@@ -11,7 +11,7 @@
 // padding 30/32. -> _home-design.scss
 
 .cl-section--promises {
-  padding: 20px 64px 0;
+  padding: calc(1.25 * var(--cl-u)) var(--cl-gutter) 0;
 }
 
 .cl-promises {

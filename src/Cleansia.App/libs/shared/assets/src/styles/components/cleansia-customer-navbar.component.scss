@@ -61,7 +61,7 @@ $primary: #0284c7;
     position: relative;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1360px) {
     &__center {
       display: flex;
     }
@@ -633,7 +633,9 @@ body:has(.cleansia-dev-banner) {
 
   &__center {
     gap: 22px;
+    // The links are the only thing on the bar that may give way.
     flex: 0 1 auto;
+    min-width: 0;
   }
 
   &__link {
@@ -650,7 +652,10 @@ body:has(.cleansia-dev-banner) {
   }
 
   &__right {
-    gap: 14px;
+    gap: 22px;
+    // Fixed-size controls: a 44px circle, the language chip, the sign-in link
+    // and the CTA. None of them has anything to give.
+    flex: 0 0 auto;
   }
 
   &__divider {
@@ -728,4 +733,84 @@ body:has(.cleansia-dev-banner) {
 // belt and braces rather than a workaround for markup I do not control.
 .customer-navbar .customer-navbar__inner {
   padding: 10px 12px 10px 30px !important;
+}
+
+// The mobile menu button is the only control on the bar at phone widths, and it
+// measured 35x39 — under the 40px floor on the one form factor that is touched.
+.customer-navbar__hamburger {
+  .cleansia-button--icon-only button,
+  button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+// The bar needs 1331px in Ukrainian — the longest labels we ship — before the
+// brand, four links, both controls, the sign-in link and the CTA all fit inside
+// the pill. PrimeFlex's `md:flex` starts laying them out at 768 and ships
+// `!important`, so they were rendered anyway from 768 up and the right-hand
+// cluster ran past the pill's edge: 134px in Czech, and still 105px at a 1200
+// breakpoint in Ukrainian. Below 1360 the hamburger owns the bar. Keep in step
+// with NAV_DESKTOP_MIN_WIDTH in customer-navbar.component.ts, and see
+// agents/tools/check-nav-fits.mjs.
+@media (max-width: 1359.98px) {
+  .customer-navbar__center,
+  .customer-navbar__right {
+    display: none !important;
+  }
+
+  .customer-navbar__hamburger {
+    display: flex !important;
+  }
+}
+
+// The drawer is the ONLY navigation below 1360px now, not just on phones, so
+// its rows have to be real targets rather than 33px text. `padding: 0.5rem` is
+// 7px at this root size, which is what left them short.
+.customer-navbar__mobile-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+// =============================================================================
+// The links sit on the pill's centre line
+// =============================================================================
+// `justify-content: space-between` gives each of the three groups whatever the
+// other two leave, so the link row's midpoint moved with the width of the brand
+// and the controls — 81px left of centre in Ukrainian, 58px right of it in
+// English. A three-column grid whose OUTER tracks are equal puts the middle
+// track on the geometric centre whatever the sides contain.
+//
+// The links must never wrap or truncate, so the centre track is `auto` (its
+// content width) and the outer tracks are `1fr` with `minmax(0, 1fr)` so they
+// can give way instead.
+@media (min-width: 1360px) {
+  .customer-navbar__inner {
+    display: grid !important;
+    // Equal outer tracks put the middle track on the geometric centre. The
+    // `max-content` FLOOR is what makes it safe in every language: perfect
+    // centring needs 2 x max(side) + links, which is ~1650px in Ukrainian, and
+    // `minmax(0, 1fr)` let the wider side shrink below its own content and lie
+    // 129px across the links. With the floor, the browser centres whenever
+    // there is room and otherwise gives each side exactly what it needs — the
+    // links drift instead of colliding, and nothing ever wraps or truncates.
+    grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+    column-gap: 24px;
+    align-items: center;
+  }
+
+  .customer-navbar__center {
+    // Its own track is exactly its content; nothing here may wrap.
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .customer-navbar__left {
+    justify-self: start;
+  }
+
+  .customer-navbar__right {
+    justify-self: end;
+  }
 }

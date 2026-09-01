@@ -12,7 +12,7 @@
 // three link columns are even.
 
 .cl-footer {
-  background: $text-heading; // #0c4a6e
+  background: var(--cl-footer-bg); // #0c4a6e in the light theme
   color: #bae6fd;
   position: relative;
   z-index: 1;
@@ -22,7 +22,7 @@
     // the artboard's 1312 rather than 1312 minus the gutters.
     max-width: calc(#{$home-width} + 128px);
     margin: 0 auto;
-    padding: 56px 64px 0;
+    padding: calc(3.5 * var(--cl-u)) var(--cl-gutter) 0;
   }
 
   &__columns {
@@ -181,11 +181,44 @@
       top: auto;
       right: auto;
     }
+
+    // The globe chip is painted for the nav pill: white ground, slate text. On
+    // the navy footer that reads as a form control someone forgot to style, so
+    // it takes the theme toggle's treatment instead and the two read as a pair.
+    .cleansia-language-switcher--globe {
+      .p-select {
+        // 30px matched the theme toggle beside it, and put both under the touch
+        // floor. They now match at 36px, and both take 44px on a phone (below).
+        min-height: 36px;
+        height: 36px;
+        padding: 0 6px 0 12px;
+        background: none;
+        border-color: rgba(186, 230, 253, 0.28);
+
+        &:not(.p-disabled):hover {
+          background: rgba(186, 230, 253, 0.1);
+          border-color: rgba(186, 230, 253, 0.5);
+        }
+      }
+
+      .p-select-label,
+      .p-select-dropdown,
+      .cleansia-language-switcher__globe {
+        color: #bae6fd;
+        font-size: 13px;
+      }
+
+      .p-select:not(.p-disabled):hover .p-select-label,
+      .p-select:not(.p-disabled):hover .cleansia-language-switcher__globe {
+        color: #{$white};
+      }
+    }
   }
 
   &__theme-toggle {
     display: inline-flex;
     align-items: center;
+    min-height: 36px;
     gap: 6px;
     background: none;
     border: 1px solid rgba(186, 230, 253, 0.28);
@@ -258,5 +291,26 @@
   &:focus-visible {
     outline: 2px solid #38bdf8;
     outline-offset: 2px;
+  }
+}
+
+// Footer links are 30px tall, which is fine to click and not to tap. They get
+// the touch floor on the form factor that needs it rather than everywhere,
+// because on desktop the extra height would loosen the column rhythm.
+@media (max-width: 900px) {
+  .cl-footer__col ul li a,
+  .cl-footer__linkbtn,
+  .cl-footer__contact a,
+  .cl-footer__theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  // The language chip is a control like the others and was excluded from the
+  // floor above because it is a PrimeNG element, not one of our own.
+  .cl-footer__prefs .cleansia-language-switcher--globe .p-select {
+    min-height: 44px;
+    height: 44px;
   }
 }

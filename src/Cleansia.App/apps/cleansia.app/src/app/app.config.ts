@@ -67,7 +67,13 @@ export const appConfig: ApplicationConfig = {
     // authenticated GET was eligible. Both are fixed in 20.3.25/20.3.27, so the
     // cache is back on and the first-load re-fetch it cost is gone with it.
     provideClientHydration(withEventReplay()),
-    provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
+    provideRouter(
+      appRoutes,
+      // `anchorScrolling` was off, so every in-page link — the navbar's Ceník and
+      // "Jak to chodí", the footer's FAQ — navigated to `/` and scrolled to the
+      // top instead of to the section. The fragment was parsed and then ignored.
+      withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
+    ),
     provideAnimationsAsync(),
     providePrimeNG({
       theme: { preset: CleansiaPreset, options: { darkModeSelector: '.dark-mode' } },

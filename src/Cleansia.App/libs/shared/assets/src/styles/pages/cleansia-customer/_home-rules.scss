@@ -13,7 +13,7 @@
 // instead of three claims and a footnote. The artboard gives the grid 28px of
 // air under the lead and the rail another 20px under the cards.
 .cl-section--rules {
-  padding: 24px 64px 0;
+  padding: calc(1.5 * var(--cl-u)) var(--cl-gutter) 0;
 
   .cl-section__header {
     margin-bottom: 28px;
@@ -32,9 +32,11 @@
   // wide cards plus one orphan at some widths, which is not a layout anyone
   // chose.
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  // The three cards were 18px apart and their labels sat straight on top of the
-  // value with nothing between. Both had no air.
+  // 24px, not the artboard's 18: at 18 the three cards' labels sat close enough
+  // to read as one block. That was a deliberate earlier ruling and reverting it
+  // to the raw artboard number undid it.
   gap: 24px;
+  margin-top: 28px;
 
   // On the filled third card everything is white; the label was a muted grey
   // inherited from .cl-lbl and scored 3.09 on that blue.
@@ -95,31 +97,29 @@
     margin: 10px 0 0;
   }
 
-  // the three flat facts under the cards
+  // The three facts under the cards, as chips — the artboard's own treatment.
+  // They are not controls, so they never take the hover or the pointer the
+  // interactive chips do; they borrow only the shape.
   &__facts {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 20px;
-    margin: 20px 0 0;
+    gap: 12px;
+    // `common/font.scss` ships `ul { margin: 0 !important; padding: 0 !important }`,
+    // so a plain margin here is silently discarded — the gap measured 0px. The
+    // artboard sets 16px; owner asked for more air between the cards and the
+    // three footnote chips under them.
+    margin: 26px 0 0 !important;
     padding: 0;
     list-style: none;
 
-    // Plain text with a hairline separator, as the artboard states them. They
-    // were pills, which made three footnotes look like three more controls.
-    li {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 15px;
-      color: var(--cl-body);
+    .cl-chip {
+      cursor: default;
+      gap: 5px;
 
-      & + li::before {
-        content: '';
-        width: 1px;
-        height: 14px;
-        background: $border;
-        margin-right: 12px;
+      &:hover {
+        border-color: var(--cl-border);
+        background: var(--cl-surface);
       }
     }
 

@@ -22,6 +22,8 @@
 .cleansia-landing {
   width: 100%;
   position: relative;
+  // Explicit, so the app shell's --surface-ground never shows between sections.
+  background: var(--cl-surface);
 
   // Ensure all child Angular component host elements are block-level
   // to prevent inline gaps between sections
@@ -132,7 +134,7 @@ cleansia-cta {
   // 64px gutters everywhere; the VERTICAL padding is per-section, because the
   // artboard does not use one rhythm — a section that follows a tinted band
   // opens tighter than one that follows white. Each section states its own.
-  padding: 0 64px;
+  padding: 0 var(--cl-gutter);
   position: relative;
   z-index: 1;
 
@@ -179,40 +181,22 @@ cleansia-cta {
     text-align: center;
   }
 
-  &--features {
-    background: var(--surface-card);
-  }
-  &--process {
-    background: var(--surface-ground);
-  }
-  &--benefits {
-    background: var(--surface-card);
-  }
-  &--services {
-    background: var(--surface-ground);
-  }
-  &--gallery {
-    background: var(--surface-card);
-  }
-  &--rules {
-    background: var(--surface-ground);
-  }
-  &--plus {
-    background: var(--surface-card);
-  }
-  &--faq {
-    background: var(--surface-card);
-  }
+  // Sections deliberately paint no ground of their own. The artboard has four
+  // and only four: the hero gradient, the gallery band, the CTA gradient and the
+  // navy footer; everything between them is the page. This block used to
+  // alternate card/ground down the page — a scheme from the previous design,
+  // still naming two sections (`--process`, `--benefits`) that no longer exist —
+  // which put a #F8FAFC slab behind Služby and Pravidla and turned every section
+  // boundary into a visible step.
 }
 
 // =============================
 // Responsive — Common
 // =============================
 @media (max-width: 768px) {
-  .cl-section {
-    padding: 4rem 1.5rem;
-  }
-
+  // The horizontal gutter is `--cl-gutter`, overridden above — stating it here
+  // did nothing, because every `.cl-section--x` modifier outranks a bare
+  // `.cl-section`.
   .cl-heading--hero {
     text-align: center;
   }
@@ -231,15 +215,134 @@ cleansia-cta {
 // =============================
 // Foam edge
 // =============================
-// The scalloped section divider. One component draws it (cleansia-foam-edge);
-// this only sizes it and flips it. -> /product/features
+// The scalloped section divider. One component draws it (cleansia-foam-edge)
+// and carries its own viewBox height; this only lets the SVG fill its strip.
+// There is deliberately no flip modifier — a hood is a different path, not a
+// mirrored cap. -> /product/features
 .cl-foam {
   display: block;
   width: 100%;
-  height: 5.625rem;
-  margin-bottom: -1px; // hairline seam between the SVG and the next section
+  height: auto;
+  // Hairline seam between the SVG's last row of pixels and the next section.
+  margin-bottom: -1px;
 
-  &--flipped {
-    transform: scaleY(-1);
+  // The hero's edge overlaps the section by 22px so the mascot stands on the
+  // foam line rather than above it. The artboard's own margin-top.
+  //
+  // `display: block` is load-bearing: the class sits on `<cleansia-foam-edge>`,
+  // a custom element, which is `display: inline` by default — and a margin-top
+  // on an inline box is ignored, so the overlap silently never applied.
+  &--hero {
+    display: block;
+    margin-top: -22px;
+  }
+}
+
+// =============================
+// Long-word safety
+// =============================
+// Four separate overflows on this page turned out to be the same two defaults,
+// and all four only appeared once the page was translated:
+//
+//   1. A grid or flex ITEM defaults to `min-width: auto`, which is its content's
+//      minimum width — not its track's. One long Ukrainian word in a rules card
+//      therefore made the card wider than the column it sits in and pushed it
+//      23px out of the section.
+//   2. A display heading has nothing to break on. `overflow-wrap` lets the word
+//      break rather than the layout.
+//
+// Stated once here instead of per section: it had already been patched into the
+// hero and the nav separately before the pattern was visible.
+.cl-promises,
+.cl-rules,
+.cl-gallery,
+.cl-services,
+.cl-faq-layout,
+.cl-plus,
+.cl-cta__row {
+  > * {
+    min-width: 0;
+  }
+}
+
+.cl-d1,
+.cl-d2,
+.cl-h3,
+.cl-h4,
+.cl-rules__value,
+.cl-plus__title,
+.cl-cta__title {
+  overflow-wrap: break-word;
+}
+
+// A button's label is content, not a fixed width. `nowrap` is right on a wide
+// bar and wrong on a 360px phone, where a Russian or Ukrainian label runs past
+// the card holding it.
+@media (max-width: 900px) {
+  // The two wordmarks are links home, and on a phone they are tapped.
+  .cleansia-brand-name a,
+  .cl-footer__brand-logo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  // A text link is a tap target too. The floor was added to `.cl-btn` only, so
+  // "Naše služby" and "Všechny služby" stayed 26px tall next to 40px buttons.
+  .cl-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+
+  .cl-btn,
+  .cl-btn--inverse {
+    white-space: normal;
+    text-align: center;
+    // A button may shrink to its container but never past it.
+    max-width: 100%;
+  }
+
+  // Action rows stack rather than push their last button out of the card.
+  .cl-plus__actions,
+  .cl-cta__actions,
+  .cl-hero__buttons {
+    flex-wrap: wrap;
+  }
+
+  // An image scales to its column; `width: 100%` of a fixed box does not.
+  .cl-hero__image img,
+  .cl-plus__mascot img,
+  .cl-cta__mascot {
+    max-width: 100%;
+    height: auto;
+  }
+
+  // The service card's 158px mascot sits in a 176px disc. The disc shrinks with
+  // the card on a narrow phone; the icon was a fixed size and pushed out of it.
+  .cl-mascot-disc {
+    max-width: 100%;
+  }
+
+  .cl-mascot-icon {
+    max-width: 100%;
+    height: auto;
+  }
+
+  // PrimeNG sets the accordion header to one line, so a long question is cut
+  // off rather than wrapped — and a cut-off question cannot be read at all. The
+  // header is a flex row whose label is an anonymous item, so it also needs a
+  // break opportunity: at 320px the longest Ukrainian word alone exceeds the
+  // 190px left beside the chevron.
+  .cl-faq-layout p-accordion-header,
+  .cl-faq-layout .p-accordionheader,
+  .cl-faq-layout .p-accordion-header {
+    white-space: normal;
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+
+    > * {
+      min-width: 0;
+    }
   }
 }

@@ -1,7 +1,7 @@
 @use './home-variables' as *;
 
 .cl-section--faq {
-  padding: 64px 64px 0;
+  padding: var(--cl-gutter) var(--cl-gutter) 0;
 }
 
 

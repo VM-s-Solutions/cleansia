@@ -1,5 +1,15 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, PLATFORM_ID } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  OnInit,
+  PLATFORM_ID,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 // Inlined from @cleansia/services to avoid module boundary issues
 const PREFERRED_LANGUAGE_KEY = 'preferred_language';
@@ -32,6 +42,8 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
   readonly variant = input<'flag' | 'globe'>('flag');
 
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
   languages: LanguageOption[] = [];
   selectedLanguage: string;
 
@@ -56,6 +68,17 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Every switcher on the page follows the service, not just the one that was
+    // clicked. `selectedLanguage` is local state, so the navbar and the footer
+    // each kept whichever value they were constructed with and drifted apart the
+    // moment either was used.
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ lang }) => {
+        this.selectedLanguage = lang;
+        this.cdr.markForCheck();
+      });
+
     this.languages = this.translate.getLangs().map((lang) => ({
       value: lang,
       label: this.getNativeLanguageName(lang),

@@ -2,7 +2,8 @@
 
 cleansia-hero {
   display: block;
-  background-color: var(--surface-card);
+  // Behind the gradient, so it only shows for the frame before it paints.
+  background-color: var(--cl-surface);
 }
 
 // =============================
@@ -26,7 +27,7 @@ cleansia-hero {
     var(--cl-hero-2) 44%,
     var(--cl-hero-3) 100%
   );
-  padding: 5rem 2rem 0;
+  padding: 20px 0 0;
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -47,92 +48,70 @@ cleansia-hero {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: 1fr 520px;
+    // 650, not the artboard's 520. At 520 the five service chips wrapped to two
+    // rows in Czech and three in English, so the card's height — and the whole
+    // hero's — depended on the language. 650 fits five chips in two rows in
+    // every locale we ship, which is also what stops the card growing when the
+    // catalogue lands.
+    grid-template-columns: minmax(0, 1fr) 650px;
     gap: 48px;
     align-items: end;
-    padding: 52px 64px 0;
+    padding: calc(3.25 * var(--cl-u)) var(--cl-gutter) 0;
     max-width: $home-width;
     margin: 0 auto;
-  }
 
-  &__text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    // the column runs to the foam line so the artwork below it is grounded
-    padding-bottom: 2rem;
-  }
-
-  &__tagline {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-start;
-    gap: 0.5rem;
-    color: $primary;
-    font-family: $font-heading;
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 1.25rem !important;
-    i {
-      font-size: 0.85rem;
+    // A grid item's default `min-width: auto` is its content's minimum width,
+    // so a long word in the copy or a wide chip in the calculator made the
+    // column wider than its own track and pushed out of the hero.
+    > * {
+      min-width: 0;
     }
   }
 
+  // The column runs the full height of the grid row so `__spacer` can push the
+  // mascot down onto the foam line. -> the approved artboard.
+  &__text {
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+
   &__subtitle {
-    font-size: clamp(1rem, 2vw, 1.1rem);
-    color: var(--cl-text-secondary);
-    line-height: 1.7;
-    margin-bottom: 2rem;
-    max-width: 500px;
+    font-size: 19px;
+    margin: 18px 0 0;
+    // In em, so the measure tracks the font size rather than fixing a pixel
+    // width that only holds for Czech.
+    max-width: 25em;
   }
 
   &__buttons {
     display: flex;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 26px;
+    margin-top: 28px;
     flex-wrap: wrap;
-    margin-bottom: 2.5rem;
   }
 
-  &__trust {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
 
   // Chips: whole badges wrap as one unit — never mid-text
-  &__trust-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    white-space: nowrap;
-    padding: 0.4rem 0.9rem;
-    border-radius: 999px;
-    background: rgba($white, 0.75);
-    border: 1px solid rgba($primary, 0.18);
-    font-size: 0.82rem;
-    color: var(--cl-heading);
-    font-weight: 600;
-    i {
-      color: $primary;
-      font-size: 0.9rem;
-    }
-  }
 
+  // The artboard's mascot: 330px wide, its own aspect ratio, nudged 18px left
+  // so it sits under the copy rather than indented from it. It had a forced
+  // 1/1 ratio inside a 400px box — the artwork carries transparent margins, so
+  // squaring it shrank the visible figure to roughly 250px — and a drop-shadow
+  // the artboard does not give it.
   &__image {
     flex: 0 0 auto;
-    width: min(100%, 400px);
+    width: min(100%, calc(20.625 * var(--cl-u))); // 330px
+    margin-left: calc(-1.125 * var(--cl-u)); // -18px
     position: relative;
 
     img {
       width: 100%;
       height: auto;
-      aspect-ratio: 1 / 1;
       display: block;
-      filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.12));
       position: relative;
       z-index: 2;
     }
@@ -203,7 +182,7 @@ cleansia-hero {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 16px;
   }
 
   // LAYOUT ONLY — a third heading system used to live here, with its own
@@ -214,22 +193,28 @@ cleansia-hero {
   }
 
   &__pill {
-    font-size: 0.8125rem;
+    font-size: calc(0.8125 * var(--cl-u)); // 13px
     font-weight: 800;
     color: var(--cl-heading);
     background: var(--cl-tint-strong);
-    padding: 0.4375rem 0.875rem;
+    padding: calc(0.4375 * var(--cl-u)) calc(0.875 * var(--cl-u)); // 7px 14px
     border-radius: 999px;
     white-space: nowrap;
   }
 
   &__field {
-    margin-top: 1.25rem;
+    margin-top: calc(1.25 * var(--cl-u)); // 20px
+
+    &:first-of-type {
+      margin-top: calc(1.375 * var(--cl-u)); // 22px, as the artboard opens it
+    }
   }
 
+  // The artboard's `.lbl`, which is what `.cl-lbl` already is. Stated here only
+  // because the markup uses a BEM name for it.
   &__label {
     display: block;
-    font-size: 0.75rem;
+    font-size: calc(0.75 * var(--cl-u)); // 12px
     font-weight: 800;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -239,63 +224,33 @@ cleansia-hero {
   &__chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.625rem;
+    gap: calc(0.5 * var(--cl-u)); // 8px
+    margin-top: calc(0.625 * var(--cl-u)); // 10px
   }
 
-  &__chip {
-    min-height: 2.75rem; // 44px — the mobile hit-target floor applies here too
-    padding: 0 1.125rem;
-    border-radius: 999px;
-    border: 1px solid var(--cl-border);
-    background: var(--cl-surface);
-    font-family: inherit;
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--cl-body);
-    cursor: pointer;
-    transition: border-color 0.16s ease, background-color 0.16s ease;
-
-    &:hover {
-      border-color: $primary-accent;
-      background: var(--cl-tint);
-    }
-
-    &--on,
-    &--on:hover {
-      background: $primary;
-      border-color: $primary;
-      color: $white;
-    }
-
-    &:focus-visible {
-      outline: 2px solid $primary;
-      outline-offset: 2px;
-    }
+  // The service row wraps to two lines at the artboard's five chips, so it
+  // reserves both up front — otherwise the card is a row shorter until the
+  // catalogue arrives and then grows under the visitor's eyes.
+  &__chips--services {
+    min-height: calc(5.75 * var(--cl-u)); // two 44px rows plus the 8px gap
+    align-content: flex-start;
   }
 
-  &__date {
-    width: 100%;
-    font: inherit;
-    font-size: 0.9375rem;
-    color: var(--cl-body);
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-border);
-    border-radius: 0.75rem;
-    padding: 0.6rem 0.85rem;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-    &:hover {
-      border-color: var(--cl-border-tint);
-    }
-
-    // A ring, not a shadow — the accent belongs on focus. -> T-0669 AC2
-    &:focus-visible {
-      outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.15);
-    }
+  // A chip-shaped placeholder, not a spinner: it holds the exact space the real
+  // chip will take, so nothing moves when the catalogue lands.
+  &__chip--ghost {
+    background: var(--cl-tint);
+    border-color: transparent;
+    pointer-events: none;
+    animation: cl-quote-ghost 1.4s ease-in-out infinite;
   }
+
+  // `&__chip` used to restate the whole chip token in rem — min-height, padding,
+  // border, font — which meant it WON over `.cl-chip` on the same element and
+  // rendered every one of those values at 87.5 % (`html { font-size: 14px }`).
+  // The markup carries `cl-chip cl-quote__chip`, so the token already applies;
+  // this is a hook, not a second definition.
+
 
   &__hint {
     display: block;
@@ -352,7 +307,7 @@ cleansia-hero {
   }
 
   &__title {
-    margin-top: 16px;
+    margin-top: 30px;
     text-align: left;
   }
 
@@ -433,24 +388,85 @@ cleansia-hero {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+    // The label sat straight on the boxes; the chip rows above get 10px, and
+    // this row reads as one field with them.
+    margin-top: 10px;
   }
 }
 
 // The two "when" boxes, at the artboard's measurements: 52px tall, 16px radius,
 // 16px inset, and the value set in the same 15px bold the chips use so a chosen
 // day reads as a chosen value rather than as placeholder text.
-.cl-quote__when .cl-quote__date {
-  min-height: 52px;
-  border: 1px solid var(--cl-border);
-  border-radius: 16px;
-  padding: 0 16px;
-  font-family: $font-body;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--cl-body);
-  background: var(--cl-surface);
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
+//
+// Both are the booking wizard's own controls (p-datePicker, p-select) rather
+// than native date/time inputs: a visitor must not be offered an hour on the
+// home page that the wizard then refuses, and a native picker cannot be told
+// which hours those are. PrimeNG's own shell is neutralised here so the two
+// read as one pair of boxes.
+.cl-quote__when {
+  .cl-quote__picker {
+    width: 100%;
+    min-width: 0;
+  }
+
+  // p-datePicker renders a wrapper around its input; p-select IS the box.
+  .cl-quote__date,
+  .p-select {
+    width: 100%;
+    min-height: 52px;
+    border: 1px solid var(--cl-border);
+    border-radius: 16px;
+    padding: 0 16px;
+    font-family: $font-body;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cl-body);
+    background: var(--cl-surface);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    box-shadow: none;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+    &:hover {
+      border-color: var(--cl-border-tint);
+    }
+  }
+
+  // PrimeNG paints focus with its own ring token; the artboard's is the brand.
+  .cl-quote__date:focus,
+  .cl-quote__date:focus-visible,
+  .p-select.p-focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.15);
+  }
+
+  .p-select {
+    display: flex;
+    align-items: center;
+  }
+
+  // The select's inner label carries its own padding and line-height, both of
+  // which fight the 52px box.
+  .p-select-label {
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    display: flex;
+    align-items: center;
+  }
+
+  .p-select-label.p-placeholder,
+  .cl-quote__date::placeholder {
+    color: var(--cl-muted);
+    font-weight: 600;
+  }
+
+  .p-select-dropdown,
+  .p-datepicker-input-icon {
+    color: var(--cl-muted);
+    width: auto;
+  }
 }
 
 // The price block: label, the number at display size, action on the right.
@@ -467,6 +483,18 @@ cleansia-hero {
 .cl-quote__price {
   display: flex;
   flex-direction: column;
+  // Reserved for label + amount + crew line, so the block is the same height
+  // whether it holds a price, a dash or an error. The row must not resize while
+  // a quote is in flight.
+  min-height: calc(5.5 * var(--cl-u));
+  justify-content: center;
+  // A dim, not a swap. The number stays legible and in place while the next one
+  // is fetched, so the card never changes height mid-interaction.
+  transition: opacity 0.18s ease;
+
+  &--busy {
+    opacity: 0.45;
+  }
 
   strong {
     font-family: $font-heading;
@@ -481,4 +509,90 @@ cleansia-hero {
 
 .cl-quote__footnote {
   margin: 13px 0 0;
+}
+
+@keyframes cl-quote-ghost {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-quote__chip--ghost {
+    animation: none;
+  }
+}
+
+// The price row's own pieces, at the artboard's sizes.
+.cl-quote__amount {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2.25 * var(--cl-u)); // 36px
+  line-height: 1.08;
+  letter-spacing: -1.1px;
+  color: $primary;
+  margin-top: 4px;
+
+  &--empty {
+    color: var(--cl-muted);
+  }
+}
+
+.cl-quote__crew {
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  // Holds its line box even while empty.
+  min-height: 1.6em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-quote__price {
+    transition: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .cl-hero__image {
+    margin-left: 0;
+    // The 330px artboard width is wider than a 360px phone once gutters are
+    // taken off, so it becomes a share of the column instead.
+    width: min(100%, 300px);
+    align-self: center;
+  }
+
+  // The two "when" boxes stop being a pair and stack, or each is ~140px wide
+  // with a date and an icon inside it.
+  .cl-quote__when {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Long labels have to fit the card, not the other way round. "Bez registrace"
+// is 13 characters in Czech and 16 in Ukrainian, and the pill and the Continue
+// button both carry `white-space: nowrap` for the desktop layout — on a 390px
+// phone that pushed them 32px and 7px out of the card.
+@media (max-width: 900px) {
+  .cl-quote__head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .cl-quote__pill {
+    white-space: normal;
+  }
+
+  // The price and the action stop competing for one row: the button takes the
+  // full width under the number, which is also the easier target.
+  .cl-quote__result {
+    flex-wrap: wrap;
+
+    .cl-btn {
+      width: 100%;
+      white-space: normal;
+    }
+  }
 }

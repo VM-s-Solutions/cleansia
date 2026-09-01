@@ -7,8 +7,6 @@
 // below, so the photographs sit on colour rather than floating on the page.
 .cl-section--gallery {
   background: var(--cl-tint);
-  padding-top: 20px;
-  padding-bottom: 56px;
 }
 
 .cl-gallery {
@@ -52,7 +50,9 @@
   -webkit-user-select: none;
   touch-action: none;
   aspect-ratio: 4 / 3;
-  background: $bg-alt;
+  // Shown only while the photograph loads. $bg-alt is a build-time #F8FAFC, so
+  // in dark mode it was a white slab inside a dark card until the image landed.
+  background: var(--cl-tint);
   container-type: inline-size;
 
   &__after,
@@ -172,20 +172,29 @@
   }
 }
 
-// The top edge is drawn above the section's own padding, so it must escape it.
+// The band runs edge to edge: the foam is a full-bleed shape, so the section
+// carries NO horizontal padding and the inner column carries the gutter
+// instead. The edges used to escape a 64px gutter with a hardcoded -64px
+// margin; once the gutter became fluid (and smaller again under the mobile
+// breakpoints) that margin was too large at every width below 1440 and hung the
+// scallops 43px past the viewport, giving the whole page a horizontal
+// scrollbar. Nothing to escape now, so nothing can overshoot.
 .cl-section--gallery {
-  padding-top: 0;
-
-  > .cl-foam--top {
-    display: block;
-    width: 100%;
-    margin: 0 -64px;
-    width: calc(100% + 128px);
-  }
+  // The artboard sets no vertical padding on the band itself: the hood opens
+  // it, the cap closes it, and the inner column carries the spacing.
+  padding: 0;
+  margin-top: var(--cl-gutter);
 
   > .cl-section__inner {
     padding-top: 20px;
+    padding-bottom: 36px;
+    padding-left: var(--cl-gutter);
+    padding-right: var(--cl-gutter);
+    // The gutter moved from the section onto the inner so the foam can run
+    // full-bleed. `max-width` caps the BORDER box, so without adding the two
+    // gutters back the content column came out 128px narrower here than in
+    // every other section and the photographs no longer lined up with the
+    // headings above and below them.
+    max-width: calc(#{$home-width} + var(--cl-gutter) * 2);
   }
-
-  padding-bottom: 56px;
 }

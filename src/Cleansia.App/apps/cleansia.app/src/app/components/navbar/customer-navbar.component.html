@@ -23,19 +23,25 @@
       <a class="customer-navbar__link" routerLink="/services" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
         {{ 'nav.services' | translate }}
       </a>
-      <a class="customer-navbar__link" routerLink="/" fragment="services" (click)="closeMenus()">
-        {{ 'nav.pricing' | translate }}
-      </a>
       <a class="customer-navbar__link" routerLink="/" fragment="why-us" (click)="closeMenus()">
         {{ 'nav.how_it_works' | translate }}
       </a>
       <a class="customer-navbar__link" routerLink="/membership" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
         {{ 'nav.plus' | translate }}
       </a>
+      <!--
+        One anchor, not an @if/@else pair. `isLoggedIn()` resolves differently
+        on the server than at hydration, and a conditional here changes the node
+        count under the bar — which surfaced as an NG0500 hydration mismatch
+        pointing at the language switcher two containers away.
+      -->
+      <a class="customer-navbar__link" [routerLink]="ordersLink()" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
+        {{ ordersLabel() | translate }}
+      </a>
     </nav>
 
     <!-- Desktop right section -->
-    <div class="customer-navbar__right hidden md:flex align-items-center justify-content-end gap-2">
+    <div class="customer-navbar__right hidden md:flex align-items-center justify-content-end">
       <span class="customer-navbar__divider" aria-hidden="true"></span>
 
       <!--
@@ -211,6 +217,14 @@
         {{ 'nav.track_order' | translate }}
       </a>
     }
+    <a class="customer-navbar__mobile-link" routerLink="/" fragment="why-us" (click)="closeMenus()">
+      <i class="pi pi-question-circle mr-2"></i>
+      {{ 'nav.how_it_works' | translate }}
+    </a>
+    <a class="customer-navbar__mobile-link" routerLink="/membership" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+      <i class="pi pi-bookmark-fill mr-2"></i>
+      {{ 'nav.plus' | translate }}
+    </a>
     <a class="customer-navbar__mobile-link" routerLink="/order" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
       <i class="pi pi-calendar-plus mr-2"></i>
       {{ 'nav.book_now' | translate }}

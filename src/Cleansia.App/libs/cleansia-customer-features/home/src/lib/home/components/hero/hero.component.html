@@ -4,7 +4,6 @@
   <div class="cl-hero__sud cl-hero__sud--3" aria-hidden="true"></div>
   <div class="cl-hero__inner">
     <div class="cl-hero__text animate-on-scroll">
-      <span class="cl-lbl cl-hero__eyebrow">{{ 'pages.home.hero.tagline' | translate }}</span>
       <h1 class="cl-d1 cl-hero__title">{{ 'pages.home.hero.title' | translate }}</h1>
       <p class="cl-hero__subtitle">
         {{ 'pages.home.hero.subtitle' | translate }}
@@ -31,5 +30,5 @@
     </div>
     <cleansia-quick-quote [services]="quoteServices()" />
   </div>
-  <cleansia-foam-edge />
+  <cleansia-foam-edge class="cl-foam cl-foam--hero" variant="cap" />
 </section>

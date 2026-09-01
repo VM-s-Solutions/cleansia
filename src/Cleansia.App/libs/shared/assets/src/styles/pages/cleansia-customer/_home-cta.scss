@@ -10,11 +10,11 @@
 .cl-cta {
   position: relative;
   margin-top: 64px;
-  background: radial-gradient(110% 130% at 20% 10%, $primary-light 0%, $primary-lighter 60%, $white 100%);
+  background: radial-gradient(110% 130% at 20% 10%, var(--cl-cta-1) 0%, var(--cl-cta-2) 60%, var(--cl-cta-3) 100%);
   overflow: hidden;
 
   &__inner {
-    padding: 34px 64px 60px;
+    padding: calc(2.125 * var(--cl-u)) var(--cl-gutter) calc(3.75 * var(--cl-u));
     // The cap includes the 64px gutters, so the content column after padding is
     // the artboard's 1312 rather than 1312 minus the gutters.
     max-width: calc(#{$home-width} + 128px);
@@ -135,7 +135,9 @@
 
   &__consent {
     display: flex;
-    align-items: flex-start;
+    // Centred, not top-aligned: the label runs to two lines and the box sat
+    // against the first one.
+    align-items: center;
     gap: 10px;
     max-width: 22em;
     cursor: pointer;
@@ -144,7 +146,7 @@
       width: 20px;
       height: 20px;
       flex-shrink: 0;
-      margin: 2px 0 0;
+      margin: 0;
       accent-color: $primary;
     }
   }

@@ -419,7 +419,6 @@
       "hero": {
         "title": "A home that smells clean",
         "subtitle": "Order online in two minutes. You see the price up front and it does not change — not even if it takes longer.",
-        "tagline": "Prague and up to 30 km around · daily 8–20",
         "book_now": "Book a clean",
         "view_services": "Our services"
       },
@@ -479,7 +478,7 @@
         "contact_button": "Contact Us",
         "q1": {
           "question": "Do you also travel outside Prague?",
-          "answer": "Yes, we cover surrounding areas up to approximately 30 km from Prague. For more distant locations, contact us — we will find a solution."
+          "answer": "Yes, we also travel to the areas around Prague. For more distant locations, contact us — we will find a solution."
         },
         "q2": {
           "question": "Do I have to be at home during the cleaning?",
@@ -536,7 +535,6 @@
         "services_col": "Services",
         "hours_label": "Open daily",
         "hours_value": "08:00-20:00",
-        "coverage": "Prague and up to 30 km around",
         "registration": "Reg. no. [ICO] · VAT [DIC]",
         "apps": "Get the app",
         "svc_home": "Home cleaning",
@@ -599,9 +597,9 @@
         "pick_service": "Pick a service to see the price",
         "loading": "Working it out...",
         "error": "We could not price that just now. Please try again.",
-        "size_note": "by country",
         "time_label": "Time",
-        "footnote": "Priced by the same calculation the order uses. Nothing is added afterwards."
+        "footnote": "Priced by the same calculation the order uses. Nothing is added afterwards.",
+        "duration": "About {{hours}} h"
       }
     },
     "profile": {

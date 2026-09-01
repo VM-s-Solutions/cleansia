@@ -10,7 +10,7 @@
 // white, padding 30/32, price 26px Poppins. -> _home-design.scss
 
 .cl-section--services {
-  padding: 64px 64px 0;
+  padding: var(--cl-gutter) var(--cl-gutter) 0;
 }
 
 .cl-services {

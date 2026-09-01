@@ -419,7 +419,6 @@
       "hero": {
         "title": "Domov, který voní čistotou",
         "subtitle": "Objednáte online za dvě minuty. Cenu vidíte předem a už se nezmění — ani když to trvá déle.",
-        "tagline": "Praha a okolí do 30 km · denně 8–20",
         "book_now": "Objednat úklid",
         "view_services": "Naše služby"
       },
@@ -479,7 +478,7 @@
         "contact_button": "Kontaktujte nás",
         "q1": {
           "question": "Vyjíždíte i mimo Prahu?",
-          "answer": "Ano, pokrýváme i okolní oblasti do přibližně 30 km od Prahy. Pro vzdálenější lokality nás kontaktujte — řešení najdeme."
+          "answer": "Ano, vyjíždíme i do okolí Prahy. Pro vzdálenější lokality nás kontaktujte — řešení najdeme."
         },
         "q2": {
           "question": "Musím být během úklidu doma?",
@@ -536,7 +535,6 @@
         "services_col": "Služby",
         "hours_label": "Otevřeno denně",
         "hours_value": "08:00–20:00",
-        "coverage": "Praha a okolí do 30 km",
         "registration": "IČO [IČO] · DIČ [DIČ]",
         "apps": "Stáhnout aplikaci",
         "svc_home": "Úklid domácnosti",
@@ -599,9 +597,9 @@
         "pick_service": "Vyberte službu a uvidíte cenu",
         "loading": "Počítáme…",
         "error": "Cenu se teď nepodařilo spočítat. Zkuste to prosím znovu.",
-        "size_note": "podle země",
         "time_label": "Čas",
-        "footnote": "Cenu počítá stejný výpočet jako objednávku. Nic se potom nepřipočítává."
+        "footnote": "Cenu počítá stejný výpočet jako objednávku. Nic se potom nepřipočítává.",
+        "duration": "Odhadem {{hours}} h"
       }
     },
     "profile": {

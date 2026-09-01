@@ -1,7 +1,7 @@
 @use './home-variables' as *;
 
 .cl-section--plus {
-  padding: 64px 64px 0;
+  padding: var(--cl-gutter) var(--cl-gutter) 0;
 }
 
 
@@ -16,8 +16,8 @@
   position: relative;
   overflow: hidden;
   border-radius: 52px;
-  background: radial-gradient(120% 140% at 88% 12%, $primary-accent 0%, $primary 58%);
-  color: $white;
+  background: radial-gradient(120% 140% at 88% 12%, var(--cl-plus-1) 0%, var(--cl-plus-2) 58%);
+  color: var(--cl-plus-ink);
   padding: 44px 50px;
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
@@ -81,6 +81,9 @@
       gap: 10px;
       font-size: 17px;
       line-height: 1.55;
+      // Without this the row is sized by its longest word and pushes out of the
+      // card rather than wrapping inside it.
+      min-width: 0;
     }
 
     i {
@@ -165,4 +168,19 @@
 // it is the only way to speak over a global `!important`.
 ul.cl-plus__perks {
   margin: 18px 0 0 !important;
+}
+
+@media (max-width: 900px) {
+  // Two columns leave roughly 154px per cell on a phone, which no perk fits.
+  .cl-plus__perks {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  // The mascot is sized for the card's right-hand column; once the card is one
+  // column it has to fit the card's width instead.
+  .cl-plus__mascot img {
+    max-width: 100%;
+    height: auto;
+  }
 }

@@ -2,7 +2,7 @@ import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CustomerClient, QuoteOrderCommand, QuoteOrderResponse } from '@cleansia/customer-services';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { Subject, catchError, map, of, switchMap, takeUntil } from 'rxjs';
 
 import { PROPERTY_SIZE_PRESETS, PropertySizePreset } from './property-size-presets';
 
@@ -39,15 +39,33 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
   readonly state = this._state.asReadonly();
   readonly quote = this._quote.asReadonly();
 
-  readonly totalPrice = computed(() => this._quote()?.totalPrice ?? null);
+  /**
+   * The price the card is currently showing.
+   *
+   * Deliberately the LAST known price rather than null-while-loading: the block
+   * used to be replaced by a one-line status on every request, so the card
+   * changed height each time a chip was tapped. `_quote` is never cleared on
+   * refresh, so the previous number stays put and is dimmed by the template
+   * until the new one lands.
+   */
+  readonly displayPrice = computed(() => this._quote()?.totalPrice ?? null);
+
+  /** What the small label above the number says, given the current state. */
+  readonly priceLabelKey = computed(() => {
+    if (this._state() === 'error') return 'pages.home.quote.error';
+    if (this._quote()) return 'pages.home.quote.price_label';
+    return 'pages.home.quote.pick_service';
+  });
 
   /**
-   * The artboard shows "2 uklízeči · odhad 4 hodiny" under the price. We cannot:
-   * `QuoteOrderResponse` carries neither a crew size nor a duration — those live
-   * on the order DTO, not the quote — and a number invented here would be the
-   * kind of unprovable claim T-0670 stripped off this page. Omitted until the
-   * quote endpoint returns them.
+   * The estimate under the price.
+   *
+   * The artboard states it as "2 uklízeči · odhad 4 hodiny"; the crew count came
+   * off on owner ruling, so only the duration is shown. It comes from the quote
+   * endpoint, computed by the same `OrderDuration` the order itself uses, rather
+   * than being a claim invented on the landing page.
    */
+  readonly crewMinutes = computed(() => this._quote()?.estimatedDurationMinutes ?? null);
 
   /**
    * Everything the visitor chose here, in the shape the order wizard reads.
@@ -82,9 +100,7 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
   });
   readonly currencyCode = computed(() => this._quote()?.currencyCode ?? null);
 
-  /** Crew size follows the same rule the backend uses: ceil(estimate / 120 min). */
   readonly isLoading = computed(() => this._state() === 'loading');
-  readonly hasFailed = computed(() => this._state() === 'error');
 
   selectService(serviceId: string): void {
     if (this._serviceId() === serviceId) {
@@ -145,6 +161,34 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
    * Accept-Language for 60 seconds, so a quote rendered there would be served
    * to somebody who never chose it.
    */
+  /** The latest quote request. Older ones are cancelled, not merged. */
+  private readonly pending$ = new Subject<QuoteOrderCommand>();
+
+  constructor() {
+    super();
+    this.pending$
+      .pipe(
+        switchMap((command) =>
+          this.client.orderClient.quote(command).pipe(
+            map((result) => ({ result, failed: false })),
+            catchError(() => of({ result: null, failed: true })),
+          ),
+        ),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe(({ result, failed }) => {
+        if (failed) {
+          this._state.set('error');
+          return;
+        }
+        if (result) {
+          this._quote.set(result);
+        }
+        // Always cleared on a reply, so a previous failure cannot outlive it.
+        this._state.set('loaded');
+      });
+  }
+
   refresh(): void {
     const serviceId = this._serviceId();
     if (!serviceId || !isPlatformBrowser(this.platformId)) {
@@ -169,24 +213,12 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
 
     this._state.set('loading');
 
-    this.client.orderClient
-      .quote(command)
-      .pipe(
-        catchError(() => {
-          this._state.set('error');
-          return of(null);
-        }),
-        finalize(() => {
-          if (this._state() === 'loading') {
-            this._state.set('loaded');
-          }
-        }),
-        takeUntil(this.destroyed$),
-      )
-      .subscribe((result) => {
-        if (result) {
-          this._quote.set(result);
-        }
-      });
+    // switchMap, not a fresh subscription per call: two chips tapped in quick
+    // succession raced, and a slow FIRST reply could land after a fast second
+    // one and put yesterday's price under today's selection. It also fixes a
+    // stuck error — a failed earlier request used to leave `_state` on 'error'
+    // while a later one succeeded, so the card showed "we could not price that"
+    // as the caption directly above a correct, fresh number.
+    this.pending$.next(command);
   }
 }

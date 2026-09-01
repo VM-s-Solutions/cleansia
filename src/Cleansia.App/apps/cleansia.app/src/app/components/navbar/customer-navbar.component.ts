@@ -41,6 +41,22 @@ import {
   CleansiaLanguageSwitcherComponent,
 } from '@cleansia/components';
 
+/**
+ * Width at which the full bar fits inside the floating pill.
+ *
+ * Measured, not guessed, and measured in EVERY locale: the brand, four links,
+ * both controls, the sign-in link and the CTA need 1139px in English and 1331px
+ * in Ukrainian, whose labels are the longest we ship. PrimeFlex's `md:` is 768,
+ * so the bar was laid out from 768 up and its right-hand cluster ran as much as
+ * 134px past the pill — and at 1200 it still overflowed by 105px in Ukrainian,
+ * which is what "the layout breaks when I switch language" was.
+ *
+ * `agents/tools/check-nav-fits.mjs` re-measures all five locales against this
+ * number, so a longer translation fails a check instead of shipping broken.
+ * Keep in step with the media query in `cleansia-customer-navbar.component.scss`.
+ */
+const NAV_DESKTOP_MIN_WIDTH = 1360;
+
 @Component({
   selector: 'cleansia-customer-navbar',
   standalone: true,
@@ -213,6 +229,14 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
 
   // Links are real routerLink anchors (crawlable hrefs); this only has to
   // cover the same-URL click, where no NavigationEnd fires to close menus.
+  /**
+   * The one nav slot that changes meaning with the session: a signed-out
+   * visitor tracks an order, a signed-in one opens their list. Computed rather
+   * than branched in the template so the bar renders the same node either way.
+   */
+  readonly ordersLink = computed(() => (this.isLoggedIn() ? '/orders' : '/track-order'));
+  readonly ordersLabel = computed(() => (this.isLoggedIn() ? 'nav.my_orders' : 'nav.track_order'));
+
   closeMenus(): void {
     this.mobileMenuOpen.set(false);
     this.userMenuOpen.set(false);
@@ -237,6 +261,6 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   }
 
   private updateMobileStatus(): void {
-    this.isMobile.set(window.innerWidth < 768);
+    this.isMobile.set(window.innerWidth < NAV_DESKTOP_MIN_WIDTH);
   }
 }

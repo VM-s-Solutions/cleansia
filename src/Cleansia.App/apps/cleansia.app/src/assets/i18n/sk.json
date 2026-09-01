@@ -419,7 +419,6 @@
       "hero": {
         "title": "Domov, ktorý vonia čistotou",
         "subtitle": "Objednáte online za dve minúty. Cenu vidíte vopred a už sa nezmení — ani keď to trvá dlhšie.",
-        "tagline": "Praha a okolie do 30 km · denne 8–20",
         "book_now": "Objednať upratovanie",
         "view_services": "Naše služby"
       },
@@ -479,7 +478,7 @@
         "contact_button": "Kontaktujte nás",
         "q1": {
           "question": "Chodíte aj mimo Prahy?",
-          "answer": "Áno, pokrývame aj okolité oblasti do približne 30 km od Prahy. Pre vzdialenejšie lokality nás kontaktujte — riešenie nájdeme."
+          "answer": "Áno, vychádzame aj do okolia Prahy. Pre vzdialenejšie lokality nás kontaktujte — riešenie nájdeme."
         },
         "q2": {
           "question": "Musím byť počas upratovania doma?",
@@ -536,7 +535,6 @@
         "services_col": "Služby",
         "hours_label": "Otvorené denne",
         "hours_value": "08:00–20:00",
-        "coverage": "Praha a okolie do 30 km",
         "registration": "IČO [IČO] · DIČ [DIČ]",
         "apps": "Stiahnuť aplikáciu",
         "svc_home": "Upratovanie domácnosti",
@@ -599,9 +597,9 @@
         "pick_service": "Vyberte službu a uvidíte cenu",
         "loading": "Počítame…",
         "error": "Cenu sa teraz nepodarilo vypočítať. Skúste to prosím znova.",
-        "size_note": "podľa krajiny",
         "time_label": "Čas",
-        "footnote": "Cenu počíta rovnaký výpočet ako objednávku. Nič sa potom nepripočítava."
+        "footnote": "Cenu počíta rovnaký výpočet ako objednávku. Nič sa potom nepripočítava.",
+        "duration": "Odhadom {{hours}} h"
       }
     },
     "profile": {

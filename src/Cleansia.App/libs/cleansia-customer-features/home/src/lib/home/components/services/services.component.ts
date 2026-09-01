@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import {
   loadCustomerServices,
@@ -19,6 +20,23 @@ import { toSignal } from '@angular/core/rxjs-interop';
 export class ServicesComponent {
   private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * Bumped on every language change.
+   *
+   * Service names and descriptions come from the catalogue's own per-language
+   * dictionary, not from ngx-translate, so nothing in the template depends on a
+   * pipe — and an OnPush component with no changed input never re-rendered. The
+   * cards kept the language they were first drawn in.
+   */
+  private readonly lang = signal(this.translate.currentLang);
+
+  constructor() {
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ lang }) => this.lang.set(lang));
+  }
 
   services = toSignal(this.store.select(selectCustomerServices), {
     initialValue: [] as ServiceListItem[],
@@ -31,8 +49,15 @@ export class ServicesComponent {
    * catalogue rather than naming three services in the markup — the copy says
    * "eleven services", and that number should come from the catalogue.
    */
-  readonly cardServices = computed(() => this.services().slice(0, 3));
-  readonly chipServices = computed(() => this.services().slice(3));
+  readonly cardServices = computed(() => {
+    this.lang();
+    return this.services().slice(0, 3);
+  });
+
+  readonly chipServices = computed(() => {
+    this.lang();
+    return this.services().slice(3);
+  });
 
   fallbackServices = [
     { name: 'pages.home.fallback_services.s1.name', desc: 'pages.home.fallback_services.s1.desc', price: 890 },
@@ -41,7 +66,7 @@ export class ServicesComponent {
   ];
 
   getTranslation(item: ServiceListItem | PackageListItem, field: string): string {
-    const lang = this.translate.currentLang || this.translate.getDefaultLang();
+    const lang = this.lang() || this.translate.getDefaultLang();
     const translations = item.translations;
     if (translations && translations[lang]) {
       const translated = (translations[lang] as unknown as Record<string, string>)[field];

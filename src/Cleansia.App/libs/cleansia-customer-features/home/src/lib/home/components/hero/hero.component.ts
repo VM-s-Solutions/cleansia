@@ -1,10 +1,11 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FoamEdgeComponent } from '../foam-edge/foam-edge.component';
 import { QuickQuoteComponent, QuickQuoteService } from '../quick-quote/quick-quote.component';
 import { Store } from '@ngrx/store';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { selectCustomerServices } from '@cleansia/customer-stores';
 import { ServiceListItem } from '@cleansia/customer-services';
 import {
@@ -20,12 +21,29 @@ const PRELOAD_ID = 'cl-hero-img-preload';
   templateUrl: './hero.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FoamEdgeComponent, QuickQuoteComponent, TranslatePipe, CleansiaButtonComponent, CleansiaTitleComponent],
+  imports: [FoamEdgeComponent, QuickQuoteComponent, TranslatePipe, CleansiaButtonComponent, CleansiaTitleComponent, RouterModule],
 })
 export class HeroComponent {
   private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
+  // Declared before `lang`, which reads it at field-initialiser time.
+  private readonly translate = inject(TranslateService);
+
+  /**
+   * Bumped on every language change.
+   *
+   * The calculator's chips come from the catalogue's own per-language
+   * translations, not from a TranslatePipe, and `translate.currentLang` is a
+   * plain property — so `quoteServices` never re-ran and the chips kept the
+   * language the page was first drawn in while the rest of it switched.
+   */
+  private readonly lang = signal(this.translate.currentLang);
 
   constructor() {
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ lang }) => this.lang.set(lang));
+
     // Preload the LCP hero image from <head>. Running this during SSR puts
     // the hint into the served HTML, so the browser fetches the image ahead
     // of the script bundles instead of competing with them.
@@ -48,7 +66,6 @@ export class HeroComponent {
   }
 
   private readonly store = inject(Store);
-  private readonly translate = inject(TranslateService);
 
   private readonly catalogue = toSignal(this.store.select(selectCustomerServices), {
     initialValue: [] as ServiceListItem[],
@@ -61,14 +78,15 @@ export class HeroComponent {
    * choosing between eleven options above the fold is being asked to browse
    * rather than to price.
    */
-  readonly quoteServices = computed<QuickQuoteService[]>(() =>
-    this.catalogue()
+  readonly quoteServices = computed<QuickQuoteService[]>(() => {
+    this.lang(); // re-run when the language changes
+    return this.catalogue()
       .slice(0, 5)
-      .map((service) => ({ id: service.id ?? '', name: this.serviceName(service) })),
-  );
+      .map((service) => ({ id: service.id ?? '', name: this.serviceName(service) }));
+  });
 
   private serviceName(service: ServiceListItem): string {
-    const lang = this.translate.currentLang || this.translate.getDefaultLang();
+    const lang = this.lang() || this.translate.getDefaultLang();
     const translated = service.translations?.[lang] as unknown as Record<string, string> | undefined;
     return translated?.['name'] || service.name || '';
   }

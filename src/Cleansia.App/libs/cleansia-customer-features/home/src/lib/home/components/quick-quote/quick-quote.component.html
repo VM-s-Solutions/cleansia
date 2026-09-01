@@ -4,10 +4,16 @@
     <span class="cl-quote__pill">{{ 'pages.home.quote.no_registration' | translate }}</span>
   </div>
 
-  @if (services().length > 0) {
+  <!--
+    Rendered unconditionally, with placeholder chips until the catalogue
+    arrives. It used to be behind `@if (services().length > 0)`, so the card
+    was laid out without this field on first paint and grew by two chip rows
+    the moment the request resolved — the calculator visibly jumped while the
+    visitor was reading it.
+  -->
   <div class="cl-quote__field">
     <span class="cl-quote__label">{{ 'pages.home.quote.service_label' | translate }}</span>
-    <div class="cl-quote__chips">
+    <div class="cl-quote__chips cl-quote__chips--services">
       @for (service of services(); track service.id) {
       <button
         type="button"
@@ -17,16 +23,16 @@
       >
         {{ service.name }}
       </button>
+      } @empty {
+      @for (w of placeholderChipWidths; track w) {
+      <span class="cl-chip cl-quote__chip cl-quote__chip--ghost" [style.width.px]="w" aria-hidden="true"></span>
+      }
       }
     </div>
   </div>
-  }
 
   <div class="cl-quote__field">
-    <div class="cl-quote__label-row">
-      <span class="cl-quote__label">{{ 'pages.home.quote.size_label' | translate }}</span>
-      <span class="cl-quote__note">{{ 'pages.home.quote.size_note' | translate }}</span>
-    </div>
+    <span class="cl-quote__label">{{ 'pages.home.quote.size_label' | translate }}</span>
     <div class="cl-quote__chips">
       @for (size of facade.sizes; track size.code) {
       <button
@@ -44,39 +50,68 @@
   <div class="cl-quote__field">
     <span class="cl-quote__label">{{ 'pages.home.quote.date_label' | translate }}</span>
     <div class="cl-quote__when">
-      <input
-        type="date"
-        class="cl-quote__date"
-        [min]="today"
-        [value]="facade.cleaningDate() ?? ''"
-        (change)="onDate($event)"
-        [attr.aria-label]="'pages.home.quote.date_label' | translate"
+      <p-datePicker
+        styleClass="cl-quote__picker"
+        [ngModel]="selectedDate()"
+        (ngModelChange)="onDate($event)"
+        [minDate]="today"
+        dateFormat="dd.mm.yy"
+        appendTo="body"
+        [showIcon]="true"
+        iconDisplay="input"
+        [placeholder]="'pages.home.quote.date_label' | translate"
+        [inputStyleClass]="'cl-quote__date'"
+        [ariaLabel]="'pages.home.quote.date_label' | translate"
       />
-      <input
-        type="time"
-        class="cl-quote__date"
-        step="1800"
-        [value]="facade.cleaningTime() ?? ''"
-        (change)="onTime($event)"
-        [attr.aria-label]="'pages.home.quote.time_label' | translate"
+      <p-select
+        styleClass="cl-quote__picker cl-quote__picker--time"
+        [ngModel]="facade.cleaningTime()"
+        (ngModelChange)="facade.selectTime($event)"
+        [options]="timeOptions()"
+        optionLabel="label"
+        optionValue="value"
+        optionDisabled="disabled"
+        appendTo="body"
+        [placeholder]="'pages.home.quote.time_label' | translate"
+        [ariaLabel]="'pages.home.quote.time_label' | translate"
       />
     </div>
     <small class="cl-quote__hint">{{ 'pages.home.quote.date_hint' | translate }}</small>
   </div>
 
   <div class="cl-quote__result">
-    @if (facade.isLoading()) {
-    <p class="cl-quote__status">{{ 'pages.home.quote.loading' | translate }}</p>
-    } @else if (facade.hasFailed()) {
-    <p class="cl-quote__status cl-quote__status--error">{{ 'pages.home.quote.error' | translate }}</p>
-    } @else if (facade.totalPrice() !== null) {
-    <div class="cl-quote__price">
-      <span class="cl-quote__label">{{ 'pages.home.quote.price_label' | translate }}</span>
-      <strong class="cl-num">{{ facade.totalPrice() }} {{ facade.currencyCode() }}</strong>
+    <!--
+      One block, always mounted. It used to swap between a two-line price and a
+      one-line status, so the card changed height on every chip tap — which read
+      as the calculator dragging rather than calculating. The last price now
+      stays on screen and dims while the next one is in flight.
+    -->
+    <div class="cl-quote__price" [class.cl-quote__price--busy]="facade.isLoading()" aria-live="polite">
+      <span class="cl-quote__label">{{ facade.priceLabelKey() | translate }}</span>
+      @if (facade.displayPrice() !== null) {
+      <strong class="cl-num cl-quote__amount">{{ facade.displayPrice() }} {{ facade.currencyCode() }}</strong>
+      } @else {
+      <span class="cl-quote__amount cl-quote__amount--empty">&mdash;</span>
+      }
+      <!--
+        "2 uklízeči · odhad 4 hodiny" — the artboard's subline. Both numbers come
+        from the quote endpoint, computed by the same OrderDuration the order
+        uses, so this is the order's estimate rather than a landing-page claim.
+      -->
+      <!--
+        The estimate only — the crew size came off on owner ruling. Always
+        rendered, empty until the quote lands: an @if here removes a line box
+        from the card whenever a request is in flight, which puts the jump the
+        placeholder chips were added to prevent straight back.
+      -->
+      <span class="cl-muted cl-quote__crew">
+        @if (crewHours(); as hours) {
+        {{ 'pages.home.quote.duration' | translate: { hours: hours } }}
+        } @else {
+        &nbsp;
+        }
+      </span>
     </div>
-    } @else {
-    <p class="cl-quote__status">{{ 'pages.home.quote.pick_service' | translate }}</p>
-    }
     <a class="cl-btn" routerLink="/order" [queryParams]="facade.continueQueryParams()">
       {{ 'pages.home.quote.continue' | translate }}
     </a>

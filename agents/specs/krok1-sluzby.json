@@ -1,141 +1,53 @@
 {
   "artboard": "C:/Users/cmisa/AppData/Local/Temp/claude/c--Users-cmisa-Desktop-Mike-Projects-cleansia/93c98d29-aca8-421d-bfdb-9c5c8be391ce/scratchpad/canvas/Krok1Sluzby.dc.html",
   "generatedFrom": "1440px, light",
-  "ignore": [],
+  "ignore": [
+    "^[0-9][0-9\\s]*Kč$",
+    "^Základní$",
+    "^Kompletní$",
+    "^Stěhování$",
+    "^Pro udržovaný byt$",
+    "^Nejčastější volba$",
+    "^Předání bytu$",
+    "^Vše ze Základního$",
+    "^Okna zevnitř i zvenku$",
+    "^Hloubkový úklid",
+    "^Úklid domácnosti$",
+    "^Čištění koberců$",
+    "^Čištění čalounní$",
+    "^Čištění čalounnění$",
+    "^Mytí oken",
+    "^Úklid koupelny$",
+    "^Úklid po rekonstrukci$",
+    "^Pravidelný nebo jednorázový",
+    "^Do detailu:",
+    "^Extrakční stroj",
+    "^Test na malé ploše",
+    "^Vnitřní i vnější strana",
+    "^Vodní kámen",
+    "^Trouba, digestoř",
+    "^Prach a zbytky",
+    "^3 pokoje",
+    "^Praha 7$",
+    "^út 2\\. 9\\.",
+    "^bez příplatku$",
+    "^Odhadem 3,5 h",
+    "^Nejoblíbenější$",
+    "^Cleansia$",
+    "^Objednat úklid$",
+    "^Přihlásit$",
+    "^Služby$",
+    "^Jak to chodí$",
+    "^Cleansia Plus$",
+    "^Sledovat objednávku$",
+    "^CZ$",
+    "^Adresa$",
+    "^Termín$",
+    "^Platba$",
+    "^Souhrn$",
+    "^Zpět na služby$"
+  ],
   "texts": [
-    {
-      "text": "Cleansia",
-      "count": 1,
-      "style": {
-        "fontSize": "26px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "-0.5px",
-        "color": "rgb(2, 132, 199)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Služby",
-      "count": 2,
-      "style": {
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Jak to chodí",
-      "count": 1,
-      "style": {
-        "fontSize": "15px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(51, 65, 85)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Cleansia Plus",
-      "count": 2,
-      "style": {
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Sledovat objednávku",
-      "count": 1,
-      "style": {
-        "fontSize": "15px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(51, 65, 85)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Přihlásit",
-      "count": 1,
-      "style": {
-        "fontSize": "15px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Objednat úklid",
-      "count": 1,
-      "style": {
-        "fontSize": "16px",
-        "fontWeight": "800",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(255, 255, 255)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Adresa",
-      "count": 1,
-      "style": {
-        "fontSize": "13px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(148, 163, 184)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Termín",
-      "count": 1,
-      "style": {
-        "fontSize": "13px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(148, 163, 184)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Platba",
-      "count": 1,
-      "style": {
-        "fontSize": "13px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(148, 163, 184)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Souhrn",
-      "count": 2,
-      "style": {
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
     {
       "text": "Vyberte si služby",
       "count": 1,
@@ -146,7 +58,7 @@
         "letterSpacing": "-0.9px",
         "color": "rgb(3, 105, 161)",
         "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -159,7 +71,7 @@
         "letterSpacing": "normal",
         "color": "rgb(51, 65, 85)",
         "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -172,70 +84,7 @@
         "letterSpacing": "0.84px",
         "color": "rgb(100, 116, 139)",
         "textTransform": "uppercase",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Pro udržovaný byt",
-      "count": 1,
-      "style": {
-        "fontSize": "12px",
-        "fontWeight": "800",
-        "lineHeight": "normal",
-        "letterSpacing": "0.84px",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "uppercase",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Základní",
-      "count": 1,
-      "style": {
-        "fontSize": "20px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Úklid domácnosti",
-      "count": 3,
-      "style": {
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Mytí oken",
-      "count": 2,
-      "style": {
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Úklid koupelny",
-      "count": 2,
-      "style": {
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "1 490 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "24px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(2, 132, 199)",
-        "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -247,7 +96,7 @@
         "lineHeight": "20.8px",
         "letterSpacing": "normal",
         "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -259,156 +108,7 @@
         "lineHeight": "normal",
         "letterSpacing": "normal",
         "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Nejoblíbenější",
-      "count": 1,
-      "style": {
-        "fontSize": "11px",
-        "fontWeight": "800",
-        "lineHeight": "normal",
-        "letterSpacing": "0.66px",
-        "color": "rgb(255, 255, 255)",
-        "textTransform": "uppercase",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Nejčastější volba",
-      "count": 1,
-      "style": {
-        "fontSize": "12px",
-        "fontWeight": "800",
-        "lineHeight": "normal",
-        "letterSpacing": "0.84px",
-        "color": "rgb(186, 230, 253)",
-        "textTransform": "uppercase",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Kompletní",
-      "count": 1,
-      "style": {
-        "fontSize": "20px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(255, 255, 255)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Vše ze Základního",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(224, 242, 254)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Hloubkový úklid kuchyně",
-      "count": 3,
-      "style": {
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Čištění koberců",
-      "count": 2,
-      "style": {
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "2 480 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "24px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(255, 255, 255)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Předání bytu",
-      "count": 1,
-      "style": {
-        "fontSize": "12px",
-        "fontWeight": "800",
-        "lineHeight": "normal",
-        "letterSpacing": "0.84px",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "uppercase",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Stěhování",
-      "count": 1,
-      "style": {
-        "fontSize": "20px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Hloubkový úklid",
-      "count": 2,
-      "style": {
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Okna zevnitř i zvenku",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(51, 65, 85)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Úklid po rekonstrukci",
-      "count": 2,
-      "style": {
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "3 900 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "24px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(2, 132, 199)",
-        "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -421,31 +121,7 @@
         "letterSpacing": "0.84px",
         "color": "rgb(100, 116, 139)",
         "textTransform": "uppercase",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Pravidelný nebo jednorázový úklid bytu i domu.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "500 Kč",
-      "count": 2,
-      "style": {
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -458,31 +134,7 @@
         "letterSpacing": "normal",
         "color": "rgb(255, 255, 255)",
         "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Do detailu: spáry, za spotřebiče, okenní rámy.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "800 Kč",
-      "count": 2,
-      "style": {
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -495,33 +147,7 @@
         "letterSpacing": "normal",
         "color": "rgb(51, 65, 85)",
         "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Extrakční stroj, schne do několika hodin.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "560 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "19px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -534,135 +160,7 @@
         "letterSpacing": "-0.1px",
         "color": "rgb(3, 105, 161)",
         "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Test na malé ploše před každým čištěním.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "480 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "19px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Vnitřní i vnější strana, rámy a parapety.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "200 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "19px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Vodní kámen, spáry, sanita.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "300 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "19px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Trouba, digestoř, dvířka, spotřebiče.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "400 Kč",
-      "count": 2,
-      "style": {
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Prach a zbytky stavebního materiálu.",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "1 200 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "19px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -675,7 +173,7 @@
         "letterSpacing": "0.84px",
         "color": "rgb(100, 116, 139)",
         "textTransform": "uppercase",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -688,7 +186,7 @@
         "letterSpacing": "0.84px",
         "color": "rgb(100, 116, 139)",
         "textTransform": "uppercase",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -701,85 +199,7 @@
         "letterSpacing": "normal",
         "color": "rgb(100, 116, 139)",
         "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Zpět na služby",
-      "count": 1,
-      "style": {
-        "fontSize": "17px",
-        "fontWeight": "800",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Mytí oken × 4",
-      "count": 1,
-      "style": {
-        "fontSize": "15px",
-        "fontWeight": "400",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(51, 65, 85)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "3 pokoje · 1 koupelna",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Praha 7",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "út 2. 9. · 10:00",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "bez příplatku",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "700",
-        "lineHeight": "normal",
-        "letterSpacing": "normal",
-        "color": "rgb(3, 105, 161)",
-        "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -792,33 +212,7 @@
         "letterSpacing": "0.84px",
         "color": "rgb(100, 116, 139)",
         "textTransform": "uppercase",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "1 700 Kč",
-      "count": 1,
-      "style": {
-        "fontSize": "34px",
-        "fontWeight": "700",
-        "lineHeight": "36.72px",
-        "letterSpacing": "normal",
-        "color": "rgb(2, 132, 199)",
-        "textTransform": "none",
-        "textAlign": "start"
-      }
-    },
-    {
-      "text": "Odhadem 3,5 h · 2 uklízeči",
-      "count": 1,
-      "style": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "lineHeight": "22.4px",
-        "letterSpacing": "normal",
-        "color": "rgb(100, 116, 139)",
-        "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -831,7 +225,7 @@
         "letterSpacing": "normal",
         "color": "rgb(255, 255, 255)",
         "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     },
     {
@@ -844,9 +238,558 @@
         "letterSpacing": "normal",
         "color": "rgb(3, 105, 161)",
         "textTransform": "none",
-        "textAlign": "start"
+        "textAlign": "left"
       }
     }
   ],
-  "boxes": {}
+  "boxes": {
+    ".cl-wiz__rail": {
+      "paddingTop": "13px",
+      "paddingRight": "24px",
+      "paddingBottom": "13px",
+      "paddingLeft": "24px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "11px",
+      "columnGap": "11px",
+      "borderRadius": "999px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__body": {
+      "paddingTop": "26px",
+      "paddingRight": "64px",
+      "paddingBottom": "48px",
+      "paddingLeft": "64px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "32px",
+      "columnGap": "32px",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "grid",
+      "gridTemplateColumns": "908px 372px",
+      "flexDirection": "row",
+      "alignItems": "start",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__panel": {
+      "paddingTop": "34px",
+      "paddingRight": "38px",
+      "paddingBottom": "32px",
+      "paddingLeft": "38px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "32px",
+      "minHeight": "auto",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__packages": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "14px",
+      "marginBottom": "0px",
+      "rowGap": "14px",
+      "columnGap": "14px",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "grid",
+      "gridTemplateColumns": "268px 268px 268px",
+      "flexDirection": "row",
+      "alignItems": "stretch",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__pack": {
+      "paddingTop": "22px",
+      "paddingRight": "22px",
+      "paddingBottom": "20px",
+      "paddingLeft": "22px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "26px",
+      "minHeight": "auto",
+      "minWidth": "auto",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopWidth": "1px",
+      "borderTopColor": "rgb(226, 232, 240)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "column",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__pack-includes": {
+      "paddingTop": "13px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "14px",
+      "marginBottom": "0px",
+      "rowGap": "8px",
+      "columnGap": "8px",
+      "borderRadius": "0px",
+      "minHeight": "auto",
+      "minWidth": "auto",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "1px",
+      "borderTopColor": "rgba(3, 105, 161, 0.14)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "column",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__pack-include": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "8px",
+      "columnGap": "8px",
+      "borderRadius": "0px",
+      "minHeight": "auto",
+      "minWidth": "auto",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(51, 65, 85)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "flex-start",
+      "justifyContent": "normal",
+      "fontSize": "14px",
+      "fontWeight": "400",
+      "lineHeight": "normal",
+      "color": "rgb(51, 65, 85)",
+      "whiteSpace": "normal"
+    },
+    ".cl-wiz__pack-name": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "5px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "0px",
+      "minHeight": "auto",
+      "minWidth": "auto",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(3, 105, 161)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal",
+      "fontSize": "20px",
+      "fontWeight": "700",
+      "lineHeight": "normal",
+      "color": "rgb(3, 105, 161)",
+      "whiteSpace": "normal"
+    },
+    ".cl-wiz__pack-price": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "0px",
+      "minHeight": "auto",
+      "minWidth": "auto",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(2, 132, 199)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal",
+      "fontSize": "24px",
+      "fontWeight": "700",
+      "lineHeight": "normal",
+      "color": "rgb(2, 132, 199)",
+      "whiteSpace": "normal"
+    },
+    ".cl-wiz__pack-foot": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "16px",
+      "marginBottom": "0px",
+      "rowGap": "10px",
+      "columnGap": "10px",
+      "borderRadius": "0px",
+      "minHeight": "auto",
+      "minWidth": "auto",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "baseline",
+      "justifyContent": "space-between"
+    },
+    ".cl-wiz__pack-cta": {
+      "paddingTop": "0px",
+      "paddingRight": "18px",
+      "paddingBottom": "0px",
+      "paddingLeft": "18px",
+      "marginTop": "12px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "999px",
+      "minHeight": "40px",
+      "minWidth": "auto",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopWidth": "1px",
+      "borderTopColor": "rgb(226, 232, 240)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "justifyContent": "center"
+    },
+    ".cl-wiz__services": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "8px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__svc": {
+      "paddingTop": "15px",
+      "paddingRight": "4px",
+      "paddingBottom": "15px",
+      "paddingLeft": "4px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "20px",
+      "columnGap": "20px",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "grid",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__svc-name": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(3, 105, 161)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal",
+      "fontSize": "17px",
+      "fontWeight": "600",
+      "lineHeight": "22.1px",
+      "color": "rgb(3, 105, 161)",
+      "whiteSpace": "normal"
+    },
+    ".cl-wiz__svc-desc": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "2px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(100, 116, 139)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal",
+      "fontSize": "14px",
+      "fontWeight": "400",
+      "lineHeight": "22.4px",
+      "color": "rgb(100, 116, 139)",
+      "whiteSpace": "normal"
+    },
+    ".cl-wiz__svc-price": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "0px",
+      "minHeight": "auto",
+      "minWidth": "auto",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(3, 105, 161)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal",
+      "fontSize": "19px",
+      "fontWeight": "700",
+      "lineHeight": "normal",
+      "color": "rgb(3, 105, 161)",
+      "whiteSpace": "nowrap"
+    },
+    ".cl-wiz__svc-add": {
+      "paddingTop": "0px",
+      "paddingRight": "18px",
+      "paddingBottom": "0px",
+      "paddingLeft": "18px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "999px",
+      "minHeight": "40px",
+      "minWidth": "100px",
+      "borderTopWidth": "1px",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "justifyContent": "center"
+    },
+    ".cl-wiz__rule": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "28px",
+      "marginBottom": "24px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgb(226, 232, 240)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__counts": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "34px",
+      "columnGap": "34px",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "grid",
+      "gridTemplateColumns": "399px 399px",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__count-chips": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "10px",
+      "marginBottom": "0px",
+      "rowGap": "9px",
+      "columnGap": "9px",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__count-chip:not(.cl-chip--on)": {
+      "paddingTop": "0px",
+      "paddingRight": "18px",
+      "paddingBottom": "0px",
+      "paddingLeft": "18px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "999px",
+      "minHeight": "44px",
+      "minWidth": "52px",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopWidth": "1px",
+      "borderTopColor": "rgb(226, 232, 240)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "justifyContent": "center"
+    },
+    ".cl-wiz__summary": {
+      "paddingTop": "24px",
+      "paddingRight": "26px",
+      "paddingBottom": "24px",
+      "paddingLeft": "26px",
+      "marginTop": "0px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "28px",
+      "minHeight": "auto",
+      "minWidth": "auto",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(0, 0, 0)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__total": {
+      "paddingTop": "0px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "4px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(2, 132, 199)",
+      "display": "block",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "normal",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__summary-note": {
+      "paddingTop": "14px",
+      "paddingRight": "0px",
+      "paddingBottom": "0px",
+      "paddingLeft": "0px",
+      "marginTop": "16px",
+      "marginBottom": "0px",
+      "rowGap": "9px",
+      "columnGap": "9px",
+      "borderRadius": "0px",
+      "minHeight": "0px",
+      "minWidth": "0px",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderTopWidth": "1px",
+      "borderTopColor": "rgba(3, 105, 161, 0.16)",
+      "display": "flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "justifyContent": "normal"
+    },
+    ".cl-wiz__advance": {
+      "paddingTop": "0px",
+      "paddingBottom": "0px",
+      "marginTop": "18px",
+      "marginBottom": "0px",
+      "rowGap": "normal",
+      "columnGap": "normal",
+      "borderRadius": "999px",
+      "minWidth": "0px",
+      "backgroundColor": "rgb(2, 132, 199)",
+      "borderTopWidth": "0px",
+      "borderTopColor": "rgb(255, 255, 255)",
+      "display": "inline-flex",
+      "gridTemplateColumns": "none",
+      "flexDirection": "row",
+      "alignItems": "center",
+      "justifyContent": "center"
+    }
+  }
 }

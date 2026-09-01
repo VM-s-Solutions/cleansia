@@ -5,12 +5,7 @@
   for.
 -->
 <div class="cl-wiz">
-  <div class="cl-wiz__inner">
-    <div class="cl-wiz__head">
-      <h1 class="cl-d2">{{ 'pages.order.hero_title' | translate }}</h1>
-      <p class="cl-body cl-wiz__lead">{{ 'pages.order.hero_subtitle' | translate }}</p>
-    </div>
-
+  <div class="cl-wiz__railwrap">
     <div class="cl-wiz__rail" role="list">
       @for (step of facade.steps; track step; let i = $index) {
       <button
@@ -34,221 +29,131 @@
       }
       }
     </div>
+  </div>
 
-    <!-- The step, and the summary that answers "what am I paying" beside it. -->
-    <div class="cl-wiz__body">
+  <!-- The step, and the summary that answers "what am I paying" beside it. -->
+  <div class="cl-wiz__body">
       <div class="cl-wiz__panel">
       <!-- Step 0: Services -->
+      <!--
+        Step 1, to the approved artboard: packages that say what is in them, then
+        the services as a priced list, then the two counts the price is computed
+        from. No category filter - eleven services in one list is shorter than
+        the filter that would hide them.
+      -->
       @if (facade.activeStep() === 0) {
-      <div class="order-wizard__step">
-        <!-- Services Section -->
-        @if (facade.services().length > 0) {
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-list"></i>
-            {{ 'pages.order.services_section_title' | translate }}
-          </h2>
+      <div class="cl-wiz__step-body">
+        <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.services_section_title' | translate }}</h1>
+        <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_services_lead' | translate }}</p>
 
-          <!-- Category filter chips: only render when there's more than one
-               category to choose from. Mobile parity (Wave 2). -->
-          @if (facade.categories().length > 1) {
-          <div class="order-wizard__filter-row">
-            <span class="order-wizard__filter-label">
-              {{ 'pages.order.filter_label' | translate }}
+        @if (facade.packages().length > 0) {
+        <div class="cl-lbl cl-wiz__section-label">{{ 'pages.order.packages_section_title' | translate }}</div>
+        <div class="cl-wiz__packages">
+          @for (pkg of facade.packages(); track pkg.id; let idx = $index) {
+          <button
+            type="button"
+            class="cl-wiz__pack"
+            [class.cl-wiz__pack--on]="isPackageSelected(pkg.id!)"
+            [attr.aria-pressed]="isPackageSelected(pkg.id!)"
+            [attr.aria-label]="'aria.select_package' | translate: { name: getTranslation(pkg, 'name') }"
+            (click)="togglePackage(pkg.id!)"
+          >
+            <span class="cl-wiz__pack-name">{{ getTranslation(pkg, 'name') }}</span>
+            @if (getTranslation(pkg, 'description'); as desc) {
+            <span class="cl-wiz__pack-desc">{{ desc }}</span>
+            }
+            @if (pkg.includedServices && pkg.includedServices.length > 0) {
+            <span class="cl-wiz__pack-includes">
+              @for (svc of pkg.includedServices; track svc.name) {
+              <span class="cl-wiz__pack-include">
+                <i class="pi pi-check" aria-hidden="true"></i>
+                {{ getTranslation(svc, 'name') }}
+              </span>
+              }
             </span>
-            <div class="order-wizard__filter-chips">
-              <button
-                type="button"
-                class="order-wizard__filter-chip"
-                [class.order-wizard__filter-chip--selected]="facade.selectedCategorySlug() === null"
-                (click)="facade.setCategory(null)"
-              >
-                <i class="pi pi-th-large"></i>
-                {{ 'pages.order.filter_all' | translate }}
-              </button>
-              @for (cat of facade.categories(); track cat.slug) {
-              <button
-                type="button"
-                class="order-wizard__filter-chip"
-                [class.order-wizard__filter-chip--selected]="facade.selectedCategorySlug() === cat.slug"
-                (click)="onCategoryChipClick(cat.slug ?? null)"
-              >
-                {{ getCategoryName(cat) }}
-              </button>
+            }
+            <span class="cl-wiz__pack-spacer"></span>
+            <span class="cl-wiz__pack-foot">
+              <span class="cl-num cl-wiz__pack-price">{{ formatPrice(pkg.price) }}</span>
+              <span class="cl-muted">{{ 'pages.order.per_cleaning' | translate }}</span>
+            </span>
+            <span class="cl-chip cl-wiz__pack-cta">
+              {{ (isPackageSelected(pkg.id!) ? 'pages.order.package_selected' : 'pages.order.package_select') | translate }}
+            </span>
+          </button>
+          }
+        </div>
+        }
+
+        @if (facade.services().length > 0) {
+        <div class="cl-lbl cl-wiz__section-label">{{ 'pages.order.services_or_single' | translate }}</div>
+        <div class="cl-wiz__services">
+          @for (service of facade.services(); track service.id) {
+          <div class="cl-wiz__svc">
+            <div class="cl-wiz__svc-body">
+              <div class="cl-h4 cl-wiz__svc-name">{{ getTranslation(service, 'name') }}</div>
+              @if (getTranslation(service, 'description'); as desc) {
+              <div class="cl-muted cl-wiz__svc-desc">{{ desc }}</div>
               }
             </div>
-          </div>
-          @if (facade.selectedCategorySlug() !== null) {
-          <div class="order-wizard__filter-active">
-            <i class="pi pi-filter-fill"></i>
-            <span>
-              {{ 'pages.order.filtering_active' | translate }}
-              <strong>{{ activeCategoryName() }}</strong>
-            </span>
+            <div class="cl-num cl-wiz__svc-price">{{ formatPrice(service.basePrice) }}</div>
             <button
               type="button"
-              class="order-wizard__filter-clear"
-              (click)="facade.setCategory(null)"
-            >
-              <i class="pi pi-times"></i>
-              {{ 'pages.order.filter_clear' | translate }}
-            </button>
-          </div>
-          }
-          }
-
-          <div class="order-wizard__card-grid">
-            @for (service of facade.filteredServices(); track service.id; let idx = $index) {
-            <button
-              type="button"
-              class="order-wizard__selection-card"
-              [class.order-wizard__selection-card--selected]="isServiceSelected(service.id!)"
+              class="cl-chip cl-wiz__svc-add"
+              data-spec-select
+              [class.cl-chip--on]="isServiceSelected(service.id!)"
               [attr.aria-pressed]="isServiceSelected(service.id!)"
               [attr.aria-label]="'aria.select_service' | translate: { name: getTranslation(service, 'name') }"
               (click)="toggleService(service.id!)"
             >
-              <div class="order-wizard__selection-check" aria-hidden="true">
-                <i class="pi pi-check"></i>
-              </div>
-              <div class="order-wizard__selection-icon">
-                <i [class]="getServiceIcon(idx)"></i>
-              </div>
-              <div class="order-wizard__selection-body">
-                <h3 class="order-wizard__selection-name">
-                  {{ getTranslation(service, 'name') }}
-                </h3>
-                <p class="order-wizard__selection-desc">
-                  {{ getTranslation(service, 'description') }}
-                </p>
-                <div class="order-wizard__selection-price">
-                  {{ formatPrice(service.basePrice) }}
-                  @if (service.perRoomPrice > 0) {
-                  <span class="order-wizard__selection-per-room">
-                    + {{ formatPrice(service.perRoomPrice) }}
-                    {{ 'pages.services.per_room' | translate }}
-                  </span>
-                  }
-                </div>
-              </div>
+              {{ (isServiceSelected(service.id!) ? 'pages.order.service_added' : 'pages.order.service_add') | translate }}
             </button>
-            }
           </div>
+          }
         </div>
         }
 
-        <!-- Room Configuration -->
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-building"></i>
-            {{ 'pages.order.room_config_title' | translate }}
-          </h2>
-          <div class="order-wizard__counters">
-            <div class="order-wizard__counter">
-              <label class="order-wizard__counter-label">
-                {{ 'pages.order.rooms_label' | translate }}
-              </label>
-              <div class="order-wizard__counter-controls">
-                <button
-                  type="button"
-                  class="order-wizard__counter-btn"
-                  [attr.aria-label]="'aria.decrease_rooms' | translate"
-                  (click)="decrementRooms()"
-                  [disabled]="facade.formData().rooms <= 1"
-                >
-                  <i class="pi pi-minus"></i>
-                </button>
-                <span class="order-wizard__counter-value">
-                  {{ facade.formData().rooms }}
-                </span>
-                <button
-                  type="button"
-                  class="order-wizard__counter-btn"
-                  [attr.aria-label]="'aria.increase_rooms' | translate"
-                  (click)="incrementRooms()"
-                >
-                  <i class="pi pi-plus"></i>
-                </button>
-              </div>
-            </div>
-            <div class="order-wizard__counter">
-              <label class="order-wizard__counter-label">
-                {{ 'pages.order.bathrooms_label' | translate }}
-              </label>
-              <div class="order-wizard__counter-controls">
-                <button
-                  type="button"
-                  class="order-wizard__counter-btn"
-                  [attr.aria-label]="'aria.decrease_bathrooms' | translate"
-                  (click)="decrementBathrooms()"
-                  [disabled]="facade.formData().bathrooms <= 1"
-                >
-                  <i class="pi pi-minus"></i>
-                </button>
-                <span class="order-wizard__counter-value">
-                  {{ facade.formData().bathrooms }}
-                </span>
-                <button
-                  type="button"
-                  class="order-wizard__counter-btn"
-                  [attr.aria-label]="'aria.increase_bathrooms' | translate"
-                  (click)="incrementBathrooms()"
-                >
-                  <i class="pi pi-plus"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div class="cl-wiz__rule"></div>
 
-        <!-- Packages Section -->
-        @if (facade.packages().length > 0) {
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-box"></i>
-            {{ 'pages.order.packages_section_title' | translate }}
-          </h2>
-          <div class="order-wizard__card-grid">
-            @for (pkg of facade.packages(); track pkg.id; let idx = $index) {
-            <button
-              type="button"
-              class="order-wizard__selection-card"
-              [class.order-wizard__selection-card--selected]="isPackageSelected(pkg.id!)"
-              [attr.aria-pressed]="isPackageSelected(pkg.id!)"
-              [attr.aria-label]="'aria.select_package' | translate: { name: getTranslation(pkg, 'name') }"
-              (click)="togglePackage(pkg.id!)"
-            >
-              <div class="order-wizard__selection-check" aria-hidden="true">
-                <i class="pi pi-check"></i>
-              </div>
-              <div class="order-wizard__selection-icon">
-                <i [class]="getPackageIcon(idx)"></i>
-              </div>
-              <div class="order-wizard__selection-body">
-                <h3 class="order-wizard__selection-name">
-                  {{ getTranslation(pkg, 'name') }}
-                </h3>
-                <p class="order-wizard__selection-desc">
-                  {{ getTranslation(pkg, 'description') }}
-                </p>
-                @if (pkg.includedServices && pkg.includedServices.length > 0) {
-                <ul class="order-wizard__selection-included">
-                  @for (svc of pkg.includedServices; track svc.name) {
-                  <li>
-                    <i class="pi pi-check"></i>
-                    {{ getTranslation(svc, 'name') }}
-                  </li>
-                  }
-                </ul>
-                }
-                <div class="order-wizard__selection-price">
-                  {{ formatPrice(pkg.price) }}
-                </div>
-              </div>
-            </button>
-            }
+        <!--
+          The two numbers the price is computed from. Chips, not a stepper: the
+          artboard draws a specific set, and OrderPricingCalculator multiplies
+          per-room price by (rooms + bathrooms), so these are the inputs and not
+          a preset that stands for them.
+        -->
+        <div class="cl-wiz__counts">
+          <div>
+            <div class="cl-lbl">{{ 'pages.order.rooms_count_label' | translate }}</div>
+            <div class="cl-wiz__count-chips">
+              @for (n of roomChoices; track n) {
+              <button
+                type="button"
+                class="cl-chip cl-wiz__count-chip"
+                [class.cl-chip--on]="facade.formData().rooms === n"
+                [attr.aria-pressed]="facade.formData().rooms === n"
+                [attr.aria-label]="'aria.set_rooms' | translate: { count: n }"
+                (click)="setRooms(n)"
+              >{{ n }}</button>
+              }
+            </div>
+          </div>
+          <div>
+            <div class="cl-lbl">{{ 'pages.order.bathrooms_count_label' | translate }}</div>
+            <div class="cl-wiz__count-chips">
+              @for (n of bathroomChoices; track n) {
+              <button
+                type="button"
+                class="cl-chip cl-wiz__count-chip"
+                [class.cl-chip--on]="facade.formData().bathrooms === n"
+                [attr.aria-pressed]="facade.formData().bathrooms === n"
+                [attr.aria-label]="'aria.set_bathrooms' | translate: { count: n }"
+                (click)="setBathrooms(n)"
+              >{{ n }}</button>
+              }
+            </div>
           </div>
         </div>
-        }
+        <p class="cl-muted cl-wiz__count-note">{{ 'pages.order.counts_note' | translate }}</p>
       </div>
       }
 
@@ -670,128 +575,120 @@
         <cleansia-wizard-summary-step [facade]="facade" />
       }
 
-      <!-- Actions -->
-      <div class="order-wizard__actions">
-        @if (facade.activeStep() > 0) {
-        <cleansia-button
-          [title]="'global.actions.back' | translate"
-          [severity]="'secondary'"
-          [outlined]="true"
-          (clickFn)="facade.prevStep()"
-        />
-        }
-        <div class="order-wizard__actions-spacer"></div>
-        @if (facade.activeStep() < facade.steps.length - 1) {
-        <cleansia-button
-          [title]="'global.actions.next' | translate"
-          [severity]="'primary'"
-          [style]="'raised-button'"
-          [disabled]="!facade.canProceed() || (facade.activeStep() === 2 && !hasValidTime())"
-          (clickFn)="onNextStep()"
-        />
-        }
-        @if (facade.activeStep() === facade.steps.length - 1) {
-        <cleansia-button
-          [title]="'pages.order.place_order' | translate"
-          [severity]="'primary'"
-          [style]="'raised-button'"
-          [loading]="facade.submitting()"
-          (clickFn)="onPlaceOrder()"
-        />
-        }
-      </div>
+      @if (facade.activeStep() > 0) {
+      <button type="button" class="cl-link cl-wiz__back" (click)="facade.prevStep()">
+        {{ 'global.actions.back' | translate }}
+      </button>
+      }
     </div>
 
     <!-- Price Sidebar (Desktop) -->
       <aside class="cl-wiz__summary">
-        <div class="order-wizard__sidebar-card">
-        <h3 class="order-wizard__sidebar-title">
-          {{ 'pages.order.price_total' | translate }}
-        </h3>
-        <div class="order-wizard__sidebar-price">
-          {{ formatPrice(facade.displayedTotalPrice()) }}
-        </div>
+        <h2 class="cl-h3">{{ 'pages.order.summary_heading' | translate }}</h2>
 
-        <!-- Sidebar breakdown -->
         @if (selectedServices().length > 0 || selectedPackages().length > 0) {
-        <div class="order-wizard__sidebar-breakdown">
+        <div class="cl-wiz__summary-lines">
           @for (pkg of selectedPackages(); track pkg.id) {
-          <div class="order-wizard__sidebar-item">
+          <div class="cl-wiz__summary-line">
             <span>{{ getTranslation(pkg, 'name') }}</span>
-            <span>{{ formatPrice(pkg.price) }}</span>
+            <strong>{{ formatPrice(pkg.price) }}</strong>
           </div>
           }
           @for (service of selectedServices(); track service.id) {
-          <div class="order-wizard__sidebar-item">
+          <div class="cl-wiz__summary-line">
             <span>{{ getTranslation(service, 'name') }}</span>
-            <span>{{ formatPrice(service.basePrice + service.perRoomPrice * (facade.formData().rooms + facade.formData().bathrooms)) }}</span>
-          </div>
-          @if (service.perRoomPrice > 0) {
-          <div class="order-wizard__sidebar-detail">
-            <span>{{ formatPrice(service.basePrice) }} + {{ formatPrice(service.perRoomPrice) }} × {{ facade.formData().rooms + facade.formData().bathrooms }} {{ 'pages.order_detail.rooms' | translate }}</span>
+            <strong>{{ formatPrice(service.basePrice + service.perRoomPrice * (facade.formData().rooms + facade.formData().bathrooms)) }}</strong>
           </div>
           }
-          }
-          @switch (facade.appliedDiscountKind()) {
-            @case ('membership') {
-              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
-                <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
-                <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
-              </div>
+        </div>
+        } @else {
+        <p class="cl-muted cl-wiz__summary-empty">{{ 'pages.order.summary_empty' | translate }}</p>
+        }
+
+        <div class="cl-wiz__rule"></div>
+
+        <!-- What the price was computed from, in the customer's own words. -->
+        <div class="cl-wiz__summary-meta">
+          <div>
+            <span>{{ roomsKey() | translate: { count: facade.formData().rooms } }} · {{ bathroomsKey() | translate: { count: facade.formData().bathrooms } }}</span>
+            @if (facade.formData().address.city; as city) {
+            <span>{{ city }}</span>
             }
-            @case ('tier') {
-              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
-                <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
-                <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
-              </div>
+          </div>
+          @if (facade.formData().cleaningDate) {
+          <div>
+            <span>{{ facade.formData().cleaningDate | date: 'EEE d. M.' }} · {{ facade.formData().cleaningTime }}</span>
+            <!--
+              Three states, not two. A Plus member booking inside the express
+              window pays nothing extra, and saying "express surcharge" to them
+              contradicts the total directly underneath. The waiver is the
+              server's verdict, never a client-side count of upgrades left.
+            -->
+            @if (facade.expressSurchargeWaived()) {
+            <span class="cl-wiz__summary-flag">{{ 'pages.order.express_surcharge_waived_label' | translate }}</span>
+            } @else if (facade.expressSurchargeApplied()) {
+            <span class="cl-wiz__summary-flag">{{ 'pages.order.summary_express' | translate }}</span>
+            } @else {
+            <span>{{ 'pages.order.summary_no_surcharge' | translate }}</span>
             }
-            @case ('combined') {
-              <!-- LOY-003 — Plus + tier additive, render both rows so the user sees each source. -->
-              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
-                <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
-                <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
-              </div>
-              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
-                <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
-                <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
-              </div>
-            }
-            @case ('promo') {
-              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
-                <span>{{ 'pages.order.summary.promo_discount' | translate: { code: facade.promoCode().trim().toUpperCase() } }}</span>
-                <span>− {{ formatPrice(facade.effectivePromoDiscount()) }}</span>
-              </div>
-            }
-          }
-          @if (facade.expressSurchargeApplied()) {
-          <div class="order-wizard__sidebar-item order-wizard__sidebar-item--express">
-            <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
-            <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
           </div>
           }
-          @if (facade.expressSurchargeWaived()) {
-          <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
-            <span>{{ 'pages.order.express_surcharge_waived_label' | translate }}</span>
-            <span>{{ formatPrice(0) }}</span>
+        </div>
+
+        @switch (facade.appliedDiscountKind()) {
+          @case ('membership') {
+          <div class="cl-wiz__summary-discount">
+            <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+            <span class="cl-num">− {{ formatPrice(facade.membershipDiscount()) }}</span>
           </div>
           }
+          @case ('tier') {
+          <div class="cl-wiz__summary-discount">
+            <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+            <span class="cl-num">− {{ formatPrice(facade.tierDiscount()) }}</span>
+          </div>
+          }
+        }
+
+        <div class="cl-wiz__rule"></div>
+
+        <div class="cl-lbl">{{ 'pages.order.price_fixed' | translate }}</div>
+        <div class="cl-num cl-wiz__total">{{ formatPrice(facade.displayedTotalPrice()) }}</div>
+        @if (facade.quote()?.estimatedDurationMinutes; as minutes) {
+        <div class="cl-muted cl-wiz__summary-estimate">
+          {{ 'pages.order.summary_estimate' | translate: { hours: estimateHours(), crew: facade.quote()?.requiredEmployees } }}
         </div>
         }
 
-        <div class="order-wizard__sidebar-badges">
-          <div class="order-wizard__sidebar-badge">
-            <i class="pi pi-verified"></i>
-            {{ 'pages.order.trust_certified' | translate }}
-          </div>
-          <div class="order-wizard__sidebar-badge">
-            <i class="pi pi-shield"></i>
-            {{ 'pages.order.trust_no_hidden' | translate }}
-          </div>
-        </div>
-      </div>
-    </aside>
-  </div>
+        <!--
+          The forward action lives with the price it commits to. Back is a link
+          inside the step: one primary action per screen, and it is this one.
+        -->
+        @if (facade.activeStep() < facade.steps.length - 1) {
+        <button
+          type="button"
+          class="cl-btn cl-wiz__advance"
+          [disabled]="!facade.canProceed() || (facade.activeStep() === 2 && !hasValidTime())"
+          (click)="onNextStep()"
+        >
+          {{ 'pages.order.continue_action' | translate }}
+        </button>
+        } @else {
+        <button
+          type="button"
+          class="cl-btn cl-wiz__advance"
+          [disabled]="facade.submitting()"
+          (click)="onPlaceOrder()"
+        >
+          {{ 'pages.order.place_order' | translate }}
+        </button>
+        }
 
+        <div class="cl-wiz__summary-note">
+          <i class="pi pi-check-circle" aria-hidden="true"></i>
+          {{ 'pages.order.summary_free_cancel' | translate }}
+        </div>
+    </aside>
   </div>
 </div>
 <cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />

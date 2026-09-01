@@ -4,7 +4,7 @@ import { computed, signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { SnackbarService } from '@cleansia/services';
-import { AddressDto, PackageListItem, PaymentType, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import { AddressDto, PackageListItem, PaymentType, QuoteOrderResponse, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import { TranslateModule } from '@ngx-translate/core';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
@@ -75,6 +75,9 @@ class FakeOrderWizardFacade {
   expressWaiverExhausted = signal(false);
   expressWaiverPendingTrial = signal(false);
   appliedDiscountKind = signal<'none' | 'membership' | 'tier' | 'combined' | 'promo'>('none');
+  // The summary rail reads the server's quote for the duration estimate, so the
+  // double needs it or every template render throws before an assertion runs.
+  quote = signal<QuoteOrderResponse | null>(null);
   promoCode = signal('');
 
   initialize = jest.fn();
@@ -161,7 +164,9 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.services.set([makeService('s-1', 'Deep clean')]);
       fixture.detectChanges();
 
-      const card = el.querySelector('.order-wizard__selection-card') as HTMLElement;
+      // The artboard lists services as priced rows with their own Add control,
+      // so the pressable element is that control rather than the whole row.
+      const card = el.querySelector('.cl-wiz__svc-add') as HTMLElement;
       expect(card.tagName).toBe('BUTTON');
       expect(card.getAttribute('aria-pressed')).toBe('false');
 
@@ -175,7 +180,7 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.packages.set([makePackage('p-1', 'Bundle')]);
       fixture.detectChanges();
 
-      const cards = el.querySelectorAll('.order-wizard__selection-card');
+      const cards = el.querySelectorAll('.cl-wiz__pack');
       const pkgCard = cards[cards.length - 1] as HTMLElement;
       expect(pkgCard.tagName).toBe('BUTTON');
       expect(pkgCard.getAttribute('aria-pressed')).toBe('false');
@@ -185,7 +190,8 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('room/bathroom counters (AC5)', () => {
     it('gives every counter button an aria-label', async () => {
       await setup();
-      const counterBtns = el.querySelectorAll('.order-wizard__counter-btn');
+      // Counts are a chip per choice now, not a pair of +/- steppers.
+      const counterBtns = el.querySelectorAll('.cl-wiz__count-chip');
       expect(counterBtns.length).toBeGreaterThanOrEqual(4);
       counterBtns.forEach((b) => {
         expect(b.getAttribute('aria-label')).toBeTruthy();

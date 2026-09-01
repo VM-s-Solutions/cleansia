@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -67,6 +68,7 @@ import { WizardSummaryStepComponent } from './components/wizard-summary-step.com
 export class OrderWizardComponent implements OnInit {
   protected readonly facade = inject(OrderWizardFacade);
   protected readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly snackbar = inject(SnackbarService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -196,6 +198,10 @@ export class OrderWizardComponent implements OnInit {
 
   ngOnInit(): void {
     this.facade.initialize();
+
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((e) => this.lang.set(e.lang));
 
     // Pre-select service or package from query params (e.g., from services catalog)
     const serviceId = this.route.snapshot.queryParamMap.get('serviceId');
@@ -374,6 +380,50 @@ export class OrderWizardComponent implements OnInit {
     const currentTime = this.facade.formData().cleaningTime;
     return available.some((o) => o.value === currentTime);
   });
+
+  /** The counts the artboard offers. Rooms run to eight, bathrooms to four. */
+  readonly roomChoices = [1, 2, 3, 4, 5, 6, 7, 8];
+  readonly bathroomChoices = [1, 2, 3, 4];
+
+  /**
+   * Bumped on every language change. `translate.currentLang` is a plain
+   * property, so a computed that reads it never re-runs and the plural form
+   * would freeze in whatever language the page first loaded in.
+   */
+  private readonly lang = signal(this.translate.currentLang);
+
+  /**
+   * Czech, Slovak, Russian and Ukrainian each take three plural forms and the
+   * boundaries differ per language - Czech puts 5 in `other`, Russian in
+   * `many`. `Intl.PluralRules` already knows every one of those rules, so the
+   * category it returns picks the key rather than a hand-written threshold.
+   * A single `{{rooms}} pokoje` read "1 pokoje" for the default one-room flat.
+   */
+  private pluralKey(base: string, count: number): string {
+    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const cat = new Intl.PluralRules(tag).select(count);
+    return `pages.order.${base}_${cat}`;
+  }
+
+  readonly roomsKey = computed(() => this.pluralKey('summary_rooms', this.facade.formData().rooms));
+  readonly bathroomsKey = computed(() =>
+    this.pluralKey('summary_bathrooms', this.facade.formData().bathrooms)
+  );
+
+  /** The quote's minute estimate, in hours, to the nearest half. */
+  readonly estimateHours = computed(() => {
+    const minutes = this.facade.quote()?.estimatedDurationMinutes ?? 0;
+    if (!minutes) return null;
+    return Math.round((minutes / 60) * 2) / 2;
+  });
+
+  setRooms(rooms: number): void {
+    this.facade.updateFormData({ rooms });
+  }
+
+  setBathrooms(bathrooms: number): void {
+    this.facade.updateFormData({ bathrooms });
+  }
 
   incrementRooms(): void {
     const current = this.facade.formData().rooms;

@@ -43,9 +43,19 @@ const TEXT_PROPS = ['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'co
 const BOX_PROPS = [
   'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
   'marginTop', 'marginBottom', 'rowGap', 'columnGap',
-  'borderRadius', 'minHeight', 'backgroundColor', 'borderTopWidth', 'borderTopColor',
+  'borderRadius', 'minHeight', 'minWidth', 'backgroundColor', 'borderTopWidth', 'borderTopColor',
   'display', 'gridTemplateColumns', 'flexDirection', 'alignItems', 'justifyContent',
 ];
+/**
+ * Typography, compared only on a box whose map entry opts in with
+ * `"typography": true`. It is opt-in because these five inherit: on a layout
+ * container that holds no words of its own they report the document's base size
+ * (14px in the app, 16px in a bare artboard) and say nothing about the design.
+ * On a text-bearing leaf whose words are sample data - a package's include list
+ * - this is the ONLY thing that asserts its size and colour, because ignoring
+ * the sample text ignores the styling with it.
+ */
+const TYPE_PROPS = ['fontSize', 'fontWeight', 'lineHeight', 'color', 'whiteSpace'];
 
 /**
  * The text of an element, ignoring anything a child already owns - so a card
@@ -68,7 +78,8 @@ async function walk(page, props) {
         const r = el.getBoundingClientRect();
         return r.width > 0 && r.height > 0;
       };
-      const pick = (cs, keys) => Object.fromEntries(keys.map((k) => [k, cs[k]]));
+      const norm = (k, v) => (k === 'textAlign' && (v === 'start' || v === 'left') ? 'left' : v);
+      const pick = (cs, keys) => Object.fromEntries(keys.map((k) => [k, norm(k, cs[k])]));
       const texts = [];
       for (const el of document.querySelectorAll('body *')) {
         if (!visible(el)) continue;
@@ -83,19 +94,20 @@ async function walk(page, props) {
   );
 }
 
-async function boxes(page, selectors) {
+async function boxes(page, selectors, typographyFor = {}) {
   return page.evaluate(
-    ({ sels, keys }) => {
+    ({ sels, keys, typeKeys, withType }) => {
       const out = {};
       for (const [name, sel] of Object.entries(sels)) {
         const el = document.querySelector(sel);
         if (!el) { out[name] = { missing: sel }; continue; }
         const cs = getComputedStyle(el);
-        out[name] = Object.fromEntries(keys.map((k) => [k, cs[k]]));
+        const wanted = withType[name] ? [...keys, ...typeKeys] : keys;
+        out[name] = Object.fromEntries(wanted.map((k) => [k, cs[k]]));
       }
       return out;
     },
-    { sels: selectors, keys: BOX_PROPS }
+    { sels: selectors, keys: BOX_PROPS, typeKeys: TYPE_PROPS, withType: typographyFor }
   );
 }
 
@@ -125,6 +137,11 @@ async function openApp(browser, url, { width, lang, theme }) {
     for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 40)); }
     window.scrollTo(0, 0);
   });
+  // A selected state is part of the design: the artboard draws one chip reading
+  // "Přidáno", and a page measured with nothing chosen can never show it. One
+  // click covers both labels.
+  const first = page.locator('[data-spec-select]').first();
+  if (await first.count()) await first.click().catch(() => {});
   await page.evaluate(() => document.fonts?.ready);
   await page.waitForTimeout(700);
   return page;
@@ -137,13 +154,24 @@ async function extract(artboard, out, mapFile) {
   // address - which the running app will render from real data. Without it every
   // sample value reports as missing copy and buries the real gaps.
   const ignore = (raw._ignore ?? []).map((p) => new RegExp(p));
-  const map = Object.fromEntries(Object.entries(raw).filter(([k]) => k !== '_ignore'));
-  const browser = await chromium.launch();
+  // Every underscore key is metadata for this file, not a selector to query.
+  // A value is either the artboard selector, or {sel, skip, why} where `skip`
+  // drops properties the artboard is knowingly stale on - each with its reason.
+  const map = Object.fromEntries(Object.entries(raw)
+    .filter(([k]) => !k.startsWith('_'))
+    .map(([app, v]) => [app, typeof v === 'string'
+      ? { sel: v, skip: [], typography: false }
+      : { sel: v.sel, skip: v.skip ?? [], typography: v.typography === true }]));
+  const browser = await chromium.launch({ args: ['--hide-scrollbars'] });
   const page = await openArtboard(browser, artboard, 1440);
   const { texts } = await walk(page, { text: TEXT_PROPS, box: BOX_PROPS });
   // The map is { appSelector: artboardSelector }; values are read off the artboard.
-  const artSelectors = Object.fromEntries(Object.entries(map).map(([app, art]) => [app, art]));
-  const boxValues = await boxes(page, artSelectors);
+  const artSelectors = Object.fromEntries(Object.entries(map).map(([app, m]) => [app, m.sel]));
+  const boxValues = await boxes(page, artSelectors,
+    Object.fromEntries(Object.entries(map).map(([app, m]) => [app, m.typography])));
+  for (const [app, m] of Object.entries(map)) {
+    for (const k of m.skip) delete boxValues[app]?.[k];
+  }
   await browser.close();
 
   // A repeated string (every "Přidat" chip) cannot be matched to one element, so
@@ -176,11 +204,12 @@ async function extract(artboard, out, mapFile) {
 // ───────────────────────────────────────────────────────────────── check
 async function check(specFile, url, opts) {
   const spec = JSON.parse(readFileSync(specFile, 'utf8'));
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: ['--hide-scrollbars'] });
   const page = await openApp(browser, url, opts);
   const { texts } = await walk(page, { text: TEXT_PROPS, box: BOX_PROPS });
   const appSelectors = Object.fromEntries(Object.keys(spec.boxes).map((s) => [s, s]));
-  const boxValues = await boxes(page, appSelectors);
+  const boxValues = await boxes(page, appSelectors,
+    Object.fromEntries(Object.entries(spec.boxes).map(([s, b]) => [s, 'fontSize' in b])));
   await browser.close();
 
   const live = new Map();

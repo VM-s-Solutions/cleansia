@@ -28,10 +28,15 @@
   --cl-wiz-ground: #0b1626;
 }
 
-.cl-wiz__inner {
-  max-width: $home-width;
+%cl-wiz-measure {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
   margin: 0 auto;
-  padding: 0 var(--cl-gutter);
+  box-sizing: border-box;
+}
+
+.cl-wiz__railwrap {
+  @extend %cl-wiz-measure;
+  padding: calc(1.875 * var(--cl-u)) var(--cl-gutter) 0;
 }
 
 // ---- the step rail ----------------------------------------------------------
@@ -42,7 +47,6 @@
   background: var(--cl-surface);
   border-radius: 999px;
   padding: 13px 24px;
-  margin-top: calc(1.875 * var(--cl-u));
   box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
 }
 
@@ -120,11 +124,12 @@
 
 // ---- body: the step, and the summary that follows it ------------------------
 .cl-wiz__body {
+  @extend %cl-wiz-measure;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 372px;
   gap: 32px;
   align-items: start;
-  margin-top: calc(1.625 * var(--cl-u));
+  padding: calc(1.625 * var(--cl-u)) var(--cl-gutter) calc(3 * var(--cl-u));
 }
 
 .cl-wiz__panel {
@@ -162,7 +167,6 @@
   border-radius: 28px;
   padding: 24px 26px;
   box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
-  min-width: 0;
 }
 
 .cl-wiz__summary-lines {
@@ -235,7 +239,7 @@
 .cl-wiz__rule {
   height: 1px;
   background: var(--cl-border);
-  margin: 16px 0;
+  margin: 28px 0 24px;
 }
 
 // =============================================================================
@@ -278,170 +282,6 @@
   }
 }
 
-// =============================================================================
-// Step 1 — choose the services
-// =============================================================================
-// The legacy step keeps its markup; what changes is the surface it is drawn on.
-// Rules live here rather than in order-wizard.component.scss so the conversion
-// is one file to read and one file to revert.
-
-// A package is a set of services sold together, so the card has to say WHICH
-// services — that is the whole reason to pick one over building your own. The
-// description was clamped to two lines, measured at 51px of text inside a 34px
-// box, which cut exactly the sentence that explains the difference.
-.order-wizard__selection-desc {
-  display: block;
-  -webkit-line-clamp: none;
-  line-clamp: none;
-  overflow: visible;
-  font-size: calc(0.875 * var(--cl-u));
-  line-height: 1.6;
-  color: var(--cl-muted);
-  margin: 0 0 12px !important;
-}
-
-.order-wizard__selection-card {
-  border-radius: 26px;
-  padding: 22px 22px 20px;
-  padding-right: 52px;
-  border: 1px solid var(--cl-border);
-  background: var(--cl-surface);
-  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
-
-  &:hover {
-    border-color: var(--cl-accent-soft);
-    // No lift: these sit in a grid of four and a hovered card that rises pushes
-    // the eye off the one being read.
-    transform: none;
-    box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
-  }
-
-  &--selected {
-    border: 2px solid $primary;
-    box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
-    // The 2px border would otherwise shift the contents by a pixel on select.
-    padding: 21px 21px 19px;
-    padding-right: 51px;
-  }
-}
-
-.order-wizard__selection-name {
-  font-family: $font-heading;
-  font-weight: 600;
-  font-size: calc(1.0625 * var(--cl-u));
-  line-height: 1.3;
-  color: var(--cl-heading);
-}
-
-.order-wizard__selection-included {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0 0 4px;
-  padding: 0 !important;
-  list-style: none;
-
-  li {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    font-size: calc(0.875 * var(--cl-u));
-    line-height: 1.5;
-    color: var(--cl-body);
-  }
-
-  i {
-    flex-shrink: 0;
-    margin-top: 3px;
-    font-size: 12px;
-    color: $primary;
-  }
-}
-
-.order-wizard__selection-price {
-  font-family: $font-heading;
-  font-weight: 700;
-  font-size: calc(1.375 * var(--cl-u));
-  color: var(--cl-heading);
-  font-variant-numeric: tabular-nums;
-  margin-top: 14px;
-  padding-top: 13px;
-  border-top: 1px solid var(--cl-rule);
-}
-
-// ---- how many rooms, how many bathrooms -------------------------------------
-// Left as a counter rather than the artboard's row of chips: a counter states a
-// specific number, which is what was asked for, and it does not cap. A chip row
-// has to stop somewhere, and a nine-room house is not a "8+".
-.order-wizard__counters {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.order-wizard__counter {
-  background: var(--cl-tint);
-  border: 1px solid var(--cl-border-tint);
-  border-radius: 22px;
-  padding: 18px 20px;
-}
-
-.order-wizard__counter-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  // Slate-600 rather than --cl-muted: on the tinted card the muted grey came to
-  // 4.46 against a 4.5 floor.
-  color: #475569;
-}
-
-.order-wizard__counter-controls {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-top: 12px;
-}
-
-.order-wizard__counter-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: var(--cl-surface);
-  border: 1px solid var(--cl-border);
-  color: var(--cl-heading);
-  cursor: pointer;
-  transition: border-color 0.16s ease, background 0.16s ease;
-
-  &:hover:not(:disabled) {
-    border-color: var(--cl-accent-soft);
-    background: var(--cl-tint);
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
-}
-
-.order-wizard__counter-value {
-  font-family: $font-heading;
-  font-weight: 700;
-  font-size: calc(1.5 * var(--cl-u));
-  color: var(--cl-heading);
-  font-variant-numeric: tabular-nums;
-  min-width: 32px;
-  text-align: center;
-}
-
-@media (max-width: 700px) {
-  .order-wizard__counters {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 // The shared cleansia-button paints its primary with sky-500, but the approved
 // system's primary is sky-600 — and white on sky-500 measures 2.77 against a
 // 4.5 floor. Corrected here, for this page, rather than in the shared component:
@@ -465,5 +305,246 @@
       background: #{$primary-dark};
       border-color: #{$primary-dark};
     }
+  }
+}
+
+// =============================================================================
+// Step 1 — the artboard's structure
+// =============================================================================
+.cl-wiz__title {
+  font-size: calc(1.9375 * var(--cl-u)); // 31px
+}
+
+.cl-wiz__section-label {
+  margin-top: calc(1.75 * var(--cl-u));
+}
+
+// ---- packages ---------------------------------------------------------------
+.cl-wiz__packages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+  align-items: stretch;
+}
+
+.cl-wiz__pack {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: 26px;
+  padding: 22px 22px 20px;
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    border-color: var(--cl-accent-soft);
+  }
+
+  &--on {
+    border: 2px solid $primary;
+    // The extra border pixel comes off the padding so the contents do not jump.
+    padding: 21px 21px 19px;
+    box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+  }
+}
+
+.cl-wiz__pack-name {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.25 * var(--cl-u)); // 20px
+  line-height: normal;
+  color: var(--cl-heading);
+  margin-top: 5px;
+}
+
+.cl-wiz__pack-desc {
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-muted);
+  margin-top: 6px;
+}
+
+// What is IN the package. The reason to take one over building your own, so it
+// is never truncated.
+.cl-wiz__pack-includes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(3, 105, 161, 0.14);
+}
+
+.cl-wiz__pack-include {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: normal;
+  color: var(--cl-body);
+
+  i {
+    flex-shrink: 0;
+    margin-top: 3px;
+    font-size: 12px;
+    color: $primary;
+  }
+}
+
+// 13px, not the 14px .cl-muted carries: it sits on the same baseline as a 24px
+// price and the artboard drops it a step so the number leads.
+.cl-wiz__pack-foot .cl-muted {
+  font-size: calc(0.8125 * var(--cl-u));
+  line-height: 1.6;
+  // "za úklid" is two short words in Czech and five syllables in Ukrainian.
+  // Without these it is a flex item that refuses to shrink and pushes out of
+  // the card; with them it drops under the price instead.
+  min-width: 0;
+}
+
+.cl-wiz__pack-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cl-wiz__pack-spacer {
+  flex-grow: 1;
+}
+
+.cl-wiz__pack-price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.5 * var(--cl-u)); // 24px
+  color: $primary;
+}
+
+.cl-wiz__pack-cta {
+  margin-top: 12px;
+  justify-content: center;
+  min-height: max(40px, calc(2.5 * var(--cl-u)));
+
+  .cl-wiz__pack--on & {
+    background: $primary;
+    border-color: $primary;
+    color: $white;
+  }
+}
+
+// ---- services, as a priced list ---------------------------------------------
+.cl-wiz__services {
+  margin-top: 8px;
+}
+
+.cl-wiz__svc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 4px;
+  border-bottom: 1px solid var(--cl-border);
+}
+
+.cl-wiz__svc-name {
+  font-size: calc(1.0625 * var(--cl-u)); // 17px
+}
+
+.cl-wiz__svc-desc {
+  margin-top: 2px;
+}
+
+.cl-wiz__svc-price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.1875 * var(--cl-u)); // 19px
+  color: var(--cl-heading);
+  white-space: nowrap;
+}
+
+.cl-wiz__pack-cta,
+.cl-wiz__svc-add {
+  min-height: 40px;
+}
+
+.cl-wiz__svc-add {
+  min-width: 100px;
+  // Centred by flex, but the artboard leaves the text itself start-aligned and
+  // the checker compares that too.
+  justify-content: center;
+  text-align: left;
+  cursor: pointer;
+}
+
+// ---- how many rooms, how many bathrooms -------------------------------------
+.cl-wiz__counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 34px;
+}
+
+.cl-wiz__count-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.cl-wiz__count-chip {
+  min-width: 52px;
+  justify-content: center;
+  cursor: pointer;
+}
+
+// The label box is centred by flex; the text inside it is not re-aligned, which
+// is what the artboard does and what the checker compares.
+.cl-wiz__advance {
+  width: 100%;
+  margin-top: calc(1.125 * var(--cl-u));
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.cl-wiz__count-note {
+  margin: 14px 0 0;
+}
+
+@media (max-width: 900px) {
+  .cl-wiz__packages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-wiz__counts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  // The price and the button drop under the name rather than squeezing it to a
+  // column two words wide.
+  .cl-wiz__svc {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 16px;
+  }
+
+  .cl-wiz__svc-add {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+// A finger is not a mouse pointer. The 40px the artboard draws is a desktop
+// density; below the tablet breakpoint these go back to the 44px touch floor.
+@media (pointer: coarse), (max-width: 700px) {
+  .cl-wiz__pack-cta,
+  .cl-wiz__svc-add {
+    min-height: 44px;
   }
 }

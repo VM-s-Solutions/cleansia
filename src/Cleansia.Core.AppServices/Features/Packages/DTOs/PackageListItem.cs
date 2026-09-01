@@ -6,6 +6,8 @@ public record PackageListItem(
     string Id,
     string Name,
     string Description,
+    string? Tagline,
+    bool IsPopular,
     decimal Price,
     Dictionary<string, Translation> Translations,
     IEnumerable<PackageServiceSummary> IncludedServices);

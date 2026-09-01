@@ -45,6 +45,20 @@
               [rows]="3"
             />
           </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.package_form.tagline' | translate"
+              formControlName="tagline"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-checkbox
+              [label]="'pages.package_form.is_popular' | translate"
+              formControlName="isPopular"
+            />
+          </div>
         </div>
       </cleansia-section>
 
@@ -135,6 +149,13 @@
                       [label]="'pages.package_form.description' | translate"
                       formControlName="description"
                       [rows]="3"
+                    />
+                  </div>
+
+                  <div class="form-field">
+                    <cleansia-text-input
+                      [label]="'pages.package_form.tagline' | translate"
+                      formControlName="tagline"
                     />
                   </div>
                 </div>

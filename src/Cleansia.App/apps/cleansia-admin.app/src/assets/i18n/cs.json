@@ -1090,7 +1090,9 @@
         "create_error": "Nepodařilo se vytvořit balíček",
         "update_success": "Balíček byl úspěšně aktualizován",
         "update_error": "Nepodařilo se aktualizovat balíček"
-      }
+      },
+      "tagline": "Krátký popisek na kartě",
+      "is_popular": "Nejoblíbenější balíček"
     },
     "admin_user_management": {
       "title": "Správa administrátorů",

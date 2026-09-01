@@ -6,6 +6,8 @@ public record PackageDetails(
     string Id,
     string Name,
     string Description,
+    string? Tagline,
+    bool IsPopular,
     decimal Price,
     int EstimatedTime,
     string CurrencyCode,

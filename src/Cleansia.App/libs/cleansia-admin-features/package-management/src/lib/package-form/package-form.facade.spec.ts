@@ -20,6 +20,8 @@ describe('PackageFormFacade', () => {
   const formData: PackageFormData = {
     name: 'Move-out bundle',
     description: 'desc',
+    tagline: 'Handover day',
+    isPopular: false,
     price: 100,
     serviceIds: ['svc-a', 'svc-b'],
     translations: {},
@@ -194,8 +196,8 @@ describe('PackageFormFacade', () => {
     const translatedData: PackageFormData = {
       ...formData,
       translations: {
-        cs: { name: 'Balíček', description: 'Popis' },
-        en: { name: '', description: '' },
+        cs: { name: 'Balíček', description: 'Popis', tagline: 'Předání bytu' },
+        en: { name: '', description: '', tagline: '' },
       },
     };
 
@@ -209,9 +211,13 @@ describe('PackageFormFacade', () => {
       expect(command.toJSON()).toEqual({
         name: 'Move-out bundle',
         description: 'desc',
+        tagline: 'Handover day',
+        isPopular: false,
         price: 100,
         serviceIds: ['svc-a', 'svc-b'],
-        translations: { cs: { name: 'Balíček', description: 'Popis' } },
+        translations: {
+          cs: { name: 'Balíček', description: 'Popis', tagline: 'Předání bytu' },
+        },
       });
     });
 
@@ -231,6 +237,8 @@ describe('PackageFormFacade', () => {
         packageId: 'pkg-1',
         name: 'Move-out bundle',
         description: 'desc',
+        tagline: 'Handover day',
+        isPopular: false,
         price: 100,
         serviceIds: ['svc-a', 'svc-b'],
         serviceWeights: { 'svc-a': 3, 'svc-b': 1 },

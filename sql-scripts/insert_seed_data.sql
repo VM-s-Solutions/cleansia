@@ -677,51 +677,59 @@ VALUES
 INSERT INTO public."Packages" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "Name", "Description", "Price", "Translations"
+  "DeactivatedOn", "Name", "Description", "Tagline", "IsPopular", "Price", "Translations"
 )
 VALUES
   -- Basic Packages
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Essential Clean', 'Perfect for regular maintenance cleaning of your home',
+   'For a well-kept home', false,
    799.00,
-   '{"en":{"Name":"Essential Clean","Description":"Perfect for regular maintenance cleaning of your home"},"cs":{"Name":"Základní úklid","Description":"Ideální pro pravidelný udržovací úklid vašeho domova"},"sk":{"Name":"Základné upratovanie","Description":"Ideálne pre pravidelné udržiavacie upratovanie vášho domova"},"uk":{"Name":"Основне прибирання","Description":"Ідеально для регулярного підтримуючого прибирання вашого дому"},"ru":{"Name":"Основная уборка","Description":"Идеально для регулярной поддерживающей уборки вашего дома"}}'),
+   '{"en":{"Name":"Essential Clean","Description":"Perfect for regular maintenance cleaning of your home","Tagline":"For a well-kept home"},"cs":{"Name":"Základní úklid","Description":"Ideální pro pravidelný udržovací úklid vašeho domova","Tagline":"Pro udržovaný byt"},"sk":{"Name":"Základné upratovanie","Description":"Ideálne pre pravidelné udržiavacie upratovanie vášho domova","Tagline":"Pre udržiavaný byt"},"uk":{"Name":"Основне прибирання","Description":"Ідеально для регулярного підтримуючого прибирання вашого дому","Tagline":"Для доглянутої оселі"},"ru":{"Name":"Основная уборка","Description":"Идеально для регулярной поддерживающей уборки вашего дома","Tagline":"Для ухоженного дома"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Complete Home Clean', 'Comprehensive cleaning package for the entire home',
+   'Most common choice', true,
    1299.00,
-   '{"en":{"Name":"Complete Home Clean","Description":"Comprehensive cleaning package for the entire home"},"cs":{"Name":"Kompletní úklid domova","Description":"Komplexní úklidový balíček pro celý domov"},"sk":{"Name":"Kompletné upratovanie domova","Description":"Komplexný upratovací balík pre celý domov"},"uk":{"Name":"Повне прибирання дому","Description":"Комплексний пакет прибирання для всього дому"},"ru":{"Name":"Полная уборка дома","Description":"Комплексный пакет уборки для всего дома"}}'),
+   '{"en":{"Name":"Complete Home Clean","Description":"Comprehensive cleaning package for the entire home","Tagline":"Most common choice"},"cs":{"Name":"Kompletní úklid domova","Description":"Komplexní úklidový balíček pro celý domov","Tagline":"Nejčastější volba"},"sk":{"Name":"Kompletné upratovanie domova","Description":"Komplexný upratovací balík pre celý domov","Tagline":"Najčastejšia voľba"},"uk":{"Name":"Повне прибирання дому","Description":"Комплексний пакет прибирання для всього дому","Tagline":"Найчастіший вибір"},"ru":{"Name":"Полная уборка дома","Description":"Комплексный пакет уборки для всего дома","Tagline":"Самый частый выбор"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Deep Clean Premium', 'Intensive deep cleaning for thoroughly clean spaces',
+   'When it must be spotless', false,
    1799.00,
-   '{"en":{"Name":"Deep Clean Premium","Description":"Intensive deep cleaning for thoroughly clean spaces"},"cs":{"Name":"Prémiový hloubkový úklid","Description":"Intenzivní hloubkový úklid pro dokonale čisté prostory"},"sk":{"Name":"Prémiové hĺbkové upratovanie","Description":"Intenzívne hĺbkové upratovanie pre dokonale čisté priestory"},"uk":{"Name":"Преміум глибоке прибирання","Description":"Інтенсивне глибоке прибирання для ідеально чистих приміщень"},"ru":{"Name":"Премиум глубокая уборка","Description":"Интенсивная глубокая уборка для идеально чистых помещений"}}'),
+   '{"en":{"Name":"Deep Clean Premium","Description":"Intensive deep cleaning for thoroughly clean spaces","Tagline":"When it must be spotless"},"cs":{"Name":"Prémiový hloubkový úklid","Description":"Intenzivní hloubkový úklid pro dokonale čisté prostory","Tagline":"Když musí být dokonale"},"sk":{"Name":"Prémiové hĺbkové upratovanie","Description":"Intenzívne hĺbkové upratovanie pre dokonale čisté priestory","Tagline":"Keď musí byť dokonale"},"uk":{"Name":"Преміум глибоке прибирання","Description":"Інтенсивне глибоке прибирання для ідеально чистих приміщень","Tagline":"Коли має бути бездоганно"},"ru":{"Name":"Премиум глубокая уборка","Description":"Интенсивная глубокая уборка для идеально чистых помещений","Tagline":"Когда должно быть безупречно"}}'),
 
   -- Specialized Packages
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Kitchen & Bathroom Focus', 'Specialized package focusing on kitchen and bathroom deep cleaning',
+   'The two hardest rooms', false,
    999.00,
-   '{"en":{"Name":"Kitchen & Bathroom Focus","Description":"Specialized package focusing on kitchen and bathroom deep cleaning"},"cs":{"Name":"Zaměření na kuchyň a koupelnu","Description":"Specializovaný balíček zaměřený na hloubkový úklid kuchyně a koupelny"},"sk":{"Name":"Zameranie na kuchyňu a kúpeľňu","Description":"Špecializovaný balík zameraný na hĺbkové upratovanie kuchyne a kúpeľne"},"uk":{"Name":"Фокус на кухню та ванну","Description":"Спеціалізований пакет з акцентом на глибоке прибирання кухні та ванної"},"ru":{"Name":"Фокус на кухню и ванную","Description":"Специализированный пакет с акцентом на глубокую уборку кухни и ванной"}}'),
+   '{"en":{"Name":"Kitchen & Bathroom Focus","Description":"Specialized package focusing on kitchen and bathroom deep cleaning","Tagline":"The two hardest rooms"},"cs":{"Name":"Zaměření na kuchyň a koupelnu","Description":"Specializovaný balíček zaměřený na hloubkový úklid kuchyně a koupelny","Tagline":"Dvě nejnáročnější místnosti"},"sk":{"Name":"Zameranie na kuchyňu a kúpeľňu","Description":"Špecializovaný balík zameraný na hĺbkové upratovanie kuchyne a kúpeľne","Tagline":"Dve najnáročnejšie miestnosti"},"uk":{"Name":"Фокус на кухню та ванну","Description":"Спеціалізований пакет з акцентом на глибоке прибирання кухні та ванної","Tagline":"Дві найскладніші кімнати"},"ru":{"Name":"Фокус на кухню и ванную","Description":"Специализированный пакет с акцентом на глубокую уборку кухни и ванной","Tagline":"Две самые сложные комнаты"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Eco-Green Package', 'Complete eco-friendly cleaning using only green products',
+   'Green products only', false,
    1499.00,
-   '{"en":{"Name":"Eco-Green Package","Description":"Complete eco-friendly cleaning using only green products"},"cs":{"Name":"Eko-zelený balíček","Description":"Kompletní ekologický úklid používající pouze zelené produkty"},"sk":{"Name":"Eko-zelený balík","Description":"Kompletné ekologické upratovanie používajúce iba zelené produkty"},"uk":{"Name":"Еко-зелений пакет","Description":"Повне екологічне прибирання з використанням лише зелених продуктів"},"ru":{"Name":"Эко-зеленый пакет","Description":"Полная экологическая уборка с использованием только зеленых продуктов"}}'),
+   '{"en":{"Name":"Eco-Green Package","Description":"Complete eco-friendly cleaning using only green products","Tagline":"Green products only"},"cs":{"Name":"Eko-zelený balíček","Description":"Kompletní ekologický úklid používající pouze zelené produkty","Tagline":"Jen zelené prostředky"},"sk":{"Name":"Eko-zelený balík","Description":"Kompletné ekologické upratovanie používajúce iba zelené produkty","Tagline":"Len zelené prostriedky"},"uk":{"Name":"Еко-зелений пакет","Description":"Повне екологічне прибирання з використанням лише зелених продуктів","Tagline":"Лише зелені засоби"},"ru":{"Name":"Эко-зеленый пакет","Description":"Полная экологическая уборка с использованием только зеленых продуктов","Tagline":"Только зелёные средства"}}'),
 
   -- Premium Packages
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Moving Day Special', 'Perfect for move-in or move-out situations',
+   'Handover day', false,
    2299.00,
-   '{"en":{"Name":"Moving Day Special","Description":"Perfect for move-in or move-out situations"},"cs":{"Name":"Speciál pro den stěhování","Description":"Ideální pro situace nastěhování nebo vystěhování"},"sk":{"Name":"Špeciál pre deň sťahovania","Description":"Ideálne pre situácie nasťahovania alebo vysťahovania"},"uk":{"Name":"Спеціальний пакет для переїзду","Description":"Ідеально для ситуацій в''їзду або виїзду"},"ru":{"Name":"Специальный пакет для переезда","Description":"Идеально для ситуаций въезда или выезда"}}'),
+   '{"en":{"Name":"Moving Day Special","Description":"Perfect for move-in or move-out situations","Tagline":"Handover day"},"cs":{"Name":"Speciál pro den stěhování","Description":"Ideální pro situace nastěhování nebo vystěhování","Tagline":"Předání bytu"},"sk":{"Name":"Špeciál pre deň sťahovania","Description":"Ideálne pre situácie nasťahovania alebo vysťahovania","Tagline":"Odovzdanie bytu"},"uk":{"Name":"Спеціальний пакет для переїзду","Description":"Ідеально для ситуацій в''''їзду або виїзду","Tagline":"Передача квартири"},"ru":{"Name":"Специальный пакет для переезда","Description":"Идеально для ситуаций въезда или выезда","Tagline":"Передача квартиры"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Post-Renovation Clean', 'Specialized cleaning after construction or renovation work',
+   'After the builders', false,
    2799.00,
-   '{"en":{"Name":"Post-Renovation Clean","Description":"Specialized cleaning after construction or renovation work"},"cs":{"Name":"Úklid po rekonstrukci","Description":"Specializovaný úklid po stavebních nebo rekonstrukčních pracích"},"sk":{"Name":"Upratovanie po rekonštrukcii","Description":"Špecializované upratovanie po stavebných alebo rekonštrukčných prácach"},"uk":{"Name":"Прибирання після ремонту","Description":"Спеціалізоване прибирання після будівельних або ремонтних робіт"},"ru":{"Name":"Уборка после ремонта","Description":"Специализированная уборка после строительных или ремонтных работ"}}'),
+   '{"en":{"Name":"Post-Renovation Clean","Description":"Specialized cleaning after construction or renovation work","Tagline":"After the builders"},"cs":{"Name":"Úklid po rekonstrukci","Description":"Specializovaný úklid po stavebních nebo rekonstrukčních pracích","Tagline":"Po řemeslnících"},"sk":{"Name":"Upratovanie po rekonštrukcii","Description":"Špecializované upratovanie po stavebných alebo rekonštrukčných prácach","Tagline":"Po remeselníkoch"},"uk":{"Name":"Прибирання після ремонту","Description":"Спеціалізоване прибирання після будівельних або ремонтних робіт","Tagline":"Після будівельників"},"ru":{"Name":"Уборка после ремонта","Description":"Специализированная уборка после строительных или ремонтных работ","Tagline":"После строителей"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Luxury Full Service', 'Premium package with all services included',
+   'Everything, included', false,
    3499.00,
-   '{"en":{"Name":"Luxury Full Service","Description":"Premium package with all services included"},"cs":{"Name":"Luxusní kompletní služba","Description":"Prémiový balíček se všemi zahrnutými službami"},"sk":{"Name":"Luxusná kompletná služba","Description":"Prémiový balík so všetkými zahrnutými službami"},"uk":{"Name":"Розкішний повний сервіс","Description":"Преміум пакет з усіма включеними послугами"},"ru":{"Name":"Роскошный полный сервис","Description":"Премиум пакет со всеми включенными услугами"}}');
+   '{"en":{"Name":"Luxury Full Service","Description":"Premium package with all services included","Tagline":"Everything, included"},"cs":{"Name":"Luxusní kompletní služba","Description":"Prémiový balíček se všemi zahrnutými službami","Tagline":"Vše v jednom"},"sk":{"Name":"Luxusná kompletná služba","Description":"Prémiový balík so všetkými zahrnutými službami","Tagline":"Všetko v jednom"},"uk":{"Name":"Розкішний повний сервіс","Description":"Преміум пакет з усіма включеними послугами","Tagline":"Все в одному"},"ru":{"Name":"Роскошный полный сервис","Description":"Премиум пакет со всеми включенными услугами","Tagline":"Всё в одному"}}');
 
 -- 9. EMPLOYEE PAY CONFIGS
 -- Every catalogue entry gets the PLATFORM-WIDE row (EmployeeId NULL). This is not optional data: an

@@ -10,6 +10,8 @@ public static class PackageMappers
             Id: package.Id,
             Name: package.Name,
             Description: package.Description,
+            Tagline: package.Tagline,
+            IsPopular: package.IsPopular,
             Price: package.Price,
             Translations: package.Translations.ToDictionary(),
             IncludedServices: package.IncludedServices.Select(ps => new PackageServiceSummary(
@@ -23,6 +25,8 @@ public static class PackageMappers
             Id: package.Id,
             Name: package.Name,
             Description: package.Description,
+            Tagline: package.Tagline,
+            IsPopular: package.IsPopular,
             Price: package.Price,
             EstimatedTime: package.IncludedServices.Sum(s => s.Service.EstimatedTime),
             CurrencyCode: currencyCode,
@@ -38,6 +42,8 @@ public static class PackageMappers
             Id: package.Id,
             Name: package.Name,
             Description: package.Description,
+            Tagline: package.Tagline,
+            IsPopular: package.IsPopular,
             Price: package.Price,
             Translations: package.Translations.ToDictionary(),
             IncludedServices: package.IncludedServices.Select(ps => new PackageServiceDto(

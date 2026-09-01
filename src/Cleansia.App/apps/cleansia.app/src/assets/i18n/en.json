@@ -905,7 +905,8 @@
       "summary_bathrooms_other": "{{count}} bathrooms",
       "summary_property": "Property",
       "rooms_count_label": "Number of rooms",
-      "bathrooms_count_label": "Number of bathrooms"
+      "bathrooms_count_label": "Number of bathrooms",
+      "package_most_popular": "Most popular"
     },
     "orders": {
       "title": "My Orders",

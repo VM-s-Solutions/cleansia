@@ -54,14 +54,22 @@
             type="button"
             class="cl-wiz__pack"
             [class.cl-wiz__pack--on]="isPackageSelected(pkg.id!)"
+            [class.cl-wiz__pack--featured]="pkg.isPopular"
             [attr.aria-pressed]="isPackageSelected(pkg.id!)"
             [attr.aria-label]="'aria.select_package' | translate: { name: getTranslation(pkg, 'name') }"
             (click)="togglePackage(pkg.id!)"
           >
-            <span class="cl-wiz__pack-name">{{ getTranslation(pkg, 'name') }}</span>
-            @if (getTranslation(pkg, 'description'); as desc) {
-            <span class="cl-wiz__pack-desc">{{ desc }}</span>
+            @if (pkg.isPopular) {
+            <span class="cl-wiz__pack-badge">{{ 'pages.order.package_most_popular' | translate }}</span>
             }
+            <!--
+              The tagline, not the description: this slot is one short line above the
+              name, and a package's description is prose that would wrap to four.
+            -->
+            @if (getTranslation(pkg, 'tagline'); as tag) {
+            <span class="cl-lbl cl-wiz__pack-tag">{{ tag }}</span>
+            }
+            <span class="cl-wiz__pack-name">{{ getTranslation(pkg, 'name') }}</span>
             @if (pkg.includedServices && pkg.includedServices.length > 0) {
             <span class="cl-wiz__pack-includes">
               @for (svc of pkg.includedServices; track svc.name) {

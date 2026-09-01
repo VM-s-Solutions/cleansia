@@ -22,10 +22,12 @@
 
 :root {
   --cl-wiz-ground: #f8fbfe;
+  --cl-pack-tag: #0369a1;
 }
 
 :root.dark-mode {
   --cl-wiz-ground: #0b1626;
+  --cl-pack-tag: #7dd3fc;
 }
 
 %cl-wiz-measure {
@@ -329,6 +331,8 @@
 }
 
 .cl-wiz__pack {
+  // The "most popular" badge hangs over the top edge from here.
+  position: relative;
   display: flex;
   flex-direction: column;
   text-align: left;
@@ -363,11 +367,72 @@
   margin-top: 5px;
 }
 
-.cl-wiz__pack-desc {
-  font-size: calc(0.875 * var(--cl-u));
-  line-height: 1.6;
-  color: var(--cl-muted);
-  margin-top: 6px;
+.cl-wiz__pack-tag {
+  // Sky700 on a white card; the dark theme's card is near-black, where Sky700
+  // measures 2.91 against the 4.5 a 12px label needs, so it rides the heading
+  // token instead of a literal.
+  color: var(--cl-pack-tag);
+  text-align: left;
+}
+
+// The featured package. A second colourway rather than a second component: same
+// box, same spacing, inverted so the card carries the emphasis instead of a
+// larger size that would break the three-up grid.
+//
+// Sky800, where the artboard draws Sky600. On Sky600 the dimmed tagline measures
+// 3.09 and the price caption 3.57, against the 4.5 a label under 18px needs — and
+// the ceiling there is 4.08, which is what PURE WHITE scores on it, so no text
+// colour could have fixed it and the ground had to move. Sky800 clears every
+// label on the card. Same resolution, and the same reason, as .cl-chip--on
+// shipping Sky700 after the home-page contrast pass.
+.cl-wiz__pack--featured {
+  background: $primary-darker;
+  border: 2px solid $primary-darker;
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+
+  .cl-wiz__pack-tag {
+    color: #bae6fd;
+  }
+
+  .cl-wiz__pack-name,
+  .cl-wiz__pack-price {
+    color: $white;
+  }
+
+  .cl-wiz__pack-includes {
+    border-top-color: rgba(255, 255, 255, 0.24);
+  }
+
+  .cl-wiz__pack-include,
+  .cl-wiz__pack-foot .cl-muted {
+    color: #e0f2fe;
+  }
+
+  // The tick is Sky600 on a white card, which is the card's own colour here.
+  .cl-wiz__pack-include i {
+    color: $white;
+  }
+
+  .cl-wiz__pack-cta {
+    background: $white;
+    border-color: $white;
+    color: $primary-dark;
+  }
+}
+
+// Sits on the card's top edge, so the card cannot clip it.
+.cl-wiz__pack-badge {
+  position: absolute;
+  top: -12px;
+  left: 22px;
+  background: $text-heading;
+  color: $white;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
 }
 
 // What is IN the package. The reason to take one over building your own, so it

@@ -24,6 +24,9 @@ public class PackageEntityConfiguration : AuditableEntityConfiguration<Package, 
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(p => p.Tagline)
+            .HasMaxLength(60);
+
         builder.Property(p => p.Price)
             .IsRequired()
             .HasPrecision(18, 2);

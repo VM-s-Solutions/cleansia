@@ -31,7 +31,6 @@
     "^út 2\\. 9\\.",
     "^bez příplatku$",
     "^Odhadem 3,5 h",
-    "^Nejoblíbenější$",
     "^Cleansia$",
     "^Objednat úklid$",
     "^Přihlásit$",
@@ -61,6 +60,13 @@
   ".cl-wiz__pack-includes": "[style*='rgba(3,105,161,.14)']",
   ".cl-wiz__pack-include": { "sel": "[style*='rgba(3,105,161,.14)'] > div", "typography": true },
   ".cl-wiz__pack-name": { "sel": "[style*='border-radius:26px'] [style*='font-size:20px']", "typography": true },
+  ".cl-wiz__pack-tag": { "sel": "[style*='border-radius:26px'] .lbl", "typography": true },
+  ".cl-wiz__pack-badge": { "sel": "[style*='top:-12px']", "typography": true },
+  ".cl-wiz__pack--featured": {
+    "sel": "[style*='border:2px solid #0284C7']",
+    "skip": ["backgroundColor", "borderTopColor"],
+    "why": "The artboard fills the featured card with Sky600 #0284C7. Its dimmed tagline measures 3.09 and its price caption 3.57 against the 4.5 a sub-18px label needs, and pure white scores only 4.08 on that ground - no text colour fixes it, so the card ships on Sky800 #075985. Everything else about the card is asserted."
+  },
   ".cl-wiz__pack-price": { "sel": "[style*='align-items:baseline'] .num", "typography": true },
   ".cl-wiz__pack-foot": "[style*='align-items:baseline; justify-content:space-between']",
   ".cl-wiz__pack-cta": "[style*='margin-top:12px; justify-content:center']",

@@ -980,7 +980,9 @@
         "create_error": "Nepodarilo sa vytvoriť balíček",
         "update_success": "Balíček bol úspešne aktualizovaný",
         "update_error": "Nepodarilo sa aktualizovať balíček"
-      }
+      },
+      "tagline": "Krátky popisok na karte",
+      "is_popular": "Najobľúbenejší balík"
     },
     "admin_user_management": {
       "title": "Správa administrátorov",

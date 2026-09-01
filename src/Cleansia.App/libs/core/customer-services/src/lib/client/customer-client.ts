@@ -11707,6 +11707,8 @@ export class PackageDetails implements IPackageDetails {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     estimatedTime!: number;
     currencyCode!: string | undefined;
@@ -11728,6 +11730,8 @@ export class PackageDetails implements IPackageDetails {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             this.estimatedTime = Data["estimatedTime"];
             this.currencyCode = Data["currencyCode"];
@@ -11763,6 +11767,8 @@ export class PackageDetails implements IPackageDetails {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         data["estimatedTime"] = this.estimatedTime;
         data["currencyCode"] = this.currencyCode;
@@ -11791,6 +11797,8 @@ export interface IPackageDetails {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     estimatedTime: number;
     currencyCode: string | undefined;
@@ -11803,6 +11811,8 @@ export class PackageListItem implements IPackageListItem {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceSummary[] | undefined;
@@ -11821,6 +11831,8 @@ export class PackageListItem implements IPackageListItem {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -11849,6 +11861,8 @@ export class PackageListItem implements IPackageListItem {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (this.translations) {
             data["translations"] = {};
@@ -11870,6 +11884,8 @@ export interface IPackageListItem {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceSummary[] | undefined;
@@ -13649,6 +13665,7 @@ export interface ISwapMembershipPlanResponse {
 export class Translation implements ITranslation {
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
 
     constructor(data?: ITranslation) {
         if (data) {
@@ -13663,6 +13680,7 @@ export class Translation implements ITranslation {
         if (Data) {
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
         }
     }
 
@@ -13677,6 +13695,7 @@ export class Translation implements ITranslation {
         data = typeof data === 'object' ? data : {};
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
         return data;
     }
 }
@@ -13684,6 +13703,7 @@ export class Translation implements ITranslation {
 export interface ITranslation {
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
 }
 
 export class UnregisterDeviceResponse implements IUnregisterDeviceResponse {

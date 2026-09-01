@@ -905,7 +905,8 @@
       "summary_bathrooms_other": "{{count}} ванные",
       "summary_property": "Помещение",
       "rooms_count_label": "Количество комнат",
-      "bathrooms_count_label": "Количество ванных комнат"
+      "bathrooms_count_label": "Количество ванных комнат",
+      "package_most_popular": "Самый популярный"
     },
     "orders": {
       "title": "Мои заказы",

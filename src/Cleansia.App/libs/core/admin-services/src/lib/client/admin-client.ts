@@ -15455,6 +15455,8 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceDto[] | undefined;
@@ -15475,6 +15477,8 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -15505,6 +15509,8 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (this.translations) {
             data["translations"] = {};
@@ -15528,6 +15534,8 @@ export interface IAdminPackageDetailDto {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceDto[] | undefined;
@@ -18238,9 +18246,11 @@ export interface ICreateMembershipPlanResponse {
 export class CreatePackageCommand implements ICreatePackageCommand {
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     serviceIds!: string[] | undefined;
-    translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    translations!: { [key: string]: PackageTranslationInput; } | undefined;
 
     constructor(data?: ICreatePackageCommand) {
         if (data) {
@@ -18255,6 +18265,8 @@ export class CreatePackageCommand implements ICreatePackageCommand {
         if (Data) {
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Array.isArray(Data["serviceIds"])) {
                 this.serviceIds = [] as any;
@@ -18265,7 +18277,7 @@ export class CreatePackageCommand implements ICreatePackageCommand {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
                     if (Data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = Data["translations"][key] ? CreateServiceTranslationInput.fromJS(Data["translations"][key]) : new CreateServiceTranslationInput();
+                        (this.translations as any)![key] = Data["translations"][key] ? PackageTranslationInput.fromJS(Data["translations"][key]) : new PackageTranslationInput();
                 }
             }
         }
@@ -18282,6 +18294,8 @@ export class CreatePackageCommand implements ICreatePackageCommand {
         data = typeof data === 'object' ? data : {};
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (Array.isArray(this.serviceIds)) {
             data["serviceIds"] = [];
@@ -18302,9 +18316,11 @@ export class CreatePackageCommand implements ICreatePackageCommand {
 export interface ICreatePackageCommand {
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     serviceIds: string[] | undefined;
-    translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    translations: { [key: string]: PackageTranslationInput; } | undefined;
 }
 
 export class CreatePackageResponse implements ICreatePackageResponse {
@@ -20396,6 +20412,7 @@ export enum EmailType {
     PeriodClosed = 4,
     PeriodEndReminder = 5,
     OrderStatusUpdate = 6,
+    PromoCode = 7,
 }
 
 export class EmailTypeDetailDto implements IEmailTypeDetailDto {
@@ -24113,6 +24130,8 @@ export class OrderItem implements IOrderItem {
     notes!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
+    customerFloor!: string | undefined;
+    customerApartment!: string | undefined;
     recurringTemplateId!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
     currency!: CurrencyDetailDto;
@@ -24183,6 +24202,8 @@ export class OrderItem implements IOrderItem {
             this.notes = Data["notes"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
+            this.customerFloor = Data["customerFloor"];
+            this.customerApartment = Data["customerApartment"];
             this.recurringTemplateId = Data["recurringTemplateId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
@@ -24277,6 +24298,8 @@ export class OrderItem implements IOrderItem {
         data["notes"] = this.notes;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
+        data["customerFloor"] = this.customerFloor;
+        data["customerApartment"] = this.customerApartment;
         data["recurringTemplateId"] = this.recurringTemplateId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
@@ -24358,6 +24381,8 @@ export interface IOrderItem {
     notes: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
+    customerFloor: string | undefined;
+    customerApartment: string | undefined;
     recurringTemplateId: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
     currency: CurrencyDetailDto;
@@ -24766,6 +24791,8 @@ export class PackageDetails implements IPackageDetails {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     estimatedTime!: number;
     currencyCode!: string | undefined;
@@ -24787,6 +24814,8 @@ export class PackageDetails implements IPackageDetails {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             this.estimatedTime = Data["estimatedTime"];
             this.currencyCode = Data["currencyCode"];
@@ -24822,6 +24851,8 @@ export class PackageDetails implements IPackageDetails {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         data["estimatedTime"] = this.estimatedTime;
         data["currencyCode"] = this.currencyCode;
@@ -24850,6 +24881,8 @@ export interface IPackageDetails {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     estimatedTime: number;
     currencyCode: string | undefined;
@@ -24862,6 +24895,8 @@ export class PackageListItem implements IPackageListItem {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceSummary[] | undefined;
@@ -24880,6 +24915,8 @@ export class PackageListItem implements IPackageListItem {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -24908,6 +24945,8 @@ export class PackageListItem implements IPackageListItem {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (this.translations) {
             data["translations"] = {};
@@ -24929,6 +24968,8 @@ export interface IPackageListItem {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceSummary[] | undefined;
@@ -25072,6 +25113,50 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 export interface IPackageServiceSummary {
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
+}
+
+export class PackageTranslationInput implements IPackageTranslationInput {
+    name!: string | undefined;
+    description!: string | undefined;
+    tagline!: string | undefined;
+
+    constructor(data?: IPackageTranslationInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.tagline = Data["tagline"];
+        }
+    }
+
+    static fromJS(data: any): PackageTranslationInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new PackageTranslationInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        return data;
+    }
+}
+
+export interface IPackageTranslationInput {
+    name: string | undefined;
+    description: string | undefined;
+    tagline: string | undefined;
 }
 
 export class PagedDataOfAdminActionAuditDto implements IPagedDataOfAdminActionAuditDto {
@@ -28910,6 +28995,7 @@ export interface IToggleFeatureFlagResponse {
 export class Translation implements ITranslation {
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
 
     constructor(data?: ITranslation) {
         if (data) {
@@ -28924,6 +29010,7 @@ export class Translation implements ITranslation {
         if (Data) {
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
         }
     }
 
@@ -28938,6 +29025,7 @@ export class Translation implements ITranslation {
         data = typeof data === 'object' ? data : {};
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
         return data;
     }
 }
@@ -28945,6 +29033,7 @@ export class Translation implements ITranslation {
 export interface ITranslation {
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
 }
 
 export class UpdateAdminUserCommand implements IUpdateAdminUserCommand {
@@ -29763,10 +29852,12 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
     packageId!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     serviceIds!: string[] | undefined;
     serviceWeights!: { [key: string]: number; } | undefined;
-    translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    translations!: { [key: string]: PackageTranslationInput; } | undefined;
 
     constructor(data?: IUpdatePackageCommand) {
         if (data) {
@@ -29782,6 +29873,8 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
             this.packageId = Data["packageId"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Array.isArray(Data["serviceIds"])) {
                 this.serviceIds = [] as any;
@@ -29799,7 +29892,7 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
                     if (Data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = Data["translations"][key] ? CreateServiceTranslationInput.fromJS(Data["translations"][key]) : new CreateServiceTranslationInput();
+                        (this.translations as any)![key] = Data["translations"][key] ? PackageTranslationInput.fromJS(Data["translations"][key]) : new PackageTranslationInput();
                 }
             }
         }
@@ -29817,6 +29910,8 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
         data["packageId"] = this.packageId;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (Array.isArray(this.serviceIds)) {
             data["serviceIds"] = [];
@@ -29845,10 +29940,12 @@ export interface IUpdatePackageCommand {
     packageId: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     serviceIds: string[] | undefined;
     serviceWeights: { [key: string]: number; } | undefined;
-    translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    translations: { [key: string]: PackageTranslationInput; } | undefined;
 }
 
 export class UpdatePackageResponse implements IUpdatePackageResponse {

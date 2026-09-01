@@ -905,7 +905,8 @@
       "summary_bathrooms_other": "{{count}} kúpeľní",
       "summary_property": "Nehnuteľnosť",
       "rooms_count_label": "Počet izieb",
-      "bathrooms_count_label": "Počet kúpeľní"
+      "bathrooms_count_label": "Počet kúpeľní",
+      "package_most_popular": "Najobľúbenejšie"
     },
     "orders": {
       "title": "Moje objednávky",

@@ -301,6 +301,8 @@ namespace Cleansia.Infra.Database.Migrations
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Tagline = table.Column<string>(type: "character varying(60)", maxLength: 60, nullable: true),
+                    IsPopular = table.Column<bool>(type: "boolean", nullable: false),
                     Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),

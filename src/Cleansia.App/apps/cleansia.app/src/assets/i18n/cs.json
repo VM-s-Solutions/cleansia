@@ -905,7 +905,8 @@
       "summary_bathrooms_other": "{{count}} koupelen",
       "summary_property": "Nemovitost",
       "rooms_count_label": "Počet pokojů",
-      "bathrooms_count_label": "Počet koupelen"
+      "bathrooms_count_label": "Počet koupelen",
+      "package_most_popular": "Nejoblíbenější"
     },
     "orders": {
       "title": "Moje objednávky",

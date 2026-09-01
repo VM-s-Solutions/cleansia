@@ -24,6 +24,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTextareaComponent,
+  CleansiaCheckboxComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
@@ -49,6 +50,7 @@ import { PackageFormData, PackageFormFacade } from './package-form.facade';
     MultiSelectModule,
     CleansiaButtonComponent,
     CleansiaTextInputComponent,
+    CleansiaCheckboxComponent,
     CleansiaTextareaComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
@@ -77,6 +79,10 @@ export class PackageFormComponent implements OnInit, OnDestroy {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(100)]],
     description: ['', [Validators.maxLength(500)]],
+    // The one short line the customer-facing package card leads with, above the
+    // name. Sixty characters is what fits that slot; the backend enforces it too.
+    tagline: ['', [Validators.maxLength(60)]],
+    isPopular: [false],
     price: [0, [Validators.required, Validators.min(0)]],
     serviceIds: [[] as string[]],
     translations: this.fb.nonNullable.group({}),
@@ -138,6 +144,7 @@ export class PackageFormComponent implements OnInit, OnDestroy {
           this.fb.nonNullable.group({
             name: ['', [Validators.required, Validators.maxLength(100)]],
             description: ['', [Validators.maxLength(500)]],
+            tagline: ['', [Validators.maxLength(60)]],
           })
         );
       }
@@ -154,11 +161,17 @@ export class PackageFormComponent implements OnInit, OnDestroy {
       description?: string;
       priceWeight?: number;
     }[];
-    translations?: { [key: string]: { name?: string; description?: string } };
+    tagline?: string | undefined;
+    isPopular?: boolean;
+    translations?: {
+      [key: string]: { name?: string; description?: string; tagline?: string };
+    };
   }): void {
     this.form.patchValue({
       name: pkg.name ?? '',
       description: pkg.description ?? '',
+      tagline: pkg.tagline ?? '',
+      isPopular: pkg.isPopular ?? false,
       price: pkg.price ?? 0,
       serviceIds:
         pkg.includedServices
@@ -192,6 +205,7 @@ export class PackageFormComponent implements OnInit, OnDestroy {
           translationsGroup.get(langCode)?.patchValue({
             name: translation.name ?? '',
             description: translation.description ?? '',
+            tagline: translation.tagline ?? '',
           });
         }
       }
@@ -224,11 +238,11 @@ export class PackageFormComponent implements OnInit, OnDestroy {
 
     const formValue = this.form.getRawValue();
     const translations: {
-      [key: string]: { name: string; description: string };
+      [key: string]: { name: string; description: string; tagline: string };
     } = {};
 
     const translationsValue = formValue.translations as {
-      [key: string]: { name: string; description: string };
+      [key: string]: { name: string; description: string; tagline: string };
     };
 
     // Include all translations (required for all languages)
@@ -236,12 +250,15 @@ export class PackageFormComponent implements OnInit, OnDestroy {
       translations[langCode] = {
         name: trans.name ?? '',
         description: trans.description ?? '',
+        tagline: trans.tagline ?? '',
       };
     }
 
     const data: PackageFormData = {
       name: formValue.name,
       description: formValue.description,
+      tagline: formValue.tagline,
+      isPopular: formValue.isPopular,
       price: formValue.price,
       serviceIds: formValue.serviceIds,
       translations,

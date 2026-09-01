@@ -123,6 +123,11 @@ public static class OrderMappers
                 Id: p.Id,
                 Name: p.Name,
                 Description: p.Description,
+                // An order is a historical record. Which package the catalogue features today,
+                // and the line its card leads with, say nothing about an order already placed —
+                // the read-model row does not carry them and nothing renders them here.
+                Tagline: null,
+                IsPopular: false,
                 Price: p.Price,
                 Translations: p.Translations.ToDictionary(),
                 // The list queries never load Package.IncludedServices, so the entity path

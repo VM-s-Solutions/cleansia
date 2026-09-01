@@ -980,7 +980,9 @@
         "create_error": "Failed to create package",
         "update_success": "Package updated successfully",
         "update_error": "Failed to update package"
-      }
+      },
+      "tagline": "Card tagline",
+      "is_popular": "Most popular package"
     },
     "admin_user_management": {
       "title": "Admin User Management",

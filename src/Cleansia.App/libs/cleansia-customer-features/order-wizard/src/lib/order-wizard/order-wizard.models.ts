@@ -7,6 +7,25 @@ import { TranslateService } from '@ngx-translate/core';
  * based on `kind`. Backend re-validates server-side at order-create time so
  * this is purely a UX optimization (instant green-check / red-X feedback).
  */
+/**
+ * The backend's PromoCodeError enum, as i18n keys. Lives here rather than in a
+ * component because two steps read it: the payment step, where the code is
+ * entered, and the review step, which restates the result.
+ */
+export const PROMO_ERROR_KEYS: Record<string, string> = {
+  NotFound: 'pages.order.promo.error_not_found',
+  Inactive: 'pages.order.promo.error_inactive',
+  Expired: 'pages.order.promo.error_expired',
+  NotYetValid: 'pages.order.promo.error_not_yet_valid',
+  GlobalLimitReached: 'pages.order.promo.error_global_limit',
+  PerUserLimitReached: 'pages.order.promo.error_used',
+  BelowMinimumOrderAmount: 'pages.order.promo.error_min_order',
+  CurrencyMismatch: 'pages.order.promo.error_currency',
+};
+
+/** Falls back to a generic message for an error code this client does not know. */
+export const PROMO_ERROR_FALLBACK = 'pages.order.promo.error_generic';
+
 export type PromoCodeUiState =
   | { kind: 'idle' }
   | { kind: 'validating' }

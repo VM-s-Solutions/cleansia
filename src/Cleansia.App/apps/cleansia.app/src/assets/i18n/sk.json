@@ -790,11 +790,11 @@
       "payment_method": "Spôsob platby",
       "payment_section_title": "Ako chcete platiť?",
       "pay_by_card": "Platba kartou",
-      "payment_card_title": "Kreditná / debetná karta",
-      "payment_card_desc": "Bezpečná online platba cez Stripe",
+      "payment_card_title": "Kartou online",
+      "payment_card_desc": "Bezpečná platba kartou. Zaplatíte pri objednaní.",
       "pay_by_cash": "Platba v hotovosti",
-      "payment_cash_title": "Platba pri prevzatí",
-      "payment_cash_desc": "Zaplatíte po dokončení čistenia",
+      "payment_cash_title": "Hotovosťou na mieste",
+      "payment_cash_desc": "Zaplatíte upratovačovi po dokončení upratovania.",
       "contact_info": "Kontaktné údaje",
       "customer_first_name": "Meno",
       "customer_first_name_placeholder": "napr. Ján",
@@ -804,8 +804,8 @@
       "customer_email_placeholder": "napr. jan@example.com",
       "customer_phone": "Telefón",
       "customer_phone_placeholder": "napr. +421 900 123 456",
-      "special_instructions": "Špeciálne pokyny",
-      "special_instructions_placeholder": "Máte špeciálne požiadavky? (napr. zamerať sa na kuchyňu, produkty vhodné pre domáce zvieratá...)",
+      "special_instructions": "Poznámka pre upratovača",
+      "special_instructions_placeholder": "Napríklad: mačka je doma, prosím nezatvárať balkón.",
       "entry_instructions_label": "Pokyny pre vstup",
       "entry_instructions_placeholder": "Ako sa dostaneme k vám? (napr. zvonček, kľúč pod rohožkou...)",
       "summary": {
@@ -877,7 +877,9 @@
         "error_used": "Tento kód ste už použili",
         "error_min_order": "Objednávka nespĺňa minimálnu sumu pre tento kód",
         "error_currency": "Kód neplatí pre túto menu",
-        "error_generic": "Nepodarilo sa overiť kód. Skúste to znova."
+        "error_generic": "Nepodarilo sa overiť kód. Skúste to znova.",
+        "placeholder": "Napr. PRVNI10",
+        "needs_account": "Zľavové kódy sú viazané na účet — prihláste sa a kód uplatníte. Objednať môžete aj bez neho."
       },
       "step_services_lead": "Balík je sada služieb za jednu cenu — čo presne obsahuje, je vypísané na karte. Alebo si poskladajte vlastnú kombináciu nižšie.",
       "services_or_single": "Alebo jednotlivé služby",
@@ -934,7 +936,8 @@
         "phone": "Zadajte platné telefónne číslo.",
         "date": "Vyberte dátum upratovania.",
         "time": "Vyberte čas, ktorý je ešte voľný.",
-        "address_fields": "Doplňte ulicu, mesto a PSČ."
+        "address_fields": "Doplňte ulicu, mesto a PSČ.",
+        "terms": "Potvrďte súhlas s podmienkami."
       },
       "step_when_title": "Kedy máme prísť?",
       "step_when_lead": "Najbližší voľný termín je o {{lead}} hodiny. Skorší termín, najskôr o {{express}} hodiny, má expresný príplatok +{{rate}} %.",
@@ -949,7 +952,13 @@
         "reception": "Recepcia"
       },
       "address_enter_manually": "Nemôžete adresu nájsť? Zadajte ju ručne",
-      "address_manual_note": "Adresu overíme pred príchodom. Upratovač vám môže zavolať, ak ju nenájde."
+      "address_manual_note": "Adresu overíme pred príchodom. Upratovač vám môže zavolať, ak ju nenájde.",
+      "step_pay_lead": "Kartou zaplatíte hneď, hotovosťou až na mieste v deň upratovania. Cena je rovnaká.",
+      "step_review_title": "Skontrolujte objednávku",
+      "step_review_lead": "Každú sekciu opravíte priamo tu, bez prechádzania celého sprievodcu znova.",
+      "review_edit": "Upraviť",
+      "accept_terms": "Súhlasím s obchodnými podmienkami a spracovaním osobných údajov",
+      "cancel_policy_note": "Zrušenie zdarma do 24 hodín. Do 15 minút od objednania neplatíte nič."
     },
     "orders": {
       "title": "Moje objednávky",
@@ -1869,7 +1878,8 @@
     "set_rooms": "Nastaviť počet izieb: {{count}}",
     "set_bathrooms": "Nastaviť počet kúpeľní: {{count}}",
     "previous_month": "Predchádzajúci mesiac",
-    "next_month": "Ďalší mesiac"
+    "next_month": "Ďalší mesiac",
+    "edit_step": "Upraviť: {{step}}"
   },
   "help": {
     "dismiss": "Rozumiem, nezobrazovať znova",

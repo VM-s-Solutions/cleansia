@@ -271,7 +271,7 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.formData.update((d) => ({ ...d, paymentType: PaymentType.Card }));
       fixture.detectChanges();
 
-      const cards = el.querySelectorAll('.order-wizard__payment-card');
+      const cards = el.querySelectorAll('.cl-wiz__pay-card');
       expect(cards.length).toBe(2);
       expect((cards[0] as HTMLElement).tagName).toBe('BUTTON');
       expect(cards[0].getAttribute('aria-pressed')).toBe('true');

@@ -4,8 +4,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { AddressDto, CategoryDto, CUSTOMER_API_BASE_URL, PackageListItem, QuoteOrderQuoteLine, PackageServiceSummary, PaymentType, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import { AddressDto, CategoryDto, CUSTOMER_API_BASE_URL, PackageListItem, QuoteOrderQuoteLine, PackageServiceSummary, PaymentType, SavedAddressDto, ServiceListItem, SignupConsentService } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -29,6 +30,8 @@ import {
   filterTimeOptionsForToday,
   formatPrice,
   generateTimeOptions,
+  PROMO_ERROR_FALLBACK,
+  PROMO_ERROR_KEYS,
   getFieldError,
   getItemTranslation,
 } from './order-wizard.models';
@@ -39,7 +42,6 @@ import {
   LAST_WINDOW_HOUR,
   STANDARD_LEAD_TIME_HOURS,
 } from '@cleansia/models';
-import { WizardSummaryStepComponent } from './components/wizard-summary-step.component';
 
 /** Midnight of a date, so two dates compare as days and not as instants. */
 function startOfDay(date: Date): Date {
@@ -68,7 +70,7 @@ function startOfMonth(date: Date): Date {
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
     CleansiaTelephoneComponent,
-    WizardSummaryStepComponent,
+    WizardPreferredCleanerComponent,
   ],
   templateUrl: './order-wizard.component.html',
   providers: [
@@ -86,6 +88,7 @@ export class OrderWizardComponent implements OnInit {
   protected readonly facade = inject(OrderWizardFacade);
   protected readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly signupConsent = inject(SignupConsentService);
   private readonly apiBaseUrl = inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? '';
   private readonly route = inject(ActivatedRoute);
   private readonly snackbar = inject(SnackbarService);
@@ -592,6 +595,126 @@ export class OrderWizardComponent implements OnInit {
     this.onDateChange(date);
   }
 
+  // ── the review step ─────────────────────────────────────────────────────────
+
+  /** Ticked before the order can be placed. Not a default — it is a consent. */
+  readonly acceptedTerms = signal(false);
+
+  /**
+   * What was chosen, restated per step, each with a way back to the step that
+   * owns it. Built from the form so it cannot describe a choice that is not
+   * there — a review screen with its own copy of the answers is a second place
+   * for them to be wrong.
+   */
+  readonly reviewCards = computed(() => {
+    const data = this.facade.formData();
+    const lines = this.priceLines();
+
+    const services = lines.map(
+      (line) => `${this.lineName(line)} — ${this.formatPrice(line.amount)}`
+    );
+    services.push(
+      `${this.translate.instant(this.roomsKey(), { count: data.rooms })} · ` +
+        `${this.translate.instant(this.bathroomsKey(), { count: data.bathrooms })}`
+    );
+
+    const unit = [data.customerFloor, data.customerApartment].filter(Boolean).join(', ');
+    const address = [
+      `${data.customerFirstName} ${data.customerLastName}`.trim(),
+      [data.customerPhone, data.customerEmail].filter(Boolean).join(' · '),
+      [
+        [data.address.street, data.address.city, data.address.zipCode]
+          .filter(Boolean)
+          .join(', '),
+        unit,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    ].filter(Boolean);
+
+    const when: string[] = [];
+    if (data.cleaningDate) {
+      const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+      when.push(
+        `${new Intl.DateTimeFormat(tag, { dateStyle: 'long' }).format(data.cleaningDate)}, ${data.cleaningTime}`
+      );
+    }
+    if (data.accessMode) {
+      when.push(
+        `${this.translate.instant('pages.order.access_mode_label')}: ` +
+          this.translate.instant(`pages.order.access_mode.${data.accessMode}`)
+      );
+    }
+
+    const pay = [
+      this.translate.instant(
+        data.paymentType === PaymentType.Card
+          ? 'pages.order.payment_card_title'
+          : 'pages.order.payment_cash_title'
+      ),
+    ];
+    if (this.facade.promoCodeState().kind === 'valid') {
+      pay.push(
+        this.translate.instant('pages.order.promo.row_applied', {
+          code: this.facade.promoCode(),
+        })
+      );
+    }
+
+    return [
+      { step: 0, icon: 'pi pi-list', titleKey: 'pages.order.steps.services', lines: services },
+      { step: 1, icon: 'pi pi-map-marker', titleKey: 'pages.order.steps.address', lines: address },
+      { step: 2, icon: 'pi pi-calendar', titleKey: 'pages.order.steps.datetime', lines: when },
+      { step: 3, icon: 'pi pi-credit-card', titleKey: 'pages.order.steps.payment', lines: pay },
+    ];
+  });
+
+  /** Back to the step that owns a line, rather than back through all of them. */
+  editStep(step: number): void {
+    this.triedToAdvance.set(false);
+    this.facade.goToStep(step);
+  }
+
+  // ── step 4: paying ──────────────────────────────────────────────────────────
+
+  /** The two ways to pay, as equals — the price is the same either way. */
+  readonly paymentMethods = [
+    {
+      type: PaymentType.Card,
+      icon: 'pi pi-credit-card',
+      titleKey: 'payment_card_title',
+      descKey: 'payment_card_desc',
+    },
+    {
+      type: PaymentType.Cash,
+      icon: 'pi pi-wallet',
+      titleKey: 'payment_cash_title',
+      descKey: 'payment_cash_desc',
+    },
+  ] as const;
+
+  /**
+   * One round trip, on Apply. A promo code is validated by the server, so a
+   * debounced check per keystroke is a request per keystroke for an answer only
+   * the last one needs.
+   */
+  async applyPromo(): Promise<void> {
+    const code = this.facade.promoCode().trim();
+    if (!code) return;
+    await this.facade.validatePromoCodeNow(code);
+  }
+
+  /** Why the code was refused, in the customer's language. */
+  readonly promoError = computed(() => {
+    // Read so the message re-resolves on a language switch.
+    this.lang();
+    const state = this.facade.promoCodeState();
+    if (state.kind !== 'invalid') return '';
+    return this.translate.instant(
+      PROMO_ERROR_KEYS[state.error ?? ''] ?? PROMO_ERROR_FALLBACK
+    );
+  });
+
   readonly propertyTypes = ['flat', 'house'] as const;
 
   /**
@@ -674,6 +797,12 @@ export class OrderWizardComponent implements OnInit {
     const reasons = [...this.facade.missingReasons()];
     if (this.facade.activeStep() === 2 && !this.hasValidTime()) {
       reasons.push('pages.order.missing.time');
+    }
+    // The consent is the review step's own condition, and the place-order
+    // button reads the same list as every other step so it cannot refuse
+    // silently either.
+    if (this.facade.activeStep() === 4 && !this.acceptedTerms()) {
+      reasons.push('pages.order.missing.terms');
     }
     return reasons;
   });
@@ -778,6 +907,16 @@ export class OrderWizardComponent implements OnInit {
   }
 
   async onPlaceOrder(): Promise<void> {
+    if (this.blockingReasons().length > 0) {
+      this.triedToAdvance.set(true);
+      return;
+    }
+    // Parked BEFORE the submit, not after: the order can succeed and navigate
+    // away, and a consent recorded only on the way out is a consent lost to a
+    // slow network. The service delivers it at the first session that can take
+    // one, so an anonymous booking's tick is not dropped either.
+    this.signupConsent.record(this.facade.formData().customerEmail);
+
     if (this.saveNewAddress() && this.isCustomAddress()) {
       const label = this.newAddressLabel().trim();
       if (!label) {

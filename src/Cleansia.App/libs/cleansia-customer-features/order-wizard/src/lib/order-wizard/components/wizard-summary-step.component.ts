@@ -9,23 +9,13 @@ import {
   CodeDialogResult,
 } from '@cleansia/components';
 import { OrderWizardFacade } from '../order-wizard.facade';
-import { formatPrice, getItemTranslation, PromoCodeUiState } from '../order-wizard.models';
+import {
+  formatPrice,
+  getItemTranslation,
+  PROMO_ERROR_KEYS,
+  PromoCodeUiState,
+} from '../order-wizard.models';
 import { WizardPreferredCleanerComponent } from './wizard-preferred-cleaner.component';
-
-/**
- * Map the backend's PromoCodeError enum (string) to a localized i18n key.
- * Unknown / null error codes fall back to a generic "couldn't validate" key.
- */
-const PROMO_ERROR_KEYS: Record<string, string> = {
-  NotFound: 'pages.order.promo.error_not_found',
-  Inactive: 'pages.order.promo.error_inactive',
-  Expired: 'pages.order.promo.error_expired',
-  NotYetValid: 'pages.order.promo.error_not_yet_valid',
-  GlobalLimitReached: 'pages.order.promo.error_global_limit',
-  PerUserLimitReached: 'pages.order.promo.error_used',
-  BelowMinimumOrderAmount: 'pages.order.promo.error_min_order',
-  CurrencyMismatch: 'pages.order.promo.error_currency',
-};
 
 @Component({
   selector: 'cleansia-wizard-summary-step',

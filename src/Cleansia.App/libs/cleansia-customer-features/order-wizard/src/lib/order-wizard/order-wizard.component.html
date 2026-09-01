@@ -644,91 +644,174 @@
       </div>
       }
 
+      <!--
+        Step 4, to the approved artboard: the two ways to pay as equals — the
+        price is the same either way and the copy says so — then the promo code.
+        The note for the cleaner moved to the review step, where the artboard
+        puts it.
+      -->
       @if (facade.activeStep() === 3) {
-      <div class="order-wizard__step">
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-credit-card"></i>
-            {{ 'pages.order.payment_section_title' | translate }}
-          </h2>
+      <div class="cl-wiz__step-body">
+        <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.payment_section_title' | translate }}</h1>
+        <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_pay_lead' | translate }}</p>
 
-          <div class="order-wizard__payment-grid">
-            <button
-              type="button"
-              class="order-wizard__payment-card"
-              [class.order-wizard__payment-card--selected]="facade.formData().paymentType === PaymentType.Card"
-              [attr.aria-pressed]="facade.formData().paymentType === PaymentType.Card"
-              [attr.aria-label]="'aria.select_payment' | translate: { method: ('pages.order.payment_card_title' | translate) }"
-              (click)="facade.updateFormData({ paymentType: PaymentType.Card })"
-            >
-              <div class="order-wizard__payment-card-icon">
-                <i class="pi pi-credit-card"></i>
-              </div>
-              <h3 class="order-wizard__payment-card-title">
-                {{ 'pages.order.payment_card_title' | translate }}
-              </h3>
-              <p class="order-wizard__payment-card-desc">
-                {{ 'pages.order.payment_card_desc' | translate }}
-              </p>
-              @if (facade.formData().paymentType === PaymentType.Card) {
-              <div class="order-wizard__payment-card-check">
-                <i class="pi pi-check"></i>
-              </div>
+        <div class="cl-wiz__pay">
+          @for (method of paymentMethods; track method.type) {
+          <button
+            type="button"
+            class="cl-wiz__pay-card"
+            [class.cl-wiz__pay-card--on]="facade.formData().paymentType === method.type"
+            [attr.aria-pressed]="facade.formData().paymentType === method.type"
+            (click)="facade.updateFormData({ paymentType: method.type })"
+          >
+            <span class="cl-wiz__pay-head">
+              <span class="cl-wiz__pay-icon"><i [class]="method.icon" aria-hidden="true"></i></span>
+              @if (facade.formData().paymentType === method.type) {
+              <span class="cl-wiz__pay-check" aria-hidden="true"><i class="pi pi-check"></i></span>
               }
-            </button>
-
-            <button
-              type="button"
-              class="order-wizard__payment-card"
-              [class.order-wizard__payment-card--selected]="facade.formData().paymentType === PaymentType.Cash"
-              [attr.aria-pressed]="facade.formData().paymentType === PaymentType.Cash"
-              [attr.aria-label]="'aria.select_payment' | translate: { method: ('pages.order.payment_cash_title' | translate) }"
-              (click)="facade.updateFormData({ paymentType: PaymentType.Cash })"
-            >
-              <div class="order-wizard__payment-card-icon">
-                <i class="pi pi-wallet"></i>
-              </div>
-              <h3 class="order-wizard__payment-card-title">
-                {{ 'pages.order.payment_cash_title' | translate }}
-              </h3>
-              <p class="order-wizard__payment-card-desc">
-                {{ 'pages.order.payment_cash_desc' | translate }}
-              </p>
-              @if (facade.formData().paymentType === PaymentType.Cash) {
-              <div class="order-wizard__payment-card-check">
-                <i class="pi pi-check"></i>
-              </div>
-              }
-            </button>
-          </div>
+            </span>
+            <span class="cl-h3 cl-wiz__pay-title">{{ 'pages.order.' + method.titleKey | translate }}</span>
+            <span class="cl-muted cl-wiz__pay-desc">{{ 'pages.order.' + method.descKey | translate }}</span>
+          </button>
+          }
         </div>
 
-        <!-- Special Instructions -->
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-comment"></i>
-            {{ 'pages.order.special_instructions' | translate }}
-          </h2>
-          <div class="order-wizard__field order-wizard__field--full">
-            <!-- 2000 mirrors CreateOrder.Validator's MaximumLength on
-                 SpecialInstructions. Without it the note is only rejected at
-                 submit, after payment details are already entered. -->
-            <textarea
-              pTextarea
-              [ngModel]="facade.formData().specialInstructions"
-              (ngModelChange)="facade.updateFormData({ specialInstructions: $event })"
-              [rows]="4"
-              maxlength="2000"
-              [placeholder]="'pages.order.special_instructions_placeholder' | translate"
-            ></textarea>
-          </div>
+        <div class="cl-wiz__rule"></div>
+
+        <!--
+          One round trip on Apply, never a debounced check per keystroke: a promo
+          code is validated by the server and every attempt is a request.
+        -->
+        <div class="cl-lbl">{{ 'pages.order.promo.row_title' | translate }}</div>
+
+        <!--
+          Codes are per-customer — the backend enforces a per-user redemption
+          limit, so validating one requires an account and answers 401 without.
+          A booking does not require an account, so an anonymous visitor was
+          being shown a field that could only ever tell them it had failed. The
+          reason is said instead, and no one is sent to a login page mid-basket.
+        -->
+        @if (!facade.isAuthenticated()) {
+        <p class="cl-muted cl-wiz__promo-signin">{{ 'pages.order.promo.needs_account' | translate }}</p>
+        } @else {
+        <div class="cl-wiz__promo">
+          <input
+            pInputText
+            id="wizard-promo"
+            class="cl-wiz__promo-input"
+            maxlength="40"
+            [ngModel]="facade.promoCode()"
+            (ngModelChange)="facade.setPromoCode($event)"
+            [placeholder]="'pages.order.promo.placeholder' | translate"
+            [attr.aria-label]="'pages.order.promo.row_title' | translate"
+          />
+          <button
+            type="button"
+            class="cl-chip cl-wiz__promo-apply"
+            [disabled]="!facade.promoCode() || facade.promoCodeState().kind === 'validating'"
+            (click)="applyPromo()"
+          >{{ 'pages.order.promo.dialog_apply' | translate }}</button>
         </div>
+
+        @switch (facade.promoCodeState().kind) {
+          @case ('valid') {
+          <p class="cl-wiz__promo-note cl-wiz__promo-note--ok">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            {{ 'pages.order.promo.row_applied' | translate: { code: facade.promoCode() } }}
+          </p>
+          }
+          @case ('invalid') {
+          <p class="cl-wiz__promo-note cl-wiz__promo-note--bad" role="alert">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            {{ promoError() }}
+          </p>
+          }
+          @case ('validating') {
+          <p class="cl-wiz__promo-note">
+            <i class="pi pi-spinner" aria-hidden="true"></i>
+            {{ 'pages.order.promo.validating' | translate }}
+          </p>
+          }
+        }
+        }
       </div>
       }
 
-      <!-- Step 4: Summary -->
+      <!--
+        The review step, to the approved artboard: four cards restating what was
+        chosen, each with a way back to the step that owns it — so a correction
+        costs one click, not a walk through the whole wizard again.
+      -->
       @if (facade.activeStep() === 4) {
-        <cleansia-wizard-summary-step [facade]="facade" />
+      <div class="cl-wiz__step-body">
+        <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_review_title' | translate }}</h1>
+        <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_review_lead' | translate }}</p>
+
+        <div class="cl-wiz__review">
+          @for (card of reviewCards(); track card.step) {
+          <div class="cl-wiz__review-card">
+            <div class="cl-wiz__review-head">
+              <span class="cl-wiz__review-title">
+                <i [class]="card.icon" aria-hidden="true"></i>
+                <span class="cl-h4">{{ card.titleKey | translate }}</span>
+              </span>
+              <button
+                type="button"
+                class="cl-link cl-wiz__review-edit"
+                [attr.aria-label]="'aria.edit_step' | translate: { step: (card.titleKey | translate) }"
+                (click)="editStep(card.step)"
+              >{{ 'pages.order.review_edit' | translate }}</button>
+            </div>
+            <div class="cl-wiz__review-lines">
+              @for (line of card.lines; track line) {
+              <span>{{ line }}</span>
+              }
+            </div>
+          </div>
+          }
+        </div>
+
+        <!--
+          The preferred cleaner, a Cleansia Plus perk. It belongs on the Plus
+          step, which is not built yet — the concepts for it are still with the
+          owner. It stays here rather than nowhere: the step that used to host
+          it was replaced by this one, and a perk with no UI is a perk that has
+          quietly stopped existing. Moves when that step lands.
+        -->
+        <cleansia-wizard-preferred-cleaner [facade]="facade" />
+
+        <!--
+          The note the cleaner reads on arrival. It used to sit on the payment
+          step, which is the one place in the wizard nobody is thinking about the
+          flat.
+        -->
+        <div class="cl-lbl cl-wiz__note-label">{{ 'pages.order.special_instructions' | translate }}</div>
+        <textarea
+          pTextarea
+          class="cl-wiz__note-input"
+          [ngModel]="facade.formData().specialInstructions"
+          (ngModelChange)="facade.updateFormData({ specialInstructions: $event })"
+          [rows]="3"
+          maxlength="2000"
+          [placeholder]="'pages.order.special_instructions_placeholder' | translate"
+        ></textarea>
+
+        <!--
+          Recorded, not just ticked. The same two documents the sign-up tick
+          names, through the same service — which parks a consent taken before
+          there is a session and delivers it at the first one there is, because
+          a booking does not require an account.
+        -->
+        <label class="cl-wiz__consent">
+          <p-checkbox
+            [ngModel]="acceptedTerms()"
+            (ngModelChange)="acceptedTerms.set($event)"
+            [binary]="true"
+            inputId="wizard-terms"
+          />
+          <span>{{ 'pages.order.accept_terms' | translate }}</span>
+        </label>
+      </div>
       }
 
       @if (facade.activeStep() > 0) {
@@ -876,10 +959,21 @@
         </button>
         }
 
+        <!--
+          The last step says the whole policy, where the earlier ones say the
+          headline: this is the screen where the customer commits, so the "you
+          can still undo this" is worth its extra line. 15 minutes is the
+          STANDARD oops window — a first-time customer gets 60 — so the sentence
+          under-promises for them rather than overstating for anyone.
+        -->
+        @if (facade.activeStep() === facade.steps.length - 1) {
+        <p class="cl-muted cl-wiz__summary-policy">{{ 'pages.order.cancel_policy_note' | translate }}</p>
+        } @else {
         <div class="cl-wiz__summary-note">
           <i class="pi pi-check-circle" aria-hidden="true"></i>
           {{ 'pages.order.summary_free_cancel' | translate }}
         </div>
+        }
     </aside>
   </div>
 </div>

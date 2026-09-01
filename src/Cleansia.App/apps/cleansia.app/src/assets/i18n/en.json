@@ -780,11 +780,11 @@
       "payment_method": "Payment Method",
       "payment_section_title": "How Would You Like to Pay?",
       "pay_by_card": "Pay by Card",
-      "payment_card_title": "Credit / Debit Card",
-      "payment_card_desc": "Pay securely online via Stripe",
+      "payment_card_title": "Card online",
+      "payment_card_desc": "Secure card payment, taken when you book.",
       "pay_by_cash": "Pay in Cash",
-      "payment_cash_title": "Cash on Delivery",
-      "payment_cash_desc": "Pay when the cleaning is done",
+      "payment_cash_title": "Cash on the day",
+      "payment_cash_desc": "You pay the cleaner once the cleaning is done.",
       "contact_info": "Contact Information",
       "customer_first_name": "First Name",
       "customer_first_name_placeholder": "e.g. John",
@@ -794,8 +794,8 @@
       "customer_email_placeholder": "e.g. john@example.com",
       "customer_phone": "Phone",
       "customer_phone_placeholder": "e.g. +420 123 456 789",
-      "special_instructions": "Special Instructions",
-      "special_instructions_placeholder": "Any special requests? (e.g., focus on kitchen, pet-friendly products...)",
+      "special_instructions": "Note for the cleaner",
+      "special_instructions_placeholder": "For example: the cat is home, please do not shut the balcony.",
       "entry_instructions_label": "Entry Instructions",
       "entry_instructions_placeholder": "How should we access your property? (e.g., doorbell, key under mat...)",
       "summary": {
@@ -877,7 +877,9 @@
         "error_used": "You've already used this code",
         "error_min_order": "Order doesn't meet the minimum for this code",
         "error_currency": "Code doesn't apply to this currency",
-        "error_generic": "Couldn't validate code. Please try again."
+        "error_generic": "Couldn't validate code. Please try again.",
+        "placeholder": "e.g. FIRST10",
+        "needs_account": "Discount codes are tied to an account — sign in to use one. You can book without it."
       },
       "step_services_lead": "A package is a set of services at one price — each card lists exactly what is in it. Or build your own combination below.",
       "services_or_single": "Or individual services",
@@ -934,7 +936,8 @@
         "phone": "Enter a valid phone number.",
         "date": "Pick a cleaning date.",
         "time": "Pick a time that is still available.",
-        "address_fields": "Fill in the street, city and postcode."
+        "address_fields": "Fill in the street, city and postcode.",
+        "terms": "Accept the terms to continue."
       },
       "step_when_title": "When should we come?",
       "step_when_lead": "The earliest slot is in {{lead}} hours. An earlier one, from {{express}} hours, carries a +{{rate}}% express surcharge.",
@@ -949,7 +952,13 @@
         "reception": "Reception"
       },
       "address_enter_manually": "Cannot find the address? Enter it manually",
-      "address_manual_note": "We check the address before arrival. The cleaner may call you if they cannot find it."
+      "address_manual_note": "We check the address before arrival. The cleaner may call you if they cannot find it.",
+      "step_pay_lead": "Card pays now, cash on the day at your door. The price is the same.",
+      "step_review_title": "Check your order",
+      "step_review_lead": "Fix any section right here, without walking through the whole wizard again.",
+      "review_edit": "Edit",
+      "accept_terms": "I agree to the terms of service and the processing of my personal data",
+      "cancel_policy_note": "Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing."
     },
     "orders": {
       "title": "My Orders",
@@ -1869,7 +1878,8 @@
     "set_rooms": "Set number of rooms: {{count}}",
     "set_bathrooms": "Set number of bathrooms: {{count}}",
     "previous_month": "Previous month",
-    "next_month": "Next month"
+    "next_month": "Next month",
+    "edit_step": "Edit: {{step}}"
   },
   "help": {
     "dismiss": "Got it, don't show again",

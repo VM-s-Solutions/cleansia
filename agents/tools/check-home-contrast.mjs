@@ -3,6 +3,10 @@ const require = createRequire(`${process.cwd()}/`);
 const { chromium } = require('playwright');
 
 const THEME = process.env.THEME ?? 'dark';
+// Honour TARGET like the other checkers: this was pinned to the home page, so a
+// run against any other route silently measured the home page and reported a
+// green that was about a different page entirely.
+const TARGET = process.env.TARGET ?? 'http://localhost:4202/';
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
 await p.addInitScript((t) => {
@@ -11,7 +15,7 @@ await p.addInitScript((t) => {
     localStorage.setItem('cleansia-theme', t);
   } catch { /* private mode */ }
 }, THEME);
-await p.goto('http://localhost:4202/', { waitUntil: 'networkidle', timeout: 60000 });
+await p.goto(TARGET, { waitUntil: 'networkidle', timeout: 60000 });
 await p.waitForTimeout(2500);
 await p.evaluate(async () => { for (let y=0;y<document.body.scrollHeight;y+=600){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,60));} window.scrollTo(0,0); });
 await p.waitForTimeout(800);

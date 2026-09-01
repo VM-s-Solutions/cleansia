@@ -72,7 +72,9 @@
   flex-shrink: 0;
   background: #f1f5f9;
   border: 1px solid var(--cl-border);
-  color: #94a3b8;
+  // Slate-500, not slate-400: on white the lighter grey measured 2.56 against a
+  // floor of 3. A step you have not reached yet still has to be readable.
+  color: #64748b;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 
   .cl-wiz__step--done & {
@@ -91,7 +93,7 @@
 .cl-wiz__step-label {
   font-size: 14px;
   font-weight: 700;
-  color: #94a3b8;
+  color: #64748b;
   white-space: nowrap;
 
   .cl-wiz__step--done &,
@@ -273,5 +275,195 @@
 
   .cl-wiz__step-line {
     min-width: 20px;
+  }
+}
+
+// =============================================================================
+// Step 1 — choose the services
+// =============================================================================
+// The legacy step keeps its markup; what changes is the surface it is drawn on.
+// Rules live here rather than in order-wizard.component.scss so the conversion
+// is one file to read and one file to revert.
+
+// A package is a set of services sold together, so the card has to say WHICH
+// services — that is the whole reason to pick one over building your own. The
+// description was clamped to two lines, measured at 51px of text inside a 34px
+// box, which cut exactly the sentence that explains the difference.
+.order-wizard__selection-desc {
+  display: block;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+  overflow: visible;
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-muted);
+  margin: 0 0 12px !important;
+}
+
+.order-wizard__selection-card {
+  border-radius: 26px;
+  padding: 22px 22px 20px;
+  padding-right: 52px;
+  border: 1px solid var(--cl-border);
+  background: var(--cl-surface);
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    border-color: var(--cl-accent-soft);
+    // No lift: these sit in a grid of four and a hovered card that rises pushes
+    // the eye off the one being read.
+    transform: none;
+    box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+  }
+
+  &--selected {
+    border: 2px solid $primary;
+    box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+    // The 2px border would otherwise shift the contents by a pixel on select.
+    padding: 21px 21px 19px;
+    padding-right: 51px;
+  }
+}
+
+.order-wizard__selection-name {
+  font-family: $font-heading;
+  font-weight: 600;
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.3;
+  color: var(--cl-heading);
+}
+
+.order-wizard__selection-included {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 4px;
+  padding: 0 !important;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: calc(0.875 * var(--cl-u));
+    line-height: 1.5;
+    color: var(--cl-body);
+  }
+
+  i {
+    flex-shrink: 0;
+    margin-top: 3px;
+    font-size: 12px;
+    color: $primary;
+  }
+}
+
+.order-wizard__selection-price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.375 * var(--cl-u));
+  color: var(--cl-heading);
+  font-variant-numeric: tabular-nums;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--cl-rule);
+}
+
+// ---- how many rooms, how many bathrooms -------------------------------------
+// Left as a counter rather than the artboard's row of chips: a counter states a
+// specific number, which is what was asked for, and it does not cap. A chip row
+// has to stop somewhere, and a nine-room house is not a "8+".
+.order-wizard__counters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.order-wizard__counter {
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border-tint);
+  border-radius: 22px;
+  padding: 18px 20px;
+}
+
+.order-wizard__counter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  // Slate-600 rather than --cl-muted: on the tinted card the muted grey came to
+  // 4.46 against a 4.5 floor.
+  color: #475569;
+}
+
+.order-wizard__counter-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.order-wizard__counter-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  color: var(--cl-heading);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--cl-accent-soft);
+    background: var(--cl-tint);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.order-wizard__counter-value {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.5 * var(--cl-u));
+  color: var(--cl-heading);
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .order-wizard__counters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// The shared cleansia-button paints its primary with sky-500, but the approved
+// system's primary is sky-600 — and white on sky-500 measures 2.77 against a
+// 4.5 floor. Corrected here, for this page, rather than in the shared component:
+// that button is also the partner and admin apps' primary, and restyling all
+// three is the owner's call, not a side effect of building the wizard.
+.cl-wiz {
+  .p-button.p-button-primary {
+    background: #{$primary};
+    border-color: #{$primary};
+    // The design's primary action is 17px/800 white on sky-600. PrimeNG's dark
+    // theme repaints the label navy, which put dark-blue text on blue at 2.31.
+    font-size: calc(1.0625 * var(--cl-u));
+    font-weight: 800;
+
+    .p-button-label {
+      color: #{$white};
+      font-weight: 800;
+    }
+
+    &:enabled:hover {
+      background: #{$primary-dark};
+      border-color: #{$primary-dark};
+    }
   }
 }

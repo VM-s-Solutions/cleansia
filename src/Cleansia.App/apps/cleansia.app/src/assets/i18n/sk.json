@@ -933,7 +933,8 @@
         "email": "Zadajte platný e-mail.",
         "phone": "Zadajte platné telefónne číslo.",
         "date": "Vyberte dátum upratovania.",
-        "time": "Vyberte čas, ktorý je ešte voľný."
+        "time": "Vyberte čas, ktorý je ešte voľný.",
+        "address_fields": "Doplňte ulicu, mesto a PSČ."
       },
       "step_when_title": "Kedy máme prísť?",
       "step_when_lead": "Najbližší voľný termín je o {{lead}} hodiny. Skorší termín, najskôr o {{express}} hodiny, má expresný príplatok +{{rate}} %.",
@@ -946,7 +947,9 @@
         "keys_handover": "Odovzdám kľúče",
         "door_code": "Kód od dverí",
         "reception": "Recepcia"
-      }
+      },
+      "address_enter_manually": "Nemôžete adresu nájsť? Zadajte ju ručne",
+      "address_manual_note": "Adresu overíme pred príchodom. Upratovač vám môže zavolať, ak ju nenájde."
     },
     "orders": {
       "title": "Moje objednávky",

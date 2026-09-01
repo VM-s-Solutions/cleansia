@@ -933,7 +933,8 @@
         "email": "Enter a valid email.",
         "phone": "Enter a valid phone number.",
         "date": "Pick a cleaning date.",
-        "time": "Pick a time that is still available."
+        "time": "Pick a time that is still available.",
+        "address_fields": "Fill in the street, city and postcode."
       },
       "step_when_title": "When should we come?",
       "step_when_lead": "The earliest slot is in {{lead}} hours. An earlier one, from {{express}} hours, carries a +{{rate}}% express surcharge.",
@@ -946,7 +947,9 @@
         "keys_handover": "I will hand over keys",
         "door_code": "Door code",
         "reception": "Reception"
-      }
+      },
+      "address_enter_manually": "Cannot find the address? Enter it manually",
+      "address_manual_note": "We check the address before arrival. The cleaner may call you if they cannot find it."
     },
     "orders": {
       "title": "My Orders",

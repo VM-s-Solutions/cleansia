@@ -786,6 +786,40 @@
   margin: 0;
 }
 
+// Typing the address, when the lookup could not find it.
+.cl-wiz__manual {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cl-wiz__manual-note {
+  margin: 0;
+}
+
+.cl-wiz__manual-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+// A link, not a button: it is the quieter of the two ways to give an address,
+// and the lookup above it is the one we would rather people used.
+.cl-wiz__manual-toggle {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: calc(0.875 * var(--cl-u));
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .cl-wiz__manual-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .cl-wiz__addr-side {
   min-width: 0;
 }

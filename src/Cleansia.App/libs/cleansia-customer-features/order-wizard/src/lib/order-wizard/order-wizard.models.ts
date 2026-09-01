@@ -41,6 +41,18 @@ export interface OrderWizardFormData {
   addressLatitude: number | null;
   addressLongitude: number | null;
   /**
+   * The customer typed the address instead of picking one from the lookup.
+   *
+   * An explicit flag rather than "there are no coordinates": a picked address
+   * that is still loading also has none, and the difference decides whether the
+   * step may be left. It is the opt-in the failure message already promised —
+   * "you can enter the address manually" was true of nothing until now.
+   *
+   * The server geocodes it on submit (OrderAddressResolver populates
+   * coordinates when they are null), so a typed address routes like a picked one.
+   */
+  addressEnteredManually: boolean;
+  /**
    * A house has no floor and no flat number, and asking for them reads as a form
    * that was not written for you. This drives which fields the address step
    * shows; it is not sent anywhere — the two values it gates are.
@@ -123,6 +135,7 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   specialInstructions: '',
   entryInstructions: '',
   propertyType: 'flat',
+  addressEnteredManually: false,
   customerFloor: '',
   customerApartment: '',
   accessMode: '',

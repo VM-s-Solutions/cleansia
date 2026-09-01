@@ -933,7 +933,8 @@
         "email": "Zadejte platný e-mail.",
         "phone": "Zadejte platné telefonní číslo.",
         "date": "Vyberte datum úklidu.",
-        "time": "Vyberte čas, který je ještě volný."
+        "time": "Vyberte čas, který je ještě volný.",
+        "address_fields": "Doplňte ulici, město a PSČ."
       },
       "step_when_title": "Kdy máme přijít?",
       "step_when_lead": "Nejbližší volný termín je za {{lead}} hodiny. Dřívější termín, nejdřív za {{express}} hodiny, má expresní příplatek +{{rate}} %.",
@@ -946,7 +947,9 @@
         "keys_handover": "Předám klíče",
         "door_code": "Kód od dveří",
         "reception": "Recepce"
-      }
+      },
+      "address_enter_manually": "Nemůžete adresu najít? Zadejte ji ručně",
+      "address_manual_note": "Adresu ověříme před příjezdem. Uklízeč vám může zavolat, pokud ji nenajde."
     },
     "orders": {
       "title": "Moje objednávky",

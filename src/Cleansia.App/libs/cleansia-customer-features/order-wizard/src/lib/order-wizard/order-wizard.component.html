@@ -212,7 +212,12 @@
               />
             </div>
 
-            @if (facade.formData().address.street) {
+            <!--
+              What the lookup found, so the customer can check it before going
+              on. Not shown for a typed address: it would be a card echoing the
+              three inputs directly beneath it.
+            -->
+            @if (facade.formData().address.street && !facade.formData().addressEnteredManually) {
             <div class="cl-wiz__addr-resolved">
               <i class="pi pi-map-marker" aria-hidden="true"></i>
               <div>
@@ -230,8 +235,56 @@
               <span>{{ 'api.service_area.city_not_serviced' | translate }}</span>
             </div>
             }
-            } @else {
+            } @else if (!facade.formData().addressEnteredManually) {
             <p class="cl-muted cl-wiz__addr-hint">{{ 'pages.order.address_pick_required' | translate }}</p>
+            }
+
+            <!--
+              The way out when the lookup cannot find it. The failure message has
+              always said the address could be typed instead; until now there was
+              nowhere to type it. The server geocodes what is typed here on
+              submit, so it routes like a picked one.
+            -->
+            @if (facade.formData().addressEnteredManually) {
+            <div class="cl-wiz__manual">
+              <p class="cl-muted cl-wiz__manual-note">{{ 'pages.order.address_manual_note' | translate }}</p>
+              <label class="cl-wiz__field">
+                <span class="cl-lbl">{{ 'pages.order.street' | translate }}</span>
+                <input
+                  pInputText
+                  id="wizard-street"
+                  maxlength="255"
+                  [ngModel]="facade.formData().address.street"
+                  (ngModelChange)="updateAddressField('street', $event)"
+                />
+              </label>
+              <div class="cl-wiz__manual-row">
+                <label class="cl-wiz__field">
+                  <span class="cl-lbl">{{ 'pages.order.city' | translate }}</span>
+                  <input
+                    pInputText
+                    id="wizard-city"
+                    maxlength="100"
+                    [ngModel]="facade.formData().address.city"
+                    (ngModelChange)="updateAddressField('city', $event)"
+                  />
+                </label>
+                <label class="cl-wiz__field">
+                  <span class="cl-lbl">{{ 'pages.order.zip_code' | translate }}</span>
+                  <input
+                    pInputText
+                    id="wizard-zip"
+                    maxlength="10"
+                    [ngModel]="facade.formData().address.zipCode"
+                    (ngModelChange)="updateAddressField('zipCode', $event)"
+                  />
+                </label>
+              </div>
+            </div>
+            } @else {
+            <button type="button" class="cl-link cl-wiz__manual-toggle" (click)="enterAddressManually()">
+              {{ 'pages.order.address_enter_manually' | translate }}
+            </button>
             }
           </div>
 
@@ -679,7 +732,7 @@
       }
 
       @if (facade.activeStep() > 0) {
-      <button type="button" class="cl-link cl-wiz__back" (click)="facade.prevStep()">
+      <button type="button" class="cl-link cl-wiz__back" (click)="onPrevStep()">
         {{ 'global.actions.back' | translate }}
       </button>
       }
@@ -789,7 +842,7 @@
           reads the SAME list the button's disabled state does, so the two can
           never disagree.
         -->
-        @if (blockingReasons().length > 0) {
+        @if (triedToAdvance() && blockingReasons().length > 0) {
         <div class="cl-wiz__blocked" role="status">
           <i class="pi pi-info-circle" aria-hidden="true"></i>
           <div>
@@ -808,7 +861,6 @@
           type="button"
           class="cl-btn cl-wiz__advance"
           data-spec-advance
-          [disabled]="blockingReasons().length > 0"
           (click)="onNextStep()"
         >
           {{ 'pages.order.continue_action' | translate }}

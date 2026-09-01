@@ -398,6 +398,65 @@ describe('OrderWizardFacade', () => {
       expect(facade.canProceed()).toBe(false);
     });
 
+    it('step 1 accepts a TYPED address without coordinates', () => {
+      // The failure message has always told the customer they could enter the
+      // address by hand. The server geocodes what they type on submit, so the
+      // only thing that ever refused it was this gate.
+      facade.goToStep(1);
+      facade.updateFormData({
+        address: createAddressDto({
+          street: 'Wenceslas Square',
+          city: 'Prague',
+          zipCode: '11000',
+          countryId: 'cz',
+          state: '',
+        }),
+        addressLatitude: null,
+        addressLongitude: null,
+        addressEnteredManually: true,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
+        customerEmail: 'anna@example.com',
+        customerPhone: '+420123456789',
+      });
+
+      expect(facade.canProceed()).toBe(true);
+    });
+
+    it('step 1 still requires the fields themselves of a typed address', () => {
+      facade.goToStep(1);
+      facade.updateFormData({
+        address: createAddressDto({ street: 'W', city: '', zipCode: '', countryId: 'cz' }),
+        addressEnteredManually: true,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
+        customerEmail: 'anna@example.com',
+        customerPhone: '+420123456789',
+      });
+
+      expect(facade.canProceed()).toBe(false);
+      // and it names the typed-address case, not "pick one from the list"
+      expect(facade.missingReasons()).toContain('pages.order.missing.address_fields');
+    });
+
+    it('names every reason the step cannot be left', () => {
+      // The advance button reads this same list, so a reason missing here is a
+      // button that refuses without saying why.
+      facade.goToStep(1);
+
+      expect(facade.missingReasons()).toEqual([
+        'pages.order.missing.address',
+        'pages.order.missing.first_name',
+        'pages.order.missing.last_name',
+        'pages.order.missing.email',
+        'pages.order.missing.phone',
+      ]);
+
+      fillValidContactAndAddress();
+      expect(facade.missingReasons()).toEqual([]);
+      expect(facade.canProceed()).toBe(true);
+    });
+
     it('step 1 rejects an invalid email', () => {
       facade.goToStep(1);
       fillValidContactAndAddress();

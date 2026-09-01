@@ -489,22 +489,31 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         // suggestion pick, which is the only thing that sets lat/lng — typing
         // into the field alone never produces a bookable address.
         const usingSaved = this.isAuthenticated() && this.isSavedAddressSelected();
+        const fieldsValid = !!(
+          data.address.street &&
+          data.address.street.length >= 5 &&
+          data.address.street.length <= 255 &&
+          data.address.city &&
+          data.address.city.length >= 2 &&
+          data.address.city.length <= 100 &&
+          data.address.zipCode &&
+          this.zipRegex.test(data.address.zipCode)
+        );
+        // Coordinates are required of a LOOKUP address, because a half-finished
+        // pick has the words without the place. A typed address is a different
+        // promise: the customer said the lookup could not find it, and the
+        // server geocodes it on submit.
         const addressValid = usingSaved
           ? !!(data.address.street && data.address.city && data.address.zipCode)
-          : !!(
-              data.address.street &&
-              data.address.street.length >= 5 &&
-              data.address.street.length <= 255 &&
-              data.address.city &&
-              data.address.city.length >= 2 &&
-              data.address.city.length <= 100 &&
-              data.address.zipCode &&
-              this.zipRegex.test(data.address.zipCode) &&
-              data.addressLatitude != null &&
-              data.addressLongitude != null
-            );
+          : fieldsValid &&
+            (data.addressEnteredManually ||
+              (data.addressLatitude != null && data.addressLongitude != null));
         if (!addressValid) {
-          reasons.push('pages.order.missing.address');
+          reasons.push(
+            data.addressEnteredManually
+              ? 'pages.order.missing.address_fields'
+              : 'pages.order.missing.address'
+          );
         }
 
         // Only an explicit rejection blocks. 'pending' / 'error' / 'idle' pass

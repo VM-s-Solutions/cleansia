@@ -115,12 +115,18 @@ export async function walkWizard(page, steps, { log = () => {} } = {}) {
 
     const next = page.locator('[data-spec-advance]').first();
     if (!(await next.count())) return 'no advance control on the page';
-    if (await next.isDisabled().catch(() => false)) {
+
+    // The button is no longer disabled when the step is incomplete — clicking it
+    // is how the customer asks, and being told why is the answer. So the walk
+    // clicks and then reads whether the step moved, rather than asking the
+    // button whether it would have worked.
+    await next.click().catch(() => {});
+    await page.waitForTimeout(700);
+    if (await page.locator('.cl-wiz__blocked').count()) {
       const why = await blockedReasons(page);
       log(`  (advance ${i + 1} refused: ${why})`);
       return why;
     }
-    await next.click().catch(() => {});
   }
 
   // Once more after the last advance: the step just arrived at has had no pass.

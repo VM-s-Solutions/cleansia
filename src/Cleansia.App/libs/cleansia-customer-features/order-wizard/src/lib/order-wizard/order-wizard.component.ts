@@ -275,6 +275,8 @@ export class OrderWizardComponent implements OnInit {
 
   /** Wired to the autocomplete component's `picked` output. */
   onAddressPicked(suggestion: MapboxAddressSuggestion): void {
+    // A pick supersedes a manual entry: the lookup found it after all.
+    this.facade.updateFormData({ addressEnteredManually: false });
     this.facade.applyAddressSuggestion(suggestion);
   }
 
@@ -282,6 +284,41 @@ export class OrderWizardComponent implements OnInit {
     this.snackbar.showError(
       this.translate.instant('address_picker.search_failed')
     );
+    // That message says the address can be typed instead. Until now it could
+    // not — there was no input anywhere on the step. Open the fields with the
+    // message that promises them.
+    this.enterAddressManually();
+  }
+
+  /**
+   * Switch to typing the address.
+   *
+   * Any coordinates from an abandoned pick are dropped: they belong to whatever
+   * was highlighted last, not to what is about to be typed, and a cleaner sent
+   * to the wrong pin is worse off than one sent to no pin at all.
+   */
+  enterAddressManually(): void {
+    if (this.facade.formData().addressEnteredManually) return;
+    this.facade.updateFormData({
+      addressEnteredManually: true,
+      addressLatitude: null,
+      addressLongitude: null,
+    });
+  }
+
+  /** Patch one field of the address without disturbing the others. */
+  updateAddressField(field: 'street' | 'city' | 'zipCode', value: string): void {
+    const current = this.facade.formData().address;
+    this.facade.updateFormData({
+      address: createAddressDto({
+        street: current.street ?? '',
+        city: current.city ?? '',
+        zipCode: current.zipCode ?? '',
+        countryId: current.countryId ?? '',
+        state: current.state ?? '',
+        [field]: value,
+      }),
+    });
   }
 
   isServiceSelected(id: string): boolean {
@@ -377,8 +414,46 @@ export class OrderWizardComponent implements OnInit {
     return this.packageIcons[index] ?? this.packageIcons[0];
   }
 
+  /**
+   * True once the customer has ASKED to go on and could not. Until then the step
+   * says nothing about what is missing — a form that greets you red has told you
+   * off for not having filled it in yet.
+   *
+   * Cleared on every step change, so the reasons belong to the step you are on
+   * and to an attempt you actually made.
+   */
+  readonly triedToAdvance = signal(false);
+
   onNextStep(): void {
+    if (this.blockingReasons().length > 0) {
+      this.triedToAdvance.set(true);
+      // The field-level errors come out with the summary. Blur is the only
+      // thing that marks a field touched, so a field never visited has none —
+      // which is exactly the field the customer needs pointed at.
+      this.markStepFieldsTouched();
+      return;
+    }
+    this.triedToAdvance.set(false);
     this.facade.nextStep();
+  }
+
+  /** Every field this step validates, whether or not it has been visited. */
+  private markStepFieldsTouched(): void {
+    if (this.facade.activeStep() !== 1) return;
+    for (const field of [
+      'customerFirstName',
+      'customerLastName',
+      'customerEmail',
+      'customerPhone',
+    ]) {
+      this.markTouched(field);
+    }
+  }
+
+  /** Leaving a step ends the attempt that belonged to it. */
+  onPrevStep(): void {
+    this.triedToAdvance.set(false);
+    this.facade.prevStep();
   }
 
   isDateSelected = computed(() => !!this.facade.formData().cleaningDate);
@@ -690,6 +765,7 @@ export class OrderWizardComponent implements OnInit {
       address: createAddressDto(),
       addressLatitude: null,
       addressLongitude: null,
+      addressEnteredManually: false,
     });
   }
 

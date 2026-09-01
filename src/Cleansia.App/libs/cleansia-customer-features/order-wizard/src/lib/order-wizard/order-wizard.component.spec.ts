@@ -86,9 +86,13 @@ class FakeOrderWizardFacade {
   selectSavedAddress = jest.fn();
   prevStep = jest.fn();
   nextStep = jest.fn();
-  // The component derives the advance button's disabled state and its
-  // explanation from this ONE list, so the double has to supply it too.
-  missingReasons = jest.fn((): string[] => []);
+  // Signal-backed, not a bare jest.fn: the component reads this through a
+  // `computed`, and a computed with no signal dependency caches its first value
+  // forever. A mockReturnValue set after the first render then changed nothing,
+  // and a test asserting "the panel is absent" passed because the list was
+  // stale-empty rather than because the code was right.
+  missingReasonsValue = signal<string[]>([]);
+  missingReasons = jest.fn((): string[] => this.missingReasonsValue());
   canProceed = jest.fn(() => this.missingReasons().length === 0);
 
   updateFormData = jest.fn((patch: Partial<OrderWizardFormData>) => {
@@ -272,6 +276,80 @@ describe('OrderWizardComponent (a11y)', () => {
       expect((cards[0] as HTMLElement).tagName).toBe('BUTTON');
       expect(cards[0].getAttribute('aria-pressed')).toBe('true');
       expect(cards[1].getAttribute('aria-pressed')).toBe('false');
+    });
+  });
+
+  describe('what is still missing', () => {
+    it('says nothing until the customer has asked to go on', async () => {
+      await setup();
+      facade.missingReasonsValue.set(['pages.order.missing.services']);
+      fixture.detectChanges();
+
+      // A form that greets you red has told you off for not having filled it in.
+      expect(el.querySelector('.cl-wiz__blocked')).toBeNull();
+      // And the button is clickable, because clicking it is how you ask.
+      const advance = el.querySelector('[data-spec-advance]') as HTMLButtonElement;
+      expect(advance.disabled).toBe(false);
+    });
+
+    it('names every reason once the attempt is made, and does not advance', async () => {
+      await setup();
+      facade.missingReasonsValue.set([
+        'pages.order.missing.services',
+        'pages.order.missing.address',
+      ]);
+      fixture.detectChanges();
+
+      (el.querySelector('[data-spec-advance]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      const items = el.querySelectorAll('.cl-wiz__blocked li');
+      expect(items.length).toBe(2);
+      expect(facade.nextStep).not.toHaveBeenCalled();
+    });
+
+    it('advances, and says nothing, when there is nothing missing', async () => {
+      await setup();
+      facade.missingReasonsValue.set([]);
+      fixture.detectChanges();
+
+      (el.querySelector('[data-spec-advance]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__blocked')).toBeNull();
+      expect(facade.nextStep).toHaveBeenCalled();
+    });
+
+    it('marks the contact fields touched so their own errors show too', async () => {
+      await setup();
+      facade.activeStep.set(1);
+      facade.missingReasonsValue.set(['pages.order.missing.first_name']);
+      fixture.detectChanges();
+
+      // Blur is the only thing that marks a field touched, so a field never
+      // visited has no error — which is exactly the field to point at.
+      expect(fixture.componentInstance.isTouched('customerFirstName')).toBe(false);
+
+      (el.querySelector('[data-spec-advance]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      for (const field of ['customerFirstName', 'customerLastName', 'customerEmail', 'customerPhone']) {
+        expect(fixture.componentInstance.isTouched(field)).toBe(true);
+      }
+    });
+
+    it('forgets the attempt when the customer goes back', async () => {
+      await setup();
+      facade.missingReasonsValue.set(['pages.order.missing.services']);
+      fixture.detectChanges();
+      (el.querySelector('[data-spec-advance]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(el.querySelector('.cl-wiz__blocked')).toBeTruthy();
+
+      fixture.componentInstance.onPrevStep();
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__blocked')).toBeNull();
     });
   });
 

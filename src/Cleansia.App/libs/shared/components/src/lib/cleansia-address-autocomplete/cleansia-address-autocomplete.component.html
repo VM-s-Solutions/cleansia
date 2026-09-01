@@ -1,6 +1,9 @@
 @if (isMapboxConfigured) {
 <div class="cleansia-address-autocomplete">
-  <label class="cleansia-address-autocomplete__label">
+  <label
+    class="cleansia-address-autocomplete__label"
+    [class.cleansia-address-autocomplete__label--hidden]="hideLabel()"
+  >
     <i class="pi pi-search"></i>
     {{ 'address_picker.search_label' | translate }}
   </label>

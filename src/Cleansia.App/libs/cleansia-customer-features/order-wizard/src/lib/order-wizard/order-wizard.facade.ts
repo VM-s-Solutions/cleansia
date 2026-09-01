@@ -610,6 +610,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     // because a whitespace-only note is not a note.
     command.specialInstructions = data.specialInstructions.trim() || undefined;
     command.accessInstructions = data.entryInstructions.trim() || undefined;
+    // A house has neither, and the step hides both — but a customer who filled
+    // them in and then switched to "house" would otherwise still send them.
+    const isFlat = data.propertyType === 'flat';
+    command.customerFloor = (isFlat && data.customerFloor.trim()) || undefined;
+    command.customerApartment = (isFlat && data.customerApartment.trim()) || undefined;
     // The picker only ever offers cleaners the roster returned, but the entitlement, the eligibility
     // and the seat are all re-decided server-side; an id here asks, it does not reserve.
     command.preferredEmployeeId = data.preferredEmployeeId ?? undefined;

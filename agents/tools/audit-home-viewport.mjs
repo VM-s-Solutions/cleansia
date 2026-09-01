@@ -52,6 +52,23 @@ page.on('console', (m) => {
 });
 
 await page.goto(TARGET, { waitUntil: 'networkidle', timeout: 90000 });
+
+// A wizard's later steps are only reachable through the earlier ones. ADVANCE=n
+// walks forward the way a visitor does, so a step past the first can be audited
+// at all — without it every run measures step one and reports it clean.
+const ADVANCE = Number(process.env.ADVANCE ?? 0);
+if (ADVANCE > 0) {
+  const pick = page.locator('[data-spec-select]').first();
+  if (await pick.count()) await pick.click().catch(() => {});
+  for (let i = 0; i < ADVANCE; i += 1) {
+    await page.waitForTimeout(500);
+    const next = page.locator('[data-spec-advance]').first();
+    if (!(await next.count())) break;
+    await next.click().catch(() => {});
+  }
+  await page.waitForTimeout(900);
+}
+
 // Everything below the fold has to be laid out before it can be measured.
 await page.evaluate(async () => {
   for (let y = 0; y < document.body.scrollHeight; y += 400) {

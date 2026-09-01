@@ -40,6 +40,19 @@ export interface OrderWizardFormData {
    */
   addressLatitude: number | null;
   addressLongitude: number | null;
+  /**
+   * A house has no floor and no flat number, and asking for them reads as a form
+   * that was not written for you. This drives which fields the address step
+   * shows; it is not sent anywhere — the two values it gates are.
+   */
+  propertyType: 'flat' | 'house';
+  /**
+   * On the ORDER, not on Address: addresses dedupe across users, so a flat
+   * number stored there would leak between neighbours at the same street
+   * address. → src/Cleansia.Core.Domain/Orders/Order.cs
+   */
+  customerFloor: string;
+  customerApartment: string;
   cleaningDate: Date | null;
   cleaningTime: string;
   paymentType: PaymentType;
@@ -103,6 +116,9 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   extras: {},
   specialInstructions: '',
   entryInstructions: '',
+  propertyType: 'flat',
+  customerFloor: '',
+  customerApartment: '',
   promoCode: '',
   preferredEmployeeId: null,
 };

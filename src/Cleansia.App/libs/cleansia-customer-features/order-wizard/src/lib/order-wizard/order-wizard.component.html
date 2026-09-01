@@ -166,221 +166,279 @@
       }
 
       <!-- Step 1: Contact & Address -->
+      <!--
+        Step 2, to the approved artboard: the address and what we can confirm
+        about it side by side, then the property type that decides whether a
+        floor and flat number are even a question, then the protected entry
+        note, then who to call.
+      -->
       @if (facade.activeStep() === 1) {
-      <div class="order-wizard__step">
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-user"></i>
-            {{ 'pages.order.contact_section_title' | translate }}
-          </h2>
-          <div class="order-wizard__form-grid">
-            <div class="order-wizard__field">
-              <label for="wizard-first-name">{{ 'pages.order.customer_first_name' | translate }}</label>
-              <input
-                pInputText
-                id="wizard-first-name"
-                [ngModel]="facade.formData().customerFirstName"
-                (ngModelChange)="facade.updateFormData({ customerFirstName: $event })"
-                (blur)="markTouched('customerFirstName')"
-                [placeholder]="'pages.order.customer_first_name_placeholder' | translate"
-                [class.ng-invalid]="fieldError('customerFirstName')"
-                [attr.aria-invalid]="fieldError('customerFirstName') ? 'true' : null"
-                [attr.aria-describedby]="fieldError('customerFirstName') ? 'wizard-first-name-error' : null"
-              />
-              @if (fieldError('customerFirstName')) {
-              <small id="wizard-first-name-error" class="order-wizard__field-error">{{ fieldError('customerFirstName') }}</small>
-              }
-            </div>
-            <div class="order-wizard__field">
-              <label for="wizard-last-name">{{ 'pages.order.customer_last_name' | translate }}</label>
-              <input
-                pInputText
-                id="wizard-last-name"
-                [ngModel]="facade.formData().customerLastName"
-                (ngModelChange)="facade.updateFormData({ customerLastName: $event })"
-                (blur)="markTouched('customerLastName')"
-                [placeholder]="'pages.order.customer_last_name_placeholder' | translate"
-                [class.ng-invalid]="fieldError('customerLastName')"
-                [attr.aria-invalid]="fieldError('customerLastName') ? 'true' : null"
-                [attr.aria-describedby]="fieldError('customerLastName') ? 'wizard-last-name-error' : null"
-              />
-              @if (fieldError('customerLastName')) {
-              <small id="wizard-last-name-error" class="order-wizard__field-error">{{ fieldError('customerLastName') }}</small>
-              }
-            </div>
-            <div class="order-wizard__field">
-              <label for="wizard-email">{{ 'pages.order.customer_email' | translate }}</label>
-              <input
-                pInputText
-                id="wizard-email"
-                [ngModel]="facade.formData().customerEmail"
-                (ngModelChange)="facade.updateFormData({ customerEmail: $event })"
-                (blur)="markTouched('customerEmail')"
-                type="email"
-                [placeholder]="'pages.order.customer_email_placeholder' | translate"
-                [class.ng-invalid]="fieldError('customerEmail')"
-                [attr.aria-invalid]="fieldError('customerEmail') ? 'true' : null"
-                [attr.aria-describedby]="fieldError('customerEmail') ? 'wizard-email-error' : null"
-              />
-              @if (fieldError('customerEmail')) {
-              <small id="wizard-email-error" class="order-wizard__field-error">{{ fieldError('customerEmail') }}</small>
-              }
-            </div>
-            <div class="order-wizard__field">
-              <label for="wizard-phone">{{ 'pages.order.customer_phone' | translate }} *</label>
-              <cleansia-telephone
-                id="wizard-phone"
-                [ngModel]="facade.formData().customerPhone"
-                (ngModelChange)="facade.updateFormData({ customerPhone: $event })"
-                (blur)="markTouched('customerPhone')"
-                defaultCountryFlag="cz"
-                [class.ng-invalid]="fieldError('customerPhone')"
-                [attr.aria-invalid]="fieldError('customerPhone') ? 'true' : null"
-                [attr.aria-describedby]="fieldError('customerPhone') ? 'wizard-phone-error' : null"
-              />
-              @if (fieldError('customerPhone')) {
-              <small id="wizard-phone-error" class="order-wizard__field-error">{{ fieldError('customerPhone') }}</small>
-              }
-            </div>
-          </div>
-        </div>
+      <div class="cl-wiz__step-body">
+        <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_address_title' | translate }}</h1>
+        <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_address_lead' | translate }}</p>
 
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-map-marker"></i>
-            {{ 'pages.order.address_section_title' | translate }}
-          </h2>
-
-          @if (facade.isAuthenticated() && facade.savedAddresses().length > 0) {
-          <div class="order-wizard__saved-addresses">
-            @for (addr of facade.savedAddresses(); track addr.id) {
-            <button
-              type="button"
-              class="order-wizard__saved-address"
-              [class.order-wizard__saved-address--selected]="isAddressSelected(addr)"
-              [attr.aria-pressed]="isAddressSelected(addr)"
-              [attr.aria-label]="'aria.use_address' | translate: { label: addr.label }"
-              (click)="addr.id && facade.selectSavedAddress(addr.id)"
-            >
-              <div class="order-wizard__saved-address-radio">
-                <i [class]="isAddressSelected(addr) ? 'pi pi-circle-fill' : 'pi pi-circle'"></i>
-              </div>
-              <div class="order-wizard__saved-address-info">
-                <strong class="order-wizard__saved-address-label">{{ addr.label }}</strong>
-                <span>{{ addr.street }}</span>
-                <span>{{ addr.city }}, {{ addr.zipCode }}</span>
-                @if (addr.isDefault) {
-                <span class="order-wizard__saved-address-badge">{{ 'pages.order.saved_address_default' | translate }}</span>
-                }
-              </div>
-            </button>
-            }
-            <button
-              type="button"
-              class="order-wizard__saved-address"
-              [class.order-wizard__saved-address--selected]="isCustomAddress()"
-              [attr.aria-pressed]="isCustomAddress()"
-              [attr.aria-label]="'aria.use_new_address' | translate"
-              (click)="clearAddress()"
-            >
-              <div class="order-wizard__saved-address-radio">
-                <i [class]="isCustomAddress() ? 'pi pi-circle-fill' : 'pi pi-circle'"></i>
-              </div>
-              <div class="order-wizard__saved-address-info">
-                <strong>{{ 'pages.order.new_address' | translate }}</strong>
-              </div>
-            </button>
-          </div>
+        @if (facade.isAuthenticated() && facade.savedAddresses().length > 0) {
+        <div class="cl-wiz__saved">
+          @for (addr of facade.savedAddresses(); track addr.id) {
+          <button
+            type="button"
+            class="cl-chip cl-wiz__saved-chip"
+            [class.cl-chip--on]="isAddressSelected(addr)"
+            [attr.aria-pressed]="isAddressSelected(addr)"
+            [attr.aria-label]="'aria.use_address' | translate: { label: addr.label }"
+            (click)="addr.id && facade.selectSavedAddress(addr.id)"
+          >{{ addr.label }}</button>
           }
+          <button
+            type="button"
+            class="cl-chip cl-wiz__saved-chip"
+            [class.cl-chip--on]="isCustomAddress()"
+            [attr.aria-pressed]="isCustomAddress()"
+            [attr.aria-label]="'aria.use_new_address' | translate"
+            (click)="clearAddress()"
+          >{{ 'pages.order.new_address' | translate }}</button>
+        </div>
+        }
 
-          @if (!facade.isAuthenticated() || isCustomAddress() || facade.savedAddresses().length === 0) {
-          <div class="order-wizard__form-grid">
-            <div class="order-wizard__field order-wizard__field--full">
+        @if (!facade.isAuthenticated() || isCustomAddress() || facade.savedAddresses().length === 0) {
+        <div class="cl-wiz__addr">
+          <div class="cl-wiz__addr-main">
+            <div class="cl-wiz__field">
+              <span class="cl-lbl">{{ 'pages.order.address_field_label' | translate }}</span>
               <cleansia-address-autocomplete
                 [initialQuery]="facade.formData().address.street ?? ''"
+                [hideLabel]="true"
                 (picked)="onAddressPicked($event)"
                 (searchFailed)="onAddressSearchFailed()"
               />
             </div>
-            <div class="order-wizard__field order-wizard__field--full">
-              @if (facade.formData().address.street) {
-                <div class="order-wizard__address-resolved">
-                  <i class="pi pi-map-marker"></i>
-                  <div>
-                    <strong>{{ facade.formData().address.street }}</strong>
-                    <span>{{ facade.formData().address.city }}, {{ facade.formData().address.zipCode }}</span>
-                  </div>
-                </div>
-                <!-- Service-area inline warning. Backend re-validates on
-                     submit; this surfaces the same rejection earlier so the
-                     user doesn't fill out the rest of the wizard for a city
-                     we won't service. -->
-                @if (facade.cityServiced() === 'rejected') {
-                  <div class="order-wizard__address-warning" role="alert">
-                    <i class="pi pi-info-circle"></i>
-                    <span>{{ 'api.service_area.city_not_serviced' | translate }}</span>
-                  </div>
-                }
-              } @else {
-                <p class="order-wizard__address-hint">
-                  {{ 'pages.order.address_pick_required' | translate }}
-                </p>
-              }
+
+            @if (facade.formData().address.street) {
+            <div class="cl-wiz__addr-resolved">
+              <i class="pi pi-map-marker" aria-hidden="true"></i>
+              <div>
+                <strong>{{ facade.formData().address.street }}</strong>
+                <span>{{ facade.formData().address.city }}, {{ facade.formData().address.zipCode }}</span>
+              </div>
             </div>
-            <!-- Country is hardcoded to CZ — auto-selected in facade -->
-            @if (facade.isAuthenticated()) {
-            <div class="order-wizard__field order-wizard__field--full order-wizard__save-address">
-              <p-checkbox
-                [ngModel]="saveNewAddress()"
-                (ngModelChange)="toggleSaveNewAddress($event)"
-                [binary]="true"
-                inputId="saveAddress"
-              />
-              <label for="saveAddress">{{ 'pages.order.save_address' | translate }}</label>
-            </div>
-            @if (saveNewAddress()) {
-            <div class="order-wizard__field order-wizard__field--full">
-              <label for="wizard-address-label">{{ 'pages.order.address_label' | translate }}</label>
-              <input
-                pInputText
-                id="wizard-address-label"
-                [ngModel]="newAddressLabel()"
-                (ngModelChange)="newAddressLabel.set($event); labelError.set(null)"
-                [placeholder]="'pages.order.address_label_placeholder' | translate"
-                [class.ng-invalid]="!!labelError()"
-                [attr.aria-invalid]="labelError() ? 'true' : null"
-                [attr.aria-describedby]="labelError() ? 'wizard-address-label-error' : null"
-              />
-              @if (labelError()) {
-              <small id="wizard-address-label-error" class="order-wizard__field-error">{{ labelError() }}</small>
-              }
+            <!--
+              The backend re-validates on submit; this surfaces the same
+              rejection now, rather than after the payment details.
+            -->
+            @if (facade.cityServiced() === 'rejected') {
+            <div class="cl-wiz__addr-warning" role="alert">
+              <i class="pi pi-info-circle" aria-hidden="true"></i>
+              <span>{{ 'api.service_area.city_not_serviced' | translate }}</span>
             </div>
             }
+            } @else {
+            <p class="cl-muted cl-wiz__addr-hint">{{ 'pages.order.address_pick_required' | translate }}</p>
             }
           </div>
+
+          <div class="cl-wiz__addr-side">
+            <!--
+              A real tile for the picked coordinates, not a drawing of one: the
+              same graphic under every address would read as a map and be none.
+              The token stays server-side behind /api/mapbox/static, and the
+              panel keeps its box when the image cannot load — no coordinates
+              yet, or the proxy is not configured in this environment.
+            -->
+            <div class="cl-wiz__map" [class.cl-wiz__map--empty]="!mapUrl()">
+              @if (mapUrl(); as url) {
+              <img [src]="url" [alt]="'pages.order.address_field_label' | translate" (error)="onMapFailed()" />
+              } @else {
+              <span class="cl-muted">{{ 'pages.order.map_unavailable' | translate }}</span>
+              }
+            </div>
+
+            @if (facade.cityServiced() === 'ok') {
+            <div class="cl-wiz__range">
+              <i class="pi pi-check-circle" aria-hidden="true"></i>
+              <div>
+                <div class="cl-h4 cl-wiz__range-title">{{ 'pages.order.in_range_title' | translate }}</div>
+                <div class="cl-muted cl-wiz__range-note">{{ 'pages.order.in_range_note' | translate }}</div>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <div class="cl-wiz__rule"></div>
+
+        <div class="cl-lbl">{{ 'pages.order.property_type_label' | translate }}</div>
+        <div class="cl-wiz__proptype">
+          @for (type of propertyTypes; track type) {
+          <button
+            type="button"
+            class="cl-chip cl-wiz__proptype-chip"
+            [class.cl-chip--on]="facade.formData().propertyType === type"
+            [attr.aria-pressed]="facade.formData().propertyType === type"
+            (click)="setPropertyType(type)"
+          >{{ 'pages.order.property_' + type | translate }}</button>
           }
         </div>
+        <p class="cl-muted cl-wiz__proptype-note">{{ 'pages.order.property_house_note' | translate }}</p>
 
-        <!-- Entry Instructions -->
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-key"></i>
-            {{ 'pages.order.entry_instructions_label' | translate }}
-          </h2>
-          <div class="order-wizard__field order-wizard__field--full">
-            <!-- 2000 mirrors CreateOrder.Validator's MaximumLength on
-                 AccessInstructions. Without it the note is only rejected at
-                 submit, after payment details are already entered. -->
-            <textarea
-              pTextarea
-              [ngModel]="facade.formData().entryInstructions"
-              (ngModelChange)="facade.updateFormData({ entryInstructions: $event })"
-              [rows]="3"
-              maxlength="2000"
-              [placeholder]="'pages.order.entry_instructions_placeholder' | translate"
-            ></textarea>
-          </div>
+        @if (facade.formData().propertyType === 'flat') {
+        <div class="cl-wiz__unit">
+          <label class="cl-wiz__field">
+            <span class="cl-lbl">{{ 'pages.order.floor_label' | translate }}</span>
+            <input
+              pInputText
+              maxlength="20"
+              [ngModel]="facade.formData().customerFloor"
+              (ngModelChange)="facade.updateFormData({ customerFloor: $event })"
+            />
+          </label>
+          <label class="cl-wiz__field">
+            <span class="cl-lbl">{{ 'pages.order.apartment_label' | translate }}</span>
+            <input
+              pInputText
+              maxlength="20"
+              [ngModel]="facade.formData().customerApartment"
+              (ngModelChange)="facade.updateFormData({ customerApartment: $event })"
+            />
+          </label>
         </div>
+        }
+
+        <!--
+          Marked as protected because it is: ADR-0047 redacts it, along with the
+          address, phone and confirmation code, from every cleaner but the one
+          the order belongs to. The badge states that, rather than leaving the
+          customer to guess who reads it.
+        -->
+        <div class="cl-wiz__entry">
+          <div class="cl-wiz__entry-head">
+            <div class="cl-h4 cl-wiz__entry-title">{{ 'pages.order.entry_title' | translate }}</div>
+            <span class="cl-wiz__entry-badge">
+              <i class="pi pi-shield" aria-hidden="true"></i>
+              {{ 'pages.order.entry_private_badge' | translate }}
+            </span>
+          </div>
+          <p class="cl-muted cl-wiz__entry-lead">{{ 'pages.order.entry_lead' | translate }}</p>
+          <!--
+            2000 mirrors CreateOrder.Validator's MaximumLength on
+            AccessInstructions. Without it the note is only rejected at submit,
+            after the payment details are already in.
+          -->
+          <textarea
+            pTextarea
+            class="cl-wiz__entry-input"
+            [ngModel]="facade.formData().entryInstructions"
+            (ngModelChange)="facade.updateFormData({ entryInstructions: $event })"
+            [rows]="3"
+            maxlength="2000"
+            [placeholder]="'pages.order.entry_instructions_placeholder' | translate"
+          ></textarea>
+          <p class="cl-muted cl-wiz__entry-note">{{ 'pages.order.entry_privacy_note' | translate }}</p>
+        </div>
+
+        <div class="cl-wiz__rule"></div>
+
+        <div class="cl-lbl">{{ 'pages.order.contact_details_label' | translate }}</div>
+        <div class="cl-wiz__contact">
+          <label class="cl-wiz__field">
+            <span class="cl-lbl">{{ 'pages.order.customer_first_name' | translate }}</span>
+            <input
+              pInputText
+              id="wizard-first-name"
+              [ngModel]="facade.formData().customerFirstName"
+              (ngModelChange)="facade.updateFormData({ customerFirstName: $event })"
+              (blur)="markTouched('customerFirstName')"
+              [class.ng-invalid]="fieldError('customerFirstName')"
+              [attr.aria-invalid]="fieldError('customerFirstName') ? 'true' : null"
+              [attr.aria-describedby]="fieldError('customerFirstName') ? 'wizard-first-name-error' : null"
+            />
+            @if (fieldError('customerFirstName')) {
+            <small id="wizard-first-name-error" class="cl-wiz__field-error">{{ fieldError('customerFirstName') }}</small>
+            }
+          </label>
+
+          <label class="cl-wiz__field">
+            <span class="cl-lbl">{{ 'pages.order.customer_last_name' | translate }}</span>
+            <input
+              pInputText
+              id="wizard-last-name"
+              [ngModel]="facade.formData().customerLastName"
+              (ngModelChange)="facade.updateFormData({ customerLastName: $event })"
+              (blur)="markTouched('customerLastName')"
+              [class.ng-invalid]="fieldError('customerLastName')"
+              [attr.aria-invalid]="fieldError('customerLastName') ? 'true' : null"
+              [attr.aria-describedby]="fieldError('customerLastName') ? 'wizard-last-name-error' : null"
+            />
+            @if (fieldError('customerLastName')) {
+            <small id="wizard-last-name-error" class="cl-wiz__field-error">{{ fieldError('customerLastName') }}</small>
+            }
+          </label>
+
+          <label class="cl-wiz__field">
+            <span class="cl-lbl">{{ 'pages.order.customer_email' | translate }}</span>
+            <input
+              pInputText
+              id="wizard-email"
+              type="email"
+              [ngModel]="facade.formData().customerEmail"
+              (ngModelChange)="facade.updateFormData({ customerEmail: $event })"
+              (blur)="markTouched('customerEmail')"
+              [class.ng-invalid]="fieldError('customerEmail')"
+              [attr.aria-invalid]="fieldError('customerEmail') ? 'true' : null"
+              [attr.aria-describedby]="fieldError('customerEmail') ? 'wizard-email-error' : null"
+            />
+            @if (fieldError('customerEmail')) {
+            <small id="wizard-email-error" class="cl-wiz__field-error">{{ fieldError('customerEmail') }}</small>
+            }
+          </label>
+
+          <label class="cl-wiz__field">
+            <span class="cl-lbl">{{ 'pages.order.customer_phone' | translate }}</span>
+            <cleansia-telephone
+              id="wizard-phone"
+              [ngModel]="facade.formData().customerPhone"
+              (ngModelChange)="facade.updateFormData({ customerPhone: $event })"
+              (blur)="markTouched('customerPhone')"
+              defaultCountryFlag="cz"
+              [class.ng-invalid]="fieldError('customerPhone')"
+              [attr.aria-invalid]="fieldError('customerPhone') ? 'true' : null"
+              [attr.aria-describedby]="fieldError('customerPhone') ? 'wizard-phone-error' : null"
+            />
+            @if (fieldError('customerPhone')) {
+            <small id="wizard-phone-error" class="cl-wiz__field-error">{{ fieldError('customerPhone') }}</small>
+            }
+          </label>
+        </div>
+
+        @if (facade.isAuthenticated() && (isCustomAddress() || facade.savedAddresses().length === 0)) {
+        <div class="cl-wiz__save">
+          <p-checkbox
+            [ngModel]="saveNewAddress()"
+            (ngModelChange)="toggleSaveNewAddress($event)"
+            [binary]="true"
+            inputId="saveAddress"
+          />
+          <label for="saveAddress">{{ 'pages.order.save_address' | translate }}</label>
+        </div>
+        @if (saveNewAddress()) {
+        <label class="cl-wiz__field cl-wiz__save-label">
+          <span class="cl-lbl">{{ 'pages.order.address_label' | translate }}</span>
+          <input
+            pInputText
+            id="wizard-address-label"
+            [ngModel]="newAddressLabel()"
+            (ngModelChange)="newAddressLabel.set($event); labelError.set(null)"
+            [placeholder]="'pages.order.address_label_placeholder' | translate"
+            [class.ng-invalid]="!!labelError()"
+            [attr.aria-invalid]="labelError() ? 'true' : null"
+            [attr.aria-describedby]="labelError() ? 'wizard-address-label-error' : null"
+          />
+          @if (labelError()) {
+          <small id="wizard-address-label-error" class="cl-wiz__field-error">{{ labelError() }}</small>
+          }
+        </label>
+        }
+        }
       </div>
       }
 
@@ -676,6 +734,7 @@
         <button
           type="button"
           class="cl-btn cl-wiz__advance"
+          data-spec-advance
           [disabled]="!facade.canProceed() || (facade.activeStep() === 2 && !hasValidTime())"
           (click)="onNextStep()"
         >

@@ -120,7 +120,7 @@ async function openArtboard(browser, file, width) {
   return page;
 }
 
-async function openApp(browser, url, { width, lang, theme }) {
+async function openApp(browser, url, { width, lang, theme, advance = 0 }) {
   const page = await browser.newPage({ viewport: { width, height: 1400 }, deviceScaleFactor: 1 });
   await page.addInitScript((cfg) => {
     try {
@@ -142,8 +142,19 @@ async function openApp(browser, url, { width, lang, theme }) {
   // click covers both labels.
   const first = page.locator('[data-spec-select]').first();
   if (await first.count()) await first.click().catch(() => {});
+
+  // A later step of a wizard is only reachable through the earlier ones, so the
+  // checker walks forward the same way a visitor does rather than deep-linking
+  // into a state the app would never be in.
+  for (let i = 0; i < advance; i += 1) {
+    await page.waitForTimeout(500);
+    const next = page.locator('[data-spec-advance]').first();
+    if (!(await next.count())) break;
+    await next.click().catch(() => {});
+  }
+
   await page.evaluate(() => document.fonts?.ready);
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(900);
   return page;
 }
 
@@ -260,9 +271,10 @@ else if (cmd === 'check') await check(a, b, {
   width: Number(flag('width', 1440)),
   lang: flag('lang', 'cs'),
   theme: flag('theme', 'light'),
+  advance: Number(flag('advance', 0)),
 });
 else {
   console.log('usage: artboard-spec.mjs extract <artboard.dc.html> <spec.json> [--map map.json]');
-  console.log('       artboard-spec.mjs check <spec.json> <url> [--lang cs] [--width 1440] [--theme light]');
+  console.log('       artboard-spec.mjs check <spec.json> <url> [--lang cs] [--width 1440] [--theme light] [--advance N]');
   process.exit(2);
 }

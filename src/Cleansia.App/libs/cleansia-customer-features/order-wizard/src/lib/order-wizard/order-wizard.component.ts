@@ -381,6 +381,44 @@ export class OrderWizardComponent implements OnInit {
     return available.some((o) => o.value === currentTime);
   });
 
+  readonly propertyTypes = ['flat', 'house'] as const;
+
+  /**
+   * True once the static-map proxy has answered with something the browser
+   * could not render — no token in this environment, or an upstream failure.
+   * One flag, not a retry: the panel falls back to its empty state and stops
+   * asking, rather than re-requesting a billed endpoint on every change.
+   */
+  private readonly mapFailed = signal(false);
+
+  /**
+   * The same-origin static map for the picked coordinates, or null when there
+   * is nothing to show yet. Coordinates only exist after an autocomplete pick;
+   * a typed address has none.
+   */
+  readonly mapUrl = computed(() => {
+    if (this.mapFailed()) return null;
+    const { addressLatitude: lat, addressLongitude: lng } = this.facade.formData();
+    if (lat == null || lng == null) return null;
+    return `/api/mapbox/static?lat=${lat}&lng=${lng}`;
+  });
+
+  onMapFailed(): void {
+    this.mapFailed.set(true);
+  }
+
+  setPropertyType(propertyType: 'flat' | 'house'): void {
+    // Clearing on the way to "house" is what makes the hidden fields honest —
+    // otherwise a value typed before the switch is still in the form, and the
+    // customer has no way to see or remove it.
+    this.mapFailed.set(false);
+    this.facade.updateFormData(
+      propertyType === 'house'
+        ? { propertyType, customerFloor: '', customerApartment: '' }
+        : { propertyType }
+    );
+  }
+
   /** The counts the artboard offers. Rooms run to eight, bathrooms to four. */
   readonly roomChoices = [1, 2, 3, 4, 5, 6, 7, 8];
   readonly bathroomChoices = [1, 2, 3, 4];

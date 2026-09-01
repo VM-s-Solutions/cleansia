@@ -17,6 +17,21 @@ await p.addInitScript((t) => {
 }, THEME);
 await p.goto(TARGET, { waitUntil: 'networkidle', timeout: 60000 });
 await p.waitForTimeout(2500);
+// A wizard's later steps are only reachable through the earlier ones, so a step
+// past the first cannot be measured for contrast without walking there first.
+const ADVANCE = Number(process.env.ADVANCE ?? 0);
+if (ADVANCE > 0) {
+  const pick = p.locator('[data-spec-select]').first();
+  if (await pick.count()) await pick.click().catch(() => {});
+  for (let i = 0; i < ADVANCE; i += 1) {
+    await p.waitForTimeout(500);
+    const next = p.locator('[data-spec-advance]').first();
+    if (!(await next.count())) break;
+    await next.click().catch(() => {});
+  }
+  await p.waitForTimeout(900);
+}
+
 await p.evaluate(async () => { for (let y=0;y<document.body.scrollHeight;y+=600){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,60));} window.scrollTo(0,0); });
 await p.waitForTimeout(800);
 

@@ -1,0 +1,71 @@
+{
+  "_comment": "Same two sections as krok1-sluzby.map.json. `_ignore` is text the artboard shows as a SAMPLE — an address, a name, a price, a suggestion row — which the running page renders from real data or from what the visitor typed. Everything NOT listed there is structural copy and has to appear. The remaining keys are the BOX map, { appSelector: artboardSelector }; only the pairing is declared, every expected value is read off the artboard. A value may be {sel, skip, why, typography}.",
+  "_ignore": [
+    "^[0-9][0-9\\s]*Kč$",
+    "^Cleansia$",
+    "^Služby$",
+    "^Jak to chodí$",
+    "^Cleansia Plus$",
+    "^Sledovat objednávku$",
+    "^CZ$",
+    "^Přihlásit$",
+    "^Objednat úklid$",
+    "^Adresa$",
+    "^Termín$",
+    "^Platba$",
+    "^Souhrn$",
+    "^Zpět na služby$",
+    "^Dělnická",
+    "^12$",
+    "^Michal$",
+    "^Novák$",
+    "^michal\\.novak@example\\.cz$",
+    "^\\+420",
+    "^Kód od vchodu 4455",
+    "^Úklid domácnosti$",
+    "^Hloubkový úklid kuchyně$",
+    "^Mytí oken",
+    "^3 pokoje",
+    "^Praha 7$",
+    "^út 2\\. 9\\.",
+    "^bez příplatku$",
+    "^Pevná cena$",
+    "^Odhadem 3,5 h",
+    "^Pokračovat$",
+    "^Zrušení zdarma do 24 h$",
+    "^V dojezdu$",
+    "^Bez příplatku za dopravu\\.$",
+    "^Uložit adresu pro příští objednávky$"
+  ],
+  "_save_address_note": "\"Uložit adresu pro příští objednávky\" is in _ignore because only a signed-in visitor is offered it — an anonymous one has nowhere to save it to. The artboard draws a signed-in session; the checker runs anonymous.",
+  ".cl-wiz__addr": "[style*='1fr 320px']",
+  ".cl-wiz__addr-main": "[style*='grid-template-columns:1fr; gap:16px']",
+  ".cl-wiz__map": "[style*='height:206px']",
+  "_range_note": "The \"in range\" card renders only once the service-area check has answered ok, which needs a real geocoded pick — and /api/mapbox is not proxied under `nx serve`, so it can never be present at check time in dev. Its copy stays in _ignore and its box is not mapped, rather than mapping a selector that is always absent and reporting it as a gap forever.",
+  ".cl-wiz__proptype": "[style*='display:flex; gap:10px; margin-top:12px']",
+  ".cl-wiz__proptype-chip": {
+    "sel": "[style*='padding:0 26px']",
+    "skip": [
+      "backgroundColor",
+      "borderTopColor"
+    ],
+    "why": "The artboard fills a selected chip with Sky600 #0284C7, on which white 15px/700 measures 4.1 against a 4.5 floor. .cl-chip--on shipped as Sky700 after the home-page contrast pass; same exemption as step 1's service chip."
+  },
+  ".cl-wiz__unit": "[style*='grid-template-columns:1fr 1fr; gap:16px; margin-top:18px']",
+  ".cl-wiz__entry": "[style*='border-radius:24px; padding:22px 24px']",
+  ".cl-wiz__entry-head": "[style*='justify-content:space-between; gap:16px; flex-wrap:wrap']",
+  ".cl-wiz__entry-badge": {
+    "sel": "[style*='letter-spacing:.04em']",
+    "typography": true
+  },
+  ".cl-wiz__entry-input": {
+    "sel": "[style*='min-height:76px']",
+    "skip": [
+      "color",
+      "whiteSpace"
+    ],
+    "typography": true,
+    "why": "The artboard draws this as a div holding sample text at placeholder grey, so its `color` is the placeholder's, not a value's — the real control is empty at check time and reports its text colour. `whiteSpace` is `pre-wrap` on every textarea and `normal` on that div. Size, weight, padding, radius and border are all still asserted."
+  },
+  ".cl-wiz__contact": "[style*='grid-template-columns:1fr 1fr; gap:16px; margin-top:12px']"
+}

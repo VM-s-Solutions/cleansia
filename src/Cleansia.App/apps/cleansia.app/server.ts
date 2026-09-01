@@ -101,6 +101,69 @@ app.get('/api/mapbox/geocode', (req, res) => {
     });
 });
 
+/**
+ * Static map image for the booking wizard's address step, same reasoning as the
+ * geocoding proxy above: the token stays server-side and the browser only ever
+ * sends coordinates to this same-origin path.
+ *
+ * Coordinates are parsed as numbers and range-checked rather than passed through
+ * as strings — they land in the upstream URL's path, so a string would let a
+ * caller steer the request at another Mapbox endpoint.
+ */
+const MAPBOX_STATIC_BASE =
+  'https://api.mapbox.com/styles/v1/mapbox/streets-v12/static';
+const MAPBOX_STATIC_ZOOM = 15;
+// The panel is 320x206 CSS px; @2x covers a retina screen without asking for a
+// second, larger billed request.
+const MAPBOX_STATIC_SIZE = '320x206@2x';
+
+app.get('/api/mapbox/static', (req, res) => {
+  const token = process.env['MAPBOX_TOKEN'] ?? '';
+  if (!token) {
+    res.status(503).end();
+    return;
+  }
+
+  const lng = Number(req.query['lng']);
+  const lat = Number(req.query['lat']);
+  const valid =
+    Number.isFinite(lng) && Number.isFinite(lat) &&
+    lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90;
+  if (!valid) {
+    res.status(400).end();
+    return;
+  }
+
+  const pin = `pin-l+0284c7(${lng},${lat})`;
+  const upstream = new URL(
+    `${MAPBOX_STATIC_BASE}/${pin}/${lng},${lat},${MAPBOX_STATIC_ZOOM},0/${MAPBOX_STATIC_SIZE}`
+  );
+  upstream.searchParams.set('access_token', token);
+  upstream.searchParams.set('attribution', 'true');
+  upstream.searchParams.set('logo', 'true');
+
+  fetch(upstream)
+    .then(async (upstreamRes) => {
+      if (!upstreamRes.ok) {
+        res.status(upstreamRes.status).end();
+        return;
+      }
+      const buffer = Buffer.from(await upstreamRes.arrayBuffer());
+      res
+        .status(200)
+        .type(upstreamRes.headers.get('content-type') ?? 'image/png')
+        // The same address always renders the same tile, and a customer will
+        // re-enter one across sessions. A day of caching keeps repeat views off
+        // the billed endpoint.
+        .set('Cache-Control', 'public, max-age=86400')
+        .send(buffer);
+    })
+    .catch(() => {
+      console.error('Mapbox static image proxy upstream request failed');
+      res.status(502).end();
+    });
+});
+
 // Domain-verification files (Apple's domain association today; apple-app-site-association
 // and assetlinks.json later). These need their own mount because the general static
 // handler below sees the request path `/.well-known/…`, and `send` defaults to

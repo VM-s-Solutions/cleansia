@@ -205,10 +205,12 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.activeStep.set(1);
       fixture.detectChanges();
 
-      const firstNameInput = el.querySelector('#wizard-first-name');
-      const firstNameLabel = el.querySelector('label[for="wizard-first-name"]');
+      // `labels` covers both associations — a wrapping <label> and a for/id
+      // pair — so the assertion is that the field HAS an accessible name, not
+      // which of the two valid mechanisms gives it one.
+      const firstNameInput = el.querySelector<HTMLInputElement>('#wizard-first-name');
       expect(firstNameInput).toBeTruthy();
-      expect(firstNameLabel).toBeTruthy();
+      expect(firstNameInput!.labels?.length).toBeGreaterThan(0);
     });
 
     it('sets aria-invalid + aria-describedby when a contact field has a touched error', async () => {
@@ -248,7 +250,8 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.selectedSavedAddressId.set('a-1');
       fixture.detectChanges();
 
-      const row = el.querySelector('.order-wizard__saved-address') as HTMLElement;
+      // Saved addresses are chips on the artboard's address step, not rows.
+      const row = el.querySelector('.cl-wiz__saved-chip') as HTMLElement;
       expect(row.tagName).toBe('BUTTON');
       expect(row.getAttribute('aria-pressed')).toBe('true');
     });

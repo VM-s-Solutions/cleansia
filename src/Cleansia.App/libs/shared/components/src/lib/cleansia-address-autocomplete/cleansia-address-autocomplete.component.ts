@@ -39,6 +39,14 @@ export class CleansiaAddressAutocompleteComponent implements OnInit, OnDestroy {
   /** Optional initial input value (e.g., when editing an existing address). */
   initialQuery = input<string>('');
 
+  /**
+   * Hides the built-in label VISUALLY, for a caller that already prints its own
+   * heading over this control — without it the field carries two. The label
+   * element stays in the DOM and stays associated, so the accessible name is
+   * unchanged; a caller's own heading is usually a span and names nothing.
+   */
+  hideLabel = input<boolean>(false);
+
   /** Emitted once the user picks a suggestion from the dropdown. */
   readonly picked = output<MapboxAddressSuggestion>();
 

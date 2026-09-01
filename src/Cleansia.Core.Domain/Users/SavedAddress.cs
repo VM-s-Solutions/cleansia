@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 
 namespace Cleansia.Core.Domain.Users;
@@ -24,14 +24,41 @@ public class SavedAddress : Auditable, ITenantEntity
 
     public bool IsDefault { get; private set; }
 
-    public static SavedAddress Create(string userId, string addressId, string label, bool isDefault) =>
+    /// <summary>
+    /// Floor and door for this user at this address. On the SAVED address, not on
+    /// <see cref="Address"/>, for the same reason the order carries its own copy:
+    /// the Address row is deduped across every user in the building.
+    /// </summary>
+    [MaxLength(20)]
+    public string? Floor { get; private set; }
+
+    /// <inheritdoc cref="Floor"/>
+    [MaxLength(20)]
+    public string? Apartment { get; private set; }
+
+    public static SavedAddress Create(
+        string userId,
+        string addressId,
+        string label,
+        bool isDefault,
+        string? floor = null,
+        string? apartment = null) =>
         new()
         {
             UserId = userId,
             AddressId = addressId,
             Label = label,
             IsDefault = isDefault,
+            Floor = string.IsNullOrWhiteSpace(floor) ? null : floor.Trim(),
+            Apartment = string.IsNullOrWhiteSpace(apartment) ? null : apartment.Trim(),
         };
+
+    public SavedAddress UpdateUnit(string? floor, string? apartment)
+    {
+        Floor = string.IsNullOrWhiteSpace(floor) ? null : floor.Trim();
+        Apartment = string.IsNullOrWhiteSpace(apartment) ? null : apartment.Trim();
+        return this;
+    }
 
     public SavedAddress UpdateLabel(string label)
     {

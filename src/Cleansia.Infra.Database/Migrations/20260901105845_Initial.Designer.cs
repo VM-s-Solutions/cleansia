@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260830221715_Initial")]
+    [Migration("20260901105845_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -3371,10 +3371,18 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(26)");
 
+                    b.Property<string>("CustomerApartment")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("CustomerEmail")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CustomerFloor")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("CustomerName")
                         .IsRequired()
@@ -5316,6 +5324,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(26)");
 
+                    b.Property<string>("Apartment")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -5330,6 +5342,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Floor")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");

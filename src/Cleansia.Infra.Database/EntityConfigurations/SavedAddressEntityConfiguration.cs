@@ -1,4 +1,4 @@
-using Cleansia.Core.Domain.Users;
+﻿using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,6 +9,15 @@ public class SavedAddressEntityConfiguration : AuditableEntityConfiguration<Save
     public override void Configure(EntityTypeBuilder<SavedAddress> builder)
     {
         base.Configure(builder);
+
+        // Per-user unit details. NOT on Address: that row is deduped across
+        // every user at the same street, so a flat number there would be read
+        // by the neighbours.
+        builder.Property(a => a.Floor)
+            .HasMaxLength(20);
+
+        builder.Property(a => a.Apartment)
+            .HasMaxLength(20);
 
         builder.Property(s => s.Label)
             .IsRequired()

@@ -255,6 +255,8 @@ public static class OrderMappers
             Notes: order.Notes,
             SpecialInstructions: order.SpecialInstructions,
             AccessInstructions: order.AccessInstructions,
+            CustomerFloor: order.CustomerFloor,
+            CustomerApartment: order.CustomerApartment,
             HasAccessInstructions: !string.IsNullOrWhiteSpace(order.AccessInstructions),
             // System cancellations only. The same column holds an admin's free-text note when a human
             // cancels, and that is written by staff for staff — gating on CancelledBy is what keeps an

@@ -7671,6 +7671,8 @@ export class CreateOrderCommand implements ICreateOrderCommand {
     preferredEmployeeId!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
+    customerFloor!: string | undefined;
+    customerApartment!: string | undefined;
 
     constructor(data?: ICreateOrderCommand) {
         if (data) {
@@ -7717,6 +7719,8 @@ export class CreateOrderCommand implements ICreateOrderCommand {
             this.preferredEmployeeId = Data["preferredEmployeeId"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
+            this.customerFloor = Data["customerFloor"];
+            this.customerApartment = Data["customerApartment"];
         }
     }
 
@@ -7763,6 +7767,8 @@ export class CreateOrderCommand implements ICreateOrderCommand {
         data["preferredEmployeeId"] = this.preferredEmployeeId;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
+        data["customerFloor"] = this.customerFloor;
+        data["customerApartment"] = this.customerApartment;
         return data;
     }
 }
@@ -7788,6 +7794,8 @@ export interface ICreateOrderCommand {
     preferredEmployeeId: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
+    customerFloor: string | undefined;
+    customerApartment: string | undefined;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {
@@ -11038,6 +11046,8 @@ export class OrderItem implements IOrderItem {
     notes!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
+    customerFloor!: string | undefined;
+    customerApartment!: string | undefined;
     recurringTemplateId!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
     currency!: CurrencyDetailDto;
@@ -11108,6 +11118,8 @@ export class OrderItem implements IOrderItem {
             this.notes = Data["notes"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
+            this.customerFloor = Data["customerFloor"];
+            this.customerApartment = Data["customerApartment"];
             this.recurringTemplateId = Data["recurringTemplateId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
@@ -11202,6 +11214,8 @@ export class OrderItem implements IOrderItem {
         data["notes"] = this.notes;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
+        data["customerFloor"] = this.customerFloor;
+        data["customerApartment"] = this.customerApartment;
         data["recurringTemplateId"] = this.recurringTemplateId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
@@ -11283,6 +11297,8 @@ export interface IOrderItem {
     notes: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
+    customerFloor: string | undefined;
+    customerApartment: string | undefined;
     recurringTemplateId: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
     currency: CurrencyDetailDto;

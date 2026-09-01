@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
@@ -147,6 +147,24 @@ public class Order : Auditable, ITenantEntity
     public string? SpecialInstructions { get; private set; }
 
     public string? AccessInstructions { get; private set; }
+
+    /// <summary>
+    /// Which floor, and which door on it. Deliberately NOT on <see cref="Address"/>:
+    /// addresses are deduped across users on (Street, City, ZipCode, CountryId)
+    /// — <c>AddressRepository.GetAddressAsync</c> — so one row is shared by
+    /// everyone in the building, and a flat number stored there would be read by
+    /// the neighbours. These belong to the booking, like AccessInstructions, and
+    /// are redacted with it for a cleaner the order does not belong to.
+    ///
+    /// <para>Strings, not integers: a floor is "3", but it is also "přízemí",
+    /// "mezanin" or "2A" depending on the building and the market.</para>
+    /// </summary>
+    [MaxLength(20)]
+    public string? CustomerFloor { get; private set; }
+
+    /// <inheritdoc cref="CustomerFloor"/>
+    [MaxLength(20)]
+    public string? CustomerApartment { get; private set; }
 
     public string CurrencyId { get; private set; }
     public Currency Currency { get; private set; }
@@ -380,12 +398,18 @@ public class Order : Auditable, ITenantEntity
         // the order does not belong to, so a browsing cleaner reads the job's
         // scope and not the customer's door code. An ENTITLED reader (the
         // customer, an assigned cleaner, an admin) still gets it at any status.
-        string? accessInstructions = null) => new()
+        string? accessInstructions = null,
+        // Floor and door, for a flat. Null for a house, which has neither. See
+        // CustomerFloor for why these are on the order and not on the address.
+        string? customerFloor = null,
+        string? customerApartment = null) => new()
         {
             CustomerName = customerName,
             CustomerEmail = customerEmail,
             CustomerPhone = customerPhone,
             CustomerAddress = customerAddress,
+            CustomerFloor = string.IsNullOrWhiteSpace(customerFloor) ? null : customerFloor.Trim(),
+            CustomerApartment = string.IsNullOrWhiteSpace(customerApartment) ? null : customerApartment.Trim(),
             Rooms = rooms,
             Bathrooms = bathrooms,
             _extras = extras,

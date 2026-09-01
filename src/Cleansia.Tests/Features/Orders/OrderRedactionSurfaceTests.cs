@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -41,6 +41,11 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.Notes),
         nameof(OrderItem.SpecialInstructions),
         nameof(OrderItem.AccessInstructions),
+        // Blanked with the address, not kept: a floor and a door number are a
+        // small key on their own, but a browsing cleaner already sees the city,
+        // and street + floor + door is the whole key.
+        nameof(OrderItem.CustomerFloor),
+        nameof(OrderItem.CustomerApartment),
         nameof(OrderItem.HasAccessInstructions),
         nameof(OrderItem.CompletionNotes),
         nameof(OrderItem.RecurringTemplateId),
@@ -336,6 +341,8 @@ public class OrderRedactionSurfaceTests
             Notes: "Cat is friendly.",
             SpecialInstructions: "Use the eco products under the sink.",
             AccessInstructions: "Code 1234 at the gate.",
+            CustomerFloor: "3",
+            CustomerApartment: "12",
             HasAccessInstructions: true,
             RecurringTemplateId: "tmpl-weekly",
             SelectedPackages: [],

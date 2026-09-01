@@ -31,6 +31,14 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .IsRequired()
             .HasMaxLength(20);
 
+        // Floor and door. Nullable: a house has neither, and an order booked
+        // before this shipped has neither either.
+        builder.Property(o => o.CustomerFloor)
+            .HasMaxLength(20);
+
+        builder.Property(o => o.CustomerApartment)
+            .HasMaxLength(20);
+
         builder.Property(o => o.TotalPrice)
             .IsRequired()
             .HasPrecision(18, 2);

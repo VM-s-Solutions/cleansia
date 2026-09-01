@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.PayConfig;
@@ -168,6 +168,16 @@ public class CreateOrder
 
             RuleFor(x => x.AccessInstructions)
                 .MaximumLength(2000)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            // 20 matches the column. A floor is short in every market we ship —
+            // "3", "přízemí", "2A" — and a longer value is a note, not a floor.
+            RuleFor(x => x.CustomerFloor)
+                .MaximumLength(20)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.CustomerApartment)
+                .MaximumLength(20)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
             // ONE ordered chain, never a second RuleFor: the class-level default is Continue, so a
@@ -343,7 +353,15 @@ public class CreateOrder
         /// note fields. Optional on purpose: clients built before this field
         /// existed simply omit it and behave exactly as before.
         /// </summary>
-        string? AccessInstructions = null) : ICommand<Response>;
+        string? AccessInstructions = null,
+        /// <summary>
+        /// Which floor, and which door on it. Both optional and both null for a
+        /// house, which has neither. They are carried on the order rather than
+        /// on the address because addresses are deduped across users at the same
+        /// street — see <c>Order.CustomerFloor</c>.
+        /// </summary>
+        string? CustomerFloor = null,
+        string? CustomerApartment = null) : ICommand<Response>;
 
     public record Response(
         string Id,
@@ -463,7 +481,9 @@ public class CreateOrder
                 PreferredEmployeeId: command.PreferredEmployeeId,
                 RecurringTemplateId: null,
                 SpecialInstructions: command.SpecialInstructions,
-                AccessInstructions: command.AccessInstructions), cancellationToken);
+                AccessInstructions: command.AccessInstructions,
+                CustomerFloor: command.CustomerFloor,
+                CustomerApartment: command.CustomerApartment), cancellationToken);
 
             if (reservation != null)
             {

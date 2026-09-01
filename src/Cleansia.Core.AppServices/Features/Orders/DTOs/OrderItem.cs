@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Currencies.DTOs;
+﻿using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
@@ -43,6 +43,13 @@ public record OrderItem(
     string? Notes,
     string? SpecialInstructions,
     string? AccessInstructions,
+    /// <summary>
+    /// Which floor and which door. Redacted with the address for a cleaner the
+    /// order does not belong to — on their own they are a smaller key than the
+    /// access instructions, but together with a street they are the same key.
+    /// </summary>
+    string? CustomerFloor,
+    string? CustomerApartment,
     /// <summary>
     /// FK back to the recurring booking template that spawned this order.
     /// Null for one-off orders. Mobile uses this + <c>PaymentStatus.Pending</c>

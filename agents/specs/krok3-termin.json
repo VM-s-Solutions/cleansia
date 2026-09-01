@@ -1,0 +1,636 @@
+{
+  "artboard": "C:/Users/cmisa/AppData/Local/Temp/claude/c--Users-cmisa-Desktop-Mike-Projects-cleansia/93c98d29-aca8-421d-bfdb-9c5c8be391ce/scratchpad/canvas/Krok3Termin.dc.html",
+  "generatedFrom": "1440px, light",
+  "ignore": [],
+  "texts": [
+    {
+      "text": "Cleansia",
+      "count": 1,
+      "style": {
+        "fontSize": "26px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "-0.5px",
+        "color": "rgb(2, 132, 199)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Služby",
+      "count": 2,
+      "style": {
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Jak to chodí",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Cleansia Plus",
+      "count": 2,
+      "style": {
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Sledovat objednávku",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Přihlásit",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Objednat úklid",
+      "count": 1,
+      "style": {
+        "fontSize": "16px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Adresa",
+      "count": 1,
+      "style": {
+        "fontSize": "13px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Termín",
+      "count": 1,
+      "style": {
+        "fontSize": "13px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Platba",
+      "count": 1,
+      "style": {
+        "fontSize": "13px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(148, 163, 184)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Souhrn",
+      "count": 2,
+      "style": {
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Kdy máme přijít?",
+      "count": 1,
+      "style": {
+        "fontSize": "31px",
+        "fontWeight": "700",
+        "lineHeight": "35.96px",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Nejbližší volný termín je za 4 hodiny. Objednávka do 48 hodin má expresní příplatek +20 %.",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "400",
+        "lineHeight": "29.24px",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Září 2026",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Čas příjezdu",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "08:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "09:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "10:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "11:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "12:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "13:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "14:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "15:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "16:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "17:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "18:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "19:00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Šedé časy jsou dnes už mimo dojezd. Denní okna 08:00–20:00.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Vstup do bytu",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Budu doma",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Předám klíče",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Kód od dveří",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Recepce",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Zpět na adresu",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Úklid domácnosti",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "500 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Hloubkový úklid kuchyně",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "400 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Mytí oken × 4",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "800 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "3 pokoje · 1 koupelna",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Praha 7",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "út 2. 9. · 10:00",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "bez příplatku",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Pevná cena",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "1 700 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "34px",
+        "fontWeight": "700",
+        "lineHeight": "36.72px",
+        "letterSpacing": "normal",
+        "color": "rgb(2, 132, 199)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Odhadem 3,5 h · 2 uklízeči",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Pokračovat",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Zrušení zdarma do 24 h",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    }
+  ],
+  "boxes": {}
+}

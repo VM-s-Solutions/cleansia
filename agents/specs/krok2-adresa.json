@@ -1,0 +1,740 @@
+{
+  "artboard": "C:/Users/cmisa/AppData/Local/Temp/claude/c--Users-cmisa-Desktop-Mike-Projects-cleansia/93c98d29-aca8-421d-bfdb-9c5c8be391ce/scratchpad/canvas/Krok2Adresa.dc.html",
+  "generatedFrom": "1440px, light",
+  "ignore": [],
+  "texts": [
+    {
+      "text": "Cleansia",
+      "count": 1,
+      "style": {
+        "fontSize": "26px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "-0.5px",
+        "color": "rgb(2, 132, 199)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Služby",
+      "count": 2,
+      "style": {
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Jak to chodí",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Cleansia Plus",
+      "count": 2,
+      "style": {
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Sledovat objednávku",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Přihlásit",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Objednat úklid",
+      "count": 1,
+      "style": {
+        "fontSize": "16px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Adresa",
+      "count": 1,
+      "style": {
+        "fontSize": "13px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Termín",
+      "count": 1,
+      "style": {
+        "fontSize": "13px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(148, 163, 184)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Platba",
+      "count": 1,
+      "style": {
+        "fontSize": "13px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(148, 163, 184)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Souhrn",
+      "count": 2,
+      "style": {
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Kam máme přijet?",
+      "count": 1,
+      "style": {
+        "fontSize": "31px",
+        "fontWeight": "700",
+        "lineHeight": "35.96px",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Začněte psát adresu — napovíme ji a rovnou zkontrolujeme, že je v dojezdu.",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "400",
+        "lineHeight": "29.24px",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Adresa úklidu",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Dělnická 12, Praha 7",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Dělnická 12, Praha 7 — 170 00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Dělnická 21, Praha 7 — 170 00",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Dělnická 1201, Praha 7",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "V dojezdu",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "600",
+        "lineHeight": "19.5px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Bez příplatku za dopravu.",
+      "count": 1,
+      "style": {
+        "fontSize": "13px",
+        "fontWeight": "400",
+        "lineHeight": "20.8px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Typ nemovitosti",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Byt",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Dům",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "U domu se patro ani číslo bytu neptáme — pole níž se schovají.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Patro",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Byt č.",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Jak se dostaneme dovnitř?",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "600",
+        "lineHeight": "22.1px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Vidí jen přidělený uklízeč",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.48px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Nepovinné. Například kód od vchodu, kde jsou klíče, nebo že otevře soused.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Kód od vchodu 4455, dveře vlevo ve 3. patře.",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(148, 163, 184)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Uklízeč, kterému objednávka nepatří, tohle nevidí — stejně jako adresu, telefon a potvrzovací kód.",
+      "count": 1,
+      "style": {
+        "fontSize": "13px",
+        "fontWeight": "400",
+        "lineHeight": "20.8px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Kontaktní údaje",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Jméno",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Michal",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Příjmení",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Novák",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "E-mail",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "michal.novak@example.cz",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Telefon",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "+420 739 788 108",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Uložit adresu pro příští objednávky",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Zpět na služby",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Úklid domácnosti",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "500 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Hloubkový úklid kuchyně",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "400 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Mytí oken × 4",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "800 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "3 pokoje · 1 koupelna",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Praha 7",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "út 2. 9. · 10:00",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "bez příplatku",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Pevná cena",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "1 700 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "34px",
+        "fontWeight": "700",
+        "lineHeight": "36.72px",
+        "letterSpacing": "normal",
+        "color": "rgb(2, 132, 199)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Odhadem 3,5 h · 2 uklízeči",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Pokračovat",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Zrušení zdarma do 24 h",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    }
+  ],
+  "boxes": {}
+}

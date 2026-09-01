@@ -1,0 +1,941 @@
+{
+  "artboard": "C:/Users/cmisa/AppData/Local/Temp/claude/c--Users-cmisa-Desktop-Mike-Projects-cleansia/93c98d29-aca8-421d-bfdb-9c5c8be391ce/scratchpad/canvas/SluzbyKatalog.dc.html",
+  "generatedFrom": "1440px, light",
+  "ignore": [],
+  "texts": [
+    {
+      "text": "Cleansia",
+      "count": 1,
+      "style": {
+        "fontSize": "26px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "-0.5px",
+        "color": "rgb(2, 132, 199)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Služby",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(2, 132, 199)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Jak to chodí",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Cleansia Plus",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Sledovat objednávku",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Přihlásit",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Objednat úklid",
+      "count": 2,
+      "style": {
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Naše služby",
+      "count": 1,
+      "style": {
+        "fontSize": "58px",
+        "fontWeight": "700",
+        "lineHeight": "62.64px",
+        "letterSpacing": "-1.6px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "center"
+      }
+    },
+    {
+      "text": "Profesionální úklid s vlastními stroji a pevnou cenou. Vyberte službu nebo celý balíček.",
+      "count": 1,
+      "style": {
+        "fontSize": "19px",
+        "fontWeight": "400",
+        "lineHeight": "32.68px",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "center"
+      }
+    },
+    {
+      "text": "Certifikovaní profesionálové",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "center"
+      }
+    },
+    {
+      "text": "Ekologické produkty",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "center"
+      }
+    },
+    {
+      "text": "100 % spokojenost",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "center"
+      }
+    },
+    {
+      "text": "Balíčky",
+      "count": 1,
+      "style": {
+        "fontSize": "38px",
+        "fontWeight": "700",
+        "lineHeight": "44.08px",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Tři nejčastější kombinace. Vyjdou levněji než stejné služby zvlášť.",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "400",
+        "lineHeight": "29.24px",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Zobrazit všechny balíčky",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Pro udržovaný byt",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Základní",
+      "count": 1,
+      "style": {
+        "fontSize": "27px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "1 490 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "38px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(2, 132, 199)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "za úklid",
+      "count": 6,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Úklid domácnosti",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Mytí oken",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Úklid koupelny",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Objednat balíček",
+      "count": 3,
+      "style": {
+        "fontSize": "16px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Nejoblíbenější",
+      "count": 1,
+      "style": {
+        "fontSize": "11px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.66px",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Nejčastější volba",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(186, 230, 253)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Kompletní",
+      "count": 1,
+      "style": {
+        "fontSize": "27px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "2 480 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "38px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Vše ze Základního",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(224, 242, 254)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Hloubkový úklid kuchyně",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(224, 242, 254)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Čištění koberců",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(224, 242, 254)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Předání bytu",
+      "count": 1,
+      "style": {
+        "fontSize": "12px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "0.84px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "uppercase",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Stěhování",
+      "count": 1,
+      "style": {
+        "fontSize": "27px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "3 900 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "38px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(2, 132, 199)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Hloubkový úklid",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Okna zevnitř i zvenku",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "· Úklid po rekonstrukci",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "400",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Jednotlivé služby",
+      "count": 1,
+      "style": {
+        "fontSize": "38px",
+        "fontWeight": "700",
+        "lineHeight": "44.08px",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Cena: od nejnižší",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Cena: od nejvyšší",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Název: A–Z",
+      "count": 1,
+      "style": {
+        "fontSize": "15px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Úklid domácnosti",
+      "count": 1,
+      "style": {
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "23.4px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Pravidelný nebo jednorázový úklid bytu i domu.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "500 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "22px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "za pokoj",
+      "count": 2,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Objednat",
+      "count": 8,
+      "style": {
+        "fontSize": "16px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Hloubkový úklid",
+      "count": 1,
+      "style": {
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "23.4px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Do detailu: spáry, za spotřebiče, okenní rámy.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "800 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "22px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Čištění koberců",
+      "count": 1,
+      "style": {
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "23.4px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Extrakční stroj, schne do několika hodin.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "560 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "22px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Čištění čalounění",
+      "count": 1,
+      "style": {
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "23.4px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Test na malé ploše před každým čištěním.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "480 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "22px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "za kus",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Mytí oken",
+      "count": 1,
+      "style": {
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "23.4px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Vnitřní i vnější strana, rámy a parapety.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "200 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "22px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "za okno",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Úklid koupelny",
+      "count": 1,
+      "style": {
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "23.4px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Vodní kámen, spáry, sanita.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "300 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "22px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Hloubkový úklid kuchyně",
+      "count": 1,
+      "style": {
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "23.4px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Trouba, digestoř, dvířka, spotřebiče.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "400 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "22px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Úklid po rekonstrukci",
+      "count": 1,
+      "style": {
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "23.4px",
+        "letterSpacing": "-0.1px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Prach a zbytky stavebního materiálu.",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "1 200 Kč",
+      "count": 1,
+      "style": {
+        "fontSize": "22px",
+        "fontWeight": "700",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "na míru",
+      "count": 1,
+      "style": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "22.4px",
+        "letterSpacing": "normal",
+        "color": "rgb(100, 116, 139)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Připraveni na zářivě čistý domov?",
+      "count": 1,
+      "style": {
+        "fontSize": "34px",
+        "fontWeight": "700",
+        "lineHeight": "39.44px",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Objednáte online za dvě minuty. Cenu vidíte předem a už se nezmění.",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "400",
+        "lineHeight": "29.24px",
+        "letterSpacing": "normal",
+        "color": "rgb(51, 65, 85)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    },
+    {
+      "text": "Spočítat cenu",
+      "count": 1,
+      "style": {
+        "fontSize": "17px",
+        "fontWeight": "800",
+        "lineHeight": "normal",
+        "letterSpacing": "normal",
+        "color": "rgb(3, 105, 161)",
+        "textTransform": "none",
+        "textAlign": "start"
+      }
+    }
+  ],
+  "boxes": {}
+}

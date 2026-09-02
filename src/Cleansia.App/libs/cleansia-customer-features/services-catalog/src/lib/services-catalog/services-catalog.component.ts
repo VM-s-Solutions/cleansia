@@ -115,7 +115,10 @@ export class ServicesCatalogComponent implements OnInit {
     'assets/images/mascot/mascot-arms-crossed-tile.webp',
   ];
 
-  readonly heroMascotLeft = 'assets/images/mascot/mascot-leaning-tile.webp';
+  // Paired by footprint, not by pose: this tile's figure is 201x258 and the one
+  // on the right is 201x258 exactly, so the two balance. The mop-and-bucket
+  // character was 187x256 and read as the odd one out beside it.
+  readonly heroMascotLeft = 'assets/images/mascot/mascot-spray-and-cloth-tile.webp';
   readonly heroMascotRight = 'assets/images/mascot/mascot-dusting-tile.webp';
   readonly closingMascot = 'assets/images/mascot/mascot-waving.webp';
 

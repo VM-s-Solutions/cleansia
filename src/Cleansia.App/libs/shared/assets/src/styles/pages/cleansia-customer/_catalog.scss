@@ -95,6 +95,19 @@
   }
 }
 
+// The colour the closing band opens on. It has to be a real step away from the
+// tinted section above it in BOTH themes, and no existing token is: --cl-cta-1
+// is that section's own colour in light, --cl-hero-1 is only 1.19 from it, and
+// --cl-accent-soft does not flip at all — it stayed sky-300 and painted a lit
+// slab across the bottom of a dark page.
+:root {
+  --cl-cat-close: #{$primary-accent};
+}
+
+:root.dark-mode {
+  --cl-cat-close: #1d5f87;
+}
+
 // ---- The band the page opens on ---------------------------------------------
 .cl-cat-hero {
   position: relative;
@@ -132,7 +145,11 @@
 // information the copy does not, so they are the first thing to go when the
 // column gets narrow.
 .cl-cat-hero__mascot {
-  height: calc(11.25 * var(--cl-u));
+  // 140, not 180. The artwork is a 340x280 tile, so at 180 a 2x screen asked for
+  // 360 device pixels from a 280-pixel source and upscaled it — which is what
+  // made the characters look soft. At 140 the tile renders 1:1 on a 2x screen
+  // and is downsampled on a 1x one, which is the direction that looks good.
+  height: calc(8.75 * var(--cl-u));
   width: auto;
   display: block;
 }
@@ -159,6 +176,10 @@
 // ---- The column both sections sit in ----------------------------------------
 .cl-cat {
   // Tinted, not white — and that is what makes the square divider legible.
+  // --cl-hero-2 rather than --cl-tint-strong: the latter is an overlay, and in
+  // dark mode it is rgba(56, 189, 248, 0.12), so a whole section painted with it
+  // is translucent and the divider cut out of it shows the ground straight
+  // through. Same colour in light, opaque in both.
   //
   // The square variant shows as narrow notches between tabs rather than as
   // whole bubbles, so it has a fraction of the shape the round one does. Where
@@ -173,7 +194,7 @@
   //
   // The cards gain from it as well: they were white on white, told apart by a
   // hairline and a soft shadow alone.
-  background: var(--cl-tint-strong);
+  background: var(--cl-hero-2);
 }
 
 .cl-cat__inner {
@@ -438,7 +459,7 @@
   // the card, so the band keeps its shape and only its first stop moves.
   background: radial-gradient(
     110% 130% at 20% 10%,
-    var(--cl-accent-soft) 0%,
+    var(--cl-cat-close) 0%,
     var(--cl-cta-1) 55%,
     var(--cl-cta-3) 100%
   );

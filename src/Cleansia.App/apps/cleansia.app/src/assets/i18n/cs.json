@@ -161,7 +161,8 @@
       "apple": "Pokračovat přes Apple",
       "success": "Úspěšně přihlášeno!",
       "error": "Neplatný email nebo heslo",
-      "email_not_confirmed": "Nejprve prosím potvrďte svůj email"
+      "email_not_confirmed": "Nejprve prosím potvrďte svůj email",
+      "lead": "Přihlaste se a máte uložené adresy, historii objednávek i faktury na jednom místě."
     },
     "register": {
       "title": "Vytvořit účet",
@@ -185,7 +186,7 @@
         "password_uppercase": "Alespoň jedno velké písmeno",
         "password_letter": "Alespoň jedno písmeno",
         "password_number": "Alespoň jedna číslice",
-        "password_min_length": "Alespoň 12 znaků",
+        "password_min_length": "Alespoň 8 znaků",
         "password_special_character": "Alespoň jeden speciální znak",
         "passwords_match": "Hesla se shodují"
       },
@@ -205,7 +206,8 @@
         "error_already_referred": "Doporučení jste již přijali",
         "error_inactive": "Tento doporučovací kód již není aktivní",
         "error_generic": "Kód se nepodařilo ověřit. Můžete pokračovat."
-      }
+      },
+      "lead": "Registrace trvá minutu a k ničemu vás nezavazuje. Objednávat můžete hned potom."
     },
     "confirm_email": {
       "title": "Potvrďte svůj email",
@@ -224,6 +226,18 @@
       "email": "Email",
       "submit": "Odeslat odkaz",
       "success": "Odkaz pro obnovení hesla odeslán! Zkontrolujte svůj email.",
+      "back_to_login": "Zpět na přihlášení"
+    },
+    "below": {
+      "title": "K čemu je účet",
+      "addresses_title": "Adresy, historie, faktury",
+      "addresses_text": "Uložené adresy, všechny dokončené objednávky a faktury najdete na jednom místě.",
+      "points_title": "Body za každý dokončený úklid",
+      "points_text": "Za každou dokončenou objednávku získáte 1 bod za každých 10 Kč. Při 500 bodech máte stříbrný stupeň — 5 % z objednávek nad 1 000 Kč.",
+      "cancel_title": "Zrušení zdarma",
+      "cancel_text": "Až do 24 hodin před úklidem. S členstvím Cleansia Plus do 4 hodin.",
+      "track_text": "Chcete jen sledovat objednávku? Účet k tomu nepotřebujete — stačí číslo objednávky a e-mail.",
+      "track_link": "Sledovat objednávku",
       "back_to_login": "Zpět na přihlášení"
     }
   },
@@ -1329,7 +1343,8 @@
       "resend_code": "Odeslat kód",
       "verify_code": "Potvrdit kód",
       "email_sent": "E-mail byl úspěšně odeslán",
-      "code_cooldown": "Kód potvrzení byl odeslán. Prosím, počkejte {{ cooldown }} sekund, než požádáte o nový kód."
+      "code_cooldown": "Kód potvrzení byl odeslán. Prosím, počkejte {{ cooldown }} sekund, než požádáte o nový kód.",
+      "change_email": "Změnit e-mail"
     },
     "order_lookup": {
       "title": "Vyhledat objednávku",

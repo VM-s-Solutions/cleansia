@@ -58,21 +58,12 @@
     }
   }
 
-  // `.cl-chip` and `.cl-link` were drawn for a <span>. As a real control they
-  // pick up the UA's own border, background and centring — which drew a box
-  // around both of this page's text links — so the button spelling restates
-  // what the span got for free.
-  button.cl-chip,
-  button.cl-link {
+  // `.cl-chip` was drawn for a <span>; as a real control it centres its text.
+  // `.cl-link`'s button spelling is handled in _home-design.scss, where the
+  // class itself lives — this page was the third to need it.
+  button.cl-chip {
     text-align: left;
     font-family: inherit;
-  }
-
-  button.cl-link {
-    border: 0;
-    border-bottom: 2px solid var(--cl-accent-soft);
-    background: none;
-    padding: 0 0 2px;
   }
 }
 

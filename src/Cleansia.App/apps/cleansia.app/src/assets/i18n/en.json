@@ -161,7 +161,8 @@
       "apple": "Continue with Apple",
       "success": "Successfully logged in!",
       "error": "Invalid email or password",
-      "email_not_confirmed": "Please confirm your email address first"
+      "email_not_confirmed": "Please confirm your email address first",
+      "lead": "Sign in and your saved addresses, order history and invoices are all in one place."
     },
     "register": {
       "title": "Create Account",
@@ -185,7 +186,7 @@
         "password_uppercase": "At least one uppercase letter",
         "password_letter": "At least one letter",
         "password_number": "At least one number",
-        "password_min_length": "At least 12 characters",
+        "password_min_length": "At least 8 characters",
         "password_special_character": "At least one special character",
         "passwords_match": "Passwords match"
       },
@@ -205,7 +206,8 @@
         "error_already_referred": "You've already accepted a referral",
         "error_inactive": "This referral code is no longer active",
         "error_generic": "Couldn't validate code. You can still continue."
-      }
+      },
+      "lead": "Registration takes a minute and commits you to nothing. You can book straight afterwards."
     },
     "confirm_email": {
       "title": "Confirm Your Email",
@@ -225,6 +227,18 @@
       "submit": "Send Reset Link",
       "success": "Password reset link sent! Check your email.",
       "back_to_login": "Back to login"
+    },
+    "below": {
+      "title": "What an account is for",
+      "addresses_title": "Addresses, history, invoices",
+      "addresses_text": "Saved addresses, every completed order and all your invoices in one place.",
+      "points_title": "Points for every completed clean",
+      "points_text": "Every completed order earns 1 point per 10 CZK. At 500 points you reach the silver tier — 5% off orders over 1,000 CZK.",
+      "cancel_title": "Free cancellation",
+      "cancel_text": "Up to 24 hours before the clean. With a Cleansia Plus membership, up to 4 hours.",
+      "track_text": "Only want to track an order? You do not need an account — the order number and an e-mail are enough.",
+      "track_link": "Track an order",
+      "back_to_login": "Back to sign in"
     }
   },
   "services": {
@@ -1329,7 +1343,8 @@
       "resend_code": "Resend code",
       "verify_code": "Verify code",
       "email_sent": "Email sent successfully",
-      "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code."
+      "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code.",
+      "change_email": "Change e-mail"
     },
     "order_lookup": {
       "title": "Look up your order",

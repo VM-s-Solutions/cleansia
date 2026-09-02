@@ -161,7 +161,8 @@
       "apple": "Pokračovať cez Apple",
       "success": "Úspešne prihlásený!",
       "error": "Nesprávny e-mail alebo heslo",
-      "email_not_confirmed": "Najprv potvrďte svoju e-mailovú adresu"
+      "email_not_confirmed": "Najprv potvrďte svoju e-mailovú adresu",
+      "lead": "Prihláste sa a máte uložené adresy, históriu objednávok aj faktúry na jednom mieste."
     },
     "register": {
       "title": "Vytvoriť účet",
@@ -185,7 +186,7 @@
         "password_uppercase": "Aspoň jedno veľké písmeno",
         "password_letter": "Aspoň jedno písmeno",
         "password_number": "Aspoň jedna číslica",
-        "password_min_length": "Aspoň 12 znakov",
+        "password_min_length": "Aspoň 8 znakov",
         "password_special_character": "Aspoň jeden špeciálny znak",
         "passwords_match": "Heslá sa zhodujú"
       },
@@ -205,7 +206,8 @@
         "error_already_referred": "Odporúčanie ste už prijali",
         "error_inactive": "Tento odporúčací kód už nie je aktívny",
         "error_generic": "Kód sa nepodarilo overiť. Môžete pokračovať."
-      }
+      },
+      "lead": "Registrácia trvá minútu a k ničomu vás nezaväzuje. Objednávať môžete hneď potom."
     },
     "confirm_email": {
       "title": "Potvrďte svoj e-mail",
@@ -224,6 +226,18 @@
       "email": "E-mail",
       "submit": "Odoslať odkaz na obnovenie",
       "success": "Odkaz na obnovenie hesla odoslaný! Skontrolujte svoj e-mail.",
+      "back_to_login": "Späť na prihlásenie"
+    },
+    "below": {
+      "title": "Na čo je účet",
+      "addresses_title": "Adresy, história, faktúry",
+      "addresses_text": "Uložené adresy, všetky dokončené objednávky a faktúry nájdete na jednom mieste.",
+      "points_title": "Body za každé dokončené upratovanie",
+      "points_text": "Za každú dokončenú objednávku získate 1 bod za každých 10 Kč. Pri 500 bodoch máte strieborný stupeň — 5 % z objednávok nad 1 000 Kč.",
+      "cancel_title": "Zrušenie zdarma",
+      "cancel_text": "Až do 24 hodín pred upratovaním. S členstvom Cleansia Plus do 4 hodín.",
+      "track_text": "Chcete len sledovať objednávku? Účet na to nepotrebujete — stačí číslo objednávky a e-mail.",
+      "track_link": "Sledovať objednávku",
       "back_to_login": "Späť na prihlásenie"
     }
   },
@@ -1329,7 +1343,8 @@
       "resend_code": "Znovu odoslať kód",
       "verify_code": "Overiť kód",
       "email_sent": "E-mail bol úspešne odoslaný",
-      "code_cooldown": "Potvrdzovací kód bol odoslaný. Počkajte prosím {{ cooldown }} sekúnd pred vyžiadaním nového kódu."
+      "code_cooldown": "Potvrdzovací kód bol odoslaný. Počkajte prosím {{ cooldown }} sekúnd pred vyžiadaním nového kódu.",
+      "change_email": "Zmeniť e-mail"
     },
     "order_lookup": {
       "title": "Vyhľadať objednávku",

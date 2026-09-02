@@ -194,24 +194,42 @@ const report = await page.evaluate((vw) => {
   }
 
   // 4. Overlapping interactive elements - a real click-blocker.
+  //
+  // Compared FRAGMENT by fragment, not by bounding box. An inline link that
+  // wraps onto a second line has a bounding box spanning both lines and the
+  // full column width, so any other link on either line intersects it — two
+  // links in one sentence of terms copy reported as a click-blocker on every
+  // phone width. getClientRects() gives the boxes actually painted.
   const inter = [...document.querySelectorAll('a[href], button')]
     .filter(visible)
-    .map((e) => ({ e, r: e.getBoundingClientRect() }));
+    .map((e) => ({ e, rects: [...e.getClientRects()] }));
   const overlaps = [];
   for (let i = 0; i < inter.length; i++) {
     for (let j = i + 1; j < inter.length; j++) {
       const a = inter[i];
       const b = inter[j];
       if (a.e.contains(b.e) || b.e.contains(a.e)) continue;
-      const ox = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
-      const oy = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
-      if (ox > 4 && oy > 4) overlaps.push({ a: path(a.e), b: path(b.e), ox: Math.round(ox), oy: Math.round(oy) });
+      let hit = null;
+      for (const ra of a.rects) {
+        for (const rb of b.rects) {
+          const ox = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
+          const oy = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+          if (ox > 4 && oy > 4) hit = { ox: Math.round(ox), oy: Math.round(oy) };
+        }
+      }
+      if (hit) overlaps.push({ a: path(a.e), b: path(b.e), ...hit });
     }
   }
 
   // 5. Images that did not load, or render at zero.
+  //
+  // An image with NO layout box at all is not broken — it is hidden, which is
+  // what every decorative mascot is below the tablet breakpoint. Flagging those
+  // buried the real failures under a row of false positives on every phone
+  // width, which is the way a checker stops being read.
   const badImgs = [];
   for (const img of document.querySelectorAll('img')) {
+    if (img.getClientRects().length === 0) continue;
     const r = img.getBoundingClientRect();
     const name = (img.currentSrc || img.src || '').split('/').pop();
     if (!img.complete || img.naturalWidth === 0) badImgs.push({ sel: path(img), src: name, reason: 'not loaded' });

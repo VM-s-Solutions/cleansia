@@ -1,23 +1,32 @@
-<cleansia-dynamic-background>
-  <div class="cleansia-email-confirm__page">
-    <div
-      class="cleansia-email-confirm__confirmation-card"
-      [formGroup]="facade.formGroup"
-    >
-      <div class="cleansia-email-confirm__brand-name-container">
-        <cleansia-brand-name />
-      </div>
-      <div class="cleansia-email-confirm__header">
-        <cleansia-title
-          [level]="1"
-          [title]="'pages.email_confirm.title' | translate"
-        />
-      </div>
-      <div class="cleansia-email-confirm__description">
-        <p>{{ 'pages.email_confirm.description' | translate }}</p>
-      </div>
+<section class="cl-auth">
+  <div class="cl-auth__suds" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <div class="cl-auth__plate">
+    <h1 class="cl-d2">{{ 'pages.email_confirm.title' | translate }}</h1>
+    <p class="cl-body cl-auth__lead">{{ 'pages.email_confirm.description' | translate }}</p>
+  </div>
+
+  <div class="cl-auth__row">
+    <!--
+      One character, on the right. Two flank the screens a person chose to be
+      on; the three they landed on mid-flow get one, and the composition gets
+      quieter as the task gets more anxious.
+    -->
+    <img
+      class="cl-auth__mascot cl-auth__mascot--right"
+      src="assets/images/mascot/mascot-dusting-tile.webp"
+      alt=""
+      width="340"
+      height="280"
+      aria-hidden="true"
+    />
+
+    <!--
+      Narrow: six 44px boxes are about 300px of content and a 520 card around
+      them looks abandoned.
+    -->
+    <div class="cl-auth__card cl-auth__card--narrow cl-lift" [formGroup]="facade.formGroup">
       @if (!facade.emailKnown()) {
-      <div class="cleansia-email-confirm__form-control">
         <cleansia-text-input
           [label]="'pages.email_confirm.email_label' | translate"
           [floatVariant]="'on'"
@@ -26,37 +35,48 @@
           [required]="true"
           [showErrors]="true"
         />
-      </div>
       }
-      <div class="cleansia-email-confirm__form-control">
-        <cleansia-code-input
-          formControlName="code"
-          (codeComplete)="onVerifyCode()"
-        />
-      </div>
-      <div class="cleansia-email-confirm__actions">
+
+      <cleansia-code-input formControlName="code" (codeComplete)="onVerifyCode()" />
+
+      <div class="cl-auth__row-between">
         @if (facade.isResendDisabled()) {
-        <span class="cleansia-email-confirm__countdown">{{ resendCodeTimeout() }}</span>
+          <span class="cl-auth__countdown">{{ resendCodeTimeout() }}</span>
+        } @else {
+          <button type="button" class="cl-link" (click)="onResendCode()">
+            {{ 'pages.email_confirm.resend_code' | translate }}
+          </button>
         }
-        <div class="cleansia-email-confirm__button-row">
-          <cleansia-button
-            [title]="'pages.email_confirm.resend_code' | translate"
-            [severity]="'secondary'"
-            [icon]="'pi pi-refresh'"
-            [disabled]="facade.isResendDisabled()"
-            (clickFn)="onResendCode()"
-          />
-          <cleansia-button
-            [buttonType]="'submit'"
-            [title]="'pages.email_confirm.verify_code' | translate"
-            [severity]="'primary'"
-            [icon]="'pi pi-check-circle'"
-            [iconPosition]="'right'"
-            [loading]="loading() || false"
-            (clickFn)="onVerifyCode()"
-          />
-        </div>
+        <a class="cl-link" [routerLink]="'/' + routes.REGISTER">
+          {{ 'pages.email_confirm.change_email' | translate }}
+        </a>
       </div>
+
+      <cleansia-button
+        [buttonType]="'submit'"
+        [title]="'pages.email_confirm.verify_code' | translate"
+        [severity]="'primary'"
+        [size]="'full-width'"
+        [loading]="loading() || false"
+        (clickFn)="onVerifyCode()"
+      />
     </div>
   </div>
-</cleansia-dynamic-background>
+
+  <cleansia-foam-edge variant="cap-short" />
+</section>
+
+<!--
+  Variant B. A person part-way through confirming an address is not a prospect,
+  so this is one quiet line rather than the case for having an account.
+-->
+<section class="cl-auth-below cl-auth-below--quiet">
+  <div class="cl-auth-below__inner">
+    <p class="cl-muted cl-auth-below__escape">
+      <a [routerLink]="'/' + routes.LOGIN">{{ 'auth.below.back_to_login' | translate }}</a>
+      &nbsp;·&nbsp;
+      {{ 'auth.below.track_text' | translate }}
+      <a [routerLink]="'/' + routes.TRACK_ORDER">{{ 'auth.below.track_link' | translate }}</a>
+    </p>
+  </div>
+</section>

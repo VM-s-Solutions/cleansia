@@ -60,6 +60,11 @@
   --cl-plus-2: #{$primary};
   --cl-plus-ink: #{$white};
   --cl-footer-bg: #{$text-heading};
+
+  // The one colour that means "this destroys something". Declared here rather
+  // than in whichever page happened to need it first — the booking wizard's
+  // cancel notice and the account pages' field errors are both consumers now.
+  --cl-danger: #b91c1c;
 }
 
 :root.dark-mode {
@@ -102,6 +107,9 @@
   // Navy on near-black is a light slab; the footer drops to a deep ink that
   // still reads as its own band.
   --cl-footer-bg: #0a2438;
+
+  // Red-300, not red-700: the light theme's red measures 2.1 on a dark ground.
+  --cl-danger: #fca5a5;
 }
 
 // ---- Type scale -------------------------------------------------------------
@@ -311,6 +319,23 @@
   &:focus-visible {
     outline: 2px solid var(--cl-accent);
     outline-offset: 3px;
+  }
+}
+
+// The class was drawn for a <span>, but half its call sites are real buttons —
+// a resend, a reveal, a "show all". As a <button> it picks up the UA's own
+// border, background and centring, which drew a box around every one of them.
+// This is the same rule three pages had started keeping locally.
+button.cl-link {
+  border: 0;
+  border-bottom: 2px solid var(--cl-accent-soft);
+  background: none;
+  padding: 0 0 2px;
+  text-align: left;
+  font-family: inherit;
+
+  &:hover {
+    border-color: var(--cl-accent);
   }
 }
 

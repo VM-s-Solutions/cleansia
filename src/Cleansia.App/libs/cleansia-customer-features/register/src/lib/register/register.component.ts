@@ -4,15 +4,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
-  CleansiaBrandNameComponent,
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
   CleansiaCodeInputDialogComponent,
-  CleansiaDynamicBackgroundComponent,
   CleansiaTextInputComponent,
-  CleansiaTitleComponent,
   CodeDialogResult,
 } from '@cleansia/components';
+import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { selectCustomerLoading } from '@cleansia/customer-stores';
 import {
   APPLE_CLIENT_ID,
@@ -49,13 +47,11 @@ const REFERRAL_ERROR_KEYS: Record<string, string> = {
     TranslatePipe,
     ReactiveFormsModule,
     InputTextModule,
-    CleansiaTitleComponent,
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
-    CleansiaBrandNameComponent,
     CleansiaTextInputComponent,
-    CleansiaDynamicBackgroundComponent,
     CleansiaCodeInputDialogComponent,
+    FoamEdgeComponent,
   ],
   providers: [RegisterFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,

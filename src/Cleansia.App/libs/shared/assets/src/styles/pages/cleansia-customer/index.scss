@@ -2,10 +2,7 @@
 // All customer app page styles imported here
 
 @use './home.component.scss';
-@use './login.component.scss';
-@use './register.component.scss';
-@use './confirm-email.component.scss';
-@use './forgot-password.component.scss';
+@use './auth';
 @use './catalog';
 @use './order-wizard.component.scss';
 @use './wizard-shell';

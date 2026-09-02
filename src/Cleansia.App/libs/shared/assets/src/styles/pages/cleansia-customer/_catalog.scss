@@ -98,6 +98,13 @@
 // ---- The band the page opens on ---------------------------------------------
 .cl-cat-hero {
   position: relative;
+  // Reclaim the shell's navbar spacer and pay it back as padding, so the
+  // gradient runs to the very top of the page and the floating white pill sits
+  // ON it. Without this the catalogue opened on a white band the home page does
+  // not have, which is the whole reason the two pages looked unrelated at the
+  // top. Same two lines, same order, as `.cl-hero`. -> _home-hero.scss
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding-top: var(--cl-nav-h);
   background: radial-gradient(
     120% 92% at 76% 6%,
     var(--cl-hero-1) 0%,
@@ -142,6 +149,34 @@
   flex-wrap: wrap;
   gap: calc(0.75 * var(--cl-u));
   margin-top: calc(1.5 * var(--cl-u));
+}
+
+// The square divider shows as narrow notches between tabs rather than as whole
+// bubbles, so it has far less shape to be seen by than the round one — and both
+// of this page's dividers sit exactly where their gradient bottoms out at
+// near-white. Measured against that foot the edge came out at 1.068, which is
+// invisible; the round variant survives the same ground only because 60px of
+// bubble is exposed instead of 28px of notch.
+//
+// So the strip carries its own band. It fades in from the colour immediately
+// above it, so there is no step where the two meet, and lands on a tint the
+// white tabs can be read against. The FILL still has to equal the section the
+// edge leads into — that rule is what stops a hard line at the seam — so the
+// contrast has to come from behind the shape, not from it.
+//
+// This only takes it from 1.068 to 1.145. The square variant reads as TABS when
+// the section it leads into is itself tinted, because then the notches join
+// that band; leading into white, the notches are isolated slivers and the eye
+// reads spikes however dark they are. Pushing the band to --cl-hero-1 measured
+// 1.31 and looked worse for exactly that reason. Owner decision pending.
+.cl-cat-hero > cleansia-foam-edge {
+  display: block;
+  background: linear-gradient(var(--cl-hero-3), var(--cl-tint-strong));
+}
+
+.cl-cat-closing > cleansia-foam-edge {
+  display: block;
+  background: linear-gradient(var(--cl-cta-1), var(--cl-tint-strong));
 }
 
 // ---- The column both sections sit in ----------------------------------------

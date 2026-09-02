@@ -20,11 +20,11 @@
       works. Linking them to invented routes would be worse than anchoring.
     -->
     <nav class="customer-navbar__center hidden md:flex align-items-center justify-content-center">
-      <a class="customer-navbar__link" routerLink="/services" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
-        {{ 'nav.services' | translate }}
-      </a>
       <a class="customer-navbar__link" routerLink="/" fragment="why-us" (click)="closeMenus()">
         {{ 'nav.how_it_works' | translate }}
+      </a>
+      <a class="customer-navbar__link" routerLink="/services" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
+        {{ 'nav.services' | translate }}
       </a>
       <a class="customer-navbar__link" routerLink="/membership" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
         {{ 'nav.plus' | translate }}

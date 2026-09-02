@@ -18,7 +18,7 @@ import { FoamEdgeComponent, FoamVariant } from './foam-edge.component';
  * cases stay distinguishable: an intentional crop that drifts is a bug again.
  */
 describe('FoamEdgeComponent', () => {
-  const VARIANTS: FoamVariant[] = ['cap', 'cap-short', 'hood'];
+  const VARIANTS: FoamVariant[] = ['cap', 'hood', 'hood-short'];
 
   function build(variant: FoamVariant): {
     ref: ComponentRef<FoamEdgeComponent>;
@@ -88,7 +88,7 @@ describe('FoamEdgeComponent', () => {
   it('crops the square sibling by exactly the amount that flattens it', () => {
     // 60 of bubble off a 28 band in a 60 strip. Change any of the three and the
     // tab stops being the shape the design asked for.
-    expect(overhang(build('cap-short').component)).toBe(28);
+    expect(overhang(build('hood-short').component)).toBe(28);
   });
 
   it('hangs a hood down and arcs a cap up', () => {

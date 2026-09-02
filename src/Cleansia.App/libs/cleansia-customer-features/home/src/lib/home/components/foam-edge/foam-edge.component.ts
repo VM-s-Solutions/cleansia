@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /** Which way the bubbles face, and how tall the strip is. */
-export type FoamVariant = 'cap' | 'cap-short' | 'hood';
+export type FoamVariant = 'cap' | 'hood' | 'hood-short';
 
 /** One bubble run: how many, how big, how much solid band, and which way it faces. */
 interface FoamGeometry {
@@ -33,11 +33,11 @@ interface FoamGeometry {
  *
  * SVG does not scale an arc that does not fit its viewBox — it draws it and the
  * box crops the overflow. `cap` and `hood` are sized so nothing is cropped and
- * the bubbles read as full rounds. `cap-short` deliberately is not: a 60-radius
- * bubble off a 28 band in a 60-tall strip has its crown cut away, which is what
- * gives that variant its flatter, squarer tabs. Owner ruling 2026-09-02, after
- * seeing both — the two shapes are the vocabulary, and the short one is meant to
- * read as the square sibling of the round one.
+ * the bubbles read as full rounds. `hood-short` deliberately is not: a 60-radius
+ * bubble off a 28 band in a 60-tall strip has its far edge cut away, which is
+ * what gives that variant its flatter, squarer tabs. Owner ruling 2026-09-02,
+ * after seeing both — the two shapes are the vocabulary, and the short one is
+ * the square sibling of the round one.
  *
  * The one thing that was genuinely broken is fixed and stays fixed: `hood` used
  * the sweep flag that bulges its arcs UP into its own band rather than down out
@@ -54,9 +54,13 @@ const GEOMETRY: Record<FoamVariant, FoamGeometry> = {
   cap: { count: 12, radius: 60, band: 30, up: true, strip: 90 },
   // The same bubble, hung the other way, in a strip tall enough to hold it.
   hood: { count: 12, radius: 60, band: 30, up: false, strip: 90 },
-  // The square sibling. 28 + 60 against a 60 strip crops each crown by 28,
-  // which is the flatter tab the design wants — not an oversight.
-  'cap-short': { count: 12, radius: 60, band: 28, up: true, strip: 60 },
+  // The square sibling, hung the same way as `hood`. 28 + 60 against a 60 strip
+  // crops each bubble's far edge by 28, which is the flatter tab — not an
+  // oversight. Owner ruling 2026-09-02: the home page carries the round shape
+  // throughout and the services page carries this one, so the two pages read
+  // as the same motif at two weights rather than as one page disagreeing with
+  // itself.
+  'hood-short': { count: 12, radius: 60, band: 28, up: false, strip: 60 },
 };
 
 @Component({
@@ -70,8 +74,9 @@ export class FoamEdgeComponent {
   readonly fill = input<string>('var(--cl-foam, var(--surface-card))');
 
   /**
-   * `cap` is the hero's 90-tall edge, `hood` the 90-tall edge that opens a
-   * tinted band, `cap-short` the gallery's 60-tall one. -> the approved artboard.
+   * `cap` is the 90-tall edge that arcs up, `hood` the 90-tall one that hangs
+   * down, `hood-short` its 60-tall square sibling. The home page uses the round
+   * pair throughout; the services page uses the square one.
    */
   readonly variant = input<FoamVariant>('cap');
 

@@ -116,7 +116,7 @@ export class ServicesCatalogComponent implements OnInit {
   ];
 
   readonly heroMascotLeft = 'assets/images/mascot/mascot-leaning-tile.webp';
-  readonly heroMascotRight = 'assets/images/mascot/mascot-floor-scrubber-tile.webp';
+  readonly heroMascotRight = 'assets/images/mascot/mascot-dusting-tile.webp';
   readonly closingMascot = 'assets/images/mascot/mascot-waving.webp';
 
   ngOnInit(): void {

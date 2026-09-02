@@ -1,0 +1,112 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Your data — a copy of it, the consents on it, and closing the account
+// =============================================================================
+// Replaces `gdpr.component.scss`, which drew on PrimeNG's --surface-* and a
+// --red-200 fallback chain. Short page, same shell as the rest of the account
+// surface. The MARKUP is unchanged.
+
+.customer-gdpr {
+  position: relative;
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding: var(--cl-nav-h) var(--cl-gutter) calc(4 * var(--cl-u));
+  background: var(--cl-band);
+  min-height: 100vh;
+}
+
+// `cleansia-title` is a component host and inline by default, so the column
+// width below applied to nothing and the page heading sat hard against the
+// gutter while every card under it was centred.
+.customer-gdpr > cleansia-title {
+  display: block;
+}
+
+.customer-gdpr > * {
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.customer-gdpr h1,
+.customer-gdpr h2 {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  line-height: 1.16;
+  letter-spacing: -0.9px;
+  color: var(--cl-heading);
+  margin: calc(2.25 * var(--cl-u)) auto 0;
+}
+
+.customer-gdpr__subtitle {
+  margin: calc(0.625 * var(--cl-u)) auto calc(1.75 * var(--cl-u));
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.72;
+  color: var(--cl-body);
+}
+
+.customer-gdpr__section {
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.75 * var(--cl-u));
+  padding: calc(1.75 * var(--cl-u));
+  margin-bottom: calc(1.25 * var(--cl-u));
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: calc(0.5 * var(--cl-u));
+    margin: 0 0 calc(0.75 * var(--cl-u));
+    font-family: $font-heading;
+    font-weight: 600;
+    font-size: calc(1.375 * var(--cl-u));
+    letter-spacing: -0.35px;
+    color: var(--cl-heading);
+  }
+
+  p {
+    margin: 0 0 var(--cl-u);
+    font-size: calc(0.9375 * var(--cl-u));
+    line-height: 1.7;
+    color: var(--cl-body);
+  }
+
+  // Closing the account. The border carries the warning; the heading stays in
+  // the page's own ink, because a red title on a section a customer may simply
+  // be reading reads as an error they have already made.
+  &--danger {
+    border-color: var(--cl-danger-line);
+
+    h3 {
+      color: var(--cl-danger);
+    }
+  }
+}
+
+.customer-gdpr__consents {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.75 * var(--cl-u));
+}
+
+.customer-gdpr__consent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--cl-u);
+  padding: calc(0.875 * var(--cl-u)) var(--cl-u);
+  border-radius: var(--cl-u);
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border);
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+@media (max-width: 600px) {
+  .customer-gdpr__consent-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

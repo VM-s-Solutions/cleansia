@@ -636,6 +636,78 @@ cleansia-multiselect {
   }
 }
 
+// ---- The two fields that are not a p-inputtext ------------------------------
+// Owner, 2026-09-02: "the phone and date inputs look kinda corrupted".
+//
+// Both sit in the same two-column row as a pair of text inputs, and neither was
+// reached by the field floor above. The phone control is a <div> wrapping a bare
+// <input> — no `p-inputtext` class on either — so it fell back to the hardcoded
+// `var(--p-inputtext-border-radius, 6px)` in its own component sheet and stood
+// 35px tall next to a 48px neighbour. The date field's `p-datepicker` stretches
+// to the column but PrimeNG sizes the input inside it independently, so the box
+// ended half-width with its calendar glyph stranded against the wrapper's right
+// edge, detached from the field it opens.
+//
+// Scoped to the customer surface on purpose: the same two components render on
+// partner and admin, which have not had this design pass.
+cleansia-telephone .cleansia-telephone {
+  min-height: calc(3 * var(--cl-u));
+  border-radius: calc(0.875 * var(--cl-u));
+  border-color: var(--cl-field-border);
+  background: var(--cl-surface);
+
+  &:hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  &.cleansia-telephone--focused {
+    border-color: var(--cl-accent);
+    box-shadow: 0 0 0 3px var(--cl-tint-strong);
+  }
+}
+
+cleansia-telephone .cleansia-telephone__trigger {
+  align-self: stretch;
+  padding: 0 calc(0.75 * var(--cl-u));
+  border-right-color: var(--cl-field-border);
+  font-family: $font-body;
+  color: var(--cl-body);
+}
+
+cleansia-telephone .cleansia-telephone__code {
+  font-size: var(--cl-u);
+  font-weight: 700;
+}
+
+cleansia-telephone .cleansia-telephone__input {
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-width: 0;
+  padding: 0 var(--cl-u);
+  border: 0;
+  background: none;
+  font-family: $font-body;
+  font-size: var(--cl-u);
+  color: var(--cl-body);
+
+  &:focus {
+    outline: 0;
+  }
+
+  &::placeholder {
+    color: var(--cl-faint);
+  }
+}
+
+cleansia-calendar .p-datepicker {
+  display: flex;
+  width: 100%;
+
+  .p-datepicker-input {
+    width: 100%;
+  }
+}
+
 // ---- The fact line that closes a card --------------------------------------
 .cl-fact {
   display: flex;

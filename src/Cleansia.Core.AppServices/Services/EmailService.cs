@@ -343,20 +343,37 @@ public sealed class EmailService : IEmailService
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.PromoCode, languageCode, ct);
 
-        var subject = translations.GetValueOrDefault("Subject", "Your Cleansia discount code");
+        // Owner, 2026-09-02: the promo e-mail arrived "corrupted" — a bare "!" where
+        // the greeting belongs and a button with no words on it.
+        //
+        // Nothing was wrong with the template or the send. EmailTemplateTranslation
+        // is admin-managed data with no code seed, and no row has ever been entered
+        // for PromoCode, so every key resolved to nothing. The renderer strips an
+        // unmatched {{Key}} rather than mailing braces, which turned "{{Greeting}}!"
+        // into "!" and emptied the CTA. Only Subject and ExpiryNotice survived,
+        // because only those two had a fallback here.
+        //
+        // So the copy the template needs now has one, in every locale the platform
+        // speaks. This is the BASE layer: an admin row still wins over it, and the
+        // per-send data below still wins over both.
+        var defaults = PromoDefaultsFor(languageCode);
+
+        var subject = translations.GetValueOrDefault("Subject", defaults["Subject"]);
 
         // Expiry is optional: an issued code with no end date renders the sentence
         // empty rather than the words "null" or a fabricated date.
         var expiryNotice = expiresOn is null
             ? string.Empty
             : string.Format(
-                translations.GetValueOrDefault("ExpiryNotice", "The code is valid until {0}."),
+                translations.GetValueOrDefault("ExpiryNotice", defaults["ExpiryNotice"]),
                 expiresOn.Value.ToString("d. M. yyyy"));
 
-        // Copy still comes from EmailTemplateTranslation, exactly as the hosted
-        // templates get it — only the rendering moved into the repository. It is
-        // the BASE layer: everything below is per-send data and overrides it.
         var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+
+        foreach (var (key, value) in defaults)
+        {
+            values[key] = value;
+        }
 
         foreach (var (key, value) in translations)
         {
@@ -367,7 +384,7 @@ public sealed class EmailService : IEmailService
         // and carries no figure, because the figure is not translatable — it is
         // the value on the row. The pill needs both, or the e-mail offers a
         // discount without ever saying how much.
-        var discountPhrase = translations.GetValueOrDefault("DiscountText");
+        var discountPhrase = translations.GetValueOrDefault("DiscountText", defaults["DiscountText"]);
 
         values["lang"] = languageCode;
         values["PromoCode"] = promoCode;
@@ -526,6 +543,107 @@ public sealed class EmailService : IEmailService
     /// reviewed. An unknown type throws rather than falling back — a silent default here would mail
     /// the wrong template.
     /// </remarks>
+    /// <summary>
+    /// Default promo-code copy, per locale. Used only where
+    /// <see cref="EmailTemplateTranslation"/> has no row for a key.
+    /// </summary>
+    /// <remarks>
+    /// The translations table is admin-managed and has never carried a PromoCode
+    /// row, so before this the template's greeting, intro, instructions, CTA label,
+    /// sign-off and footer all rendered empty and the mail reached customers with a
+    /// blank button. Copy lives here rather than in a migration because the table is
+    /// editable data, not schema: seeding it with HasData would mean regenerating
+    /// `Initial` and dropping the DEV database, and an admin edit would then be
+    /// overwritten on the next reseed. As a fallback layer, an entered row always wins.
+    ///
+    /// Keys match the placeholders in `email-templates/promo-code.html`. `{0}` in
+    /// ExpiryNotice is the formatted date.
+    /// </remarks>
+    private static IReadOnlyDictionary<string, string> PromoDefaultsFor(string languageCode) =>
+        PromoDefaults.TryGetValue(languageCode ?? string.Empty, out var copy)
+            ? copy
+            : PromoDefaults[Constants.Language.English];
+
+    private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> PromoDefaults =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["cs"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "Váš slevový kód Cleansia",
+                ["Greeting"] = "Dobrý den",
+                ["IntroText"] = "Máme pro vás slevový kód na úklid s Cleansia.",
+                ["DiscountText"] = "Sleva na vaši objednávku",
+                ["InstructionsText"] = "Kód zadejte v posledním kroku objednávky.",
+                ["ButtonText"] = "Objednat úklid",
+                ["ExpiryNotice"] = "Kód platí do {0}.",
+                ["IgnoreText"] = "Pokud jste o kód nežádali, můžete tento e-mail ignorovat.",
+                ["SupportText"] = "Potřebujete pomoc? Napište nám na",
+                ["Closing"] = "S pozdravem,",
+                ["TeamName"] = "tým Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
+            },
+            ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "Váš zľavový kód Cleansia",
+                ["Greeting"] = "Dobrý deň",
+                ["IntroText"] = "Máme pre vás zľavový kód na upratovanie s Cleansia.",
+                ["DiscountText"] = "Zľava na vašu objednávku",
+                ["InstructionsText"] = "Kód zadajte v poslednom kroku objednávky.",
+                ["ButtonText"] = "Objednať upratovanie",
+                ["ExpiryNotice"] = "Kód platí do {0}.",
+                ["IgnoreText"] = "Ak ste o kód nežiadali, tento e-mail môžete ignorovať.",
+                ["SupportText"] = "Potrebujete pomoc? Napíšte nám na",
+                ["Closing"] = "S pozdravom,",
+                ["TeamName"] = "tím Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
+            },
+            ["en"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "Your Cleansia discount code",
+                ["Greeting"] = "Hello",
+                ["IntroText"] = "Here is your discount code for a clean with Cleansia.",
+                ["DiscountText"] = "Discount on your order",
+                ["InstructionsText"] = "Enter the code at the last step of your booking.",
+                ["ButtonText"] = "Book a clean",
+                ["ExpiryNotice"] = "The code is valid until {0}.",
+                ["IgnoreText"] = "If you did not ask for this code, you can ignore this e-mail.",
+                ["SupportText"] = "Need a hand? Write to us at",
+                ["Closing"] = "Kind regards,",
+                ["TeamName"] = "the Cleansia team",
+                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
+            },
+            ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "Ваш промокод Cleansia",
+                ["Greeting"] = "Здравствуйте",
+                ["IntroText"] = "Мы приготовили для вас промокод на уборку с Cleansia.",
+                ["DiscountText"] = "Скидка на ваш заказ",
+                ["InstructionsText"] = "Введите код на последнем шаге оформления заказа.",
+                ["ButtonText"] = "Заказать уборку",
+                ["ExpiryNotice"] = "Код действует до {0}.",
+                ["IgnoreText"] = "Если вы не запрашивали этот код, просто проигнорируйте письмо.",
+                ["SupportText"] = "Нужна помощь? Напишите нам на",
+                ["Closing"] = "С уважением,",
+                ["TeamName"] = "команда Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
+            },
+            ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["Subject"] = "Ваш промокод Cleansia",
+                ["Greeting"] = "Доброго дня",
+                ["IntroText"] = "Ми підготували для вас промокод на прибирання з Cleansia.",
+                ["DiscountText"] = "Знижка на ваше замовлення",
+                ["InstructionsText"] = "Введіть код на останньому кроці оформлення замовлення.",
+                ["ButtonText"] = "Замовити прибирання",
+                ["ExpiryNotice"] = "Код діє до {0}.",
+                ["IgnoreText"] = "Якщо ви не запитували цей код, просто проігноруйте цей лист.",
+                ["SupportText"] = "Потрібна допомога? Напишіть нам на",
+                ["Closing"] = "З повагою,",
+                ["TeamName"] = "команда Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
+            },
+        };
+
     private static string TemplateFileFor(EmailType emailType) => emailType switch
     {
         EmailType.ConfirmationEmail => "email-confirmation.html",

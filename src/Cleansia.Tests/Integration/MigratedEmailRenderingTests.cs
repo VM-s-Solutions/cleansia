@@ -216,6 +216,83 @@ public class MigratedEmailRenderingTests
         currencyId: "czk",
         paymentStatus: PaymentStatus.Pending);
 
+    /// <summary>
+    /// The promo e-mail with NO translation rows at all — which is the state the
+    /// table has always been in, because EmailTemplateTranslation is admin-managed
+    /// and nothing ever entered a PromoCode row.
+    ///
+    /// Owner, 2026-09-02: the delivered mail showed a lone "!" where the greeting
+    /// belongs and a CTA button with no label. Both are what the renderer produces
+    /// when it strips an unresolved placeholder: "{{Greeting}}!" collapses to "!"
+    /// and the anchor empties. This is the regression test for that mail.
+    /// </summary>
+    [Fact]
+    public async Task Promo_is_complete_with_no_translation_rows()
+    {
+        var (service, wire) = Build([]);
+
+        await service.SendPromoCodeEmailAsync(
+            "customer@example.com", "VITEJTE-JF8J6F", "-10 %",
+            new DateTime(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc), "cs", CancellationToken.None);
+
+        // The code and the figure are per-send data and were never the problem.
+        Assert.Contains("VITEJTE-JF8J6F", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("-10 %", wire.Html, StringComparison.Ordinal);
+
+        // The copy that used to vanish.
+        Assert.Contains("Dobrý den", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("Objednat úklid", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("Kód platí do 2. 10. 2026.", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("tým Cleansia", wire.Html, StringComparison.Ordinal);
+        Assert.Equal("Váš slevový kód Cleansia", wire.Subject);
+
+        // The two shapes the owner actually saw in the inbox.
+        Assert.DoesNotContain(">!<", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("{{", wire.Html, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An entered translation row still beats the default — the fallback is a
+    /// floor, not an override. If this inverts, editing copy in the admin stops
+    /// having any effect and nobody would notice until a customer read it.
+    /// </summary>
+    [Fact]
+    public async Task Promo_translation_row_beats_the_default()
+    {
+        var (service, wire) = Build(new Dictionary<string, string>
+        {
+            ["Greeting"] = "Ahoj",
+            ["ButtonText"] = "Chci uklidit",
+        });
+
+        await service.SendPromoCodeEmailAsync(
+            "customer@example.com", "CODE-1", "-15 %", null, "cs", CancellationToken.None);
+
+        Assert.Contains("Ahoj", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("Chci uklidit", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Dobrý den", wire.Html, StringComparison.Ordinal);
+        // Keys the row did not carry still fall back rather than emptying.
+        Assert.Contains("tým Cleansia", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("{{", wire.Html, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An unknown locale falls back to English rather than to nothing — the
+    /// language code arrives off a user row and is not validated here.
+    /// </summary>
+    [Fact]
+    public async Task Promo_falls_back_to_english_for_an_unknown_locale()
+    {
+        var (service, wire) = Build([]);
+
+        await service.SendPromoCodeEmailAsync(
+            "customer@example.com", "CODE-2", "-5 %", null, "de", CancellationToken.None);
+
+        Assert.Contains("Hello", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("Book a clean", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("{{", wire.Html, StringComparison.Ordinal);
+    }
+
     private static (EmailService Service, WireCapture Wire) Build(Dictionary<string, string> translations)
     {
         var config = new Mock<ISendGridConfig>();

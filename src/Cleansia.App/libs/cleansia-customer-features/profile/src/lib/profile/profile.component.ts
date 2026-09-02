@@ -26,7 +26,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DialogModule } from 'primeng/dialog';
-import { RewardsCardComponent } from '@cleansia-customer/rewards';
 import { NotificationPreferencesComponent } from '../notification-preferences/notification-preferences.component';
 import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
 import { ProfileFacade } from './profile.facade';
@@ -56,7 +55,6 @@ import {
     CleansiaCalendarComponent,
     CleansiaSelectComponent,
     CleansiaAddressAutocompleteComponent,
-    RewardsCardComponent,
     NotificationPreferencesComponent,
   ],
   providers: [ProfileFacade],

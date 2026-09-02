@@ -65,11 +65,15 @@
   align-items: start;
 }
 
-.customer-profile__sidebar-sticky {
+.customer-profile__sidebar {
   position: sticky;
   // Clear of the fixed navbar, which publishes its own height and grows when
   // the dev banner is up.
   top: calc(var(--cl-nav-h) + 1 * var(--cl-u));
+  min-width: 0;
+}
+
+.customer-profile__sidebar-sticky {
   display: flex;
   flex-direction: column;
   gap: var(--cl-u);
@@ -264,11 +268,53 @@
 }
 
 .customer-profile__password-checklist {
-  display: flex;
-  flex-direction: column;
-  gap: calc(0.375 * var(--cl-u));
   font-size: calc(0.875 * var(--cl-u));
   color: var(--cl-muted);
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: calc(0.375 * var(--cl-u));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: calc(0.5 * var(--cl-u));
+    line-height: 1.4;
+
+    // The dot IS the state: neutral until the field is touched, then it
+    // resolves. Drawn here rather than with an icon font so the three rows
+    // keep one baseline whichever state they are in.
+    &::before {
+      content: '';
+      flex: 0 0 auto;
+      width: calc(0.5 * var(--cl-u));
+      height: calc(0.5 * var(--cl-u));
+      border-radius: 50%;
+      background: var(--cl-field-border);
+      transition: background 0.16s ease;
+    }
+
+    &.valid {
+      color: var(--cl-heading);
+
+      &::before {
+        background: var(--cl-accent);
+      }
+    }
+
+    &.invalid {
+      color: var(--cl-danger);
+
+      &::before {
+        background: var(--cl-danger);
+      }
+    }
+  }
 }
 
 // ---- The avatar -------------------------------------------------------------
@@ -345,15 +391,27 @@
 }
 
 .customer-profile__address-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
   font-size: calc(0.9375 * var(--cl-u));
   color: var(--cl-body);
   overflow-wrap: anywhere;
+
+  strong {
+    color: var(--cl-heading);
+  }
+
+  span {
+    color: var(--cl-muted);
+  }
 }
 
 .customer-profile__address-label {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: calc(0.5 * var(--cl-u));
   font-weight: 800;
   color: var(--cl-heading);
@@ -362,6 +420,9 @@
 .customer-profile__address-default-badge {
   display: inline-flex;
   align-items: center;
+  align-self: center;
+  flex: 0 0 auto;
+  gap: calc(0.25 * var(--cl-u));
   padding: 2px calc(0.5 * var(--cl-u));
   border-radius: 999px;
   background: var(--cl-tint-strong);
@@ -440,15 +501,77 @@
 }
 
 .customer-profile__pref-label {
+  display: flex;
+  align-items: center;
+  gap: calc(0.625 * var(--cl-u));
   font-size: var(--cl-u);
   font-weight: 700;
   color: var(--cl-heading);
+
+  i {
+    color: var(--cl-accent);
+    font-size: calc(1.0625 * var(--cl-u));
+  }
 }
 
 .customer-profile__pref-control {
   display: flex;
   align-items: center;
   gap: calc(0.5 * var(--cl-u));
+}
+
+// ---- Notifications ----------------------------------------------------------
+// The component brings its own three wrappers (list, skeleton, error) and
+// reuses .customer-profile__pref-row for each of the eleven categories. The
+// wrappers had no rule anywhere, so the rows stacked with zero gap and the
+// switches piled into a column against the right edge.
+.customer-notification-prefs__list {
+  display: flex;
+  flex-direction: column;
+
+  // Eleven rows is a list, not a form: a hairline between them gives the eye
+  // a rail to follow without adding eleven borders' worth of weight.
+  .customer-profile__pref-row {
+    padding: calc(0.75 * var(--cl-u)) 0;
+    border-bottom: 1px solid var(--cl-border);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+}
+
+// The save button sat directly on the last row's hairline.
+.customer-notification-prefs .customer-profile__actions {
+  margin-top: calc(1.25 * var(--cl-u));
+}
+
+.customer-notification-prefs__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.75 * var(--cl-u));
+}
+
+.customer-notification-prefs__error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(0.75 * var(--cl-u));
+  padding: calc(1.25 * var(--cl-u));
+  border-radius: var(--cl-u);
+  background: var(--cl-danger-soft);
+  border: 1px solid var(--cl-danger-line);
+
+  > i {
+    color: var(--cl-danger);
+    font-size: calc(1.25 * var(--cl-u));
+  }
+
+  p {
+    margin: 0;
+    color: var(--cl-body);
+    font-size: calc(0.9375 * var(--cl-u));
+  }
 }
 
 // ---- Data and privacy -------------------------------------------------------

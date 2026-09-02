@@ -356,6 +356,31 @@
         </div>
       </div>
 
+      <!--
+        Notifications — its own section, not a block at the foot of Preferences.
+        Eleven toggles are the biggest thing on this page and were sitting under
+        a language picker and a theme switch. The component is unchanged: it
+        brings its own facade, its own loading and retry states, and the eleven
+        categories.
+      -->
+      <div id="profile-notifications" class="customer-profile__section-card">
+        <div class="customer-profile__section-header">
+          <div class="customer-profile__section-icon">
+            <i class="pi pi-bell"></i>
+          </div>
+          <div>
+            <h2 class="customer-profile__section-title">
+              {{ 'pages.profile.notifications.title' | translate }}
+            </h2>
+            <p class="customer-profile__section-subtitle">
+              {{ 'pages.profile.notifications.desc' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <cleansia-customer-notification-preferences />
+      </div>
+
       <!-- Preferences Section -->
       <div id="profile-preferences" class="customer-profile__section-card">
         <div class="customer-profile__section-header">
@@ -409,8 +434,6 @@
           </div>
 
         </div>
-
-        <cleansia-customer-notification-preferences />
       </div>
 
       <!-- Danger Zone -->

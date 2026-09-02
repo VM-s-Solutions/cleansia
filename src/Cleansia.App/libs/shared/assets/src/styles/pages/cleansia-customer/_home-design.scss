@@ -87,6 +87,8 @@
   --cl-warn-soft: #fffbeb;
   --cl-warn-line: #fde68a;
   --cl-warn-ink: #b45309;
+  --cl-danger-soft: #fef2f2;
+  --cl-danger-line: #fecaca;
 
   // Suds. Flipping the OPACITY leaves a grey blob on a dark ground, so the
   // colour flips instead. Lives here rather than beside one page's suds since
@@ -144,6 +146,8 @@
   --cl-warn-soft: rgba(251, 191, 36, 0.10);
   --cl-warn-line: rgba(251, 191, 36, 0.30);
   --cl-warn-ink: #fbbf24;
+  --cl-danger-soft: rgba(248, 113, 113, 0.10);
+  --cl-danger-line: rgba(248, 113, 113, 0.28);
   --cl-sud: rgba(125, 211, 252, 0.06);
   --cl-sud-soft: rgba(125, 211, 252, 0.05);
   --cl-sud-faint: rgba(125, 211, 252, 0.04);

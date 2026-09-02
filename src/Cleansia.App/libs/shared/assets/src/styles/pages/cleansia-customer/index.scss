@@ -12,8 +12,8 @@
 @use './orders.component.scss';
 @use './checkout.component.scss';
 @use './order-detail.component.scss';
-@use './profile.component.scss';
-@use './saved-addresses.component.scss';
+@use './profile';
+@use './saved-addresses';
 @use './gdpr.component.scss';
 @use './legal-pages.component.scss';
 @use './disputes.component.scss';

@@ -41,6 +41,9 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
    */
   readonly variant = input<'flag' | 'globe'>('flag');
 
+  // The last constructor-injected dependency in this lib; every sibling field
+  // here already uses inject(), and the constructor now only seeds state.
+  private readonly translate = inject(TranslateService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -62,7 +65,7 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
     ru: 'RU',
   };
 
-  constructor(private translate: TranslateService) {
+  constructor() {
     this.selectedLanguage =
       this.translate.currentLang || this.translate.getDefaultLang();
   }

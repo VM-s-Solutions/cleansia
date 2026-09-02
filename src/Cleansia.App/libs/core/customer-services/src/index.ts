@@ -217,3 +217,4 @@ export type {
 export * from './lib/guards';
 export * from './lib/interceptors';
 export * from './lib/services';
+export { MembershipPlanFactsService } from './lib/services/membership-plan-facts.service';

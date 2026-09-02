@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
+import { TranslatePipe } from '@ngx-translate/core';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { InputTextModule } from 'primeng/inputtext';
 import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
@@ -25,6 +26,7 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
     InputTextModule,
     FormsModule,
     FloatLabelModule,
+    TranslatePipe,
   ],
   templateUrl: './cleansia-text-input.component.html',
   providers: [

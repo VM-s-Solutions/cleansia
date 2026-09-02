@@ -14,20 +14,28 @@ cleansia-hero {
 // the fixed bar, which left a white strip behind the pill, so the hero reclaims
 // exactly that height and pays it back as padding.
 .cl-hero {
-  margin-top: -96px;
-  padding-top: 96px;
+  // The shell's navbar spacer, reclaimed and paid back, so the gradient runs to
+  // the top of the page with the white pill floating ON it. Read from the token
+  // rather than written as 96px: the navbar publishes --cl-nav-h and makes it
+  // TALLER when the dev banner is up, and the hardcoded pair left the hero
+  // pulled 96px up and padded 126 down on every environment that shows it.
+  margin-top: calc(-1 * var(--cl-nav-h));
   // Radial rather than linear so the light sits behind the mascot instead of
-  // sweeping across the whole band. -> agents/knowledge/design-language.md
-  // Radial rather than linear so the light sits behind the mascot. The stops
-  // are tokens because the whole band stayed light in dark mode, leaving the
-  // hero as a bright slab with unreadable copy on it.
+  // sweeping across the whole band. The stops are tokens because the whole band
+  // stayed light in dark mode, leaving the hero a bright slab with unreadable
+  // copy on it. -> agents/knowledge/design-language.md
+  //
+  // Ends on --cl-band, not --cl-hero-3: the divider below it cuts white tabs,
+  // and against --cl-hero-3 they measured 1.07 — the weakest edge on the site.
   background: radial-gradient(
     120% 92% at 76% 6%,
     var(--cl-hero-1) 0%,
     var(--cl-hero-2) 44%,
-    var(--cl-hero-3) 100%
+    var(--cl-band) 100%
   );
-  padding: 20px 0 0;
+  // One shorthand, written AFTER the padding-top above used to be, which is
+  // what silently reset it to 20px and left the reclaimed navbar height unpaid.
+  padding: calc(var(--cl-nav-h) + 20px) 0 0;
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -35,13 +43,13 @@ cleansia-hero {
   &__sud {
     position: absolute;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--cl-sud);
     pointer-events: none;
     z-index: 1;
 
     &--1 { left: 5%; top: 24%; width: 4.875rem; height: 4.875rem; }
-    &--2 { left: 33%; top: 14%; width: 2.375rem; height: 2.375rem; background: rgba(255, 255, 255, 0.42); }
-    &--3 { right: 6%; bottom: 26%; width: 8.125rem; height: 8.125rem; background: rgba(255, 255, 255, 0.28); }
+    &--2 { left: 33%; top: 14%; width: 2.375rem; height: 2.375rem; background: var(--cl-sud-soft); }
+    &--3 { right: 6%; bottom: 26%; width: 8.125rem; height: 8.125rem; background: var(--cl-sud-faint); }
   }
 
   &__inner {
@@ -232,7 +240,16 @@ cleansia-hero {
   // reserves both up front — otherwise the card is a row shorter until the
   // catalogue arrives and then grows under the visitor's eyes.
   &__chips--services {
-    min-height: calc(5.75 * var(--cl-u)); // two 44px rows plus the 8px gap
+    // Two chip rows and the gap between them, composed from the SAME
+    // expressions the chip and the gap use rather than from a multiplier.
+    //
+    // It read `5.75 * --cl-u`, which is 92px at the 1440 width the comment was
+    // written against — but a chip is `max(44px, 2.75 * --cl-u)`, so it is
+    // 44px flat wherever --cl-u drops below 16, and two of those plus an 8px
+    // gap is 96. The card therefore reserved four pixels too few and grew by
+    // exactly that much the moment the catalogue arrived, which is the shift
+    // check-home-shift has been reporting.
+    min-height: calc(2 * max(44px, 2.75 * var(--cl-u)) + 0.5 * var(--cl-u));
     align-content: flex-start;
   }
 

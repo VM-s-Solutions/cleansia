@@ -14,7 +14,15 @@
     <div class="cl-services__head animate-on-scroll">
       <div>
         <h2 class="cl-d2">{{ 'pages.home.services.title' | translate }}</h2>
-        <p class="cl-body cl-services__lead">{{ 'pages.home.services.subtitle' | translate }}</p>
+        <!--
+          The count is interpolated from the list this section renders, not
+          written into the copy. It read "eleven services" in five locales while
+          the catalogue served ten — a heading that counts its own list goes
+          stale the first time one is retired, silently and everywhere at once.
+        -->
+        <p class="cl-body cl-services__lead">
+          {{ 'pages.home.services.subtitle' | translate: { count: services().length } }}
+        </p>
       </div>
       <a class="cl-link" routerLink="/services">{{ 'pages.home.services.view_all' | translate }}</a>
     </div>

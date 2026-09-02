@@ -65,6 +65,28 @@
   // than in whichever page happened to need it first — the booking wizard's
   // cancel notice and the account pages' field errors are both consumers now.
   --cl-danger: #b91c1c;
+
+  // The tinted band a foam divider separates from the page ground. A divider is
+  // exactly as visible as the difference between the two sections it separates,
+  // so this token IS the divider's visibility — the shape has no say. One token
+  // rather than a per-page value because every such band on the site has to
+  // read as the same step, and they had drifted to four different ones.
+  //
+  // The two themes are not the same number on purpose. White on #e0f2fe is
+  // 1.15; the dark pair needs 1.28 to look like the same step, because a step
+  // of equal ratio reads as smaller against a dark ground.
+  --cl-band: #{$primary-light};
+
+  // The edge of an input. --cl-border is the divider colour and is too faint
+  // to read as the boundary of a control.
+  --cl-field-border: #cbd5e1;
+
+  // Suds. Flipping the OPACITY leaves a grey blob on a dark ground, so the
+  // colour flips instead. Lives here rather than beside one page's suds since
+  // the home hero and the auth pages both draw them.
+  --cl-sud: rgba(255, 255, 255, 0.5);
+  --cl-sud-soft: rgba(255, 255, 255, 0.42);
+  --cl-sud-faint: rgba(255, 255, 255, 0.28);
 }
 
 :root.dark-mode {
@@ -110,6 +132,11 @@
 
   // Red-300, not red-700: the light theme's red measures 2.1 on a dark ground.
   --cl-danger: #fca5a5;
+  --cl-band: #12304d;
+  --cl-field-border: rgba(148, 163, 184, 0.38);
+  --cl-sud: rgba(125, 211, 252, 0.06);
+  --cl-sud-soft: rgba(125, 211, 252, 0.05);
+  --cl-sud-faint: rgba(125, 211, 252, 0.04);
 }
 
 // ---- Type scale -------------------------------------------------------------
@@ -397,6 +424,27 @@ button.cl-link {
 
 .cl-lift {
   box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+}
+
+// ---- The shared button, corrected ------------------------------------------
+// `<cleansia-button severity="primary">` paints PrimeNG's sky-500, and white on
+// sky-500 is 2.77 against a 4.5 floor. PrimeNG's dark theme separately repaints
+// the label navy, which put dark blue on blue at 2.31. Both are colour, both
+// are the same fix everywhere, and three page stylesheets had each grown a
+// private copy of it. Scoped to the customer app by this file's only importer.
+.p-button.p-button-primary {
+  background: #{$primary};
+  border-color: #{$primary};
+
+  .p-button-label {
+    color: #{$white};
+    font-weight: 800;
+  }
+
+  &:enabled:hover {
+    background: #{$primary-dark};
+    border-color: #{$primary-dark};
+  }
 }
 
 // ---- The fact line that closes a card --------------------------------------

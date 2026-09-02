@@ -1,17 +1,30 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+} from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { CustomerAuthService } from '@cleansia/customer-services';
+import {
+  CustomerAuthService,
+  MembershipPlanFactsService,
+} from '@cleansia/customer-services';
 import { TranslatePipe } from '@ngx-translate/core';
 
 /**
- * Cleansia Plus, stated with the figures the seed actually pins:
- * DiscountPercentage 5.00, FreeCancellationWindowHours 4,
- * ExpressUpgradesPerMonth 1, TrialPeriodDays 14, 199 CZK monthly.
+ * The home page's argument for Cleansia Plus.
  *
- * The price is copy rather than a live read of `GetMembershipPlans` — worth
- * revisiting if plans ever vary by tenant or country. The public `/plus` page
- * does read the plan, so the two can disagree if a price changes; that band is
- * the one to convert first.
+ * Its figures used to be COPY — 199 CZK, 5 %, 4 hours, one express clean,
+ * 2 030 CZK and 15 %, written into five locales each — while the public
+ * `/plus` page read the same six off `Membership/GetPlans`. An admin moving a
+ * price would have left the two pages on the same site disagreeing, and only
+ * one of them would have been right. Both read the catalogue now.
+ *
+ * One of those numbers was also simply wrong: the cancellation perk said the
+ * window was "4 hours longer", but 4 is the WINDOW (a member cancels free up
+ * to four hours before) against a standard of twenty-four — so it is twenty
+ * hours longer, not four.
  */
 @Component({
   selector: 'cleansia-plus',
@@ -20,8 +33,9 @@ import { TranslatePipe } from '@ngx-translate/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslatePipe, RouterModule],
 })
-export class PlusComponent {
+export class PlusComponent implements OnInit {
   private readonly authService = inject(CustomerAuthService);
+  readonly facts = inject(MembershipPlanFactsService);
 
   /**
    * This CTA pointed at `/membership/subscribe` unconditionally, which is
@@ -37,4 +51,32 @@ export class PlusComponent {
   readonly ctaLink = computed(() =>
     this.authService.isLoggedIn() ? '/membership/subscribe' : '/plus',
   );
+
+  /**
+   * The band's numeric copy renders only once there is a plan to read it from.
+   * Not a set of fallback constants: a fallback matching today's seed would be
+   * right until the day it mattered, which is the failure this replaces. With
+   * no answer the band keeps its badge, a plain line and its call to action,
+   * and states nothing it cannot support.
+   */
+  readonly canStateFigures = this.facts.hasPlans;
+
+  ngOnInit(): void {
+    this.facts.load();
+  }
+
+  /**
+   * Whole korunas. Both seeded plans are round numbers and "199,00 Kč" in a
+   * headline reads as a form field; the fractional branch stays because an
+   * admin can price a plan to the halér.
+   */
+  formatCzk(amount: number): string {
+    const fractionDigits = amount % 1 === 0 ? 0 : 2;
+    return new Intl.NumberFormat('cs-CZ', {
+      style: 'currency',
+      currency: 'CZK',
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(amount);
+  }
 }

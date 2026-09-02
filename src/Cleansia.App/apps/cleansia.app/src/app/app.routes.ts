@@ -1,4 +1,5 @@
 import { Route } from '@angular/router';
+import { CleansiaNotFoundComponent } from '@cleansia/components';
 import {
   customerAuthGuard,
   customerGuestGuard,
@@ -78,7 +79,12 @@ export const appRoutes: Route[] = [
     data: { title: 'page_titles.customer.track_order' },
   },
 
-  // Order wizard — authenticated only (per Customer App Requirements)
+  // Order wizard — PUBLIC, and deliberately so. `Order/CreateOrder` is
+  // [AllowAnonymous] and the wizard branches on `isAuthenticated` throughout
+  // (saved addresses, prefilled name, membership perks), so a guest can book
+  // end to end. The comment here used to say "authenticated only", which is
+  // the opposite of what the endpoint and the facade do; a guard added to
+  // match it would have removed guest checkout.
   {
     path: CleansiaCustomerRoute.ORDER,
     loadChildren: () =>
@@ -133,6 +139,9 @@ export const appRoutes: Route[] = [
     canActivate: [customerAuthGuard],
   },
   {
+    // `checkout` is a namespace for the two URLs Stripe returns to, not a page.
+    // Without the redirect below its bare path matched and rendered an empty
+    // outlet — a blank screen with a navbar — for anyone who trimmed the URL.
     path: 'checkout',
     loadChildren: () =>
       import('@cleansia-customer/checkout').then((m) => m.checkoutRoutes),
@@ -157,9 +166,12 @@ export const appRoutes: Route[] = [
 
   // 404
   {
+    // Imported statically. `@cleansia/components` is already in the main bundle
+    // (app.ts, the navbar and the footer all use it), so deferring it here
+    // saved nothing and made Nx treat the whole library as lazy-loaded — which
+    // is what turned those three eager imports into lint errors.
     path: CleansiaCustomerRoute.NOT_FOUND,
-    loadComponent: () =>
-      import('@cleansia/components').then((m) => m.CleansiaNotFoundComponent),
+    component: CleansiaNotFoundComponent,
     data: { title: 'page_titles.customer.not_found' },
   },
   {

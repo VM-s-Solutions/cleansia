@@ -338,23 +338,12 @@
 // that button is also the partner and admin apps' primary, and restyling all
 // three is the owner's call, not a side effect of building the wizard.
 .cl-wiz {
+  // The design's primary action is 17px/800. Its COLOUR — white on sky-600,
+  // and the label PrimeNG's dark theme repaints navy — is corrected once in
+  // _home-design.scss; only the size is this page's business.
   .p-button.p-button-primary {
-    background: #{$primary};
-    border-color: #{$primary};
-    // The design's primary action is 17px/800 white on sky-600. PrimeNG's dark
-    // theme repaints the label navy, which put dark-blue text on blue at 2.31.
     font-size: calc(1.0625 * var(--cl-u));
     font-weight: 800;
-
-    .p-button-label {
-      color: #{$white};
-      font-weight: 800;
-    }
-
-    &:enabled:hover {
-      background: #{$primary-dark};
-      border-color: #{$primary-dark};
-    }
   }
 }
 

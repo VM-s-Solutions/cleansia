@@ -1,5 +1,5 @@
 import { Component, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
   CleansiaCookieConsentComponent,

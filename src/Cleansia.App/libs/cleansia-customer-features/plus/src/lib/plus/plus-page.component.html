@@ -29,7 +29,16 @@
         <a class="cl-btn" [routerLink]="subscribeLink()">
           {{ 'pages.plus.cta_trial' | translate: { days: facade.trialDays() } }}
         </a>
-        <a class="cl-link" href="#perks">{{ 'pages.plus.cta_whats_in_it' | translate }}</a>
+        <!--
+          `routerLink="[]"` with a fragment, NOT href="#perks": a bare hash is a
+          navigation to the path "#perks", which the router resolves to the
+          empty path — so the link went to the home page instead of down the
+          page. anchorScrolling is enabled in app.config, so the fragment alone
+          does the scrolling.
+        -->
+        <a class="cl-link" [routerLink]="[]" fragment="perks">
+          {{ 'pages.plus.cta_whats_in_it' | translate }}
+        </a>
       </div>
 
       @if (facade.monthlyPlan(); as monthly) {
@@ -56,7 +65,7 @@
     in opposite directions read as two different sites. The closing edge below
     still hangs, exactly as the catalogue's does.
   -->
-  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-hero-2)'" />
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-band)'" />
 </section>
 
 <section class="cl-plusp__body" id="perks">
@@ -306,7 +315,7 @@
 </section>
 
 <section class="cl-plusp__closing">
-  <cleansia-foam-edge variant="hood-short" [fill]="'var(--cl-hero-2)'" />
+  <cleansia-foam-edge variant="hood-short" [fill]="'var(--cl-band)'" />
   <div class="cl-plusp__inner">
     <div class="cl-plusp__cta cl-lift">
       <img

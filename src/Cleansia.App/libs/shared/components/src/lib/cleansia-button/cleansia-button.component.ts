@@ -108,6 +108,12 @@ export class CleansiaButtonComponent {
 
   isLink = computed(() => this.routerLink() !== undefined || this.href() !== undefined);
 
+  // The rule is right in general — an output named like a DOM event reads as
+  // one — but this name IS the API: it mirrors PrimeNG's own `onClick` so a
+  // <cleansia-button> is a drop-in for a <p-button>, and 234 templates across
+  // the customer, partner and admin apps bind to it. Renaming it is a
+  // three-app sweep, not a lint fix.
+  // eslint-disable-next-line @angular-eslint/no-output-on-prefix
   onClick = output<MouseEvent>(); // PrimeNG-compatible output name
   clickFn = output<MouseEvent>(); // Legacy output name
 

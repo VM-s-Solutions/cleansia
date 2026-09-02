@@ -966,7 +966,9 @@
       "1": "Čeká na kontrolu",
       "2": "Schváleno",
       "3": "Zamítnuto"
-    }
+    },
+    "show_password": "Zobrazit heslo",
+    "hide_password": "Skrýt heslo"
   },
   "registration_lock": {
     "title": "Vyžadováno dokončení profilu",

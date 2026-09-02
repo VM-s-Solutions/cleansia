@@ -80,7 +80,9 @@
 .cl-plusp__hero-inner {
   max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
   margin: 0 auto;
-  padding: calc(3.5 * var(--cl-u)) var(--cl-gutter) 0;
+  // The bottom value is not 0: the trial-price note was landing directly on the
+  // divider's tabs with nothing between them. Owner, 2026-09-02.
+  padding: calc(3.5 * var(--cl-u)) var(--cl-gutter) calc(2 * var(--cl-u));
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: calc(3 * var(--cl-u));
@@ -150,7 +152,7 @@
 // One step of tint fixes both, and it is the ground the services catalogue
 // already uses — which is the page most visitors arrive from.
 .cl-plusp__body {
-  background: var(--cl-hero-2);
+  background: var(--cl-band);
 }
 
 .cl-plusp__inner {

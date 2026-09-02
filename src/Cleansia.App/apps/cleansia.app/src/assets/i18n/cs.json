@@ -143,7 +143,9 @@
     "of": "z",
     "page": "Stránka {{page}}",
     "previous_page": "Předchozí stránka",
-    "rows_per_page": "Řádků na stránku"
+    "rows_per_page": "Řádků na stránku",
+    "show_password": "Zobrazit heslo",
+    "hide_password": "Skrýt heslo"
   },
   "auth": {
     "login": {
@@ -468,7 +470,7 @@
       },
       "services": {
         "title": "Co u nás objednáte",
-        "subtitle": "Jedenáct služeb. Vlastní stroje a ekologické prostředky v ceně.",
+        "subtitle": "{{count}} služeb. Vlastní stroje a ekologické prostředky v ceně.",
         "view_all": "Všechny služby",
         "details": "Podrobnosti",
         "extra_stain": "Odstranění složitých skvrn",
@@ -587,13 +589,14 @@
       },
       "plus": {
         "badge": "Cleansia Plus",
-        "title": "199 Kč měsíčně, prvních 14 dní zdarma",
-        "perk1": "5% sleva na každou objednávku",
-        "perk2": "Zrušení zdarma o 4 hodiny déle",
-        "perk3": "Jeden expresní úklid měsíčně bez příplatku",
-        "perk4": "Opakované termíny s vaším uklízečem",
-        "yearly": "ročně 2 030 Kč — ušetříte 15 %",
-        "cta": "Vyzkoušet zdarma"
+        "title": "{{price}} měsíčně, prvních {{days}} dní zdarma",
+        "perk1": "Sleva {{percent}} % z každé objednávky",
+        "perk2": "Zrušení zdarma až {{hours}} hodiny předem místo 24",
+        "perk3": "{{count}}× měsíčně expresní úklid bez příplatku",
+        "perk4": "Opakované termíny a oblíbený uklízeč",
+        "yearly": "{{price}} ročně — ušetříte {{percent}} %",
+        "cta": "Vyzkoušet zdarma",
+        "lead_plain": "Členství, které se vrátí každému, kdo objednává pravidelně."
       },
       "quote": {
         "title": "Spočítat cenu",

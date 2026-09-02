@@ -201,8 +201,9 @@
       @for (slot of editingSlots(); track $index; let i = $index) {
       <div class="slot-row">
         <div class="field">
-          <label>{{ 'components.availability.start_time' | translate }}</label>
+          <label [for]="'slot-start-' + i">{{ 'components.availability.start_time' | translate }}</label>
           <p-datepicker
+            [inputId]="'slot-start-' + i"
             [ngModel]="slot.start"
             (onSelect)="updateEditingSlotTime(i, true, $event)"
             [timeOnly]="true"
@@ -214,8 +215,9 @@
         </div>
         <span class="slot-separator">&ndash;</span>
         <div class="field">
-          <label>{{ 'components.availability.end_time' | translate }}</label>
+          <label [for]="'slot-end-' + i">{{ 'components.availability.end_time' | translate }}</label>
           <p-datepicker
+            [inputId]="'slot-end-' + i"
             [ngModel]="slot.end"
             (onSelect)="updateEditingSlotTime(i, false, $event)"
             [timeOnly]="true"
@@ -297,8 +299,9 @@
         @for (slot of exceptionSlots(); track $index; let i = $index) {
         <div class="slot-row">
           <div class="field">
-            <label>{{ 'components.availability.start_time' | translate }}</label>
+            <label [for]="'exc-start-' + i">{{ 'components.availability.start_time' | translate }}</label>
             <p-datepicker
+              [inputId]="'exc-start-' + i"
               [ngModel]="slot.start"
               (onSelect)="updateExceptionSlotTime(i, true, $event)"
               [timeOnly]="true"
@@ -310,8 +313,9 @@
           </div>
           <span class="slot-separator">&ndash;</span>
           <div class="field">
-            <label>{{ 'components.availability.end_time' | translate }}</label>
+            <label [for]="'exc-end-' + i">{{ 'components.availability.end_time' | translate }}</label>
             <p-datepicker
+              [inputId]="'exc-end-' + i"
               [ngModel]="slot.end"
               (onSelect)="updateExceptionSlotTime(i, false, $event)"
               [timeOnly]="true"

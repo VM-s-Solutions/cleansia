@@ -36,6 +36,15 @@ export class CleansiaAddressAutocompleteComponent implements OnInit, OnDestroy {
   private readonly mapbox = inject(MapboxAutocompleteService);
   private readonly destroy$ = new Subject<void>();
 
+  /**
+   * Ties the label to the control it names. Unique per instance because a
+   * screen can hold more than one address picker (a pickup and a drop-off, an
+   * edit dialog over a list), and a duplicated id points every label at the
+   * first field.
+   */
+  private static nextId = 0;
+  readonly inputId = `cleansia-address-${CleansiaAddressAutocompleteComponent.nextId++}`;
+
   /** Optional initial input value (e.g., when editing an existing address). */
   initialQuery = input<string>('');
 

@@ -6,7 +6,11 @@
 // The artboard gives this section a tinted ground with a foam edge above and
 // below, so the photographs sit on colour rather than floating on the page.
 .cl-section--gallery {
-  background: var(--cl-tint);
+  // --cl-band, not --cl-tint. --cl-tint is #f0f9ff, one hair off white, so the
+  // two dividers bounding this band measured 1.07 and read as nothing; and in
+  // dark mode it is a TRANSLUCENT overlay, so the band was see-through and the
+  // cut-outs showed the page through rather than the section.
+  background: var(--cl-band);
 }
 
 .cl-gallery {

@@ -143,7 +143,9 @@
     "of": "of",
     "page": "Page {{page}}",
     "previous_page": "Previous page",
-    "rows_per_page": "Rows per page"
+    "rows_per_page": "Rows per page",
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "auth": {
     "login": {
@@ -468,7 +470,7 @@
       },
       "services": {
         "title": "What you can order",
-        "subtitle": "Eleven services. Our own machines and eco products included.",
+        "subtitle": "{{count}} services. Our own machines and eco products included.",
         "view_all": "All services",
         "details": "Details",
         "extra_stain": "Tough stain removal",
@@ -587,13 +589,14 @@
       },
       "plus": {
         "badge": "Cleansia Plus",
-        "title": "199 CZK a month, first 14 days free",
-        "perk1": "5% off every order",
-        "perk2": "Free cancellation window 4 hours longer",
-        "perk3": "One express clean a month at no surcharge",
-        "perk4": "Repeat slots with your own cleaner",
-        "yearly": "2 030 CZK a year - saves 15%",
-        "cta": "Try it free"
+        "title": "{{price}} a month, first {{days}} days free",
+        "perk1": "{{percent}}% off every order",
+        "perk2": "Cancel free up to {{hours}} hours before, instead of 24",
+        "perk3": "{{count}} express clean a month at no surcharge",
+        "perk4": "Recurring slots and a cleaner you have had before",
+        "yearly": "{{price}} a year — saves {{percent}}%",
+        "cta": "Try it free",
+        "lead_plain": "A membership that pays for itself if you book regularly."
       },
       "quote": {
         "title": "Get a price",

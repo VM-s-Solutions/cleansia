@@ -966,7 +966,9 @@
       "1": "Pending Review",
       "2": "Approved",
       "3": "Rejected"
-    }
+    },
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "registration_lock": {
     "title": "Profile Completion Required",

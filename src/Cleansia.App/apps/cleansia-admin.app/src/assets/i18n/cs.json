@@ -209,7 +209,9 @@
       "de": "Němčina",
       "sk": "Slovenština",
       "pl": "Polština"
-    }
+    },
+    "show_password": "Zobrazit heslo",
+    "hide_password": "Skrýt heslo"
   },
   "sidebar": {
     "employees": "Zaměstnanci",

@@ -44,19 +44,9 @@
     text-align: left;
   }
 
-  .p-button.p-button-primary {
-    background: #{$primary};
-    border-color: #{$primary};
-
-    .p-button-label {
-      color: #{$white};
-    }
-
-    &:enabled:hover {
-      background: #{$primary-dark};
-      border-color: #{$primary-dark};
-    }
-  }
+  // The primary action's COLOUR correction is in _home-design.scss now — three
+  // pages had each grown a copy of it. Only the sizing is per page, and the
+  // catalogue's action is 16px where the auth and wizard ones are 17.
 
   // `.cl-chip` was drawn for a <span>; as a real control it centres its text.
   // `.cl-link`'s button spelling is handled in _home-design.scss, where the
@@ -92,11 +82,22 @@
 // --cl-accent-soft does not flip at all — it stayed sky-300 and painted a lit
 // slab across the bottom of a dark page.
 :root {
-  --cl-cat-close: #{$primary-accent};
+  // The closing band's first gradient stop — the ground the last divider's tabs
+  // sit on, and therefore that divider's whole visibility.
+  //
+  // Was sky-400 / #1d5f87, which measured 1.67 and 1.98 against the tabs and
+  // read as a hard stripe. Owner, 2026-09-02: turn it down. One step lighter in
+  // each theme puts both at ~1.35, which is the same step the dividers higher
+  // up the page make. Not the SAME numbers in the two themes on purpose — an
+  // equal ratio reads as a smaller step against a dark ground.
+  //
+  // sky-300, spelled out: $primary-accent is sky-400 (#38bdf8) and reusing it
+  // here is what left this edge at 1.67 after it was supposed to come down.
+  --cl-cat-close: #7dd3fc;
 }
 
 :root.dark-mode {
-  --cl-cat-close: #1d5f87;
+  --cl-cat-close: #184e6d;
 }
 
 // ---- The band the page opens on ---------------------------------------------
@@ -143,6 +144,11 @@
   height: calc(8.75 * var(--cl-u));
   width: auto;
   display: block;
+  // Feet 20px INTO the foam strip, so the characters stand on the divider
+  // rather than stopping dead at it. Measured: they landed at exactly 0 here
+  // against 20 on the auth pages, which is what read as clipped. Owner,
+  // 2026-09-02: match the login page. -> _auth.scss $auth-foot
+  margin-bottom: -20px;
 }
 
 .cl-cat-hero__copy {
@@ -185,7 +191,7 @@
   //
   // The cards gain from it as well: they were white on white, told apart by a
   // hairline and a soft shadow alone.
-  background: var(--cl-hero-2);
+  background: var(--cl-band);
 }
 
 .cl-cat__inner {

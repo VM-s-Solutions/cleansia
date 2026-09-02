@@ -209,7 +209,9 @@
       "de": "German",
       "sk": "Slovak",
       "pl": "Polish"
-    }
+    },
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "sidebar": {
     "employees": "Employees",

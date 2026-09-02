@@ -1,0 +1,565 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Rewards — the tier, the points, the ladder and how to climb it
+// =============================================================================
+// Replaces 642 lines of `rewards.component.scss` that carried their own
+// $primary, their own dark-mode block and a rem scale.
+//
+// The one thing here that is NOT a token is the tier palette, and it stays: a
+// loyalty ladder whose four rungs look identical is not a ladder. What changes
+// is where those colours live — they were raw SCSS variables baked into
+// gradients with hardcoded white text, and they are custom properties now, so
+// they flip with the theme like everything else and a fifth tier is one line.
+//
+// The MARKUP is unchanged.
+
+.customer-rewards {
+  // Bronze is the floor: every account has a tier, so these always resolve.
+  --tier-ink: #b45309;
+  --tier-soft: #fffbeb;
+  --tier-line: #fde68a;
+
+  position: relative;
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding: var(--cl-nav-h) 0 calc(4 * var(--cl-u));
+  background: var(--cl-band);
+  min-height: 100vh;
+}
+
+.customer-rewards__hero-card--silver,
+.customer-rewards__tier-row--silver {
+  --tier-ink: #475569;
+  --tier-soft: #f8fafc;
+  --tier-line: #cbd5e1;
+}
+
+.customer-rewards__hero-card--gold,
+.customer-rewards__tier-row--gold {
+  --tier-ink: #a16207;
+  --tier-soft: #fefce8;
+  --tier-line: #fde047;
+}
+
+.customer-rewards__hero-card--platinum,
+.customer-rewards__tier-row--platinum {
+  --tier-ink: #334155;
+  --tier-soft: #f1f5f9;
+  --tier-line: #94a3b8;
+}
+
+:root.dark-mode .customer-rewards {
+  --tier-ink: #fbbf24;
+  --tier-soft: rgba(251, 191, 36, 0.1);
+  --tier-line: rgba(251, 191, 36, 0.3);
+}
+
+:root.dark-mode .customer-rewards__hero-card--silver,
+:root.dark-mode .customer-rewards__tier-row--silver {
+  --tier-ink: #cbd5e1;
+  --tier-soft: rgba(203, 213, 225, 0.1);
+  --tier-line: rgba(203, 213, 225, 0.28);
+}
+
+:root.dark-mode .customer-rewards__hero-card--gold,
+:root.dark-mode .customer-rewards__tier-row--gold {
+  --tier-ink: #fde047;
+  --tier-soft: rgba(253, 224, 71, 0.1);
+  --tier-line: rgba(253, 224, 71, 0.3);
+}
+
+:root.dark-mode .customer-rewards__hero-card--platinum,
+:root.dark-mode .customer-rewards__tier-row--platinum {
+  --tier-ink: #cbd5e1;
+  --tier-soft: rgba(148, 163, 184, 0.12);
+  --tier-line: rgba(148, 163, 184, 0.32);
+}
+
+// ---- The band the page opens on ---------------------------------------------
+.customer-rewards__hero {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(2.75 * var(--cl-u)) var(--cl-gutter) 0;
+}
+
+.customer-rewards__hero-title {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  line-height: 1.16;
+  letter-spacing: -0.9px;
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+// Invisible containers: the gutter is padding, so their CONTENT lines up with
+// the hero above.
+.customer-rewards__section,
+.customer-rewards__skeleton,
+.customer-rewards__error,
+.customer-rewards__actions-bar {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--cl-gutter);
+  padding-right: var(--cl-gutter);
+}
+
+// Visible cards: the column is the card's own width and the padding is inside
+// its border. Given the same rule as above they spanned the whole viewport,
+// because $home-width + 2 * gutter is exactly 1440 at this breakpoint.
+.customer-rewards__hero-card,
+.customer-rewards__hero-card--bronze,
+.customer-rewards__hero-card--silver,
+.customer-rewards__hero-card--gold,
+.customer-rewards__hero-card--platinum,
+.customer-rewards__progress-card,
+.customer-rewards__referral {
+  max-width: #{$home-width};
+  margin-left: auto;
+  margin-right: auto;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.75 * var(--cl-u));
+  padding: calc(1.5 * var(--cl-u));
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+// ---- Where the account stands today -----------------------------------------
+// The tier used to be a full-bleed gradient with white text on it, which made
+// the loudest block on the page a decorative one. It is a card like the others
+// now; the tier reads through the badge and the rule under it.
+// NOTE: the template writes `class="...__hero-card"` AND `[class]="'...__hero-card--' + tier"`.
+// An Angular [class] binding REPLACES the static attribute, so at runtime the
+// element carries only the modifier. Every rule the hero needs is therefore
+// attached to the four modifiers, not to the base class.
+.customer-rewards__hero-card,
+.customer-rewards__hero-card--bronze,
+.customer-rewards__hero-card--silver,
+.customer-rewards__hero-card--gold,
+.customer-rewards__hero-card--platinum {
+  display: flex;
+  align-items: center;
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.75 * var(--cl-u));
+}
+
+.customer-rewards__hero-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(4 * var(--cl-u));
+  height: calc(4 * var(--cl-u));
+  border-radius: 50%;
+  background: var(--tier-soft);
+  border: 2px solid var(--tier-line);
+  color: var(--tier-ink);
+  flex-shrink: 0;
+
+  i {
+    font-size: calc(1.75 * var(--cl-u));
+  }
+}
+
+.customer-rewards__hero-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.customer-rewards__tier-name {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.75 * var(--cl-u));
+  letter-spacing: -0.5px;
+  color: var(--cl-heading);
+}
+
+.customer-rewards__hero-points {
+  display: flex;
+  align-items: baseline;
+  gap: calc(0.375 * var(--cl-u));
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.375 * var(--cl-u));
+  color: var(--cl-accent);
+}
+
+.customer-rewards__hero-meta {
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+// ---- How far to the next rung -----------------------------------------------
+.customer-rewards__progress-card {
+  margin-top: calc(1.25 * var(--cl-u));
+}
+
+
+
+.customer-rewards__progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--cl-u);
+  margin-bottom: calc(0.5 * var(--cl-u));
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+.customer-rewards__progress-max {
+  font-weight: 800;
+  color: var(--cl-heading);
+}
+
+// ---- One section per block --------------------------------------------------
+.customer-rewards__section {
+  margin-top: calc(2 * var(--cl-u));
+}
+
+// It carries both classes; the card rule owns its box.
+.customer-rewards__section.customer-rewards__referral {
+  padding-left: calc(1.5 * var(--cl-u));
+  padding-right: calc(1.5 * var(--cl-u));
+}
+
+.customer-rewards__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cl-u);
+  margin-bottom: var(--cl-u);
+}
+
+.customer-rewards__section-title {
+  font-family: $font-heading;
+  font-weight: 600;
+  font-size: calc(1.5 * var(--cl-u));
+  line-height: 1.24;
+  letter-spacing: -0.35px;
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+.customer-rewards__link {
+  color: var(--cl-accent);
+  font-weight: 700;
+  font-size: calc(0.9375 * var(--cl-u));
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// ---- What the tier buys -----------------------------------------------------
+.customer-rewards__perk-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+}
+
+.customer-rewards__perk {
+  display: flex;
+  align-items: center;
+  gap: var(--cl-u);
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.5 * var(--cl-u));
+  padding: calc(1.25 * var(--cl-u));
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.customer-rewards__perk-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(2.75 * var(--cl-u));
+  height: calc(2.75 * var(--cl-u));
+  border-radius: var(--cl-u);
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+  flex-shrink: 0;
+
+  i {
+    font-size: calc(1.125 * var(--cl-u));
+  }
+}
+
+.customer-rewards__perk-label {
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+// ---- The ladder -------------------------------------------------------------
+.customer-rewards__tier-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.75 * var(--cl-u));
+}
+
+.customer-rewards__tier-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cl-u);
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.25 * var(--cl-u));
+  padding: var(--cl-u) calc(1.25 * var(--cl-u));
+
+  // The rung the account is standing on. A ring rather than a fill: the row is
+  // still a row, it is just the one that is true right now.
+  &--current {
+    border-color: var(--tier-line);
+    box-shadow: 0 0 0 3px var(--tier-soft);
+  }
+
+  &--locked {
+    opacity: 0.55;
+  }
+}
+
+.customer-rewards__tier-row-left {
+  display: flex;
+  align-items: center;
+  gap: calc(0.75 * var(--cl-u));
+  min-width: 0;
+}
+
+.customer-rewards__tier-row-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(2.25 * var(--cl-u));
+  height: calc(2.25 * var(--cl-u));
+  border-radius: 50%;
+  background: var(--tier-soft);
+  border: 1px solid var(--tier-line);
+  color: var(--tier-ink);
+  flex-shrink: 0;
+
+  i {
+    font-size: var(--cl-u);
+  }
+}
+
+.customer-rewards__tier-row-name {
+  font-weight: 800;
+  color: var(--cl-heading);
+}
+
+.customer-rewards__tier-row-threshold {
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.customer-rewards__tier-row-discount {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.125 * var(--cl-u));
+  color: var(--cl-accent);
+  white-space: nowrap;
+}
+
+// ---- Referral ---------------------------------------------------------------
+.customer-rewards__referral-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cl-u);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+
+
+.customer-rewards__referral-subtitle {
+  margin: calc(0.375 * var(--cl-u)) 0 var(--cl-u);
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+  max-width: 44em;
+}
+
+// The code is meant to be read aloud and typed by someone else, so it is set
+// wide and monospaced-by-tracking rather than as body copy.
+.customer-rewards__referral-code {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  padding: calc(0.75 * var(--cl-u)) calc(1.125 * var(--cl-u));
+  border-radius: var(--cl-u);
+  background: var(--cl-tint);
+  border: 1px dashed var(--cl-accent-soft);
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.25 * var(--cl-u));
+  letter-spacing: 2px;
+  color: var(--cl-accent);
+}
+
+.customer-rewards__referral-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cl-u);
+  margin-top: var(--cl-u);
+}
+
+.customer-rewards__referral-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(1.5 * var(--cl-u));
+  margin-top: calc(1.25 * var(--cl-u));
+  padding-top: calc(1.25 * var(--cl-u));
+  border-top: 1px solid var(--cl-border);
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+// ---- Activity ---------------------------------------------------------------
+.customer-rewards__activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-rewards__activity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cl-u);
+  padding: calc(0.875 * var(--cl-u)) 0;
+  border-bottom: 1px solid var(--cl-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.customer-rewards__activity-text {
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+  min-width: 0;
+}
+
+.customer-rewards__activity-date {
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+// Points earned read positive, points spent read neutral — never red. Spending
+// a reward is the point of having one.
+.customer-rewards__activity-points {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.0625 * var(--cl-u));
+  color: var(--cl-body);
+  white-space: nowrap;
+
+  // Earned reads positive. Spent reads neutral, never red — using a reward is
+  // the point of having one, not an error.
+  &--positive {
+    color: var(--cl-ok);
+  }
+
+  &--negative {
+    color: var(--cl-muted);
+  }
+}
+
+.customer-rewards__empty {
+  padding: calc(2 * var(--cl-u)) 0;
+  text-align: center;
+  color: var(--cl-muted);
+  font-size: calc(0.9375 * var(--cl-u));
+}
+
+.customer-rewards__error {
+  margin-top: calc(1.75 * var(--cl-u));
+  text-align: center;
+  color: var(--cl-body);
+}
+
+.customer-rewards__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cl-u);
+  margin-top: calc(1.75 * var(--cl-u));
+}
+
+// ---- The entry card ---------------------------------------------------------
+// Rendered by rewards-card.component. Nothing mounts it since the profile page
+// dropped its rewards slot; kept in tokens so it is not left half-styled if it
+// is put back somewhere.
+.customer-rewards-card {
+  display: flex;
+  align-items: center;
+  gap: var(--cl-u);
+  padding: calc(1.25 * var(--cl-u));
+  border-radius: calc(1.5 * var(--cl-u));
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.customer-rewards-card__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(3 * var(--cl-u));
+  height: calc(3 * var(--cl-u));
+  border-radius: 50%;
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+  flex-shrink: 0;
+}
+
+.customer-rewards-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.customer-rewards-card__title {
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.customer-rewards-card__tier {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.125 * var(--cl-u));
+  color: var(--cl-heading);
+}
+
+.customer-rewards-card__points {
+  display: flex;
+  align-items: baseline;
+  gap: calc(0.25 * var(--cl-u));
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+.customer-rewards-card__points-label {
+  color: var(--cl-muted);
+}
+
+.customer-rewards-card__link {
+  color: var(--cl-accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+// ---- Narrow -----------------------------------------------------------------
+@media (max-width: 700px) {
+  .customer-rewards__hero-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .customer-rewards__tier-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

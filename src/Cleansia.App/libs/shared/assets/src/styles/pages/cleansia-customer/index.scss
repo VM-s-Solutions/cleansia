@@ -10,7 +10,6 @@
 @use './order-wizard.component.scss';
 @use './wizard-shell';
 @use './orders';
-@use './checkout.component.scss';
 @use './order-detail';
 @use './profile';
 @use './saved-addresses';
@@ -18,6 +17,6 @@
 @use './legal-pages';
 @use './disputes';
 @use './rewards';
-@use './track-order.component.scss';
+@use './order-lookup';
 @use './membership';
 @use './recurring-bookings';

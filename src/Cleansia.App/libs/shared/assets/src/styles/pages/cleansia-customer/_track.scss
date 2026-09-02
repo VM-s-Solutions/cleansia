@@ -1,0 +1,351 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Track an order — the public lookup, its result, and its empty answer
+// =============================================================================
+// One page, three states: the form, the order it found, and the "we have no
+// such order" that shares the form's frame. Layout only; type, buttons, links,
+// shadows and the foam edge come from _home-design.scss and the home lib.
+
+.cl-trk {
+  position: relative;
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding-top: var(--cl-nav-h);
+  // Ends on --cl-surface so the divider's tinted tabs have a lighter ground to
+  // be seen against — the arrangement every other page here uses.
+  background: radial-gradient(
+    120% 92% at 76% 6%,
+    var(--cl-hero-1) 0%,
+    var(--cl-hero-2) 44%,
+    var(--cl-surface) 100%
+  );
+}
+
+.cl-trk__inner {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(3.25 * var(--cl-u)) var(--cl-gutter) calc(2.5 * var(--cl-u));
+}
+
+.cl-trk__plate {
+  text-align: center;
+  max-width: 40em;
+  margin: 0 auto;
+}
+
+.cl-trk__lead {
+  margin: calc(0.75 * var(--cl-u)) auto 0;
+  max-width: 34em;
+}
+
+// ---- The lookup card --------------------------------------------------------
+.cl-trk__card {
+  width: min(520px, 100%);
+  margin: calc(2 * var(--cl-u)) auto 0;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(2 * var(--cl-u));
+  padding: calc(2 * var(--cl-u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.125 * var(--cl-u));
+}
+
+.cl-trk__hint {
+  width: min(520px, 100%);
+  margin: calc(1 * var(--cl-u)) auto 0;
+  text-align: center;
+}
+
+.cl-trk__account {
+  width: min(520px, 100%);
+  margin: calc(0.75 * var(--cl-u)) auto 0;
+  text-align: center;
+}
+
+// The empty answer. A panel inside the card's column rather than a toast: the
+// question was asked here and the answer belongs beside the two fields that
+// asked it, where they can be corrected without hunting for a dismissed
+// message.
+.cl-trk__miss {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.75 * var(--cl-u));
+  padding: calc(1 * var(--cl-u));
+  border-radius: var(--cl-u);
+  background: var(--cl-warn-soft);
+  border: 1px solid var(--cl-warn-line);
+
+  > i {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--cl-warn-ink);
+    font-size: calc(1.125 * var(--cl-u));
+  }
+
+  p {
+    margin: 0;
+    font-size: calc(0.9375 * var(--cl-u));
+    color: var(--cl-body);
+  }
+}
+
+// ---- What it found ----------------------------------------------------------
+.cl-trk__found {
+  background: var(--cl-band);
+}
+
+.cl-trk__found-inner {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(2.5 * var(--cl-u)) var(--cl-gutter) calc(3.5 * var(--cl-u));
+}
+
+.cl-trk__num {
+  color: var(--cl-muted);
+}
+
+.cl-trk__headline {
+  margin: calc(0.5 * var(--cl-u)) 0 0;
+  max-width: 22em;
+}
+
+.cl-trk__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  min-height: calc(2.25 * var(--cl-u));
+  margin-top: var(--cl-u);
+  padding: 0 calc(0.875 * var(--cl-u));
+  border-radius: 999px;
+  background: var(--cl-heading);
+  color: var(--cl-surface);
+  font-size: calc(0.875 * var(--cl-u));
+  font-weight: 800;
+}
+
+// ---- The two axes -----------------------------------------------------------
+// Not one timeline. An order's progress and its money move independently —
+// a cash job is Completed and unpaid until the cleaner is handed the notes —
+// so one merged list would have to interleave two sequences that have no
+// order between them. -> /domain/order-lifecycle
+.cl-trk__axes {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.75 * var(--cl-u));
+}
+
+.cl-trk__axis {
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.75 * var(--cl-u));
+  padding: calc(1.625 * var(--cl-u));
+}
+
+.cl-trk__axis-lead {
+  margin: calc(0.375 * var(--cl-u)) 0 calc(1.125 * var(--cl-u));
+}
+
+.cl-trk__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cl-trk__step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: calc(0.75 * var(--cl-u));
+  padding-bottom: calc(1.125 * var(--cl-u));
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+// The rail is drawn on the marker, not as a separate element, so it cannot
+// drift out of alignment with the dots it joins.
+.cl-trk__marker {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: calc(1.5 * var(--cl-u));
+
+  i {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(1.5 * var(--cl-u));
+    height: calc(1.5 * var(--cl-u));
+    border-radius: 999px;
+    background: var(--cl-tint-strong);
+    color: var(--cl-muted);
+    font-size: calc(0.6875 * var(--cl-u));
+  }
+}
+
+.cl-trk__step:not(:last-child) .cl-trk__marker::after {
+  content: '';
+  position: absolute;
+  top: calc(1.5 * var(--cl-u));
+  bottom: calc(-1.125 * var(--cl-u));
+  width: 2px;
+  background: var(--cl-border);
+}
+
+// A step that has happened. Carried by the marker's fill AND its glyph, never
+// by colour alone.
+.cl-trk__step--done {
+  .cl-trk__marker i {
+    background: var(--cl-accent);
+    color: #{$white};
+  }
+
+  .cl-trk__step-name {
+    color: var(--cl-heading);
+  }
+}
+
+.cl-trk__step--now .cl-trk__marker i {
+  background: var(--cl-heading);
+  color: #{$white};
+  box-shadow: 0 0 0 4px var(--cl-tint-strong);
+}
+
+.cl-trk__step-name {
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-muted);
+}
+
+.cl-trk__step-when {
+  display: block;
+  margin-top: 2px;
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+// ---- The order itself -------------------------------------------------------
+.cl-trk__summary {
+  margin-top: calc(1.25 * var(--cl-u));
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.75 * var(--cl-u));
+  padding: calc(1.625 * var(--cl-u));
+}
+
+.cl-trk__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+}
+
+.cl-trk__cell {
+  min-width: 0;
+}
+
+.cl-trk__value {
+  margin-top: 2px;
+  font-size: var(--cl-u);
+  font-weight: 700;
+  color: var(--cl-heading);
+  overflow-wrap: anywhere;
+}
+
+.cl-trk__total {
+  font-family: $font-heading;
+  font-size: calc(1.625 * var(--cl-u));
+  letter-spacing: -0.6px;
+  color: var(--cl-accent);
+}
+
+.cl-trk__lines {
+  margin-top: calc(1.25 * var(--cl-u));
+  padding-top: calc(1.25 * var(--cl-u));
+  border-top: 1px solid var(--cl-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.5 * var(--cl-u));
+}
+
+.cl-trk__note {
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-trk__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.5 * var(--cl-u));
+}
+
+// ---- Orders this device remembers -------------------------------------------
+.cl-trk__recent {
+  display: grid;
+  gap: calc(0.75 * var(--cl-u));
+  margin-top: calc(1.25 * var(--cl-u));
+}
+
+.cl-trk__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--cl-u);
+  width: 100%;
+  text-align: left;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-u);
+  padding: calc(0.875 * var(--cl-u)) calc(1.125 * var(--cl-u));
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.16s ease, transform 0.16s ease;
+
+  &:hover {
+    border-color: var(--cl-border-tint);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+}
+
+.cl-trk__row-num {
+  font-weight: 800;
+  color: var(--cl-heading);
+}
+
+.cl-trk__row-when {
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+// ---- Narrow -----------------------------------------------------------------
+@media (max-width: 900px) {
+  .cl-trk__axes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-trk__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .cl-trk__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-trk__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(0.25 * var(--cl-u));
+  }
+}

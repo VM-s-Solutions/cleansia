@@ -194,80 +194,8 @@ $auth-foot: 20px;
     font-weight: 800;
   }
 
-  // ---- Fields -------------------------------------------------------------
-  // The approved board draws a 48px field with a 14px radius and 16px text.
-  // PrimeNG's own sizing is 35px / 6px / 14px, which is a different component
-  // on a different scale — beside a 40px action and a 17px label the fields
-  // read as a dense admin form dropped into a marketing page, which is exactly
-  // what the owner saw. Owner, 2026-09-02: make them match the design.
-  //
-  // Scoped to `.cl-auth`. The same PrimeNG input is used across the partner and
-  // admin apps, whose forms ARE dense admin forms and were drawn against the
-  // 35px default.
-  .p-inputtext {
-    min-height: calc(3 * var(--cl-u));
-    padding: 0 var(--cl-u);
-    border-radius: calc(0.875 * var(--cl-u));
-    border: 1px solid var(--cl-field-border);
-    background: var(--cl-surface);
-    font-family: $font-body;
-    // 16, not the 17 the actions use. The board sets its fields a step below
-    // its buttons on purpose — what you type should not compete with what you
-    // press.
-    font-size: var(--cl-u);
-    color: var(--cl-body);
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-
-    &::placeholder {
-      color: var(--cl-faint);
-    }
-
-    &:enabled:hover {
-      border-color: var(--cl-border-tint);
-    }
-
-    // One ring, not PrimeNG's ring plus its own border colour change — two
-    // focus treatments on one control read as a rendering fault.
-    &:enabled:focus {
-      border-color: var(--cl-accent);
-      box-shadow: 0 0 0 3px var(--cl-tint-strong);
-      outline: 0;
-    }
-  }
-
-  // A password field carries a reveal button inside its right edge, so its text
-  // has to stop before it rather than run under it.
-  .p-inputtext[type='password'],
-  .p-password .p-inputtext {
-    padding-right: calc(2.75 * var(--cl-u));
-  }
-
-  // The floating label sits ON the field's top border, so it needs the field's
-  // own background behind it or the border strikes through the words.
-  .p-floatlabel label {
-    left: var(--cl-u);
-    padding: 0 calc(0.25 * var(--cl-u));
-    background: var(--cl-surface);
-    color: var(--cl-muted);
-    font-family: $font-body;
-  }
-
-  .p-floatlabel-on label {
-    font-size: calc(0.8125 * var(--cl-u));
-    font-weight: 700;
-  }
-
-  // The invalid state is a border, not a background wash: a tinted field on a
-  // tinted card is a colour, not a signal, and it fails the same contrast the
-  // rest of the page is held to.
-  .p-inputtext.ng-invalid.ng-touched {
-    border-color: var(--cl-danger);
-
-    &:enabled:focus {
-      border-color: var(--cl-danger);
-      box-shadow: none;
-    }
-  }
+  // Field sizing moved to _home-design.scss — the tracking page needed the
+  // same 48px control, which made this the second caller.
 
   // The colour correction moved to _home-design.scss; this page keeps only its
   // 17px sizing, above.

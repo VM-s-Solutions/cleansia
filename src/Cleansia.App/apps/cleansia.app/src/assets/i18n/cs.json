@@ -1072,13 +1072,15 @@
         "card": {
           "title": "Platba úspěšná!",
           "subtitle": "Děkujeme za vaši objednávku",
-          "description": "Vaše platba byla zpracována a úklid je potvrzen. Brzy obdržíte potvrzovací email se všemi podrobnostmi."
+          "description": "Vaše platba byla zpracována a úklid je potvrzen. Brzy obdržíte potvrzovací email se všemi podrobnostmi.",
+          "lead_dated": "Platba proběhla a úklid je potvrzený na {{when}}."
         },
         "cash": {
           "title": "Objednávka potvrzena!",
           "subtitle": "Děkujeme za vaši rezervaci",
           "description": "Váš úklid byl zarezervován a bude zaplacen hotově v den poskytnutí služby. Brzy obdržíte potvrzovací email se všemi podrobnostmi.",
-          "step_payment": "Zaplaťte uklízeči hotově po dokončení služby"
+          "step_payment": "Zaplaťte uklízeči hotově po dokončení služby",
+          "lead_dated": "Úklid je potvrzený na {{when}}. Zaplatíte na místě."
         },
         "what_next": "Co se stane dál?",
         "step_confirmation": "Obdržíte potvrzovací email během několika minut",
@@ -1086,7 +1088,11 @@
         "step_cleaner": "Náš profesionální uklízeč dorazí v naplánovaném čase",
         "view_orders": "Zobrazit objednávky",
         "book_another": "Objednat další úklid",
-        "back_home": "Zpět na úvodní stránku"
+        "back_home": "Zpět na úvodní stránku",
+        "step_1": "Krok 1",
+        "step_2": "Krok 2",
+        "step_3": "Krok 3",
+        "line_count": "{{count}} služby"
       },
       "cancel": {
         "title": "Platba zrušena",
@@ -1389,7 +1395,36 @@
       "manual_lookup": "Ruční vyhledávání",
       "guest_limit": "Jako host je sledováno pouze posledních 5 objednávek na tomto zařízení. Vytvořte si účet pro přístup ke všem objednávkám odkudkoli.",
       "guest_cta": "Vytvořit účet",
-      "view_details": "Zobrazit detail"
+      "view_details": "Zobrazit detail",
+      "lead": "Účet k tomu nepotřebujete. Stačí číslo objednávky a e-mail, na který jsme poslali potvrzení.",
+      "retry": "Zkusit znovu",
+      "have_account": "Máte účet?",
+      "sign_in": "Přihlaste se a uvidíte všechny objednávky najednou.",
+      "axis_order": "Úklid",
+      "axis_order_lead": "Co se děje s objednávkou.",
+      "axis_payment": "Platba",
+      "axis_payment_lead": "Peníze jdou svou vlastní cestou.",
+      "paid_done": "zaplaceno",
+      "paid_after": "po úklidu",
+      "need_help": "Potřebuji pomoc",
+      "guest_cta_lead": "Založte si účet a příště uvidíte všechny objednávky bez hledání čísla.",
+      "price_note_paid": "Pevná cena. Zaplaceno.",
+      "price_note_cash": "Pevná cena. Zaplatíte uklízeči po úklidu.",
+      "headline": {
+        "new": "Objednávku máme. Hledáme uklízeče.",
+        "confirmed": "Objednávka je potvrzená.",
+        "on_the_way": "Uklízeč je na cestě.",
+        "in_progress": "Uklízíme.",
+        "completed": "Hotovo. Díky!",
+        "cancelled": "Objednávka byla zrušena."
+      },
+      "step": {
+        "new": "Přijato",
+        "confirmed": "Potvrzeno",
+        "on_the_way": "Na cestě",
+        "in_progress": "Uklízíme",
+        "completed": "Hotovo"
+      }
     },
     "saved_addresses": {
       "title": "Moje adresy",

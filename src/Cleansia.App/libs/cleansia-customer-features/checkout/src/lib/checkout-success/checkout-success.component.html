@@ -1,69 +1,122 @@
-<div class="checkout-page">
-  <cleansia-dynamic-background [iconCount]="15" />
-  <div class="checkout-card">
-    <!-- Welcoming mascot — plays once on screen entry, freezes on last frame.
-         WebM with VP9 alpha keeps full transparency on any background. The
-         <img> fallback handles browsers that can't decode VP9-with-alpha
-         (older Safari) or the moment before the video buffers. -->
-    <video
-      class="checkout-card__mascot"
-      autoplay
-      muted
-      playsinline
-      disablePictureInPicture
-      preload="auto"
-      aria-hidden="true"
-    >
-      <source src="assets/videos/mascot-welcoming.webm" type="video/webm" />
-      <img src="assets/images/mascot/mascot-cleaning.png" alt="" loading="lazy" />
-    </video>
+<section class="cl-done">
+  <div class="cl-done__inner">
+    <div>
+      @if (order(); as found) {
+        <div class="cl-lbl cl-done__num">
+          {{ 'pages.track_order.order' | translate }} {{ found.displayOrderNumber }}
+        </div>
+      }
 
-    @if (isCash()) {
-      <h1 class="checkout-card__title">{{ 'pages.checkout.success.cash.title' | translate }}</h1>
-      <p class="checkout-card__subtitle">{{ 'pages.checkout.success.cash.subtitle' | translate }}</p>
-      <p class="checkout-card__desc">{{ 'pages.checkout.success.cash.description' | translate }}</p>
-    } @else {
-      <h1 class="checkout-card__title">{{ 'pages.checkout.success.card.title' | translate }}</h1>
-      <p class="checkout-card__subtitle">{{ 'pages.checkout.success.card.subtitle' | translate }}</p>
-      <p class="checkout-card__desc">{{ 'pages.checkout.success.card.description' | translate }}</p>
+      <h1 class="cl-d1 cl-done__title">
+        {{
+          (isCash() ? 'pages.checkout.success.cash.title' : 'pages.checkout.success.card.title')
+            | translate
+        }}
+      </h1>
+
+      <!--
+        The lead names the date when the order could be found, and falls back to
+        the generic line when it could not. A confirmation that says "confirmed
+        for" with nothing after it is worse than one that does not say it.
+      -->
+      @if (order(); as found) {
+        <p class="cl-body cl-done__lead">
+          {{
+            (isCash() ? 'pages.checkout.success.cash.lead_dated'
+                      : 'pages.checkout.success.card.lead_dated')
+              | translate: { when: formatDateTime(found.cleaningDateTime) }
+          }}
+        </p>
+      } @else {
+        <p class="cl-body cl-done__lead">
+          {{
+            (isCash() ? 'pages.checkout.success.cash.description'
+                      : 'pages.checkout.success.card.description')
+              | translate
+          }}
+        </p>
+      }
+
+      <div class="cl-done__actions">
+        <a class="cl-btn" [routerLink]="ordersRoute">
+          {{ 'pages.checkout.success.view_orders' | translate }}
+        </a>
+        <a class="cl-link" [routerLink]="'/' + routes.ORDER">
+          {{ 'pages.checkout.success.book_another' | translate }}
+        </a>
+      </div>
+    </div>
+
+    <img
+      class="cl-done__mascot"
+      src="assets/images/mascot/mascot-waving.webp"
+      alt=""
+      width="340"
+      height="280"
+      aria-hidden="true"
+    />
+  </div>
+
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-band)'" />
+</section>
+
+<section class="cl-done__below">
+  <div class="cl-done__below-inner">
+    <h2 class="cl-lbl cl-done__next-title">
+      {{ 'pages.checkout.success.what_next' | translate }}
+    </h2>
+
+    <div class="cl-done__steps">
+      <div class="cl-done__step cl-soft">
+        <div class="cl-lbl cl-done__step-num">{{ 'pages.checkout.success.step_1' | translate }}</div>
+        <p>{{ 'pages.checkout.success.step_confirmation' | translate }}</p>
+      </div>
+      <div class="cl-done__step cl-soft">
+        <div class="cl-lbl cl-done__step-num">{{ 'pages.checkout.success.step_2' | translate }}</div>
+        <p>{{ 'pages.checkout.success.step_reminder' | translate }}</p>
+      </div>
+      <div class="cl-done__step cl-soft">
+        <div class="cl-lbl cl-done__step-num">{{ 'pages.checkout.success.step_3' | translate }}</div>
+        <p>
+          {{
+            (isCash() ? 'pages.checkout.success.cash.step_payment'
+                      : 'pages.checkout.success.step_cleaner')
+              | translate
+          }}
+        </p>
+      </div>
+    </div>
+
+    <!--
+      The strip only exists when the order was found. Its figures come off the
+      order itself, not off the wizard's query string, which carries nothing but
+      the payment type.
+    -->
+    @if (order(); as found) {
+      <div class="cl-done__strip cl-soft">
+        <div class="cl-done__cell">
+          <div class="cl-lbl">{{ 'pages.track_order.cleaning_date' | translate }}</div>
+          <div class="cl-done__value">{{ formatDateTime(found.cleaningDateTime) }}</div>
+        </div>
+        <div class="cl-done__cell">
+          <div class="cl-lbl">{{ 'pages.track_order.services' | translate }}</div>
+          <div class="cl-done__value">
+            {{ 'pages.checkout.success.line_count' | translate: { count: lineCount() } }}
+          </div>
+        </div>
+        <div class="cl-done__cell">
+          <div class="cl-lbl">{{ 'pages.track_order.payment_type' | translate }}</div>
+          <div class="cl-done__value">{{ found.paymentType.name }}</div>
+        </div>
+        <div class="cl-done__cell">
+          <div class="cl-lbl">{{ 'pages.track_order.total' | translate }}</div>
+          <div class="cl-done__value cl-done__total cl-num">{{ formatPrice(found) }}</div>
+        </div>
+      </div>
     }
 
-    <div class="checkout-card__divider"></div>
-
-    <div class="checkout-card__steps">
-      <h3 class="checkout-card__steps-title">{{ 'pages.checkout.success.what_next' | translate }}</h3>
-      <div class="checkout-card__step">
-        <span class="checkout-card__step-num step-num--success">1</span>
-        <span>{{ 'pages.checkout.success.step_confirmation' | translate }}</span>
-      </div>
-      <div class="checkout-card__step">
-        <span class="checkout-card__step-num step-num--success">2</span>
-        <span>{{ 'pages.checkout.success.step_reminder' | translate }}</span>
-      </div>
-      <div class="checkout-card__step">
-        <span class="checkout-card__step-num step-num--success">3</span>
-        @if (isCash()) {
-          <span>{{ 'pages.checkout.success.cash.step_payment' | translate }}</span>
-        } @else {
-          <span>{{ 'pages.checkout.success.step_cleaner' | translate }}</span>
-        }
-      </div>
-    </div>
-
-    <div class="checkout-card__actions">
-      <a [routerLink]="ordersRoute" class="checkout-card__btn checkout-card__btn--primary">
-        <i class="pi pi-list"></i>
-        {{ 'pages.checkout.success.view_orders' | translate }}
-      </a>
-      <a [routerLink]="'/' + routes.ORDER" class="checkout-card__btn checkout-card__btn--outline">
-        <i class="pi pi-plus"></i>
-        {{ 'pages.checkout.success.book_another' | translate }}
-      </a>
-    </div>
-
-    <a [routerLink]="'/'" class="checkout-card__home-link">
-      <i class="pi pi-arrow-left"></i>
-      {{ 'pages.checkout.success.back_home' | translate }}
-    </a>
+    <p class="cl-muted cl-done__home">
+      <a [routerLink]="'/'">{{ 'pages.checkout.success.back_home' | translate }}</a>
+    </p>
   </div>
-</div>
+</section>

@@ -1072,13 +1072,15 @@
         "card": {
           "title": "Payment Successful!",
           "subtitle": "Thank you for your order",
-          "description": "Your payment has been processed and your cleaning is confirmed. You'll receive a confirmation email with all the details shortly."
+          "description": "Your payment has been processed and your cleaning is confirmed. You'll receive a confirmation email with all the details shortly.",
+          "lead_dated": "Paid, and your clean is confirmed for {{when}}."
         },
         "cash": {
           "title": "Order Confirmed!",
           "subtitle": "Thank you for your booking",
           "description": "Your cleaning has been booked and will be paid in cash on the day of service. You'll receive a confirmation email with all the details shortly.",
-          "step_payment": "Pay the cleaner in cash when the service is complete"
+          "step_payment": "Pay the cleaner in cash when the service is complete",
+          "lead_dated": "Your clean is confirmed for {{when}}. You pay on the day."
         },
         "what_next": "What happens next?",
         "step_confirmation": "You'll receive a confirmation email within a few minutes",
@@ -1086,7 +1088,11 @@
         "step_cleaner": "Our professional cleaner will arrive at your scheduled time",
         "view_orders": "View My Orders",
         "book_another": "Book Another Cleaning",
-        "back_home": "Back to Home"
+        "back_home": "Back to Home",
+        "step_1": "Step 1",
+        "step_2": "Step 2",
+        "step_3": "Step 3",
+        "line_count": "{{count}} items"
       },
       "cancel": {
         "title": "Payment Cancelled",
@@ -1389,7 +1395,36 @@
       "manual_lookup": "Manual Lookup",
       "guest_limit": "As a guest, only your last 5 orders are tracked on this device. Create an account to access all your orders from anywhere.",
       "guest_cta": "Create an account",
-      "view_details": "View details"
+      "view_details": "View details",
+      "lead": "You do not need an account. The order number and the e-mail we sent the confirmation to are enough.",
+      "retry": "Try again",
+      "have_account": "Have an account?",
+      "sign_in": "Sign in and see every order at once.",
+      "axis_order": "The clean",
+      "axis_order_lead": "What is happening with the order.",
+      "axis_payment": "Payment",
+      "axis_payment_lead": "Money moves on its own track.",
+      "paid_done": "paid",
+      "paid_after": "after the clean",
+      "need_help": "I need help",
+      "guest_cta_lead": "Create an account and next time every order is there without hunting for a number.",
+      "price_note_paid": "A fixed price. Paid.",
+      "price_note_cash": "A fixed price. You pay the cleaner after the clean.",
+      "headline": {
+        "new": "We have your order. We are finding a cleaner.",
+        "confirmed": "Your order is confirmed.",
+        "on_the_way": "Your cleaner is on the way.",
+        "in_progress": "We are cleaning.",
+        "completed": "All done. Thank you!",
+        "cancelled": "This order was cancelled."
+      },
+      "step": {
+        "new": "Received",
+        "confirmed": "Confirmed",
+        "on_the_way": "On the way",
+        "in_progress": "Cleaning",
+        "completed": "Done"
+      }
     },
     "saved_addresses": {
       "title": "My addresses",

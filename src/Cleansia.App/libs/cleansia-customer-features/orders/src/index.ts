@@ -5,3 +5,4 @@ export { GuestOrderDetailComponent } from './lib/order-lookup/guest-order-detail
 export { orderLookupRoutes } from './lib/order-lookup/order-lookup.routes';
 export { GuestOrderService } from './lib/track-order/guest-order.service';
 export type { GuestOrder } from './lib/track-order/guest-order.service';
+export { TrackOrderFacade } from './lib/track-order/track-order.facade';

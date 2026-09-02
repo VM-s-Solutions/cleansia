@@ -6,22 +6,25 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   CleansiaButtonComponent,
   CleansiaScrollTopComponent,
+  CleansiaTextInputComponent,
 } from '@cleansia/components';
+import { FoamEdgeComponent } from '@cleansia-customer/home';
 import {
+  CustomerAuthService,
   LookupOrderResponse,
   LookupOrderBatchResponse,
 } from '@cleansia/customer-services';
+import { OrderStatus, PaymentStatus } from '@cleansia/models';
 import {
   OrderStatusIconPipe,
   OrderStatusLabelPipe,
-  OrderStatusSeverityPipe,
   PaymentStatusLabelPipe,
-  PaymentStatusSeverityPipe,
 } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { GuestOrderService } from './guest-order.service';
@@ -44,9 +47,9 @@ import { TrackOrderFacade } from './track-order.facade';
     TimelineModule,
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
-    OrderStatusSeverityPipe,
+    CleansiaTextInputComponent,
+    FoamEdgeComponent,
     OrderStatusLabelPipe,
-    PaymentStatusSeverityPipe,
     PaymentStatusLabelPipe,
     OrderStatusIconPipe,
   ],
@@ -61,8 +64,25 @@ export class TrackOrderComponent implements OnInit {
   private readonly guestOrderService = inject(GuestOrderService);
   private readonly cache = inject(GuestOrderLookupCacheService);
   private readonly facade = inject(TrackOrderFacade);
+  private readonly authService = inject(CustomerAuthService);
 
   routes = CleansiaCustomerRoute;
+  readonly isLoggedIn = this.authService.isLoggedIn;
+
+  /**
+   * The order's own axis, drawn as the whole journey rather than only the
+   * stops it has already made — a reader wants to know what is still to come,
+   * and a list that stops at "Confirmed" says nothing about what happens next.
+   * `Pending` is deliberately absent: it has no production writer and the state
+   * it used to describe lives on the payment axis. -> /domain/order-lifecycle
+   */
+  private static readonly ORDER_STEPS: readonly { key: string; value: OrderStatus }[] = [
+    { key: 'new', value: OrderStatus.New },
+    { key: 'confirmed', value: OrderStatus.Confirmed },
+    { key: 'on_the_way', value: OrderStatus.OnTheWay },
+    { key: 'in_progress', value: OrderStatus.InProgress },
+    { key: 'completed', value: OrderStatus.Completed },
+  ];
 
   // Manual lookup
   orderNumber = signal('');
@@ -75,6 +95,90 @@ export class TrackOrderComponent implements OnInit {
   error = signal<string | null>(null);
   searched = signal(false);
   showManualLookup = signal(false);
+
+  /** Both fields carry something. The server decides whether they match. */
+  readonly canSubmit = computed(
+    () => this.orderNumber().trim().length > 0 && this.email().trim().length > 0,
+  );
+
+  readonly isPaid = computed(
+    () => this.manualResult()?.paymentStatus?.value === PaymentStatus.Paid,
+  );
+
+  /**
+   * The sentence at the top. A status pill names the state; this says what it
+   * MEANS for the person reading, which is the thing they came for.
+   */
+  readonly headline = computed(() => {
+    const value = this.manualResult()?.orderStatus?.value;
+    const key = TrackOrderComponent.ORDER_STEPS.find((s) => s.value === value)?.key;
+    return this.translate.instant(
+      value === OrderStatus.Cancelled
+        ? 'pages.track_order.headline.cancelled'
+        : `pages.track_order.headline.${key ?? 'new'}`,
+    );
+  });
+
+  /**
+   * Each step with the moment it happened, read off the order's own history
+   * rather than assumed from its current state — an order can skip a state
+   * (a cash job that is confirmed and started in one motion), and a timeline
+   * that infers timestamps would invent them.
+   */
+  readonly orderSteps = computed(() => {
+    const order = this.manualResult();
+    const history = order?.statusHistory ?? [];
+    const currentValue = order?.orderStatus?.value;
+    const reached = new Set(history.map((h) => h.status?.value));
+
+    return TrackOrderComponent.ORDER_STEPS.map((step) => {
+      const entry = history.find((h) => h.status?.value === step.value);
+      return {
+        key: step.key,
+        label: this.translate.instant(`pages.track_order.step.${step.key}`),
+        when: entry ? this.formatDate(entry.createdOn) : '',
+        done: reached.has(step.value) && step.value !== currentValue,
+        current: step.value === currentValue,
+      };
+    });
+  });
+
+  /** Every service and package on the order, as chips. */
+  readonly lineItems = computed(() => {
+    const order = this.manualResult();
+    if (!order) return [] as string[];
+    return [
+      ...(order.selectedServices ?? []).map((s) => s.name ?? ''),
+      ...(order.selectedPackages ?? []).map((p) => p.name ?? ''),
+    ].filter((n) => n.length > 0);
+  });
+
+  /**
+   * Cash is settled with the cleaner after the work; a card was charged when
+   * the booking was made. Saying the wrong one is the difference between a
+   * customer having their wallet ready and not.
+   */
+  readonly priceNote = computed(() =>
+    this.isPaid()
+      ? 'pages.track_order.price_note_paid'
+      : 'pages.track_order.price_note_cash',
+  );
+
+  /** Back to the form, with the fields kept so a typo can be corrected. */
+  reset(): void {
+    this.manualResult.set(null);
+    this.error.set(null);
+    this.searched.set(false);
+    this.showManualLookup.set(true);
+  }
+
+  formatDuration(minutes: number | undefined): string {
+    if (!minutes) return '—';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (h === 0) return `${m} min`;
+    return m === 0 ? `${h} h` : `${h} h ${m} min`;
+  }
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParams;

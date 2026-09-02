@@ -1,48 +1,62 @@
-<div class="checkout-page">
-  <cleansia-dynamic-background [iconCount]="15" />
-  <div class="checkout-card">
-    <img src="assets/images/mascot/mascot-idea.png" alt="" class="checkout-card__mascot" loading="lazy" />
+<section class="cl-done cl-done--quiet">
+  <div class="cl-done__inner">
+    <div>
+      <h1 class="cl-d1 cl-done__title">{{ 'pages.checkout.cancel.title' | translate }}</h1>
+      <p class="cl-body cl-done__lead">{{ 'pages.checkout.cancel.subtitle' | translate }}</p>
 
-    <h1 class="checkout-card__title">{{ 'pages.checkout.cancel.title' | translate }}</h1>
-    <p class="checkout-card__subtitle">{{ 'pages.checkout.cancel.subtitle' | translate }}</p>
-    <p class="checkout-card__desc">{{ 'pages.checkout.cancel.description' | translate }}</p>
-
-    <div class="checkout-card__divider"></div>
-
-    <div class="checkout-card__reasons">
-      <h3 class="checkout-card__reasons-title">{{ 'pages.checkout.cancel.reasons_title' | translate }}</h3>
-      <div class="checkout-card__reason">
-        <i class="pi pi-refresh"></i>
-        <span>{{ 'pages.checkout.cancel.reason_changed_mind' | translate }}</span>
+      <!--
+        Amber, not red: nothing failed and nothing was charged. The panel says
+        the one thing a customer here needs and would otherwise guess wrong —
+        the booking was created BEFORE the redirect to Stripe, so it exists and
+        is unpaid rather than gone.
+      -->
+      <div class="cl-done__panel">
+        <i class="pi pi-info-circle"></i>
+        <p>{{ 'pages.checkout.cancel.description' | translate }}</p>
       </div>
-      <div class="checkout-card__reason">
-        <i class="pi pi-pencil"></i>
-        <span>{{ 'pages.checkout.cancel.reason_wrong_details' | translate }}</span>
-      </div>
-      <div class="checkout-card__reason">
-        <i class="pi pi-credit-card"></i>
-        <span>{{ 'pages.checkout.cancel.reason_payment_issue' | translate }}</span>
+
+      <div class="cl-done__actions">
+        <a class="cl-btn" [routerLink]="'/' + routes.ORDER">
+          {{ 'pages.checkout.cancel.try_again' | translate }}
+        </a>
+        <a class="cl-link" [routerLink]="ordersRoute">
+          {{ 'pages.checkout.cancel.view_orders' | translate }}
+        </a>
       </div>
     </div>
 
-    <div class="checkout-card__actions">
-      <a [routerLink]="'/' + routes.ORDER" class="checkout-card__btn checkout-card__btn--primary">
-        <i class="pi pi-replay"></i>
-        {{ 'pages.checkout.cancel.try_again' | translate }}
-      </a>
-      <a [routerLink]="'/' + routes.ORDERS" class="checkout-card__btn checkout-card__btn--outline">
-        <i class="pi pi-list"></i>
-        {{ 'pages.checkout.cancel.view_orders' | translate }}
-      </a>
+    <img
+      class="cl-done__mascot"
+      src="assets/images/mascot/mascot-arms-crossed-tile.webp"
+      alt=""
+      width="340"
+      height="280"
+      aria-hidden="true"
+    />
+  </div>
+
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-band)'" />
+</section>
+
+<section class="cl-done__below">
+  <div class="cl-done__below-inner">
+    <h2 class="cl-lbl cl-done__next-title">{{ 'pages.checkout.cancel.reasons_title' | translate }}</h2>
+    <div class="cl-done__steps">
+      <div class="cl-done__step cl-soft">
+        <p>{{ 'pages.checkout.cancel.reason_changed_mind' | translate }}</p>
+      </div>
+      <div class="cl-done__step cl-soft">
+        <p>{{ 'pages.checkout.cancel.reason_wrong_details' | translate }}</p>
+      </div>
+      <div class="cl-done__step cl-soft">
+        <p>{{ 'pages.checkout.cancel.reason_payment_issue' | translate }}</p>
+      </div>
     </div>
 
-    <a [routerLink]="'/'" class="checkout-card__home-link">
-      <i class="pi pi-arrow-left"></i>
-      {{ 'pages.checkout.cancel.back_home' | translate }}
-    </a>
-
-    <p class="checkout-card__support">
+    <p class="cl-muted cl-done__home">
       {{ 'pages.checkout.cancel.contact_support' | translate }}
+      &nbsp;·&nbsp;
+      <a [routerLink]="'/'">{{ 'pages.checkout.cancel.back_home' | translate }}</a>
     </p>
   </div>
-</div>
+</section>

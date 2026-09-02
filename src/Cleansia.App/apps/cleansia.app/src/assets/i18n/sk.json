@@ -1072,13 +1072,15 @@
         "card": {
           "title": "Platba úspešná!",
           "subtitle": "Ďakujeme za vašu objednávku",
-          "description": "Vaša platba bola spracovaná a vaše čistenie je potvrdené. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami."
+          "description": "Vaša platba bola spracovaná a vaše čistenie je potvrdené. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami.",
+          "lead_dated": "Platba prebehla a upratovanie je potvrdené na {{when}}."
         },
         "cash": {
           "title": "Objednávka potvrdená!",
           "subtitle": "Ďakujeme za vašu rezerváciu",
           "description": "Vaše čistenie bolo objednané a zaplatíte v hotovosti v deň služby. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami.",
-          "step_payment": "Zaplaťte pracovníkovi v hotovosti po dokončení služby"
+          "step_payment": "Zaplaťte pracovníkovi v hotovosti po dokončení služby",
+          "lead_dated": "Upratovanie je potvrdené na {{when}}. Zaplatíte na mieste."
         },
         "what_next": "Čo bude nasledovať?",
         "step_confirmation": "Do niekoľkých minút dostanete potvrdzovací e-mail",
@@ -1086,7 +1088,11 @@
         "step_cleaner": "Náš profesionálny pracovník dorazí v naplánovanom čase",
         "view_orders": "Zobraziť moje objednávky",
         "book_another": "Objednať ďalšie čistenie",
-        "back_home": "Späť na úvod"
+        "back_home": "Späť na úvod",
+        "step_1": "Krok 1",
+        "step_2": "Krok 2",
+        "step_3": "Krok 3",
+        "line_count": "{{count}} služby"
       },
       "cancel": {
         "title": "Platba zrušená",
@@ -1389,7 +1395,36 @@
       "manual_lookup": "Ručné vyhľadávanie",
       "guest_limit": "Ako hosť sa sleduje iba posledných 5 objednávok na tomto zariadení. Vytvorte si účet pre prístup ku všetkým objednávkam odkiaľkoľvek.",
       "guest_cta": "Vytvoriť účet",
-      "view_details": "Zobraziť detail"
+      "view_details": "Zobraziť detail",
+      "lead": "Účet na to nepotrebujete. Stačí číslo objednávky a e-mail, na ktorý sme poslali potvrdenie.",
+      "retry": "Skúsiť znova",
+      "have_account": "Máte účet?",
+      "sign_in": "Prihláste sa a uvidíte všetky objednávky naraz.",
+      "axis_order": "Upratovanie",
+      "axis_order_lead": "Čo sa deje s objednávkou.",
+      "axis_payment": "Platba",
+      "axis_payment_lead": "Peniaze idú svojou vlastnou cestou.",
+      "paid_done": "zaplatené",
+      "paid_after": "po upratovaní",
+      "need_help": "Potrebujem pomoc",
+      "guest_cta_lead": "Založte si účet a nabudúce uvidíte všetky objednávky bez hľadania čísla.",
+      "price_note_paid": "Pevná cena. Zaplatené.",
+      "price_note_cash": "Pevná cena. Zaplatíte upratovačovi po upratovaní.",
+      "headline": {
+        "new": "Objednávku máme. Hľadáme upratovača.",
+        "confirmed": "Objednávka je potvrdená.",
+        "on_the_way": "Upratovač je na ceste.",
+        "in_progress": "Upratujeme.",
+        "completed": "Hotovo. Ďakujeme!",
+        "cancelled": "Objednávka bola zrušená."
+      },
+      "step": {
+        "new": "Prijaté",
+        "confirmed": "Potvrdené",
+        "on_the_way": "Na ceste",
+        "in_progress": "Upratujeme",
+        "completed": "Hotovo"
+      }
     },
     "saved_addresses": {
       "title": "Moje adresy",

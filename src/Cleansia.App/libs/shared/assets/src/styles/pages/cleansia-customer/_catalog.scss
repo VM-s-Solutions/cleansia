@@ -105,11 +105,16 @@
   // top. Same two lines, same order, as `.cl-hero`. -> _home-hero.scss
   margin-top: calc(-1 * var(--cl-nav-h));
   padding-top: var(--cl-nav-h);
+  // The same gradient as the home hero except at the very last stop, which runs
+  // out to white rather than to --cl-hero-3. The divider's tabs are the tint of
+  // the section below, so they need a lighter ground than themselves to be seen
+  // against; against --cl-hero-3 they measured 1.06, which is nothing. The top
+  // of the band — the part anyone compares with the home page — is unchanged.
   background: radial-gradient(
     120% 92% at 76% 6%,
     var(--cl-hero-1) 0%,
     var(--cl-hero-2) 44%,
-    var(--cl-hero-3) 100%
+    var(--cl-surface) 100%
   );
 }
 
@@ -151,37 +156,24 @@
   margin-top: calc(1.5 * var(--cl-u));
 }
 
-// The square divider shows as narrow notches between tabs rather than as whole
-// bubbles, so it has far less shape to be seen by than the round one — and both
-// of this page's dividers sit exactly where their gradient bottoms out at
-// near-white. Measured against that foot the edge came out at 1.068, which is
-// invisible; the round variant survives the same ground only because 60px of
-// bubble is exposed instead of 28px of notch.
-//
-// So the strip carries its own band. It fades in from the colour immediately
-// above it, so there is no step where the two meet, and lands on a tint the
-// white tabs can be read against. The FILL still has to equal the section the
-// edge leads into — that rule is what stops a hard line at the seam — so the
-// contrast has to come from behind the shape, not from it.
-//
-// This only takes it from 1.068 to 1.145. The square variant reads as TABS when
-// the section it leads into is itself tinted, because then the notches join
-// that band; leading into white, the notches are isolated slivers and the eye
-// reads spikes however dark they are. Pushing the band to --cl-hero-1 measured
-// 1.31 and looked worse for exactly that reason. Owner decision pending.
-.cl-cat-hero > cleansia-foam-edge {
-  display: block;
-  background: linear-gradient(var(--cl-hero-3), var(--cl-tint-strong));
-}
-
-.cl-cat-closing > cleansia-foam-edge {
-  display: block;
-  background: linear-gradient(var(--cl-cta-1), var(--cl-tint-strong));
-}
-
 // ---- The column both sections sit in ----------------------------------------
 .cl-cat {
-  background: var(--cl-surface);
+  // Tinted, not white — and that is what makes the square divider legible.
+  //
+  // The square variant shows as narrow notches between tabs rather than as
+  // whole bubbles, so it has a fraction of the shape the round one does. Where
+  // it leads into WHITE those notches are isolated slivers against a near-white
+  // ground and the eye reads a row of spikes, whatever the contrast: measured
+  // 1.068 plain, 1.145 with a band behind the strip, 1.31 pushed hard — and the
+  // harder it went the more it read as spikes. Where it leads into a tinted
+  // area the same notches join that area, so what you see is a scalloped
+  // boundary between two large fields, which is legible at this palette's very
+  // small tint steps. It is how the home page's closing band reads too.
+  // Owner decision 2026-09-02, having been shown all three.
+  //
+  // The cards gain from it as well: they were white on white, told apart by a
+  // hairline and a soft shadow alone.
+  background: var(--cl-tint-strong);
 }
 
 .cl-cat__inner {
@@ -438,9 +430,13 @@
   position: relative;
   margin-top: calc(4 * var(--cl-u));
   overflow: hidden;
+  // Opens a step deeper than the tinted section above it, so the divider's tabs
+  // — which carry that section's tint — have something to sit on. Both were
+  // --cl-cta-1 / --cl-tint-strong, i.e. the same colour, and the boundary
+  // vanished into a stray white stripe.
   background: radial-gradient(
     110% 130% at 20% 10%,
-    var(--cl-cta-1) 0%,
+    var(--cl-hero-1) 0%,
     var(--cl-cta-2) 60%,
     var(--cl-cta-3) 100%
   );

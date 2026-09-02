@@ -3,16 +3,19 @@ import { ComponentRef } from '@angular/core';
 import { FoamEdgeComponent, FoamVariant } from './foam-edge.component';
 
 /**
- * The arithmetic that broke silently.
+ * What the divider must keep doing.
  *
- * All three variants hard-coded a 60 radius, and only the 90-tall `cap` had
- * room for it. SVG does not scale an arc that does not fit — it draws it and
- * the viewBox crops whatever hangs outside — so `hood` rendered as a row of
- * thin spikes and `cap-short` as shallow humps, on six call sites and in the
- * approved artboard, for as long as they existed. Nothing failed; it just did
- * not look like foam.
+ * The one thing that was genuinely broken: `hood` used the sweep flag that
+ * bulges its arcs UP into its own band rather than down out of it, so sixty
+ * units of bubble ate a thirty-two unit band and all that rendered was the
+ * slivers left at the cusps — a row of thin spikes rather than foam, on four of
+ * the six call sites and in the approved artboard. Nothing failed; it just did
+ * not look like the design.
  *
- * These tests read the path back and check it fits the strip it is drawn in.
+ * `cap-short`'s crop is NOT that bug. It is cropped on purpose, and by a known
+ * amount, because the flatter tab is the square sibling of the round bubble and
+ * both are part of the vocabulary. The test below pins the amount so the two
+ * cases stay distinguishable: an intentional crop that drifts is a bug again.
  */
 describe('FoamEdgeComponent', () => {
   const VARIANTS: FoamVariant[] = ['cap', 'cap-short', 'hood'];
@@ -28,9 +31,9 @@ describe('FoamEdgeComponent', () => {
   }
 
   /**
-   * Every arc in the run, as {radius, dx, sweep}. The component writes them as
-   * `a{r},{r} 0 0 {sweep} {dx},0`, so a chord of `dx` on a radius of `r` is a
-   * half-circle whose apex is `r` from the baseline.
+   * Every arc in the run. The component writes them as `a{r},{r} 0 0 {sweep}
+   * {dx},0`, so a chord of `dx` on a radius of `r` is a half-circle whose apex
+   * is `r` from the baseline.
    */
   function arcs(path: string): { radius: number; dx: number; sweep: number }[] {
     const out: { radius: number; dx: number; sweep: number }[] = [];
@@ -51,6 +54,14 @@ describe('FoamEdgeComponent', () => {
     return Number(hood[1]);
   }
 
+  /** How far the bubbles' far edge falls outside the strip. 0 means uncropped. */
+  function overhang(component: FoamEdgeComponent): number {
+    const path = component.path();
+    const run = arcs(path);
+    const apex = run[0].dx > 0 ? baseline(path) - run[0].radius : baseline(path) + run[0].radius;
+    return run[0].dx > 0 ? Math.max(0, -apex) : Math.max(0, apex - component.height());
+  }
+
   describe.each(VARIANTS)('%s', (variant) => {
     it('draws a run that spans the canvas exactly', () => {
       const { component } = build(variant);
@@ -67,63 +78,36 @@ describe('FoamEdgeComponent', () => {
         expect(Math.abs(a.dx)).toBe(a.radius * 2);
       }
     });
+  });
 
-    it('keeps every bubble inside the strip', () => {
-      // The bug: a 60-radius bubble off a 32 baseline needs 92 units of strip
-      // and had 60, so 32 units of every bubble were cropped away.
-      const { component } = build(variant);
-      const path = component.path();
-      const base = baseline(path);
-      const run = arcs(path);
-      const apex = run[0].dx > 0 ? base - run[0].radius : base + run[0].radius;
+  it('leaves the round bubbles whole', () => {
+    expect(overhang(build('cap').component)).toBe(0);
+    expect(overhang(build('hood').component)).toBe(0);
+  });
 
-      expect(apex).toBeGreaterThanOrEqual(0);
-      expect(apex).toBeLessThanOrEqual(component.height());
-    });
-
-    it('puts the rim crescent on the outside of the bubbles', () => {
-      // Offset the other way and the crescent hides behind the foam, which is
-      // the whole reason the edge gets a value of its own.
-      const { component } = build(variant);
-      const run = arcs(component.path());
-      const bulgesUp = run[0].dx > 0;
-
-      expect(component.rimOffset()).not.toBe(0);
-      expect(component.rimOffset() < 0).toBe(bulgesUp);
-    });
-
-    it('leaves the crescent exactly as much clear strip as it is offset by', () => {
-      // The crescent is the same run pushed outward, so it needs that much
-      // room past the bubbles or the viewBox crops it — and it crops it at the
-      // crest, the part that carries the shape. A cap lost everything but the
-      // slivers between bumps and rendered as a row of spikes.
-      const { component } = build(variant);
-      const path = component.path();
-      const run = arcs(path);
-      const bulgesUp = run[0].dx > 0;
-      const apex = bulgesUp ? baseline(path) - run[0].radius : baseline(path) + run[0].radius;
-      const clearance = bulgesUp ? apex : component.height() - apex;
-
-      expect(clearance).toBe(Math.abs(component.rimOffset()));
-    });
+  it('crops the square sibling by exactly the amount that flattens it', () => {
+    // 60 of bubble off a 28 band in a 60 strip. Change any of the three and the
+    // tab stops being the shape the design asked for.
+    expect(overhang(build('cap-short').component)).toBe(28);
   });
 
   it('hangs a hood down and arcs a cap up', () => {
-    // A hood is not a flipped cap. If these ever agree, one of them is drawing
-    // its fill on the wrong side of the line.
+    // A hood is not a flipped cap. This is the one that was actually broken:
+    // the hood's arcs bulged back into its own band and left only spikes.
     const hood = build('hood').component;
     const cap = build('cap').component;
 
     expect(arcs(hood.path())[0].dx).toBeLessThan(0);
     expect(arcs(cap.path())[0].dx).toBeGreaterThan(0);
+    expect(overhang(hood)).toBe(0);
   });
 
-  it('gives the shorter strip a smaller bubble rather than a cropped one', () => {
-    const short = build('cap-short').component;
-    const cap = build('cap').component;
+  it('draws the bubbles in one colour and nothing else', () => {
+    // No second path and no rim: an outline made the divider read as a graphic
+    // rather than as foam. Owner, 2026-09-02.
+    const { component } = build('hood');
 
-    expect(short.height()).toBeLessThan(cap.height());
-    expect(arcs(short.path())[0].radius).toBeLessThan(arcs(cap.path())[0].radius);
+    expect(Object.keys(component)).not.toContain('rimOffset');
   });
 
   it('lets the caller name the colour the bubbles are cut out of', () => {

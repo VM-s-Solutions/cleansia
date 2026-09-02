@@ -234,7 +234,7 @@ cleansia-cta {
   // on an inline box is ignored, so the overlap silently never applied.
   &--hero {
     display: block;
-    margin-top: calc(-1 * var(--cl-hero-foam-overlap));
+    margin-top: -22px;
   }
 }
 

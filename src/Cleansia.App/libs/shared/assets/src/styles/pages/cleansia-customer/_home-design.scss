@@ -49,18 +49,6 @@
   --cl-hero-2: #{$primary-light};
   --cl-hero-3: #{$primary-lighter};
   --cl-foam: #{$white};
-  // The crescent along the outside of each bubble. The foam's FILL can never
-  // carry contrast — it has to equal the section it leads into or a hard band
-  // appears at the seam — so the edge is given a value of its own by a second
-  // run of the same shape behind the first. Measured before this existed, the
-  // seam sat between 1.001 and 1.26 against the band behind it at the six call
-  // sites; 1.00 is invisible by definition. Owner, 2026-09-02.
-  //
-  // Sky-400 is not a taste call: it is the dominant ink in
-  // core/src/main/res/drawable-nodpi/refresh_suds.png, the pull-to-refresh
-  // asset this component's docblock already cites as its source. The web edge
-  // and the mobile indicator now draw with the same colour.
-  --cl-foam-rim: #{$primary-accent};
 
   // The three bands that paint their own ground. They were build-time SCSS
   // values inlined at their use sites, which is why they stayed light when the
@@ -100,10 +88,6 @@
   // to be that section's ground exactly. #0b1220 was a shade of its own, which
   // put a faintly different dark band across every divider in dark mode.
   --cl-foam: #0f1b2d;
-  // Sky-400 is a floodlight on a dark ground — the crescent reads as neon
-  // rather than as the shaded underside of foam. Held to the same visual
-  // weight the light theme has instead of the same hex.
-  --cl-foam-rim: #2b7ba6;
 
   // The closing band lands on the page's own dark, not on a light gradient.
   --cl-cta-1: #14304c;

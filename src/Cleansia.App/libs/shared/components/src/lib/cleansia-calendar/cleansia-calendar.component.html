@@ -1,5 +1,5 @@
-@if (floatVariant()) {
-<p-floatlabel [variant]="floatVariant()">
+@if (floatVariant(); as variant) {
+<p-floatlabel [variant]="variant">
   <p-datepicker
     [inputId]="id()"
     [(ngModel)]="innerValue"
@@ -17,6 +17,17 @@
 </p-floatlabel>
 } @else {
 <div class="cleansia-calendar-wrapper">
+  <!--
+    Label FIRST. It was written after the picker, which read correctly only
+    while the surrounding CSS reversed the order for a floating label — with a
+    stacked label the field's name ended up underneath the field.
+  -->
+  @if (label()) {
+  <label [for]="id()" class="cleansia-calendar-label">
+    {{ label() }}
+    @if (required()) { <span class="required-asterisk">*</span> }
+  </label>
+  }
   <p-datepicker
     [inputId]="id()"
     [(ngModel)]="innerValue"
@@ -30,12 +41,6 @@
     [appendTo]="appendTo()"
     [class]="'w-full ' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
   />
-  @if (label()) {
-  <label [for]="id()" class="cleansia-calendar-label">
-    {{ label() }}
-    @if (required()) { <span class="required-asterisk">*</span> }
-  </label>
-  }
 </div>
 } @if (showErrors() && formControl.invalid && (formControl.dirty ||
 formControl.touched)) {

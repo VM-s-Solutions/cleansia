@@ -34,7 +34,7 @@ describe('CheckoutSuccessComponent', () => {
   let fixture: ComponentFixture<CheckoutSuccessComponent>;
   let queryParamMap: BehaviorSubject<ParamMap>;
   let title: Title;
-  let lookup: jest.Mock;
+  let lookupBatch: jest.Mock;
 
   /**
    * `guestOrders` is what the page uses to find the order it is confirming —
@@ -51,8 +51,12 @@ describe('CheckoutSuccessComponent', () => {
       lookup?: unknown;
     } = {},
   ): Promise<void> {
-    lookup = jest.fn().mockReturnValue(
-      options.lookup === 'fail' ? throwError(() => new Error('not found')) : of(options.lookup ?? ORDER),
+    // The page looks the order up by its ULID, which only the BATCH query
+    // matches — the single lookup is keyed on the display order number.
+    lookupBatch = jest.fn().mockReturnValue(
+      options.lookup === 'fail'
+        ? throwError(() => new Error('not found'))
+        : of({ orders: options.lookup === 'none' ? [] : [ORDER] }),
     );
     queryParamMap = new BehaviorSubject<ParamMap>(
       convertToParamMap(options.type === undefined ? {} : { type: options.type })
@@ -76,7 +80,7 @@ describe('CheckoutSuccessComponent', () => {
       // The page provides the facade itself, so the double replaces the
       // COMPONENT's provider rather than a module-level one.
       .overrideComponent(CheckoutSuccessComponent, {
-        set: { providers: [{ provide: TrackOrderFacade, useValue: { lookup } }] },
+        set: { providers: [{ provide: TrackOrderFacade, useValue: { lookupBatch } }] },
       })
       .compileComponents();
 
@@ -172,7 +176,9 @@ describe('CheckoutSuccessComponent', () => {
 
     it('asks for the newest remembered order', async () => {
       await render({ guestOrders: GUEST });
-      expect(lookup).toHaveBeenCalledWith('01ORDER', 'jan@example.com');
+      expect(lookupBatch).toHaveBeenCalledWith([
+        { orderId: '01ORDER', email: 'jan@example.com' },
+      ]);
       expect(fixture.componentInstance.hasOrder()).toBe(true);
     });
 
@@ -192,7 +198,7 @@ describe('CheckoutSuccessComponent', () => {
 
     it('asks for nothing when this browser remembers no order', async () => {
       await render({ guestOrders: [] });
-      expect(lookup).not.toHaveBeenCalled();
+      expect(lookupBatch).not.toHaveBeenCalled();
       expect(fixture.componentInstance.hasOrder()).toBe(false);
     });
   });

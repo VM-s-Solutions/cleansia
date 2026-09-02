@@ -447,6 +447,7 @@
           <label class="cl-wiz__field">
             <span class="cl-lbl">{{ 'pages.order.customer_phone' | translate }}</span>
             <cleansia-telephone
+              [floatVariant]="null"
               id="wizard-phone"
               [ngModel]="facade.formData().customerPhone"
               (ngModelChange)="facade.updateFormData({ customerPhone: $event })"

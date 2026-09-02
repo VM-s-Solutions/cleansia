@@ -28,8 +28,8 @@
     <div class="cl-auth__card cl-auth__card--narrow cl-lift" [formGroup]="facade.formGroup">
       @if (!facade.emailKnown()) {
         <cleansia-text-input
+          [floatVariant]="null"
           [label]="'pages.email_confirm.email_label' | translate"
-          [floatVariant]="'on'"
           formControlName="email"
           dataType="email"
           [required]="true"

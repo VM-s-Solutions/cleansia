@@ -53,19 +53,28 @@ export class OrderLookupComponent {
 
   readonly confirmationCode = signal('');
   readonly email = signal('');
+  /**
+   * The display order number. This form asked for a confirmation code and an
+   * e-mail and passed the CODE where the order number goes — so it only ever
+   * worked for someone who typed their order number into a field labelled
+   * "Confirmation code". The lookup takes all three now, and each value goes
+   * where its label says it does.
+   */
+  readonly orderNumber = signal('');
   readonly loading = signal(false);
   readonly notFound = signal(false);
 
   submit(): void {
     const code = this.confirmationCode().trim();
     const email = this.email().trim();
-    if (!code || !email || this.loading()) return;
+    const orderNumber = this.orderNumber().trim();
+    if (!code || !email || !orderNumber || this.loading()) return;
 
     this.loading.set(true);
     this.notFound.set(false);
 
     this.facade
-      .lookup(code, email)
+      .lookup(orderNumber, email, code)
       .pipe(takeUntil(this.facade.destroyed$))
       .subscribe({
         next: (order) => {

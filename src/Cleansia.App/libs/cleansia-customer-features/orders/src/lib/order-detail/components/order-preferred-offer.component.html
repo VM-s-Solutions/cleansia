@@ -65,6 +65,7 @@
         />
       } @else {
         <cleansia-select
+          [floatVariant]="null"
           [options]="facade.options()"
           [ngModel]="facade.selectedEmployeeId()"
           (ngModelChange)="onSelect($event)"

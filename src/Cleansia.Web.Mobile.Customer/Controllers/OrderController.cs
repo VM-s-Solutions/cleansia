@@ -20,9 +20,14 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
     [HttpGet("Lookup")]
     [ProducesResponseType(typeof(LookupOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> LookupOrder([FromQuery] string orderNumber, [FromQuery] string email, CancellationToken cancellationToken)
+    public async Task<IActionResult> LookupOrder(
+        [FromQuery] string orderNumber,
+        [FromQuery] string email,
+        [FromQuery] string confirmationCode,
+        CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new LookupOrder.Query(orderNumber, email), cancellationToken);
+        var result = await Mediator.Send(
+            new LookupOrder.Query(orderNumber, email, confirmationCode), cancellationToken);
         return HandleResult<LookupOrder.Response>(result);
     }
 

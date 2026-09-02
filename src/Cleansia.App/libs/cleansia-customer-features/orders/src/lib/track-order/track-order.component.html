@@ -40,8 +40,8 @@
     @if (showManualLookup() && !manualResult()) {
       <form class="cl-trk__card" (ngSubmit)="lookup()">
         <cleansia-text-input
+          [floatVariant]="null"
           [label]="'pages.track_order.order_number' | translate"
-          [floatVariant]="'on'"
           [ngModel]="orderNumber()"
           (ngModelChange)="orderNumber.set($event)"
           name="orderNumber"
@@ -49,12 +49,26 @@
           [showErrors]="false"
         />
         <cleansia-text-input
+          [floatVariant]="null"
           [label]="'pages.track_order.email' | translate"
-          [floatVariant]="'on'"
           [ngModel]="email()"
           (ngModelChange)="email.set($event)"
           name="email"
           dataType="email"
+          [required]="true"
+          [showErrors]="false"
+        />
+        <!--
+          The third factor. An order number is sequential and an e-mail is not
+          a secret; the confirmation code only ever reaches the inbox that
+          booked the clean.
+        -->
+        <cleansia-text-input
+          [floatVariant]="null"
+          [label]="'pages.track_order.confirmation_code' | translate"
+          [ngModel]="confirmationCode()"
+          (ngModelChange)="confirmationCode.set($event)"
+          name="confirmationCode"
           [required]="true"
           [showErrors]="false"
         />

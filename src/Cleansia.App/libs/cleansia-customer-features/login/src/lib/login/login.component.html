@@ -23,15 +23,15 @@
     -->
     <form class="cl-auth__card cl-lift" [formGroup]="facade.formGroup">
       <cleansia-text-input
+        [floatVariant]="null"
         [label]="'auth.login.email' | translate"
-        [floatVariant]="'on'"
         formControlName="email"
         dataType="email"
         [showErrors]="true"
       />
       <cleansia-text-input
+        [floatVariant]="null"
         [label]="'auth.login.password' | translate"
-        [floatVariant]="'on'"
         formControlName="password"
         dataType="password"
         [required]="true"

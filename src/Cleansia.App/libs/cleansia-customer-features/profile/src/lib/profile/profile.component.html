@@ -146,43 +146,43 @@
           (ngSubmit)="saveProfile()"
         >
           <cleansia-text-input
+            [floatVariant]="null"
             [label]="'pages.profile.email' | translate"
             [disabled]="true"
             [ngModel]="user()?.email || ''"
             [ngModelOptions]="{standalone: true}"
             dataType="email"
-            floatVariant="on"
             inputSize="full-width"
           />
 
           <div class="customer-profile__row">
             <cleansia-text-input
+              [floatVariant]="null"
               formControlName="firstName"
               [label]="'pages.profile.first_name' | translate"
               [required]="true"
-              floatVariant="on"
               inputSize="full-width"
             />
             <cleansia-text-input
+              [floatVariant]="null"
               formControlName="lastName"
               [label]="'pages.profile.last_name' | translate"
               [required]="true"
-              floatVariant="on"
               inputSize="full-width"
             />
           </div>
 
           <div class="customer-profile__row">
             <cleansia-telephone
+              [floatVariant]="null"
               formControlName="phoneNumber"
               [label]="'pages.profile.phone' | translate"
-              floatVariant="on"
               defaultCountryFlag="cz"
             />
             <cleansia-calendar
+              [floatVariant]="null"
               formControlName="birthDate"
               [label]="'pages.profile.birth_date' | translate"
-              floatVariant="on"
               dateFormat="dd.mm.yy"
               [showIcon]="true"
             />
@@ -196,90 +196,6 @@
               [loading]="saving()"
               [disabled]="profileForm.invalid"
               (clickFn)="saveProfile()"
-            />
-          </div>
-        </form>
-      </div>
-
-      <!-- Security Section -->
-      <div id="profile-security" class="customer-profile__section-card">
-        <div class="customer-profile__section-header">
-          <div class="customer-profile__section-icon">
-            <i class="pi pi-lock"></i>
-          </div>
-          <div>
-            <h2 class="customer-profile__section-title">
-              {{ 'pages.profile.security_title' | translate }}
-            </h2>
-            <p class="customer-profile__section-subtitle">
-              {{ 'pages.profile.security_desc' | translate }}
-            </p>
-          </div>
-        </div>
-
-        <form
-          [formGroup]="passwordForm"
-          class="customer-profile__form"
-          (ngSubmit)="changePassword()"
-        >
-          <cleansia-text-input
-            [formControl]="passwordForm.controls.currentPassword"
-            [label]="'pages.profile.current_password' | translate"
-            dataType="password"
-            floatVariant="on"
-            inputSize="full-width"
-          />
-
-          <div class="customer-profile__row">
-            <cleansia-text-input
-              [formControl]="passwordForm.controls.newPassword"
-              [label]="'pages.profile.new_password' | translate"
-              dataType="password"
-              floatVariant="on"
-              inputSize="full-width"
-              [showErrors]="false"
-            />
-            <div>
-              <cleansia-text-input
-                [formControl]="passwordForm.controls.confirmPassword"
-                [label]="'pages.profile.confirm_password' | translate"
-                dataType="password"
-                floatVariant="on"
-                inputSize="full-width"
-              />
-              @if (passwordMismatch && passwordForm.controls.confirmPassword.dirty) {
-              <small class="p-error mt-1 block">{{
-                'pages.profile.passwords_not_match' | translate
-              }}</small>
-              }
-            </div>
-          </div>
-
-          <div class="customer-profile__password-checklist">
-            <ul>
-              <li [class.valid]="passwordValidation().hasMinLength"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasMinLength">
-                {{ 'auth.register.validation.password_min_length' | translate }}
-              </li>
-              <li [class.valid]="passwordValidation().hasLetter"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasLetter">
-                {{ 'auth.register.validation.password_letter' | translate }}
-              </li>
-              <li [class.valid]="passwordValidation().hasNumber"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasNumber">
-                {{ 'auth.register.validation.password_number' | translate }}
-              </li>
-            </ul>
-          </div>
-
-          <div class="customer-profile__actions">
-            <cleansia-button
-              [title]="'pages.profile.change_password' | translate"
-              [severity]="'primary'"
-              [style]="'raised-button'"
-              [loading]="saving()"
-              [disabled]="passwordForm.invalid || passwordMismatch"
-              (clickFn)="changePassword()"
             />
           </div>
         </form>
@@ -356,6 +272,90 @@
         </div>
       </div>
 
+      <!-- Security Section -->
+      <div id="profile-security" class="customer-profile__section-card">
+        <div class="customer-profile__section-header">
+          <div class="customer-profile__section-icon">
+            <i class="pi pi-lock"></i>
+          </div>
+          <div>
+            <h2 class="customer-profile__section-title">
+              {{ 'pages.profile.security_title' | translate }}
+            </h2>
+            <p class="customer-profile__section-subtitle">
+              {{ 'pages.profile.security_desc' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <form
+          [formGroup]="passwordForm"
+          class="customer-profile__form"
+          (ngSubmit)="changePassword()"
+        >
+          <cleansia-text-input
+            [floatVariant]="null"
+            [formControl]="passwordForm.controls.currentPassword"
+            [label]="'pages.profile.current_password' | translate"
+            dataType="password"
+            inputSize="full-width"
+          />
+
+          <div class="customer-profile__row">
+            <cleansia-text-input
+              [floatVariant]="null"
+              [formControl]="passwordForm.controls.newPassword"
+              [label]="'pages.profile.new_password' | translate"
+              dataType="password"
+              inputSize="full-width"
+              [showErrors]="false"
+            />
+            <div>
+              <cleansia-text-input
+                [floatVariant]="null"
+                [formControl]="passwordForm.controls.confirmPassword"
+                [label]="'pages.profile.confirm_password' | translate"
+                dataType="password"
+                inputSize="full-width"
+              />
+              @if (passwordMismatch && passwordForm.controls.confirmPassword.dirty) {
+              <small class="p-error mt-1 block">{{
+                'pages.profile.passwords_not_match' | translate
+              }}</small>
+              }
+            </div>
+          </div>
+
+          <div class="customer-profile__password-checklist">
+            <ul>
+              <li [class.valid]="passwordValidation().hasMinLength"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasMinLength">
+                {{ 'auth.register.validation.password_min_length' | translate }}
+              </li>
+              <li [class.valid]="passwordValidation().hasLetter"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasLetter">
+                {{ 'auth.register.validation.password_letter' | translate }}
+              </li>
+              <li [class.valid]="passwordValidation().hasNumber"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasNumber">
+                {{ 'auth.register.validation.password_number' | translate }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="customer-profile__actions">
+            <cleansia-button
+              [title]="'pages.profile.change_password' | translate"
+              [severity]="'primary'"
+              [style]="'raised-button'"
+              [loading]="saving()"
+              [disabled]="passwordForm.invalid || passwordMismatch"
+              (clickFn)="changePassword()"
+            />
+          </div>
+        </form>
+      </div>
+
       <!--
         Notifications — its own section, not a block at the foot of Preferences.
         Eleven toggles are the biggest thing on this page and were sitting under
@@ -406,6 +406,7 @@
             </div>
             <div class="customer-profile__pref-control">
               <cleansia-select
+                [floatVariant]="null"
                 [options]="languageOptions"
                 [ngModel]="currentLanguage"
                 (ngModelChange)="onLanguageChange($event)"
@@ -504,10 +505,10 @@
   >
     <div class="customer-profile__dialog-form" [formGroup]="addressForm">
       <cleansia-text-input
+        [floatVariant]="null"
         formControlName="label"
         [label]="'pages.profile.address_label' | translate"
         [required]="true"
-        floatVariant="on"
         inputSize="full-width"
       />
       <cleansia-address-autocomplete

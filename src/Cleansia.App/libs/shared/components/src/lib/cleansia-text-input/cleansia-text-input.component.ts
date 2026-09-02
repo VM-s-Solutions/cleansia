@@ -41,7 +41,13 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 export class CleansiaTextInputComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
   dataType = input<'text' | 'password' | 'email' | 'number'>('text');
-  floatVariant = input<'over' | 'in' | 'on'>('on');
+  /**
+   * `null` renders the label ABOVE the control instead of floating it into the
+   * border — which is what the approved customer design draws. The default
+   * stays 'on' so the partner and admin forms, built against the floating
+   * label, are untouched.
+   */
+  floatVariant = input<'over' | 'in' | 'on' | null>('on');
 
   valueChanges = output<string>();
 

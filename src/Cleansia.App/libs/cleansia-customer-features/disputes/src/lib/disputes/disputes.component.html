@@ -10,6 +10,7 @@
 
   <div class="customer-disputes__actions-bar">
     <cleansia-select
+      [floatVariant]="null"
       class="customer-disputes__status-filter"
       [formControl]="statusFilterControl"
       [options]="statusFilterOptions"
@@ -113,6 +114,7 @@
     <form [formGroup]="createForm" class="customer-disputes__create-form">
       <div class="customer-disputes__field">
         <cleansia-select
+          [floatVariant]="null"
           [label]="'pages.disputes.order_id' | translate"
           formControlName="orderId"
           [options]="orderOptions()"
@@ -124,6 +126,7 @@
       </div>
       <div class="customer-disputes__field">
         <cleansia-select
+          [floatVariant]="null"
           [label]="'pages.disputes.reason' | translate"
           formControlName="reason"
           [options]="reasonOptions"
@@ -134,6 +137,7 @@
       </div>
       <div class="customer-disputes__field">
         <cleansia-textarea
+          [floatVariant]="null"
           [label]="'pages.disputes.description' | translate"
           formControlName="description"
           [rows]="4"
@@ -296,6 +300,7 @@
 
       <div class="customer-disputes__new-message">
         <cleansia-textarea
+          [floatVariant]="null"
           [formControl]="messageControl"
           [rows]="2"
           [placeholder]="'pages.disputes.type_message' | translate"

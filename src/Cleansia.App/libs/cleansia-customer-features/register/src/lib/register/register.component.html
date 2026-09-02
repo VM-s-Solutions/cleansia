@@ -23,16 +23,16 @@
     <form class="cl-auth__card cl-auth__card--wide cl-lift" [formGroup]="facade.formGroup">
       <div class="cl-auth__pair">
         <cleansia-text-input
+          [floatVariant]="null"
           [label]="'auth.register.first_name' | translate"
-          [floatVariant]="'on'"
           formControlName="firstName"
           [required]="true"
           [showErrors]="true"
           [autocomplete]="'given-name'"
         />
         <cleansia-text-input
+          [floatVariant]="null"
           [label]="'auth.register.last_name' | translate"
-          [floatVariant]="'on'"
           formControlName="lastName"
           [required]="true"
           [showErrors]="false"
@@ -41,8 +41,8 @@
       </div>
 
       <cleansia-text-input
+        [floatVariant]="null"
         [label]="'auth.register.email' | translate"
-        [floatVariant]="'on'"
         formControlName="email"
         dataType="email"
         [required]="true"
@@ -50,8 +50,8 @@
       />
 
       <cleansia-text-input
+        [floatVariant]="null"
         [label]="'auth.register.password' | translate"
-        [floatVariant]="'on'"
         formControlName="password"
         [dataType]="'password'"
         [required]="true"
@@ -81,8 +81,8 @@
       }
 
       <cleansia-text-input
+        [floatVariant]="null"
         [label]="'auth.register.confirm_password' | translate"
-        [floatVariant]="'on'"
         formControlName="confirmPassword"
         [dataType]="'password'"
         [required]="true"

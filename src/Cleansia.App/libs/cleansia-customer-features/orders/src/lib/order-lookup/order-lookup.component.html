@@ -17,6 +17,24 @@
 <div class="track-order">
   <div class="track-order__form-card">
     <div class="track-order__form">
+      <!--
+        The order number, which this form never asked for — it collected a
+        confirmation code and sent it where the order number goes, so it only
+        worked for someone who typed their order number under the wrong label.
+      -->
+      <div class="track-order__field">
+        <label>{{ 'pages.order_lookup.order_number' | translate }}</label>
+        <div class="track-order__input-wrap">
+          <i class="pi pi-hashtag"></i>
+          <input
+            type="text"
+            [ngModel]="orderNumber()"
+            (ngModelChange)="orderNumber.set($event)"
+            (keyup.enter)="submit()"
+            autocomplete="off"
+          />
+        </div>
+      </div>
       <div class="track-order__field">
         <label>{{ 'pages.order_lookup.confirmation_code' | translate }}</label>
         <div class="track-order__input-wrap">
@@ -48,7 +66,7 @@
         [severity]="'primary'"
         [icon]="'pi pi-search'"
         [loading]="loading()"
-        [disabled]="!confirmationCode().trim() || !email().trim()"
+        [disabled]="!orderNumber().trim() || !confirmationCode().trim() || !email().trim()"
         (clickFn)="submit()"
       />
     </div>

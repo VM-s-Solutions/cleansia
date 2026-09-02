@@ -84,10 +84,17 @@ export class CheckoutSuccessComponent implements OnInit {
     const latest = this.guestOrders.getAll()[0];
     if (!latest) return;
 
+    // BATCH, not the single lookup. `GuestOrderService` stores the order's
+    // ULID, and `LookupOrder` matches on DisplayOrderNumber — a ULID is never
+    // a display number, so the single lookup could not have matched a real
+    // order. `LookupOrderBatch` is keyed on `Order.Id`, which is what is
+    // stored, and it needs no confirmation code precisely because that id is
+    // itself the secret: 26 unguessable characters the browser only holds
+    // because it placed the order.
     this.lookupFacade
-      .lookup(latest.orderId, latest.email)
+      .lookupBatch([{ orderId: latest.orderId, email: latest.email }])
       .pipe(catchError(() => of(null)))
-      .subscribe((order) => this.order.set(order));
+      .subscribe((result) => this.order.set(result?.orders?.[0] ?? null));
   }
 
   private getLocale(): string {

@@ -87,6 +87,13 @@ export class TrackOrderComponent implements OnInit {
   // Manual lookup
   orderNumber = signal('');
   email = signal('');
+  /**
+   * The third factor. The lookup used to answer to an order number and an
+   * e-mail alone — a sequential number and an address that is not a secret —
+   * so the order's own confirmation code, which only reaches the customer's
+   * inbox, is required alongside them now.
+   */
+  confirmationCode = signal('');
 
   // State
   loading = signal(false);
@@ -98,7 +105,10 @@ export class TrackOrderComponent implements OnInit {
 
   /** Both fields carry something. The server decides whether they match. */
   readonly canSubmit = computed(
-    () => this.orderNumber().trim().length > 0 && this.email().trim().length > 0,
+    () =>
+      this.orderNumber().trim().length > 0 &&
+      this.email().trim().length > 0 &&
+      this.confirmationCode().trim().length > 0,
   );
 
   readonly isPaid = computed(
@@ -182,11 +192,18 @@ export class TrackOrderComponent implements OnInit {
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParams;
-    if (params['orderNumber'] && params['email']) {
+    if (params['orderNumber'] && params['email'] && params['code']) {
       this.orderNumber.set(params['orderNumber']);
       this.email.set(params['email']);
+      this.confirmationCode.set(params['code']);
       this.showManualLookup.set(true);
       this.lookup();
+    } else if (params['orderNumber'] || params['email']) {
+      // A partial deep link prefills what it carries and lets the customer
+      // supply the rest, rather than firing a lookup that must fail.
+      this.orderNumber.set(params['orderNumber'] ?? '');
+      this.email.set(params['email'] ?? '');
+      this.showManualLookup.set(true);
     } else {
       this.loadGuestOrders();
     }
@@ -222,7 +239,8 @@ export class TrackOrderComponent implements OnInit {
   lookup(): void {
     const orderNumber = this.orderNumber().trim();
     const email = this.email().trim();
-    if (!orderNumber || !email) return;
+    const confirmationCode = this.confirmationCode().trim();
+    if (!orderNumber || !email || !confirmationCode) return;
 
     this.loading.set(true);
     this.error.set(null);
@@ -230,7 +248,7 @@ export class TrackOrderComponent implements OnInit {
     this.searched.set(true);
 
     this.facade
-      .lookup(orderNumber, email)
+      .lookup(orderNumber, email, confirmationCode)
       .pipe(takeUntil(this.facade.destroyed$))
       .subscribe({
         next: (data) => {

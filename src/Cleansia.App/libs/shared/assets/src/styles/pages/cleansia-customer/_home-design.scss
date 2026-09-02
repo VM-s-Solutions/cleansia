@@ -282,7 +282,9 @@
   // action on the page — the earlier reading, that only the in-card ones should
   // shrink, was wrong.
   min-height: max(40px, calc(2.5 * var(--cl-u)));
-  padding: 0 calc(1.625 * var(--cl-u));
+  // 34px at 1440, which is what the board draws. It was 26 — narrow enough
+  // that a two-word label sat tight against the pill's ends.
+  padding: 0 calc(2.125 * var(--cl-u));
   border-radius: 999px;
   background: $primary;
   color: $white;
@@ -471,7 +473,12 @@ button.cl-link {
 // Scoped by this file's only importer — apps/cleansia.app. The same PrimeNG
 // input is used across the partner and admin apps, whose forms ARE dense
 // admin forms and were drawn against the 35px default; they never load this.
-.p-inputtext {
+// `.p-inputtext.p-component`, not `.p-inputtext` alone. PrimeNG's own rule has
+// the same weight and loads after this file, so a single class lost the tie for
+// every property PrimeNG also sets — the radius stayed 6px and the text 14px
+// while only `min-height`, which PrimeNG does not set, got through. Same tie the
+// button floor lost.
+.p-inputtext.p-component {
   min-height: calc(3 * var(--cl-u));
   padding: 0 var(--cl-u);
   border-radius: calc(0.875 * var(--cl-u));
@@ -546,6 +553,53 @@ button.cl-link {
 .p-button.p-component {
   min-height: max(40px, calc(2.5 * var(--cl-u)));
   border-radius: 999px;
+}
+
+// ---- A labelled field ------------------------------------------------------
+// The approved board stacks the label ABOVE the control:
+//
+//   <label style="display:flex; flex-direction:column; gap:7px">
+//     <span class="lbl">E-mail</span>      <- 12px / 800 / uppercase / .07em
+//     <span class="fld">…</span>           <- 48px / 14px radius / 16px
+//   </label>
+//
+// The pages were built with PrimeNG's FLOATING label instead, which parks the
+// text on the field's top border in mixed case at ~13px — a different control
+// from the one that was approved. `<cleansia-text-input>` already renders the
+// stacked shape whenever `floatVariant` is omitted, so the templates dropped
+// the attribute and this styles what they now produce.
+//
+// Owner, 2026-09-02: make them EXACTLY the same.
+cleansia-text-input,
+cleansia-textarea,
+cleansia-select,
+cleansia-calendar,
+cleansia-telephone,
+cleansia-multiselect {
+  display: block;
+
+  // The calendar keeps its own wrapper, so its label is a grandchild rather
+  // than a direct one.
+  .cleansia-calendar-wrapper {
+    display: block;
+  }
+
+  > label,
+  .cleansia-calendar-wrapper > label,
+  .cleansia-telephone-wrapper > label {
+    display: block;
+    margin-bottom: 7px;
+    font-family: $font-body;
+    font-size: calc(0.75 * var(--cl-u));
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--cl-muted);
+    // No `.required::after { content: ' *' }`. The component sets a `required`
+    // class here, but nothing in this repo has ever drawn an asterisk from it
+    // and the board does not show one — adding it now would be inventing a
+    // marker, not matching a design.
+  }
 }
 
 // ---- The fact line that closes a card --------------------------------------

@@ -91,13 +91,15 @@
   // up the page make. Not the SAME numbers in the two themes on purpose — an
   // equal ratio reads as a smaller step against a dark ground.
   //
-  // sky-300, spelled out: $primary-accent is sky-400 (#38bdf8) and reusing it
-  // here is what left this edge at 1.67 after it was supposed to come down.
-  --cl-cat-close: #7dd3fc;
+  // Lowered twice. sky-400 measured 1.67 and read as a stripe; sky-300 came
+  // down to 1.40 and still read as too bright — owner, 2026-09-02: "not so
+  // toxically bright". This is 1.23 against the tabs, which separates the two
+  // sections without the edge announcing itself.
+  --cl-cat-close: #a5e2fd;
 }
 
 :root.dark-mode {
-  --cl-cat-close: #184e6d;
+  --cl-cat-close: #154257;
 }
 
 // ---- The band the page opens on ---------------------------------------------
@@ -149,6 +151,12 @@
   // against 20 on the auth pages, which is what read as clipped. Owner,
   // 2026-09-02: match the login page. -> _auth.scss $auth-foot
   margin-bottom: -20px;
+  // ...and IN FRONT of it. The divider follows the row in the DOM, so without
+  // a stacking context of its own the mascot is painted over by the tabs it is
+  // supposed to be standing on — the feet looked cut off rather than planted.
+  // The auth mascots have carried this since they were built.
+  position: relative;
+  z-index: 1;
 }
 
 .cl-cat-hero__copy {

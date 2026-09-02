@@ -44,7 +44,7 @@
         <ul>
           <li><a routerLink="/" fragment="why-us">{{ 'nav.how_it_works' | translate }}</a></li>
           <li><a routerLink="/" fragment="services">{{ 'nav.pricing' | translate }}</a></li>
-          <li><a routerLink="/membership">Cleansia Plus</a></li>
+          <li><a [routerLink]="plusLink()">{{ 'nav.plus' | translate }}</a></li>
         </ul>
       </div>
 

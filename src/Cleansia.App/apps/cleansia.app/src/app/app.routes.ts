@@ -20,6 +20,14 @@ export const appRoutes: Route[] = [
         (m) => m.servicesCatalogRoutes
       ),
   },
+  {
+    // The public Cleansia Plus page. `MEMBERSHIP` below is the same product's
+    // MANAGEMENT screen and stays guarded — this is the one an anonymous
+    // visitor can read, and the one the nav bar's Plus link opens for them.
+    path: CleansiaCustomerRoute.PLUS,
+    loadChildren: () =>
+      import('@cleansia-customer/plus').then((m) => m.plusRoutes),
+  },
 
   // Guest-only routes (redirect to orders if logged in)
   {

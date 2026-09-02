@@ -1,0 +1,334 @@
+<section class="cl-plusp__hero">
+  <div class="cl-plusp__hero-inner">
+    <div>
+      <span class="cl-plusp__badge">
+        <i class="pi pi-star-fill"></i>
+        {{ 'pages.plus.badge' | translate }}
+      </span>
+      <h1 class="cl-d1 cl-plusp__title">{{ 'pages.plus.title' | translate }}</h1>
+
+      <!--
+        The lead carries the headline numbers, so it is one interpolated
+        sentence rather than four fragments. Every value comes off the plan: a
+        hardcoded "5 %" here would be another copy of a number an admin can
+        change in one column.
+      -->
+      <p class="cl-body cl-plusp__lead">
+        {{
+          'pages.plus.lead'
+            | translate
+              : {
+                  discount: facade.discountPercent(),
+                  hours: facade.cancellationHours(),
+                  days: facade.trialDays()
+                }
+        }}
+      </p>
+
+      <div class="cl-plusp__actions">
+        <a class="cl-btn" [routerLink]="subscribeLink()">
+          {{ 'pages.plus.cta_trial' | translate: { days: facade.trialDays() } }}
+        </a>
+        <a class="cl-link" href="#perks">{{ 'pages.plus.cta_whats_in_it' | translate }}</a>
+      </div>
+
+      @if (facade.monthlyPlan(); as monthly) {
+        <p class="cl-muted cl-plusp__note">
+          {{ 'pages.plus.price_note' | translate: { price: formatCzk(monthly.price) } }}
+        </p>
+      }
+    </div>
+
+    <img
+      class="cl-plusp__hero-mascot"
+      src="assets/images/mascot/mascot-plus.webp"
+      alt=""
+      width="600"
+      height="600"
+      aria-hidden="true"
+    />
+  </div>
+
+  <!--
+    `cap-short`, arcing up, not the board's downward hood. Owner instruction
+    2026-09-02 was to turn the services page's top divider over, and this is the
+    same join on the sibling public page — two marketing pages whose heroes end
+    in opposite directions read as two different sites. The closing edge below
+    still hangs, exactly as the catalogue's does.
+  -->
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-hero-2)'" />
+</section>
+
+<section class="cl-plusp__body" id="perks">
+  <div class="cl-plusp__inner">
+    <h2 class="cl-d2">{{ 'pages.plus.perks_title' | translate }}</h2>
+    <!--
+      No count in this sentence. The board's copy opened "Four things" and the
+      platform gates five; a headline that counts its own list goes false the
+      next time one is added, silently, in five locales.
+    -->
+    <p class="cl-body cl-plusp__section-lead">{{ 'pages.plus.perks_lead' | translate }}</p>
+
+    <div class="cl-plusp__perks">
+      <div class="cl-plusp__perk cl-soft">
+        <span class="cl-plusp__perk-icon"><i class="pi pi-star-fill"></i></span>
+        <div class="cl-h4">
+          {{ 'pages.plus.perk_discount_title' | translate: { percent: facade.discountPercent() } }}
+        </div>
+        <p class="cl-muted">{{ 'pages.membership.benefit_discount_body' | translate }}</p>
+      </div>
+
+      <div class="cl-plusp__perk cl-soft">
+        <span class="cl-plusp__perk-icon"><i class="pi pi-calendar"></i></span>
+        <div class="cl-h4">
+          {{ 'pages.plus.perk_cancel_title' | translate: { hours: facade.cancellationHours() } }}
+        </div>
+        <p class="cl-muted">{{ 'pages.plus.perk_cancel_body' | translate }}</p>
+      </div>
+
+      <!--
+        Only drawn when the plan actually waives one. AllowsExpressUpgrade is a
+        column, and a plan with it off would otherwise be sold a perk it does
+        not carry.
+      -->
+      @if (facade.hasExpressPerk()) {
+        <div class="cl-plusp__perk cl-soft">
+          <span class="cl-plusp__perk-icon"><i class="pi pi-bolt"></i></span>
+          <div class="cl-h4">
+            {{ 'pages.plus.perk_express_title' | translate: { count: facade.expressPerMonth() } }}
+          </div>
+          <p class="cl-muted">
+            {{ 'pages.plus.perk_express_body' | translate: { percent: expressRatePercent } }}
+          </p>
+        </div>
+      }
+
+      <div class="cl-plusp__perk cl-soft">
+        <span class="cl-plusp__perk-icon"><i class="pi pi-replay"></i></span>
+        <div class="cl-h4">{{ 'pages.membership.benefit_recurring_title' | translate }}</div>
+        <p class="cl-muted">{{ 'pages.plus.perk_recurring_body' | translate }}</p>
+      </div>
+
+      <!--
+        The fifth. Requesting a cleaner you have had before is membership-gated
+        (PreferredEmployeeMembershipRequired) and the authenticated subscribe
+        page has always listed it; the design board dropped it.
+      -->
+      <div class="cl-plusp__perk cl-soft">
+        <span class="cl-plusp__perk-icon"><i class="pi pi-heart-fill"></i></span>
+        <div class="cl-h4">{{ 'pages.membership.benefit_favorite_title' | translate }}</div>
+        <p class="cl-muted">{{ 'pages.membership.benefit_favorite_body' | translate }}</p>
+      </div>
+    </div>
+
+    <h2 class="cl-d2 cl-plusp__h2">{{ 'pages.plus.compare_title' | translate }}</h2>
+    <div class="cl-plusp__table cl-soft">
+      <div class="cl-plusp__row cl-plusp__row--head">
+        <span class="cl-lbl"></span>
+        <span class="cl-lbl">{{ 'pages.plus.compare_without' | translate }}</span>
+        <span class="cl-lbl cl-plusp__lbl-on">{{ 'pages.plus.compare_with' | translate }}</span>
+      </div>
+
+      <div class="cl-plusp__row">
+        <span class="cl-plusp__row-label">{{ 'pages.plus.row_discount' | translate }}</span>
+        <span class="cl-muted" [attr.data-label]="'pages.plus.compare_without' | translate">{{ 'pages.plus.none' | translate }}</span>
+        <span class="cl-plusp__yes" [attr.data-label]="'pages.plus.compare_with' | translate">
+          <i class="pi pi-check"></i>
+          {{ 'pages.plus.row_discount_with' | translate: { percent: facade.discountPercent() } }}
+        </span>
+      </div>
+
+      <div class="cl-plusp__row">
+        <span class="cl-plusp__row-label">{{ 'pages.plus.row_cancel' | translate }}</span>
+        <span class="cl-muted" [attr.data-label]="'pages.plus.compare_without' | translate">{{ 'pages.plus.row_cancel_without' | translate }}</span>
+        <span class="cl-plusp__yes" [attr.data-label]="'pages.plus.compare_with' | translate">
+          <i class="pi pi-check"></i>
+          {{ 'pages.plus.row_cancel_with' | translate: { hours: facade.cancellationHours() } }}
+        </span>
+      </div>
+
+      @if (facade.hasExpressPerk()) {
+        <div class="cl-plusp__row">
+          <span class="cl-plusp__row-label">{{ 'pages.plus.row_express' | translate }}</span>
+          <span class="cl-muted" [attr.data-label]="'pages.plus.compare_without' | translate">
+            {{ 'pages.plus.row_express_without' | translate: { percent: expressRatePercent } }}
+          </span>
+          <span class="cl-plusp__yes" [attr.data-label]="'pages.plus.compare_with' | translate">
+            <i class="pi pi-check"></i>
+            {{ 'pages.plus.row_express_with' | translate: { count: facade.expressPerMonth() } }}
+          </span>
+        </div>
+      }
+
+      <div class="cl-plusp__row">
+        <span class="cl-plusp__row-label">{{ 'pages.plus.row_recurring' | translate }}</span>
+        <span class="cl-muted" [attr.data-label]="'pages.plus.compare_without' | translate">{{ 'pages.plus.none' | translate }}</span>
+        <span class="cl-plusp__yes" [attr.data-label]="'pages.plus.compare_with' | translate">
+          <i class="pi pi-check"></i>{{ 'pages.plus.yes' | translate }}
+        </span>
+      </div>
+
+      <div class="cl-plusp__row">
+        <span class="cl-plusp__row-label">{{ 'pages.plus.row_preferred' | translate }}</span>
+        <span class="cl-muted" [attr.data-label]="'pages.plus.compare_without' | translate">{{ 'pages.plus.none' | translate }}</span>
+        <span class="cl-plusp__yes" [attr.data-label]="'pages.plus.compare_with' | translate">
+          <i class="pi pi-check"></i>{{ 'pages.plus.yes' | translate }}
+        </span>
+      </div>
+
+      <div class="cl-plusp__row">
+        <span class="cl-plusp__row-label">{{ 'pages.plus.row_cancel_membership' | translate }}</span>
+        <span class="cl-muted" [attr.data-label]="'pages.plus.compare_without' | translate">{{ 'pages.plus.none' | translate }}</span>
+        <span class="cl-plusp__yes" [attr.data-label]="'pages.plus.compare_with' | translate">
+          <i class="pi pi-check"></i>{{ 'pages.plus.row_cancel_membership_with' | translate }}
+        </span>
+      </div>
+    </div>
+
+    <!--
+      Prices only when the endpoint answered. An empty plan list leaves the
+      perks, the comparison and the FAQ standing — all still true — instead of
+      putting an error panel on the page whose job is to convert.
+    -->
+    @if (facade.hasPlans()) {
+      <h2 class="cl-d2 cl-plusp__h2">{{ 'pages.plus.plans_title' | translate }}</h2>
+      <p class="cl-body cl-plusp__section-lead">{{ 'pages.plus.plans_lead' | translate }}</p>
+
+      <div class="cl-plusp__plans">
+        @if (facade.monthlyPlan(); as monthly) {
+          <div class="cl-plusp__plan cl-soft">
+            <div class="cl-lbl cl-plusp__plan-lbl">
+              {{ 'pages.membership.plan_monthly' | translate }}
+            </div>
+            <div class="cl-num cl-plusp__price">{{ formatCzk(monthly.price) }}</div>
+            <div class="cl-muted">{{ 'pages.plus.per_month' | translate }}</div>
+            <p class="cl-plusp__plan-text">{{ 'pages.plus.plan_monthly_text' | translate }}</p>
+            <div class="cl-plusp__plan-spacer"></div>
+            <a class="cl-btn cl-btn--ghost" [routerLink]="subscribeLink()">
+              {{ 'pages.plus.cta_try_free' | translate }}
+            </a>
+          </div>
+        }
+
+        @if (facade.yearlyPlan(); as yearly) {
+          <div class="cl-plusp__plan cl-plusp__plan--best cl-lift">
+            @if (facade.yearlySavingsPercent() > 0) {
+              <span class="cl-plusp__plan-flag">{{ 'pages.plus.best_value' | translate }}</span>
+            }
+            <div class="cl-lbl cl-plusp__plan-lbl">
+              {{ 'pages.membership.plan_annual' | translate }}
+            </div>
+            <!--
+              `price` on a yearly plan is the yearly charge;
+              `monthlyEquivalentPrice` is what the server computed the savings
+              percentage against.
+            -->
+            <div class="cl-num cl-plusp__price">{{ formatCzk(yearly.price) }}</div>
+            <div class="cl-muted">{{ 'pages.plus.per_year' | translate }}</div>
+            <p class="cl-plusp__plan-text">
+              {{ 'pages.plus.plan_yearly_text' | translate: { percent: facade.yearlySavingsPercent() } }}
+            </p>
+            <div class="cl-plusp__plan-spacer"></div>
+            <a class="cl-btn cl-btn--on-dark" [routerLink]="subscribeLink()">
+              {{ 'pages.plus.cta_try_free' | translate }}
+            </a>
+          </div>
+        }
+      </div>
+
+      <p class="cl-muted cl-plusp__note">
+        {{ 'pages.plus.plans_footnote' | translate: { days: facade.trialDays() } }}
+      </p>
+    }
+
+    <h2 class="cl-d2 cl-plusp__h2">{{ 'pages.plus.faq_title' | translate }}</h2>
+    <div class="cl-plusp__faq">
+      <div class="cl-plusp__qa">
+        <i class="pi pi-question-circle"></i>
+        <div>
+          <div class="cl-h4">
+            {{ 'pages.plus.faq_trial_q' | translate: { days: facade.trialDays() } }}
+          </div>
+          <p class="cl-muted">
+            {{ 'pages.plus.faq_trial_a' | translate: { days: facade.trialDays() } }}
+          </p>
+        </div>
+      </div>
+
+      @if (facade.hasExpressPerk()) {
+        <div class="cl-plusp__qa">
+          <i class="pi pi-question-circle"></i>
+          <div>
+            <div class="cl-h4">{{ 'pages.plus.faq_express_q' | translate }}</div>
+            <p class="cl-muted">
+              {{ 'pages.plus.faq_express_a' | translate: { days: facade.trialDays() } }}
+            </p>
+          </div>
+        </div>
+      }
+
+      <!--
+        The stacking answer is the existing `social_proof_sub`, which the
+        subscribe page already shows and which states BOTH halves of the rule —
+        the 12 % combined cap and the fact that a promo code replaces the pair
+        rather than adding to it. The board's version carried only the first.
+      -->
+      <div class="cl-plusp__qa">
+        <i class="pi pi-question-circle"></i>
+        <div>
+          <div class="cl-h4">{{ 'pages.plus.faq_stacking_q' | translate }}</div>
+          <p class="cl-muted">{{ 'pages.membership.social_proof_sub' | translate }}</p>
+        </div>
+      </div>
+
+      <!--
+        "Cancel", not "pause". There is no pause: cancel-at-period-end is the
+        only exit, and Stripe honours a trial once per customer, so someone who
+        leaves and comes back does not get another free period.
+      -->
+      <div class="cl-plusp__qa">
+        <i class="pi pi-question-circle"></i>
+        <div>
+          <div class="cl-h4">{{ 'pages.plus.faq_cancel_q' | translate }}</div>
+          <p class="cl-muted">{{ 'pages.plus.faq_cancel_a' | translate }}</p>
+        </div>
+      </div>
+
+      <div class="cl-plusp__qa">
+        <i class="pi pi-question-circle"></i>
+        <div>
+          <div class="cl-h4">{{ 'pages.plus.faq_switch_q' | translate }}</div>
+          <p class="cl-muted">{{ 'pages.plus.faq_switch_a' | translate }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cl-plusp__closing">
+  <cleansia-foam-edge variant="hood-short" [fill]="'var(--cl-hero-2)'" />
+  <div class="cl-plusp__inner">
+    <div class="cl-plusp__cta cl-lift">
+      <img
+        class="cl-plusp__cta-mascot"
+        src="assets/images/mascot/mascot-waving.webp"
+        alt=""
+        width="340"
+        height="280"
+        aria-hidden="true"
+      />
+      <div>
+        <h2 class="cl-d2 cl-plusp__cta-title">
+          {{ 'pages.plus.closing_title' | translate: { days: facade.trialDays() } }}
+        </h2>
+        <p class="cl-body">{{ 'pages.plus.closing_text' | translate }}</p>
+      </div>
+      <div class="cl-plusp__cta-actions">
+        <a class="cl-btn" [routerLink]="subscribeLink()">
+          {{ 'pages.plus.closing_cta' | translate }}
+        </a>
+        <a class="cl-link" [routerLink]="orderLink">{{ 'pages.plus.closing_alt' | translate }}</a>
+      </div>
+    </div>
+  </div>
+</section>

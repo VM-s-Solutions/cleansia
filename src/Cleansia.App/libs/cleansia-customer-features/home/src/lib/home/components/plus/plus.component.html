@@ -13,7 +13,7 @@
         </ul>
 
         <div class="cl-plus__actions">
-          <a class="cl-btn cl-btn--inverse cl-plus__cta" routerLink="/membership/subscribe">
+          <a class="cl-btn cl-btn--inverse cl-plus__cta" [routerLink]="ctaLink()">
             {{ 'pages.home.plus.cta' | translate }}
           </a>
           <span class="cl-plus__yearly">{{ 'pages.home.plus.yearly' | translate }}</span>

@@ -147,6 +147,9 @@
       "@cleansia-customer/login": [
         "libs/cleansia-customer-features/login/src/index.ts"
       ],
+      "@cleansia-customer/plus": [
+        "libs/cleansia-customer-features/plus/src/index.ts"
+      ],
       "@cleansia-customer/order-wizard": [
         "libs/cleansia-customer-features/order-wizard/src/index.ts"
       ],

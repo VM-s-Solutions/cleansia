@@ -57,6 +57,10 @@ export enum CleansiaCustomerRoute {
   DISPUTES = 'disputes',
   REWARDS = 'rewards',
   MEMBERSHIP = 'membership',
+  // The PUBLIC Cleansia Plus page. `MEMBERSHIP` above is the signed-in
+  // management screen and is guarded; this is what the nav bar and the home
+  // page's Plus CTA open for a visitor who has no account yet.
+  PLUS = 'plus',
   GDPR = 'gdpr',
   CHECKOUT_SUCCESS = 'checkout/success',
   CHECKOUT_CANCEL = 'checkout/cancel',

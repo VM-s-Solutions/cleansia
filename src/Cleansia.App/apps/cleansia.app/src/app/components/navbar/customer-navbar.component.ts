@@ -235,6 +235,16 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
    * than branched in the template so the bar renders the same node either way.
    */
   readonly ordersLink = computed(() => (this.isLoggedIn() ? '/orders' : '/track-order'));
+
+  /**
+   * `/membership` is behind `customerAuthGuard`, so this link used to send
+   * every anonymous visitor who clicked "Cleansia Plus" to a login form with
+   * no explanation of what they had clicked. Signed in it still opens the
+   * management screen; signed out it opens the public page that argues for it.
+   *
+   * An attribute, not an `@if` — same reason as `ordersLink` above.
+   */
+  readonly plusLink = computed(() => (this.isLoggedIn() ? '/membership' : '/plus'));
   readonly ordersLabel = computed(() => (this.isLoggedIn() ? 'nav.my_orders' : 'nav.track_order'));
 
   closeMenus(): void {

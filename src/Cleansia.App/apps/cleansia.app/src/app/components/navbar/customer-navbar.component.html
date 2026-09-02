@@ -26,7 +26,7 @@
       <a class="customer-navbar__link" routerLink="/services" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
         {{ 'nav.services' | translate }}
       </a>
-      <a class="customer-navbar__link" routerLink="/membership" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
+      <a class="customer-navbar__link" [routerLink]="plusLink()" routerLinkActive="customer-navbar__link--active" (click)="closeMenus()">
         {{ 'nav.plus' | translate }}
       </a>
       <!--
@@ -221,7 +221,7 @@
       <i class="pi pi-question-circle mr-2"></i>
       {{ 'nav.how_it_works' | translate }}
     </a>
-    <a class="customer-navbar__mobile-link" routerLink="/membership" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+    <a class="customer-navbar__mobile-link" [routerLink]="plusLink()" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
       <i class="pi pi-bookmark-fill mr-2"></i>
       {{ 'nav.plus' | translate }}
     </a>

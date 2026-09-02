@@ -45,6 +45,14 @@ export class CleansiaCustomerFooterComponent {
   // sign-in/sign-out without remount.
   readonly isAnonymous = computed(() => !this.authService.isLoggedIn());
 
+  /**
+   * The footer renders on every page, so this link reached every anonymous
+   * visitor — and pointed at `/membership`, which is behind `customerAuthGuard`
+   * and bounced them to a login form. It opens the public Plus page for them
+   * and the management screen for a member, matching the nav bar's Plus link.
+   */
+  readonly plusLink = computed(() => (this.isAnonymous() ? '/plus' : '/membership'));
+
   /** Reopens the cookie banner on its settings panel. */
   openCookieSettings(): void {
     this.cookieConsent.openSettings();

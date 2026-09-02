@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /** Which way the bubbles face, and how tall the strip is. */
-export type FoamVariant = 'cap' | 'hood' | 'hood-short';
+export type FoamVariant = 'cap' | 'cap-short' | 'hood' | 'hood-short';
 
 /** One bubble run: how many, how big, how much solid band, and which way it faces. */
 interface FoamGeometry {
@@ -54,12 +54,14 @@ const GEOMETRY: Record<FoamVariant, FoamGeometry> = {
   cap: { count: 12, radius: 60, band: 30, up: true, strip: 90 },
   // The same bubble, hung the other way, in a strip tall enough to hold it.
   hood: { count: 12, radius: 60, band: 30, up: false, strip: 90 },
-  // The square sibling, hung the same way as `hood`. 28 + 60 against a 60 strip
-  // crops each bubble's far edge by 28, which is the flatter tab — not an
-  // oversight. Owner ruling 2026-09-02: the home page carries the round shape
-  // throughout and the services page carries this one, so the two pages read
-  // as the same motif at two weights rather than as one page disagreeing with
-  // itself.
+  // The square siblings. 28 + 60 against a 60 strip crops each bubble's far edge
+  // by 28, which is the flatter tab — not an oversight.
+  //
+  // Owner ruling 2026-09-02: this is THE divider. Every call site on every page
+  // uses one of these two; the round pair above is kept only because the hero's
+  // `cap` is what `.cl-foam--hero` was measured against and nothing currently
+  // draws it. If that stays true, delete them.
+  'cap-short': { count: 12, radius: 60, band: 28, up: true, strip: 60 },
   'hood-short': { count: 12, radius: 60, band: 28, up: false, strip: 60 },
 };
 

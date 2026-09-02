@@ -5,5 +5,15 @@
   aria-hidden="true"
   focusable="false"
 >
+  <!--
+    The rim first, so the front run sits on top of it and only its crescent
+    shows. Both paths are the same run; the rim is offset to the outside of the
+    bubbles. Decoration, so it is aria-hidden along with the rest of the strip.
+  -->
+  <path
+    [attr.d]="path()"
+    [attr.transform]="'translate(0,' + rimOffset() + ')'"
+    fill="var(--cl-foam-rim)"
+  />
   <path [attr.d]="path()" [attr.fill]="fill()" />
 </svg>

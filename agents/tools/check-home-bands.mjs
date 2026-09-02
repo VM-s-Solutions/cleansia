@@ -64,10 +64,15 @@ const foam = await page.evaluate(() =>
     vb: s.getAttribute('viewBox'),
     h: Math.round(s.getBoundingClientRect().height),
     top: Math.round(s.getBoundingClientRect().top + scrollY),
-    fill: getComputedStyle(s.querySelector('path')).fill,
+    // The LAST path, not the first: the strip draws its rim behind the foam, so
+    // `querySelector` returns the crescent's colour rather than the fill that
+    // has to match the section the edge leads into — which is the one worth
+    // reporting, because a mismatch there is the hard band this design avoids.
+    fill: getComputedStyle([...s.querySelectorAll('path')].at(-1)).fill,
+    rim: getComputedStyle(s.querySelector('path')).fill,
   }))
 );
 console.log(`\nfoam edges: ${foam.length} (design has 4)`);
-foam.forEach((f) => console.log(`  ${String(f.top).padStart(6)}px  ${f.vb.padEnd(14)} rendered=${f.h}px  fill=${f.fill}`));
+foam.forEach((f) => console.log(`  ${String(f.top).padStart(6)}px  ${f.vb.padEnd(14)} rendered=${f.h}px  fill=${f.fill}  rim=${f.rim}`));
 
 await browser.close();

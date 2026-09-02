@@ -38,6 +38,12 @@
       fields back with what was typed still in them.
     -->
     @if (showManualLookup() && !manualResult()) {
+      <!--
+        The submit is the FORM's, not the button's. The button is
+        `buttonType="submit"`, so binding clickFn as well fired the lookup
+        twice per press — two requests against a rate-limited endpoint, and the
+        second one cleared the first one's answer before replacing it.
+      -->
       <form class="cl-trk__card" (ngSubmit)="lookup()">
         <cleansia-text-input
           [floatVariant]="null"
@@ -94,7 +100,6 @@
           [size]="'full-width'"
           [loading]="loading()"
           [disabled]="!canSubmit()"
-          (clickFn)="lookup()"
         />
       </form>
 

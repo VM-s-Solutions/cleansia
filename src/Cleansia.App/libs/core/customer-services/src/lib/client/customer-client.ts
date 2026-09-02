@@ -3314,9 +3314,10 @@ export interface IOrderClient {
     /**
      * @param orderNumber (optional) 
      * @param email (optional) 
+     * @param confirmationCode (optional) 
      * @return OK
      */
-    lookup(orderNumber?: string | undefined, email?: string | undefined): Observable<LookupOrderResponse>;
+    lookup(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse>;
     /**
      * @param body (optional) 
      * @return OK
@@ -3455,9 +3456,10 @@ export class OrderClient implements IOrderClient {
     /**
      * @param orderNumber (optional) 
      * @param email (optional) 
+     * @param confirmationCode (optional) 
      * @return OK
      */
-    lookup(orderNumber?: string | undefined, email?: string | undefined): Observable<LookupOrderResponse> {
+    lookup(orderNumber?: string | undefined, email?: string | undefined, confirmationCode?: string | undefined): Observable<LookupOrderResponse> {
         let url = this.baseUrl + "/api/Order/Lookup?";
         if (orderNumber === null)
             throw new globalThis.Error("The parameter 'orderNumber' cannot be null.");
@@ -3467,6 +3469,10 @@ export class OrderClient implements IOrderClient {
             throw new globalThis.Error("The parameter 'email' cannot be null.");
         else if (email !== undefined)
             url += "email=" + encodeURIComponent("" + email) + "&";
+        if (confirmationCode === null)
+            throw new globalThis.Error("The parameter 'confirmationCode' cannot be null.");
+        else if (confirmationCode !== undefined)
+            url += "confirmationCode=" + encodeURIComponent("" + confirmationCode) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {

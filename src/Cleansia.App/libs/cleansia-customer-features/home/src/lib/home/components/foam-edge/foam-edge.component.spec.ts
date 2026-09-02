@@ -91,6 +91,21 @@ describe('FoamEdgeComponent', () => {
       expect(component.rimOffset()).not.toBe(0);
       expect(component.rimOffset() < 0).toBe(bulgesUp);
     });
+
+    it('leaves the crescent exactly as much clear strip as it is offset by', () => {
+      // The crescent is the same run pushed outward, so it needs that much
+      // room past the bubbles or the viewBox crops it — and it crops it at the
+      // crest, the part that carries the shape. A cap lost everything but the
+      // slivers between bumps and rendered as a row of spikes.
+      const { component } = build(variant);
+      const path = component.path();
+      const run = arcs(path);
+      const bulgesUp = run[0].dx > 0;
+      const apex = bulgesUp ? baseline(path) - run[0].radius : baseline(path) + run[0].radius;
+      const clearance = bulgesUp ? apex : component.height() - apex;
+
+      expect(clearance).toBe(Math.abs(component.rimOffset()));
+    });
   });
 
   it('hangs a hood down and arcs a cap up', () => {

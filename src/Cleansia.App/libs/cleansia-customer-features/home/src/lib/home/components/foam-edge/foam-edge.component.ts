@@ -9,11 +9,23 @@ interface FoamGeometry {
   readonly count: number;
   /** Bubble radius. The chord is 2r, so `count * 2r` must be exactly 1440. */
   readonly radius: number;
-  /** Solid band behind the bubbles. The strip is `band + radius` tall. */
+  /** Solid band behind the bubbles. The strip is `band + radius + RIM` tall. */
   readonly band: number;
   /** `1` fills the bottom and arcs bubbles up; `0` fills the top and hangs them down. */
   readonly up: boolean;
 }
+
+/**
+ * How much clear strip is left on the OUTSIDE of the bubbles, for the crescent.
+ *
+ * Without it the crescent is cropped exactly where the bubbles touch the edge
+ * of the viewBox — which is each bump's crest, the part that carries the shape.
+ * On a `cap` that left only the slivers between bumps, so the edge rendered as a
+ * row of blue spikes hanging into the section instead of a line following the
+ * scallops, and the caps and hoods on the same page disagreed about what the
+ * motif even looks like. Owner, 2026-09-02.
+ */
+const RIM = 10;
 
 /**
  * The scalloped divider between sections — the suds motif the mobile apps
@@ -54,13 +66,12 @@ interface FoamGeometry {
  * again the way they did when each was a hand-written path string.
  */
 const GEOMETRY: Record<FoamVariant, FoamGeometry> = {
-  // The hero's edge. Unchanged — it was the one that already added up.
+  // The hero's edge.
   cap: { count: 12, radius: 60, band: 30, up: true },
-  // The same bubble, hung the other way. Was a 60-tall strip; a 60-radius
-  // bubble cannot hang out of one, so the strip is now as tall as its shape.
+  // The same bubble, hung the other way.
   hood: { count: 12, radius: 60, band: 30, up: false },
   // Genuinely shorter, which means a smaller bubble rather than a cropped one:
-  // half the radius, twice as many, in the 60-tall strip the gallery wants.
+  // half the radius, twice as many.
   'cap-short': { count: 24, radius: 30, band: 30, up: true },
 };
 
@@ -84,20 +95,24 @@ export class FoamEdgeComponent {
 
   readonly height = computed(() => {
     const g = this.geometry();
-    return g.band + g.radius;
+    return g.band + g.radius + RIM;
   });
 
   readonly path = computed(() => {
     const { count, radius, band, up } = this.geometry();
     const chord = radius * 2;
-    const strip = band + radius;
+    const strip = this.height();
 
     // Sweep 1 travelling right bulges up; sweep 1 travelling left bulges down.
     // The run is written once here rather than per section — the last time it
     // was repeated by hand the copies drifted apart.
+    //
+    // Both forms leave RIM of clear strip past the bubbles' far edge: a cap's
+    // crests stop at y=RIM rather than at 0, a hood's at strip-RIM rather than
+    // at the bottom. That gap is what the crescent is drawn into.
     if (up) {
       const arcs = ` a${radius},${radius} 0 0 1 ${chord},0`.repeat(count);
-      return `M0,${strip} L0,${radius}${arcs} L1440,${strip} Z`;
+      return `M0,${strip} L0,${RIM + radius}${arcs} L1440,${strip} Z`;
     }
     const arcs = ` a${radius},${radius} 0 0 1 -${chord},0`.repeat(count);
     return `M0,0 L1440,0 L1440,${band}${arcs} Z`;
@@ -114,10 +129,9 @@ export class FoamEdgeComponent {
    * the crescent is a second shape behind it, which is also what real suds look
    * like. One extra <path> and one token, rather than a stroke — an outline
    * would turn soft foam into a graphic.
+   *
+   * It is offset by exactly RIM, which is exactly the clear strip the path
+   * leaves on that side, so the crescent lands in that gap and is never cropped.
    */
-  readonly rimOffset = computed(() => {
-    const g = this.geometry();
-    const depth = Math.round(g.radius * 0.13);
-    return g.up ? -depth : depth;
-  });
+  readonly rimOffset = computed(() => (this.geometry().up ? -RIM : RIM));
 }

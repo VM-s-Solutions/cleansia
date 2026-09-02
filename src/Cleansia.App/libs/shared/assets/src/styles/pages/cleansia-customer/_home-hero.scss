@@ -32,6 +32,21 @@ cleansia-hero {
   overflow: hidden;
   z-index: 1;
 
+  // How far the scalloped edge is pulled up over the hero, so the mascot stands
+  // ON the suds rather than above them. Declared here and read by
+  // `.cl-foam--hero`, because the calculator card has to know the same number to
+  // stay OUT of the strip. -> _home-common.scss
+  --cl-hero-foam-overlap: 22px;
+
+  // The mascot wants that overlap; the card does not. An overlap of even a few
+  // pixels covers each bubble's crest, leaving only the crescent down in the
+  // troughs visible below the card — so the one divider read as arcs beside the
+  // card and as a row of blue spikes beneath it. Owner, 2026-09-02: "there is a
+  // corrupted pattern on each page".
+  cleansia-quick-quote {
+    margin-bottom: var(--cl-hero-foam-overlap);
+  }
+
   &__sud {
     position: absolute;
     border-radius: 999px;

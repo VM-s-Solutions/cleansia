@@ -35,7 +35,10 @@
 .cl-done__inner {
   max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
   margin: 0 auto;
-  padding: calc(3.5 * var(--cl-u)) var(--cl-gutter) 0;
+  // The bottom value is not 0: the actions row sat directly on the divider's
+  // tabs with nothing between them. The mascot beside it hangs INTO the strip
+  // on purpose, so the padding is on the inner rather than on the section.
+  padding: calc(3.5 * var(--cl-u)) var(--cl-gutter) calc(2 * var(--cl-u));
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: calc(2.5 * var(--cl-u));

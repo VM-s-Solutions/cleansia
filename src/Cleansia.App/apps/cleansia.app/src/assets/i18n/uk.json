@@ -991,7 +991,9 @@
         "1": "Щомісяця",
         "2": "Щороку"
       },
-      "review_payment_card": "Оплата та членство"
+      "review_payment_card": "Оплата та членство",
+      "placing_order": "Надсилаємо…",
+      "summary_remove_item": "Прибрати {{item}} із замовлення"
     },
     "orders": {
       "title": "Мої замовлення",
@@ -1371,9 +1373,9 @@
       "title": "Відстежити замовлення",
       "subtitle": "Введіть номер замовлення та email для перевірки статусу вашого замовлення",
       "order_number": "Номер замовлення",
-      "order_number_placeholder": "напр. ORD-A1B2C3D4",
+      "order_number_placeholder": "напр. CLS-2026-0412",
       "email": "Електронна адреса",
-      "email_placeholder": "Email, вказаний при оформленні замовлення",
+      "email_placeholder": "e-mail, на який прийшло підтвердження",
       "search": "Відстежити замовлення",
       "not_found": "Замовлення з такою комбінацією не знайдено. Перевірте номер замовлення та email.",
       "not_found_title": "Замовлення не знайдено",
@@ -1425,7 +1427,8 @@
         "on_the_way": "У дорозі",
         "in_progress": "Прибираємо",
         "completed": "Готово"
-      }
+      },
+      "confirmation_code_placeholder": "6 символів із листа"
     },
     "saved_addresses": {
       "title": "Мої адреси",

@@ -39,18 +39,25 @@
 
       <cleansia-code-input formControlName="code" (codeComplete)="onVerifyCode()" />
 
-      <div class="cl-auth__row-between">
+      <!--
+        One centred muted line, as the board draws it — a countdown and the
+        change-email link separated by a middot, not a two-column row of
+        17px links. Both inherit the muted 14px; the link takes its weight from
+        the `a:not(.cl-link)` rule that already governs links inside sentences.
+      -->
+      <p class="cl-muted cl-auth__resend">
         @if (facade.isResendDisabled()) {
           <span class="cl-auth__countdown">{{ resendCodeTimeout() }}</span>
         } @else {
-          <button type="button" class="cl-link" (click)="onResendCode()">
+          <button type="button" class="cl-auth__resend-btn" (click)="onResendCode()">
             {{ 'pages.email_confirm.resend_code' | translate }}
           </button>
         }
-        <a class="cl-link" [routerLink]="'/' + routes.REGISTER">
+        &nbsp;·&nbsp;
+        <a [routerLink]="'/' + routes.REGISTER">
           {{ 'pages.email_confirm.change_email' | translate }}
         </a>
-      </div>
+      </p>
 
       <cleansia-button
         [buttonType]="'submit'"

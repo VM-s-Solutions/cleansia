@@ -1005,6 +1005,20 @@
               }
             </span>
             <strong>{{ formatPrice(line.amount) }}</strong>
+            <!--
+              Removable from here. The summary used to be read-only, so undoing
+              an accidental tap meant walking BACK through the wizard to the
+              step that added it — three screens away by the review step.
+            -->
+            <button
+              type="button"
+              class="cl-wiz__summary-remove"
+              [attr.aria-label]="removeLineLabel(line)"
+              [title]="removeLineLabel(line)"
+              (click)="removeLine(line)"
+            >
+              <i class="pi pi-times" aria-hidden="true"></i>
+            </button>
           </div>
           }
         </div>
@@ -1115,13 +1129,27 @@
           {{ 'pages.order.continue_action' | translate }}
         </button>
         } @else {
+        <!--
+          Placing an order leaves for Stripe, which is a visible wait. The
+          button was only `disabled` while that happened — no spinner, no
+          change in wording — so it read as a dead control and invited a second
+          press.
+        -->
         <button
           type="button"
           class="cl-btn cl-wiz__advance"
+          [class.cl-btn--loading]="facade.submitting()"
           [disabled]="facade.submitting()"
+          [attr.aria-busy]="facade.submitting()"
           (click)="onPlaceOrder()"
         >
-          {{ 'pages.order.place_order' | translate }}
+          @if (facade.submitting()) {
+            <i class="pi pi-spin pi-spinner cl-btn__spinner" aria-hidden="true"></i>
+          }
+          {{
+            (facade.submitting() ? 'pages.order.placing_order' : 'pages.order.place_order')
+              | translate
+          }}
         </button>
         }
 

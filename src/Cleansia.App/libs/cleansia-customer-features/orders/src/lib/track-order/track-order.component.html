@@ -44,45 +44,43 @@
         twice per press — two requests against a rate-limited endpoint, and the
         second one cleared the first one's answer before replacing it.
       -->
-      <form class="cl-trk__card" (ngSubmit)="lookup()">
+      <form class="cl-trk__card" [formGroup]="form" (ngSubmit)="lookup()">
         <cleansia-text-input
           [floatVariant]="null"
           [label]="'pages.track_order.order_number' | translate"
-          [ngModel]="orderNumber()"
-          (ngModelChange)="orderNumber.set($event)"
-          name="orderNumber"
+          [placeholder]="'pages.track_order.order_number_placeholder' | translate"
+          formControlName="orderNumber"
           [required]="true"
-          [showErrors]="false"
+          [showErrors]="true"
         />
         <cleansia-text-input
           [floatVariant]="null"
           [label]="'pages.track_order.email' | translate"
-          [ngModel]="email()"
-          (ngModelChange)="email.set($event)"
-          name="email"
+          [placeholder]="'pages.track_order.email_placeholder' | translate"
+          formControlName="email"
           dataType="email"
           [required]="true"
-          [showErrors]="false"
+          [showErrors]="true"
         />
         <!--
           The third factor. An order number is sequential and an e-mail is not
           a secret; the confirmation code only ever reaches the inbox that
-          booked the clean.
+          booked the clean. Six hex characters, so the field says so rather
+          than letting the customer spend a round trip finding out.
         -->
         <cleansia-text-input
           [floatVariant]="null"
           [label]="'pages.track_order.confirmation_code' | translate"
-          [ngModel]="confirmationCode()"
-          (ngModelChange)="confirmationCode.set($event)"
-          name="confirmationCode"
+          [placeholder]="'pages.track_order.confirmation_code_placeholder' | translate"
+          formControlName="confirmationCode"
           [required]="true"
-          [showErrors]="false"
+          [showErrors]="true"
         />
 
         <!--
           The empty answer sits between the fields and the button, where the
-          two values that produced it can be corrected. Amber, not red: nothing
-          failed — the pair simply matched no order.
+          values that produced it can be corrected. Amber, not red: nothing
+          failed — the three simply matched no order.
         -->
         @if (error(); as message) {
           <div class="cl-trk__miss" role="status">
@@ -99,7 +97,6 @@
           [severity]="'primary'"
           [size]="'full-width'"
           [loading]="loading()"
-          [disabled]="!canSubmit()"
         />
       </form>
 

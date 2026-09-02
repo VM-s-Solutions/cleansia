@@ -7,7 +7,14 @@ import {
   signal,
 } from '@angular/core';
 import { computed } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   CleansiaButtonComponent,
@@ -41,6 +48,7 @@ import { TrackOrderFacade } from './track-order.facade';
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     RouterLink,
     TranslatePipe,
     TagModule,
@@ -84,16 +92,36 @@ export class TrackOrderComponent implements OnInit {
     { key: 'completed', value: OrderStatus.Completed },
   ];
 
-  // Manual lookup
-  orderNumber = signal('');
-  email = signal('');
+  private readonly fb = inject(FormBuilder);
+
   /**
-   * The third factor. The lookup used to answer to an order number and an
-   * e-mail alone — a sequential number and an address that is not a secret —
-   * so the order's own confirmation code, which only reaches the customer's
-   * inbox, is required alongside them now.
+   * A real form, not three loose signals. The fields accepted anything at all
+   * — a lookup could be fired with `abc` as an e-mail — so every attempt cost
+   * a round trip against a rate-limited endpoint to be told what the browser
+   * already knew.
+   *
+   * The confirmation code is `Guid.NewGuid().ToString("N")[..6].ToUpper()`:
+   * exactly six characters, hexadecimal, generated uppercase. The pattern
+   * accepts either case because it is read off an e-mail and typed by hand,
+   * and the server compares case-insensitively.
    */
-  confirmationCode = signal('');
+  readonly form: FormGroup = this.fb.nonNullable.group({
+    orderNumber: ['', [Validators.required, Validators.minLength(3)]],
+    email: ['', [Validators.required, Validators.email]],
+    confirmationCode: [
+      '',
+      [
+        // Length first: a short code is the common mistake and
+        // "at least 6 characters" says what to do, where the pattern's
+        // message can only say the field is wrong. The pattern still runs, for
+        // the rarer case of six characters that are not hexadecimal.
+        Validators.required,
+        Validators.minLength(6),
+        Validators.maxLength(6),
+        Validators.pattern(/^[0-9a-fA-F]+$/),
+      ],
+    ],
+  });
 
   // State
   loading = signal(false);
@@ -103,13 +131,18 @@ export class TrackOrderComponent implements OnInit {
   searched = signal(false);
   showManualLookup = signal(false);
 
-  /** Both fields carry something. The server decides whether they match. */
-  readonly canSubmit = computed(
-    () =>
-      this.orderNumber().trim().length > 0 &&
-      this.email().trim().length > 0 &&
-      this.confirmationCode().trim().length > 0,
-  );
+  /**
+   * Whether the three values are even worth sending. `form.valid` is not a
+   * signal, so this is bumped by the form's own value stream — the button has
+   * to react to typing.
+   */
+  private readonly formValue = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
+  readonly canSubmit = computed(() => {
+    this.formValue();
+    return this.form.valid;
+  });
 
   readonly isPaid = computed(
     () => this.manualResult()?.paymentStatus?.value === PaymentStatus.Paid,
@@ -192,18 +225,17 @@ export class TrackOrderComponent implements OnInit {
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParams;
-    if (params['orderNumber'] && params['email'] && params['code']) {
-      this.orderNumber.set(params['orderNumber']);
-      this.email.set(params['email']);
-      this.confirmationCode.set(params['code']);
+    if (params['orderNumber'] || params['email'] || params['code']) {
+      // A deep link prefills whatever it carries; the lookup only fires when
+      // the three together are actually valid, rather than firing a request
+      // that has to fail.
+      this.form.patchValue({
+        orderNumber: params['orderNumber'] ?? '',
+        email: params['email'] ?? '',
+        confirmationCode: params['code'] ?? '',
+      });
       this.showManualLookup.set(true);
-      this.lookup();
-    } else if (params['orderNumber'] || params['email']) {
-      // A partial deep link prefills what it carries and lets the customer
-      // supply the rest, rather than firing a lookup that must fail.
-      this.orderNumber.set(params['orderNumber'] ?? '');
-      this.email.set(params['email'] ?? '');
-      this.showManualLookup.set(true);
+      if (this.form.valid) this.lookup();
     } else {
       this.loadGuestOrders();
     }
@@ -237,10 +269,15 @@ export class TrackOrderComponent implements OnInit {
   }
 
   lookup(): void {
-    const orderNumber = this.orderNumber().trim();
-    const email = this.email().trim();
-    const confirmationCode = this.confirmationCode().trim();
-    if (!orderNumber || !email || !confirmationCode) return;
+    // Touch everything first: a field the customer never focused has no error
+    // to show until it is marked, so an invalid submit would look like nothing
+    // happened at all.
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const { orderNumber, email, confirmationCode } = this.form.getRawValue();
 
     this.loading.set(true);
     this.error.set(null);
@@ -248,7 +285,7 @@ export class TrackOrderComponent implements OnInit {
     this.searched.set(true);
 
     this.facade
-      .lookup(orderNumber, email, confirmationCode)
+      .lookup(orderNumber.trim(), email.trim(), confirmationCode.trim())
       .pipe(takeUntil(this.facade.destroyed$))
       .subscribe({
         next: (data) => {

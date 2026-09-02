@@ -314,10 +314,12 @@
     outline-offset: 2px;
   }
 
+  // The board's `.btn-s`: 16px and 24px of side padding. It was 15/22, which
+  // is what made the navbar's "Objednat úklid" read a size below the design.
   &--small {
     min-height: 40px;
-    padding: 0 22px;
-    font-size: 15px;
+    padding: 0 24px;
+    font-size: 16px;
   }
 
   // Owner ruling 2026-08-31: 56px is too tall where the action sits beside a
@@ -328,6 +330,21 @@
     min-height: 40px;
     padding: 0 22px;
     font-size: 15px;
+  }
+
+  // A `.cl-btn` is a plain <button>, so unlike <cleansia-button> it has no
+  // spinner of its own. Submitting an order takes a round trip to Stripe; with
+  // only `disabled` the button went quiet and looked broken rather than busy.
+  &--loading {
+    pointer-events: none;
+    // Not `opacity` on the whole control: the label has to stay readable, and
+    // a dimmed button beside a spinner reads as disabled-and-broken.
+    cursor: progress;
+
+    .cl-btn__spinner {
+      margin-right: calc(0.5 * var(--cl-u));
+      font-size: calc(1.0625 * var(--cl-u));
+    }
   }
 
   // On the two gradient bands the fill inverts, or it vanishes into the band.
@@ -553,6 +570,23 @@ button.cl-link {
 .p-button.p-component {
   min-height: max(40px, calc(2.5 * var(--cl-u)));
   border-radius: 999px;
+  // The approved action is 17px/800 — the same size `.cl-btn` uses, because a
+  // <cleansia-button> and a plain `.cl-btn` sit side by side on these pages and
+  // must not be two different sizes. It was set per page, so a page that
+  // forgot it shipped PrimeNG's 13.1px: white on sky-600 is 4.10, which the
+  // large-text floor forgives at 17px and nothing forgives at 13.
+  font-family: $font-body;
+  font-size: calc(1.0625 * var(--cl-u));
+  font-weight: 800;
+  // PrimeNG tracks its label out by 0.025em. The board's action has none, and
+  // at weight 800 the extra spacing reads as extra weight.
+  letter-spacing: normal;
+
+  .p-button-label {
+    font-size: calc(1.0625 * var(--cl-u));
+    font-weight: 800;
+    letter-spacing: normal;
+  }
 }
 
 // ---- A labelled field ------------------------------------------------------

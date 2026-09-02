@@ -991,7 +991,9 @@
         "1": "Mesačne",
         "2": "Ročne"
       },
-      "review_payment_card": "Platba a členstvo"
+      "review_payment_card": "Platba a členstvo",
+      "placing_order": "Odosielame…",
+      "summary_remove_item": "Odobrať {{item}} z objednávky"
     },
     "orders": {
       "title": "Moje objednávky",
@@ -1371,9 +1373,9 @@
       "title": "Sledovať objednávku",
       "subtitle": "Zadajte číslo objednávky a e-mail na kontrolu stavu vašej objednávky",
       "order_number": "Číslo objednávky",
-      "order_number_placeholder": "napr. ORD-A1B2C3D4",
+      "order_number_placeholder": "napr. CLS-2026-0412",
       "email": "E-mailová adresa",
-      "email_placeholder": "E-mail použitý pri objednávke",
+      "email_placeholder": "e-mail, na ktorý prišlo potvrdenie",
       "search": "Sledovať objednávku",
       "not_found": "Nebola nájdená žiadna objednávka s touto kombináciou. Skontrolujte číslo objednávky a e-mailovú adresu.",
       "not_found_title": "Objednávka nenájdená",
@@ -1425,7 +1427,8 @@
         "on_the_way": "Na ceste",
         "in_progress": "Upratujeme",
         "completed": "Hotovo"
-      }
+      },
+      "confirmation_code_placeholder": "6 znakov z potvrdzovacieho e-mailu"
     },
     "saved_addresses": {
       "title": "Moje adresy",

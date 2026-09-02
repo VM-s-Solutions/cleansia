@@ -991,6 +991,29 @@ export class OrderWizardComponent implements OnInit {
    * the wire would be one the server had to translate, in a language it only
    * knows because the client told it.
    */
+  /**
+   * Take a line back out of the order, from the summary itself.
+   *
+   * The summary was read-only, so undoing an accidental tap meant going BACK
+   * through the wizard to the step that added it — and by the review step that
+   * is three screens away. Every kind on a quote line is something the customer
+   * chose and can unchoose, so each one can be removed where they can see it.
+   */
+  removeLine(line: QuoteOrderQuoteLine): void {
+    const id = line.itemId;
+    if (!id) return;
+    if (line.kind === 'package') this.togglePackage(id);
+    else if (line.kind === 'service') this.toggleService(id);
+    else this.facade.toggleExtra(id);
+  }
+
+  /** What the remove control announces, named for the line it removes. */
+  removeLineLabel(line: QuoteOrderQuoteLine): string {
+    return this.translate.instant('pages.order.summary_remove_item', {
+      item: this.lineName(line),
+    });
+  }
+
   lineName(line: QuoteOrderQuoteLine): string {
     if (line.kind === 'package') {
       const pkg = this.facade.packages().find((p) => p.id === line.itemId);

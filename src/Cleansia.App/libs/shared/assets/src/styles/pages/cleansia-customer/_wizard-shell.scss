@@ -230,6 +230,7 @@
 
 .cl-wiz__summary-line {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 
@@ -237,6 +238,42 @@
     font-weight: 700;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+    margin-left: auto;
+  }
+}
+
+// Removing a line is a real control on a narrow panel, so it gets a 40px hit
+// area with a negative margin that keeps the row's height unchanged. Quiet
+// until the row is hovered or it is focused — a column of red crosses beside
+// every price reads as a list of errors rather than a summary.
+.cl-wiz__summary-remove {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: -10px -10px -10px 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--cl-faint);
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+
+  i {
+    font-size: calc(0.8125 * var(--cl-u));
+  }
+
+  &:hover {
+    background: var(--cl-danger-soft);
+    color: var(--cl-danger);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: -2px;
+    color: var(--cl-danger);
   }
 }
 

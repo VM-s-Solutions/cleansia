@@ -991,7 +991,9 @@
         "1": "Monthly",
         "2": "Yearly"
       },
-      "review_payment_card": "Payment and membership"
+      "review_payment_card": "Payment and membership",
+      "placing_order": "Placing your order…",
+      "summary_remove_item": "Remove {{item}} from the order"
     },
     "orders": {
       "title": "My Orders",
@@ -1371,9 +1373,9 @@
       "title": "Track Your Order",
       "subtitle": "Enter your order number and email to check the status of your order",
       "order_number": "Order Number",
-      "order_number_placeholder": "e.g. ORD-A1B2C3D4",
+      "order_number_placeholder": "e.g. CLS-2026-0412",
       "email": "Email Address",
-      "email_placeholder": "Email used when placing the order",
+      "email_placeholder": "the e-mail the confirmation went to",
       "search": "Track Order",
       "not_found": "No order found with this combination. Please check your order number and email address.",
       "not_found_title": "Order Not Found",
@@ -1425,7 +1427,8 @@
         "on_the_way": "On the way",
         "in_progress": "Cleaning",
         "completed": "Done"
-      }
+      },
+      "confirmation_code_placeholder": "6 characters from that e-mail"
     },
     "saved_addresses": {
       "title": "My addresses",

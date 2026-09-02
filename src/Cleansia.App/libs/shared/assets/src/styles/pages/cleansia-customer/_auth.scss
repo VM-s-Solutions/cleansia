@@ -194,6 +194,42 @@ $auth-foot: 20px;
     font-weight: 800;
   }
 
+  // The resend line on the confirmation screen: one centred muted sentence,
+  // with the countdown and the change-email link inside it. Both inherit the
+  // 14px; the button is a control, so it needs the UA's chrome removed to sit
+  // in a sentence.
+  .cl-auth__resend {
+    text-align: center;
+    margin: calc(0.25 * var(--cl-u)) 0 0;
+  }
+
+  .cl-auth__resend-btn {
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 800;
+    color: var(--cl-heading);
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--cl-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  // `Zapomenuté heslo?` shares a row with the remember-me label. The board
+  // drops it to 15px there (`class="link" style="font-size:15px"`) rather than
+  // leaving it at the 17px a standalone link uses — 17 beside a 15px label is
+  // what made it read heavier than the design.
+  .cl-auth__row-between .cl-link {
+    font-size: calc(0.9375 * var(--cl-u));
+  }
+
   // Field sizing moved to _home-design.scss — the tracking page needed the
   // same 48px control, which made this the second caller.
 

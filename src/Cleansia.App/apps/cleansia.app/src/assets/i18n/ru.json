@@ -991,7 +991,9 @@
         "1": "Ежемесячно",
         "2": "Ежегодно"
       },
-      "review_payment_card": "Оплата и членство"
+      "review_payment_card": "Оплата и членство",
+      "placing_order": "Отправляем…",
+      "summary_remove_item": "Убрать {{item}} из заказа"
     },
     "orders": {
       "title": "Мои заказы",
@@ -1371,9 +1373,9 @@
       "title": "Отследить заказ",
       "subtitle": "Введите номер заказа и email для проверки статуса вашего заказа",
       "order_number": "Номер заказа",
-      "order_number_placeholder": "напр. ORD-A1B2C3D4",
+      "order_number_placeholder": "напр. CLS-2026-0412",
       "email": "Электронная почта",
-      "email_placeholder": "Email, указанный при оформлении заказа",
+      "email_placeholder": "e-mail, на который пришло подтверждение",
       "search": "Отследить заказ",
       "not_found": "Заказ с такой комбинацией не найден. Проверьте номер заказа и email.",
       "not_found_title": "Заказ не найден",
@@ -1425,7 +1427,8 @@
         "on_the_way": "В пути",
         "in_progress": "Убираем",
         "completed": "Готово"
-      }
+      },
+      "confirmation_code_placeholder": "6 символов из письма"
     },
     "saved_addresses": {
       "title": "Мои адреса",

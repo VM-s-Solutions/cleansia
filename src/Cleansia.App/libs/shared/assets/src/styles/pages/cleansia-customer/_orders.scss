@@ -1,0 +1,464 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// My Orders — the list, and what it says when there is nothing in it
+// =============================================================================
+// Replaces 478 lines of `orders.component.scss` that carried their own palette
+// of hardcoded hexes, their own dark-mode block and a rem scale — the same
+// shape `_profile.scss` replaced, for the same reason: a page holding its own
+// palette drifts from the rest of the surface every time the tokens move.
+//
+// The MARKUP is unchanged. It already carries the structure the account pages
+// use — a hero, a stats row, a section per group, a card per order — so this
+// restyles class by class rather than rewriting the template.
+//
+// The shell matches the profile page exactly: same band, same nav offset, same
+// left-aligned hero. These two are the account surface and a customer moves
+// between them through one nav.
+
+.customer-orders {
+  position: relative;
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding: var(--cl-nav-h) 0 calc(4 * var(--cl-u));
+  background: var(--cl-band);
+  min-height: 100vh;
+}
+
+// ---- The band the page opens on ---------------------------------------------
+// Left-aligned, like the profile hero. It was centred inside a 1000px column on
+// a pale gradient with a rounded bottom, which read as a floating panel rather
+// than as the top of the page.
+.customer-orders__hero {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(2.75 * var(--cl-u)) var(--cl-gutter) 0;
+}
+
+.customer-orders__hero-title {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  line-height: 1.16;
+  letter-spacing: -0.9px;
+  // Flat ink. The old title was a gradient clipped to the glyphs, a different
+  // treatment from every other H1 on the surface.
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+.customer-orders__hero-subtitle {
+  margin: calc(0.625 * var(--cl-u)) 0 0;
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.72;
+  color: var(--cl-body);
+  max-width: 44em;
+}
+
+// ---- Everything below the hero shares one column ----------------------------
+.customer-orders__stats,
+.customer-orders__section,
+.customer-orders__skeleton,
+.customer-orders__empty {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--cl-gutter);
+  padding-right: var(--cl-gutter);
+}
+
+// ---- Three figures ----------------------------------------------------------
+.customer-orders__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.75 * var(--cl-u));
+}
+
+.customer-orders__stat {
+  display: flex;
+  align-items: center;
+  gap: var(--cl-u);
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.5 * var(--cl-u));
+  padding: calc(1.25 * var(--cl-u));
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.customer-orders__stat-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(2.75 * var(--cl-u));
+  height: calc(2.75 * var(--cl-u));
+  border-radius: var(--cl-u);
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+
+  i {
+    font-size: calc(1.125 * var(--cl-u));
+  }
+}
+
+.customer-orders__stat-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.customer-orders__stat-value {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.375 * var(--cl-u));
+  line-height: 1.2;
+  letter-spacing: -0.4px;
+  color: var(--cl-heading);
+}
+
+.customer-orders__stat-label {
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+// ---- One section per group --------------------------------------------------
+.customer-orders__section {
+  margin-top: calc(2 * var(--cl-u));
+}
+
+.customer-orders__section-header {
+  display: flex;
+  align-items: center;
+  gap: calc(0.75 * var(--cl-u));
+  margin-bottom: var(--cl-u);
+}
+
+.customer-orders__section-title {
+  font-family: $font-heading;
+  font-weight: 600;
+  font-size: calc(1.5 * var(--cl-u));
+  line-height: 1.24;
+  letter-spacing: -0.35px;
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+.customer-orders__section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(1.5 * var(--cl-u));
+  height: calc(1.5 * var(--cl-u));
+  padding: 0 calc(0.5 * var(--cl-u));
+  border-radius: 999px;
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+}
+
+.customer-orders__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cl-u);
+  margin-top: calc(1.75 * var(--cl-u));
+}
+
+// ---- One card per order -----------------------------------------------------
+.order-card {
+  display: flex;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.5 * var(--cl-u));
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  // No lift on hover. The card is a link to a detail page, not a control, and a
+  // list where every row jumps 2px under the pointer is noise.
+  &:hover {
+    border-color: var(--cl-border-tint);
+    box-shadow: 0 8px 22px rgba(12, 74, 110, 0.1);
+  }
+}
+
+// The spine carries the order's state. These are the only four semantic colours
+// on the page, and they come from the token set rather than four fresh hexes.
+.order-card__status-bar {
+  width: 4px;
+  flex-shrink: 0;
+
+  &--warn {
+    background: var(--cl-warn-ink);
+  }
+
+  &--info {
+    background: var(--cl-accent);
+  }
+
+  &--success {
+    background: var(--cl-ok);
+  }
+
+  &--danger {
+    background: var(--cl-danger);
+  }
+}
+
+.order-card__body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cl-u);
+  padding: calc(1.25 * var(--cl-u)) calc(1.5 * var(--cl-u));
+  min-width: 0;
+}
+
+.order-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(3 * var(--cl-u));
+  height: calc(3 * var(--cl-u));
+  border-radius: var(--cl-u);
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+  flex-shrink: 0;
+
+  i {
+    font-size: calc(1.25 * var(--cl-u));
+  }
+}
+
+.order-card__number {
+  font-size: calc(0.8125 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--cl-muted);
+}
+
+.order-card__date {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.0625 * var(--cl-u));
+  color: var(--cl-heading);
+}
+
+.order-card__address {
+  display: flex;
+  align-items: center;
+  gap: calc(0.375 * var(--cl-u));
+  margin-top: 2px;
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+
+  i {
+    font-size: calc(0.75 * var(--cl-u));
+  }
+}
+
+.order-card__meta {
+  display: flex;
+  align-items: center;
+  gap: calc(1.5 * var(--cl-u));
+  flex-shrink: 0;
+}
+
+.order-card__price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.375 * var(--cl-u));
+  letter-spacing: -0.4px;
+  color: var(--cl-accent);
+}
+
+.order-card__payment {
+  display: flex;
+  align-items: center;
+  gap: calc(0.25 * var(--cl-u));
+  margin-top: 2px;
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+// ---- Nothing booked yet -----------------------------------------------------
+.customer-orders__empty {
+  margin-top: calc(2 * var(--cl-u));
+  text-align: center;
+}
+
+.customer-orders__empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(5 * var(--cl-u));
+  height: calc(5 * var(--cl-u));
+  margin: 0 auto calc(1.25 * var(--cl-u));
+  border-radius: 50%;
+  background: var(--cl-tint-strong);
+
+  i {
+    font-size: calc(2 * var(--cl-u));
+    color: var(--cl-heading);
+  }
+}
+
+.customer-orders__empty-title {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.625 * var(--cl-u));
+  letter-spacing: -0.5px;
+  color: var(--cl-heading);
+  margin: 0 0 calc(0.5 * var(--cl-u));
+}
+
+.customer-orders__empty-text {
+  max-width: 34em;
+  margin: 0 auto calc(1.5 * var(--cl-u));
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.72;
+  color: var(--cl-body);
+}
+
+.customer-orders__empty-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: calc(0.75 * var(--cl-u));
+  margin: calc(1.5 * var(--cl-u)) auto;
+}
+
+.customer-orders__empty-step {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+// Numbered because these ARE a sequence — pick, schedule, done, in that order.
+.customer-orders__empty-step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(1.75 * var(--cl-u));
+  height: calc(1.75 * var(--cl-u));
+  border-radius: 50%;
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+  font-weight: 800;
+  font-size: calc(0.8125 * var(--cl-u));
+  flex-shrink: 0;
+}
+
+.customer-orders__empty-step-arrow {
+  color: var(--cl-faint);
+  font-size: calc(0.75 * var(--cl-u));
+}
+
+.customer-orders__empty-trust {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: calc(1.5 * var(--cl-u));
+  margin: 0 auto calc(1.5 * var(--cl-u));
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: calc(0.375 * var(--cl-u));
+    font-size: calc(0.8125 * var(--cl-u));
+    font-weight: 700;
+    color: var(--cl-muted);
+
+    i {
+      color: var(--cl-accent);
+      font-size: calc(0.875 * var(--cl-u));
+    }
+  }
+}
+
+// ---- The line that closes the page ------------------------------------------
+// Centred on its own rather than through the shared column rule above: it is
+// the one element in that group with a background, so gutter padding would sit
+// INSIDE the card and stretch it the full width of the viewport.
+.customer-orders__help {
+  display: flex;
+  align-items: center;
+  gap: var(--cl-u);
+  max-width: #{$home-width};
+  margin: calc(2 * var(--cl-u)) auto 0;
+  padding-left: calc(1.5 * var(--cl-u));
+  padding-right: calc(1.5 * var(--cl-u));
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.5 * var(--cl-u));
+  padding-top: calc(1.25 * var(--cl-u));
+  padding-bottom: calc(1.25 * var(--cl-u));
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.customer-orders__help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(2.75 * var(--cl-u));
+  height: calc(2.75 * var(--cl-u));
+  border-radius: var(--cl-u);
+  // Was an amber tile, the only warm colour on the page, on a row that is a
+  // signpost rather than a warning.
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+  flex-shrink: 0;
+
+  i {
+    font-size: calc(1.25 * var(--cl-u));
+  }
+}
+
+.customer-orders__help-text {
+  flex: 1;
+  min-width: 0;
+
+  strong {
+    font-size: calc(0.9375 * var(--cl-u));
+    color: var(--cl-heading);
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: calc(0.8125 * var(--cl-u));
+    color: var(--cl-muted);
+  }
+}
+
+// ---- Narrow -----------------------------------------------------------------
+@media (max-width: 900px) {
+  .customer-orders__stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .order-card__body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .order-card__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(0.75 * var(--cl-u));
+    margin-top: calc(0.5 * var(--cl-u));
+    padding-top: var(--cl-u);
+    border-top: 1px solid var(--cl-border);
+  }
+
+  .customer-orders__help {
+    flex-direction: column;
+    text-align: center;
+  }
+}

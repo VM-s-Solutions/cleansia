@@ -90,6 +90,15 @@
   --cl-danger-soft: #fef2f2;
   --cl-danger-line: #fecaca;
 
+  // A finished order is not the accent. The order lifecycle has four states a
+  // customer can be shown — waiting, in flight, done, cancelled — and three of
+  // them already had a token. Without this the spine on a completed order and
+  // the spine on a confirmed one were the same blue, so the list said nothing.
+  // → /domain/order-lifecycle
+  --cl-ok: #15803d;
+  --cl-ok-soft: #f0fdf4;
+  --cl-ok-line: #bbf7d0;
+
   // Suds. Flipping the OPACITY leaves a grey blob on a dark ground, so the
   // colour flips instead. Lives here rather than beside one page's suds since
   // the home hero and the auth pages both draw them.
@@ -148,6 +157,9 @@
   --cl-warn-ink: #fbbf24;
   --cl-danger-soft: rgba(248, 113, 113, 0.10);
   --cl-danger-line: rgba(248, 113, 113, 0.28);
+  --cl-ok: #6ee7b7;
+  --cl-ok-soft: rgba(110, 231, 183, 0.10);
+  --cl-ok-line: rgba(110, 231, 183, 0.28);
   --cl-sud: rgba(125, 211, 252, 0.06);
   --cl-sud-soft: rgba(125, 211, 252, 0.05);
   --cl-sud-faint: rgba(125, 211, 252, 0.04);

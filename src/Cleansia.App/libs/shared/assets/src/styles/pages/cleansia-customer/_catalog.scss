@@ -430,14 +430,16 @@
   position: relative;
   margin-top: calc(4 * var(--cl-u));
   overflow: hidden;
-  // Opens a step deeper than the tinted section above it, so the divider's tabs
-  // — which carry that section's tint — have something to sit on. Both were
-  // --cl-cta-1 / --cl-tint-strong, i.e. the same colour, and the boundary
-  // vanished into a stray white stripe.
+  // A divider is exactly as visible as the difference between the two sections
+  // it separates: its tabs carry the colour of one and sit on the colour of the
+  // other, and nothing about the shape can change that. Against the tinted
+  // section above, --cl-hero-1 gave 1.19 and the edge read as almost nothing.
+  // This opens a real step deeper — 1.72 — and still runs out to white behind
+  // the card, so the band keeps its shape and only its first stop moves.
   background: radial-gradient(
     110% 130% at 20% 10%,
-    var(--cl-hero-1) 0%,
-    var(--cl-cta-2) 60%,
+    var(--cl-accent-soft) 0%,
+    var(--cl-cta-1) 55%,
     var(--cl-cta-3) 100%
   );
 }

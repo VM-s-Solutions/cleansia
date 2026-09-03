@@ -1718,17 +1718,17 @@
     "last_updated_date": "",
     "intro": "Před používáním našich služeb si prosím pečlivě přečtěte tyto obchodní podmínky.",
     "review_notice": "Návrh — toto znění zatím neprošlo právní kontrolou a není konečnou závaznou verzí.",
-    "section1_title": "1. Přijetí podmínek",
+    "section1_title": "Přijetí podmínek",
     "section1_text": "Přístupem k službám Cleansia a jejich používáním souhlasíte s těmito obchodními podmínkami. Pokud s podmínkami nesouhlasíte, naše služby prosím nepoužívejte.",
-    "section2_title": "2. Popis služeb",
+    "section2_title": "Popis služeb",
     "section2_text": "Cleansia poskytuje profesionální úklidové služby pro domácnosti. Služby zahrnují čištění nábytku, koberců, matrací a další související služby uvedené na našich webových stránkách.",
-    "section3_title": "3. Objednávka a platba",
+    "section3_title": "Objednávka a platba",
     "section3_text": "Objednávky lze provádět přes naše webové stránky. Platba je přijímána kartou (zpracováno přes Stripe) nebo hotově při dodání. Ceny jsou uvedeny v CZK a zahrnují DPH.",
-    "section4_title": "4. Storno podmínky",
+    "section4_title": "Storno podmínky",
     "section4_text": "Zrušení je zdarma, dokud uklízeč rezervaci nepřijme. Po přijetí: zdarma 24+ hodin před začátkem, 25% poplatek 4–24 hodin před a 50% poplatek méně než 4 hodiny před začátkem.",
-    "section5_title": "5. Odpovědnost",
+    "section5_title": "Odpovědnost",
     "section5_text": "Cleansia dbá maximální péče při úklidu. V nepravděpodobném případě poškození prosím nahlaste problém do 24 hodin prostřednictvím našeho systému reklamací. Všechny nároky prošetříme a spravedlivě vyřešíme.",
-    "section6_title": "6. Kontakt",
+    "section6_title": "Kontakt",
     "section6_text": "Pro dotazy ohledně těchto podmínek nás kontaktujte na info@cleansia.cz nebo +420 739 788 108."
   },
   "privacy_page": {
@@ -1737,17 +1737,17 @@
     "last_updated_date": "",
     "intro": "Vaše soukromí je pro nás důležité. Tyto zásady vysvětlují, jak shromažďujeme, používáme a chráníme vaše osobní údaje.",
     "review_notice": "Návrh — toto znění zatím neprošlo právní kontrolou a není konečnou závaznou verzí.",
-    "section1_title": "1. Jaké údaje sbíráme",
+    "section1_title": "Jaké údaje sbíráme",
     "section1_text": "Sbíráme osobní údaje, které nám poskytnete při zadávání objednávek, vytváření účtu nebo kontaktování nás. Jedná se o vaše jméno, emailovou adresu, telefonní číslo a adresu.",
-    "section2_title": "2. Jak vaše údaje používáme",
+    "section2_title": "Jak vaše údaje používáme",
     "section2_text": "Vaše údaje používáme ke zpracování objednávek, komunikaci o vašich rezervacích, zlepšování služeb a zasílání marketingových sdělení (pouze s vaším souhlasem).",
-    "section3_title": "3. Ochrana údajů",
+    "section3_title": "Ochrana údajů",
     "section3_text": "Implementujeme standardní bezpečnostní opatření pro ochranu vašich osobních údajů. Vaše platební údaje jsou bezpečně zpracovávány prostřednictvím Stripe a nikdy nejsou uloženy na našich serverech.",
-    "section4_title": "4. Vaše práva (GDPR)",
+    "section4_title": "Vaše práva (GDPR)",
     "section4_text": "V rámci GDPR máte právo na přístup, opravu, smazání a export svých osobních údajů. Tato práva můžete spravovat v sekci Ochrana údajů ve svém účtu, nebo nás kontaktujte přímo.",
-    "section5_title": "5. Cookies",
+    "section5_title": "Cookies",
     "section5_text": "Používáme cookies pro zlepšení vašeho prohlížení a analýzu návštěvnosti. Své preference ohledně cookies můžete spravovat prostřednictvím banneru souhlasu s cookies.",
-    "section6_title": "6. Kontakt",
+    "section6_title": "Kontakt",
     "section6_text": "Pro dotazy týkající se ochrany osobních údajů nás kontaktujte na info@cleansia.cz nebo +420 739 788 108."
   },
   "api": {
@@ -2118,5 +2118,11 @@
   "help": {
     "dismiss": "Rozumím, nezobrazovat znovu",
     "show_help": "Zobrazit nápovědu"
+  },
+  "legal": {
+    "eyebrow": "Právní informace",
+    "contents": "Obsah",
+    "ask_lead": "Něčemu nerozumíte? Napište na",
+    "ask_tail": "— odpovíme lidsky, ne odkazem na odstavec."
   }
 }

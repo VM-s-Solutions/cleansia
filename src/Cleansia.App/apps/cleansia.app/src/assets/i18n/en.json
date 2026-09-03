@@ -1718,17 +1718,17 @@
     "last_updated_date": "",
     "intro": "Please read these terms of service carefully before using our services.",
     "review_notice": "Draft — this wording has not yet been through legal review and is not the final, binding version.",
-    "section1_title": "1. Acceptance of Terms",
+    "section1_title": "Acceptance of Terms",
     "section1_text": "By accessing and using Cleansia's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.",
-    "section2_title": "2. Services Description",
+    "section2_title": "Services Description",
     "section2_text": "Cleansia provides professional cleaning services for residential customers. Services include furniture cleaning, carpet cleaning, mattress cleaning, and other related services as listed on our website.",
-    "section3_title": "3. Ordering & Payment",
+    "section3_title": "Ordering & Payment",
     "section3_text": "Orders can be placed through our website. Payment is accepted via credit/debit card (processed by Stripe) or cash on delivery. Prices are displayed in CZK and include VAT.",
-    "section4_title": "4. Cancellation Policy",
+    "section4_title": "Cancellation Policy",
     "section4_text": "Cancellations are free until a cleaner accepts your booking. Once accepted: free 24+ hours before start, 25% fee 4-24 hours before, 50% fee under 4 hours before start.",
-    "section5_title": "5. Liability",
+    "section5_title": "Liability",
     "section5_text": "Cleansia takes utmost care during cleaning. In the unlikely event of damage, please report the issue within 24 hours through our dispute system. We will investigate and resolve all claims fairly.",
-    "section6_title": "6. Contact",
+    "section6_title": "Contact",
     "section6_text": "For questions regarding these terms, please contact us at info@cleansia.cz or +420 739 788 108."
   },
   "privacy_page": {
@@ -1737,17 +1737,17 @@
     "last_updated_date": "",
     "intro": "Your privacy is important to us. This policy explains how we collect, use, and protect your personal data.",
     "review_notice": "Draft — this wording has not yet been through legal review and is not the final, binding version.",
-    "section1_title": "1. Data We Collect",
+    "section1_title": "Data We Collect",
     "section1_text": "We collect personal information you provide when placing orders, creating an account, or contacting us. This includes your name, email address, phone number, and address.",
-    "section2_title": "2. How We Use Your Data",
+    "section2_title": "How We Use Your Data",
     "section2_text": "Your data is used to process orders, communicate about your bookings, improve our services, and send marketing communications (only with your consent).",
-    "section3_title": "3. Data Protection",
+    "section3_title": "Data Protection",
     "section3_text": "We implement industry-standard security measures to protect your personal data. Your payment information is processed securely by Stripe and is never stored on our servers.",
-    "section4_title": "4. Your Rights (GDPR)",
+    "section4_title": "Your Rights (GDPR)",
     "section4_text": "Under GDPR, you have the right to access, rectify, delete, and export your personal data. You can manage these rights through your account's Privacy & Data section, or by contacting us directly.",
-    "section5_title": "5. Cookies",
+    "section5_title": "Cookies",
     "section5_text": "We use cookies to improve your browsing experience and analyze traffic. You can manage your cookie preferences through the cookie consent banner.",
-    "section6_title": "6. Contact",
+    "section6_title": "Contact",
     "section6_text": "For privacy-related inquiries, please contact us at info@cleansia.cz or +420 739 788 108."
   },
   "api": {
@@ -2118,5 +2118,11 @@
   "help": {
     "dismiss": "Got it, don't show again",
     "show_help": "Show Help"
+  },
+  "legal": {
+    "eyebrow": "Legal information",
+    "contents": "Contents",
+    "ask_lead": "Something unclear? Write to",
+    "ask_tail": "— we answer like people, not with a paragraph number."
   }
 }

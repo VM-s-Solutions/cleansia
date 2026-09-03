@@ -1718,17 +1718,17 @@
     "last_updated_date": "",
     "intro": "Pred použitím našich služieb si pozorne prečítajte tieto obchodné podmienky.",
     "review_notice": "Návrh — toto znenie zatiaľ neprešlo právnou kontrolou a nie je konečnou záväznou verziou.",
-    "section1_title": "1. Prijatie podmienok",
+    "section1_title": "Prijatie podmienok",
     "section1_text": "Prístupom k službám Cleansia a ich používaním súhlasíte s týmito obchodnými podmienkami. Ak s nimi nesúhlasíte, nepoužívajte prosím naše služby.",
-    "section2_title": "2. Popis služieb",
+    "section2_title": "Popis služieb",
     "section2_text": "Cleansia poskytuje profesionálne čistiace služby pre domácnosti. Služby zahŕňajú čistenie nábytku, kobercov, matracov a ďalšie súvisiace služby uvedené na našej webovej stránke.",
-    "section3_title": "3. Objednávky a platby",
+    "section3_title": "Objednávky a platby",
     "section3_text": "Objednávky je možné zadať prostredníctvom našej webovej stránky. Platby prijímame kreditnou/debetnou kartou (spracované cez Stripe) alebo v hotovosti pri doručení. Ceny sú uvedené v CZK vrátane DPH.",
-    "section4_title": "4. Storno podmienky",
+    "section4_title": "Storno podmienky",
     "section4_text": "Zrušenie je bezplatné, kým upratovač rezerváciu neprijme. Po prijatí: zdarma 24+ hodín pred začiatkom, 25 % poplatok 4–24 hodín pred a 50 % poplatok menej než 4 hodiny pred začiatkom.",
-    "section5_title": "5. Zodpovednosť",
+    "section5_title": "Zodpovednosť",
     "section5_text": "Cleansia pristupuje k čisteniu s maximálnou starostlivosťou. V nepravdepodobnom prípade poškodenia nahláste prosím problém do 24 hodín prostredníctvom nášho reklamačného systému. Všetky reklamácie prešetríme a spravodlivo vyriešime.",
-    "section6_title": "6. Kontakt",
+    "section6_title": "Kontakt",
     "section6_text": "V prípade otázok k týmto podmienkam nás kontaktujte na info@cleansia.cz alebo +420 739 788 108."
   },
   "privacy_page": {
@@ -1737,17 +1737,17 @@
     "last_updated_date": "",
     "intro": "Vaše súkromie je pre nás dôležité. Tieto zásady vysvetľujú, ako zhromažďujeme, používame a chránime vaše osobné údaje.",
     "review_notice": "Návrh — toto znenie zatiaľ neprešlo právnou kontrolou a nie je konečnou záväznou verziou.",
-    "section1_title": "1. Údaje, ktoré zhromažďujeme",
+    "section1_title": "Údaje, ktoré zhromažďujeme",
     "section1_text": "Zhromažďujeme osobné údaje, ktoré nám poskytnete pri zadávaní objednávok, vytváraní účtu alebo kontaktovaní nás. Patria sem vaše meno, e-mailová adresa, telefónne číslo a adresa.",
-    "section2_title": "2. Ako používame vaše údaje",
+    "section2_title": "Ako používame vaše údaje",
     "section2_text": "Vaše údaje používame na spracovanie objednávok, komunikáciu ohľadom vašich rezervácií, zlepšovanie našich služieb a zasielanie marketingovej komunikácie (iba s vaším súhlasom).",
-    "section3_title": "3. Ochrana údajov",
+    "section3_title": "Ochrana údajov",
     "section3_text": "Implementujeme štandardné bezpečnostné opatrenia na ochranu vašich osobných údajov. Vaše platobné údaje sú bezpečne spracované službou Stripe a nikdy nie sú uložené na našich serveroch.",
-    "section4_title": "4. Vaše práva (GDPR)",
+    "section4_title": "Vaše práva (GDPR)",
     "section4_text": "Podľa GDPR máte právo na prístup, opravu, vymazanie a export svojich osobných údajov. Tieto práva môžete spravovať prostredníctvom sekcie Súkromie a údaje vo vašom účte, alebo nás môžete kontaktovať priamo.",
-    "section5_title": "5. Cookies",
+    "section5_title": "Cookies",
     "section5_text": "Cookies používame na zlepšenie prehliadania a analýzu návštevnosti. Svoje preferencie cookies môžete spravovať prostredníctvom bannera súhlasu s cookies.",
-    "section6_title": "6. Kontakt",
+    "section6_title": "Kontakt",
     "section6_text": "V prípade otázok týkajúcich sa súkromia nás kontaktujte na info@cleansia.cz alebo +420 739 788 108."
   },
   "api": {
@@ -2118,5 +2118,11 @@
   "help": {
     "dismiss": "Rozumiem, nezobrazovať znova",
     "show_help": "Zobraziť nápovedu"
+  },
+  "legal": {
+    "eyebrow": "Právne informácie",
+    "contents": "Obsah",
+    "ask_lead": "Niečomu nerozumiete? Napíšte na",
+    "ask_tail": "— odpovieme ľudsky, nie odkazom na odsek."
   }
 }

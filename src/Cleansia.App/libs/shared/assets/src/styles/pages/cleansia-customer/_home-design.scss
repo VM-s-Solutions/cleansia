@@ -105,6 +105,11 @@
   // on <html> when it slides away.
   --cl-nav-offset: var(--cl-nav-h);
 
+  // The darkest ink on the surface. --cl-heading is the brand blue every title
+  // takes; this is for the few figures the board sets in near-black, where an
+  // accent would make a column of ten prices shout.
+  --cl-ink: #0f172a;
+
   --cl-page: #f8fbfe;
 
   --cl-ok: #15803d;
@@ -169,6 +174,7 @@
   --cl-warn-ink: #fbbf24;
   --cl-danger-soft: rgba(248, 113, 113, 0.10);
   --cl-danger-line: rgba(248, 113, 113, 0.28);
+  --cl-ink: #f1f5f9;
   --cl-page: #0f2740;
   --cl-ok: #6ee7b7;
   --cl-ok-soft: rgba(110, 231, 183, 0.10);

@@ -95,26 +95,26 @@
 // rail is taller than the space, and plain `center` would push its top out of
 // reach above the scroll origin; `safe` falls back to start-aligned, and the
 // overflow scrolls. Browsers that do not know the keyword keep plain `center`.
+// MIN-height, not height, and no breakpoint. This is the whole trick:
+//
+//   - when the rail is SHORTER than the space under the navbar, the box is
+//     exactly that space and `center` splits the slack evenly above and below;
+//   - when the rail is TALLER, the box grows to the rail instead of clipping
+//     it, `center` has no slack left to distribute, and the rail simply starts
+//     under the navbar and scrolls with the page.
+//
+// So it centres wherever there is room, at every window height, and it can
+// never overflow — which is what the scroll container was there to handle, and
+// why that scrollbar appeared. A fixed `height` needed a media query to guess
+// where the rail stops fitting, and the guess was wrong on the owner's screen.
 .customer-profile__sidebar {
   position: sticky;
   top: var(--cl-nav-h);
+  min-height: calc(100vh - var(--cl-nav-h));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   min-width: 0;
-}
-
-// Centred only where there is genuinely room for it. The rail is about 650px,
-// so below this the space under the navbar cannot hold it and the previous
-// attempt turned the rail into a scroll container to cope — which put a
-// scrollbar down the middle of the page. There is no overflow here at any
-// height: above the breakpoint the rail is centred in the space, below it the
-// rail simply pins under the navbar and scrolls with the page like any other
-// sticky element.
-@media (min-height: 800px) {
-  .customer-profile__sidebar {
-    height: calc(100vh - var(--cl-nav-h));
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
 }
 
 .customer-profile__sidebar-sticky {

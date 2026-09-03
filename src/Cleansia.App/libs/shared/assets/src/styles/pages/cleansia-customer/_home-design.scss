@@ -668,7 +668,14 @@ cleansia-multiselect {
 //
 // Scoped to the customer surface on purpose: the same two components render on
 // partner and admin, which have not had this design pass.
-cleansia-telephone .cleansia-telephone {
+// The class is DOUBLED on purpose. `cleansia-telephone.component.scss` is
+// component-scoped, so Angular emits its `.cleansia-telephone` rule with an
+// attribute selector — (0,2,0) — which beat this block at (0,1,1) for every
+// property it also sets. `min-height` got through because the component sets
+// none; `border-radius` did not, so the field stayed at the component's
+// hardcoded 6px fallback beside 14px neighbours. Repeating the class takes
+// this to (0,2,1) and the field floor wins.
+cleansia-telephone .cleansia-telephone.cleansia-telephone {
   min-height: calc(3 * var(--cl-u));
   border-radius: calc(0.875 * var(--cl-u));
   border-color: var(--cl-field-border);

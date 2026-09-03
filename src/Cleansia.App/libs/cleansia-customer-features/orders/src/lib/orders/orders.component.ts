@@ -11,18 +11,12 @@ import {
   selectCustomerOrderLoading,
 } from '@cleansia/customer-stores';
 import { OrderListItem } from '@cleansia/customer-services';
-import { OrderStatus, PaymentStatus } from '@cleansia/models';
-import {
-  OrderStatusLabelPipe,
-  OrderStatusSeverityPipe,
-  PaymentStatusSeverityPipe,
-} from '@cleansia/pipes';
+import { OrderStatus } from '@cleansia/models';
+import { OrderStatusLabelPipe, OrderStatusSeverityPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
@@ -33,14 +27,11 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
     CommonModule,
     RouterModule,
     TranslatePipe,
-    TableModule,
-    TagModule,
     SkeletonModule,
     CleansiaButtonComponent,
     PaginatorModule,
     OrderStatusSeverityPipe,
     OrderStatusLabelPipe,
-    PaymentStatusSeverityPipe,
   ],
   templateUrl: './orders.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,43 +45,6 @@ export class OrdersComponent implements OnInit {
   orders = toSignal(this.store.select(selectCustomerOrders), {
     initialValue: [],
   });
-  upcomingOrders = computed(() => {
-    const rawOrders = this.orders();
-    if (!rawOrders) return [];
-    const now = new Date();
-    return rawOrders.filter((o) => new Date(o.cleaningDateTime) >= now);
-  });
-  pastOrders = computed(() => {
-    const rawOrders = this.orders();
-    if (!rawOrders) return [];
-    const now = new Date();
-    return rawOrders.filter((o) => new Date(o.cleaningDateTime) < now);
-  });
-
-  /**
-   * Orders that actually COMPLETED. The stat beside it is labelled "completed",
-   * and it was showing `pastOrders` — which is "the date has passed", so a
-   * cancelled booking counted as one. The Past Orders SECTION below still
-   * groups by date, which is the right grouping for a list of what happened.
-   */
-  completedOrders = computed(() =>
-    (this.orders() ?? []).filter((o) => o.orderStatus?.value === OrderStatus.Completed),
-  );
-
-  /**
-   * What the customer has actually PAID. This summed every row on the page,
-   * so a cancelled-and-refunded booking and an upcoming one not yet charged
-   * both counted as money spent. Only a settled payment is spending.
-   */
-  totalSpent = computed(() => {
-    const paid = (this.orders() ?? []).filter(
-      (o) => o.paymentStatus?.value === PaymentStatus.Paid,
-    );
-    if (paid.length === 0) return this.formatPrice(0);
-    const sum = paid.reduce((acc, o) => acc + (o.totalPrice || 0), 0);
-    return this.formatPrice(sum, paid[0]?.currency);
-  });
-
   // ---- The board's four filters ---------------------------------------------
   // -> "Objednavky zakaznika" board. They replace the Upcoming/Past SECTIONS the
   // page used to draw: the board lists one flat run of orders and lets the

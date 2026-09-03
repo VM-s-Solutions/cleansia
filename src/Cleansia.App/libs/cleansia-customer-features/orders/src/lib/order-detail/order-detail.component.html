@@ -1,314 +1,374 @@
 <div class="order-detail">
-  <div class="order-detail__breadcrumb">
-    <cleansia-button
-      [title]="''"
-      [icon]="'pi pi-arrow-left'"
-      [severity]="'secondary'"
-      (clickFn)="goBack()"
-    />
-    <span (click)="goBack()" class="order-detail__breadcrumb-link">{{ 'nav.orders' | translate }}</span>
-    @if (order()) {
-      <span>/</span>
+  <!-- Hero. Breadcrumb, the order's name, one sentence of where it is, and the
+       action that matters right now. -> Detail artboard -->
+  <div class="order-detail__hero">
+    <div class="order-detail__breadcrumb">
+      <span class="order-detail__breadcrumb-link" (click)="goBack()">
+        {{ 'nav.orders' | translate }}
+      </span>
+      @if (order()) {
+      <i class="pi pi-angle-right"></i>
       <span>{{ order()!.displayOrderNumber }}</span>
+      }
+    </div>
+
+    @if (order(); as o) {
+    <div class="order-detail__hero-row">
+      <div>
+        <h1 class="order-detail__title">
+          {{ 'pages.order_detail.order' | translate }} {{ o.displayOrderNumber }}
+        </h1>
+        <p class="order-detail__lead">
+          {{ o.orderStatus | orderStatusLabel }} · {{ formatDate(o.cleaningDateTime) }}
+        </p>
+      </div>
+      @if (isInProgress() || o.orderStatus?.value === 3) {
+      <cleansia-button
+        [title]="'pages.order_detail.track_live' | translate"
+        [severity]="'primary'"
+        [style]="'raised-button'"
+        (clickFn)="goBack()"
+      />
+      }
+    </div>
     }
   </div>
 
   @if (loading()) {
-    <div class="order-detail__skeleton">
-      <p-skeleton width="40%" height="2rem" styleClass="mb-3" />
-      <p-skeleton width="100%" height="12rem" styleClass="mb-2" />
-      <p-skeleton width="100%" height="8rem" />
-    </div>
-  } @else if (error()) {
-    <div class="order-detail__error">
-      <i class="pi pi-exclamation-triangle"></i>
-      <h3>{{ 'pages.order_detail.not_found' | translate }}</h3>
-      <cleansia-button
-        [title]="'global.actions.back' | translate"
-        [severity]="'primary'"
-        (clickFn)="goBack()"
-      />
-    </div>
-  } @else if (order()) {
-    <div class="order-detail__card">
-      <!-- Header -->
-      <div class="order-detail__header">
-        <div>
-          <h2>{{ 'pages.order_detail.order' | translate }} #{{ order()!.displayOrderNumber }}</h2>
-          <span class="order-detail__date">{{ formatDate(order()!.createdOn) }}</span>
-        </div>
-        <div class="order-detail__header-actions">
-          @if (order()!.receiptNumber) {
-            <cleansia-button
-              [title]="'pages.order_detail.download_receipt' | translate"
-              [icon]="'pi pi-download'"
-              [severity]="'secondary'"
-              [loading]="downloading()"
-              (clickFn)="downloadReceipt()"
-            />
-          }
-          <cleansia-button
-            [title]="'pages.order_detail.report_issue' | translate"
-            [icon]="'pi pi-exclamation-circle'"
-            [severity]="'danger'"
-            (clickFn)="reportIssue()"
-          />
-        </div>
-      </div>
+  <div class="order-detail__skeleton">
+    <p-skeleton width="100%" height="26rem" borderRadius="28px" />
+    <p-skeleton width="100%" height="16rem" borderRadius="28px" />
+  </div>
+  } @else if (error() || !order()) {
+  <div class="order-detail__error">
+    <i class="pi pi-exclamation-triangle"></i>
+    <h3>{{ 'pages.order_detail.not_found' | translate }}</h3>
+    <cleansia-button
+      [title]="'global.actions.back' | translate"
+      [severity]="'secondary'"
+      (clickFn)="goBack()"
+    />
+  </div>
+  } @else {
 
-      <!-- Live mascot — only when cleaner is on-site (InProgress). Loops
-           continuously while status holds, vanishes when it transitions to
-           Completed/Cancelled. WebM keeps full alpha on any background. -->
-      @if (isInProgress()) {
-        <div class="order-detail__mascot-row">
-          <video
-            class="order-detail__mascot"
-            autoplay
-            muted
-            playsinline
-            loop
-            disablePictureInPicture
-            preload="auto"
-            aria-hidden="true"
-          >
-            <source src="assets/videos/mascot-cleaning-in-progress.webm" type="video/webm" />
-          </video>
+  <div class="order-detail__grid">
+    <!-- ================= LEFT ================= -->
+    <div class="order-detail__col">
+      <!--
+        The two axes. The board's argument, and the domain's: an order's state
+        is two independent things and one timeline cannot say them.
+        → /domain/order-lifecycle
+      -->
+      <section class="order-detail__card">
+        <h2 class="order-detail__card-title">
+          {{ 'pages.order_detail.where_it_is' | translate }}
+        </h2>
+        <p class="order-detail__card-lead">
+          {{ 'pages.order_detail.two_axes_lead' | translate }}
+        </p>
+
+        <div class="order-detail__axes">
+          <div class="order-detail__axis">
+            <div class="order-detail__axis-name">
+              {{ 'pages.order_detail.axis_cleaning' | translate }}
+            </div>
+            <p class="order-detail__axis-lead">
+              {{ 'pages.order_detail.axis_cleaning_lead' | translate }}
+            </p>
+            @for (step of cleaningSteps(); track step.key) {
+            <div
+              class="order-detail__step"
+              [class.order-detail__step--done]="step.done"
+              [class.order-detail__step--current]="step.current"
+              [class.order-detail__step--danger]="step.danger"
+            >
+              <span class="order-detail__step-dot">
+                @if (step.done && !step.current) { <i class="pi pi-check"></i> }
+              </span>
+              <div class="order-detail__step-text">
+                <div class="order-detail__step-title">
+                  {{ 'pages.order_detail.step_' + step.key | translate }}
+                </div>
+                @if (step.meta) {
+                <div class="order-detail__step-meta">{{ step.meta }}</div>
+                }
+              </div>
+            </div>
+            }
+          </div>
+
+          <div class="order-detail__axis">
+            <div class="order-detail__axis-name">
+              {{ 'pages.order_detail.axis_payment' | translate }}
+            </div>
+            <p class="order-detail__axis-lead">
+              {{ 'pages.order_detail.axis_payment_lead' | translate }}
+            </p>
+            @for (step of paymentSteps(); track step.key) {
+            <div
+              class="order-detail__step"
+              [class.order-detail__step--done]="step.done"
+              [class.order-detail__step--current]="step.current"
+              [class.order-detail__step--danger]="step.danger"
+            >
+              <span class="order-detail__step-dot">
+                @if (step.done && !step.current) { <i class="pi pi-check"></i> }
+              </span>
+              <div class="order-detail__step-text">
+                <div class="order-detail__step-title">
+                  {{ 'pages.order_detail.step_' + step.key | translate }}
+                </div>
+                @if (step.meta) {
+                <div class="order-detail__step-meta">{{ step.meta }}</div>
+                }
+              </div>
+            </div>
+            }
+          </div>
         </div>
+
+        @if (cancellationReasonKey(); as reasonKey) {
+        <div class="order-detail__cancellation-reason">{{ reasonKey | translate }}</div>
+        }
+      </section>
+
+      <!-- Who is coming. Named from AssignedEmployees, never from Confirmed. -->
+      @if (assignedCleaner(); as cleaner) {
+      <section class="order-detail__cleaner">
+        <span class="order-detail__cleaner-avatar">{{ initialsOf(cleaner.fullName) }}</span>
+        <div class="order-detail__cleaner-text">
+          <div class="order-detail__cleaner-name">{{ cleaner.fullName }}</div>
+          @if (otherCrewCount() > 0) {
+          <div class="order-detail__cleaner-meta">
+            {{ 'pages.order_detail.crew_others' | translate: { count: otherCrewCount() } }}
+          </div>
+          }
+        </div>
+      </section>
       }
 
-      <!-- Status -->
-      <div class="order-detail__section">
-        <h3>{{ 'pages.order_detail.status' | translate }}</h3>
-        <div class="order-detail__status-row">
-          <div>
-            <span>{{ 'pages.order_detail.order_status' | translate }}:</span>
-            <p-tag [value]="order()!.orderStatus | orderStatusLabel" [severity]="order()!.orderStatus | orderStatusSeverity" />
-          </div>
-          <div>
-            <span>{{ 'pages.order_detail.payment_status' | translate }}:</span>
-            <p-tag [value]="order()!.paymentStatus | paymentStatusLabel" [severity]="order()!.paymentStatus | paymentStatusSeverity" />
-          </div>
-          <div>
-            <span>{{ 'pages.order_detail.payment_type' | translate }}:</span>
-            <span>{{ order()!.paymentType.name }}</span>
-          </div>
-        </div>
-        <!-- Why, not just that. The cancellation notice tells the customer to look here for the
-             reason, and until now there was none — a failed payment had to be inferred from the
-             absence of a charge. Present only for platform-initiated cancellations: the backend
-             leaves the field null when a human cancelled, so a customer who cancelled their own
-             booking is not told that they did. An unrecognised key renders nothing rather than
-             printing itself, because the server ships independently of this app. -->
-        @if (cancellationReasonKey(); as reasonKey) {
-          <p class="order-detail__cancellation-reason">{{ reasonKey | translate }}</p>
-        }
+      <!-- Live mascot — only while the cleaner is on site. -->
+      @if (isInProgress()) {
+      <div class="order-detail__mascot-row">
+        <video
+          class="order-detail__mascot"
+          autoplay
+          loop
+          muted
+          playsinline
+          aria-hidden="true"
+        >
+          <source src="assets/videos/mascot-cleaning-in-progress.webm" type="video/webm" />
+        </video>
       </div>
+      }
 
       <cleansia-customer-order-preferred-offer
         [facade]="preferredOffer"
         [locale]="getLocale()"
       />
 
-      <!-- Service Details -->
-      <div class="order-detail__section">
-        <h3>{{ 'pages.order_detail.service_details' | translate }}</h3>
-        <div class="order-detail__grid">
+      <!-- The facts of the booking. -->
+      <section class="order-detail__card">
+        <h2 class="order-detail__card-title">
+          {{ 'pages.order_detail.the_booking' | translate }}
+        </h2>
+
+        <div class="order-detail__fact">
+          <i class="pi pi-calendar"></i>
           <div>
-            <label>{{ 'pages.order_detail.cleaning_date' | translate }}</label>
-            <p>{{ formatDate(order()!.cleaningDateTime) }}</p>
-          </div>
-          <div>
-            <label>{{ 'pages.order_detail.rooms' | translate }}</label>
-            <p>{{ order()!.rooms }}</p>
-          </div>
-          <div>
-            <label>{{ 'pages.order_detail.bathrooms' | translate }}</label>
-            <p>{{ order()!.bathrooms }}</p>
-          </div>
-          <div>
-            <label>{{ 'pages.order_detail.estimated_time' | translate }}</label>
-            <p>{{ order()!.estimatedTime }} min</p>
-          </div>
-          @if (order()!.completedAt) {
-            <div>
-              <label>{{ 'pages.order_detail.completed_at' | translate }}</label>
-              <p>{{ formatDate(order()!.completedAt) }}</p>
-            </div>
-          }
-        </div>
-      </div>
-
-      <!-- Address -->
-      @if (order()!.address) {
-        <div class="order-detail__section">
-          <h3>{{ 'pages.order_detail.address' | translate }}</h3>
-          <p>{{ order()!.address!.street }}, {{ order()!.address!.city }} {{ order()!.address!.zipCode }}</p>
-        </div>
-      }
-
-      <!-- Packages & Services -->
-      @if (order()!.selectedPackages && order()!.selectedPackages!.length > 0) {
-        <div class="order-detail__section">
-          <h3>{{ 'pages.order_detail.packages' | translate }}</h3>
-          @for (pkg of order()!.selectedPackages!; track pkg.id) {
-            <div class="order-detail__item">
-              <span>{{ pkg.name }}</span>
-              <span>{{ formatPrice(pkg.price) }}</span>
-            </div>
-          }
-        </div>
-      }
-
-      @if (order()!.selectedServices && order()!.selectedServices!.length > 0) {
-        <div class="order-detail__section">
-          <h3>{{ 'pages.order_detail.services' | translate }}</h3>
-          @for (svc of order()!.selectedServices!; track svc.id) {
-            <div class="order-detail__item">
-              <span>{{ svc.name }}</span>
-              <span>{{ svc.estimatedTime }} min</span>
-            </div>
-          }
-        </div>
-      }
-
-      <!-- Total + applied-discount chip when one of the three discount sources fired. -->
-      <div class="order-detail__total">
-        <span>{{ 'pages.order_detail.total' | translate }}</span>
-        <span class="order-detail__total-amount">
-          @if (
-            order()!.appliedDiscountSource &&
-            order()!.appliedDiscountSource !== 0 &&
-            order()!.originalSubtotal > order()!.totalPrice
-          ) {
-            <span class="order-detail__original-price">{{ formatPrice(order()!.originalSubtotal) }}</span>
-          }
-          <strong>{{ formatPrice(order()!.totalPrice) }}</strong>
-        </span>
-      </div>
-      @if (
-        order()!.appliedDiscountSource &&
-        order()!.appliedDiscountSource !== 0 &&
-        order()!.originalSubtotal > order()!.totalPrice
-      ) {
-        <div class="order-detail__discount-chip">
-          @switch (order()!.appliedDiscountSource) {
-            @case (1) { <span>{{ 'pages.order_detail.discount_tier' | translate }}</span> }
-            @case (2) { <span>{{ 'pages.order_detail.discount_membership' | translate }}</span> }
-            @case (3) { <span>{{ 'pages.order_detail.discount_promo' | translate }}</span> }
-            @case (4) {
-              <!-- LOY-003 — Combined: render both Plus and tier labels. -->
-              <span>{{ 'pages.order_detail.discount_membership' | translate }}</span>
-              <span class="order-detail__discount-chip-separator">·</span>
-              <span>{{ 'pages.order_detail.discount_tier' | translate }}</span>
-            }
-          }
-        </div>
-      }
-
-      <!-- Make this recurring — Path B entry. Always visible on Completed
-           orders; non-Plus users get routed to /membership/subscribe via the
-           click handler so they don't fill out a wizard they can't save. -->
-      @if (isCompleted()) {
-        <div class="order-detail__section order-detail__make-recurring">
-          <cleansia-button
-            severity="secondary"
-            [outlined]="true"
-            icon="pi pi-calendar-plus"
-            [label]="'recurring_booking.order_detail_make_recurring' | translate"
-            (click)="makeRecurring()"
-          ></cleansia-button>
-        </div>
-      }
-
-      <!-- Rating / Review -->
-      @if (isCompleted()) {
-        <div class="order-detail__section order-detail__review">
-          <h3>{{ 'pages.order_detail.review.title' | translate }}</h3>
-          @if (hasReview()) {
-            <div class="order-detail__review-display">
-              <div class="order-detail__review-stars">
-                @for (star of stars; track star) {
-                  <i class="pi" [class.pi-star-fill]="star <= order()!.review!.rating" [class.pi-star]="star > order()!.review!.rating"></i>
-                }
-              </div>
-              @if (order()!.review!.comment) {
-                <p class="order-detail__review-comment">{{ order()!.review!.comment }}</p>
+            <span class="order-detail__fact-label">
+              {{ 'pages.order_detail.label_when' | translate }}
+            </span>
+            <div class="order-detail__fact-value">
+              {{ formatDate(order()!.cleaningDateTime) }}
+              @if (order()!.estimatedTime) {
+              —
+              {{
+                'pages.order_detail.estimated_hours'
+                  | translate: { hours: (order()!.estimatedTime / 60 | number: '1.0-1') }
+              }}
               }
-              <small class="order-detail__review-date">{{ formatDate(order()!.review!.createdOn) }}</small>
             </div>
-          } @else {
-            <div class="order-detail__review-form">
-              <p class="order-detail__review-prompt">{{ 'pages.order_detail.review.prompt' | translate }}</p>
-              <div class="order-detail__review-stars order-detail__review-stars--interactive">
-                @for (star of stars; track star) {
-                  <i class="pi"
-                    [class.pi-star-fill]="star <= (reviewHover() || reviewRating())"
-                    [class.pi-star]="star > (reviewHover() || reviewRating())"
-                    (mouseenter)="reviewHover.set(star)"
-                    (mouseleave)="reviewHover.set(0)"
-                    (click)="setRating(star)"></i>
-                }
-              </div>
-              <textarea
-                class="order-detail__review-textarea"
-                [placeholder]="'pages.order_detail.review.comment_placeholder' | translate"
-                [ngModel]="reviewComment()"
-                (ngModelChange)="reviewComment.set($event)"
-                rows="3"
-                maxlength="1000"
-              ></textarea>
-              <cleansia-button
-                [title]="'pages.order_detail.review.submit' | translate"
-                [icon]="'pi pi-send'"
-                [severity]="'primary'"
-                [loading]="reviewSubmitting()"
-                (clickFn)="submitReview()"
-                [disabled]="reviewRating() === 0"
-              />
+          </div>
+        </div>
+
+        <div class="order-detail__fact">
+          <i class="pi pi-map-marker"></i>
+          <div>
+            <span class="order-detail__fact-label">
+              {{ 'pages.order_detail.label_address' | translate }}
+            </span>
+            <div class="order-detail__fact-value">{{ addressLine() }}</div>
+          </div>
+        </div>
+
+        @if (entryLabel(); as entry) {
+        <div class="order-detail__fact">
+          <i class="pi pi-user"></i>
+          <div>
+            <span class="order-detail__fact-label">
+              {{ 'pages.order_detail.label_entry' | translate }}
+            </span>
+            <div class="order-detail__fact-value">{{ entry }}</div>
+          </div>
+        </div>
+        }
+
+        <div class="order-detail__fact">
+          <i class="pi pi-credit-card"></i>
+          <div>
+            <span class="order-detail__fact-label">
+              {{ 'pages.order_detail.label_payment' | translate }}
+            </span>
+            <div class="order-detail__fact-value">
+              {{ order()!.paymentType?.name }} · {{ order()!.paymentStatus?.name }}
             </div>
-          }
+          </div>
         </div>
+
+        @if (order()!.notes || order()!.specialInstructions) {
+        <div class="order-detail__fact">
+          <i class="pi pi-comment"></i>
+          <div>
+            <span class="order-detail__fact-label">
+              {{ 'pages.order_detail.notes' | translate }}
+            </span>
+            <div class="order-detail__fact-value">
+              {{ order()!.specialInstructions || order()!.notes }}
+            </div>
+          </div>
+        </div>
+        }
+      </section>
+
+      <!-- The code read on the doorstep. It is an instruction for a clean that
+           is still coming, so it goes once the order is finished or off. -->
+      @if (order()!.confirmationCode && !isCompleted() && !isCancelled()) {
+      <div class="order-detail__confirmation">
+        {{ 'pages.order_detail.confirmation_code' | translate }}
+        <strong>{{ order()!.confirmationCode }}</strong>
+      </div>
       }
 
-      <!-- Status Timeline -->
-      @if (order()!.statusHistory && order()!.statusHistory!.length > 0) {
-        <div class="order-detail__section">
-          <h3>{{ 'pages.order_detail.timeline' | translate }}</h3>
-          <p-timeline [value]="order()!.statusHistory!" layout="vertical">
-            <ng-template #content let-event>
-              <div class="order-detail__timeline-event">
-                <strong>{{ event.status | orderStatusLabel }}</strong>
-                <small>{{ formatDate(event.createdOn) }}</small>
-              </div>
-            </ng-template>
-            <ng-template #marker let-event>
-              <span class="order-detail__timeline-marker">
-                <i [class]="event.status?.value | orderStatusIcon"></i>
-              </span>
-            </ng-template>
-          </p-timeline>
-        </div>
-      }
-
-      <!-- Notes -->
-      @if (order()!.notes || order()!.specialInstructions) {
-        <div class="order-detail__section">
-          <h3>{{ 'pages.order_detail.notes' | translate }}</h3>
-          @if (order()!.specialInstructions) {
-            <p><strong>{{ 'pages.order_detail.special_instructions' | translate }}:</strong> {{ order()!.specialInstructions }}</p>
+      <!-- Rating, once the clean is over. -->
+      @if (isCompleted()) {
+      <section class="order-detail__card order-detail__review">
+        <h2 class="order-detail__card-title">
+          {{ 'pages.order_detail.review.title' | translate }}
+        </h2>
+        @if (hasReview()) {
+        <div class="order-detail__review-display">
+          <div class="order-detail__review-stars">
+            @for (star of stars; track star) {
+            <i [class]="star <= order()!.review!.rating ? 'pi pi-star-fill' : 'pi pi-star'"></i>
+            }
+          </div>
+          @if (order()!.review!.comment) {
+          <p class="order-detail__review-comment">{{ order()!.review!.comment }}</p>
           }
-          @if (order()!.notes) {
-            <p>{{ order()!.notes }}</p>
-          }
+          <span class="order-detail__review-date">
+            {{ formatDate(order()!.review!.createdOn) }}
+          </span>
         </div>
-      }
-
-      @if (order()!.confirmationCode) {
-        <div class="order-detail__confirmation">
-          <span>{{ 'pages.order_detail.confirmation_code' | translate }}:</span>
-          <strong>{{ order()!.confirmationCode }}</strong>
+        } @else {
+        <div class="order-detail__review-form">
+          <p class="order-detail__review-prompt">
+            {{ 'pages.order_detail.review.prompt' | translate }}
+          </p>
+          <div class="order-detail__review-stars order-detail__review-stars--interactive">
+            @for (star of stars; track star) {
+            <i
+              [class]="
+                star <= (reviewHover() || reviewRating()) ? 'pi pi-star-fill' : 'pi pi-star'
+              "
+              (click)="reviewRating.set(star)"
+              (mouseenter)="reviewHover.set(star)"
+              (mouseleave)="reviewHover.set(0)"
+            ></i>
+            }
+          </div>
+          <textarea
+            class="order-detail__review-textarea"
+            [value]="reviewComment()"
+            (input)="reviewComment.set($any($event.target).value)"
+            [placeholder]="'pages.order_detail.review.comment_placeholder' | translate"
+          ></textarea>
+          <cleansia-button
+            [title]="'pages.order_detail.review.submit' | translate"
+            [severity]="'primary'"
+            [style]="'raised-button'"
+            [loading]="reviewSubmitting()"
+            [disabled]="reviewRating() === 0"
+            (clickFn)="submitReview()"
+          />
         </div>
+        }
+      </section>
       }
     </div>
+
+    <!-- ================= RIGHT ================= -->
+    <div class="order-detail__col">
+      <!-- What it cost, line by line. -->
+      <section class="order-detail__card">
+        <h2 class="order-detail__card-title">{{ 'pages.order_detail.price' | translate }}</h2>
+
+        @for (line of priceLines(); track $index) {
+        <div class="order-detail__price-line" [class.order-detail__price-line--discount]="line.discount">
+          <span>{{ line.label }}</span>
+          <span class="order-detail__price-amount cl-num">{{ formatPrice(line.amount) }}</span>
+        </div>
+        }
+
+        <div class="order-detail__total">
+          <span>{{ 'pages.order_detail.total' | translate }}</span>
+          <span class="order-detail__total-amount cl-num">
+            {{ formatPrice(order()!.totalPrice) }}
+          </span>
+        </div>
+      </section>
+
+      <!-- What you can do about it. -->
+      <section class="order-detail__card">
+        <h2 class="order-detail__card-title">
+          {{ 'pages.order_detail.what_you_can_do' | translate }}
+        </h2>
+
+        <div class="order-detail__actions">
+          @if (isCompleted()) {
+          <button type="button" class="order-detail__action" (click)="makeRecurring()">
+            <i class="pi pi-sync"></i>
+            {{ 'pages.order_detail.action_recurring' | translate }}
+          </button>
+          }
+          @if (order()!.receiptNumber) {
+          <button
+            type="button"
+            class="order-detail__action"
+            [disabled]="downloading()"
+            (click)="downloadReceipt()"
+          >
+            <i class="pi pi-download"></i>
+            {{ 'pages.order_detail.action_invoice' | translate }}
+          </button>
+          }
+          <button type="button" class="order-detail__action" (click)="reportIssue()">
+            <i class="pi pi-question-circle"></i>
+            {{ 'pages.order_detail.action_report' | translate }}
+          </button>
+        </div>
+
+        <!-- The window is a membership benefit, so it is read off the
+             membership rather than hardcoded. → /product/business-rules -->
+        <p class="order-detail__policy">
+          <i class="pi pi-calendar"></i>
+          {{
+            'pages.order_detail.cancellation_note' | translate: { hours: freeCancellationHours() }
+          }}
+        </p>
+      </section>
+    </div>
+  </div>
   }
 </div>

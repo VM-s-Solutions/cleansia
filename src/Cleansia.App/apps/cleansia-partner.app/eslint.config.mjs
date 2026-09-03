@@ -8,11 +8,16 @@ export default [
   {
     files: ['**/*.ts'],
     rules: {
+      // Both prefixes, matching the customer and admin configs: every
+      // component in this app is <cleansia-*>, which is the convention the
+      // project guide states and the prefix project.json declares, while the
+      // ROOT stays <app-root> because index.html bootstraps it by name. The
+      // generator's bare 'app' was asserting a scheme nothing in the repo uses.
       '@angular-eslint/directive-selector': [
         'error',
         {
           type: 'attribute',
-          prefix: 'app',
+          prefix: ['app', 'cleansia'],
           style: 'camelCase',
         },
       ],
@@ -20,7 +25,7 @@ export default [
         'error',
         {
           type: 'element',
-          prefix: 'app',
+          prefix: ['app', 'cleansia'],
           style: 'kebab-case',
         },
       ],

@@ -1,4 +1,5 @@
 import { Route } from '@angular/router';
+import { CleansiaNotFoundComponent } from '@cleansia/components';
 import { authGuard, guestGuard } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute, CommonRoute } from '@cleansia/services';
 
@@ -74,8 +75,12 @@ export const appRoutes: Route[] = [
   },
   {
     path: CommonRoute.NOT_FOUND,
-    loadComponent: () =>
-      import('@cleansia/components').then((m) => m.CleansiaNotFoundComponent),
+    // Eager, like the admin app's: this was the ONLY lazy import of
+    // `@cleansia/components` in this app, and it bought nothing — the bundle
+    // already holds the library for the shell — while making Nx read the whole
+    // library as lazy-loaded and reject app.component.ts's five static imports
+    // of it.
+    component: CleansiaNotFoundComponent,
     data: { title: 'page_titles.partner.not_found' },
   },
   {

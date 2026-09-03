@@ -1,82 +1,158 @@
-<section class="recurring-bookings-list">
-  <header class="page-header">
-    <div>
-      <h1>{{ 'recurring_booking.list_title' | translate }}</h1>
-      <p>{{ 'recurring_booking.list_subtitle' | translate }}</p>
+<div class="cl-rec">
+  <section class="cl-rec__hero">
+    <div class="cl-rec__hero-inner">
+      <h1 class="cl-rec__title">{{ 'recurring_booking.list_title' | translate }}</h1>
+      <p class="cl-rec__lead">{{ 'recurring_booking.list_subtitle' | translate }}</p>
     </div>
-    @if (templates().length > 0) {
-      <cleansia-button
-        [label]="'recurring_booking.list_create_cta' | translate"
-        icon="pi pi-plus"
-        (click)="goToCreate()"
-      ></cleansia-button>
-    }
-  </header>
+    <div style="height: 2.125rem"></div>
+    <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-page)'" />
+  </section>
 
-  @if (initialLoading()) {
-    <div class="skeletons">
-      <p-skeleton height="120px" styleClass="rounded-2xl"></p-skeleton>
-      <p-skeleton height="120px" styleClass="rounded-2xl"></p-skeleton>
-    </div>
-  } @else if (templates().length === 0) {
-    <article class="empty-state">
-      <i class="pi pi-calendar empty-icon" aria-hidden="true"></i>
-      <h2>{{ 'recurring_booking.empty_title' | translate }}</h2>
-      <p>{{ 'recurring_booking.empty_subtitle' | translate }}</p>
-      <cleansia-button
-        [label]="'recurring_booking.empty_cta' | translate"
-        (click)="goToCreate()"
-      ></cleansia-button>
-    </article>
-  } @else {
-    <ul class="template-list">
-      @for (template of templates(); track trackById($index, template)) {
-        <li class="template-card" [class.paused]="!template.isActive">
-          <header>
-            <span class="cadence-badge">
-              <i class="pi pi-sparkles" aria-hidden="true"></i>
-              {{ formatSchedule(template) }}
+  <section class="cl-rec__body">
+    <div class="cl-rec__inner" [class.cl-rec__inner--narrow]="!isMember()">
+      @if (initialLoading()) {
+        <div class="cl-rec__skeletons">
+          <p-skeleton height="120px" styleClass="rounded-2xl" />
+          <p-skeleton height="120px" styleClass="rounded-2xl" />
+        </div>
+      } @else if (!isMember()) {
+        <!--
+          The paywall, not an empty list. `CreateRecurringBooking` refuses a
+          caller without Plus, so a "new schedule" button here would be a
+          button that 400s. → the board's "Bez členství" artboard
+        -->
+        <article class="cl-rec__empty">
+          <img
+            class="cl-rec__empty-art"
+            src="assets/images/mascot/mascot-plus.webp"
+            alt=""
+            width="200"
+            height="200"
+            aria-hidden="true"
+          />
+          <div>
+            <span class="cl-rec__gate-badge">
+              <i class="pi pi-star-fill" aria-hidden="true"></i>
+              {{ 'recurring_booking.gate_badge' | translate }}
             </span>
-            @if (!template.isActive) {
-              <span class="paused-pill">{{ 'recurring_booking.paused_badge' | translate }}</span>
-            }
-          </header>
-
-          @if (template.addressLine) {
-            <p class="address">
-              <i class="pi pi-map-marker" aria-hidden="true"></i>
-              {{ template.addressLine }}
-            </p>
+            <h2 class="cl-rec__empty-title">{{ 'recurring_booking.gate_title' | translate }}</h2>
+            <p class="cl-rec__empty-lead">{{ 'recurring_booking.gate_lead' | translate }}</p>
+            <div class="cl-rec__empty-actions">
+              <a class="cl-btn" [routerLink]="plusRoute">
+                {{ 'recurring_booking.gate_cta' | translate }}
+              </a>
+              <a class="cl-link" [routerLink]="plusRoute" fragment="perks">
+                {{ 'recurring_booking.gate_alt' | translate }}
+              </a>
+            </div>
+          </div>
+        </article>
+      } @else {
+        <div class="cl-rec__bar">
+          <span class="cl-rec__plus-chip">
+            <i class="pi pi-star-fill" aria-hidden="true"></i>
+            {{ 'recurring_booking.plus_chip' | translate }}
+          </span>
+          @if (templates().length > 0) {
+            <a class="cl-btn cl-rec__bar-action" [routerLink]="createRoute">
+              {{ 'recurring_booking.list_create_cta' | translate }}
+            </a>
           }
+        </div>
 
-          <footer class="actions">
-            <cleansia-button
-              severity="secondary"
-              [outlined]="true"
-              [label]="
-                (template.isActive
-                  ? 'recurring_booking.action_pause'
-                  : 'recurring_booking.action_resume'
-                ) | translate
-              "
-              [icon]="template.isActive ? 'pi pi-pause' : 'pi pi-play'"
-              [loading]="mutatingId() === template.id"
-              [disabled]="mutatingId() !== null && mutatingId() !== template.id"
-              (click)="toggleActive(template)"
-            ></cleansia-button>
-            <cleansia-button
-              severity="danger"
-              [outlined]="true"
-              [label]="'recurring_booking.action_delete' | translate"
-              icon="pi pi-trash"
-              [disabled]="mutatingId() !== null"
-              (click)="confirmDelete(template)"
-            ></cleansia-button>
-          </footer>
-        </li>
+        @if (templates().length === 0) {
+          <article class="cl-rec__empty">
+            <img
+              class="cl-rec__empty-art"
+              src="assets/images/mascot/mascot-ready-tile.webp"
+              alt=""
+              width="200"
+              height="200"
+              aria-hidden="true"
+            />
+            <div>
+              <h2 class="cl-rec__empty-title">{{ 'recurring_booking.empty_title' | translate }}</h2>
+              <p class="cl-rec__empty-lead">
+                {{ 'recurring_booking.empty_subtitle' | translate }}
+              </p>
+              <div class="cl-rec__empty-actions">
+                <a class="cl-btn" [routerLink]="createRoute">
+                  {{ 'recurring_booking.empty_cta' | translate }}
+                </a>
+              </div>
+            </div>
+          </article>
+        } @else {
+          <ul class="cl-rec__list">
+            @for (template of templates(); track template.id) {
+              <li class="cl-rec__card" [class.cl-rec__card--paused]="!template.isActive">
+                <div class="cl-rec__card-main">
+                  <div class="cl-rec__card-head">
+                    <h2 class="cl-rec__card-title">{{ templateTitle(template) }}</h2>
+                    <span
+                      class="cl-rec__pill"
+                      [class.cl-rec__pill--on]="template.isActive"
+                      [class.cl-rec__pill--off]="!template.isActive"
+                    >
+                      {{
+                        (template.isActive
+                          ? 'recurring_booking.status_active'
+                          : 'recurring_booking.paused_badge'
+                        ) | translate
+                      }}
+                    </span>
+                  </div>
+
+                  <div class="cl-rec__facts">
+                    <span class="cl-rec__fact">
+                      <i class="pi pi-replay" aria-hidden="true"></i>
+                      {{ cadenceKey(template.frequency) | translate }}
+                    </span>
+                    <span class="cl-rec__fact">
+                      <i class="pi pi-calendar" aria-hidden="true"></i>
+                      {{ whenLine(template) }}
+                    </span>
+                    @if (template.addressLine) {
+                      <span class="cl-rec__fact">
+                        <i class="pi pi-map-marker" aria-hidden="true"></i>
+                        {{ template.addressLine }}
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <!--
+                  Quoted, not computed here — and simply absent when the quote
+                  did not come back. A wrong price on a schedule is worse than
+                  no price.
+                -->
+                @if (priceFor(template); as price) {
+                  <div class="cl-rec__card-price">
+                    <div class="cl-rec__price-amount">{{ price }}</div>
+                    <div class="cl-rec__price-label">
+                      {{ 'recurring_booking.price_per_clean' | translate }}
+                    </div>
+                  </div>
+                } @else {
+                  <div></div>
+                }
+
+                <a
+                  class="cl-rec__ghost cl-rec__card-action"
+                  [routerLink]="editRouteFor(template)"
+                >
+                  {{ 'recurring_booking.action_edit' | translate }}
+                </a>
+              </li>
+            }
+          </ul>
+
+          <p class="cl-rec__note">
+            <i class="pi pi-bell" aria-hidden="true"></i>
+            <span>{{ 'recurring_booking.list_note' | translate }}</span>
+          </p>
+        }
       }
-    </ul>
-  }
-
-  <p-confirmDialog></p-confirmDialog>
-</section>
+    </div>
+  </section>
+</div>

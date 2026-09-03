@@ -74,6 +74,27 @@
       </p>
     }
 
+    <!--
+      What was booked. The old summary strip carried a services COUNT; naming
+      them is both shorter to read and more than it said, and the date, the
+      total and the order number it also carried are in the lead above.
+    -->
+    @if (bookedItems().length > 0) {
+      <div class="cl-out__items">
+        @for (item of bookedItems(); track item.key) {
+          <span class="cl-out__item">
+            <i
+              class="cl-out__item-icon pi"
+              [class.pi-box]="item.isPackage"
+              [class.pi-sparkles]="!item.isPackage"
+              aria-hidden="true"
+            ></i>
+            {{ item.name }}
+          </span>
+        }
+      </div>
+    }
+
     <!-- Three things the platform will do next — told, not asked. -->
     <div class="cl-out__facts">
       <div class="cl-out__fact">

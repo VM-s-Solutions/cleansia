@@ -40,6 +40,48 @@ $outcome-line: #e2e8f0;
   );
 }
 
+// The customer app's navbar is a TRANSPARENT strip with a floating white pill,
+// so whatever sits behind it is the page's own ground — on every other page
+// that is the layout's near-white, which cuts a white stripe across the blue.
+// Pulling the band up under it puts the pill on this page's gradient, which is
+// how all three artboards draw it. Guarded on `.customer-navbar` because the
+// partner and admin shells are sidebars with no such bar, and `--cl-nav-h`
+// already grows by the dev banner's height when one is on screen.
+body:has(.customer-navbar) .cl-out {
+  margin-top: calc(-1 * var(--cl-nav-h, 0px));
+  padding-top: calc(52px + var(--cl-nav-h, 0px));
+}
+
+// What was booked — restored from the summary strip the artboards do not draw,
+// in the chip language the 404's exits already use rather than a new one.
+.cl-out__items {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px auto 0;
+}
+
+.cl-out__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid $outcome-line;
+  font-size: 14px;
+  font-weight: 700;
+  color: $outcome-body;
+}
+
+.cl-out__item-icon {
+  font-size: 13px;
+  color: variables.$cleansia-primary-600;
+}
+
 .cl-out__inner {
   max-width: 860px;
   margin: 0 auto;
@@ -263,6 +305,10 @@ $outcome-line: #e2e8f0;
     padding-top: 32px;
   }
 
+  body:has(.customer-navbar) .cl-out {
+    padding-top: calc(32px + var(--cl-nav-h, 0px));
+  }
+
   .cl-out__art {
     height: 144px;
   }
@@ -305,6 +351,16 @@ $outcome-line: #e2e8f0;
 
   .cl-out__eyebrow {
     color: #94a3b8;
+  }
+
+  .cl-out__item {
+    background: rgba(15, 27, 45, 0.72);
+    border-color: rgba(148, 163, 184, 0.22);
+    color: #cbd5e1;
+  }
+
+  .cl-out__item-icon {
+    color: #7dd3fc;
   }
 
   .cl-out__chip,

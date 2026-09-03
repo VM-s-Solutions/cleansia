@@ -18,4 +18,14 @@ export const recurringBookingsRoutes: Route[] = [
     component: CreateRecurringWizardComponent,
     data: { title: 'page_titles.customer.recurring_bookings_create' },
   },
+  {
+    // Editing reuses the create screen — the two differ only in which command
+    // the facade sends. Registered AFTER 'create' so the literal segment wins
+    // over the parameter; a schedule id is a ULID and never spells "create",
+    // but relying on that rather than on route order would be a trap for the
+    // next person who adds a segment here.
+    path: ':id',
+    component: CreateRecurringWizardComponent,
+    data: { title: 'page_titles.customer.recurring_bookings_edit' },
+  },
 ];

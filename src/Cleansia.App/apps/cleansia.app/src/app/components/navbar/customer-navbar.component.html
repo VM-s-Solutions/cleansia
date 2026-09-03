@@ -119,10 +119,6 @@
                 <span class="customer-navbar__dropdown-icon"><i class="pi pi-user"></i></span>
                 {{ 'nav.profile' | translate }}
               </a>
-              <a class="customer-navbar__dropdown-item" routerLink="/saved-addresses" (click)="closeMenus()">
-                <span class="customer-navbar__dropdown-icon"><i class="pi pi-map-marker"></i></span>
-                {{ 'nav.my_addresses' | translate }}
-              </a>
             </div>
             <!-- Activity section -->
             <div class="customer-navbar__section-label">{{ 'nav.section_activity' | translate }}</div>
@@ -258,10 +254,6 @@
         <a class="customer-navbar__mobile-link" routerLink="/profile" (click)="closeMenus()">
           <i class="pi pi-user mr-2"></i>
           {{ 'nav.profile' | translate }}
-        </a>
-        <a class="customer-navbar__mobile-link" routerLink="/saved-addresses" (click)="closeMenus()">
-          <i class="pi pi-map-marker mr-2"></i>
-          {{ 'nav.my_addresses' | translate }}
         </a>
         <a class="customer-navbar__mobile-link" routerLink="/disputes" (click)="closeMenus()">
           <i class="pi pi-exclamation-triangle mr-2"></i>

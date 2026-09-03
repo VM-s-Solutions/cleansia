@@ -66,6 +66,11 @@ export class CheckoutSuccessComponent implements OnInit {
 
   readonly isCash = computed(() => this.paymentType() === 'cash');
 
+  private readonly currentLang = toSignal(
+    this.translate.onLangChange.pipe(map((e) => e.lang)),
+    { initialValue: this.translate.currentLang || this.translate.getDefaultLang() },
+  );
+
   readonly order = signal<LookupOrderResponse | null>(null);
   readonly hasOrder = computed(() => this.order() !== null);
 
@@ -117,6 +122,38 @@ export class CheckoutSuccessComponent implements OnInit {
       minute: '2-digit',
     });
   }
+
+  /**
+   * Every service and package on the order, named in the reader's language.
+   *
+   * The name resolution is inlined rather than imported: the helper that does
+   * this lives in the order-wizard library, and four other features already
+   * carry their own copy of these six lines rather than reach across a feature
+   * boundary for them.
+   */
+  readonly bookedItems = computed<
+    readonly { key: string; name: string; isPackage: boolean }[]
+  >(() => {
+    const order = this.order();
+    if (!order) return [];
+    // Read the signal so the list re-resolves when the language changes.
+    const lang = this.currentLang();
+    const named = (
+      item: { id?: string; name?: string; translations?: Record<string, unknown> },
+      isPackage: boolean,
+    ) => {
+      const bundle = item.translations?.[lang] as Record<string, string> | undefined;
+      return {
+        key: (isPackage ? 'p:' : 's:') + (item.id ?? item.name ?? ''),
+        name: bundle?.['name'] || item.name || '',
+        isPackage,
+      };
+    };
+    return [
+      ...(order.selectedPackages ?? []).map((p) => named(p, true)),
+      ...(order.selectedServices ?? []).map((s) => named(s, false)),
+    ].filter((i) => i.name !== '');
+  });
 
   formatPrice(order: LookupOrderResponse): string {
     return new Intl.NumberFormat(this.getLocale(), {

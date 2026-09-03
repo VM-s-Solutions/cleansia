@@ -1,736 +1,645 @@
 @use './home-variables' as *;
 
 // =============================================================================
-// Recurring cleanings — the schedules a member has, and setting one up
+// Recurring schedules — built against the "Opakované termíny" board
 // =============================================================================
-// Replaces 921 lines of `recurring-bookings.component.scss` with their own
-// palette, a rem scale and a 200-line dark-mode block.
+// Three artboards, three states of one feature:
 //
-// Two components share this sheet: the LIST of schedules, and the WIZARD that
-// creates one. The wizard deliberately borrows the booking wizard's language
-// (a step rail, a summary banner, cards you pick from) because it IS the same
-// job with a repeat attached, and a customer who has booked once should not
-// have to learn a second flow. -> _wizard-shell.scss
+//   Moje rozvrhy   — the list, one row per schedule
+//   Nový rozvrh    — the form, which the board draws as ONE page of three
+//                    sections, not the three-step wizard that was here
+//   Bez členství   — the paywall, because `CreateRecurringBooking` refuses a
+//                    caller without Plus (`RecurringTemplateMembershipRequired`),
+//                    so an empty list with a "new schedule" button would be a
+//                    button that 400s
 //
-// The MARKUP is unchanged. Both components use bare class names, so every rule
-// stays nested under its page root.
-//
-// `.recurring-link` is NOT here: it appears only on the membership management
-// screen and lives with that page now. -> _membership.scss
+// Measurements off the artboards:
+//   page 1312 wide (list) / 1040 (form and paywall); cards radius 26, padding
+//   22-26; sections radius 28, padding 26-28-24; chips 44 tall, radius 999;
+//   price Poppins 700 20px on a card, 30px in the form's summary bar
 
-// ---- The schedules you have -------------------------------------------------
-.recurring-bookings-list {
+// ---- The page ---------------------------------------------------------------------
+.cl-rec {
   position: relative;
+  background: var(--cl-page);
+}
+
+.cl-rec__hero {
+  // Same pull-up the subscribe page uses: the navbar is a transparent strip
+  // with a floating pill, so THIS element's gradient has to run up behind it
+  // or the pill sits on a stripe that does not match the band under it.
   margin-top: calc(-1 * var(--cl-nav-h));
-  padding: var(--cl-nav-h) var(--cl-gutter) calc(4 * var(--cl-u));
-  background: var(--cl-band);
-  min-height: 100vh;
+  padding: calc(var(--cl-nav-h) + 2.75 * var(--cl-u)) 0 0;
+  background: radial-gradient(
+    120% 92% at 76% 6%,
+    var(--cl-hero-1) 0%,
+    var(--cl-hero-2) 44%,
+    var(--cl-hero-3) 100%
+  );
+}
 
-  > * {
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
+.cl-rec__hero-inner {
+  max-width: $home-width;
+  margin: 0 auto;
+  padding: 0 var(--cl-gutter);
+}
+
+.cl-rec__title {
+  margin: 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  line-height: 1.16;
+  letter-spacing: -0.9px;
+  color: var(--cl-heading);
+}
+
+.cl-rec__lead {
+  margin: calc(0.625 * var(--cl-u)) 0 0;
+  max-width: 46em;
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.72;
+  color: var(--cl-body);
+}
+
+.cl-rec__body {
+  padding: 0 0 calc(3.75 * var(--cl-u));
+  background: var(--cl-page);
+  min-height: 50vh;
+}
+
+.cl-rec__inner {
+  max-width: $home-width;
+  margin: 0 auto;
+  padding: calc(1.25 * var(--cl-u)) var(--cl-gutter) 0;
+}
+
+.cl-rec__inner--narrow {
+  max-width: 65rem;
+}
+
+// ---- The bar over the list ----------------------------------------------------------
+.cl-rec__bar {
+  display: flex;
+  align-items: center;
+  gap: calc(0.875 * var(--cl-u));
+  flex-wrap: wrap;
+}
+
+.cl-rec__plus-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border-tint);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cl-heading);
+}
+
+.cl-rec__bar-action {
+  margin-left: auto;
+}
+
+// ---- One schedule -------------------------------------------------------------------
+.cl-rec__list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.875 * var(--cl-u));
+  margin: calc(1.25 * var(--cl-u)) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cl-rec__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: calc(1.5 * var(--cl-u));
+  align-items: center;
+  padding: calc(1.375 * var(--cl-u)) calc(1.625 * var(--cl-u));
+  border-radius: 1.625rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+
+  // A paused schedule is still a schedule: it dims, it does not grey out, and
+  // it keeps every figure legible — the customer paused it on purpose and will
+  // come back to it.
+  &--paused {
+    opacity: 0.72;
+  }
+}
+
+.cl-rec__card-main {
+  min-width: 0;
+}
+
+.cl-rec__card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cl-rec__card-title {
+  margin: 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  color: var(--cl-heading);
+}
+
+.cl-rec__pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+
+  &--on {
+    background: #dcfce7;
+    color: #166534;
   }
 
-  .page-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--cl-u);
-    padding-top: calc(2.75 * var(--cl-u));
-    margin-bottom: calc(1.75 * var(--cl-u));
+  &--off {
+    background: #fef3c7;
+    color: #92400e;
+  }
+}
 
-    h1 {
-      font-family: $font-heading;
-      font-weight: 700;
-      font-size: calc(2.375 * var(--cl-u));
-      line-height: 1.16;
-      letter-spacing: -0.9px;
-      color: var(--cl-heading);
-      margin: 0;
+.cl-rec__facts {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+
+.cl-rec__fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9375rem;
+  color: var(--cl-body);
+
+  i {
+    font-size: 0.875rem;
+    color: var(--cl-muted);
+  }
+}
+
+.cl-rec__card-price {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cl-rec__price-amount {
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cl-heading);
+}
+
+.cl-rec__price-label {
+  font-size: 0.8125rem;
+  color: var(--cl-muted);
+}
+
+.cl-rec__card-action {
+  white-space: nowrap;
+}
+
+// The board's `.btn-ghost`. `.cl-btn` ships no ghost modifier and adding one to
+// the shared design system is a wider change than this page: it lives here.
+.cl-rec__ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: max(40px, calc(2.5 * var(--cl-u)));
+  padding: 0 1.5rem;
+  border-radius: 999px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border-tint);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--cl-heading);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+
+  &:hover {
+    background: var(--cl-tint);
+    border-color: var(--cl-accent);
+    color: var(--cl-heading);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+
+  &--danger {
+    border-color: rgba(220, 38, 38, 0.32);
+    color: #b91c1c;
+
+    &:hover {
+      background: rgba(220, 38, 38, 0.06);
+      border-color: rgba(220, 38, 38, 0.5);
+      color: #b91c1c;
     }
+  }
+}
 
-    p {
-      margin: calc(0.625 * var(--cl-u)) 0 0;
-      font-size: calc(1.0625 * var(--cl-u));
-      line-height: 1.72;
-      color: var(--cl-body);
-      max-width: 44em;
-    }
+// ---- The note under the list -----------------------------------------------------------
+.cl-rec__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-top: calc(1.25 * var(--cl-u));
+  padding: 1rem 1.125rem;
+  border-radius: 1.25rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--cl-muted);
+
+  i {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--cl-heading);
+  }
+}
+
+// ---- Nothing here yet -------------------------------------------------------------------
+.cl-rec__empty {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: calc(2.5 * var(--cl-u));
+  align-items: center;
+  margin-top: calc(1.25 * var(--cl-u));
+  padding: calc(2.75 * var(--cl-u));
+  border-radius: 2rem;
+  background: var(--cl-surface);
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+}
+
+.cl-rec__empty-art {
+  height: 12.5rem;
+  width: auto;
+  display: block;
+}
+
+.cl-rec__empty-title {
+  margin: 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.625rem;
+  color: var(--cl-heading);
+}
+
+.cl-rec__empty-lead {
+  margin: 0.625rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--cl-body);
+}
+
+.cl-rec__empty-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.625rem;
+  flex-wrap: wrap;
+}
+
+.cl-rec__empty-fine {
+  margin: 0.875rem 0 0;
+  font-size: 0.875rem;
+  color: var(--cl-muted);
+}
+
+// The paywall is the empty card with the product's own badge on it.
+.cl-rec__gate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 2.25rem;
+  padding: 0 0.875rem;
+  border-radius: 999px;
+  background: var(--cl-heading);
+  border: 1px solid var(--cl-heading);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+// ---- The form ---------------------------------------------------------------------------
+// One page, three sections. The board collapses what used to be a three-step
+// wizard: every field fits on one screen, and a schedule is four decisions, not
+// a journey.
+.cl-rec__form {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.25 * var(--cl-u));
+}
+
+.cl-rec__section {
+  padding: calc(1.625 * var(--cl-u)) calc(1.75 * var(--cl-u)) calc(1.5 * var(--cl-u));
+  border-radius: 1.75rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.cl-rec__section-title {
+  margin: 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--cl-heading);
+}
+
+.cl-rec__section-hint {
+  margin: 6px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--cl-muted);
+}
+
+// ---- Picking what gets cleaned ------------------------------------------------------------
+.cl-rec__picks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-rec__pick {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 1rem 1.125rem;
+  border-radius: 1.25rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+
+  &:hover {
+    border-color: var(--cl-border-tint);
   }
 
-  .skeletons {
-    display: flex;
-    flex-direction: column;
-    gap: var(--cl-u);
+  &--on {
+    background: var(--cl-heading);
+    border: 2px solid var(--cl-heading);
   }
 
-  .empty-state {
-    padding: calc(2.5 * var(--cl-u)) calc(1.5 * var(--cl-u));
-    border-radius: calc(1.75 * var(--cl-u));
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-border);
-    box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+}
+
+.cl-rec__pick-tick {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid var(--cl-border);
+
+  .cl-rec__pick--on & {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: var(--cl-heading);
+  }
+
+  i {
+    font-size: 0.6875rem;
+    font-weight: 900;
+  }
+}
+
+.cl-rec__pick-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.cl-rec__pick-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cl-ink, #0f172a);
+
+  .cl-rec__pick--on & {
+    color: #ffffff;
+  }
+}
+
+.cl-rec__pick-note {
+  margin-top: 1px;
+  font-size: 0.8125rem;
+  color: var(--cl-muted);
+
+  .cl-rec__pick--on & {
+    color: var(--cl-accent-soft);
+  }
+}
+
+// ---- Fields -----------------------------------------------------------------------------
+.cl-rec__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-rec__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cl-rec__label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+// ---- Cadence, days --------------------------------------------------------------------
+.cl-rec__cadence {
+  display: flex;
+  gap: 10px;
+  margin-top: calc(1.125 * var(--cl-u));
+  flex-wrap: wrap;
+}
+
+.cl-rec__days {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.cl-rec__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cl-body);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+
+  &:hover:not(.cl-rec__chip--on) {
+    border-color: var(--cl-border-tint);
+    background: var(--cl-tint);
+  }
+
+  &--on {
+    background: var(--cl-heading);
+    border-color: var(--cl-heading);
+    color: #ffffff;
+  }
+
+  &--grow {
+    flex: 1;
+  }
+
+  &--day {
+    min-width: 52px;
+    padding: 0 0.875rem;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+}
+
+.cl-rec__subhead {
+  margin-top: calc(1.375 * var(--cl-u));
+}
+
+// ---- What it costs, and the two ways out ---------------------------------------------
+.cl-rec__summary {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: calc(1.625 * var(--cl-u)) calc(1.875 * var(--cl-u));
+  border-radius: 1.75rem;
+  background: var(--cl-surface);
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+}
+
+.cl-rec__summary-main {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.cl-rec__summary-price {
+  margin-top: 4px;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cl-accent);
+}
+
+.cl-rec__summary-note {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--cl-muted);
+}
+
+.cl-rec__summary-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+// Destructive actions live on the EDIT screen, not on the list: the board gives
+// each row one button, and pausing or deleting a schedule is a decision you
+// make with the schedule open in front of you.
+.cl-rec__danger {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: calc(1.25 * var(--cl-u));
+  padding-top: calc(1.25 * var(--cl-u));
+  border-top: 1px solid var(--cl-border);
+}
+
+// ---- Loading ----------------------------------------------------------------------------
+.cl-rec__skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.875 * var(--cl-u));
+  margin-top: calc(1.25 * var(--cl-u));
+}
+
+// ---- Narrow -----------------------------------------------------------------------------
+@media (max-width: 900px) {
+  .cl-rec__card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(0.875 * var(--cl-u));
+  }
+
+  .cl-rec__card-price {
+    text-align: left;
+  }
+
+  .cl-rec__empty {
+    grid-template-columns: minmax(0, 1fr);
     text-align: center;
-
-    h2 {
-      font-family: $font-heading;
-      font-weight: 700;
-      font-size: calc(1.625 * var(--cl-u));
-      letter-spacing: -0.5px;
-      color: var(--cl-heading);
-      margin: 0 0 calc(0.5 * var(--cl-u));
-    }
-
-    p {
-      max-width: 34em;
-      margin: 0 auto calc(1.5 * var(--cl-u));
-      font-size: calc(1.0625 * var(--cl-u));
-      line-height: 1.72;
-      color: var(--cl-body);
-    }
+    justify-items: center;
   }
 
-  // The class sits on the <i> itself, so the disc is drawn with the glyph
-  // centred in its own line box rather than by wrapping it in a div.
-  .empty-icon {
-    display: inline-flex;
-    align-items: center;
+  .cl-rec__empty-actions {
     justify-content: center;
-    width: calc(5 * var(--cl-u));
-    height: calc(5 * var(--cl-u));
-    margin: 0 auto calc(1.25 * var(--cl-u));
-    border-radius: 50%;
-    background: var(--cl-tint-strong);
-    font-size: calc(2 * var(--cl-u));
-    color: var(--cl-heading);
-  }
-
-  .template-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--cl-u);
-    margin: 0 auto;
-    padding: 0;
-    list-style: none;
-  }
-
-  .template-card > header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: calc(0.75 * var(--cl-u));
-    min-width: 0;
-  }
-
-  .template-card {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--cl-u);
-    padding: calc(1.375 * var(--cl-u));
-    border-radius: calc(1.5 * var(--cl-u));
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-border);
-    box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
-    transition: border-color 0.16s ease;
-
-    &:hover {
-      border-color: var(--cl-border-tint);
-    }
-
-    // A paused schedule still exists and still matters: it dims, it does not
-    // disappear, and it keeps its row.
-    &.paused {
-      opacity: 0.72;
-    }
-  }
-
-  // How often — the fact that distinguishes one schedule from another, so it
-  // is the first thing on the row and the only tinted thing on it.
-  .cadence-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: calc(0.375 * var(--cl-u));
-    padding: calc(0.25 * var(--cl-u)) calc(0.75 * var(--cl-u));
-    border-radius: 999px;
-    background: var(--cl-tint-strong);
-    color: var(--cl-heading);
-    font-size: calc(0.75 * var(--cl-u));
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  // A paused schedule still exists and still matters — it is dimmed, not
-  // struck through, and it keeps its own row.
-  .paused-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: calc(0.375 * var(--cl-u));
-    padding: calc(0.25 * var(--cl-u)) calc(0.75 * var(--cl-u));
-    border-radius: 999px;
-    background: var(--cl-warn-soft);
-    color: var(--cl-warn-ink);
-    border: 1px solid var(--cl-warn-line);
-    font-size: calc(0.75 * var(--cl-u));
-    font-weight: 800;
-  }
-
-  .starts-on {
-    font-size: calc(0.875 * var(--cl-u));
-    color: var(--cl-muted);
-  }
-
-  .address {
-    display: flex;
-    align-items: center;
-    gap: calc(0.375 * var(--cl-u));
-    font-size: calc(0.875 * var(--cl-u));
-    color: var(--cl-muted);
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: calc(0.5 * var(--cl-u));
-    margin-left: auto;
   }
 }
 
-// ---- Setting one up ---------------------------------------------------------
-.create-recurring-wizard {
-  position: relative;
-  margin-top: calc(-1 * var(--cl-nav-h));
-  padding: var(--cl-nav-h) var(--cl-gutter) calc(4 * var(--cl-u));
-  background: var(--cl-band);
-  min-height: 100vh;
-
-  > * {
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .wizard-header {
-    padding-top: calc(2.75 * var(--cl-u));
-    margin-bottom: calc(1.5 * var(--cl-u));
-
-    h1 {
-      font-family: $font-heading;
-      font-weight: 700;
-      font-size: calc(2.375 * var(--cl-u));
-      line-height: 1.16;
-      letter-spacing: -0.9px;
-      color: var(--cl-heading);
-      margin: 0;
-    }
-
-    p {
-      margin: calc(0.625 * var(--cl-u)) 0 0;
-      font-size: calc(1.0625 * var(--cl-u));
-      line-height: 1.72;
-      color: var(--cl-body);
-      max-width: 44em;
-    }
-  }
-
-  // The wizard groups its questions in <fieldset>s, which is right for the
-  // form semantics and wrong for the look: the UA draws a border and notches
-  // the <legend> into it. Reset the chrome, keep the grouping.
-  fieldset {
-    min-width: 0;
-    margin: 0 0 calc(1.5 * var(--cl-u));
-    padding: 0;
-    border: 0;
-  }
-
-  legend {
-    padding: 0;
-    margin-bottom: calc(0.625 * var(--cl-u));
-    font-size: calc(0.75 * var(--cl-u));
-    font-weight: 800;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--cl-muted);
-  }
-
-  .time-slot-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: calc(0.5 * var(--cl-u));
-  }
-
-  .time-slot {
-    padding: calc(0.5 * var(--cl-u)) calc(0.875 * var(--cl-u));
-    border-radius: 999px;
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-field-border);
-    font: inherit;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--cl-body);
-    cursor: pointer;
-    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
-
-    &:hover {
-      border-color: var(--cl-border-tint);
-    }
-
-    &.selected {
-      background: var(--cl-accent);
-      border-color: var(--cl-accent);
-      color: #fff;
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--cl-accent);
-      outline-offset: 2px;
-    }
-  }
-
-  // ---- The rail ----
-  .step-indicator {
-    display: flex;
-    align-items: center;
-    gap: calc(0.5 * var(--cl-u));
-    margin-bottom: calc(1.5 * var(--cl-u));
-  }
-
-  .stepper {
-    display: flex;
-    align-items: center;
-    gap: calc(0.5 * var(--cl-u));
-  }
-
-  .step-dot {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: calc(1.75 * var(--cl-u));
-    height: calc(1.75 * var(--cl-u));
-    border-radius: 50%;
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-field-border);
-    color: var(--cl-muted);
-    font-size: calc(0.8125 * var(--cl-u));
-    font-weight: 800;
-
-    &.current {
-      background: var(--cl-accent);
-      border-color: var(--cl-accent);
-      color: #fff;
-    }
-
-    &.done {
-      background: var(--cl-ok-soft);
-      border-color: var(--cl-ok-line);
-      color: var(--cl-ok);
-    }
-
-    &.future {
-      color: var(--cl-faint);
-    }
-  }
-
-  // What the schedule currently says, carried down every step — the same job
-  // the booking wizard's summary rail does.
-  .summary-banner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--cl-u);
-    margin-bottom: calc(1.5 * var(--cl-u));
-    padding: var(--cl-u) calc(1.25 * var(--cl-u));
-    border-radius: calc(1.25 * var(--cl-u));
-    background: var(--cl-tint);
-    border: 1px solid var(--cl-border);
-    font-size: calc(0.9375 * var(--cl-u));
-    color: var(--cl-body);
-  }
-
-  .wizard-step {
-    padding: calc(1.75 * var(--cl-u));
-    border-radius: calc(1.75 * var(--cl-u));
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-border);
-    box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
-
-    h2 {
-      font-family: $font-heading;
-      font-weight: 600;
-      font-size: calc(1.5 * var(--cl-u));
-      letter-spacing: -0.35px;
-      color: var(--cl-heading);
-      margin: 0 0 var(--cl-u);
-    }
-  }
-
-  // ---- How often ----
-  .frequency-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: var(--cl-u);
-  }
-
-  .frequency-card {
-    display: flex;
-    align-items: center;
-    gap: calc(0.75 * var(--cl-u));
-    padding: calc(1.125 * var(--cl-u));
-    border-radius: calc(1.25 * var(--cl-u));
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-field-border);
-    cursor: pointer;
-    text-align: left;
-    font: inherit;
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-
-    &:hover {
-      border-color: var(--cl-border-tint);
-    }
-
-    // Selected is a ring, not a fill: the card still has to be readable, and
-    // a filled card in a grid of four reads as disabled rather than chosen.
-    &.selected {
-      border-color: var(--cl-accent);
-      box-shadow: 0 0 0 3px var(--cl-tint-strong);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--cl-accent);
-      outline-offset: 2px;
-    }
-  }
-
-  .freq-row {
-    display: flex;
-    align-items: center;
-    gap: calc(0.5 * var(--cl-u));
-  }
-
-  // "Most popular" — a word, not an icon. It was drawn as a 40px tile, which
-  // sat on top of the option's own label.
-  .freq-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 1px calc(0.5 * var(--cl-u));
-    border-radius: 999px;
-    background: var(--cl-accent-soft);
-    color: var(--cl-heading);
-    font-size: calc(0.625 * var(--cl-u));
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .freq-text {
-    min-width: 0;
-  }
-
-  .freq-label {
-    font-weight: 800;
-    color: var(--cl-heading);
-  }
-
-  .freq-subline {
-    margin-top: 2px;
-    font-size: calc(0.8125 * var(--cl-u));
-    color: var(--cl-muted);
-  }
-
-  // ---- Which days ----
-  .day-chips {
-    display: flex;
-    flex-direction: column;
-    gap: calc(0.75 * var(--cl-u));
-  }
-
-  .day-chip-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: calc(0.5 * var(--cl-u));
-  }
-
-  .day-chip {
-    min-width: calc(2.75 * var(--cl-u));
-    padding: calc(0.5 * var(--cl-u)) calc(0.75 * var(--cl-u));
-    border-radius: 999px;
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-field-border);
-    font: inherit;
-    font-weight: 700;
-    color: var(--cl-body);
-    cursor: pointer;
-    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
-
-    &.selected {
-      background: var(--cl-accent);
-      border-color: var(--cl-accent);
-      color: #fff;
-    }
-
-    &.weekend:not(.selected) {
-      color: var(--cl-muted);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--cl-accent);
-      outline-offset: 2px;
-    }
-  }
-
-  // ---- What time ----
-  .time-groups {
-    display: flex;
-    flex-direction: column;
-    gap: var(--cl-u);
-  }
-
-  .time-group {
-    display: flex;
-    flex-direction: column;
-    gap: calc(0.5 * var(--cl-u));
-
-    > span {
-      font-size: calc(0.75 * var(--cl-u));
-      font-weight: 800;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: var(--cl-muted);
-    }
-  }
-
-  // ---- What gets cleaned ----
-  .catalog-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--cl-u);
-  }
-
-  .catalog-card {
-    display: flex;
-    align-items: flex-start;
-    gap: calc(0.75 * var(--cl-u));
-    padding: calc(1.125 * var(--cl-u));
-    border-radius: calc(1.25 * var(--cl-u));
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-field-border);
-    cursor: pointer;
-    text-align: left;
-    font: inherit;
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-
-    &:hover {
-      border-color: var(--cl-border-tint);
-    }
-
-    &.selected {
-      border-color: var(--cl-accent);
-      box-shadow: 0 0 0 3px var(--cl-tint-strong);
-    }
-  }
-
-  .catalog-check {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: calc(1.5 * var(--cl-u));
-    height: calc(1.5 * var(--cl-u));
-    border-radius: 50%;
-    background: var(--cl-ok-soft);
-    color: var(--cl-ok);
-    flex-shrink: 0;
-  }
-
-  .catalog-text {
-    min-width: 0;
-  }
-
-  .catalog-title {
-    font-weight: 800;
-    color: var(--cl-heading);
-  }
-
-  .catalog-desc {
-    margin-top: 2px;
-    font-size: calc(0.875 * var(--cl-u));
-    line-height: 1.6;
-    color: var(--cl-body);
-  }
-
-  .includes-label {
-    font-size: calc(0.75 * var(--cl-u));
-    font-weight: 800;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--cl-muted);
-  }
-
-  .catalog-includes {
-    margin: calc(0.375 * var(--cl-u)) 0 0;
-    padding-left: calc(1.125 * var(--cl-u));
-    font-size: calc(0.875 * var(--cl-u));
-    line-height: 1.7;
-    color: var(--cl-body);
-  }
-
-  .loading-note {
-    font-size: calc(0.875 * var(--cl-u));
-    color: var(--cl-muted);
-  }
-
-  // ---- How much of it ----
-  .stepper-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: calc(1.5 * var(--cl-u));
-  }
-
-  .stepper-field {
-    display: flex;
-    align-items: center;
-    gap: calc(0.75 * var(--cl-u));
-    font-size: calc(0.9375 * var(--cl-u));
-    color: var(--cl-body);
-  }
-
-  // ---- Where ----
-  .address-picker {
-    display: flex;
-    flex-direction: column;
-    gap: calc(0.75 * var(--cl-u));
-  }
-
-  .address-card {
-    display: flex;
-    align-items: flex-start;
-    gap: calc(0.75 * var(--cl-u));
-    padding: var(--cl-u);
-    border-radius: calc(1.25 * var(--cl-u));
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-field-border);
-    cursor: pointer;
-    text-align: left;
-    font: inherit;
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-
-    &.selected {
-      border-color: var(--cl-accent);
-      box-shadow: 0 0 0 3px var(--cl-tint-strong);
-    }
-  }
-
-  .address-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .address-label {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: calc(0.5 * var(--cl-u));
-    font-weight: 800;
-    color: var(--cl-heading);
-  }
-
-  .address-line {
-    font-size: calc(0.875 * var(--cl-u));
-    color: var(--cl-muted);
-    overflow-wrap: anywhere;
-  }
-
-  .default-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: calc(0.25 * var(--cl-u));
-    padding: 2px calc(0.5 * var(--cl-u));
-    border-radius: 999px;
-    background: var(--cl-tint-strong);
-    color: var(--cl-heading);
-    font-size: calc(0.6875 * var(--cl-u));
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .address-empty {
-    padding: var(--cl-u);
-    border-radius: var(--cl-u);
-    background: var(--cl-tint);
-    font-size: calc(0.9375 * var(--cl-u));
-    color: var(--cl-body);
-  }
-
-  // ---- How it gets paid ----
-  .payment-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: var(--cl-u);
-  }
-
-  .payment-card {
-    display: flex;
-    align-items: center;
-    gap: calc(0.75 * var(--cl-u));
-    padding: calc(1.125 * var(--cl-u));
-    border-radius: calc(1.25 * var(--cl-u));
-    background: var(--cl-surface);
-    border: 1px solid var(--cl-field-border);
-    cursor: pointer;
-    text-align: left;
-    font: inherit;
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-
-    &.selected {
-      border-color: var(--cl-accent);
-      box-shadow: 0 0 0 3px var(--cl-tint-strong);
-    }
-  }
-
-  .payment-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: calc(2.5 * var(--cl-u));
-    height: calc(2.5 * var(--cl-u));
-    border-radius: var(--cl-u);
-    background: var(--cl-tint-strong);
-    color: var(--cl-heading);
-    flex-shrink: 0;
-  }
-
-  .wizard-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--cl-u);
-    margin-top: calc(1.5 * var(--cl-u));
-  }
-}
-
-// ---- Narrow -----------------------------------------------------------------
 @media (max-width: 700px) {
-  .recurring-bookings-list .template-card .actions {
-    margin-left: 0;
+  .cl-rec__title {
+    font-size: calc(1.875 * var(--cl-u));
+  }
+
+  .cl-rec__picks,
+  .cl-rec__fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-rec__summary {
+    align-items: flex-start;
+  }
+
+  .cl-rec__summary-actions {
     width: 100%;
-  }
-
-  .create-recurring-wizard .wizard-step {
-    padding: calc(1.25 * var(--cl-u));
-  }
-
-  .create-recurring-wizard .wizard-actions {
-    flex-direction: column-reverse;
-    align-items: stretch;
+    justify-content: space-between;
   }
 }

@@ -93,12 +93,24 @@ export const appRoutes: Route[] = [
       ),
   },
 
-  // Guest order lookup (public — no auth) — MUST come before the auth-guarded
-  // `orders` route so the literal `orders/lookup` path wins the match.
+  // Guest order lookup used to live here as a SECOND form and a second result
+  // screen. It is one page now — /track-order — so this redirects rather than
+  // 404s: the path was in the footer and `/orders/lookup/:id` could be
+  // bookmarked. Still above the auth-guarded `orders` route, so the literal
+  // path keeps winning the match.
+  //
+  // Two routes and `pathMatch: 'full'`, not one prefix route: a PREFIX redirect
+  // appends whatever it did not consume, so `/orders/lookup/<id>` became
+  // `/track-order/<id>` — a path nothing serves — and landed on not-found.
   {
     path: CleansiaCustomerRoute.ORDERS + '/lookup',
-    loadChildren: () =>
-      import('@cleansia-customer/orders').then((m) => m.orderLookupRoutes),
+    redirectTo: '/' + CleansiaCustomerRoute.TRACK_ORDER,
+    pathMatch: 'full',
+  },
+  {
+    path: CleansiaCustomerRoute.ORDERS + '/lookup/:orderId',
+    redirectTo: '/' + CleansiaCustomerRoute.TRACK_ORDER,
+    pathMatch: 'full',
   },
 
   // Protected routes (require login)

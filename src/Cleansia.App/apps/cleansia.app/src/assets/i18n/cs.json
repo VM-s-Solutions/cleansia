@@ -83,8 +83,6 @@
       "checkout_cancel": "Platba zrušena",
       "not_found": "Stránka nenalezena",
       "track_order": "Sledovat objednávku",
-      "order_lookup": "Vyhledat objednávku",
-      "order_lookup_detail": "Detaily objednávky",
       "saved_addresses": "Moje adresy",
       "plus": "Cleansia Plus"
     }
@@ -1410,17 +1408,6 @@
       "code_cooldown": "Kód potvrzení byl odeslán. Prosím, počkejte {{ cooldown }} sekund, než požádáte o nový kód.",
       "change_email": "Změnit e-mail"
     },
-    "order_lookup": {
-      "title": "Vyhledat objednávku",
-      "subtitle": "Zadejte potvrzovací kód a e-mail použitý při objednávce — vaši objednávku najdeme.",
-      "confirmation_code": "Potvrzovací kód",
-      "email": "E-mail použitý při objednávce",
-      "submit": "Najít objednávku",
-      "not_found": "Objednávku s tímto kódem se nepodařilo najít. Zkontrolujte potvrzovací e-mail.",
-      "error": "Něco se pokazilo. Zkuste to prosím znovu.",
-      "entry_link": "Máte potvrzovací kód? Vyhledejte svou objednávku",
-      "order_number": "Číslo objednávky"
-    },
     "track_order": {
       "title": "Sledovat objednávku",
       "subtitle": "Zadejte číslo objednávky a e-mail pro kontrolu stavu vaší objednávky",
@@ -1444,7 +1431,7 @@
       "services": "Služby",
       "total": "Celkem",
       "timeline": "Průběh objednávky",
-      "hint": "Kód najdete v potvrzovacím e-mailu, hned u čísla objednávky.",
+      "hint": "Kód najdete v potvrzovacím e-mailu, hned u čísla objednávky. Nedorazil? Zkontrolujte složku s nevyžádanou poštou, nebo nám ",
       "recent_orders": "Nedávné objednávky",
       "lookup_another": "Vyhledat jinou objednávku",
       "manual_lookup": "Ruční vyhledávání",
@@ -1480,7 +1467,20 @@
         "in_progress": "Uklízíme",
         "completed": "Hotovo"
       },
-      "confirmation_code_placeholder": "6 znaků z potvrzovacího e-mailu"
+      "confirmation_code_placeholder": "6 znaků z potvrzovacího e-mailu",
+      "entry_link": "Máte číslo objednávky? Sledujte ji",
+      "where_it_is": "Kde to je",
+      "two_axes_lead": "Dvě věci se dějí zvlášť — proto dvě osy.",
+      "whats_booked": "Co je objednáno",
+      "the_order": "Objednávka",
+      "hint_missed": "Pořád nic?",
+      "write_us": "Napište nám",
+      "hint_end": " a najdeme ji za vás.",
+      "pay_method_cash": "Hotově · zaplatíte na místě",
+      "pay_method_card": "Zaplaceno kartou",
+      "pay_paid": "Zaplaceno",
+      "pay_failed": "Platba se nezdařila",
+      "pay_refunded": "Vráceno"
     },
     "saved_addresses": {
       "title": "Moje adresy",

@@ -83,8 +83,6 @@
       "checkout_cancel": "Payment Cancelled",
       "not_found": "Page Not Found",
       "track_order": "Track Order",
-      "order_lookup": "Look Up Order",
-      "order_lookup_detail": "Order Details",
       "saved_addresses": "My Addresses",
       "plus": "Cleansia Plus"
     }
@@ -1410,17 +1408,6 @@
       "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code.",
       "change_email": "Change e-mail"
     },
-    "order_lookup": {
-      "title": "Look up your order",
-      "subtitle": "Enter your confirmation code and the email you used for booking — we'll find your order.",
-      "confirmation_code": "Confirmation code",
-      "email": "Email used for booking",
-      "submit": "Find my order",
-      "not_found": "We couldn't find an order matching this code. Check your confirmation email.",
-      "error": "Something went wrong. Please try again.",
-      "entry_link": "Have a confirmation code? Look up your order",
-      "order_number": "Order number"
-    },
     "track_order": {
       "title": "Track Your Order",
       "subtitle": "Enter your order number and email to check the status of your order",
@@ -1444,7 +1431,7 @@
       "services": "Services",
       "total": "Total",
       "timeline": "Order Timeline",
-      "hint": "The code is in your confirmation e-mail, next to the order number.",
+      "hint": "The code is in your confirmation e-mail, next to the order number. Never arrived? Check your spam folder, or ",
       "recent_orders": "Recent Orders",
       "lookup_another": "Look up another order",
       "manual_lookup": "Manual Lookup",
@@ -1480,7 +1467,20 @@
         "in_progress": "Cleaning",
         "completed": "Done"
       },
-      "confirmation_code_placeholder": "6 characters from that e-mail"
+      "confirmation_code_placeholder": "6 characters from that e-mail",
+      "entry_link": "Have an order number? Track your order",
+      "where_it_is": "Where it is",
+      "two_axes_lead": "Two things happen separately — so there are two tracks.",
+      "whats_booked": "What's booked",
+      "the_order": "The order",
+      "hint_missed": "Still nothing?",
+      "write_us": "Write to us",
+      "hint_end": " and we will find it for you.",
+      "pay_method_cash": "Cash · you pay on the day",
+      "pay_method_card": "Paid by card",
+      "pay_paid": "Paid",
+      "pay_failed": "Payment failed",
+      "pay_refunded": "Refunded"
     },
     "saved_addresses": {
       "title": "My addresses",

@@ -15,7 +15,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   CleansiaButtonComponent,
   CleansiaScrollTopComponent,
@@ -28,18 +28,11 @@ import {
   LookupOrderBatchResponse,
 } from '@cleansia/customer-services';
 import { OrderStatus, PaymentStatus } from '@cleansia/models';
-import {
-  OrderStatusIconPipe,
-  OrderStatusLabelPipe,
-  PaymentStatusLabelPipe,
-} from '@cleansia/pipes';
+import { OrderStatusIconPipe, OrderStatusLabelPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { GuestOrderService } from './guest-order.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { TagModule } from 'primeng/tag';
-import { TimelineModule } from 'primeng/timeline';
 import { takeUntil } from 'rxjs';
-import { GuestOrderLookupCacheService } from '../order-lookup/guest-order-lookup-cache.service';
 import { TrackOrderFacade } from './track-order.facade';
 
 @Component({
@@ -51,14 +44,11 @@ import { TrackOrderFacade } from './track-order.facade';
     ReactiveFormsModule,
     RouterLink,
     TranslatePipe,
-    TagModule,
-    TimelineModule,
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
     CleansiaTextInputComponent,
     FoamEdgeComponent,
     OrderStatusLabelPipe,
-    PaymentStatusLabelPipe,
     OrderStatusIconPipe,
   ],
   templateUrl: './track-order.component.html',
@@ -66,11 +56,9 @@ import { TrackOrderFacade } from './track-order.facade';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrackOrderComponent implements OnInit {
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly guestOrderService = inject(GuestOrderService);
-  private readonly cache = inject(GuestOrderLookupCacheService);
   private readonly facade = inject(TrackOrderFacade);
   private readonly authService = inject(CustomerAuthService);
 
@@ -129,7 +117,13 @@ export class TrackOrderComponent implements OnInit {
   manualResult = signal<LookupOrderResponse | null>(null);
   error = signal<string | null>(null);
   searched = signal(false);
-  showManualLookup = signal(false);
+
+  /**
+   * The page's one branch. The form IS the page until an order is found, and
+   * the order is the page after that — there is no third thing to toggle, so
+   * the flag that used to gate the form went with the second screen.
+   */
+  readonly found = computed(() => this.manualResult());
 
   /**
    * Whether the three values are even worth sending. `form.valid` is not a
@@ -186,6 +180,76 @@ export class TrackOrderComponent implements OnInit {
     });
   });
 
+  /**
+   * The money's own axis, drawn the same way as the order's so the two read as
+   * two tracks rather than a list and a footnote.
+   *
+   * It carries no timestamps: the guest lookup returns `statusHistory` for the
+   * ORDER only, and the payment has no history of its own on the response. The
+   * rows say what state the money is in and what happens next, which is true;
+   * borrowing the order's clock would date a different event.
+   */
+  readonly paymentSteps = computed(() => {
+    const order = this.manualResult();
+    if (!order) return [];
+
+    const status = order.paymentStatus?.value;
+    const paid = status === PaymentStatus.Paid;
+    const refunded = status === PaymentStatus.Refunded;
+    const failed = status === PaymentStatus.Failed;
+
+    const steps = [
+      // Done, never "now": choosing how to pay is a thing that HAPPENED. What
+      // is still ahead is the money arriving, and that is the row below.
+      {
+        key: 'method',
+        label: this.translate.instant(
+          paid ? 'pages.track_order.pay_method_card' : 'pages.track_order.pay_method_cash',
+        ),
+        when: this.formatDate(order.createdOn),
+        done: true,
+        current: false,
+      },
+    ];
+
+    if (failed) {
+      steps.push({
+        key: 'failed',
+        label: this.translate.instant('pages.track_order.pay_failed'),
+        when: '',
+        done: true,
+        current: true,
+      });
+    } else {
+      steps.push({
+        key: 'paid',
+        label: this.translate.instant('pages.track_order.pay_paid'),
+        when: this.translate.instant(
+          paid ? 'pages.track_order.paid_done' : 'pages.track_order.paid_after',
+        ),
+        done: paid || refunded,
+        current: paid,
+      });
+    }
+
+    if (refunded) {
+      steps.push({
+        key: 'refunded',
+        label: this.translate.instant('pages.track_order.pay_refunded'),
+        when: '',
+        done: true,
+        current: true,
+      });
+    }
+
+    return steps;
+  });
+
+  /** A cancelled order's pill is the one that is not the brand tint. */
+  readonly isCancelled = computed(
+    () => this.manualResult()?.orderStatus?.value === OrderStatus.Cancelled,
+  );
+
   /** Every service and package on the order, as chips. */
   readonly lineItems = computed(() => {
     const order = this.manualResult();
@@ -212,7 +276,6 @@ export class TrackOrderComponent implements OnInit {
     this.manualResult.set(null);
     this.error.set(null);
     this.searched.set(false);
-    this.showManualLookup.set(true);
   }
 
   formatDuration(minutes: number | undefined): string {
@@ -234,7 +297,6 @@ export class TrackOrderComponent implements OnInit {
         email: params['email'] ?? '',
         confirmationCode: params['code'] ?? '',
       });
-      this.showManualLookup.set(true);
       if (this.form.valid) this.lookup();
     } else {
       this.loadGuestOrders();
@@ -243,10 +305,7 @@ export class TrackOrderComponent implements OnInit {
 
   private loadGuestOrders(): void {
     const guestOrders = this.guestOrderService.getAll();
-    if (guestOrders.length === 0) {
-      this.showManualLookup.set(true);
-      return;
-    }
+    if (guestOrders.length === 0) return;
 
     this.loading.set(true);
     this.facade
@@ -258,14 +317,10 @@ export class TrackOrderComponent implements OnInit {
           this.loading.set(false);
         },
         error: () => {
+          // The remembered list is a convenience — the form below still works.
           this.loading.set(false);
-          this.showManualLookup.set(true);
         },
       });
-  }
-
-  toggleManualLookup(): void {
-    this.showManualLookup.set(!this.showManualLookup());
   }
 
   lookup(): void {
@@ -301,20 +356,19 @@ export class TrackOrderComponent implements OnInit {
       });
   }
 
-  navigateToOrder(): void {
-    this.router.navigate([CleansiaCustomerRoute.ORDER]);
-  }
-
-  viewDetails(orderId: string): void {
-    // Cache the loaded order so the detail page does not re-fetch and the
-    // guest does not have to re-enter their email.
-    const order = this.recentOrders().find((o) => o.id === orderId);
-    const email =
-      this.guestOrderService.getAll().find((g) => g.orderId === orderId)?.email ?? '';
-    if (order && email) {
-      this.cache.set(orderId, order, email);
-    }
-    this.router.navigate(['/' + CleansiaCustomerRoute.ORDERS, 'lookup', orderId]);
+  /**
+   * A remembered order opens where it is.
+   *
+   * It used to navigate to `/orders/lookup/:id`, a second screen that drew the
+   * same order from a cache written on the way out. The board draws ONE page
+   * with three states and the answer already renders here, so the row just
+   * fills it in — no cache to keep in step, no second screen to style, and no
+   * round trip: `lookupBatch` already returned the whole order.
+   */
+  showOrder(order: LookupOrderResponse): void {
+    this.manualResult.set(order);
+    this.error.set(null);
+    this.searched.set(true);
   }
 
   private getLocale(): string {

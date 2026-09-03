@@ -43,4 +43,13 @@ export class MembershipWelcomeComponent implements OnInit {
   goToSetupRecurring(): void {
     this.router.navigate([CleansiaCustomerRoute.MEMBERSHIP, 'recurring', 'create']);
   }
+
+  /**
+   * The board's primary action here is booking, not managing: a membership only
+   * pays for itself on the next order, and this screen exists at the moment
+   * somebody has just decided to have one.
+   */
+  goToBook(): void {
+    this.router.navigate([CleansiaCustomerRoute.ORDER]);
+  }
 }

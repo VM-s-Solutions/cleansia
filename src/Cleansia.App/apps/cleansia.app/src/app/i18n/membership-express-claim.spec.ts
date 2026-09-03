@@ -86,10 +86,15 @@ const SERVER_GATES: Record<(typeof MEMBERSHIP_TEMPLATES)[number], string> = {
 const MEMBERSHIP_PERK_KEYS = [
   'benefit_express_title',
   'benefit_express_body',
-  'perk_express',
+  // The management card's own wording. It was `perk_express`, which carried the
+  // remaining COUNT inside the sentence; the board states the perk on one line
+  // and the count on its own strip, so the claim moved to this key and the
+  // count to `express_remaining`. The guard follows the claim, not the name.
+  'perk_express_monthly',
   'perk_express_used',
   'perk_express_trial',
   'welcome_perk_express',
+  'welcome_express_after_trial',
 ];
 
 const BOOKING_FLOW_KEYS = [

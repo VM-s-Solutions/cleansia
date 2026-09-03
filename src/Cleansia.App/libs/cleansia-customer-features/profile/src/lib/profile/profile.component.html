@@ -277,15 +277,37 @@
           />
 
           <div class="customer-profile__row">
-            <cleansia-text-input
-              [floatVariant]="null"
-              [formControl]="passwordForm.controls.newPassword"
-              [label]="'pages.profile.new_password' | translate"
-              [placeholder]="'pages.profile.password_change_note' | translate"
-              dataType="password"
-              inputSize="full-width"
-              [showErrors]="false"
-            />
+            <div>
+              <cleansia-text-input
+                [floatVariant]="null"
+                [formControl]="passwordForm.controls.newPassword"
+                [label]="'pages.profile.new_password' | translate"
+                dataType="password"
+                inputSize="full-width"
+                [showErrors]="false"
+              />
+              <!--
+                The same three rules the registration and reset forms show, in
+                the same component classes, so a password typed here reads
+                exactly as one typed there. -> _auth.scss .cl-auth__rules
+              -->
+              @if (passwordValidation(); as check) {
+              <ul class="cl-auth__rules">
+                <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasMinLength">
+                  <i [class]="check.hasMinLength ? 'pi pi-check' : 'pi pi-circle'"></i>
+                  {{ 'auth.register.validation.password_min_length' | translate }}
+                </li>
+                <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasLetter">
+                  <i [class]="check.hasLetter ? 'pi pi-check' : 'pi pi-circle'"></i>
+                  {{ 'auth.register.validation.password_letter' | translate }}
+                </li>
+                <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasNumber">
+                  <i [class]="check.hasNumber ? 'pi pi-check' : 'pi pi-circle'"></i>
+                  {{ 'auth.register.validation.password_number' | translate }}
+                </li>
+              </ul>
+              }
+            </div>
             <div>
               <cleansia-text-input
                 [floatVariant]="null"

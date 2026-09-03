@@ -717,6 +717,56 @@ cleansia-telephone .cleansia-telephone__input {
   }
 }
 
+// The select is the third control that is not a p-inputtext, so the field floor
+// above never reached it either: it rendered 35px tall with a 6px radius beside
+// 48px/14px neighbours in the same row. -> "Profil zakaznika" board, .fld
+cleansia-select .p-select.p-component {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: calc(3 * var(--cl-u));
+  border-radius: calc(0.875 * var(--cl-u));
+  border: 1px solid var(--cl-field-border);
+  background: var(--cl-surface);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &:not(.p-disabled):hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  // One ring, matching the text inputs — not PrimeNG's ring plus its own
+  // border change, which reads as two focus treatments on one control.
+  &:not(.p-disabled).p-focus {
+    border-color: var(--cl-accent);
+    box-shadow: 0 0 0 3px var(--cl-tint-strong);
+    outline: 0;
+  }
+
+  .p-select-label {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--cl-u);
+    font-family: $font-body;
+    font-size: var(--cl-u);
+    color: var(--cl-body);
+  }
+
+  .p-select-label.p-placeholder {
+    color: var(--cl-faint);
+  }
+
+  // The chevron is a glyph at the end of the field, not a tinted button glued
+  // to its right edge — PrimeNG gives it its own 35px box and corner radii.
+  .p-select-dropdown {
+    width: auto;
+    padding-right: calc(0.875 * var(--cl-u));
+    background: none;
+    border: 0;
+    border-radius: 0;
+    color: var(--cl-muted);
+  }
+}
+
 cleansia-calendar .p-datepicker {
   display: flex;
   width: 100%;

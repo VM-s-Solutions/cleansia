@@ -394,6 +394,12 @@
   color: var(--cl-muted);
 }
 
+// The shared rule carries a negative top margin tuned to the auth form's own
+// field gap; this form has none under the input, so the rules sat on it.
+.customer-profile .cl-auth__rules {
+  margin-top: calc(0.5 * var(--cl-u));
+}
+
 .customer-profile__field-error {
   display: block;
   margin-top: calc(0.375 * var(--cl-u));

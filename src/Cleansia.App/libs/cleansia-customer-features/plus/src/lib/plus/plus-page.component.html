@@ -26,9 +26,9 @@
       </p>
 
       <div class="cl-plusp__actions">
-        <a class="cl-btn" [routerLink]="subscribeLink()">
+        <button type="button" class="cl-btn" [disabled]="facade.submitting()" (click)="startTrial()">
           {{ 'pages.plus.cta_trial' | translate: { days: facade.trialDays() } }}
-        </a>
+        </button>
         <!--
           `routerLink="[]"` with a fragment, NOT href="#perks": a bare hash is a
           navigation to the path "#perks", which the router resolves to the
@@ -67,6 +67,22 @@
   -->
   <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-band)'" />
 </section>
+
+<!--
+  Your membership, when you have one. Rendered only AFTER `Membership/GetMine`
+  answers, so the server and the first client paint agree on there being no
+  panel — the node count changing later is fine, changing at hydration is the
+  NG0500 this page has always been careful about.
+
+  This is what makes /plus the one surface for the product: benefits below for
+  everyone, management above for a member, and no second sales page to keep in
+  sync. → /membership redirects here
+-->
+@if (facade.isMember()) {
+  <section class="cl-plusp__member" id="membership">
+    <cleansia-customer-membership-management [embedded]="true" />
+  </section>
+}
 
 <section class="cl-plusp__body" id="perks">
   <div class="cl-plusp__inner">
@@ -213,9 +229,14 @@
             <div class="cl-muted">{{ 'pages.plus.per_month' | translate }}</div>
             <p class="cl-plusp__plan-text">{{ 'pages.plus.plan_monthly_text' | translate }}</p>
             <div class="cl-plusp__plan-spacer"></div>
-            <a class="cl-btn cl-btn--ghost" [routerLink]="subscribeLink()">
+            <button
+              type="button"
+              class="cl-btn cl-btn--ghost"
+              [disabled]="facade.submitting()"
+              (click)="startTrial(monthly.code)"
+            >
               {{ 'pages.plus.cta_try_free' | translate }}
-            </a>
+            </button>
           </div>
         }
 
@@ -238,9 +259,14 @@
               {{ 'pages.plus.plan_yearly_text' | translate: { percent: facade.yearlySavingsPercent() } }}
             </p>
             <div class="cl-plusp__plan-spacer"></div>
-            <a class="cl-btn cl-btn--on-dark" [routerLink]="subscribeLink()">
+            <button
+              type="button"
+              class="cl-btn cl-btn--on-dark"
+              [disabled]="facade.submitting()"
+              (click)="startTrial(yearly.code)"
+            >
               {{ 'pages.plus.cta_try_free' | translate }}
-            </a>
+            </button>
           </div>
         }
       </div>
@@ -333,9 +359,9 @@
         <p class="cl-body">{{ 'pages.plus.closing_text' | translate }}</p>
       </div>
       <div class="cl-plusp__cta-actions">
-        <a class="cl-btn" [routerLink]="subscribeLink()">
+        <button type="button" class="cl-btn" [disabled]="facade.submitting()" (click)="startTrial()">
           {{ 'pages.plus.closing_cta' | translate }}
-        </a>
+        </button>
         <a class="cl-link" [routerLink]="orderLink">{{ 'pages.plus.closing_alt' | translate }}</a>
       </div>
     </div>

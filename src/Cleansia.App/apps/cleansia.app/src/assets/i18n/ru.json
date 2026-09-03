@@ -74,7 +74,6 @@
       "rewards": "Мои награды",
       "rewards_activity": "Активность наград",
       "membership": "Cleansia Plus",
-      "membership_subscribe": "Подписаться на Plus",
       "membership_welcome": "Добро пожаловать в Plus",
       "recurring_bookings": "Регулярные уборки",
       "recurring_bookings_create": "Новая регулярная уборка",
@@ -1601,7 +1600,8 @@
       "row_preferred": "Запросить знакомого уборщика",
       "row_recurring": "Регулярные уборки",
       "title": "Cleansia Plus",
-      "yes": "да"
+      "yes": "да",
+      "checkout_failed": "Не удалось открыть страницу оплаты. Пожалуйста, попробуйте ещё раз."
     }
   },
   "address_picker": {

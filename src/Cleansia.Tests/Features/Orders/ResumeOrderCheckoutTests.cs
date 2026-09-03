@@ -27,6 +27,7 @@ public class ResumeOrderCheckoutTests
 {
     private const string OrderId = "order-1";
     private const string OwnerId = "user-owner";
+    private const string SessionId = "cs_test_123";
     private const string CheckoutUrl = "https://checkout.stripe.com/c/pay/cs_test_123";
 
     private readonly Mock<IOrderRepository> _orders = new();
@@ -40,7 +41,7 @@ public class ResumeOrderCheckoutTests
         _session.Setup(s => s.GetUserId()).Returns(OwnerId);
         _stripe
             .Setup(s => s.CreateCheckoutSessionAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CheckoutUrl);
+            .ReturnsAsync(new CheckoutSessionResult(SessionId, CheckoutUrl));
     }
 
     private static Order BuildOrder(
@@ -221,6 +222,40 @@ public class ResumeOrderCheckoutTests
         Assert.Equal(CheckoutUrl, result.Value.CheckoutUrl);
         _stripe.Verify(
             s => s.CreateCheckoutSessionAsync(order, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Idempotency means this is the SAME session the customer abandoned, so recording it also
+    /// heals an order minted before the dispatcher started doing so — which, until that fix, was
+    /// every web card order in the system.
+    /// </summary>
+    [Fact]
+    public async Task It_records_the_session_on_an_order_that_had_no_charge_surface()
+    {
+        var order = BuildOrder();
+        Assert.Empty(order.StripeSessionId);
+
+        await CreateHandler(order).Handle(
+            new ResumeOrderCheckout.Command(OrderId), CancellationToken.None);
+
+        Assert.Equal(SessionId, order.StripeSessionId);
+    }
+
+    /// <summary>
+    /// An order that already carries one keeps it. Stripe replays the same id inside the window, so
+    /// this is belt and braces rather than a behaviour change — but "resume" must never look like a
+    /// way to repoint an order at a different charge surface.
+    /// </summary>
+    [Fact]
+    public async Task It_leaves_an_existing_charge_surface_alone()
+    {
+        var order = BuildOrder();
+        order.AssignStripeSessionId("cs_already_recorded");
+
+        await CreateHandler(order).Handle(
+            new ResumeOrderCheckout.Command(OrderId), CancellationToken.None);
+
+        Assert.Equal("cs_already_recorded", order.StripeSessionId);
     }
 
     [Fact]

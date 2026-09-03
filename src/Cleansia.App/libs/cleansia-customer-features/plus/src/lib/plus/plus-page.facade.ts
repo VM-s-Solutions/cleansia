@@ -1,6 +1,14 @@
-import { inject, Injectable } from '@angular/core';
-import { MembershipPlanFactsService } from '@cleansia/customer-services';
+import { inject, Injectable, signal } from '@angular/core';
+import {
+  CreateMembershipCheckoutSessionCommand,
+  CustomerClient,
+  GetMyMembershipResponse,
+  MembershipPlanFactsService,
+} from '@cleansia/customer-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
+import { SnackbarService } from '@cleansia/services';
+import { TranslateService } from '@ngx-translate/core';
+import { catchError, of, take, takeUntil } from 'rxjs';
 
 /**
  * The public Cleansia Plus page.
@@ -20,6 +28,9 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 @Injectable()
 export class PlusPageFacade extends UnsubscribeControlDirective {
   private readonly facts = inject(MembershipPlanFactsService);
+  private readonly membershipClient = inject(CustomerClient).membershipClient;
+  private readonly snackbar = inject(SnackbarService);
+  private readonly translate = inject(TranslateService);
 
   readonly loading = this.facts.loading;
   readonly plans = this.facts.plans;
@@ -34,7 +45,59 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
   readonly hasExpressPerk = this.facts.hasExpressPerk;
   readonly hasPlans = this.facts.hasPlans;
 
+  /**
+   * The caller's own membership, once this page became the ONE surface for the
+   * product. Null until it is known — and it stays null for an anonymous
+   * visitor, who is the majority of this page's traffic and must never wait on
+   * an authenticated call to read the marketing.
+   */
+  readonly membership = signal<GetMyMembershipResponse | null>(null);
+  readonly isMember = signal(false);
+  readonly submitting = signal(false);
+
   load(): void {
     this.facts.load();
+  }
+
+  refreshMembership(): void {
+    this.membershipClient
+      .getMine()
+      .pipe(take(1), takeUntil(this.destroyed$), catchError(() => of(null)))
+      .subscribe((response) => {
+        this.membership.set(response);
+        this.isMember.set(response?.hasMembership === true);
+      });
+  }
+
+  /**
+   * Start Stripe's hosted Checkout for a plan.
+   *
+   * Moved here from the retired `/membership/subscribe`, which was a second
+   * sales page for the same product. The success URL still lands on
+   * `/membership/welcome` — that is the page Stripe has always returned to and
+   * the one that celebrates the purchase; only the CANCEL url changes, because
+   * the page the customer backed out of is now this one.
+   */
+  startCheckout(planCode: string): void {
+    if (this.submitting() || !planCode) return;
+    this.submitting.set(true);
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const command = new CreateMembershipCheckoutSessionCommand();
+    command.planCode = planCode;
+    command.successUrl = `${origin}/membership/welcome`;
+    command.cancelUrl = `${origin}/plus`;
+
+    this.membershipClient
+      .createCheckoutSession(command)
+      .pipe(take(1), takeUntil(this.destroyed$), catchError(() => of(null)))
+      .subscribe((response) => {
+        if (response?.checkoutUrl) {
+          window.location.href = response.checkoutUrl;
+          return;
+        }
+        this.submitting.set(false);
+        this.snackbar.showError(this.translate.instant('pages.plus.checkout_failed'));
+      });
   }
 }

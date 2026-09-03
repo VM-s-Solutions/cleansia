@@ -1,4 +1,4 @@
-using Cleansia.Core.Clients.Abstractions;
+﻿using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -41,7 +41,7 @@ public class StripeClient : IStripeClient
     public static long ToMinorUnits(decimal amount) =>
         (long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero);
 
-    public async Task<string> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
+    public async Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
     {
         var unitAmount = ToMinorUnits(order.TotalPrice);
 
@@ -76,7 +76,7 @@ public class StripeClient : IStripeClient
             nameof(CreateCheckoutSessionAsync),
             () => service.CreateAsync(options, requestOptions, cancellationToken));
 
-        return session.Url;
+        return new CheckoutSessionResult(session.Id, session.Url);
     }
 
     public async Task RefundCheckoutSessionAsync(

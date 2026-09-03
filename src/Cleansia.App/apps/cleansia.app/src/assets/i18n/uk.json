@@ -74,7 +74,6 @@
       "rewards": "Мої винагороди",
       "rewards_activity": "Активність винагород",
       "membership": "Cleansia Plus",
-      "membership_subscribe": "Підписатися на Plus",
       "membership_welcome": "Ласкаво просимо до Plus",
       "recurring_bookings": "Регулярні прибирання",
       "recurring_bookings_create": "Нове регулярне прибирання",
@@ -1601,7 +1600,8 @@
       "row_preferred": "Запросити знайомого прибиральника",
       "row_recurring": "Регулярні прибирання",
       "title": "Cleansia Plus",
-      "yes": "так"
+      "yes": "так",
+      "checkout_failed": "Не вдалося відкрити сторінку оплати. Будь ласка, спробуйте ще раз."
     }
   },
   "address_picker": {

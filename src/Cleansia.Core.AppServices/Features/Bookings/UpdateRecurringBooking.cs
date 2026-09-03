@@ -23,22 +23,28 @@ public class UpdateRecurringBooking
         IReadOnlyList<string> SelectedPackageIds,
         int PaymentType,
         DateTime StartsOn,
-        DateTime? EndsOn = null) : ICommand<RecurringBookingTemplateDto>;
+        DateTime? EndsOn = null,
+        // Editable, not create-only. Without this the preferred cleaner could be chosen once and
+        // never changed or cleared, which is a schedule the customer cannot correct.
+        string? PreferredEmployeeId = null) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
         private readonly IRecurringBookingTemplateRepository _templateRepository;
         private readonly IUserMembershipRepository _userMembershipRepository;
         private readonly IUserSessionProvider _userSessionProvider;
+        private readonly IOrderRepository _orderRepository;
 
         public Validator(
             IRecurringBookingTemplateRepository templateRepository,
             IUserMembershipRepository userMembershipRepository,
-            IUserSessionProvider userSessionProvider)
+            IUserSessionProvider userSessionProvider,
+            IOrderRepository orderRepository)
         {
             _templateRepository = templateRepository;
             _userMembershipRepository = userMembershipRepository;
             _userSessionProvider = userSessionProvider;
+            _orderRepository = orderRepository;
 
             // The entitlement link is the LAST link of THIS chain, never a second RuleFor: the
             // class-level default is Continue, so a parallel chain would answer "you need Plus" for a
@@ -54,6 +60,18 @@ public class UpdateRecurringBooking
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser)
                 .MustAsync(CallerHasActiveMembershipAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateMembershipRequired);
+
+            // The same gate CreateRecurringBooking applies (ADR-0036 D9). Without it on THIS path
+            // the create-time check is a formality: a customer could create a template with no
+            // preference and then edit any employee id onto it, withholding every occurrence from
+            // the board for a cleaner they simply named.
+            When(x => !string.IsNullOrEmpty(x.PreferredEmployeeId), () =>
+            {
+                RuleFor(x => x)
+                    .MustAsync(PreferredEmployeeIsEligibleAsync)
+                    .WithMessage(BusinessErrorMessage.PreferredEmployeeNotEligible)
+                    .WithName(nameof(Command.PreferredEmployeeId));
+            });
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -88,6 +106,17 @@ public class UpdateRecurringBooking
                     .Must(c => c.EndsOn!.Value > c.StartsOn)
                     .WithMessage(BusinessErrorMessage.RecurringTemplateEndsOnBeforeStart);
             });
+        }
+
+        private async Task<bool> PreferredEmployeeIsEligibleAsync(
+            Command command,
+            CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+
+            return !string.IsNullOrEmpty(userId)
+                && await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
+                    userId, command.PreferredEmployeeId!, cancellationToken);
         }
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
@@ -150,7 +179,8 @@ public class UpdateRecurringBooking
                 selectedPackageIds: command.SelectedPackageIds,
                 paymentType: (PaymentType)command.PaymentType,
                 startsOn: command.StartsOn,
-                endsOn: command.EndsOn);
+                endsOn: command.EndsOn,
+                preferredEmployeeId: command.PreferredEmployeeId);
 
             var line = $"{address.Address.Street}, {address.Address.City} {address.Address.ZipCode}";
 

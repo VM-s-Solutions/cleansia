@@ -74,7 +74,6 @@
       "rewards": "Moje odměny",
       "rewards_activity": "Aktivita odměn",
       "membership": "Cleansia Plus",
-      "membership_subscribe": "Předplatit Plus",
       "membership_welcome": "Vítejte v Plus",
       "recurring_bookings": "Pravidelné úklidy",
       "recurring_bookings_create": "Nový pravidelný úklid",
@@ -1601,7 +1600,8 @@
       "row_preferred": "Vyžádat si oblíbeného uklízeče",
       "row_recurring": "Opakované termíny",
       "title": "Cleansia Plus",
-      "yes": "ano"
+      "yes": "ano",
+      "checkout_failed": "Platební stránku se nepodařilo otevřít. Zkuste to prosím znovu."
     }
   },
   "address_picker": {

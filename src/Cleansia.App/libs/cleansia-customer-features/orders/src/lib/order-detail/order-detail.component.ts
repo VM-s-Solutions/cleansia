@@ -341,7 +341,7 @@ export class OrderDetailComponent implements OnInit {
     const isPlus = this.membership()?.hasMembership === true;
     if (!isPlus) {
       this.facade.showRecurringPlusRequired();
-      this.router.navigate([CleansiaCustomerRoute.MEMBERSHIP, 'subscribe']);
+      this.router.navigate([CleansiaCustomerRoute.PLUS]);
       return;
     }
 

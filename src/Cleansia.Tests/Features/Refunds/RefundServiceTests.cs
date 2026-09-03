@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Common;
+﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -580,7 +580,7 @@ public class RefundServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<string> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
+        public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public Task<string> CreateCustomerAsync(string userId, string email, string fullName, string? phone, CancellationToken cancellationToken)

@@ -125,8 +125,15 @@ public class ResumeOrderCheckout
             try
             {
                 var stripeClient = stripeClientFactory.CreateClient();
-                var checkoutUrl = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
-                return BusinessResult.Success(new Response(checkoutUrl));
+                var session = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
+                // Idempotency means this is the SAME session the customer abandoned, so recording
+                // it here also heals an order created before the dispatcher started doing so —
+                // without it that order would still have no charge surface to refund against.
+                if (string.IsNullOrEmpty(order.StripeSessionId))
+                {
+                    order.AssignStripeSessionId(session.Id);
+                }
+                return BusinessResult.Success(new Response(session.Url));
             }
             catch (StripeException ex)
             {

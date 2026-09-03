@@ -4,7 +4,16 @@ namespace Cleansia.Core.Clients.Abstractions.Stripe;
 
 public interface IStripeClient
 {
-    Task<string> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken);
+    /// <summary>
+    /// Mint (or, inside Stripe's idempotency window, replay) the Checkout Session for an order.
+    ///
+    /// <para>Returns BOTH halves deliberately. The caller redirects the browser to
+    /// <see cref="CheckoutSessionResult.Url"/>, but the refund path needs
+    /// <see cref="CheckoutSessionResult.Id"/> — <see cref="RefundCheckoutSessionAsync"/> looks the
+    /// session up by id, and this method used to discard it, so no web card order carried a charge
+    /// surface at all and a refund fell through to a null PaymentIntent.</para>
+    /// </summary>
+    Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken);
 
     /// <summary>
     /// Refund a previously-paid checkout session. Amount is in the session's currency.
@@ -213,4 +222,10 @@ public record SubscriptionResult(
 /// ClientSecret is what the mobile SDK confirms against; the Id is the
 /// canonical Stripe reference we persist on the Order for webhook reconciliation.
 /// </summary>
+/// <summary>
+/// A Checkout Session's two halves: the <paramref name="Id"/> that identifies it to Stripe (and so
+/// to the refund path) and the <paramref name="Url"/> the browser is sent to.
+/// </summary>
+public record CheckoutSessionResult(string Id, string Url);
+
 public record PaymentIntentResult(string Id, string ClientSecret);

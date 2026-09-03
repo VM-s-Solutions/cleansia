@@ -6,6 +6,7 @@
   to CurrentPeriodEnd. The card says "running out", never "off" — nothing is
   withdrawn retroactively. → /product/business-rules
 -->
+@if (!embedded()) {
 <div class="cl-mbr">
   <div class="cl-mbr__hero">
     <h1 class="cl-mbr__title">{{ 'pages.membership.title' | translate }}</h1>
@@ -20,8 +21,9 @@
   </div>
   <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-page)'" />
 </div>
+}
 
-<div class="cl-mbr__body">
+<div class="cl-mbr__body" [class.cl-mbr__body--embedded]="embedded()">
   <div class="cl-mbr__page">
     @if (loading()) {
     <p-skeleton width="100%" height="14rem" borderRadius="28px" />

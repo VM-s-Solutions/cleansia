@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Authentication;
+﻿using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -51,17 +51,22 @@ public class OrderPaymentDispatcherTests
         });
 
     [Fact]
-    public async Task WebCard_CreatesStripeSession_ReturnsSessionId_DoesNotEnqueue()
+    public async Task WebCard_CreatesStripeSession_RecordsItOnTheOrder_ReturnsUrl_DoesNotEnqueue()
     {
         _stripeClient
             .Setup(c => c.CreateCheckoutSessionAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("cs_test_session");
+            .ReturnsAsync(new CheckoutSessionResult("cs_test_session", "https://checkout.stripe.com/c/pay/cs_test_session"));
 
+        var order = BuildOrder(PaymentType.Card);
         var result = await CreateDispatcher(OrderChannel.Web).DispatchAsync(
-            BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
+            order, LanguageCode, CancellationToken.None);
 
         Assert.Null(result.Failure);
-        Assert.Equal("cs_test_session", result.StripeSessionId);
+        // The dispatcher hands back the URL the browser is redirected to, and records the
+        // session ID on the order as its charge surface — RefundService looks a web order's
+        // session up by that id, and nothing used to write it.
+        Assert.Equal("https://checkout.stripe.com/c/pay/cs_test_session", result.CheckoutUrl);
+        Assert.Equal("cs_test_session", order.StripeSessionId);
         _pending.Verify(p => p.Enqueue(
             It.IsAny<string>(),
             It.IsAny<QueueEnvelope<GenerateReceiptMessage>>(),
@@ -76,7 +81,7 @@ public class OrderPaymentDispatcherTests
             BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
 
         Assert.Null(result.Failure);
-        Assert.Null(result.StripeSessionId);
+        Assert.Null(result.CheckoutUrl);
         _stripeClient.Verify(
             c => c.CreateCheckoutSessionAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -106,7 +111,7 @@ public class OrderPaymentDispatcherTests
         var result = await CreateDispatcher().DispatchAsync(
             BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
 
-        Assert.Null(result.StripeSessionId);
+        Assert.Null(result.CheckoutUrl);
         Assert.NotNull(result.Failure);
         Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, result.Failure!.Message);
         Assert.Equal(nameof(PaymentType.Card), result.Failure.Code);
@@ -131,7 +136,7 @@ public class OrderPaymentDispatcherTests
             BuildOrder(PaymentType.Cash), LanguageCode, CancellationToken.None);
 
         Assert.Null(result.Failure);
-        Assert.Null(result.StripeSessionId);
+        Assert.Null(result.CheckoutUrl);
         _pending.Verify(p => p.Enqueue(
             QueueNames.GenerateReceipt,
             It.Is<QueueEnvelope<GenerateReceiptMessage>>(e =>

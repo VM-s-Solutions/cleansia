@@ -74,7 +74,6 @@
       "rewards": "My Rewards",
       "rewards_activity": "Rewards Activity",
       "membership": "Cleansia Plus",
-      "membership_subscribe": "Subscribe to Plus",
       "membership_welcome": "Welcome to Plus",
       "recurring_bookings": "Recurring cleanings",
       "recurring_bookings_create": "New recurring cleaning",
@@ -1601,7 +1600,8 @@
       "row_preferred": "Request a cleaner you have had before",
       "row_recurring": "Recurring schedules",
       "title": "Cleansia Plus",
-      "yes": "yes"
+      "yes": "yes",
+      "checkout_failed": "We couldn't open the payment page. Please try again."
     }
   },
   "address_picker": {

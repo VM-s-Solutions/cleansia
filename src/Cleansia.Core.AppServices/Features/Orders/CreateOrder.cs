@@ -519,7 +519,9 @@ public class CreateOrder
             return BusinessResult.Success(new Response(
                 Id: order.Id,
                 ConfirmationCode: order.ConfirmationCode,
-                StripeSessionId: dispatch.StripeSessionId));
+                // The wire contract's name, kept: it has always carried the Checkout URL the
+                // browser is redirected to, and the web client reads it as one.
+                StripeSessionId: dispatch.CheckoutUrl));
         }
     }
 }

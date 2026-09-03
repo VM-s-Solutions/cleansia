@@ -66,6 +66,16 @@ export class CheckoutSuccessComponent implements OnInit {
 
   readonly isCash = computed(() => this.paymentType() === 'cash');
 
+  /**
+   * Stripe's success URL carries `?orderId=`. Read through the same param map
+   * as the payment type rather than off `route.snapshot`, so the two agree and
+   * neither depends on when in the lifecycle it is asked.
+   */
+  private readonly orderIdFromUrl = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('orderId'))),
+    { initialValue: null },
+  );
+
   private readonly currentLang = toSignal(
     this.translate.onLangChange.pipe(map((e) => e.lang)),
     { initialValue: this.translate.currentLang || this.translate.getDefaultLang() },
@@ -84,8 +94,14 @@ export class CheckoutSuccessComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Newest first — `GuestOrderService.save` unshifts.
-    const latest = this.guestOrders.getAll()[0];
+    // Stripe's success URL carries `?orderId=`, so on the card path the page is TOLD which order
+    // it is confirming. Match that against the remembered entries rather than assuming the newest
+    // is the right one — a customer with two bookings open in two tabs would otherwise be shown
+    // the wrong figures. The cash path navigates here without an orderId and still falls back to
+    // the newest, which is correct there because it was written moments earlier.
+    const remembered = this.guestOrders.getAll();
+    const fromUrl = this.orderIdFromUrl();
+    const latest = (fromUrl && remembered.find((o) => o.orderId === fromUrl)) || remembered[0];
     if (!latest) return;
 
     // BATCH, not the single lookup. `GuestOrderService` stores the order's

@@ -5,6 +5,7 @@ import {
   OnInit,
   computed,
   inject,
+  input,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
@@ -16,6 +17,9 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MembershipFacade } from './membership.facade';
+
+/** Mirrors the backend's `BillingInterval` — an enum, not a month count. */
+const BillingInterval = { Monthly: 1, Yearly: 2 } as const;
 
 @Component({
   selector: 'cleansia-customer-membership-management',
@@ -34,6 +38,16 @@ import { MembershipFacade } from './membership.facade';
   templateUrl: './membership-management.component.html',
 })
 export class MembershipManagementComponent implements OnInit {
+  /**
+   * Suppresses this screen's own hero so it can sit INSIDE the Plus page,
+   * which brings its own. `/plus` is now the single surface for the product —
+   * benefits for everyone, this panel on top for a member — and two stacked
+   * page titles would be the giveaway that it is two pages in a trenchcoat.
+   *
+   * A static input, so it renders identically on the server and at hydration.
+   */
+  readonly embedded = input(false);
+
   protected readonly facade = inject(MembershipFacade);
   private readonly translate = inject(TranslateService);
   private readonly confirmService = inject(ConfirmationService);
@@ -62,7 +76,7 @@ export class MembershipManagementComponent implements OnInit {
 
   /** Top-level CTA for non-subscribers — sends them to the marketing page. */
   goToSubscribe(): void {
-    this.router.navigate([CleansiaCustomerRoute.MEMBERSHIP, 'subscribe']);
+    this.router.navigate([CleansiaCustomerRoute.PLUS]);
   }
 
   /** Cancel-at-period-end. The benefit window is unaffected until period end. */
@@ -106,13 +120,20 @@ export class MembershipManagementComponent implements OnInit {
    * names the cadence beside the plan, because "199 Kč" and "2 030 Kč" only
    * mean anything once you know which one they are per.
    */
+  /**
+   * `BillingInterval` is an ENUM — `Monthly = 1, Yearly = 2` — not a count of
+   * months. Both of these read `>= 12` and so called every plan monthly,
+   * including the annual one: the switcher offered "MONTHLY · CZK 2,029 ·
+   * every month". `MembershipPlanFactsService` has always split the two on
+   * `=== 1` / `=== 2`, which is the reading this now shares.
+   */
   cadenceOf(plan: GetMembershipPlansResponse): string {
-    return plan.billingInterval >= 12 ? 'yearly' : 'monthly';
+    return plan.billingInterval === BillingInterval.Yearly ? 'yearly' : 'monthly';
   }
 
   cadenceKey(m: GetMyMembershipResponse): string | null {
     if (m.billingInterval == null) return null;
-    return m.billingInterval >= 12
+    return m.billingInterval === BillingInterval.Yearly
       ? 'pages.membership.cadence.yearly'
       : 'pages.membership.cadence.monthly';
   }

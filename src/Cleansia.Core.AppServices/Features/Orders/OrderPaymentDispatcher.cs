@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Authentication;
+﻿using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
@@ -41,8 +41,15 @@ public sealed class OrderPaymentDispatcher(
                 try
                 {
                     var stripeClient = stripeClientFactory.CreateClient();
-                    var stripeSessionId = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
-                    return OrderPaymentDispatchResult.Ok(stripeSessionId);
+                    var session = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
+                    // The order has to REMEMBER its charge surface. RefundService routes a web order
+                    // through RefundCheckoutSessionAsync, which looks the session up by id — and
+                    // until this line nothing in production ever called AssignStripeSessionId, so
+                    // every web card order fell through to the PaymentIntent branch with a null id.
+                    // Assigned before the pipeline commits, on the order this handler already added.
+                    order.AssignStripeSessionId(session.Id);
+                    // The URL, not the id, is what the browser is redirected to.
+                    return OrderPaymentDispatchResult.Ok(session.Url);
                 }
                 catch (StripeException ex)
                 {

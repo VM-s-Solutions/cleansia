@@ -70,15 +70,28 @@ const QUOTA_WORDS = [
   /\bдві\b/i,
 ] as const;
 
+// The sales surface is now /plus, which lives in its own library — so each
+// template carries its own directory rather than sharing MEMBERSHIP_DIR.
 const MEMBERSHIP_TEMPLATES = [
-  'membership-subscribe.component.html',
+  'plus-page.component.html',
   'membership-welcome.component.html',
   'membership-management.component.html',
 ] as const;
 
+const PLUS_DIR = join(
+  SOLUTION_DIR,
+  'Cleansia.App/libs/cleansia-customer-features/plus/src/lib/plus'
+);
+
+const TEMPLATE_DIRS: Record<(typeof MEMBERSHIP_TEMPLATES)[number], string> = {
+  'plus-page.component.html': PLUS_DIR,
+  'membership-welcome.component.html': MEMBERSHIP_DIR,
+  'membership-management.component.html': MEMBERSHIP_DIR,
+};
+
 /** The server field each template must branch on before it renders the claim. */
 const SERVER_GATES: Record<(typeof MEMBERSHIP_TEMPLATES)[number], string> = {
-  'membership-subscribe.component.html': 'allowsExpressUpgrade',
+  'plus-page.component.html': 'hasExpressPerk()',
   'membership-welcome.component.html': 'expressWaiverAdvertised()',
   'membership-management.component.html': 'expressWaiverAvailable()',
 };
@@ -228,20 +241,17 @@ describe('the Plus express perk claim matches the mechanism (T-0544 / T-0514)', 
     }
   });
 
-  it('the subscribe screen offers five perks again, the express one gated', () => {
-    const source = readFileSync(
-      join(MEMBERSHIP_DIR, 'membership-subscribe.component.html'),
-      'utf8'
-    );
-    const perks = source.match(/<li class="membership-subscribe__perk">/g) ?? [];
+  it('the sales page offers five perks, the express one gated', () => {
+    const source = readFileSync(join(PLUS_DIR, 'plus-page.component.html'), 'utf8');
+    const perks = source.match(/<div class="cl-plusp__perk cl-soft">/g) ?? [];
 
     expect(perks).toHaveLength(5);
-    expect(source).toContain('pages.membership.benefit_express_title');
+    expect(source).toContain('pages.plus.perk_express_title');
   });
 
   it('every membership screen gates the claim on a server field', () => {
     for (const template of MEMBERSHIP_TEMPLATES) {
-      const source = readFileSync(join(MEMBERSHIP_DIR, template), 'utf8');
+      const source = readFileSync(join(TEMPLATE_DIRS[template], template), 'utf8');
       expect({ template, gated: source.includes(SERVER_GATES[template]) }).toEqual({
         template,
         gated: true,

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Users;
@@ -132,7 +132,8 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
         IEnumerable<string> selectedPackageIds,
         PaymentType paymentType,
         DateTime startsOn,
-        DateTime? endsOn)
+        DateTime? endsOn,
+        string? preferredEmployeeId)
     {
         Frequency = frequency;
         DayOfWeek = dayOfWeek;
@@ -145,6 +146,8 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
         PaymentType = paymentType;
         StartsOn = startsOn;
         EndsOn = endsOn;
+        // Empty and null mean the same thing here as they do at creation: no preference.
+        PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId;
         LastMaterializedFor = null;
         return this;
     }

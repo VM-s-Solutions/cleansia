@@ -6,8 +6,9 @@ import {
   inject,
   OnInit,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
+import { MembershipManagementComponent } from '@cleansia-customer/profile';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import { EXPRESS_SURCHARGE_RATE } from '@cleansia/models';
 import { CleansiaCustomerRoute } from '@cleansia/services';
@@ -31,13 +32,20 @@ import { PlusPageFacade } from './plus-page.facade';
 @Component({
   selector: 'cleansia-customer-plus-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslatePipe, FoamEdgeComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    TranslatePipe,
+    FoamEdgeComponent,
+    MembershipManagementComponent,
+  ],
   templateUrl: './plus-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [PlusPageFacade],
 })
 export class PlusPageComponent implements OnInit {
   private readonly authService = inject(CustomerAuthService);
+  private readonly router = inject(Router);
   readonly facade = inject(PlusPageFacade);
 
   private readonly isLoggedIn = this.authService.isLoggedIn;
@@ -51,26 +59,40 @@ export class PlusPageComponent implements OnInit {
   readonly expressRatePercent = Math.round(EXPRESS_SURCHARGE_RATE * 100);
 
   /**
-   * Where "start the trial" goes. Signing up is the first step for a visitor
-   * with no account, and the subscribe screen for one who has already signed
-   * in — including a member, whose subscribe screen is the right place to be
-   * told they already have it.
+   * What "start the trial" does, now that this page IS the subscribe page.
    *
-   * Bound as an attribute rather than branched with `@if`. `isLoggedIn()`
+   * Always a <button>, never a link that becomes a button. `isLoggedIn()`
    * resolves differently on the server than at hydration, and a conditional
-   * that changes the node count under it is an NG0500 — the navbar's
-   * `ordersLink` is the same shape for the same reason.
+   * that changes the node count under it is an NG0500 — which is exactly what
+   * the attribute-bound `subscribeLink` this replaces existed to avoid. One
+   * element in every state, and the BEHAVIOUR branches inside the handler
+   * where hydration cannot see it.
    */
-  readonly subscribeLink = computed(() =>
-    this.isLoggedIn()
-      ? `/${CleansiaCustomerRoute.MEMBERSHIP}/subscribe`
-      : `/${CleansiaCustomerRoute.REGISTER}`,
-  );
+  startTrial(planCode?: string): void {
+    if (!this.isLoggedIn()) {
+      this.router.navigate([`/${CleansiaCustomerRoute.REGISTER}`]);
+      return;
+    }
+    // A member pressing a plan button is switching plans, which is the
+    // management panel's job, not a second subscription.
+    if (this.facade.isMember()) {
+      this.router.navigate([], { fragment: 'membership' });
+      return;
+    }
+    const code = planCode ?? this.facade.monthlyPlan()?.code ?? this.facade.plans()[0]?.code;
+    if (code) this.facade.startCheckout(code);
+  }
 
   readonly orderLink = `/${CleansiaCustomerRoute.ORDER}`;
 
   ngOnInit(): void {
     this.facade.load();
+    // Only for someone who could have one. This page's majority traffic is
+    // anonymous and must never wait on an authenticated call to read the
+    // marketing below.
+    if (this.isLoggedIn()) {
+      this.facade.refreshMembership();
+    }
   }
 
   /**

@@ -3,6 +3,8 @@ import {
   CustomerClient,
   GetMembershipPlansResponse,
 } from '@cleansia/customer-services';
+import { SnackbarService } from '@cleansia/services';
+import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { PlusPageFacade } from './plus-page.facade';
 
@@ -51,6 +53,10 @@ describe('PlusPageFacade', () => {
       providers: [
         PlusPageFacade,
         { provide: CustomerClient, useValue: { membershipClient: { getPlans } } },
+        // Reached only by startCheckout's failure path, which these plan-facts
+        // cases never take — the facade still needs them to construct.
+        { provide: SnackbarService, useValue: { showError: jest.fn() } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
     facade = TestBed.inject(PlusPageFacade);

@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Common;
+﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
@@ -32,6 +32,9 @@ public class UpdateRecurringBookingMembershipGuardTests
     private readonly Mock<IRecurringBookingTemplateRepository> _templateRepository = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    // Only reached when a command names a preferred employee, which these membership-gate cases
+    // never do — the validator still needs one to construct.
+    private readonly Mock<IOrderRepository> _orderRepository = new();
 
     public UpdateRecurringBookingMembershipGuardTests()
     {
@@ -106,7 +109,8 @@ public class UpdateRecurringBookingMembershipGuardTests
     }
 
     private UpdateRecurringBooking.Validator CreateValidator() =>
-        new(_templateRepository.Object, _membershipRepository.Object, _session.Object);
+        new(_templateRepository.Object, _membershipRepository.Object, _session.Object,
+            _orderRepository.Object);
 
     private void ArrangeActiveMembership()
     {

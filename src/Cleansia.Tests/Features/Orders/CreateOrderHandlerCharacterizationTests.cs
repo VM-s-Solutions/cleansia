@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Authentication;
+﻿using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -82,6 +82,15 @@ public class CreateOrderHandlerCharacterizationTests
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
 
         _stripeClientFactory.Setup(f => f.CreateClient()).Returns(_stripeClient.Object);
+        // A default session for the tests that are not about Stripe at all. Moq's loose default
+        // was a null result, which was survivable while the dispatcher discarded it and is not now
+        // that it reads the session's id to record the order's charge surface. The tests that DO
+        // care about the session override this.
+        _stripeClient
+            .Setup(c => c.CreateCheckoutSessionAsync(
+                It.IsAny<Cleansia.Core.Domain.Orders.Order>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CheckoutSessionResult(
+                "cs_test_default", "https://checkout.stripe.com/c/pay/cs_test_default"));
 
         _orderFactory
             .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
@@ -234,14 +243,15 @@ public class CreateOrderHandlerCharacterizationTests
     {
         _stripeClient
             .Setup(c => c.CreateCheckoutSessionAsync(It.IsAny<Cleansia.Core.Domain.Orders.Order>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("cs_test_session");
+            .ReturnsAsync(new CheckoutSessionResult("cs_test_session", "https://checkout.stripe.com/c/pay/cs_test_session"));
 
         var command = CreateOrderTestData.ValidCommand(paymentType: PaymentType.Card);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal("cs_test_session", result.Value!.StripeSessionId);
+        Assert.Equal(
+            "https://checkout.stripe.com/c/pay/cs_test_session", result.Value!.StripeSessionId);
         _pending.Verify(p => p.Enqueue(
             It.IsAny<string>(),
             It.IsAny<QueueEnvelope<GenerateReceiptMessage>>(),
@@ -268,14 +278,15 @@ public class CreateOrderHandlerCharacterizationTests
     {
         _stripeClient
             .Setup(c => c.CreateCheckoutSessionAsync(It.IsAny<Cleansia.Core.Domain.Orders.Order>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("cs_test_session");
+            .ReturnsAsync(new CheckoutSessionResult("cs_test_session", "https://checkout.stripe.com/c/pay/cs_test_session"));
 
         var command = CreateOrderTestData.ValidCommand(paymentType: PaymentType.Card);
 
         var result = await CreateHandler(OrderChannel.Web).Handle(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal("cs_test_session", result.Value!.StripeSessionId);
+        Assert.Equal(
+            "https://checkout.stripe.com/c/pay/cs_test_session", result.Value!.StripeSessionId);
         _stripeClient.Verify(
             c => c.CreateCheckoutSessionAsync(It.IsAny<Cleansia.Core.Domain.Orders.Order>(), It.IsAny<CancellationToken>()),
             Times.Once);

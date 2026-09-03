@@ -691,7 +691,9 @@ export class OrderWizardComponent implements OnInit {
       return;
     }
     this.parkDraft();
-    this.router.navigate([CleansiaCustomerRoute.MEMBERSHIP, 'subscribe'], {
+    // /plus is the subscribe page now; the plan carries through so the page can
+    // still be opened on the one the wizard was arguing for.
+    this.router.navigate([CleansiaCustomerRoute.PLUS], {
       queryParams: { plan: plan.code },
     });
   }

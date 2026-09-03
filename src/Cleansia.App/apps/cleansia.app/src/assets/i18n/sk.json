@@ -74,7 +74,6 @@
       "rewards": "Moje odmeny",
       "rewards_activity": "Aktivita odmien",
       "membership": "Cleansia Plus",
-      "membership_subscribe": "Predplatiť Plus",
       "membership_welcome": "Vitajte v Plus",
       "recurring_bookings": "Pravidelné upratovania",
       "recurring_bookings_create": "Nové pravidelné upratovanie",
@@ -1601,7 +1600,8 @@
       "row_preferred": "Vyžiadať si obľúbeného upratovača",
       "row_recurring": "Opakované termíny",
       "title": "Cleansia Plus",
-      "yes": "áno"
+      "yes": "áno",
+      "checkout_failed": "Platobnú stránku sa nepodarilo otvoriť. Skúste to prosím znovu."
     }
   },
   "address_picker": {

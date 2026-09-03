@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { GuestOrderService, TrackOrderFacade } from '@cleansia-customer/orders';
 import {
   CustomerAuthService,
@@ -39,7 +38,7 @@ import { catchError, map, of } from 'rxjs';
 @Component({
   selector: 'cleansia-customer-checkout-success',
   standalone: true,
-  imports: [TranslatePipe, RouterLink, FoamEdgeComponent],
+  imports: [TranslatePipe, RouterLink],
   templateUrl: './checkout-success.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [TrackOrderFacade],
@@ -127,10 +126,4 @@ export class CheckoutSuccessComponent implements OnInit {
     }).format(order.totalPrice ?? 0);
   }
 
-  /** Every service and package on the order, for the summary strip. */
-  readonly lineCount = computed(() => {
-    const order = this.order();
-    if (!order) return 0;
-    return (order.selectedServices?.length ?? 0) + (order.selectedPackages?.length ?? 0);
-  });
 }

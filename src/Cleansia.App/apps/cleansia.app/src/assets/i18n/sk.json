@@ -1123,42 +1123,40 @@
     "checkout": {
       "success": {
         "card": {
-          "title": "Platba úspešná!",
-          "subtitle": "Ďakujeme za vašu objednávku",
+          "title": "Platba prebehla",
           "description": "Vaša platba bola spracovaná a vaše čistenie je potvrdené. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami.",
-          "lead_dated": "Platba prebehla a upratovanie je potvrdené na {{when}}."
+          "lead_dated": "Objednávka {{number}} je potvrdená na {{when}} — zaplatené {{amount}}. Potvrdenie posielame na váš e-mail.",
+          "chip": "Zaplatené"
         },
         "cash": {
-          "title": "Objednávka potvrdená!",
-          "subtitle": "Ďakujeme za vašu rezerváciu",
+          "title": "Objednávka je potvrdená",
           "description": "Vaše čistenie bolo objednané a zaplatíte v hotovosti v deň služby. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami.",
           "step_payment": "Zaplaťte pracovníkovi v hotovosti po dokončení služby",
-          "lead_dated": "Upratovanie je potvrdené na {{when}}. Zaplatíte na mieste."
+          "lead_dated": "Objednávka {{number}} je potvrdená na {{when}}. Sumu {{amount}} zaplatíte v hotovosti na mieste.",
+          "chip": "Platba v hotovosti",
+          "fact_payment": "Platba v deň upratovania"
         },
-        "what_next": "Čo bude nasledovať?",
         "step_confirmation": "Do niekoľkých minút dostanete potvrdzovací e-mail",
         "step_reminder": "Pred dátumom čistenia vám pošleme pripomienku",
         "step_cleaner": "Náš profesionálny pracovník dorazí v naplánovanom čase",
         "view_orders": "Zobraziť moje objednávky",
         "book_another": "Objednať ďalšie čistenie",
-        "back_home": "Späť na úvod",
-        "step_1": "Krok 1",
-        "step_2": "Krok 2",
-        "step_3": "Krok 3",
-        "line_count": "{{count}} služby"
+        "fact_email": "Potvrdenie e-mailom",
+        "fact_cleaner": "Pridelíme upratovača",
+        "fact_reminder": "Pripomenieme deň vopred"
       },
       "cancel": {
-        "title": "Platba zrušená",
-        "subtitle": "Žiadne obavy — nič nebolo zaúčtované",
-        "description": "Vaša platba nebola dokončená a z vášho účtu neboli stiahnuté žiadne prostriedky. Vybrané služby sú stále dostupné.",
-        "reasons_title": "Bežné dôvody zrušenia:",
-        "reason_changed_mind": "Rozmysleli ste si službu",
-        "reason_wrong_details": "Potrebujete aktualizovať údaje objednávky",
-        "reason_payment_issue": "Vyskytol sa problém s platbou",
+        "title": "Platba neprebehla",
+        "description": "Nič sme vám nestrhli. Objednávku máme uloženú — stačí platbu dokončiť.",
         "try_again": "Skúsiť znova",
         "view_orders": "Zobraziť moje objednávky",
-        "contact_support": "Potrebujete pomoc? Kontaktujte náš tím podpory",
-        "back_home": "Späť na úvod"
+        "chip": "Nezaplatené",
+        "fact_card": "Skúsiť inú kartu",
+        "fact_card_note": "Karty sa občas zamietnu pre limit alebo vypršané 3-D Secure. Druhý pokus zvyčajne prejde.",
+        "fact_slot": "Termín zatiaľ držíme",
+        "fact_slot_note": "Objednávka existuje a čaká na zaplatenie — nič nemusíte vypĺňať znovu.",
+        "fact_help": "Nedarí sa to?",
+        "fact_help_note": "Napíšte na info@cleansia.cz a platbu s vami vyriešime."
       }
     },
     "disputes": {
@@ -1611,12 +1609,10 @@
   },
   "components": {
     "not_found": {
-      "title": "Stránka nenájdená",
-      "description": "Stránka, ktorú hľadáte, neexistuje alebo bola presunutá.",
-      "suggestion_home": "Vráťte sa na úvodnú stránku",
-      "suggestion_url": "Skontrolujte správnosť adresy URL",
-      "suggestion_contact": "Ak problém pretrváva, kontaktujte nás",
-      "go_home": "Na úvodnú stránku"
+      "title": "Túto stránku nemáme",
+      "description": "Odkaz je zrejme starý, alebo v adrese chýba písmenko. Skúste to od začiatku.",
+      "go_home": "Na úvodnú stránku",
+      "error_code": "Chyba {{code}}"
     },
     "availability": {
       "add_time_slot": "Pridať časový slot",

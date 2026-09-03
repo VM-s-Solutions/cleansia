@@ -182,18 +182,12 @@ describe('CheckoutSuccessComponent', () => {
       expect(fixture.componentInstance.hasOrder()).toBe(true);
     });
 
-    it('counts every service and package for the summary strip', async () => {
-      await render({ guestOrders: GUEST });
-      expect(fixture.componentInstance.lineCount()).toBe(3);
-    });
-
     // The whole point of the fallback: a confirmation that cannot prove what it
     // is confirming still has to confirm, rather than showing an error to
     // someone who has just paid.
     it('renders without figures when the lookup fails', async () => {
       await render({ guestOrders: GUEST, lookup: 'fail' });
       expect(fixture.componentInstance.hasOrder()).toBe(false);
-      expect(fixture.componentInstance.lineCount()).toBe(0);
     });
 
     it('asks for nothing when this browser remembers no order', async () => {

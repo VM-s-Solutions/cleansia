@@ -1,62 +1,69 @@
-<section class="cl-done cl-done--quiet">
-  <div class="cl-done__inner">
-    <div>
-      <h1 class="cl-d1 cl-done__title">{{ 'pages.checkout.cancel.title' | translate }}</h1>
-      <p class="cl-body cl-done__lead">{{ 'pages.checkout.cancel.subtitle' | translate }}</p>
-
-      <!--
-        Amber, not red: nothing failed and nothing was charged. The panel says
-        the one thing a customer here needs and would otherwise guess wrong —
-        the booking was created BEFORE the redirect to Stripe, so it exists and
-        is unpaid rather than gone.
-      -->
-      <div class="cl-done__panel">
-        <i class="pi pi-info-circle"></i>
-        <p>{{ 'pages.checkout.cancel.description' | translate }}</p>
-      </div>
-
-      <div class="cl-done__actions">
-        <a class="cl-btn" [routerLink]="'/' + routes.ORDER">
-          {{ 'pages.checkout.cancel.try_again' | translate }}
-        </a>
-        <a class="cl-link" [routerLink]="ordersRoute">
-          {{ 'pages.checkout.cancel.view_orders' | translate }}
-        </a>
-      </div>
-    </div>
-
+<!-- The same `.cl-out` shape as the success return and the 404. -->
+<div class="cl-out">
+  <div class="cl-out__inner">
     <img
-      class="cl-done__mascot"
-      src="assets/images/mascot/mascot-arms-crossed-tile.webp"
+      class="cl-out__art"
+      src="assets/images/mascot/mascot-idea-tile.webp"
       alt=""
-      width="340"
-      height="280"
+      width="200"
+      height="200"
       aria-hidden="true"
     />
-  </div>
 
-  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-band)'" />
-</section>
+    <!--
+      Amber, never red: nothing failed and nothing was charged. Red would read
+      as "your booking is gone", which is the opposite of what happened.
+    -->
+    <span class="cl-out__chip cl-out__chip--pending">
+      <i class="pi pi-clock" aria-hidden="true"></i>
+      {{ 'pages.checkout.cancel.chip' | translate }}
+    </span>
 
-<section class="cl-done__below">
-  <div class="cl-done__below-inner">
-    <h2 class="cl-lbl cl-done__next-title">{{ 'pages.checkout.cancel.reasons_title' | translate }}</h2>
-    <div class="cl-done__steps">
-      <div class="cl-done__step cl-soft">
-        <p>{{ 'pages.checkout.cancel.reason_changed_mind' | translate }}</p>
+    <h1 class="cl-out__title">{{ 'pages.checkout.cancel.title' | translate }}</h1>
+
+    <!--
+      The one thing a customer here needs and would otherwise guess wrong:
+      `CreateOrder` runs BEFORE the redirect to Stripe, so backing out of
+      payment leaves a real, unpaid booking rather than nothing. Without this
+      sentence they book a second time.
+    -->
+    <p class="cl-out__lead">{{ 'pages.checkout.cancel.description' | translate }}</p>
+
+    <div class="cl-out__facts">
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon"><i class="pi pi-credit-card" aria-hidden="true"></i></span>
+        <div>
+          <div class="cl-out__fact-title">{{ 'pages.checkout.cancel.fact_card' | translate }}</div>
+          <p class="cl-out__fact-note">{{ 'pages.checkout.cancel.fact_card_note' | translate }}</p>
+        </div>
       </div>
-      <div class="cl-done__step cl-soft">
-        <p>{{ 'pages.checkout.cancel.reason_wrong_details' | translate }}</p>
+
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon"><i class="pi pi-calendar" aria-hidden="true"></i></span>
+        <div>
+          <div class="cl-out__fact-title">{{ 'pages.checkout.cancel.fact_slot' | translate }}</div>
+          <p class="cl-out__fact-note">{{ 'pages.checkout.cancel.fact_slot_note' | translate }}</p>
+        </div>
       </div>
-      <div class="cl-done__step cl-soft">
-        <p>{{ 'pages.checkout.cancel.reason_payment_issue' | translate }}</p>
+
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon">
+          <i class="pi pi-question-circle" aria-hidden="true"></i>
+        </span>
+        <div>
+          <div class="cl-out__fact-title">{{ 'pages.checkout.cancel.fact_help' | translate }}</div>
+          <p class="cl-out__fact-note">{{ 'pages.checkout.cancel.fact_help_note' | translate }}</p>
+        </div>
       </div>
     </div>
 
-    <p class="cl-muted cl-done__home">
-      {{ 'pages.checkout.cancel.contact_support' | translate }}
-      &nbsp;·&nbsp;
-      <a [routerLink]="'/'">{{ 'pages.checkout.cancel.back_home' | translate }}</a>
-    </p>
+    <div class="cl-out__actions">
+      <a class="cl-out__cta" [routerLink]="'/' + routes.ORDER">
+        {{ 'pages.checkout.cancel.try_again' | translate }}
+      </a>
+      <a class="cl-out__alt" [routerLink]="ordersRoute">
+        {{ 'pages.checkout.cancel.view_orders' | translate }}
+      </a>
+    </div>
   </div>
-</section>
+</div>

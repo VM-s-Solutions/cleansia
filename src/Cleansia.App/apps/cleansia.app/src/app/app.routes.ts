@@ -1,5 +1,4 @@
 import { Route } from '@angular/router';
-import { CleansiaNotFoundComponent } from '@cleansia/components';
 import {
   customerAuthGuard,
   customerGuestGuard,
@@ -183,7 +182,12 @@ export const appRoutes: Route[] = [
     // saved nothing and made Nx treat the whole library as lazy-loaded — which
     // is what turned those three eager imports into lint errors.
     path: CleansiaCustomerRoute.NOT_FOUND,
-    component: CleansiaNotFoundComponent,
+    // The customer app's own 404: the shared component with this app's ways out
+    // of it. The bare shared one still serves partner and admin.
+    loadComponent: () =>
+      import('./components/not-found/customer-not-found.component').then(
+        (m) => m.CustomerNotFoundComponent,
+      ),
     data: { title: 'page_titles.customer.not_found' },
   },
   {

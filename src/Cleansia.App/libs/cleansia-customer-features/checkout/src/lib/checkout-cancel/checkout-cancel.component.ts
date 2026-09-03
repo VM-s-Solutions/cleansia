@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -18,7 +17,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 @Component({
   selector: 'cleansia-customer-checkout-cancel',
   standalone: true,
-  imports: [TranslatePipe, RouterLink, FoamEdgeComponent],
+  imports: [TranslatePipe, RouterLink],
   templateUrl: './checkout-cancel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

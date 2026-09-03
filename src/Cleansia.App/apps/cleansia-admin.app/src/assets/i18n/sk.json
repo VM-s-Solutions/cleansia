@@ -98,12 +98,10 @@
   },
   "components": {
     "not_found": {
-      "title": "Stránka nebola nájdená",
-      "description": "Stránka, ktorú hľadáte, mohla byť odstránená, premenovaná alebo je dočasne nedostupná.",
-      "suggestion_home": "Vráťte sa na úvodnú stránku",
-      "suggestion_url": "Skontrolujte správnosť adresy URL",
-      "suggestion_contact": "Ak problém pretrváva, kontaktujte nás",
-      "go_home": "Na úvodnú stránku"
+      "title": "Túto stránku nemáme",
+      "description": "Odkaz je zrejme starý, alebo v adrese chýba písmenko. Skúste to od začiatku.",
+      "go_home": "Na úvodnú stránku",
+      "error_code": "Chyba {{code}}"
     },
     "availability": {
       "days": {

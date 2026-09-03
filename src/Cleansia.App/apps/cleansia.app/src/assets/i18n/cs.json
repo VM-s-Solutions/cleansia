@@ -1123,42 +1123,40 @@
     "checkout": {
       "success": {
         "card": {
-          "title": "Platba úspěšná!",
-          "subtitle": "Děkujeme za vaši objednávku",
+          "title": "Platba proběhla",
           "description": "Vaše platba byla zpracována a úklid je potvrzen. Brzy obdržíte potvrzovací email se všemi podrobnostmi.",
-          "lead_dated": "Platba proběhla a úklid je potvrzený na {{when}}."
+          "lead_dated": "Objednávka {{number}} je potvrzená na {{when}} — zaplaceno {{amount}}. Potvrzení posíláme na váš e-mail.",
+          "chip": "Zaplaceno"
         },
         "cash": {
-          "title": "Objednávka potvrzena!",
-          "subtitle": "Děkujeme za vaši rezervaci",
+          "title": "Objednávka je potvrzená",
           "description": "Váš úklid byl zarezervován a bude zaplacen hotově v den poskytnutí služby. Brzy obdržíte potvrzovací email se všemi podrobnostmi.",
           "step_payment": "Zaplaťte uklízeči hotově po dokončení služby",
-          "lead_dated": "Úklid je potvrzený na {{when}}. Zaplatíte na místě."
+          "lead_dated": "Objednávka {{number}} je potvrzená na {{when}}. Částku {{amount}} zaplatíte hotově na místě.",
+          "chip": "Platba hotově",
+          "fact_payment": "Platba v den úklidu"
         },
-        "what_next": "Co se stane dál?",
         "step_confirmation": "Obdržíte potvrzovací email během několika minut",
         "step_reminder": "Pošleme vám připomínku před datem úklidu",
         "step_cleaner": "Náš profesionální uklízeč dorazí v naplánovaném čase",
         "view_orders": "Zobrazit objednávky",
         "book_another": "Objednat další úklid",
-        "back_home": "Zpět na úvodní stránku",
-        "step_1": "Krok 1",
-        "step_2": "Krok 2",
-        "step_3": "Krok 3",
-        "line_count": "{{count}} služby"
+        "fact_email": "Potvrzení e-mailem",
+        "fact_cleaner": "Přidělíme uklízeče",
+        "fact_reminder": "Připomeneme den předem"
       },
       "cancel": {
-        "title": "Platba zrušena",
-        "subtitle": "Žádné obavy — nic nebylo účtováno",
-        "description": "Vaše platba nebyla dokončena a z vašeho účtu nebyly strženy žádné prostředky. Vybrané služby jsou stále k dispozici.",
-        "reasons_title": "Časté důvody zrušení:",
-        "reason_changed_mind": "Změnili jste názor na službu",
-        "reason_wrong_details": "Potřebujete aktualizovat údaje rezervace",
-        "reason_payment_issue": "Vyskytl se problém s platbou",
+        "title": "Platba neproběhla",
+        "description": "Nic jsme vám nestrhli. Objednávku máme uloženou — stačí platbu dokončit.",
         "try_again": "Zkusit znovu",
         "view_orders": "Zobrazit objednávky",
-        "contact_support": "Potřebujete pomoc? Kontaktujte náš tým podpory",
-        "back_home": "Zpět na úvodní stránku"
+        "chip": "Nezaplaceno",
+        "fact_card": "Zkusit jinou kartu",
+        "fact_card_note": "Karty se občas zamítnou kvůli limitu nebo vypršelému 3-D Secure. Druhý pokus obvykle projde.",
+        "fact_slot": "Termín zatím držíme",
+        "fact_slot_note": "Objednávka existuje a čeká na zaplacení — nic nemusíte vyplňovat znovu.",
+        "fact_help": "Nedaří se to?",
+        "fact_help_note": "Napište na info@cleansia.cz a platbu s vámi vyřešíme."
       }
     },
     "disputes": {
@@ -1611,12 +1609,10 @@
   },
   "components": {
     "not_found": {
-      "title": "Stránka nenalezena",
-      "description": "Stránka, kterou hledáte, neexistuje nebo byla přesunuta.",
-      "suggestion_home": "Vraťte se na domovskou stránku",
-      "suggestion_url": "Zkontrolujte správnost URL adresy",
-      "suggestion_contact": "Kontaktujte nás, pokud problém přetrvává",
-      "go_home": "Na domovskou stránku"
+      "title": "Tuhle stránku nemáme",
+      "description": "Odkaz je nejspíš starý, nebo v adrese chybí písmenko. Zkuste to od začátku.",
+      "go_home": "Na úvodní stránku",
+      "error_code": "Chyba {{code}}"
     },
     "availability": {
       "add_time_slot": "Přidat časový slot",

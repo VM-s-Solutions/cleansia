@@ -1123,42 +1123,40 @@
     "checkout": {
       "success": {
         "card": {
-          "title": "Payment Successful!",
-          "subtitle": "Thank you for your order",
+          "title": "Payment received",
           "description": "Your payment has been processed and your cleaning is confirmed. You'll receive a confirmation email with all the details shortly.",
-          "lead_dated": "Paid, and your clean is confirmed for {{when}}."
+          "lead_dated": "Order {{number}} is confirmed for {{when}} — {{amount}} paid. The confirmation is on its way to your inbox.",
+          "chip": "Paid"
         },
         "cash": {
-          "title": "Order Confirmed!",
-          "subtitle": "Thank you for your booking",
+          "title": "Booking confirmed",
           "description": "Your cleaning has been booked and will be paid in cash on the day of service. You'll receive a confirmation email with all the details shortly.",
           "step_payment": "Pay the cleaner in cash when the service is complete",
-          "lead_dated": "Your clean is confirmed for {{when}}. You pay on the day."
+          "lead_dated": "Order {{number}} is confirmed for {{when}}. You'll pay {{amount}} in cash on the day.",
+          "chip": "Cash payment",
+          "fact_payment": "Pay on the day"
         },
-        "what_next": "What happens next?",
         "step_confirmation": "You'll receive a confirmation email within a few minutes",
         "step_reminder": "We'll send you a reminder before your cleaning date",
         "step_cleaner": "Our professional cleaner will arrive at your scheduled time",
         "view_orders": "View My Orders",
         "book_another": "Book Another Cleaning",
-        "back_home": "Back to Home",
-        "step_1": "Step 1",
-        "step_2": "Step 2",
-        "step_3": "Step 3",
-        "line_count": "{{count}} items"
+        "fact_email": "Confirmation by e-mail",
+        "fact_cleaner": "We'll assign a cleaner",
+        "fact_reminder": "A reminder the day before"
       },
       "cancel": {
-        "title": "Payment Cancelled",
-        "subtitle": "No worries — nothing has been charged",
-        "description": "Your payment was not completed and no charges have been made to your account. Your selected services are still available.",
-        "reasons_title": "Common reasons for cancellation:",
-        "reason_changed_mind": "Changed your mind about the service",
-        "reason_wrong_details": "Need to update booking details",
-        "reason_payment_issue": "Experienced a payment issue",
+        "title": "Payment didn't go through",
+        "description": "Nothing has been charged. We've kept your booking — all that's left is the payment.",
         "try_again": "Try Again",
         "view_orders": "View My Orders",
-        "contact_support": "Need help? Contact our support team",
-        "back_home": "Back to Home"
+        "chip": "Not paid",
+        "fact_card": "Try another card",
+        "fact_card_note": "Cards are sometimes declined over a limit or a 3-D Secure timeout. A second attempt usually goes through.",
+        "fact_slot": "We're holding your slot",
+        "fact_slot_note": "The booking exists and is waiting to be paid — you don't have to fill anything in again.",
+        "fact_help": "Not working?",
+        "fact_help_note": "Write to info@cleansia.cz and we'll sort the payment out with you."
       }
     },
     "disputes": {
@@ -1611,12 +1609,10 @@
   },
   "components": {
     "not_found": {
-      "title": "Page Not Found",
-      "description": "The page you are looking for does not exist or has been moved.",
-      "suggestion_home": "Return to the home page",
-      "suggestion_url": "Check the URL for typos",
-      "suggestion_contact": "Contact us if the problem persists",
-      "go_home": "Go to Home"
+      "title": "We don't have this page",
+      "description": "The link is probably old, or the address is missing a letter. Try again from the start.",
+      "go_home": "Go to the home page",
+      "error_code": "Error {{code}}"
     },
     "availability": {
       "add_time_slot": "Add Time Slot",

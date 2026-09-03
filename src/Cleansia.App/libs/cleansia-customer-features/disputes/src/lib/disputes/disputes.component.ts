@@ -231,17 +231,17 @@ export class DisputesComponent implements OnInit {
     }
 
     const { orderId, reason, description } = this.createForm.getRawValue();
-    // The photo goes with the dispute it is about, so it can only be sent once
-    // the dispute exists and has an id. Reading it BEFORE cancelNew clears the
+    // The photos go with the dispute they are about, so they can only be sent
+    // once it exists and has an id. Reading them BEFORE cancelNew clears the
     // form is the whole point — the reset empties the control.
-    const evidence = this.evidenceControl.value[0];
+    const evidence = [...this.evidenceControl.value];
 
     this.facade.createDispute(orderId, reason, description, (disputeId) => {
       this.cancelNew();
       // A brand-new dispute is the one to be looking at.
       this.selectedId.set(null);
       this.loadDisputes();
-      if (!evidence) return;
+      if (evidence.length === 0) return;
       if (disputeId) {
         this.facade.uploadEvidence(disputeId, evidence);
       } else {
@@ -265,10 +265,10 @@ export class DisputesComponent implements OnInit {
 
   uploadEvidence(): void {
     const detail = this.disputeDetail();
-    const file = this.evidenceControl.value[0];
-    if (!detail?.id || !file) return;
+    const files = this.evidenceControl.value;
+    if (!detail?.id || files.length === 0) return;
 
-    this.facade.uploadEvidence(detail.id, file, () => {
+    this.facade.uploadEvidence(detail.id, [...files], () => {
       this.evidenceControl.setValue([]);
       this.attaching.set(false);
     });

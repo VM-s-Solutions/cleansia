@@ -144,10 +144,38 @@ describe('DisputesFacade', () => {
   });
 
   describe('evidence upload (D-04)', () => {
+    // Owner, 2026-09-03: "I'm able to attach only 1 photo of evidence. It's an
+    // issue, there can be multiple." The endpoint takes ONE file per call, so
+    // the batch goes one after another — and the single-flight latch that
+    // guards it would have dropped everything after the first if they raced.
+    it('uploads every file in the batch, not just the first', () => {
+      disputeClient.uploadEvidence.mockReturnValue(of({ id: 'ev' }));
+
+      facade.uploadEvidence('dispute-1', [
+        validFile({ name: 'a.png' }),
+        validFile({ name: 'b.png' }),
+        validFile({ name: 'c.png' }),
+      ]);
+
+      expect(disputeClient.uploadEvidence).toHaveBeenCalledTimes(3);
+      expect(
+        disputeClient.uploadEvidence.mock.calls.map(
+          (call: [string, { fileName: string }]) => call[1].fileName
+        )
+      ).toEqual(['a.png', 'b.png', 'c.png']);
+    });
+
+    it('does nothing at all when the batch is empty', () => {
+      facade.uploadEvidence('dispute-1', []);
+
+      expect(disputeClient.uploadEvidence).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+    });
+
     it('rejects an out-of-whitelist file before any client call', () => {
       facade.uploadEvidence(
         'dispute-1',
-        validFile({ type: 'application/zip' })
+        [validFile({ type: 'application/zip' })]
       );
 
       expect(disputeClient.uploadEvidence).not.toHaveBeenCalled();
@@ -159,7 +187,7 @@ describe('DisputesFacade', () => {
     it('rejects an oversize file before any client call', () => {
       facade.uploadEvidence(
         'dispute-1',
-        validFile({ size: 11 * 1024 * 1024 })
+        [validFile({ size: 11 * 1024 * 1024 })]
       );
 
       expect(disputeClient.uploadEvidence).not.toHaveBeenCalled();
@@ -175,7 +203,7 @@ describe('DisputesFacade', () => {
       const onSuccess = jest.fn();
       const file = validFile();
 
-      facade.uploadEvidence('dispute-1', file, onSuccess);
+      facade.uploadEvidence('dispute-1', [file], onSuccess);
 
       expect(disputeClient.uploadEvidence).toHaveBeenCalledWith('dispute-1', {
         data: file,
@@ -196,7 +224,7 @@ describe('DisputesFacade', () => {
         throwError(() => ({ result: { detail: 'file.invalid_file_type' } }))
       );
 
-      facade.uploadEvidence('dispute-1', validFile());
+      facade.uploadEvidence('dispute-1', [validFile()]);
 
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'api.file.invalid_file_type'
@@ -209,7 +237,7 @@ describe('DisputesFacade', () => {
         throwError(() => ({ result: { title: 'file.invalid_file_type' } }))
       );
 
-      facade.uploadEvidence('dispute-1', validFile());
+      facade.uploadEvidence('dispute-1', [validFile()]);
 
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'api.file.invalid_file_type'
@@ -223,7 +251,7 @@ describe('DisputesFacade', () => {
         }))
       );
 
-      facade.uploadEvidence('dispute-1', validFile());
+      facade.uploadEvidence('dispute-1', [validFile()]);
 
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'api.file.size_exceeded'
@@ -235,7 +263,7 @@ describe('DisputesFacade', () => {
         throwError(() => ({ result: { detail: 'something.else' } }))
       );
 
-      facade.uploadEvidence('dispute-1', validFile());
+      facade.uploadEvidence('dispute-1', [validFile()]);
 
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'pages.disputes.evidence.upload_error'

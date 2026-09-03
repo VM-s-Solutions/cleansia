@@ -1072,6 +1072,15 @@ export class OrderWizardComponent implements OnInit {
     }
   }
 
+  /**
+   * Which address this actually is. A customer names a saved address once —
+   * "Home", "Work" — and then has to remember what they meant; the street is
+   * the only thing that tells two of them apart.
+   */
+  addressLineOf(address: SavedAddressDto): string {
+    return [address.street, address.city].filter(Boolean).join(', ');
+  }
+
   isAddressSelected(addr: SavedAddressDto): boolean {
     return this.facade.selectedSavedAddressId() === addr.id;
   }

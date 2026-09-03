@@ -775,8 +775,43 @@
   margin-top: 18px;
 }
 
+// A saved address is a NAME over a street, so the chip is two lines and stops
+// being a one-line pill. Owner, 2026-09-03: "Home"/"Work" alone left it unclear
+// which address was which.
 .cl-wiz__saved-chip {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  min-height: calc(3.25 * var(--cl-u));
+  padding: calc(0.5 * var(--cl-u)) calc(1.125 * var(--cl-u));
+  border-radius: calc(1.25 * var(--cl-u));
+  text-align: left;
   cursor: pointer;
+}
+
+.cl-wiz__saved-name {
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+// Quieter than the name, and clipped rather than wrapped: it is here to tell
+// two addresses apart, not to be read as a line of prose.
+.cl-wiz__saved-where {
+  max-width: 22em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: calc(0.8125 * var(--cl-u));
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--cl-muted);
+}
+
+// On the chosen one the street has to stay legible against the filled ground.
+.cl-chip--on .cl-wiz__saved-where {
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .cl-wiz__addr-resolved {
@@ -1124,7 +1159,15 @@
   color: var(--cl-body);
   cursor: pointer;
 
-  &:hover:not([disabled]) {
+  // Not the chosen day. Owner, 2026-09-03: "when hover on calendar then the
+  // text becomes white and I'm not able to read it."
+  //
+  // This rule is `.cl-wiz__cal-day:hover:not([disabled])` — (0,3,1) — and the
+  // chosen day is `.cl-wiz__cal-day--on` at (0,1,0). So hovering the day you had
+  // already picked replaced its dark ground with the pale tint and left the
+  // white text `--on` sets, which is white on near-white. The pointer was
+  // hiding the very thing it was over.
+  &:hover:not([disabled]):not(.cl-wiz__cal-day--on) {
     background: var(--cl-tint);
   }
 
@@ -1144,6 +1187,11 @@
     background: $primary-dark;
     color: $white;
     font-weight: 800;
+
+    // Hovering the chosen day says "still chosen", not "about to change".
+    &:hover:not([disabled]) {
+      background: $primary-darker;
+    }
   }
 
   &--blank {

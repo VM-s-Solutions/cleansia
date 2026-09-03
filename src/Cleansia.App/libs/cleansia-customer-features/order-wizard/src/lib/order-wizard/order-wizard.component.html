@@ -179,14 +179,25 @@
         @if (facade.isAuthenticated() && facade.savedAddresses().length > 0) {
         <div class="cl-wiz__saved">
           @for (addr of facade.savedAddresses(); track addr.id) {
+          <!--
+            The street under the name. Owner, 2026-09-03: "write down an exact
+            address as a label under the Home/Work address type, so a user
+            understands which address is home, which is work" — a customer
+            names these once and then has to remember what they meant.
+          -->
           <button
             type="button"
             class="cl-chip cl-wiz__saved-chip"
             [class.cl-chip--on]="isAddressSelected(addr)"
             [attr.aria-pressed]="isAddressSelected(addr)"
-            [attr.aria-label]="'aria.use_address' | translate: { label: addr.label }"
+            [attr.aria-label]="
+              'aria.use_address' | translate: { label: addr.label + ', ' + addressLineOf(addr) }
+            "
             (click)="addr.id && facade.selectSavedAddress(addr.id)"
-          >{{ addr.label }}</button>
+          >
+            <span class="cl-wiz__saved-name">{{ addr.label }}</span>
+            <span class="cl-wiz__saved-where">{{ addressLineOf(addr) }}</span>
+          </button>
           }
           <button
             type="button"
@@ -285,6 +296,41 @@
             <button type="button" class="cl-link cl-wiz__manual-toggle" (click)="enterAddressManually()">
               {{ 'pages.order.address_enter_manually' | translate }}
             </button>
+            }
+
+            <!--
+              Keeping the address belongs WITH the address. Owner, 2026-09-03:
+              this sat at the foot of the step, under the phone number and two
+              rules away from the thing it was offering to save.
+            -->
+            @if (facade.isAuthenticated()) {
+            <div class="cl-wiz__save">
+              <p-checkbox
+                [ngModel]="saveNewAddress()"
+                (ngModelChange)="toggleSaveNewAddress($event)"
+                [binary]="true"
+                inputId="saveAddress"
+              />
+              <label for="saveAddress">{{ 'pages.order.save_address' | translate }}</label>
+            </div>
+            @if (saveNewAddress()) {
+            <label class="cl-wiz__field cl-wiz__save-label">
+              <span class="cl-lbl">{{ 'pages.order.address_label' | translate }}</span>
+              <input
+                pInputText
+                id="wizard-address-label"
+                [ngModel]="newAddressLabel()"
+                (ngModelChange)="newAddressLabel.set($event); labelError.set(null)"
+                [placeholder]="'pages.order.address_label_placeholder' | translate"
+                [class.ng-invalid]="!!labelError()"
+                [attr.aria-invalid]="labelError() ? 'true' : null"
+                [attr.aria-describedby]="labelError() ? 'wizard-address-label-error' : null"
+              />
+              @if (labelError()) {
+              <small id="wizard-address-label-error" class="cl-wiz__field-error">{{ labelError() }}</small>
+              }
+            </label>
+            }
             }
           </div>
 
@@ -463,35 +509,6 @@
           </label>
         </div>
 
-        @if (facade.isAuthenticated() && (isCustomAddress() || facade.savedAddresses().length === 0)) {
-        <div class="cl-wiz__save">
-          <p-checkbox
-            [ngModel]="saveNewAddress()"
-            (ngModelChange)="toggleSaveNewAddress($event)"
-            [binary]="true"
-            inputId="saveAddress"
-          />
-          <label for="saveAddress">{{ 'pages.order.save_address' | translate }}</label>
-        </div>
-        @if (saveNewAddress()) {
-        <label class="cl-wiz__field cl-wiz__save-label">
-          <span class="cl-lbl">{{ 'pages.order.address_label' | translate }}</span>
-          <input
-            pInputText
-            id="wizard-address-label"
-            [ngModel]="newAddressLabel()"
-            (ngModelChange)="newAddressLabel.set($event); labelError.set(null)"
-            [placeholder]="'pages.order.address_label_placeholder' | translate"
-            [class.ng-invalid]="!!labelError()"
-            [attr.aria-invalid]="labelError() ? 'true' : null"
-            [attr.aria-describedby]="labelError() ? 'wizard-address-label-error' : null"
-          />
-          @if (labelError()) {
-          <small id="wizard-address-label-error" class="cl-wiz__field-error">{{ labelError() }}</small>
-          }
-        </label>
-        }
-        }
       </div>
       }
 

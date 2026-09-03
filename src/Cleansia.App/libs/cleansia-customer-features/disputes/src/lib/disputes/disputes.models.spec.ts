@@ -1,4 +1,5 @@
 import {
+  CreateDisputeResponse,
   DisputeListItem,
   DisputeMessageDto,
   DisputeReason,
@@ -116,29 +117,23 @@ describe('disputes.models', () => {
 
   // Owner, 2026-09-03: a photo attached while filing a dispute never arrived.
   // `Dispute/Create` answered with an EMPTY 200 body, so there was no id to
-  // upload the evidence against and the file was dropped in silence. These pin
-  // both wire shapes, because the generated client keeps the old signature
-  // until it is regenerated.
+  // upload the evidence against and the file was dropped in silence. The
+  // endpoint returns `{ disputeId }` now and the client has been regenerated.
   describe('readCreatedDisputeId', () => {
-    it('reads the id off the object body the endpoint returns now', () => {
-      expect(readCreatedDisputeId({ disputeId: 'dispute-1' })).toBe('dispute-1');
-    });
-
-    it('still reads a bare string, which is what the client is typed for', () => {
-      expect(readCreatedDisputeId('dispute-1')).toBe('dispute-1');
+    it('reads the id off the body', () => {
+      expect(
+        readCreatedDisputeId(CreateDisputeResponse.fromJS({ disputeId: 'dispute-1' })),
+      ).toBe('dispute-1');
     });
 
     it('answers null for the EMPTY body that hid this bug', () => {
-      // Every shape an empty 200 can arrive as through the generated client.
       expect(readCreatedDisputeId(null)).toBeNull();
       expect(readCreatedDisputeId(undefined)).toBeNull();
-      expect(readCreatedDisputeId('')).toBeNull();
     });
 
-    it('answers null rather than an empty id, which would upload against nothing', () => {
-      expect(readCreatedDisputeId({ disputeId: '' })).toBeNull();
-      expect(readCreatedDisputeId({ disputeId: 42 })).toBeNull();
-      expect(readCreatedDisputeId({})).toBeNull();
+    it('answers null for an empty id, which would upload a photo against nothing', () => {
+      expect(readCreatedDisputeId(CreateDisputeResponse.fromJS({ disputeId: '' }))).toBeNull();
+      expect(readCreatedDisputeId(CreateDisputeResponse.fromJS({}))).toBeNull();
     });
   });
 

@@ -1,4 +1,8 @@
-import { DisputeMessageDto, DisputeReason } from '@cleansia/customer-services';
+import {
+  CreateDisputeResponse,
+  DisputeMessageDto,
+  DisputeReason,
+} from '@cleansia/customer-services';
 import { TagSeverity } from '@cleansia/types';
 
 // Mirrors the backend DisputeStatus enum — the generated customer client does
@@ -140,27 +144,21 @@ export const DISPUTE_UPLOAD_FALLBACK_ERROR_KEY =
   'pages.disputes.evidence.upload_error';
 
 /**
- * The id of a dispute that was just created, read off whatever `Dispute/Create`
- * actually answered with.
+ * The id of a dispute that was just created, or null when the server did not
+ * send one.
  *
- * The endpoint used to return an EMPTY 200 body — `HandleResult<string>` never
- * matched a `BusinessResult<CreateDispute.Response>` and fell through to
+ * `Dispute/Create` used to answer with an EMPTY 200 body — `HandleResult<string>`
+ * never matched a `BusinessResult<CreateDispute.Response>` and fell through to
  * `Ok()` — so a caller had no id to attach the customer's photo to and the file
- * was dropped in silence. The controller returns `{ disputeId }` now.
+ * was dropped in silence. It returns `{ disputeId }` now.
  *
- * This reads the body rather than trusting the generated signature because the
- * client still types the call as `Observable<string>` from the old shape, and
- * will keep doing so until it is regenerated. It costs one guard and it is
- * correct against both bodies, so nothing here has to change again on the day
- * the regen lands.
+ * The check that remains is not paranoia about the shape: `disputeId` is typed
+ * `string | undefined`, and uploading a photo against an empty id would put it
+ * nowhere just as quietly as before.
  */
-export function readCreatedDisputeId(response: unknown): string | null {
-  if (typeof response === 'string') {
-    return response.length > 0 ? response : null;
-  }
-  if (response !== null && typeof response === 'object' && 'disputeId' in response) {
-    const id = (response as { disputeId?: unknown }).disputeId;
-    return typeof id === 'string' && id.length > 0 ? id : null;
-  }
-  return null;
+export function readCreatedDisputeId(
+  response: CreateDisputeResponse | null | undefined,
+): string | null {
+  const id = response?.disputeId;
+  return typeof id === 'string' && id.length > 0 ? id : null;
 }

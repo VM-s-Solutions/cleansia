@@ -1413,7 +1413,7 @@ export interface IDisputeClient {
      * @param body (optional) 
      * @return OK
      */
-    create(body?: CreateDisputeCommand | undefined): Observable<string>;
+    create(body?: CreateDisputeCommand | undefined): Observable<CreateDisputeResponse>;
     /**
      * @return OK
      */
@@ -1467,7 +1467,7 @@ export class DisputeClient implements IDisputeClient {
      * @param body (optional) 
      * @return OK
      */
-    create(body?: CreateDisputeCommand | undefined): Observable<string> {
+    create(body?: CreateDisputeCommand | undefined): Observable<CreateDisputeResponse> {
         let url = this.baseUrl + "/api/Dispute/Create";
         url = url.replace(/[?&]$/, "");
 
@@ -1490,14 +1490,14 @@ export class DisputeClient implements IDisputeClient {
                 try {
                     return this.processCreate(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<string>;
+                    return ObservableThrow(e) as any as Observable<CreateDisputeResponse>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<string>;
+                return ObservableThrow(response) as any as Observable<CreateDisputeResponse>;
         }));
     }
 
-    protected processCreate(response: HttpResponseBase): Observable<string> {
+    protected processCreate(response: HttpResponseBase): Observable<CreateDisputeResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -1508,8 +1508,7 @@ export class DisputeClient implements IDisputeClient {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-                result200 = resultData200 !== undefined ? resultData200 : null as any;
-    
+            result200 = CreateDisputeResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -7793,6 +7792,42 @@ export interface ICreateDisputeCommand {
     orderId: string | undefined;
     reason: DisputeReason;
     description: string | undefined;
+}
+
+export class CreateDisputeResponse implements ICreateDisputeResponse {
+    disputeId!: string | undefined;
+
+    constructor(data?: ICreateDisputeResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.disputeId = Data["disputeId"];
+        }
+    }
+
+    static fromJS(data: any): CreateDisputeResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateDisputeResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["disputeId"] = this.disputeId;
+        return data;
+    }
+}
+
+export interface ICreateDisputeResponse {
+    disputeId: string | undefined;
 }
 
 export class CreateMembershipCheckoutSessionCommand implements ICreateMembershipCheckoutSessionCommand {

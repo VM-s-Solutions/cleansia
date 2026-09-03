@@ -223,10 +223,10 @@ export class DisputesFacade extends UnsubscribeControlDirective {
         // and so did the failure path, so a successful create was
         // indistinguishable from a failed one: the loader stopped and nothing
         // else happened — no snackbar, no return to the list. Owner, 2026-09-03.
-        map((response: unknown) => ({ created: true, response })),
+        map((response) => ({ created: true, response })),
         catchError((error: unknown) => {
           this.snackbar.showApiError(error, 'pages.disputes.create_error');
-          return of({ created: false, response: null as unknown });
+          return of({ created: false, response: null });
         }),
         finalize(() => this.creatingDispute.set(false))
       )

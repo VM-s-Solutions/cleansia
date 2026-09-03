@@ -162,6 +162,7 @@ export {
   DisputeMessageDto,
   DisputeReason,
   CreateDisputeCommand,
+  CreateDisputeResponse,
   AddDisputeMessageCommand,
   UploadDisputeEvidenceResponse,
   PackageListItem,

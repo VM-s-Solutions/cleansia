@@ -98,6 +98,13 @@
   // The wash the account boards put behind their cards — paler than --cl-band,
   // which is the marketing surface's tinted band. A profile is a workspace, and
   // the boards keep it almost white so the cards on it read as the content.
+  // How much of the navbar a page must lay out around, RIGHT NOW. The bar is
+  // fixed and hides on scroll-down, so its height and its presence are two
+  // different facts: --cl-nav-h is how tall it is, this is how much of the
+  // screen it is currently taking. CustomerNavbarComponent puts .cl-nav-hidden
+  // on <html> when it slides away.
+  --cl-nav-offset: var(--cl-nav-h);
+
   --cl-page: #f8fbfe;
 
   --cl-ok: #15803d;
@@ -797,6 +804,12 @@ cleansia-calendar .p-datepicker {
   .p-datepicker-input {
     width: 100%;
   }
+}
+
+// The bar has slid off the top, so nothing needs reserving for it. Pages that
+// use --cl-nav-offset transition on it and follow the bar out.
+:root.cl-nav-hidden {
+  --cl-nav-offset: 0px;
 }
 
 // ---- The fact line that closes a card --------------------------------------

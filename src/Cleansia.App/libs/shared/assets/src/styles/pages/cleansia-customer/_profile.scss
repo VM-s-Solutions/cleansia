@@ -109,12 +109,24 @@
 // where the rail stops fitting, and the guess was wrong on the owner's screen.
 .customer-profile__sidebar {
   position: sticky;
-  top: var(--cl-nav-h);
-  min-height: calc(100vh - var(--cl-nav-h));
+  // --cl-nav-offset, not --cl-nav-h: the bar hides on scroll-down, and the rail
+  // is centred in the space that is ACTUALLY free. With the bar up it sits
+  // between the bar and the bottom of the screen; once the bar slides away it
+  // recentres on the whole screen, on the same 0.3s ease the bar itself uses,
+  // so the two move together rather than the rail jumping after it.
+  top: var(--cl-nav-offset);
+  min-height: calc(100vh - var(--cl-nav-offset));
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+  transition: top 0.3s ease, min-height 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-profile__sidebar {
+    transition: none;
+  }
 }
 
 .customer-profile__sidebar-sticky {

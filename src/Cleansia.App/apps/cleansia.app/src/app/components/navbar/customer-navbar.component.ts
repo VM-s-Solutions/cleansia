@@ -90,6 +90,21 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   readonly userMenuOpen = signal(false);
   readonly settingsMenuOpen = signal(false);
   readonly navbarHidden = signal(false);
+
+  /**
+   * Mirrors {@link navbarHidden} onto the root element so a PAGE can lay itself
+   * out against the navbar that is actually on screen. The bar hides on
+   * scroll-down, and a page that reserves its height unconditionally leaves a
+   * strip of nothing at the top — the profile rail centred itself in "viewport
+   * minus a navbar" that was not there. CSS-only alternatives do not reach:
+   * the bar is a sibling of the router outlet, so no selector gets from one to
+   * the other. -> _home-design.scss --cl-nav-offset
+   */
+  private readonly syncNavbarVisibilityClass = effect(() => {
+    const hidden = this.navbarHidden();
+    if (!this.isBrowser) return;
+    document.documentElement.classList.toggle('cl-nav-hidden', hidden);
+  });
   readonly navigating = signal(false);
   private lastScrollY = 0;
   private readonly scrollThreshold = 10;

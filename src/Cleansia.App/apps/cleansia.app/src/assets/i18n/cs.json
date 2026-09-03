@@ -1148,16 +1148,18 @@
       },
       "cancel": {
         "title": "Platba neproběhla",
-        "description": "Nic jsme vám nestrhli. Objednávku máme uloženou — stačí platbu dokončit.",
-        "try_again": "Zkusit znovu",
+        "description": "Nic jsme vám nestrhli. Objednávku držíme ještě hodinu — stačí dokončit platbu a je potvrzená.",
+        "try_again": "Objednat znovu",
         "view_orders": "Zobrazit objednávky",
         "chip": "Nezaplaceno",
         "fact_card": "Zkusit jinou kartu",
         "fact_card_note": "Karty se občas zamítnou kvůli limitu nebo vypršelému 3-D Secure. Druhý pokus obvykle projde.",
-        "fact_slot": "Termín zatím držíme",
-        "fact_slot_note": "Objednávka existuje a čeká na zaplacení — nic nemusíte vyplňovat znovu.",
+        "fact_slot": "Termín držíme hodinu",
+        "fact_slot_note": "Potom ho uvolníme a museli byste objednat znovu. Tak i tak vám nic nestrhneme.",
         "fact_help": "Nedaří se to?",
-        "fact_help_note": "Napište na info@cleansia.cz a platbu s vámi vyřešíme."
+        "fact_help_note": "Napište na info@cleansia.cz a platbu s vámi vyřešíme.",
+        "pay_now": "Zaplatit teď",
+        "resume_failed": "Platbu se nepodařilo znovu otevřít. Objednávka už možná byla uvolněna — zkuste ji prosím zadat znovu."
       }
     },
     "disputes": {

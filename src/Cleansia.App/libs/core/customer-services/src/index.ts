@@ -43,6 +43,8 @@ export {
   CustomerAddress,
   QuoteOrderCommand,
   QuoteOrderQuoteLine,
+  ResumeOrderCheckoutCommand,
+  ResumeOrderCheckoutResponse,
   QuotePlusSavingsQuery,
   QuotePlusSavingsResponse,
   SearchAddressesAddressSuggestion,

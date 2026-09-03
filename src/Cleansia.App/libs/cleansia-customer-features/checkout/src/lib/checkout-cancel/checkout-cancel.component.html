@@ -57,13 +57,36 @@
       </div>
     </div>
 
+    <!--
+      "Pay now" replays the checkout the customer abandoned rather than sending
+      them back through the booking wizard from a blank slate. Only offered to a
+      signed-in customer whose order Stripe named in the return URL — the
+      endpoint is [Authorize], so a guest gets the wizard instead.
+    -->
     <div class="cl-out__actions">
-      <a class="cl-out__cta" [routerLink]="'/' + routes.ORDER">
-        {{ 'pages.checkout.cancel.try_again' | translate }}
-      </a>
-      <a class="cl-out__alt" [routerLink]="ordersRoute">
-        {{ 'pages.checkout.cancel.view_orders' | translate }}
-      </a>
+      @if (canResume()) {
+        <button
+          type="button"
+          class="cl-out__cta"
+          [disabled]="resuming()"
+          (click)="resumeCheckout()"
+        >
+          @if (resuming()) {
+            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+          }
+          {{ 'pages.checkout.cancel.pay_now' | translate }}
+        </button>
+        <a class="cl-out__alt" [routerLink]="'/' + routes.ORDER">
+          {{ 'pages.checkout.cancel.try_again' | translate }}
+        </a>
+      } @else {
+        <a class="cl-out__cta" [routerLink]="'/' + routes.ORDER">
+          {{ 'pages.checkout.cancel.try_again' | translate }}
+        </a>
+        <a class="cl-out__alt" [routerLink]="ordersRoute">
+          {{ 'pages.checkout.cancel.view_orders' | translate }}
+        </a>
+      }
     </div>
   </div>
 </div>

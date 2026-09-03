@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Orders;
+﻿using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Web.Customer.Abstractions;
 using MediatR;
@@ -38,6 +38,29 @@ public class PaymentController(IMediator mediator) : CustomerApiController(media
     {
         var result = await Mediator.Send(command);
         return HandleResult<CreatePaymentIntent.Response>(result);
+    }
+
+    /// <summary>
+    /// Hands back the Checkout Session for an order the customer walked away from, so the cancel
+    /// page can offer to finish the payment instead of the booking wizard from a blank slate.
+    ///
+    /// Stripe replays an idempotent request for 24h and session creation is keyed on the order, so
+    /// this returns the SAME session rather than minting a second capturable surface.
+    ///
+    /// Authenticated, like every other mutation of an existing order: the web card checkout itself
+    /// is anonymous, so a guest cannot reach this, and the alternative — a write authorised by
+    /// possession of an order id — is a shape nothing in this API has today.
+    /// </summary>
+    [Authorize]
+    [EnableRateLimiting("auth")]
+    [HttpPost("ResumeCheckout")]
+    [ProducesResponseType(typeof(ResumeOrderCheckout.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResumeCheckout([FromBody] ResumeOrderCheckout.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<ResumeOrderCheckout.Response>(result);
     }
 
     // SEC-W3 — per-source-IP webhook window (independent of "auth"/"interactive").

@@ -5000,6 +5000,11 @@ export interface IPaymentClient {
      */
     createPaymentIntent(body?: CreatePaymentIntentCommand | undefined): Observable<CreatePaymentIntentResponse>;
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    resumeCheckout(body?: ResumeOrderCheckoutCommand | undefined): Observable<ResumeOrderCheckoutResponse>;
+    /**
      * @return OK
      */
     webhook(): Observable<void>;
@@ -5127,6 +5132,76 @@ export class PaymentClient implements IPaymentClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = CreatePaymentIntentResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    resumeCheckout(body?: ResumeOrderCheckoutCommand | undefined): Observable<ResumeOrderCheckoutResponse> {
+        let url = this.baseUrl + "/api/Payment/ResumeCheckout";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processResumeCheckout(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processResumeCheckout(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ResumeOrderCheckoutResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ResumeOrderCheckoutResponse>;
+        }));
+    }
+
+    protected processResumeCheckout(response: HttpResponseBase): Observable<ResumeOrderCheckoutResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ResumeOrderCheckoutResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -13693,6 +13768,78 @@ export class ResendConfirmationEmailCommand implements IResendConfirmationEmailC
 export interface IResendConfirmationEmailCommand {
     email: string | undefined;
     language: string | undefined;
+}
+
+export class ResumeOrderCheckoutCommand implements IResumeOrderCheckoutCommand {
+    orderId!: string | undefined;
+
+    constructor(data?: IResumeOrderCheckoutCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+        }
+    }
+
+    static fromJS(data: any): ResumeOrderCheckoutCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResumeOrderCheckoutCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        return data;
+    }
+}
+
+export interface IResumeOrderCheckoutCommand {
+    orderId: string | undefined;
+}
+
+export class ResumeOrderCheckoutResponse implements IResumeOrderCheckoutResponse {
+    checkoutUrl!: string | undefined;
+
+    constructor(data?: IResumeOrderCheckoutResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.checkoutUrl = Data["checkoutUrl"];
+        }
+    }
+
+    static fromJS(data: any): ResumeOrderCheckoutResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResumeOrderCheckoutResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["checkoutUrl"] = this.checkoutUrl;
+        return data;
+    }
+}
+
+export interface IResumeOrderCheckoutResponse {
+    checkoutUrl: string | undefined;
 }
 
 export enum ReviewTag {

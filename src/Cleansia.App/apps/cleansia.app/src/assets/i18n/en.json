@@ -1148,16 +1148,18 @@
       },
       "cancel": {
         "title": "Payment didn't go through",
-        "description": "Nothing has been charged. We've kept your booking — all that's left is the payment.",
-        "try_again": "Try Again",
+        "description": "Nothing has been charged. We're holding your booking for the next hour — finish the payment and it's confirmed.",
+        "try_again": "Start a new booking",
         "view_orders": "View My Orders",
         "chip": "Not paid",
         "fact_card": "Try another card",
         "fact_card_note": "Cards are sometimes declined over a limit or a 3-D Secure timeout. A second attempt usually goes through.",
-        "fact_slot": "We're holding your slot",
-        "fact_slot_note": "The booking exists and is waiting to be paid — you don't have to fill anything in again.",
+        "fact_slot": "We're holding your slot for an hour",
+        "fact_slot_note": "After that we release it and you'd have to book again. Either way, nothing is charged.",
         "fact_help": "Not working?",
-        "fact_help_note": "Write to info@cleansia.cz and we'll sort the payment out with you."
+        "fact_help_note": "Write to info@cleansia.cz and we'll sort the payment out with you.",
+        "pay_now": "Pay now",
+        "resume_failed": "We couldn't reopen this payment. The booking may have already been released — please book again."
       }
     },
     "disputes": {

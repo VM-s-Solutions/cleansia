@@ -96,31 +96,32 @@ export class OrdersComponent implements OnInit {
   // page used to draw: the board lists one flat run of orders and lets the
   // customer narrow it, which is the same information without a heading that is
   // wrong the moment a booking crosses midnight.
+  //
+  // Filtering happens on the SERVER. GetCustomerOrders already takes an
+  // OrderFilter and applies it through OrderSpecification before BOTH the count
+  // and the page, the client exposes it, and the effect already threads it — so
+  // narrowing here costs one dispatch. Filtering the loaded page instead would
+  // search ten rows out of however many exist and leave the paginator reporting
+  // the unfiltered total, which is wrong at any volume.
   readonly filters = ['all', 'upcoming', 'done', 'cancelled'] as const;
   readonly activeFilter = signal<(typeof this.filters)[number]>('all');
 
-  readonly visibleOrders = computed(() => {
-    const rows = this.orders() ?? [];
-    const now = new Date();
-    switch (this.activeFilter()) {
-      case 'upcoming':
-        return rows.filter(
-          (o) =>
-            new Date(o.cleaningDateTime) >= now &&
-            o.orderStatus?.value !== OrderStatus.Completed &&
-            o.orderStatus?.value !== OrderStatus.Cancelled,
-        );
-      case 'done':
-        return rows.filter((o) => o.orderStatus?.value === OrderStatus.Completed);
-      case 'cancelled':
-        return rows.filter((o) => o.orderStatus?.value === OrderStatus.Cancelled);
-      default:
-        return rows;
-    }
-  });
+  /** The statuses a booking can be in while it is still ahead of the customer. */
+  private static readonly OPEN_STATUSES = [
+    OrderStatus.New,
+    OrderStatus.Pending,
+    OrderStatus.Confirmed,
+    OrderStatus.OnTheWay,
+    OrderStatus.InProgress,
+  ];
 
   selectFilter(filter: (typeof this.filters)[number]): void {
+    if (this.activeFilter() === filter) return;
     this.activeFilter.set(filter);
+    // A narrowed list starts at its own first page; keeping the offset would
+    // land on page 3 of a set that now has one page.
+    this.first = 0;
+    this.loadOrders();
   }
 
   /**
@@ -191,8 +192,33 @@ export class OrdersComponent implements OnInit {
       loadCustomerOrders({
         offset: this.first,
         limit: this.rows,
+        ...this.filterArgs(),
       })
     );
+  }
+
+  /**
+   * The active chip as query parameters. "Upcoming" is a date AND a status set:
+   * a Confirmed booking whose date has passed is not ahead of anyone, and a
+   * cancelled one is not upcoming however far away it is.
+   */
+  private filterArgs(): {
+    orderStatuses?: OrderStatus[];
+    cleaningDateFrom?: Date;
+  } {
+    switch (this.activeFilter()) {
+      case 'upcoming':
+        return {
+          orderStatuses: OrdersComponent.OPEN_STATUSES,
+          cleaningDateFrom: new Date(),
+        };
+      case 'done':
+        return { orderStatuses: [OrderStatus.Completed] };
+      case 'cancelled':
+        return { orderStatuses: [OrderStatus.Cancelled] };
+      default:
+        return {};
+    }
   }
 
   onPageChange(event: PaginatorState): void {

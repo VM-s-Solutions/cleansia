@@ -163,11 +163,9 @@
   }
 }
 
-// Artboard rhythm. `!important` answers `common/font.scss`, which resets every
-// `ul` with `margin: 0 !important` — this is not a specificity fight I picked,
-// it is the only way to speak over a global `!important`.
+// Artboard rhythm.
 ul.cl-plus__perks {
-  margin: 18px 0 0 !important;
+  margin: 18px 0 0;
 }
 
 @media (max-width: 900px) {

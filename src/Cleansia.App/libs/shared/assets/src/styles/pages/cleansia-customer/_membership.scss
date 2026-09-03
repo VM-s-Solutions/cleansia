@@ -188,12 +188,8 @@
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: calc(1.25 * var(--cl-u));
     max-width: 900px;
-    // `common/font.scss` ships `ul { margin: 0 !important; padding: 0 !important }`
-    // for every app, so a <ul> on this surface cannot be centred by ordinary
-    // cascade — the auto margins lose to the bang. Matching it here rather than
-    // editing a reset that partner and admin also load.
-    margin: 0 auto !important;
-    padding: 0 !important;
+    margin: 0 auto;
+    padding: 0;
     list-style: none;
   }
 

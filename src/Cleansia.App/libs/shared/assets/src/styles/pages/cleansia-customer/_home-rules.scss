@@ -105,11 +105,9 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 12px;
-    // `common/font.scss` ships `ul { margin: 0 !important; padding: 0 !important }`,
-    // so a plain margin here is silently discarded — the gap measured 0px. The
-    // artboard sets 16px; owner asked for more air between the cards and the
-    // three footnote chips under them.
-    margin: 26px 0 0 !important;
+    // The artboard sets 16px; owner asked for more air between the cards and
+    // the three footnote chips under them.
+    margin: 26px 0 0;
     padding: 0;
     list-style: none;
 

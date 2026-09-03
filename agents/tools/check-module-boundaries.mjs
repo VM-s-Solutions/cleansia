@@ -72,11 +72,13 @@ const VIOLATION_CLASSES = [
  *   - `static-import-of-lazy` x3 — CLOSED for the customer app (`app.ts`, the footer and the
  *     navbar). Verified against eslint directly, file by file, not inferred from the count.
  *
- * The two below are what is left, and each is still a decision rather than an import rewrite:
+ *   - `static-import-of-lazy` x1 — CLOSED for the PARTNER app. It needed no app-shell restructure
+ *     after all: the ONE lazy import of `@cleansia/components` in that app was its 404 route, which
+ *     bought nothing (the shell already holds the library) while making Nx read the whole library
+ *     as lazy. Registering the 404 eagerly, as the admin app already did, closed the class.
  *
- *   - `static-import-of-lazy` x1 — the PARTNER app shell statically imports `@cleansia/components`
- *     while its own `app.routes.ts` lazy-loads the same lib, so the "lazy" chunk is pulled in
- *     eagerly. The fix is an app-shell restructure.
+ * The one below is what is left, and it is still a decision rather than an import rewrite:
+ *
  *   - `deep-relative-import` x1 — `invoice-management` reaches into `employee-management`'s source
  *     through `../../../../` for the reject dialog, which that lib's barrel does not export. The
  *     fix is a decision between widening that barrel and moving the dialog to `shared/components`.
@@ -85,7 +87,6 @@ const VIOLATION_CLASSES = [
  * number this gate exists to hold at zero.
  */
 const KNOWN = [
-    { file: "apps/cleansia-partner.app/src/app/app.component.ts", class: "static-import-of-lazy", count: 1 },
     { file: "libs/cleansia-admin-features/invoice-management/src/lib/invoice-detail/invoice-detail.facade.ts", class: "deep-relative-import", count: 1 },
 ];
 

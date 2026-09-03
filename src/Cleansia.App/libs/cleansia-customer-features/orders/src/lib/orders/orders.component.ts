@@ -11,6 +11,7 @@ import {
   selectCustomerOrderLoading,
 } from '@cleansia/customer-stores';
 import { OrderListItem } from '@cleansia/customer-services';
+import { OrderStatus, PaymentStatus } from '@cleansia/models';
 import {
   OrderStatusLabelPipe,
   OrderStatusSeverityPipe,
@@ -65,12 +66,28 @@ export class OrdersComponent implements OnInit {
     return rawOrders.filter((o) => new Date(o.cleaningDateTime) < now);
   });
 
+  /**
+   * Orders that actually COMPLETED. The stat beside it is labelled "completed",
+   * and it was showing `pastOrders` — which is "the date has passed", so a
+   * cancelled booking counted as one. The Past Orders SECTION below still
+   * groups by date, which is the right grouping for a list of what happened.
+   */
+  completedOrders = computed(() =>
+    (this.orders() ?? []).filter((o) => o.orderStatus?.value === OrderStatus.Completed),
+  );
+
+  /**
+   * What the customer has actually PAID. This summed every row on the page,
+   * so a cancelled-and-refunded booking and an upcoming one not yet charged
+   * both counted as money spent. Only a settled payment is spending.
+   */
   totalSpent = computed(() => {
-    const rawOrders = this.orders();
-    if (!rawOrders || rawOrders.length === 0) return this.formatPrice(0);
-    const sum = rawOrders.reduce((acc, o) => acc + (o.totalPrice || 0), 0);
-    const currency = rawOrders[0]?.currency;
-    return this.formatPrice(sum, currency);
+    const paid = (this.orders() ?? []).filter(
+      (o) => o.paymentStatus?.value === PaymentStatus.Paid,
+    );
+    if (paid.length === 0) return this.formatPrice(0);
+    const sum = paid.reduce((acc, o) => acc + (o.totalPrice || 0), 0);
+    return this.formatPrice(sum, paid[0]?.currency);
   });
 
   totalRecords = toSignal(this.store.select(selectCustomerOrdersTotal), {

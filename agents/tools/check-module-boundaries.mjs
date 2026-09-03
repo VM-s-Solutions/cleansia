@@ -60,42 +60,33 @@ const VIOLATION_CLASSES = [
 ];
 
 /**
- * The EXACT state at the commit that introduced this tool, AFTER T-0455 retired the three
- * `*-services <-> *-stores` cycles (47 violations, all `circular-dependency`, gone). Every entry
- * below predates that work and belongs to a different rule class with a different fix:
+ * What the workspace still owes, after two of the three original classes were paid off.
  *
- *   - `buildable-from-non-buildable` x14 — `libs/shared/components` carries a package.json, so Nx
- *     treats it as buildable and refuses its imports of non-buildable shared libs. The fix is a
- *     build-setup decision about that one lib (publishable or not), not an import rewrite.
- *   - `static-import-of-lazy` x4 — each app shell statically imports `@cleansia/components` while
- *     its own `app.routes.ts` lazy-loads the same lib, so the "lazy" chunk is pulled in eagerly.
- *     The fix is an app-shell restructure, per app.
+ * The list opened at 19 entries in three classes. Sixteen have since closed:
+ *
+ *   - `buildable-from-non-buildable` x13 — CLOSED. `libs/shared/components` carried a package.json
+ *     from the generator, which made Nx treat it as buildable and refuse its imports of
+ *     non-buildable shared libs. Nothing ever built or published that lib on its own, so the flag
+ *     was removed rather than the fourteen imports rewritten; every violation in the class went
+ *     with it.
+ *   - `static-import-of-lazy` x3 — CLOSED for the customer app (`app.ts`, the footer and the
+ *     navbar). Verified against eslint directly, file by file, not inferred from the count.
+ *
+ * The two below are what is left, and each is still a decision rather than an import rewrite:
+ *
+ *   - `static-import-of-lazy` x1 — the PARTNER app shell statically imports `@cleansia/components`
+ *     while its own `app.routes.ts` lazy-loads the same lib, so the "lazy" chunk is pulled in
+ *     eagerly. The fix is an app-shell restructure.
  *   - `deep-relative-import` x1 — `invoice-management` reaches into `employee-management`'s source
  *     through `../../../../` for the reject dialog, which that lib's barrel does not export. The
  *     fix is a decision between widening that barrel and moving the dialog to `shared/components`.
  *
- * None is a cross-scope or untagged violation: after the cycles were retired the workspace has
- * ZERO of both, which is the number this gate exists to hold at zero.
+ * Neither is a cross-scope or untagged violation: the workspace holds ZERO of both, which is the
+ * number this gate exists to hold at zero.
  */
 const KNOWN = [
     { file: "apps/cleansia-partner.app/src/app/app.component.ts", class: "static-import-of-lazy", count: 1 },
-    { file: "apps/cleansia.app/src/app/app.ts", class: "static-import-of-lazy", count: 1 },
-    { file: "apps/cleansia.app/src/app/components/footer/customer-footer.component.ts", class: "static-import-of-lazy", count: 1 },
-    { file: "apps/cleansia.app/src/app/components/navbar/customer-navbar.component.ts", class: "static-import-of-lazy", count: 1 },
     { file: "libs/cleansia-admin-features/invoice-management/src/lib/invoice-detail/invoice-detail.facade.ts", class: "deep-relative-import", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-address-autocomplete/cleansia-address-autocomplete.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-calendar/cleansia-calendar.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-checkbox/cleansia-checkbox.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-cookie-consent/cleansia-cookie-consent.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-file/cleansia-file.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-help-card/cleansia-help-card.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-multiselect/cleansia-multiselect.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-radio/cleansia-radio.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-select/cleansia-select.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-sidebar-menu/cleansia-sidebar-menu.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-telephone/cleansia-telephone.component.ts", class: "buildable-from-non-buildable", count: 2 },
-    { file: "libs/shared/components/src/lib/cleansia-text-input/cleansia-text-input.component.ts", class: "buildable-from-non-buildable", count: 1 },
-    { file: "libs/shared/components/src/lib/cleansia-textarea/cleansia-textarea.component.ts", class: "buildable-from-non-buildable", count: 1 },
 ];
 
 /**

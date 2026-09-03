@@ -1072,6 +1072,7 @@
       "special_instructions": "Особливі побажання",
       "access_instructions": "Інструкції з доступу",
       "confirmation_code": "Код підтвердження",
+      "confirmation_code_hint": "Назвіть його клінеру біля дверей — так він зрозуміє, що це ваше прибирання.",
       "download_receipt": "Завантажити квитанцію",
       "download_error": "Не вдалося завантажити квитанцію",
       "report_issue": "Повідомити про проблему",

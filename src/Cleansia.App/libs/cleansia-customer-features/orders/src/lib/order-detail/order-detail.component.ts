@@ -32,11 +32,29 @@ interface TimelineStep {
   danger?: boolean;
 }
 
-/** One row of the price card. A discount is negative and reads in the accent. */
+/**
+ * One row of the price card. A discount is negative and reads in the accent.
+ *
+ * A row is labelled by EITHER a name the server sent (a package, the services)
+ * or a translation key the template pipes. Resolving the key here instead would
+ * freeze the label at the language the order loaded in: a computed re-runs when
+ * a signal it read changes, and `translate.instant` is not one.
+ */
 interface PriceLine {
-  label: string;
+  label?: string;
+  labelKey?: string;
   amount: number;
   discount?: boolean;
+}
+
+/**
+ * How the cleaner gets in. Two halves that are read together: the slug is the
+ * SHAPE of the answer ("keys_handover") and the instructions are the DETAIL
+ * ("with the neighbour in apt. 11"). -> Order.AccessMode
+ */
+interface EntryDetail {
+  modeKey?: string;
+  detail?: string;
 }
 
 @Component({
@@ -225,9 +243,9 @@ export class OrderDetailComponent implements OnInit {
       lines.push({ label: serviceNames.join(', '), amount: servicesTotal });
     }
 
-    const discount = (amount: number | undefined, key: string) => {
+    const discount = (amount: number | undefined, labelKey: string) => {
       if (amount && amount > 0) {
-        lines.push({ label: this.translate.instant(key), amount: -amount, discount: true });
+        lines.push({ labelKey, amount: -amount, discount: true });
       }
     };
     discount(order.membershipDiscountAmount, 'pages.order_detail.discount_membership');
@@ -237,10 +255,32 @@ export class OrderDetailComponent implements OnInit {
     return lines;
   });
 
-  /** Where the cleaner gets in. */
-  readonly entryLabel = computed(() => {
+  /**
+   * Where the cleaner gets in.
+   *
+   * This used to be `accessInstructions || accessMode`, which was wrong in both
+   * directions: with instructions present the mode vanished, and without them
+   * the RAW SLUG reached the page — the customer read "keys_handover". The two
+   * are halves of one answer and the domain says so; the slug's four values
+   * have had copy under `pages.order.access_mode.*` all along, which is where
+   * the wizard reads them from. -> Order.AccessMode
+   */
+  readonly entry = computed<EntryDetail | undefined>(() => {
     const order = this.order();
-    return order?.accessInstructions || order?.accessMode || undefined;
+    if (!order) return undefined;
+
+    const mode = order.accessMode?.trim();
+    const detail = order.accessInstructions?.trim();
+    if (!mode && !detail) return undefined;
+
+    // No guard on the slug: CreateOrder's validator accepts exactly the four
+    // that have copy, so an unknown one cannot be in the database. Checking
+    // here with `instant` would also read a key before the locale file has
+    // loaded and drop a mode that is perfectly fine.
+    return {
+      modeKey: mode ? `pages.order.access_mode.${mode}` : undefined,
+      detail: detail || undefined,
+    };
   });
 
   /**

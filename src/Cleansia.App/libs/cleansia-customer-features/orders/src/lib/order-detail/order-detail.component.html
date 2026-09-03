@@ -203,14 +203,26 @@
           </div>
         </div>
 
-        @if (entryLabel(); as entry) {
+        @if (entry(); as entry) {
         <div class="order-detail__fact">
-          <i class="pi pi-user"></i>
+          <i class="pi pi-sign-in"></i>
           <div>
             <span class="order-detail__fact-label">
               {{ 'pages.order_detail.label_entry' | translate }}
             </span>
-            <div class="order-detail__fact-value">{{ entry }}</div>
+            <!-- The slug is the shape of the answer, the instructions are the
+                 detail, and they are read together. -> Order.AccessMode -->
+            @if (entry.modeKey) {
+            <div class="order-detail__fact-value">{{ entry.modeKey | translate }}</div>
+            }
+            @if (entry.detail) {
+            <div
+              class="order-detail__fact-value"
+              [class.order-detail__fact-detail]="!!entry.modeKey"
+            >
+              {{ entry.detail }}
+            </div>
+            }
           </div>
         </div>
         }
@@ -240,16 +252,27 @@
           </div>
         </div>
         }
-      </section>
 
-      <!-- The code read on the doorstep. It is an instruction for a clean that
-           is still coming, so it goes once the order is finished or off. -->
-      @if (order()!.confirmationCode && !isCompleted() && !isCancelled()) {
-      <div class="order-detail__confirmation">
-        {{ 'pages.order_detail.confirmation_code' | translate }}
-        <strong>{{ order()!.confirmationCode }}</strong>
-      </div>
-      }
+        <!-- The code read on the doorstep. It closes this card because it is
+             the last fact of the same booking — a floating band of its own read
+             as a notification about something else. It is an instruction for a
+             clean that is still coming, so it goes once the order is over. -->
+        @if (order()!.confirmationCode && !isCompleted() && !isCancelled()) {
+        <div class="order-detail__code">
+          <div class="order-detail__code-text">
+            <span class="order-detail__fact-label">
+              {{ 'pages.order_detail.confirmation_code' | translate }}
+            </span>
+            <p class="order-detail__code-hint">
+              {{ 'pages.order_detail.confirmation_code_hint' | translate }}
+            </p>
+          </div>
+          <span class="order-detail__code-value cl-num">
+            {{ order()!.confirmationCode }}
+          </span>
+        </div>
+        }
+      </section>
 
       <!-- Rating, once the clean is over. -->
       @if (isCompleted()) {
@@ -316,7 +339,7 @@
 
         @for (line of priceLines(); track $index) {
         <div class="order-detail__price-line" [class.order-detail__price-line--discount]="line.discount">
-          <span>{{ line.label }}</span>
+          <span>{{ line.labelKey ? (line.labelKey | translate) : line.label }}</span>
           <span class="order-detail__price-amount cl-num">{{ formatPrice(line.amount) }}</span>
         </div>
         }

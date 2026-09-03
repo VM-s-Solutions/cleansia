@@ -1072,6 +1072,7 @@
       "special_instructions": "Speciální instrukce",
       "access_instructions": "Pokyny pro přístup",
       "confirmation_code": "Potvrzovací kód",
+      "confirmation_code_hint": "Přečtěte ho uklízečce u dveří — podle něj pozná, že úklid patří vám.",
       "download_receipt": "Stáhnout účtenku",
       "download_error": "Nepodařilo se stáhnout účtenku",
       "report_issue": "Nahlásit problém",

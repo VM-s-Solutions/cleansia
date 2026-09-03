@@ -1072,6 +1072,7 @@
       "special_instructions": "Special Instructions",
       "access_instructions": "Access Instructions",
       "confirmation_code": "Confirmation Code",
+      "confirmation_code_hint": "Read it to the cleaner at the door — it is how they know the visit is yours.",
       "download_receipt": "Download Receipt",
       "download_error": "Failed to download receipt",
       "report_issue": "Report Issue",

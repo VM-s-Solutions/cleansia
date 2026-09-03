@@ -1072,6 +1072,7 @@
       "special_instructions": "Особые пожелания",
       "access_instructions": "Инструкции по доступу",
       "confirmation_code": "Код подтверждения",
+      "confirmation_code_hint": "Назовите его клинеру у двери — так он поймёт, что это ваша уборка.",
       "download_receipt": "Скачать квитанцию",
       "download_error": "Не удалось скачать квитанцию",
       "report_issue": "Сообщить о проблеме",

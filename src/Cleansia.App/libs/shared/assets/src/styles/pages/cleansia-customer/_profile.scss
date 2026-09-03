@@ -82,14 +82,28 @@
 
 // The sticky is on the grid ITEM. On a wrapper inside it, `align-items: start`
 // leaves the aside content-height and the wrapper has no room to travel.
-// Owner, 2026-09-03: the rail should sit slightly higher with air above AND
-// below it. The offset clears the fixed navbar plus a gap of its own, and the
-// bottom margin keeps the last nav row off the viewport edge when the rail is
-// taller than the window.
+// Owner, 2026-09-03: the rail should sit in the MIDDLE of the space between the
+// navbar and the bottom of the screen, with the gap below it matching the gap
+// above.
+//
+// So the sticky box is that whole space — the viewport minus the navbar — and
+// the rail is centred inside it, rather than pinned a fixed distance down. A
+// fixed offset cannot do this: the leftover space below depends on the window,
+// so any number is right at one height and wrong at every other.
+//
+// `safe center` is the second declaration on purpose. On a short window the
+// rail is taller than the space, and plain `center` would push its top out of
+// reach above the scroll origin; `safe` falls back to start-aligned, and the
+// overflow scrolls. Browsers that do not know the keyword keep plain `center`.
 .customer-profile__sidebar {
   position: sticky;
-  top: calc(var(--cl-nav-h) + 1.75 * var(--cl-u));
-  margin-bottom: calc(1.75 * var(--cl-u));
+  top: var(--cl-nav-h);
+  height: calc(100vh - var(--cl-nav-h));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  justify-content: safe center;
+  overflow-y: auto;
   min-width: 0;
 }
 

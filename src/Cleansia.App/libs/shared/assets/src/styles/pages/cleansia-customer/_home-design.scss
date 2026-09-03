@@ -120,6 +120,13 @@
   // carry both speakers, so a brand tint would make every message read as ours.
   --cl-wash: #f1f5f9;
 
+  // An INVERTED panel — a dark slab carrying light text, for the one card on a
+  // page that is the subject rather than another section. It stays dark in both
+  // themes, which --cl-heading does not: that flips to a light blue after dark,
+  // and a card painted with it turned into a pale slab with white text on it.
+  --cl-invert: #{$primary-dark};
+  --cl-invert-ink: #{$white};
+
   // Suds. Flipping the OPACITY leaves a grey blob on a dark ground, so the
   // colour flips instead. Lives here rather than beside one page's suds since
   // the home hero and the auth pages both draw them.
@@ -184,6 +191,8 @@
   --cl-ok-soft: rgba(110, 231, 183, 0.10);
   --cl-ok-line: rgba(110, 231, 183, 0.28);
   --cl-wash: rgba(148, 163, 184, 0.12);
+  --cl-invert: #0a2438;
+  --cl-invert-ink: #eaf6fd;
   --cl-sud: rgba(125, 211, 252, 0.06);
   --cl-sud-soft: rgba(125, 211, 252, 0.05);
   --cl-sud-faint: rgba(125, 211, 252, 0.04);

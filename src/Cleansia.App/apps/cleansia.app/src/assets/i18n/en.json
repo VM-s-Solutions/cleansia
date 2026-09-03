@@ -1163,11 +1163,8 @@
     "disputes": {
       "title": "My Disputes",
       "hero_title": "My Disputes",
-      "hero_subtitle": "View and manage your dispute cases",
-      "empty_description": "You have no open disputes. If you experience any issues with our service, you can create a new dispute here.",
+      "hero_subtitle": "When a clean didn't go the way it should. Write to us — starting from the order itself is quickest.",
       "create_new": "New Dispute",
-      "create_title": "Create Dispute",
-      "no_disputes": "All Clear!",
       "order_id": "Order",
       "select_order": "Select an order...",
       "reason": "Reason",
@@ -1191,16 +1188,6 @@
         "chargeback": "Chargeback",
         "unknown": "Unknown reason"
       },
-      "empty_faq_title": "What can I report?",
-      "empty_faq_items": "Quality issues, incomplete service, damaged property, billing problems, and more.",
-      "empty_response_time": "We typically respond within 24–48 hours.",
-      "table": {
-        "order": "Order",
-        "reason": "Reason",
-        "status": "Status",
-        "created": "Created"
-      },
-      "filter_status": "Filter by status",
       "new_reply": "New reply",
       "refund_amount": "Agreed refund",
       "statuses": {
@@ -1220,7 +1207,25 @@
         "too_large": "The file is too large. Maximum size is 10 MB."
       },
       "author_you": "You",
-      "author_support": "Cleansia support"
+      "author_support": "Cleansia support",
+      "empty_lead": "You haven't reported anything yet. That's good news.",
+      "new_lead": "Tell us what went wrong. We answer within one working day.",
+      "mine": "My disputes",
+      "what_happened": "What happened",
+      "describe_it": "Please describe it",
+      "describe_placeholder": "What exactly wasn't right? The more detail, the faster we settle it.",
+      "attach_title": "Attach photos",
+      "attach_note": "A photo of what's wrong helps most. Optional.",
+      "human_promise": "A person reads this, not a robot. If we need anything else we will ask you right here, and let you know by e-mail.",
+      "opened_on": "Opened {{date}}",
+      "thread_closed": "This dispute is closed. The conversation stays here for your records.",
+      "none_title": "When something isn't right, write to us",
+      "none_lead": "You can report any completed order. We answer within one working day.",
+      "none_item1": "Quality of the clean, an unfinished clean, or a cleaner who didn't arrive.",
+      "none_item2": "Something damaged — we handle the insurance for you.",
+      "none_item3": "An amount that doesn't add up, or a payment you didn't approve.",
+      "my_orders": "My orders",
+      "attach_photo": "Attach photo"
     },
     "rewards": {
       "title": "Rewards",

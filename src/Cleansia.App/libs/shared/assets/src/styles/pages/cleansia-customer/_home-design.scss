@@ -116,6 +116,10 @@
   --cl-ok-soft: #f0fdf4;
   --cl-ok-line: #bbf7d0;
 
+  // A neutral ground, deliberately NOT --cl-tint. The dispute thread's bubbles
+  // carry both speakers, so a brand tint would make every message read as ours.
+  --cl-wash: #f1f5f9;
+
   // Suds. Flipping the OPACITY leaves a grey blob on a dark ground, so the
   // colour flips instead. Lives here rather than beside one page's suds since
   // the home hero and the auth pages both draw them.
@@ -179,6 +183,7 @@
   --cl-ok: #6ee7b7;
   --cl-ok-soft: rgba(110, 231, 183, 0.10);
   --cl-ok-line: rgba(110, 231, 183, 0.28);
+  --cl-wash: rgba(148, 163, 184, 0.12);
   --cl-sud: rgba(125, 211, 252, 0.06);
   --cl-sud-soft: rgba(125, 211, 252, 0.05);
   --cl-sud-faint: rgba(125, 211, 252, 0.04);

@@ -1163,11 +1163,8 @@
     "disputes": {
       "title": "Moje reklamácie",
       "hero_title": "Moje reklamácie",
-      "hero_subtitle": "Zobrazenie a správa vašich reklamácií",
-      "empty_description": "Nemáte žiadne otvorené reklamácie. Ak sa vyskytnú problémy s našou službou, môžete tu vytvoriť novú reklamáciu.",
+      "hero_subtitle": "Keď upratovanie neprebehlo, ako malo. Napíšte nám — pri konkrétnej objednávke to ide najrýchlejšie.",
       "create_new": "Nová reklamácia",
-      "create_title": "Vytvoriť reklamáciu",
-      "no_disputes": "Všetko v poriadku!",
       "order_id": "Objednávka",
       "select_order": "Vyberte objednávku...",
       "reason": "Dôvod",
@@ -1191,16 +1188,6 @@
         "chargeback": "Spätná platba (chargeback)",
         "unknown": "Neznámy dôvod"
       },
-      "empty_faq_title": "Čo môžem nahlásiť?",
-      "empty_faq_items": "Problémy s kvalitou, neúplnú službu, poškodený majetok, problémy s fakturáciou a ďalšie.",
-      "empty_response_time": "Zvyčajne odpovedáme do 24 – 48 hodín.",
-      "table": {
-        "order": "Objednávka",
-        "reason": "Dôvod",
-        "status": "Stav",
-        "created": "Vytvorená"
-      },
-      "filter_status": "Filtrovať podľa stavu",
       "new_reply": "Nová odpoveď",
       "refund_amount": "Schválená suma na vrátenie",
       "statuses": {
@@ -1220,7 +1207,25 @@
         "too_large": "Súbor je príliš veľký. Maximálna veľkosť je 10 MB."
       },
       "author_you": "Vy",
-      "author_support": "Podpora Cleansia"
+      "author_support": "Podpora Cleansia",
+      "empty_lead": "Zatiaľ ste nič nereklamovali. To je dobrá správa.",
+      "new_lead": "Povedzte nám, čo nesedelo. Odpovedáme do jedného pracovného dňa.",
+      "mine": "Moje reklamácie",
+      "what_happened": "Čo sa stalo",
+      "describe_it": "Opíšte to prosím",
+      "describe_placeholder": "Čo konkrétne nebolo v poriadku? Čím viac detailov, tým rýchlejšie to vyriešime.",
+      "attach_title": "Priložte fotky",
+      "attach_note": "Najviac pomôže fotka toho, čo nesedí. Nepovinné.",
+      "human_promise": "Reklamáciu si prečíta človek, nie robot. Ak bude treba niečo doplniť, ozveme sa priamo tu a dáme vám vedieť e-mailom.",
+      "opened_on": "Založené {{date}}",
+      "thread_closed": "Reklamácia je uzavretá. Konverzácia tu zostáva pre vašu evidenciu.",
+      "none_title": "Keď niečo nesedí, napíšte nám",
+      "none_lead": "Reklamáciu môžete podať pri ktorejkoľvek dokončenej objednávke. Odpovedáme do jedného pracovného dňa.",
+      "none_item1": "Kvalita upratovania, nedokončené upratovanie alebo upratovač, ktorý neprišiel.",
+      "none_item2": "Poškodená vec — poistenie riešime za vás.",
+      "none_item3": "Suma, ktorá nesedí, alebo platba, ktorú ste neschválili.",
+      "my_orders": "Moje objednávky",
+      "attach_photo": "Priložiť fotku"
     },
     "rewards": {
       "title": "Odmeny",

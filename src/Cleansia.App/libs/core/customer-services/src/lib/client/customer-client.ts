@@ -5988,7 +5988,7 @@ export interface ISavedAddressClient {
     /**
      * @return OK
      */
-    delete(id: string): Observable<void>;
+    delete(id: string): Observable<DeleteSavedAddressResponse>;
 }
 
 @Injectable({
@@ -6278,7 +6278,7 @@ export class SavedAddressClient implements ISavedAddressClient {
     /**
      * @return OK
      */
-    delete(id: string): Observable<void> {
+    delete(id: string): Observable<DeleteSavedAddressResponse> {
         let url = this.baseUrl + "/api/SavedAddress/Delete/{id}";
         if (id === undefined || id === null)
             throw new globalThis.Error("The parameter 'id' must be defined.");
@@ -6289,6 +6289,7 @@ export class SavedAddressClient implements ISavedAddressClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "Accept": "application/json"
             })
         };
 
@@ -6299,14 +6300,14 @@ export class SavedAddressClient implements ISavedAddressClient {
                 try {
                     return this.processDelete(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<void>;
+                    return ObservableThrow(e) as any as Observable<DeleteSavedAddressResponse>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<void>;
+                return ObservableThrow(response) as any as Observable<DeleteSavedAddressResponse>;
         }));
     }
 
-    protected processDelete(response: HttpResponseBase): Observable<void> {
+    protected processDelete(response: HttpResponseBase): Observable<DeleteSavedAddressResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -6315,7 +6316,10 @@ export class SavedAddressClient implements ISavedAddressClient {
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return ObservableOf(null as any);
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeleteSavedAddressResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -8524,6 +8528,42 @@ export class DeleteRecurringBookingCommand implements IDeleteRecurringBookingCom
 
 export interface IDeleteRecurringBookingCommand {
     templateId: string | undefined;
+}
+
+export class DeleteSavedAddressResponse implements IDeleteSavedAddressResponse {
+    savedAddressId!: string | undefined;
+
+    constructor(data?: IDeleteSavedAddressResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.savedAddressId = Data["savedAddressId"];
+        }
+    }
+
+    static fromJS(data: any): DeleteSavedAddressResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeleteSavedAddressResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["savedAddressId"] = this.savedAddressId;
+        return data;
+    }
+}
+
+export interface IDeleteSavedAddressResponse {
+    savedAddressId: string | undefined;
 }
 
 export class DeviceDto implements IDeviceDto {

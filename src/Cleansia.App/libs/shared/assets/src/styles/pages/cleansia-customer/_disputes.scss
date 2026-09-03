@@ -137,18 +137,31 @@
   }
 }
 
-// A reply you have not read — the board's dot, and the only thing it means. It
-// holds its 8px whether or not it is lit, so the rows below do not shift when
-// one is marked read. Which row is OPEN is said by the row's own tint, not
-// here: one mark, one meaning.
+// The board's dot. It holds its 8px whether or not it is lit, so the rows below
+// do not shift when one changes.
+//
+// It marked ONLY an unread staff reply, which meant a customer whose disputes
+// had no replies yet saw no dot anywhere — the board draws one, so the page was
+// missing something the design has. Owner, 2026-09-03. It marks the OPEN row
+// now, which is the row the board's own dot is on, and unread keeps its own
+// colour rather than its own shape:
+//
+//   blue   — the thread showing on the right
+//   amber  — a reply you have not read
+//
+// Amber wins when a row is both: the new reply is the thing you did not know.
 .cl-dsp__row-dot {
   width: 8px;
   height: 8px;
   border-radius: 999px;
   background: transparent;
 
-  &--unread {
+  &--open {
     background: var(--cl-accent);
+  }
+
+  &--unread {
+    background: var(--cl-warn-ink);
   }
 }
 

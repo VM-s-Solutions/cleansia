@@ -26,10 +26,14 @@ namespace Cleansia.Tests.Controllers;
 /// the server — the caller was handed no id to upload the evidence against. It returns the id now,
 /// on both hosts, and the generated client was regenerated to match.</para>
 ///
-/// <para><b>SavedAddress Delete still has the same defect</b> — <c>HandleResult&lt;bool&gt;</c>
-/// against a <c>BusinessResult&lt;Response&gt;</c> — and is still pinned as an empty body below.
-/// Nothing depends on its body today, so it is left as it is and recorded rather than changed
-/// alongside an unrelated fix.</para>
+/// <para>SavedAddress Delete had the same defect — <c>HandleResult&lt;bool&gt;</c> against a
+/// <c>BusinessResult&lt;Response&gt;</c> — and was closed in the same pass. Nothing read its body
+/// yet, which is exactly why it was worth closing before something did: the identical mismatch on
+/// CreateDispute cost a customer their attached photo, and it was invisible until someone needed
+/// the value that was never there.</para>
+
+/// <para>SetDefault is NOT the same case and stays a bodyless 200: its command is a plain
+/// <c>ICommand</c> with no response type, so there is no value being dropped.</para>
 /// </summary>
 public class CustomerDisputeSavedAddressWireShapeTests
 {
@@ -115,27 +119,29 @@ public class CustomerDisputeSavedAddressWireShapeTests
     }
 
     [Fact]
-    public async Task Customer_DeleteSavedAddress_Returns_Empty_200_Body()
+    public async Task Customer_DeleteSavedAddress_Answers_With_The_Deleted_Id()
     {
         var mediator = MediatorReturning(BusinessResult.Success(new DeleteSavedAddress.Response("addr-1")));
         var controller = new CustomerSavedAddress(mediator.Object);
 
         var actionResult = await controller.Delete("addr-1", CancellationToken.None);
 
-        Assert.IsType<OkResult>(actionResult);
-        Assert.IsNotType<OkObjectResult>(actionResult);
+        var ok = Assert.IsType<OkObjectResult>(actionResult);
+        var body = Assert.IsType<DeleteSavedAddress.Response>(ok.Value);
+        Assert.Equal("addr-1", body.SavedAddressId);
     }
 
     [Fact]
-    public async Task MobileCustomer_DeleteSavedAddress_Returns_Empty_200_Body()
+    public async Task MobileCustomer_DeleteSavedAddress_Answers_With_The_Deleted_Id()
     {
         var mediator = MediatorReturning(BusinessResult.Success(new DeleteSavedAddress.Response("addr-1")));
         var controller = new MobileSavedAddress(mediator.Object);
 
         var actionResult = await controller.Delete("addr-1", CancellationToken.None);
 
-        Assert.IsType<OkResult>(actionResult);
-        Assert.IsNotType<OkObjectResult>(actionResult);
+        var ok = Assert.IsType<OkObjectResult>(actionResult);
+        var body = Assert.IsType<DeleteSavedAddress.Response>(ok.Value);
+        Assert.Equal("addr-1", body.SavedAddressId);
     }
 
     [Fact]

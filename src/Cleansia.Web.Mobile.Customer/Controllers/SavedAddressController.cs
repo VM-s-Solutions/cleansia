@@ -45,7 +45,7 @@ public class SavedAddressController(IMediator mediator) : CustomerSavedAddressCo
 
     [HttpDelete("Delete/{id}")]
     [Permission(Policy.CanManageSavedAddresses)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DeleteSavedAddress.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public Task<IActionResult> Delete(string id, CancellationToken cancellationToken)

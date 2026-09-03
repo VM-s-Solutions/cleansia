@@ -177,8 +177,12 @@
           [class.cl-dsp__row--on]="selectedId() === dispute.id"
           (click)="openThread(dispute)"
         >
-          <!-- A reply the customer has not read yet. -->
-          <span class="cl-dsp__row-dot" [class.cl-dsp__row-dot--unread]="isUnread(dispute)"></span>
+          <!-- Blue for the thread being read, amber for a reply not yet read. -->
+          <span
+            class="cl-dsp__row-dot"
+            [class.cl-dsp__row-dot--open]="selectedId() === dispute.id"
+            [class.cl-dsp__row-dot--unread]="isUnread(dispute)"
+          ></span>
           <span class="cl-dsp__row-main">
             <span class="cl-dsp__row-head">
               <span class="cl-dsp__row-order cl-num">{{ dispute.displayOrderNumber }}</span>

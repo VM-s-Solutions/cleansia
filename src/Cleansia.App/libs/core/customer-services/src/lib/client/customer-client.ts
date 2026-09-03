@@ -6442,6 +6442,11 @@ export interface IUserClient {
      * @param body (optional) 
      * @return OK
      */
+    updateCurrentUserPhoto(body?: UpdateCurrentUserPhotoCommand | undefined): Observable<UpdateCurrentUserPhotoResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     requestPasswordChange(body?: RequestPasswordChangeCommand | undefined): Observable<void>;
     /**
      * @param body (optional) 
@@ -6572,6 +6577,69 @@ export class UserClient implements IUserClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = UpdateCurrentUserResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    updateCurrentUserPhoto(body?: UpdateCurrentUserPhotoCommand | undefined): Observable<UpdateCurrentUserPhotoResponse> {
+        let url = this.baseUrl + "/api/User/UpdateCurrentUserPhoto";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdateCurrentUserPhoto(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateCurrentUserPhoto(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UpdateCurrentUserPhotoResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UpdateCurrentUserPhotoResponse>;
+        }));
+    }
+
+    protected processUpdateCurrentUserPhoto(response: HttpResponseBase): Observable<UpdateCurrentUserPhotoResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UpdateCurrentUserPhotoResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -14309,6 +14377,82 @@ export class UnregisterDeviceResponse implements IUnregisterDeviceResponse {
 
 export interface IUnregisterDeviceResponse {
     success: boolean;
+}
+
+export class UpdateCurrentUserPhotoCommand implements IUpdateCurrentUserPhotoCommand {
+    photo!: BlobFileDto;
+    removePhoto!: boolean;
+
+    constructor(data?: IUpdateCurrentUserPhotoCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.photo = Data["photo"] ? BlobFileDto.fromJS(Data["photo"]) : undefined as any;
+            this.removePhoto = Data["removePhoto"];
+        }
+    }
+
+    static fromJS(data: any): UpdateCurrentUserPhotoCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateCurrentUserPhotoCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["photo"] = this.photo ? this.photo.toJSON() : undefined as any;
+        data["removePhoto"] = this.removePhoto;
+        return data;
+    }
+}
+
+export interface IUpdateCurrentUserPhotoCommand {
+    photo: BlobFileDto;
+    removePhoto: boolean;
+}
+
+export class UpdateCurrentUserPhotoResponse implements IUpdateCurrentUserPhotoResponse {
+    id!: string | undefined;
+
+    constructor(data?: IUpdateCurrentUserPhotoResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+        }
+    }
+
+    static fromJS(data: any): UpdateCurrentUserPhotoResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateCurrentUserPhotoResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        return data;
+    }
+}
+
+export interface IUpdateCurrentUserPhotoResponse {
+    id: string | undefined;
 }
 
 export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {

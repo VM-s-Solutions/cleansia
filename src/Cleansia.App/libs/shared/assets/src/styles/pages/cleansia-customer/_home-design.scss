@@ -684,12 +684,28 @@ cleansia-telephone .cleansia-telephone {
   }
 }
 
+// Owner, 2026-09-03: make the phone read like the other fields. It did not,
+// because the country trigger's border-right ran the FULL height of the box and
+// cut it into two — next to the e-mail field beside it, one control looked like
+// two. The rule is inset so it reads as a separator inside one field, which is
+// what the board draws.
 cleansia-telephone .cleansia-telephone__trigger {
+  position: relative;
   align-self: stretch;
   padding: 0 calc(0.75 * var(--cl-u));
-  border-right-color: var(--cl-field-border);
+  border-right: 0;
   font-family: $font-body;
   color: var(--cl-body);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: calc(0.75 * var(--cl-u));
+    bottom: calc(0.75 * var(--cl-u));
+    right: 0;
+    width: 1px;
+    background: var(--cl-border);
+  }
 }
 
 cleansia-telephone .cleansia-telephone__code {

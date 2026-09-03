@@ -62,18 +62,34 @@
   padding: 0 var(--cl-gutter);
 }
 
-.customer-profile__layout {
+.customer-profile__layout,
+.customer-profile__skeleton {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
   gap: calc(1.5 * var(--cl-u));
   align-items: start;
 }
 
+// The placeholder stands in the same two columns as the page it precedes, so
+// nothing jumps when the profile resolves.
+.customer-profile__skeleton-rail,
+.customer-profile__skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.25 * var(--cl-u));
+  min-width: 0;
+}
+
 // The sticky is on the grid ITEM. On a wrapper inside it, `align-items: start`
 // leaves the aside content-height and the wrapper has no room to travel.
+// Owner, 2026-09-03: the rail should sit slightly higher with air above AND
+// below it. The offset clears the fixed navbar plus a gap of its own, and the
+// bottom margin keeps the last nav row off the viewport edge when the rail is
+// taller than the window.
 .customer-profile__sidebar {
   position: sticky;
-  top: calc(var(--cl-nav-h) + 1 * var(--cl-u));
+  top: calc(var(--cl-nav-h) + 1.75 * var(--cl-u));
+  margin-bottom: calc(1.75 * var(--cl-u));
   min-width: 0;
 }
 

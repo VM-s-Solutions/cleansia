@@ -54,10 +54,16 @@ public class UpdateCurrentUser
                 .WithErrorCode(nameof(Command.BirthDate))
                 .When(c => c.BirthDate.HasValue);
 
+            // Uniqueness only means something for a number that was actually given.
+            // Without the guard, EF compiles a null parameter to `PhoneNumber IS NULL`,
+            // so an account with no phone matched the FIRST other account with no
+            // phone and every save was rejected as a duplicate — including one that
+            // only changed the avatar, on a field the customer never touched.
             RuleFor(c => c.PhoneNumber)
                 .MustAsync(UserWithPhoneNumberNotExistsAsync)
                 .WithMessage(BusinessErrorMessage.ExistingPhoneNumber)
-                .WithErrorCode(nameof(Command.PhoneNumber));
+                .WithErrorCode(nameof(Command.PhoneNumber))
+                .When(c => !string.IsNullOrWhiteSpace(c.PhoneNumber));
 
             RuleFor(c => c.Photo)
                 .SetValidator(new ImageFileValidator()!)
@@ -145,51 +151,11 @@ public class UpdateCurrentUser
             var userOrders = await orderRepository.GetOrdersByPhoneNumberAsync(
                 user.PhoneNumber ?? string.Empty, cancellationToken);
 
-            await UpdateProfilePhoto(user, command, cancellationToken);
+            await ProfilePhotoUpdater.ApplyAsync(
+                user, command.Photo, command.RemovePhoto, clientFactory, cancellationToken);
             UpdateUserAndOrders(user, userOrders, command);
 
             return BusinessResult.Success(new Response(Id: user.Id));
-        }
-
-        private async Task UpdateProfilePhoto(User user, Command command, CancellationToken cancellationToken)
-        {
-            var hasNewPhoto = !string.IsNullOrWhiteSpace(command.Photo?.Base64Content);
-
-            // A save that neither carries an image nor asks for removal says nothing about the avatar,
-            // so it must not touch it. This is the shape of every profile save the clients send.
-            if (!hasNewPhoto && !command.RemovePhoto)
-            {
-                return;
-            }
-
-            var supersededPhotoName = user.ProfilePhotoName;
-            var client = clientFactory.GetBlobContainerClient(Constants.BlobContainers.UserFiles);
-
-            if (hasNewPhoto)
-            {
-                // A fresh name per upload keeps the stored name content-addressed: clients cache their
-                // avatar bitmap on it, so reusing it would render the previous image forever, and an
-                // outstanding SAS keeps resolving to the image it was issued for. Upload BEFORE
-                // deleting — a failed upload must not destroy the avatar the user still has.
-                var fileName = Guid.NewGuid().ToString();
-                await UploadPhotoAsync(client, fileName, command.Photo!.Base64Content!, cancellationToken);
-                user.UpdateProfilePhotoName(fileName);
-            }
-            else
-            {
-                user.UpdateProfilePhotoName(null);
-            }
-
-            if (!string.IsNullOrWhiteSpace(supersededPhotoName))
-            {
-                await client.DeleteAsync(supersededPhotoName, cancellationToken);
-            }
-        }
-
-        private static async Task UploadPhotoAsync(IBlobContainerClient client, string fileName, string base64Content, CancellationToken cancellationToken)
-        {
-            await using var stream = new MemoryStream(Convert.FromBase64String(base64Content.ExtractBase64Data()));
-            await client.UploadAsync(fileName, stream, cancellationToken: cancellationToken);
         }
 
         private static void UpdateUserAndOrders(User user, IReadOnlyList<Order> userOrders, Command command)

@@ -8,6 +8,7 @@ import {
   CustomerClient,
   GetCurrentUserQuery,
   LoyaltyTier,
+  UpdateCurrentUserPhotoCommand,
   MyProfileDto,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
@@ -164,15 +165,25 @@ export class ProfileFacade extends UnsubscribeControlDirective {
     this.loadProfile();
   }
 
+  /**
+   * The avatar goes out ON ITS OWN. It used to travel as a full profile save,
+   * because that was the only endpoint that could move one — so an upload was
+   * validated as if the customer had edited their name and number, and an
+   * account with no phone number was rejected on the phone rule. There is a
+   * command for exactly this edit now. -> UpdateCurrentUserPhoto
+   */
   private submitAvatarChange(intent: AvatarIntent, successKey: string): void {
-    const user = this.user();
-    if (!user) return;
+    if (!this.user()) return;
+
+    const command = new UpdateCurrentUserPhotoCommand();
+    command.removePhoto = intent.kind === 'remove';
+    if (intent.kind === 'upload') {
+      command.photo = intent.photo;
+    }
 
     this.avatarSaving.set(true);
     this.customerClient.userClient
-      .updateCurrentUser(
-        buildUpdateCurrentUserCommand(this.detailsOf(user), intent),
-      )
+      .updateCurrentUserPhoto(command)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),

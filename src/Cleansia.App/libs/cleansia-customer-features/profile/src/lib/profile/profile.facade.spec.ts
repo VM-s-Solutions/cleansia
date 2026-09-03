@@ -4,6 +4,7 @@ import {
   CustomerClient,
   MyProfileDto,
   UpdateCurrentUserCommand,
+  UpdateCurrentUserPhotoCommand,
 } from '@cleansia/customer-services';
 import { SavedAddressStore } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
@@ -43,7 +44,11 @@ const formDetails: ProfileDetails = {
 
 describe('ProfileFacade', () => {
   let facade: ProfileFacade;
-  let userClient: { getCurrent: jest.Mock; updateCurrentUser: jest.Mock };
+  let userClient: {
+    getCurrent: jest.Mock;
+    updateCurrentUser: jest.Mock;
+    updateCurrentUserPhoto: jest.Mock;
+  };
   let snackbar: {
     showSuccess: jest.Mock;
     showError: jest.Mock;
@@ -53,8 +58,17 @@ describe('ProfileFacade', () => {
   const lastCommand = (): UpdateCurrentUserCommand =>
     userClient.updateCurrentUser.mock.calls.at(-1)?.[0];
 
+  // The avatar is its own command now, so it has its own last-call reader.
+  // -> UpdateCurrentUserPhoto
+  const lastPhotoCommand = (): UpdateCurrentUserPhotoCommand =>
+    userClient.updateCurrentUserPhoto.mock.calls.at(-1)?.[0];
+
   beforeEach(() => {
-    userClient = { getCurrent: jest.fn(), updateCurrentUser: jest.fn() };
+    userClient = {
+      getCurrent: jest.fn(),
+      updateCurrentUser: jest.fn(),
+      updateCurrentUserPhoto: jest.fn(),
+    };
     snackbar = {
       showSuccess: jest.fn(),
       showError: jest.fn(),
@@ -228,14 +242,14 @@ describe('ProfileFacade', () => {
     });
 
     it('sends the picked image and never a removal', async () => {
-      userClient.updateCurrentUser.mockReturnValue(of({ id: 'user-1' }));
+      userClient.updateCurrentUserPhoto.mockReturnValue(of({ id: 'user-1' }));
       userClient.getCurrent.mockReturnValue(
         of(profileWithPhoto('blob-9', 'https://blob/blob-9?sig=new'))
       );
 
       await facade.uploadAvatar(pngFile('me.png'));
 
-      const command = lastCommand();
+      const command = lastPhotoCommand();
       expect(command.photo?.fileName).toBe('me.png');
       expect(command.photo?.contentType).toBe('image/png');
       expect(command.photo?.base64Content).toContain('base64,');
@@ -244,7 +258,7 @@ describe('ProfileFacade', () => {
     });
 
     it('re-reads the profile so the avatar updates without a page reload', async () => {
-      userClient.updateCurrentUser.mockReturnValue(of({ id: 'user-1' }));
+      userClient.updateCurrentUserPhoto.mockReturnValue(of({ id: 'user-1' }));
       userClient.getCurrent.mockReturnValue(
         of(profileWithPhoto('blob-9', 'https://blob/blob-9?sig=new'))
       );
@@ -262,7 +276,7 @@ describe('ProfileFacade', () => {
         new File(['x'], 'cv.pdf', { type: 'application/pdf' })
       );
 
-      expect(userClient.updateCurrentUser).not.toHaveBeenCalled();
+      expect(userClient.updateCurrentUserPhoto).not.toHaveBeenCalled();
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'pages.profile.avatar.invalid_type'
       );
@@ -274,14 +288,14 @@ describe('ProfileFacade', () => {
 
       await facade.uploadAvatar(big);
 
-      expect(userClient.updateCurrentUser).not.toHaveBeenCalled();
+      expect(userClient.updateCurrentUserPhoto).not.toHaveBeenCalled();
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'pages.profile.avatar.size_exceeded'
       );
     });
 
     it('clears the saving state and keeps the avatar when the upload fails', async () => {
-      userClient.updateCurrentUser.mockReturnValue(
+      userClient.updateCurrentUserPhoto.mockReturnValue(
         throwError(() => new Error('x'))
       );
 
@@ -301,18 +315,18 @@ describe('ProfileFacade', () => {
     });
 
     it('asks for removal and sends no photo', () => {
-      userClient.updateCurrentUser.mockReturnValue(of({ id: 'user-1' }));
+      userClient.updateCurrentUserPhoto.mockReturnValue(of({ id: 'user-1' }));
       userClient.getCurrent.mockReturnValue(of(profileWithPhoto(null, null)));
 
       facade.removeAvatar();
 
-      const command = lastCommand();
+      const command = lastPhotoCommand();
       expect(command.removePhoto).toBe(true);
       expect(command.photo).toBeUndefined();
     });
 
     it('reverts to the placeholder once the profile is re-read', () => {
-      userClient.updateCurrentUser.mockReturnValue(of({ id: 'user-1' }));
+      userClient.updateCurrentUserPhoto.mockReturnValue(of({ id: 'user-1' }));
       userClient.getCurrent.mockReturnValue(of(profileWithPhoto(null, null)));
 
       facade.removeAvatar();
@@ -329,7 +343,7 @@ describe('ProfileFacade', () => {
 
       facade.removeAvatar();
 
-      expect(userClient.updateCurrentUser).not.toHaveBeenCalled();
+      expect(userClient.updateCurrentUserPhoto).not.toHaveBeenCalled();
     });
   });
 

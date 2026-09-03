@@ -10,10 +10,22 @@
   </div>
 
   @if (loading()) {
+  <!--
+    The skeleton mirrors the layout it is standing in for: a 300px rail with an
+    identity card and a nav block, and a column of section cards beside it. It
+    was three stacked full-width bars, so the page visibly re-laid itself out
+    the moment the profile resolved.
+  -->
   <div class="customer-profile__skeleton">
-    <p-skeleton width="100%" height="8rem" borderRadius="16px" styleClass="mb-3" />
-    <p-skeleton width="100%" height="12rem" borderRadius="16px" styleClass="mb-3" />
-    <p-skeleton width="100%" height="12rem" borderRadius="16px" />
+    <div class="customer-profile__skeleton-rail">
+      <p-skeleton width="100%" height="15.5rem" borderRadius="28px" />
+      <p-skeleton width="100%" height="19rem" borderRadius="28px" />
+    </div>
+    <div class="customer-profile__skeleton-content">
+      <p-skeleton width="100%" height="22rem" borderRadius="28px" />
+      <p-skeleton width="100%" height="15rem" borderRadius="28px" />
+      <p-skeleton width="100%" height="17rem" borderRadius="28px" />
+    </div>
   </div>
   } @else {
 

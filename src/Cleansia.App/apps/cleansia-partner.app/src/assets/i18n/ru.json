@@ -764,7 +764,8 @@
       "or_drag_drop": "или перетащите",
       "accepted": "Допустимые",
       "max_size": "Макс. размер",
-      "selected_files": "Выбранные файлы"
+      "selected_files": "Выбранные файлы",
+      "choose": "Выбрать файлы"
     },
     "availability": {
       "days": {

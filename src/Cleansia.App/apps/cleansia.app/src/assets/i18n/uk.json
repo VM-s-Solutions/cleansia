@@ -1191,9 +1191,9 @@
       "new_reply": "Нова відповідь",
       "refund_amount": "Узгоджена сума повернення",
       "statuses": {
-        "pending": "Очікує розгляду",
+        "pending": "Прийнято",
         "under_review": "На розгляді",
-        "waiting_for_response": "Очікує вашої відповіді",
+        "waiting_for_response": "Чекаємо відповіді",
         "resolved": "Вирішено",
         "closed": "Закрито",
         "escalated": "Ескальовано"
@@ -1601,7 +1601,8 @@
       "click_to_select": "Натисніть, щоб вибрати файли",
       "max_size": "Макс. розмір",
       "or_drag_drop": "або перетягніть",
-      "selected_files": "Вибрані файли"
+      "selected_files": "Вибрані файли",
+      "choose": "Вибрати файли"
     },
     "brand_mark_alt": "Cleansia"
   },

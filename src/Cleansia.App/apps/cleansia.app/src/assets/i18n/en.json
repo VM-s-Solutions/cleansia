@@ -1191,9 +1191,9 @@
       "new_reply": "New reply",
       "refund_amount": "Agreed refund",
       "statuses": {
-        "pending": "Pending",
+        "pending": "Received",
         "under_review": "Under review",
-        "waiting_for_response": "Waiting for your response",
+        "waiting_for_response": "Waiting for you",
         "resolved": "Resolved",
         "closed": "Closed",
         "escalated": "Escalated"
@@ -1601,7 +1601,8 @@
       "click_to_select": "Click to select files",
       "max_size": "Max size",
       "or_drag_drop": "or drag and drop",
-      "selected_files": "Selected Files"
+      "selected_files": "Selected Files",
+      "choose": "Choose files"
     },
     "brand_mark_alt": "Cleansia"
   },

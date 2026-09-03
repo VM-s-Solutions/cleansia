@@ -764,7 +764,8 @@
       "or_drag_drop": "nebo přetáhněte",
       "accepted": "Povolené",
       "max_size": "Max. velikost",
-      "selected_files": "Vybrané soubory"
+      "selected_files": "Vybrané soubory",
+      "choose": "Vybrat soubory"
     },
     "availability": {
       "days": {

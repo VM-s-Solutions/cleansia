@@ -764,7 +764,8 @@
       "or_drag_drop": "or drag and drop",
       "accepted": "Accepted",
       "max_size": "Max size",
-      "selected_files": "Selected Files"
+      "selected_files": "Selected Files",
+      "choose": "Choose files"
     },
     "availability": {
       "days": {

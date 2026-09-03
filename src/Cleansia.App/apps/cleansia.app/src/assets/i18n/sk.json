@@ -1191,9 +1191,9 @@
       "new_reply": "Nová odpoveď",
       "refund_amount": "Schválená suma na vrátenie",
       "statuses": {
-        "pending": "Čaká na vybavenie",
+        "pending": "Prijaté",
         "under_review": "V riešení",
-        "waiting_for_response": "Čaká na vašu odpoveď",
+        "waiting_for_response": "Čakáme na vás",
         "resolved": "Vyriešené",
         "closed": "Uzavreté",
         "escalated": "Eskalované"
@@ -1601,7 +1601,8 @@
       "click_to_select": "Kliknite pre výber súborov",
       "max_size": "Max. veľkosť",
       "or_drag_drop": "alebo pretiahnite",
-      "selected_files": "Vybrané súbory"
+      "selected_files": "Vybrané súbory",
+      "choose": "Vybrať súbory"
     },
     "brand_mark_alt": "Cleansia"
   },

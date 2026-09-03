@@ -170,11 +170,19 @@ export class DisputesFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * Owner, 2026-09-03: a photo attached while FILING a dispute never arrived.
+   *
+   * `Dispute/Create` answers with the new dispute's id and this threw it away
+   * — `map(() => true)` — so the caller had nothing to upload the evidence
+   * against and the file was dropped without a word. The id reaches `onSuccess`
+   * now, and the page uploads what it collected.
+   */
   createDispute(
     orderId: string,
     reason: DisputeReason,
     description: string,
-    onSuccess: () => void
+    onSuccess: (disputeId: string) => void
   ): void {
     if (this.creatingDispute()) return;
     this.creatingDispute.set(true);
@@ -188,17 +196,16 @@ export class DisputesFacade extends UnsubscribeControlDirective {
       .create(command)
       .pipe(
         takeUntil(this.destroyed$),
-        map(() => true),
         catchError((error: unknown) => {
           this.snackbar.showApiError(error, 'pages.disputes.create_error');
-          return of(false);
+          return of(null);
         }),
         finalize(() => this.creatingDispute.set(false))
       )
-      .subscribe((succeeded) => {
-        if (!succeeded) return;
+      .subscribe((disputeId) => {
+        if (!disputeId) return;
         this.snackbar.showSuccessTranslated('pages.disputes.create_success');
-        onSuccess();
+        onSuccess(disputeId);
       });
   }
 

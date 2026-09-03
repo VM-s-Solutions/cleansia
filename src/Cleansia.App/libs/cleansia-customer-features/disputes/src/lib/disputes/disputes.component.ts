@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   OnInit,
@@ -180,6 +181,16 @@ export class DisputesComponent implements OnInit {
     this.attaching.set(false);
   }
 
+  /** Evidence with somewhere to point. A row with no URL renders nothing. */
+  readonly evidence = computed(() =>
+    (this.disputeDetail()?.evidence ?? []).filter((e) => !!e.blobUrl),
+  );
+
+  /** Whether to draw the file back as a picture or as a document. */
+  isImage(fileName: string | undefined): boolean {
+    return /\.(jpe?g|png|webp|gif|avif)$/i.test(fileName ?? '');
+  }
+
   toggleAttaching(): void {
     this.attaching.update((on) => !on);
   }
@@ -220,11 +231,19 @@ export class DisputesComponent implements OnInit {
     }
 
     const { orderId, reason, description } = this.createForm.getRawValue();
-    this.facade.createDispute(orderId, reason, description, () => {
+    // The photo goes with the dispute it is about, so it can only be sent once
+    // the dispute exists and has an id. Reading it BEFORE cancelNew clears the
+    // form is the whole point — the reset empties the control.
+    const evidence = this.evidenceControl.value[0];
+
+    this.facade.createDispute(orderId, reason, description, (disputeId) => {
       this.cancelNew();
       // A brand-new dispute is the one to be looking at.
       this.selectedId.set(null);
       this.loadDisputes();
+      if (evidence) {
+        this.facade.uploadEvidence(disputeId, evidence);
+      }
     });
   }
 
@@ -323,10 +342,17 @@ export class DisputesComponent implements OnInit {
     });
   }
 
-  formatPrice(price: number): string {
+  /**
+   * An agreed refund is money off a specific order, and that order has a
+   * currency — but `DisputeDetails` does not carry one, so there is nothing
+   * here to read. The fallback matches every other customer screen; the real
+   * fix is a `Currency` on the DTO, and until it exists this figure is right
+   * only while CZ is the only market.
+   */
+  formatPrice(price: number, currency?: { code?: string }): string {
     return new Intl.NumberFormat(this.getLocale(), {
       style: 'currency',
-      currency: 'CZK',
+      currency: currency?.code || 'CZK',
       minimumFractionDigits: 0,
     }).format(price);
   }

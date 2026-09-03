@@ -88,9 +88,10 @@
       -->
       <div class="cl-dsp__field cl-dsp__attach">
         <span class="cl-dsp__label">{{ 'pages.disputes.attach_title' | translate }}</span>
-        <p class="cl-dsp__attach-note">{{ 'pages.disputes.attach_note' | translate }}</p>
         <cleansia-file
           [formControl]="evidenceControl"
+          [compact]="true"
+          [hint]="'pages.disputes.attach_note' | translate"
           [multiple]="false"
           [accept]="evidenceAccept"
           [maxFileSize]="evidenceMaxFileSize"
@@ -241,7 +242,12 @@
         }
         @for (msg of detail.messages ?? []; track msg.id) {
         <div class="cl-dsp__msg">
-          <div class="cl-dsp__bubble">{{ msg.message }}</div>
+          <div
+            class="cl-dsp__bubble"
+            [class.cl-dsp__bubble--staff]="msg.isStaffMessage"
+          >
+            {{ msg.message }}
+          </div>
           <!-- Role, not the person. A customer has no business learning which
                support agent handled their thread, and Android has always
                labelled it this way — rendering the raw authorName here made one
@@ -275,20 +281,39 @@
       </div>
       }
 
-      @if (detail.evidence && detail.evidence.length > 0) {
-      <ul class="cl-dsp__evidence">
-        @for (item of detail.evidence; track item.id) {
-        <li>
-          @if (item.blobUrl) {
-          <a [href]="item.blobUrl" target="_blank" rel="noopener noreferrer">
-            <i class="pi pi-paperclip"></i>{{ item.fileName }}
-          </a>
-          } @else {
-          <span><i class="pi pi-paperclip"></i>{{ item.fileName }}</span>
+      <!--
+        Owner, 2026-09-03: "I uploaded a photo and I don't see any photos related
+        to my dispute." It was a row of file NAMES, and only when the API
+        returned any — which it did not, because a photo attached while filing
+        was never uploaded at all. Both halves are fixed; this is the half you
+        can see. A picture of what is wrong is the evidence, so it is shown as
+        one.
+      -->
+      @if (evidence().length > 0) {
+      <div class="cl-dsp__evidence">
+        <span class="cl-dsp__label">
+          {{ 'pages.disputes.evidence.title' | translate }} ({{ evidence().length }})
+        </span>
+        <ul class="cl-dsp__evidence-list">
+          @for (item of evidence(); track item.id) {
+          <li class="cl-dsp__evidence-item">
+            <a
+              [href]="item.blobUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="item.fileName"
+            >
+              @if (isImage(item.fileName)) {
+              <img [src]="item.blobUrl" [alt]="item.fileName" loading="lazy" />
+              } @else {
+              <span class="cl-dsp__evidence-doc"><i class="pi pi-file"></i></span>
+              }
+              <span class="cl-dsp__evidence-name">{{ item.fileName }}</span>
+            </a>
+          </li>
           }
-        </li>
-        }
-      </ul>
+        </ul>
+      </div>
       }
 
       <!--
@@ -307,6 +332,8 @@
         <div class="cl-dsp__reply-file">
           <cleansia-file
             [formControl]="evidenceControl"
+            [compact]="true"
+            [hint]="'pages.disputes.attach_note' | translate"
             [multiple]="false"
             [accept]="evidenceAccept"
             [maxFileSize]="evidenceMaxFileSize"

@@ -106,10 +106,9 @@
   align-items: center;
   gap: var(--cl-u);
   width: 100%;
-  padding: var(--cl-u) calc(0.5 * var(--cl-u));
+  padding: var(--cl-u) 0;
   border: 0;
   border-bottom: 1px solid var(--cl-border);
-  border-radius: calc(0.75 * var(--cl-u));
   background: none;
   font-family: $font-body;
   text-align: left;
@@ -124,10 +123,11 @@
     background: var(--cl-tint);
   }
 
-  // The one being read. A left rail rather than a fill, so the row still reads
-  // as part of the list rather than as a second card inside the panel.
+  // The one being read. A rail, and only a rail: this was a rounded tinted
+  // block, which drew a second card inside the panel and broke the flat run of
+  // rows the board draws. Owner, 2026-09-03 — "the overview doesn't look the
+  // same as in the design".
   &--on {
-    background: var(--cl-tint);
     box-shadow: inset 3px 0 0 var(--cl-accent);
   }
 
@@ -138,8 +138,10 @@
 }
 
 // A reply the customer has not read. It holds its 8px whether or not it is lit,
-// so the rows below it do not shift when one is marked read.
+// so the rows below it do not shift when one is marked read. The left margin is
+// the room the selected row's rail sits in.
 .cl-dsp__row-dot {
+  margin-left: calc(0.625 * var(--cl-u));
   width: 8px;
   height: 8px;
   border-radius: 999px;
@@ -216,8 +218,10 @@
   }
 }
 
+// A pill the width of its own words, left-aligned — not a full-width bar. The
+// board draws the action, not a footer.
 .cl-dsp__new {
-  display: block;
+  display: inline-block;
   margin-top: calc(1.125 * var(--cl-u));
 }
 
@@ -243,9 +247,11 @@
   gap: 5px;
 }
 
-// Both speakers share a bubble and both sit left, as the board draws them: this
-// is a support thread, not a chat app, and the attribution line under each one
-// says who wrote it.
+// Both speakers sit LEFT, as the board draws them — this is a support thread,
+// not a chat app. But they no longer share a ground: the board gives both the
+// same grey, and a two-party conversation where both sides look identical makes
+// the reader parse the attribution line to know who is talking. Owner ruling,
+// 2026-09-03. Ours is tinted, theirs is neutral, and the line still says who.
 .cl-dsp__bubble {
   max-width: 78%;
   padding: calc(0.875 * var(--cl-u)) calc(1.125 * var(--cl-u));
@@ -256,6 +262,11 @@
   color: var(--cl-ink);
   overflow-wrap: anywhere;
   white-space: pre-line;
+
+  &--staff {
+    background: var(--cl-tint);
+    border: 1px solid var(--cl-border-tint);
+  }
 }
 
 .cl-dsp__by {
@@ -298,27 +309,64 @@
   }
 }
 
+// The photo, not its filename. A customer who sent a picture of a greasy
+// cupboard door wants to see that they sent it — a row reading `IMG_4821.jpg`
+// proves nothing to them.
 .cl-dsp__evidence {
+  margin-top: calc(1.25 * var(--cl-u));
+  padding-top: calc(1.125 * var(--cl-u));
+  border-top: 1px solid var(--cl-border);
+}
+
+.cl-dsp__evidence-list {
   display: flex;
   flex-wrap: wrap;
-  gap: calc(0.5 * var(--cl-u));
-  margin: var(--cl-u) 0 0;
+  gap: calc(0.75 * var(--cl-u));
+  margin: calc(0.625 * var(--cl-u)) 0 0;
   padding: 0;
   list-style: none;
+}
 
-  a,
-  span {
-    display: inline-flex;
-    align-items: center;
-    gap: calc(0.375 * var(--cl-u));
-    padding: calc(0.25 * var(--cl-u)) calc(0.75 * var(--cl-u));
-    border-radius: 999px;
-    background: var(--cl-tint);
-    border: 1px solid var(--cl-border);
-    font-size: calc(0.8125 * var(--cl-u));
+.cl-dsp__evidence-item a {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.375 * var(--cl-u));
+  width: calc(6.25 * var(--cl-u));
+  color: var(--cl-muted);
+
+  &:hover .cl-dsp__evidence-name {
     color: var(--cl-heading);
-    overflow-wrap: anywhere;
   }
+
+  img,
+  .cl-dsp__evidence-doc {
+    display: block;
+    width: 100%;
+    height: calc(4.5 * var(--cl-u));
+    border-radius: calc(0.75 * var(--cl-u));
+    border: 1px solid var(--cl-border);
+    background: var(--cl-wash);
+    object-fit: cover;
+  }
+
+  .cl-dsp__evidence-doc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(1.5 * var(--cl-u));
+    color: var(--cl-muted);
+  }
+}
+
+// One line, clipped. The name is how you tell two photos apart, not something
+// to read — and a wrapped filename would set every tile a different height.
+.cl-dsp__evidence-name {
+  display: block;
+  font-size: calc(0.75 * var(--cl-u));
+  line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 // ---- Replying -----------------------------------------------------------------

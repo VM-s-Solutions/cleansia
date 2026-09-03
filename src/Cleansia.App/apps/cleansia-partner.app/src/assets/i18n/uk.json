@@ -764,7 +764,8 @@
       "or_drag_drop": "або перетягніть",
       "accepted": "Дозволені",
       "max_size": "Макс. розмір",
-      "selected_files": "Вибрані файли"
+      "selected_files": "Вибрані файли",
+      "choose": "Вибрати файли"
     },
     "availability": {
       "days": {

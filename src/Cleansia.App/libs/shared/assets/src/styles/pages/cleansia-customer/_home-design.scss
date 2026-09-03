@@ -758,6 +758,78 @@ cleansia-telephone .cleansia-telephone__input {
   }
 }
 
+// ---- The fourth control that is not a p-inputtext ---------------------------
+// Owner, 2026-09-03: "the textarea isn't as rounded as in the design, doesn't
+// correspond to other input design roundness".
+//
+// Same shape as the phone and the select before it. PrimeNG's textarea emits
+// `p-textarea p-component` and NO `p-inputtext`, so the field floor above never
+// matched it and the control kept PrimeNG's own 6px corner beside 14px
+// neighbours. It cannot simply join that selector list either: the floor sets
+// `min-height` and zero vertical padding, which are right for a one-line field
+// and wrong for a box you type paragraphs into.
+.p-textarea.p-component {
+  padding: calc(0.75 * var(--cl-u)) var(--cl-u);
+  border-radius: calc(0.875 * var(--cl-u));
+  border: 1px solid var(--cl-field-border);
+  background: var(--cl-surface);
+  font-family: $font-body;
+  font-size: var(--cl-u);
+  line-height: 1.6;
+  color: var(--cl-body);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &::placeholder {
+    color: var(--cl-faint);
+  }
+
+  &:enabled:hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  &:enabled:focus {
+    outline: 0;
+    border-color: var(--cl-accent);
+    box-shadow: 0 0 0 3px var(--cl-tint-strong);
+  }
+}
+
+// ---- The compact file strip -------------------------------------------------
+// The shared component paints itself from PrimeNG's surface variables, which on
+// this surface reads as a grey dashed box on white. The board draws it in the
+// brand: a dashed blue edge on the pale tint, with the icon and the trigger in
+// the heading colour — the one optional thing on the form, saying so.
+//
+// Customer-scoped on purpose: partner and admin render the same component and
+// have not had this design pass.
+cleansia-file .file-upload-area--compact {
+  border: 1px dashed var(--cl-accent-soft);
+  border-radius: calc(1.25 * var(--cl-u));
+  background: var(--cl-tint);
+
+  &:hover:not(.disabled) {
+    border-color: var(--cl-accent);
+    background: var(--cl-tint-strong);
+  }
+
+  .upload-icon {
+    color: var(--cl-heading);
+  }
+
+  .primary-text {
+    color: var(--cl-ink);
+  }
+
+  .secondary-text {
+    color: var(--cl-muted);
+  }
+
+  .upload-trigger {
+    border-color: var(--cl-border-tint);
+    color: var(--cl-heading);
+  }
+}
+
 // The select is the third control that is not a p-inputtext, so the field floor
 // above never reached it either: it rendered 35px tall with a 6px radius beside
 // 48px/14px neighbours in the same row. -> "Profil zakaznika" board, .fld

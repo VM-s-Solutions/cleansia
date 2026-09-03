@@ -55,6 +55,62 @@
       box-shadow: none;
     }
 
+    // ---- Compact: one row, not a panel ----------------------------------
+    // The same control where a file is the OPTIONAL extra beside a message or a
+    // description rather than the form itself. Drag-and-drop still works; it
+    // just stops announcing itself at the size of the thing it sits under.
+    &--compact {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.875rem;
+      min-height: 0;
+      padding: 1rem 1.125rem;
+      text-align: left;
+      box-shadow: none;
+
+      &:hover:not(.disabled) {
+        box-shadow: none;
+        transform: none;
+      }
+
+      .upload-icon {
+        flex-shrink: 0;
+        font-size: 1.3125rem;
+      }
+
+      .upload-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        flex-grow: 1;
+        min-width: 0;
+
+        .primary-text {
+          font-weight: 700;
+          font-size: 0.9375rem;
+        }
+
+        .secondary-text {
+          font-size: 0.8125rem;
+        }
+      }
+
+      .upload-trigger {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.5rem;
+        padding: 0 1.125rem;
+        border-radius: 999px;
+        background: var(--surface-card);
+        border: 1px solid var(--surface-border);
+        font-weight: 800;
+        font-size: 0.9375rem;
+        white-space: nowrap;
+      }
+    }
+
     .upload-content {
       display: flex;
       flex-direction: column;

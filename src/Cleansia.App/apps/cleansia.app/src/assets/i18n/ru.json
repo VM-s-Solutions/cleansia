@@ -1191,9 +1191,9 @@
       "new_reply": "Новый ответ",
       "refund_amount": "Согласованная сумма возврата",
       "statuses": {
-        "pending": "Ожидает рассмотрения",
+        "pending": "Принято",
         "under_review": "На рассмотрении",
-        "waiting_for_response": "Ожидает вашего ответа",
+        "waiting_for_response": "Ждём ответа",
         "resolved": "Решено",
         "closed": "Закрыто",
         "escalated": "Эскалировано"
@@ -1601,7 +1601,8 @@
       "click_to_select": "Нажмите, чтобы выбрать файлы",
       "max_size": "Макс. размер",
       "or_drag_drop": "или перетащите",
-      "selected_files": "Выбранные файлы"
+      "selected_files": "Выбранные файлы",
+      "choose": "Выбрать файлы"
     },
     "brand_mark_alt": "Cleansia"
   },

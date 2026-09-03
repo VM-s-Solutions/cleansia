@@ -241,8 +241,14 @@ export class DisputesComponent implements OnInit {
       // A brand-new dispute is the one to be looking at.
       this.selectedId.set(null);
       this.loadDisputes();
-      if (evidence) {
+      if (!evidence) return;
+      if (disputeId) {
         this.facade.uploadEvidence(disputeId, evidence);
+      } else {
+        // Never silently. The dispute was filed but the photo has nowhere to
+        // go, and a customer who attached one has to be told — this failed
+        // quietly once already.
+        this.facade.reportEvidenceOrphaned();
       }
     });
   }

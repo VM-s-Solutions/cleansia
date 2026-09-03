@@ -1204,7 +1204,8 @@
         "upload_success": "Evidence uploaded",
         "upload_error": "Failed to upload evidence",
         "invalid_type": "This file type isn't allowed. Use JPG, PNG, WebP or PDF.",
-        "too_large": "The file is too large. Maximum size is 10 MB."
+        "too_large": "The file is too large. Maximum size is 10 MB.",
+        "orphaned": "The dispute was filed, but the photo could not be attached. Open it and add the photo there."
       },
       "author_you": "You",
       "author_support": "Cleansia support",

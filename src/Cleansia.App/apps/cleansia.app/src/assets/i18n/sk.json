@@ -1204,7 +1204,8 @@
         "upload_success": "Dôkaz bol nahraný",
         "upload_error": "Dôkaz sa nepodarilo nahrať",
         "invalid_type": "Tento typ súboru nie je povolený. Použite JPG, PNG, WebP alebo PDF.",
-        "too_large": "Súbor je príliš veľký. Maximálna veľkosť je 10 MB."
+        "too_large": "Súbor je príliš veľký. Maximálna veľkosť je 10 MB.",
+        "orphaned": "Reklamácia bola podaná, ale fotku sa nepodarilo priložiť. Otvorte ju a pridajte fotku tam."
       },
       "author_you": "Vy",
       "author_support": "Podpora Cleansia",

@@ -1204,7 +1204,8 @@
         "upload_success": "Důkaz byl nahrán",
         "upload_error": "Důkaz se nepodařilo nahrát",
         "invalid_type": "Tento typ souboru není povolen. Použijte JPG, PNG, WebP nebo PDF.",
-        "too_large": "Soubor je příliš velký. Maximální velikost je 10 MB."
+        "too_large": "Soubor je příliš velký. Maximální velikost je 10 MB.",
+        "orphaned": "Reklamace byla podána, ale fotku se nepodařilo přiložit. Otevřete ji a přidejte fotku tam."
       },
       "author_you": "Vy",
       "author_support": "Podpora Cleansia",

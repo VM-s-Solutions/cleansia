@@ -37,6 +37,7 @@ import {
   hasUnreadStaffReply,
   latestStaffMessageTimestamp,
   validateEvidenceFile,
+  readCreatedDisputeId,
 } from './disputes.models';
 
 const LAST_VIEWED_STORAGE_KEY = 'cleansia.customer.disputes.last_viewed';
@@ -182,7 +183,7 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     orderId: string,
     reason: DisputeReason,
     description: string,
-    onSuccess: (disputeId: string) => void
+    onSuccess: (disputeId: string | null) => void
   ): void {
     if (this.creatingDispute()) return;
     this.creatingDispute.set(true);
@@ -202,11 +203,23 @@ export class DisputesFacade extends UnsubscribeControlDirective {
         }),
         finalize(() => this.creatingDispute.set(false))
       )
-      .subscribe((disputeId) => {
-        if (!disputeId) return;
+      .subscribe((response: unknown) => {
+        if (response === null) return;
         this.snackbar.showSuccessTranslated('pages.disputes.create_success');
-        onSuccess(disputeId);
+        // The dispute EXISTS — the create succeeded. Only the id may be missing,
+        // and the caller is told so rather than being handed an empty string it
+        // would quietly upload a photo against. This is what hid the bug the
+        // first time: a silent no-op after a successful create.
+        onSuccess(readCreatedDisputeId(response));
       });
+  }
+
+  /**
+   * The dispute was filed but the server returned no id, so the photo attached
+   * to it could not be sent. Says so out loud rather than dropping it.
+   */
+  reportEvidenceOrphaned(): void {
+    this.snackbar.showErrorTranslated('pages.disputes.evidence.orphaned');
   }
 
   sendMessage(disputeId: string, message: string, onSuccess: () => void): void {

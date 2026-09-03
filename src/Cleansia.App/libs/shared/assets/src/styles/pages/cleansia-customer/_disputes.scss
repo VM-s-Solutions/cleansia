@@ -123,12 +123,12 @@
     background: var(--cl-tint);
   }
 
-  // The one being read. A rail, and only a rail: this was a rounded tinted
-  // block, which drew a second card inside the panel and broke the flat run of
-  // rows the board draws. Owner, 2026-09-03 — "the overview doesn't look the
-  // same as in the design".
+  // The one being read. A flat tint the full width of the row — no rail down
+  // its side, and no rounded block either: the first drew a line where the
+  // board has a dot, the second drew a second card inside the panel.
+  // Owner, 2026-09-03.
   &--on {
-    box-shadow: inset 3px 0 0 var(--cl-accent);
+    background: var(--cl-tint);
   }
 
   &:focus-visible {
@@ -137,11 +137,11 @@
   }
 }
 
-// A reply the customer has not read. It holds its 8px whether or not it is lit,
-// so the rows below it do not shift when one is marked read. The left margin is
-// the room the selected row's rail sits in.
+// A reply you have not read — the board's dot, and the only thing it means. It
+// holds its 8px whether or not it is lit, so the rows below do not shift when
+// one is marked read. Which row is OPEN is said by the row's own tint, not
+// here: one mark, one meaning.
 .cl-dsp__row-dot {
-  margin-left: calc(0.625 * var(--cl-u));
   width: 8px;
   height: 8px;
   border-radius: 999px;

@@ -9,7 +9,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import {
   CleansiaAddressAutocompleteComponent,
   CleansiaButtonComponent,
@@ -19,7 +19,7 @@ import {
   CleansiaSelectComponent,
 } from '@cleansia/components';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
-import { SavedAddressDto } from '@cleansia/customer-services';
+import { LoyaltyTier, SavedAddressDto } from '@cleansia/customer-services';
 import { persistPreferredLanguage, ThemeService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
@@ -42,6 +42,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     FormsModule,
     ReactiveFormsModule,
     TranslatePipe,
@@ -115,6 +116,28 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Preferences
   readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');
+
+  /**
+   * i18n suffix for the tier the rail names, or null when the account has no
+   * loyalty record yet — the row is then omitted rather than shown as blank.
+   * Mirrors RewardsFacade.tierKey; duplicated as four cases rather than
+   * imported, because reaching into a sibling feature for a switch would cross
+   * a module boundary to save eight lines.
+   */
+  readonly loyaltyTierKey = computed<string | null>(() => {
+    switch (this.facade.loyaltyTier()) {
+      case LoyaltyTier.PlatinumSparkler:
+        return 'platinum_sparkler';
+      case LoyaltyTier.GoldPolisher:
+        return 'gold_polisher';
+      case LoyaltyTier.SilverMopper:
+        return 'silver_mopper';
+      case LoyaltyTier.BronzeCleaner:
+        return 'bronze_cleaner';
+      default:
+        return null;
+    }
+  });
 
   languageOptions = [
     { label: 'Čeština', value: 'cs' },
@@ -422,5 +445,15 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   toggleTheme(): void {
     this.themeService.toggleTheme();
+  }
+
+  /**
+   * The board shows light and dark as a segmented pair rather than one button
+   * that toggles, so the control has to be able to SET a side rather than flip.
+   */
+  setTheme(dark: boolean): void {
+    if (this.isDarkMode() !== dark) {
+      this.themeService.toggleTheme();
+    }
   }
 }

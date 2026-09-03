@@ -709,7 +709,10 @@
         "promo": "Akcie a ponuky",
         "dispute_reply": "Odpovede na reklamácie",
         "recurring_scheduled": "Naplánované pravidelné upratovanie"
-      }
+      },
+      "addresses_manage": "Spravovať",
+      "email_verified": "E-mail je overený. Zmena vyžaduje nové overenie.",
+      "export_request": "Vyžiadať"
     },
     "services": {
       "title": "Naše služby",

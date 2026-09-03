@@ -709,7 +709,10 @@
         "promo": "Promotions and offers",
         "dispute_reply": "Dispute replies",
         "recurring_scheduled": "Recurring cleaning scheduled"
-      }
+      },
+      "addresses_manage": "Manage",
+      "email_verified": "Your email is verified. Changing it needs a new verification.",
+      "export_request": "Request"
     },
     "services": {
       "title": "Our Services",

@@ -19,10 +19,15 @@
 
   <!-- Layout: Sidebar + Content -->
   <div class="customer-profile__layout">
-    <!-- Sticky Left Sidebar Navigation -->
+    <!-- Sticky Left Sidebar -->
     <aside class="customer-profile__sidebar">
       <div class="customer-profile__sidebar-sticky">
-        <!-- User Info Card -->
+        <!--
+          The identity card, as the board draws it: the avatar centred and large
+          with its own camera affordance, the name and address under it, and the
+          way to change the photo as a full-width action rather than a control
+          buried in the Personal details card.
+        -->
         <div class="customer-profile__user-card">
           <div class="customer-profile__user-avatar">
             @if (avatarUrl(); as url) {
@@ -30,19 +35,58 @@
               class="customer-profile__avatar-image"
               [src]="url"
               [alt]="'pages.profile.avatar.alt' | translate"
+              (load)="onAvatarLoaded()"
+              (error)="onAvatarLoadFailed()"
             />
             } @else {
-            {{ userInitials() || '?' }}
+            <span class="customer-profile__avatar-initials">{{ userInitials() || '?' }}</span>
             }
+            <span class="customer-profile__avatar-badge" aria-hidden="true">
+              <i class="pi pi-camera"></i>
+            </span>
           </div>
-          <div class="customer-profile__user-info">
-            <div class="customer-profile__user-name">
-              {{ user()?.firstName }} {{ user()?.lastName }}
-            </div>
-            <div class="customer-profile__user-email">
-              {{ user()?.email }}
-            </div>
+
+          <div class="customer-profile__user-name">
+            {{ user()?.firstName }} {{ user()?.lastName }}
           </div>
+          <div class="customer-profile__user-email">{{ user()?.email }}</div>
+
+          <input
+            #avatarInput
+            type="file"
+            hidden
+            [accept]="avatarAccept"
+            (change)="onAvatarSelected($event)"
+          />
+          <button
+            type="button"
+            class="customer-profile__photo-btn"
+            [disabled]="avatarSaving()"
+            (click)="avatarInput.click()"
+          >
+            {{ 'pages.profile.avatar.change' | translate }}
+          </button>
+          @if (avatarUrl()) {
+          <button
+            type="button"
+            class="customer-profile__photo-remove"
+            [disabled]="avatarSaving()"
+            (click)="removeAvatar()"
+          >
+            {{ 'pages.profile.avatar.remove' | translate }}
+          </button>
+          }
+
+          <!-- The one line the rail carries about the account beyond who it is. -->
+          @if (loyaltyTierKey(); as tierKey) {
+          <div class="customer-profile__tier">
+            <i class="pi pi-star"></i>
+            <span>{{ 'pages.rewards.tier.' + tierKey | translate }}</span>
+            <a class="customer-profile__tier-link" [routerLink]="'/rewards'">
+              {{ 'pages.profile.rewards_card_title' | translate }}
+            </a>
+          </div>
+          }
         </div>
 
         <!-- Section Navigation -->
@@ -66,10 +110,7 @@
     <div class="customer-profile__content">
       <!-- Personal Info Section -->
       <div id="profile-personal" class="customer-profile__section-card">
-        <div class="customer-profile__section-header">
-          <div class="customer-profile__section-icon">
-            <i class="pi pi-user"></i>
-          </div>
+        <div class="customer-profile__section-head">
           <div>
             <h2 class="customer-profile__section-title">
               {{ 'pages.profile.personal_info' | translate }}
@@ -80,75 +121,7 @@
           </div>
         </div>
 
-        <div class="customer-profile__avatar-editor">
-          <div class="customer-profile__avatar">
-            @if (avatarUrl(); as url) {
-            <img
-              class="customer-profile__avatar-image"
-              [src]="url"
-              [alt]="'pages.profile.avatar.alt' | translate"
-              (load)="onAvatarLoaded()"
-              (error)="onAvatarLoadFailed()"
-            />
-            } @else {
-            <span class="customer-profile__avatar-initials">
-              {{ userInitials() || '?' }}
-            </span>
-            }
-          </div>
-
-          <div class="customer-profile__avatar-actions">
-            <p class="customer-profile__avatar-hint">
-              {{ 'pages.profile.avatar.hint' | translate }}
-            </p>
-            <div class="customer-profile__avatar-buttons">
-              <input
-                #avatarInput
-                type="file"
-                hidden
-                [accept]="avatarAccept"
-                (change)="onAvatarSelected($event)"
-              />
-              <cleansia-button
-                [buttonType]="'button'"
-                [style]="'raised-button'"
-                [title]="'pages.profile.avatar.change' | translate"
-                [icon]="'pi pi-camera'"
-                [loading]="avatarSaving()"
-                [disabled]="avatarSaving()"
-                (clickFn)="avatarInput.click()"
-              />
-              @if (avatarUrl()) {
-              <cleansia-button
-                [buttonType]="'button'"
-                [severity]="'danger'"
-                [title]="'pages.profile.avatar.remove' | translate"
-                [icon]="'pi pi-trash'"
-                [iconPosition]="'left'"
-                [outlined]="true"
-                [disabled]="avatarSaving()"
-                (clickFn)="removeAvatar()"
-              />
-              }
-            </div>
-          </div>
-        </div>
-
-        <form
-          [formGroup]="profileForm"
-          class="customer-profile__form"
-          (ngSubmit)="saveProfile()"
-        >
-          <cleansia-text-input
-            [floatVariant]="null"
-            [label]="'pages.profile.email' | translate"
-            [disabled]="true"
-            [ngModel]="user()?.email || ''"
-            [ngModelOptions]="{standalone: true}"
-            dataType="email"
-            inputSize="full-width"
-          />
-
+        <form [formGroup]="profileForm" class="customer-profile__form" (ngSubmit)="saveProfile()">
           <div class="customer-profile__row">
             <cleansia-text-input
               [floatVariant]="null"
@@ -167,12 +140,24 @@
           </div>
 
           <div class="customer-profile__row">
+            <cleansia-text-input
+              [floatVariant]="null"
+              [label]="'pages.profile.email' | translate"
+              [disabled]="true"
+              [ngModel]="user()?.email || ''"
+              [ngModelOptions]="{ standalone: true }"
+              dataType="email"
+              inputSize="full-width"
+            />
             <cleansia-telephone
               [floatVariant]="null"
               formControlName="phoneNumber"
               [label]="'pages.profile.phone' | translate"
               defaultCountryFlag="cz"
             />
+          </div>
+
+          <div class="customer-profile__row">
             <cleansia-calendar
               [floatVariant]="null"
               formControlName="birthDate"
@@ -182,6 +167,7 @@
             />
           </div>
 
+          <!-- Action and the one fact about the e-mail beside it, as the board has them. -->
           <div class="customer-profile__actions">
             <cleansia-button
               [title]="'global.actions.save' | translate"
@@ -191,16 +177,16 @@
               [disabled]="profileForm.invalid"
               (clickFn)="saveProfile()"
             />
+            <span class="customer-profile__note">
+              {{ 'pages.profile.email_verified' | translate }}
+            </span>
           </div>
         </form>
       </div>
 
       <!-- Addresses Section -->
       <div id="profile-addresses" class="customer-profile__section-card">
-        <div class="customer-profile__section-header">
-          <div class="customer-profile__section-icon">
-            <i class="pi pi-map-marker"></i>
-          </div>
+        <div class="customer-profile__section-head">
           <div>
             <h2 class="customer-profile__section-title">
               {{ 'pages.profile.addresses_title' | translate }}
@@ -209,71 +195,68 @@
               {{ 'pages.profile.addresses_desc' | translate }}
             </p>
           </div>
+          <a class="customer-profile__head-link" [routerLink]="'/saved-addresses'">
+            {{ 'pages.profile.addresses_manage' | translate }}
+          </a>
         </div>
 
         @if (addresses().length === 0) {
         <div class="customer-profile__empty-addresses">
-          <div class="customer-profile__empty-icon">
-            <i class="pi pi-map-marker"></i>
-          </div>
+          <div class="customer-profile__empty-icon"><i class="pi pi-map-marker"></i></div>
           <p>{{ 'pages.profile.no_addresses' | translate }}</p>
         </div>
         } @else {
-        <div class="customer-profile__address-list">
+        <ul class="customer-profile__address-list">
           @for (addr of addresses(); track addr.id) {
-          <div class="customer-profile__address-card" [class.customer-profile__address-card--default]="addr.isDefault">
+          <li class="customer-profile__address-row">
+            <span class="customer-profile__address-pin"><i class="pi pi-map-marker"></i></span>
             <div class="customer-profile__address-info">
               <div class="customer-profile__address-label">
                 {{ addr.label }}
                 @if (addr.isDefault) {
                 <span class="customer-profile__address-default-badge">
-                  <i class="pi pi-check-circle"></i>
                   {{ 'pages.profile.default_address' | translate }}
                 </span>
                 }
               </div>
-              <strong>{{ addr.street }}</strong>
-              <span>{{ addr.city }}, {{ addr.zipCode }}</span>
-              @if (addr.country) {
-              <span>{{ addr.country }}</span>
-              }
+              <div class="customer-profile__address-line">
+                {{ addr.street }}, {{ addr.city }} {{ addr.zipCode }}
+              </div>
             </div>
             <div class="customer-profile__address-actions">
               @if (!addr.isDefault) {
-              <button class="customer-profile__address-btn" (click)="setDefaultAddress(addr.id!)" title="{{ 'pages.profile.set_default' | translate }}">
+              <button
+                class="customer-profile__address-btn"
+                [title]="'pages.profile.set_default' | translate"
+                (click)="setDefaultAddress(addr.id!)"
+              >
                 <i class="pi pi-star"></i>
               </button>
               }
-              <button class="customer-profile__address-btn" (click)="openEditAddress(addr)">
-                <i class="pi pi-pencil"></i>
+              <button class="customer-profile__row-link" (click)="openEditAddress(addr)">
+                {{ 'pages.profile.edit_address' | translate }}
               </button>
-              <button class="customer-profile__address-btn customer-profile__address-btn--danger" (click)="deleteAddress(addr.id!)">
+              <button
+                class="customer-profile__address-btn customer-profile__address-btn--danger"
+                (click)="deleteAddress(addr.id!)"
+              >
                 <i class="pi pi-trash"></i>
               </button>
             </div>
-          </div>
+          </li>
           }
-        </div>
+        </ul>
         }
 
-        <div class="customer-profile__actions" style="margin-top: 1rem;">
-          <cleansia-button
-            [title]="'pages.profile.add_address' | translate"
-            [severity]="'secondary'"
-            [style]="'raised-button'"
-            [icon]="'pi pi-plus'"
-            [iconPosition]="'left'"
-            (clickFn)="openAddAddress()"
-          />
-        </div>
+        <button type="button" class="customer-profile__ghost-btn" (click)="openAddAddress()">
+          <i class="pi pi-map-marker"></i>
+          {{ 'pages.profile.add_address' | translate }}
+        </button>
       </div>
 
       <!-- Security Section -->
       <div id="profile-security" class="customer-profile__section-card">
-        <div class="customer-profile__section-header">
-          <div class="customer-profile__section-icon">
-            <i class="pi pi-lock"></i>
-          </div>
+        <div class="customer-profile__section-head">
           <div>
             <h2 class="customer-profile__section-title">
               {{ 'pages.profile.security_title' | translate }}
@@ -284,11 +267,7 @@
           </div>
         </div>
 
-        <form
-          [formGroup]="passwordForm"
-          class="customer-profile__form"
-          (ngSubmit)="changePassword()"
-        >
+        <form [formGroup]="passwordForm" class="customer-profile__form" (ngSubmit)="changePassword()">
           <cleansia-text-input
             [floatVariant]="null"
             [formControl]="passwordForm.controls.currentPassword"
@@ -302,6 +281,7 @@
               [floatVariant]="null"
               [formControl]="passwordForm.controls.newPassword"
               [label]="'pages.profile.new_password' | translate"
+              [placeholder]="'pages.profile.password_change_note' | translate"
               dataType="password"
               inputSize="full-width"
               [showErrors]="false"
@@ -315,28 +295,11 @@
                 inputSize="full-width"
               />
               @if (passwordMismatch && passwordForm.controls.confirmPassword.dirty) {
-              <small class="p-error mt-1 block">{{
-                'pages.profile.passwords_not_match' | translate
-              }}</small>
+              <small class="customer-profile__field-error">
+                {{ 'pages.profile.passwords_not_match' | translate }}
+              </small>
               }
             </div>
-          </div>
-
-          <div class="customer-profile__password-checklist">
-            <ul>
-              <li [class.valid]="passwordValidation().hasMinLength"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasMinLength">
-                {{ 'auth.register.validation.password_min_length' | translate }}
-              </li>
-              <li [class.valid]="passwordValidation().hasLetter"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasLetter">
-                {{ 'auth.register.validation.password_letter' | translate }}
-              </li>
-              <li [class.valid]="passwordValidation().hasNumber"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasNumber">
-                {{ 'auth.register.validation.password_number' | translate }}
-              </li>
-            </ul>
           </div>
 
           <div class="customer-profile__actions">
@@ -352,18 +315,9 @@
         </form>
       </div>
 
-      <!--
-        Notifications — its own section, not a block at the foot of Preferences.
-        Eleven toggles are the biggest thing on this page and were sitting under
-        a language picker and a theme switch. The component is unchanged: it
-        brings its own facade, its own loading and retry states, and the eleven
-        categories.
-      -->
+      <!-- Notifications -->
       <div id="profile-notifications" class="customer-profile__section-card">
-        <div class="customer-profile__section-header">
-          <div class="customer-profile__section-icon">
-            <i class="pi pi-bell"></i>
-          </div>
+        <div class="customer-profile__section-head">
           <div>
             <h2 class="customer-profile__section-title">
               {{ 'pages.profile.notifications.title' | translate }}
@@ -379,10 +333,7 @@
 
       <!-- Preferences Section -->
       <div id="profile-preferences" class="customer-profile__section-card">
-        <div class="customer-profile__section-header">
-          <div class="customer-profile__section-icon">
-            <i class="pi pi-sliders-h"></i>
-          </div>
+        <div class="customer-profile__section-head">
           <div>
             <h2 class="customer-profile__section-title">
               {{ 'pages.profile.preferences_title' | translate }}
@@ -393,54 +344,60 @@
           </div>
         </div>
 
-        <div class="customer-profile__pref-list">
-          <!-- Language -->
-          <div class="customer-profile__pref-row">
-            <div class="customer-profile__pref-label">
-              <i class="pi pi-globe"></i>
-              {{ 'pages.profile.pref_language' | translate }}
-            </div>
-            <div class="customer-profile__pref-control">
-              <cleansia-select
-                [floatVariant]="null"
-                [options]="languageOptions"
-                [ngModel]="currentLanguage"
-                (ngModelChange)="onLanguageChange($event)"
-                [showClear]="false"
-                inputSize="small-width"
-              />
-            </div>
-          </div>
+        <div class="customer-profile__row">
+          <cleansia-select
+            [floatVariant]="null"
+            [label]="'pages.profile.pref_language' | translate"
+            [options]="languageOptions"
+            [ngModel]="currentLanguage"
+            (ngModelChange)="onLanguageChange($event)"
+            [showClear]="false"
+            inputSize="full-width"
+          />
 
-          <!-- Theme -->
-          <div class="customer-profile__pref-row">
-            <div class="customer-profile__pref-label">
-              <i [class]="isDarkMode() ? 'pi pi-moon' : 'pi pi-sun'"></i>
+          <!--
+            A segmented pair, not a single toggle button: the board shows both
+            states side by side so the current one is readable without working
+            out what the button would do if pressed.
+          -->
+          <div class="customer-profile__field">
+            <span class="customer-profile__field-label">
               {{ 'pages.profile.pref_theme' | translate }}
-            </div>
-            <div class="customer-profile__pref-control">
-              <cleansia-button
-                className="customer-profile__theme-btn"
-                [label]="(isDarkMode() ? 'pages.profile.theme_light' : 'pages.profile.theme_dark') | translate"
-                [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
-                [severity]="'secondary'"
-                [outlined]="true"
-                (onClick)="toggleTheme()"
-              />
+            </span>
+            <div class="customer-profile__segmented" role="group">
+              <button
+                type="button"
+                class="customer-profile__segment"
+                [class.customer-profile__segment--on]="!isDarkMode()"
+                [attr.aria-pressed]="!isDarkMode()"
+                (click)="setTheme(false)"
+              >
+                <i class="pi pi-sun"></i>
+                {{ 'pages.profile.theme_light' | translate }}
+              </button>
+              <button
+                type="button"
+                class="customer-profile__segment"
+                [class.customer-profile__segment--on]="isDarkMode()"
+                [attr.aria-pressed]="isDarkMode()"
+                (click)="setTheme(true)"
+              >
+                <i class="pi pi-moon"></i>
+                {{ 'pages.profile.theme_dark' | translate }}
+              </button>
             </div>
           </div>
-
         </div>
       </div>
 
-      <!-- Danger Zone -->
-      <div id="profile-danger" class="customer-profile__section-card customer-profile__section-card--danger">
-        <div class="customer-profile__section-header">
-          <div class="customer-profile__section-icon customer-profile__section-icon--danger">
-            <i class="pi pi-exclamation-triangle"></i>
-          </div>
+      <!-- Data and privacy -->
+      <div
+        id="profile-danger"
+        class="customer-profile__section-card customer-profile__section-card--danger"
+      >
+        <div class="customer-profile__section-head">
           <div>
-            <h2 class="customer-profile__section-title">
+            <h2 class="customer-profile__section-title customer-profile__section-title--danger">
               {{ 'pages.profile.danger_zone_title' | translate }}
             </h2>
             <p class="customer-profile__section-subtitle">
@@ -449,34 +406,28 @@
           </div>
         </div>
 
-        <div class="customer-profile__danger-actions">
-          <div class="customer-profile__danger-row">
-            <div>
-              <strong>{{ 'pages.profile.export_data' | translate }}</strong>
-              <p>{{ 'pages.profile.export_data_desc' | translate }}</p>
-            </div>
-            <cleansia-button
-              [title]="'pages.profile.export_data' | translate"
-              [severity]="'secondary'"
-              [icon]="'pi pi-download'"
-              [iconPosition]="'left'"
-              (clickFn)="router.navigate(['/gdpr'])"
-            />
+        <div class="customer-profile__danger-row">
+          <span class="customer-profile__danger-icon"><i class="pi pi-download"></i></span>
+          <div class="customer-profile__danger-text">
+            <strong>{{ 'pages.profile.export_data' | translate }}</strong>
+            <p>{{ 'pages.profile.export_data_desc' | translate }}</p>
           </div>
-          <div class="customer-profile__danger-divider"></div>
-          <div class="customer-profile__danger-row">
-            <div>
-              <strong>{{ 'pages.profile.delete_account' | translate }}</strong>
-              <p>{{ 'pages.profile.delete_account_desc' | translate }}</p>
-            </div>
-            <cleansia-button
-              [title]="'pages.profile.delete_account' | translate"
-              [severity]="'danger'"
-              [icon]="'pi pi-trash'"
-              [iconPosition]="'left'"
-              (clickFn)="router.navigate(['/gdpr'])"
-            />
+          <button type="button" class="customer-profile__ghost-btn" (click)="router.navigate(['/gdpr'])">
+            {{ 'pages.profile.export_request' | translate }}
+          </button>
+        </div>
+
+        <div class="customer-profile__danger-row customer-profile__danger-row--stop">
+          <span class="customer-profile__danger-icon customer-profile__danger-icon--stop">
+            <i class="pi pi-trash"></i>
+          </span>
+          <div class="customer-profile__danger-text">
+            <strong>{{ 'pages.profile.delete_account' | translate }}</strong>
+            <p>{{ 'pages.profile.delete_account_desc' | translate }}</p>
           </div>
+          <button type="button" class="customer-profile__danger-btn" (click)="router.navigate(['/gdpr'])">
+            {{ 'pages.profile.delete_account' | translate }}
+          </button>
         </div>
       </div>
     </div>
@@ -485,7 +436,11 @@
 
   <!-- Scroll to Top Button -->
   @if (showScrollTop()) {
-  <button class="customer-profile__scroll-top" (click)="scrollToTop()" [attr.aria-label]="'pages.profile.scroll_to_top' | translate">
+  <button
+    class="customer-profile__scroll-top"
+    (click)="scrollToTop()"
+    [attr.aria-label]="'pages.profile.scroll_to_top' | translate"
+  >
     <i class="pi pi-arrow-up"></i>
   </button>
   }
@@ -513,19 +468,19 @@
         (searchFailed)="onAddressSearchFailed()"
       />
       @if (addressForm.value.street) {
-        <div class="customer-profile__dialog-resolved">
-          <div class="customer-profile__dialog-resolved-row">
-            <i class="pi pi-map-marker"></i>
-            <div>
-              <strong>{{ addressForm.value.street }}</strong>
-              <span>{{ addressForm.value.city }}, {{ addressForm.value.zip }}</span>
-            </div>
+      <div class="customer-profile__dialog-resolved">
+        <div class="customer-profile__dialog-resolved-row">
+          <i class="pi pi-map-marker"></i>
+          <div>
+            <strong>{{ addressForm.value.street }}</strong>
+            <span>{{ addressForm.value.city }}, {{ addressForm.value.zip }}</span>
           </div>
         </div>
+      </div>
       } @else {
-        <p class="customer-profile__dialog-hint">
-          {{ 'pages.profile.address_pick_required' | translate }}
-        </p>
+      <p class="customer-profile__dialog-hint">
+        {{ 'pages.profile.address_pick_required' | translate }}
+      </p>
       }
       <div class="customer-profile__dialog-toggle">
         <label>{{ 'pages.profile.default_address' | translate }}</label>

@@ -7,6 +7,7 @@ import {
   ChangePasswordCommand,
   CustomerClient,
   GetCurrentUserQuery,
+  LoyaltyTier,
   MyProfileDto,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
@@ -37,6 +38,15 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   readonly avatarUrl = signal<string | null>(null);
   readonly avatarSaving = signal(false);
 
+  /**
+   * The account's loyalty tier, for the one line the board puts under the
+   * avatar in the left rail. Read through `customerClient.loyaltyClient` rather
+   * than through the rewards feature's own facade: the rail needs one enum, and
+   * importing a sibling feature to get it would cross a module boundary for a
+   * label. A failure leaves it null and the rail simply omits the row.
+   */
+  readonly loyaltyTier = signal<LoyaltyTier | null>(null);
+
   private avatarFileName: string | null = null;
   private avatarRetryAvailable = true;
   private adoptNextAvatarUrl = false;
@@ -57,12 +67,24 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           this.user.set(user);
           this.applyAvatar(user.profilePhoto);
           this.loading.set(false);
+          this.loadLoyaltyTier();
           onSuccess?.(user);
         },
         error: () => {
           this.loading.set(false);
         },
       });
+  }
+
+  /** Never blocks the page: the rail's tier row is decoration on an account screen. */
+  private loadLoyaltyTier(): void {
+    this.customerClient.loyaltyClient
+      .getMy()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+      )
+      .subscribe((account) => this.loyaltyTier.set(account?.currentTier ?? null));
   }
 
   saveProfile(

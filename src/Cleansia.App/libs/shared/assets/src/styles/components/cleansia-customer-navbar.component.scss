@@ -136,14 +136,29 @@ $nav-band: 96px;
     }
   }
 
+  // -> "Profil zakaznika" board: a filled disc with the initials in white, and
+  // a chevron beside it. It was a pale tint that read as a placeholder photo.
   &__avatar {
-    background: var(--primary-100, #e0f2fe) !important;
-    color: var(--primary-700, #0369a1) !important;
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
     aspect-ratio: 1;
-    font-size: 0.8rem !important;
+    border-radius: 999px;
+    background: var(--cl-heading, #0369a1);
+    color: #fff;
+    font-family: var(--font-heading, inherit);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+
+  &__avatar-caret {
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--cl-muted, #64748b);
   }
 
   &__icon-btn {
@@ -165,6 +180,16 @@ $nav-band: 96px;
     &:hover {
       color: var(--text-color, #1e293b);
       background: var(--surface-hover, #f1f5f9);
+    }
+
+    // The account button carries a disc AND a chevron, so it cannot stay a
+    // 36px circle with overflow hidden — that clipped the chevron off.
+    &:has(.customer-navbar__avatar) {
+      width: auto;
+      height: auto;
+      padding: 3px 10px 3px 3px;
+      border-radius: 999px;
+      overflow: visible;
     }
   }
 

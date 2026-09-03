@@ -66,7 +66,12 @@ describe('ProfileFacade', () => {
         ProfileFacade,
         {
           provide: CustomerClient,
-          useValue: { userClient, countryClient: { getServiced: jest.fn() } },
+          useValue: {
+            userClient,
+            countryClient: { getServiced: jest.fn() },
+            // The rail reads the loyalty tier after the profile resolves.
+            loyaltyClient: { getMy: jest.fn(() => of({ currentTier: 2 })) },
+          },
         },
         { provide: SnackbarService, useValue: snackbar },
         {

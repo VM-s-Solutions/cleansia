@@ -68,12 +68,13 @@
           aria-label="User menu"
         >
           @if (isLoggedIn() && userInitials()) {
-            <p-avatar
-              [label]="userInitials()!"
-              shape="circle"
-              size="normal"
-              styleClass="customer-navbar__avatar"
-            />
+            <!--
+              The board draws the signed-in account as a FILLED disc carrying the
+              initials, with a chevron beside it so the control reads as a menu.
+              It was a pale tint at 32px, which read as a placeholder avatar.
+            -->
+            <span class="customer-navbar__avatar">{{ userInitials() }}</span>
+            <i class="pi pi-chevron-down customer-navbar__avatar-caret"></i>
           } @else {
             <i class="pi pi-user text-xl"></i>
           }

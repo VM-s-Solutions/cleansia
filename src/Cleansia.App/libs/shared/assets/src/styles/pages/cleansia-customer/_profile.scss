@@ -98,13 +98,23 @@
 .customer-profile__sidebar {
   position: sticky;
   top: var(--cl-nav-h);
-  height: calc(100vh - var(--cl-nav-h));
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  justify-content: safe center;
-  overflow-y: auto;
   min-width: 0;
+}
+
+// Centred only where there is genuinely room for it. The rail is about 650px,
+// so below this the space under the navbar cannot hold it and the previous
+// attempt turned the rail into a scroll container to cope — which put a
+// scrollbar down the middle of the page. There is no overflow here at any
+// height: above the breakpoint the rail is centred in the space, below it the
+// rail simply pins under the navbar and scrolls with the page like any other
+// sticky element.
+@media (min-height: 800px) {
+  .customer-profile__sidebar {
+    height: calc(100vh - var(--cl-nav-h));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
 }
 
 .customer-profile__sidebar-sticky {

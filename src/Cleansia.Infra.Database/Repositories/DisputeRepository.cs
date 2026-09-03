@@ -42,7 +42,10 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
     public Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId, CancellationToken cancellationToken)
     {
         return GetDbSet()
+            // The order's CURRENCY comes with it: a dispute's agreed refund is money off that
+            // order, and without this the detail screen has nothing to format it in.
             .Include(d => d.Order)
+                .ThenInclude(o => o.Currency)
             .Include(d => d.User)
             .Include(d => d.Messages)
                 .ThenInclude(m => m.Author)

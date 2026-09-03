@@ -9,7 +9,9 @@ import {
   CreateOrderCommand,
   CustomerAddress,
   CustomerAuthService,
+  ConsentType,
   CustomerClient,
+  UserConsentDto,
   ExtraListItem,
   PackageListItem,
   PaymentType,
@@ -62,6 +64,24 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   isAuthenticated = signal(false);
+
+  /**
+   * Whether this account has ALREADY granted the two consents the review step's
+   * tick asks for — Terms of Service and Privacy Policy — at sign-up or on an
+   * earlier booking.
+   *
+   * Owner ruling, 2026-09-03: a signed-in customer who accepted at registration
+   * is asked again on every order, and re-consenting to the same two documents
+   * is noise, not protection. The tick stays for GUESTS, who have no account
+   * and therefore no consent on record — a booking does not require one.
+   *
+   * Cookie consent is deliberately NOT part of this: cookies are about storage
+   * and tracking, and neither consent substitutes for the other.
+   *
+   * Defaults to false, so the tick is shown whenever this could not be
+   * established — a consent that might not exist is asked for.
+   */
+  readonly alreadyConsented = signal(false);
 
   services = toSignal(this.store.select(selectCustomerServices), {
     initialValue: [] as ServiceListItem[],
@@ -320,6 +340,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     this.membership.load(loggedIn);
 
     if (loggedIn) {
+      this.loadConsentState();
       if (!this.savedAddressStore.loaded()) {
         this.savedAddressStore.refresh();
       }
@@ -342,6 +363,32 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         },
       });
     }
+  }
+
+  /**
+   * Reads the account's consents once. Both of the two must be granted and
+   * neither withdrawn — a withdrawn Privacy Policy consent is not a consent,
+   * and asking again is the correct response to one.
+   *
+   * A failure leaves the flag false, which shows the tick. The safe direction
+   * for this switch is always "ask".
+   */
+  private loadConsentState(): void {
+    this.customerClient.gdprClient
+      .consentsGet()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as UserConsentDto[])),
+      )
+      .subscribe((consents) => {
+        const granted = (type: ConsentType) =>
+          consents.some(
+            (c) => c.consentType === type && c.isGranted && !c.withdrawnAt,
+          );
+        this.alreadyConsented.set(
+          granted(ConsentType.TermsOfService) && granted(ConsentType.PrivacyPolicy),
+        );
+      });
   }
 
   selectSavedAddress(addressId: string): void {

@@ -970,7 +970,13 @@
           names, through the same service — which parks a consent taken before
           there is a session and delivers it at the first one there is, because
           a booking does not require an account.
+
+          Not asked of an account that has already granted both. Owner ruling,
+          2026-09-03: re-consenting to the same two documents on every order is
+          noise, not protection. A guest still sees it — no account, no consent
+          on record — and so does anyone whose consent could not be read.
         -->
+        @if (!facade.alreadyConsented()) {
         <label class="cl-wiz__consent">
           <p-checkbox
             [ngModel]="acceptedTerms()"
@@ -980,6 +986,12 @@
           />
           <span>{{ 'pages.order.accept_terms' | translate }}</span>
         </label>
+        } @else {
+        <p class="cl-wiz__consent-note">
+          <i class="pi pi-check-circle" aria-hidden="true"></i>
+          {{ 'pages.order.terms_already_accepted' | translate }}
+        </p>
+        }
       </div>
       }
 

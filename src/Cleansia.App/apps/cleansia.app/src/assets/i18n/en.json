@@ -994,7 +994,8 @@
       },
       "review_payment_card": "Payment and membership",
       "placing_order": "Placing your order…",
-      "summary_remove_item": "Remove {{item}} from the order"
+      "summary_remove_item": "Remove {{item}} from the order",
+      "terms_already_accepted": "You accepted our Terms of Service and Privacy Policy with your account."
     },
     "orders": {
       "title": "My Orders",

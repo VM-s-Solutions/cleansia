@@ -1478,6 +1478,21 @@
   margin-top: 26px;
 }
 
+// What the tick says once it is not being asked for. Not a control — a
+// statement that the consent is already on the account.
+.cl-wiz__consent-note {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  margin: 18px 0 0;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+
+  i {
+    color: var(--cl-ok);
+  }
+}
+
 .cl-wiz__consent {
   display: flex;
   align-items: center;

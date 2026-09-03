@@ -4,7 +4,6 @@ import { CustomerAuthService } from '@cleansia/customer-services';
 import { ThemeService } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
-  CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
   CookieConsentService,
 } from '@cleansia/components';
@@ -14,7 +13,7 @@ import {
   templateUrl: './customer-footer.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterModule, TranslatePipe, CleansiaButtonComponent, CleansiaLanguageSwitcherComponent],
+  imports: [RouterModule, TranslatePipe, CleansiaLanguageSwitcherComponent],
 })
 export class CleansiaCustomerFooterComponent {
   private readonly authService = inject(CustomerAuthService);

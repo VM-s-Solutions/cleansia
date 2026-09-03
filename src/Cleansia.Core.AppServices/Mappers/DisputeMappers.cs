@@ -38,6 +38,7 @@ public static class DisputeMappers
             Status: dispute.Status.MapToCode(),
             ResolutionNotes: dispute.ResolutionNotes,
             RefundAmount: dispute.RefundAmount,
+            Currency: dispute.Order?.Currency?.MapToDetailDto(),
             ResolvedOn: dispute.ResolvedOn,
             Messages: dispute.Messages.Select(m => m.MapToDto()).ToList(),
             Evidence: dispute.Evidence.Select(e => e.MapToDto(evidenceBlobClient)).ToList(),

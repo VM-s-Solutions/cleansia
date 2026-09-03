@@ -994,7 +994,8 @@
       },
       "review_payment_card": "Оплата та членство",
       "placing_order": "Надсилаємо…",
-      "summary_remove_item": "Прибрати {{item}} із замовлення"
+      "summary_remove_item": "Прибрати {{item}} із замовлення",
+      "terms_already_accepted": "Ви прийняли умови та політику конфіденційності під час реєстрації."
     },
     "orders": {
       "title": "Мої замовлення",

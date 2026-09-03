@@ -994,7 +994,8 @@
       },
       "review_payment_card": "Platba a členstvo",
       "placing_order": "Odosielame…",
-      "summary_remove_item": "Odobrať {{item}} z objednávky"
+      "summary_remove_item": "Odobrať {{item}} z objednávky",
+      "terms_already_accepted": "Podmienky služby a zásady ochrany osobných údajov ste odsúhlasili so svojím účtom."
     },
     "orders": {
       "title": "Moje objednávky",

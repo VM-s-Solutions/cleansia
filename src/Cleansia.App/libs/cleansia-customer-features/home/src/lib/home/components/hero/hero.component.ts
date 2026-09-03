@@ -8,10 +8,6 @@ import { Store } from '@ngrx/store';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { selectCustomerServices } from '@cleansia/customer-stores';
 import { ServiceListItem } from '@cleansia/customer-services';
-import {
-  CleansiaButtonComponent,
-  CleansiaTitleComponent,
-} from '@cleansia/components';
 
 const HERO_IMAGE = 'assets/images/mascot/mascot-mopping.webp';
 const PRELOAD_ID = 'cl-hero-img-preload';
@@ -21,7 +17,7 @@ const PRELOAD_ID = 'cl-hero-img-preload';
   templateUrl: './hero.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FoamEdgeComponent, QuickQuoteComponent, TranslatePipe, CleansiaButtonComponent, CleansiaTitleComponent, RouterModule],
+  imports: [FoamEdgeComponent, QuickQuoteComponent, TranslatePipe, RouterModule],
 })
 export class HeroComponent {
   private readonly document = inject(DOCUMENT);

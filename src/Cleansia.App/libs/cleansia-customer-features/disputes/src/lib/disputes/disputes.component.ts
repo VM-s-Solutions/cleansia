@@ -349,11 +349,11 @@ export class DisputesComponent implements OnInit {
   }
 
   /**
-   * An agreed refund is money off a specific order, and that order has a
-   * currency — but `DisputeDetails` does not carry one, so there is nothing
-   * here to read. The fallback matches every other customer screen; the real
-   * fix is a `Currency` on the DTO, and until it exists this figure is right
-   * only while CZ is the only market.
+   * An agreed refund is money off a specific order, so it is shown in THAT
+   * order's currency. The DTO carries it now — it did not, and this screen was
+   * formatting every refund as CZK, which is right while CZ is the only market
+   * and wrong on the first day it is not. The fallback remains for a dispute
+   * whose order could not be loaded.
    */
   formatPrice(price: number, currency?: { code?: string }): string {
     return new Intl.NumberFormat(this.getLocale(), {

@@ -278,7 +278,9 @@
           @if (detail.refundAmount != null) {
           <p class="cl-dsp__refund">
             {{ 'pages.disputes.refund_amount' | translate }}:
-            <strong class="cl-num">{{ formatPrice(detail.refundAmount) }}</strong>
+            <strong class="cl-num">
+              {{ formatPrice(detail.refundAmount, detail.currency) }}
+            </strong>
           </p>
           }
         </div>

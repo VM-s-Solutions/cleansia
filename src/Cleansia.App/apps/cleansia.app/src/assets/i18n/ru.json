@@ -994,7 +994,8 @@
       },
       "review_payment_card": "Оплата и членство",
       "placing_order": "Отправляем…",
-      "summary_remove_item": "Убрать {{item}} из заказа"
+      "summary_remove_item": "Убрать {{item}} из заказа",
+      "terms_already_accepted": "Вы приняли условия и политику конфиденциальности при регистрации."
     },
     "orders": {
       "title": "Мои заказы",

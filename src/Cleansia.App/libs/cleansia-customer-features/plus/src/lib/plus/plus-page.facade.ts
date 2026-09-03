@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { MembershipPlanFactsService } from '@cleansia/customer-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 
 /**
  * The public Cleansia Plus page.
@@ -17,7 +18,7 @@ import { MembershipPlanFactsService } from '@cleansia/customer-services';
  * other component here, and the service stays a plain cache.
  */
 @Injectable()
-export class PlusPageFacade {
+export class PlusPageFacade extends UnsubscribeControlDirective {
   private readonly facts = inject(MembershipPlanFactsService);
 
   readonly loading = this.facts.loading;

@@ -38,6 +38,7 @@ describe('OrderWizardFacade', () => {
   let paymentClient: { createOrder: jest.Mock };
   let promoCodeClient: { validate: jest.Mock };
   let countryClient: { getServiced: jest.Mock };
+  let gdprClient: { consentsGet: jest.Mock };
   let extraClient: { getOverview: jest.Mock };
   let userClient: { getCurrent: jest.Mock };
   let apiClient: { serviceCity: jest.Mock };
@@ -79,6 +80,7 @@ describe('OrderWizardFacade', () => {
       validate: jest.fn().mockReturnValue(of({ isValid: true, discountAmount: 100 })),
     };
     countryClient = { getServiced: jest.fn().mockReturnValue(of([])) };
+    gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
     extraClient = { getOverview: jest.fn().mockReturnValue(of([])) };
     userClient = { getCurrent: jest.fn().mockReturnValue(of({})) };
     apiClient = { serviceCity: jest.fn().mockReturnValue(of([])) };
@@ -113,6 +115,7 @@ describe('OrderWizardFacade', () => {
             paymentClient,
             promoCodeClient,
             countryClient,
+            gdprClient,
             extraClient,
             userClient,
             apiClient,
@@ -905,5 +908,69 @@ describe('OrderWizardFacade', () => {
       expect(facade.quote()).toBeNull();
       expect(facade.quoting()).toBe(false);
     }));
+  });
+
+  // Owner ruling, 2026-09-03: a signed-in customer who accepted at sign-up is
+  // asked to accept the same two documents on every order. The tick stays for
+  // GUESTS, who have no account and so no consent on record.
+  describe('the review step consent tick', () => {
+    const consent = (type: number, granted = true, withdrawnAt: Date | null = null) => ({
+      id: 'c' + type,
+      consentType: type,
+      isGranted: granted,
+      grantedAt: new Date(),
+      withdrawnAt,
+      createdOn: new Date(),
+    });
+    const TERMS = 0;
+    const PRIVACY = 1;
+
+    it('is not asked of an account holding both consents', () => {
+      gdprClient.consentsGet.mockReturnValue(of([consent(TERMS), consent(PRIVACY)]));
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(true);
+    });
+
+    it('is asked when only one of the two is on record', () => {
+      gdprClient.consentsGet.mockReturnValue(of([consent(TERMS)]));
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    it('is asked again when a consent was WITHDRAWN', () => {
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(TERMS), consent(PRIVACY, true, new Date())]),
+      );
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    it('is asked of a guest — no account, no consent on record', () => {
+      authService.isLoggedIn.mockReturnValue(false);
+
+      facade.initialize();
+
+      expect(gdprClient.consentsGet).not.toHaveBeenCalled();
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    // The safe direction for this switch is always "ask".
+    it('is asked when the consents could not be read', () => {
+      gdprClient.consentsGet.mockReturnValue(throwError(() => new Error('offline')));
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    });
   });
 });

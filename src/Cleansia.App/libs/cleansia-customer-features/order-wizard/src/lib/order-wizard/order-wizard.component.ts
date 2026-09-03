@@ -972,8 +972,13 @@ export class OrderWizardComponent implements OnInit {
     }
     // The consent is the review step's own condition, and the place-order
     // button reads the same list as every other step so it cannot refuse
-    // silently either.
-    if (this.facade.activeStep() === 5 && !this.acceptedTerms()) {
+    // silently either. An account that already granted both is not asked, so
+    // there is nothing for it to block on.
+    if (
+      this.facade.activeStep() === 5 &&
+      !this.facade.alreadyConsented() &&
+      !this.acceptedTerms()
+    ) {
       reasons.push('pages.order.missing.terms');
     }
     return reasons;
@@ -1119,7 +1124,12 @@ export class OrderWizardComponent implements OnInit {
     // away, and a consent recorded only on the way out is a consent lost to a
     // slow network. The service delivers it at the first session that can take
     // one, so an anonymous booking's tick is not dropped either.
-    this.signupConsent.record(this.facade.formData().customerEmail);
+    // Only when one was actually taken. An account that already holds both was
+    // not asked, and re-recording the same grant writes a consent nobody gave
+    // on this screen.
+    if (!this.facade.alreadyConsented()) {
+      this.signupConsent.record(this.facade.formData().customerEmail);
+    }
 
     if (this.saveNewAddress() && this.isCustomAddress()) {
       const label = this.newAddressLabel().trim();

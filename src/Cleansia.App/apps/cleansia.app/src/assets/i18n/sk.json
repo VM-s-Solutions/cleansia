@@ -820,7 +820,9 @@
         "promo_discount": "Zľavový kód ({{code}})",
         "membership_discount": "Zľava Cleansia Plus",
         "tier_discount": "Vernostná zľava",
-        "tier_discount_min_not_met": "Vernostná zľava platí pre objednávky nad {{amount}}"
+        "tier_discount_min_not_met": "Vernostná zľava platí pre objednávky nad {{amount}}",
+        "you_save": "Ušetríte {{amount}}",
+        "price_before_discount": "Cena pred zľavou: {{amount}}"
       },
       "summary_section_title": "Skontrolujte svoju objednávku",
       "summary_services": "Služby",

@@ -810,7 +810,9 @@
         "promo_discount": "Promo ({{code}})",
         "membership_discount": "Cleansia Plus discount",
         "tier_discount": "Loyalty tier discount",
-        "tier_discount_min_not_met": "Loyalty discount applies on orders above {{amount}}"
+        "tier_discount_min_not_met": "Loyalty discount applies on orders above {{amount}}",
+        "you_save": "You save {{amount}}",
+        "price_before_discount": "Price before discount: {{amount}}"
       },
       "summary_section_title": "Review Your Order",
       "summary_services": "Services",

@@ -1162,6 +1162,25 @@
         <div class="cl-wiz__rule"></div>
 
         <div class="cl-lbl">{{ 'pages.order.price_fixed' | translate }}</div>
+        <!--
+          The price before any discount, struck through above the one being charged. `<s>` rather
+          than a CSS line-through so the meaning survives with styles off, and it carries its own
+          label because "1 900 Kč" read aloud next to "1 700 Kč" is otherwise just two prices.
+        -->
+        @if (hasSaving()) {
+        <div class="cl-wiz__total-was">
+          <s
+            class="cl-num cl-wiz__total-old"
+            [attr.aria-label]="
+              'pages.order.summary.price_before_discount'
+                | translate: { amount: priceBeforeDiscount() }
+            "
+          >{{ priceBeforeDiscount() }}</s>
+          <span class="cl-wiz__total-save">{{
+            'pages.order.summary.you_save' | translate: { amount: savingAmount() }
+          }}</span>
+        </div>
+        }
         <div class="cl-num cl-wiz__total">{{ formatPrice(facade.displayedTotalPrice()) }}</div>
         @if (facade.quote()?.estimatedDurationMinutes; as minutes) {
         <div class="cl-muted cl-wiz__summary-estimate">

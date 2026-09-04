@@ -820,7 +820,9 @@
         "promo_discount": "Промокод ({{code}})",
         "membership_discount": "Скидка Cleansia Plus",
         "tier_discount": "Скидка за лояльность",
-        "tier_discount_min_not_met": "Скидка за лояльность действует для заказов от {{amount}}"
+        "tier_discount_min_not_met": "Скидка за лояльность действует для заказов от {{amount}}",
+        "you_save": "Вы экономите {{amount}}",
+        "price_before_discount": "Цена до скидки: {{amount}}"
       },
       "summary_section_title": "Проверьте Ваш заказ",
       "summary_services": "Услуги",

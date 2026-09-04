@@ -500,4 +500,60 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(discountRows()).toEqual([]);
     });
   });
+
+  describe('the price before the discount', () => {
+    /**
+     * Two TOTALS, never subtotal-minus-discount. The express surcharge is computed on the
+     * undiscounted subtotal, so the chain does not reconcile on an express order — the pair of
+     * server-quoted totals does, whatever the surcharge is doing between them.
+     */
+    it('strikes through the old price and names the saving', async () => {
+      await setup();
+      facade.totalPrice.set(2000);
+      facade.displayedTotalPrice.set(1700);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.hasSaving()).toBe(true);
+      expect(fixture.componentInstance.priceBeforeDiscount()).toContain('2');
+      expect(fixture.componentInstance.savingAmount()).toContain('300');
+      expect(el.querySelector('.cl-wiz__total-old')).toBeTruthy();
+    });
+
+    it('shows nothing when no discount applies', async () => {
+      await setup();
+      facade.totalPrice.set(2000);
+      facade.displayedTotalPrice.set(2000);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.hasSaving()).toBe(false);
+      expect(el.querySelector('.cl-wiz__total-old')).toBeNull();
+    });
+
+    /** A rounding tail is not a discount, and must not put a struck-through price on the rail. */
+    it('ignores a sub-haler difference', async () => {
+      await setup();
+      facade.totalPrice.set(2000);
+      facade.displayedTotalPrice.set(1999.999);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.hasSaving()).toBe(false);
+    });
+
+    /**
+     * The express case the subtotal row was rejected over: the surcharge sits on the undiscounted
+     * subtotal, so the saving between the two totals is NOT the discount figure. Both numbers are
+     * still the server's, and the pair still reads true.
+     */
+    it('reports the difference between the two totals, not the discount amount', async () => {
+      await setup();
+      facade.totalPrice.set(2400);          // 2000 + 20% express
+      facade.displayedTotalPrice.set(2040); // (2000 − 300) scaled by the same gross ratio
+      facade.effectivePromoDiscount.set(300);
+      facade.appliedDiscountKind.set('promo');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.savingAmount()).toContain('360');
+      expect(fixture.componentInstance.savingAmount()).not.toContain('300 ');
+    });
+  });
 });

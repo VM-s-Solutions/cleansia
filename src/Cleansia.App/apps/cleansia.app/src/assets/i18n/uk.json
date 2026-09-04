@@ -820,7 +820,9 @@
         "promo_discount": "Промокод ({{code}})",
         "membership_discount": "Знижка Cleansia Plus",
         "tier_discount": "Знижка за лояльність",
-        "tier_discount_min_not_met": "Знижка за лояльність діє для замовлень понад {{amount}}"
+        "tier_discount_min_not_met": "Знижка за лояльність діє для замовлень понад {{amount}}",
+        "you_save": "Ви заощаджуєте {{amount}}",
+        "price_before_discount": "Ціна до знижки: {{amount}}"
       },
       "summary_section_title": "Перегляньте своє замовлення",
       "summary_services": "Послуги",

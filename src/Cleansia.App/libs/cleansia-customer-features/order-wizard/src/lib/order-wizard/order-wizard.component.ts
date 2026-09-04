@@ -879,6 +879,27 @@ export class OrderWizardComponent implements OnInit {
   }
 
   /**
+   * What this order would have cost with no discount at all, and what it costs now.
+   *
+   * TWO TOTALS, never a subtotal-minus-discount chain. The express surcharge is computed on the
+   * UNDISCOUNTED subtotal, so `subtotal − discount` does not reach the charged total on an express
+   * order — `order-pricing.facade.ts` says so at length, and a row that fails to reconcile on
+   * exactly the orders that cost most is worse than no row. `totalPrice` is the gross the server
+   * quoted and `displayedTotalPrice` is what will be charged; both are the server's arithmetic, so
+   * the pair is true whatever the surcharge is doing between them.
+   */
+  readonly hasSaving = computed(
+    // Half a haler of tolerance: these are floats, and a rounding tail is not a discount.
+    () => this.facade.totalPrice() - this.facade.displayedTotalPrice() > 0.005,
+  );
+
+  readonly priceBeforeDiscount = computed(() => formatPrice(this.facade.totalPrice()));
+
+  readonly savingAmount = computed(() =>
+    formatPrice(this.facade.totalPrice() - this.facade.displayedTotalPrice()),
+  );
+
+  /**
    * What a VALID code is actually worth to this order.
    *
    * `OrderFactory.ResolveLoy003Discount` — mirrored by `effectiveDiscount` — takes the LARGER of the

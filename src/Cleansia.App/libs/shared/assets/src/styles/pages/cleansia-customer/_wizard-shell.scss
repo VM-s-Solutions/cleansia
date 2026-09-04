@@ -1391,6 +1391,33 @@
 // naming "the row's clear-X button" — a button that was never built, so a
 // customer who wanted to save a code for another order had to restart the
 // booking.
+// The price before the discount, over the one being charged.
+.cl-wiz__total-was {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.cl-wiz__total-old {
+  font-size: calc(1.0625 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-muted);
+  // `<s>` already strikes; this only keeps the line from sitting on the digits'
+  // midline where a tabular 7 can read as a struck 1.
+  text-decoration-thickness: 1.5px;
+}
+
+.cl-wiz__total-save {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #dcfce7;
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+  color: #166534;
+}
+
 .cl-wiz__promo-remove {
   margin: 8px 0 0;
   padding: 0;

@@ -89,6 +89,11 @@ class FakeOrderWizardFacade {
   // double needs it or every template render throws before an assertion runs.
   quote = signal<QuoteOrderResponse | null>(null);
   promoCode = signal('');
+  promoCodeState = signal<{ kind: string; discount?: number; error?: string | null }>({ kind: 'idle' });
+  clearPromoCode = jest.fn(() => {
+    this.promoCode.set('');
+    this.promoCodeState.set({ kind: 'idle' });
+  });
 
   initialize = jest.fn();
   // The Plus step reads the plan catalogue and the savings preview; the double
@@ -383,6 +388,64 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(summary).toBeTruthy();
       expect(el.querySelector('.order-wizard__mobile-price')).toBeNull();
       expect(panel!.compareDocumentPosition(summary!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+  });
+
+  describe('the promo row', () => {
+    /**
+     * A promo REPLACES the tier/membership discount only when it is larger — it never stacks. The
+     * row said "applied" for both outcomes and never named an amount, so a customer whose code lost
+     * to their own Plus discount was told it had been applied and shown no figure either way.
+     */
+    it('names what a winning code takes off', async () => {
+      await setup();
+      facade.promoCode.set('SAVE300');
+      facade.promoCodeState.set({ kind: 'valid', discount: 300 });
+      facade.effectivePromoDiscount.set(300);
+      facade.appliedDiscountKind.set('promo');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.promoOutcome()).toBe('applied');
+      expect(fixture.componentInstance.promoSavings()).toContain('300');
+    });
+
+    it('says a valid code lost to a bigger discount rather than claiming it applied', async () => {
+      await setup();
+      facade.promoCode.set('SAVE100');
+      facade.promoCodeState.set({ kind: 'valid', discount: 100 });
+      facade.effectivePromoDiscount.set(100);
+      // The membership discount is larger, so the quote keeps it and the promo changes nothing.
+      facade.appliedDiscountKind.set('membership');
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.promoOutcome()).toBe('superseded');
+    });
+
+    it('reports no outcome until a code has actually validated', async () => {
+      await setup();
+      facade.promoCode.set('TYPING');
+      facade.promoCodeState.set({ kind: 'validating' });
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.promoOutcome()).toBe('none');
+    });
+
+    /**
+     * `clearPromoCode` existed on the facade with a comment naming "the row's clear-X button" — a
+     * button that was never built, so keeping a code for another order meant restarting the booking.
+     */
+    it('can take a code back off', async () => {
+      await setup();
+      facade.promoCode.set('SAVE300');
+      facade.promoCodeState.set({ kind: 'valid', discount: 300 });
+      facade.appliedDiscountKind.set('promo');
+      fixture.detectChanges();
+
+      fixture.componentInstance.removePromo();
+      fixture.detectChanges();
+
+      expect(facade.clearPromoCode).toHaveBeenCalled();
+      expect(fixture.componentInstance.promoOutcome()).toBe('none');
     });
   });
 });

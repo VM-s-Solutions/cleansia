@@ -1387,6 +1387,33 @@
   }
 }
 
+// Taking a code back off. `clearPromoCode` existed on the facade with a comment
+// naming "the row's clear-X button" — a button that was never built, so a
+// customer who wanted to save a code for another order had to restart the
+// booking.
+.cl-wiz__promo-remove {
+  margin: 8px 0 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--cl-border-tint);
+  font-family: inherit;
+  font-size: calc(0.8125 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-muted);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--cl-danger);
+    border-bottom-color: var(--cl-danger);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 3px;
+  }
+}
+
 .cl-wiz__promo-note {
   display: flex;
   align-items: center;
@@ -1398,6 +1425,12 @@
 
   &--ok {
     color: var(--cl-accent-text);
+  }
+
+  // A code that validated but lost to a bigger discount. Neither a success nor a
+  // failure — the customer did nothing wrong and nothing came off.
+  &--info {
+    color: var(--cl-body);
   }
 
   &--bad {

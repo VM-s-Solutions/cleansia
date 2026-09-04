@@ -878,6 +878,31 @@ export class OrderWizardComponent implements OnInit {
     await this.facade.validatePromoCodeNow(code);
   }
 
+  /**
+   * What a VALID code is actually worth to this order.
+   *
+   * `OrderFactory.ResolveLoy003Discount` — mirrored by `effectiveDiscount` — takes the LARGER of the
+   * promo and the tier/membership pair; a promo never stacks on them. So a code can validate and
+   * still change nothing, and saying only "applied" for both outcomes is how a customer ends up
+   * believing a discount was taken that never was.
+   */
+  readonly promoOutcome = computed<'none' | 'applied' | 'superseded'>(() => {
+    if (this.facade.promoCodeState().kind !== 'valid') return 'none';
+    // `appliedDiscountKind` already resolves which source wins; asking it rather than
+    // re-comparing the amounts keeps one answer to that question in the wizard.
+    return this.facade.appliedDiscountKind() === 'promo' ? 'applied' : 'superseded';
+  });
+
+  /** The money a winning code takes off, ready to print. */
+  readonly promoSavings = computed(() =>
+    formatPrice(this.facade.effectivePromoDiscount()),
+  );
+
+  /** Drop the code and go back to whatever the order was worth without it. */
+  removePromo(): void {
+    this.facade.clearPromoCode();
+  }
+
   /** Why the code was refused, in the customer's language. */
   readonly promoError = computed(() => {
     // Read so the message re-resolves on a language switch.

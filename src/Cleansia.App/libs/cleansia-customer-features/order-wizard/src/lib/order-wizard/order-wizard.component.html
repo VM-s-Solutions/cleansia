@@ -733,10 +733,28 @@
 
         @switch (facade.promoCodeState().kind) {
           @case ('valid') {
+          <!--
+            A valid code and an APPLIED code are not the same thing: a promo replaces the
+            tier/membership discount only when it is larger, so one can validate and change nothing.
+            Saying "applied" for both is how a customer comes to believe money came off that did not.
+          -->
+          @if (promoOutcome() === 'applied') {
           <p class="cl-wiz__promo-note cl-wiz__promo-note--ok">
             <i class="pi pi-check-circle" aria-hidden="true"></i>
-            {{ 'pages.order.promo.row_applied' | translate: { code: facade.promoCode() } }}
+            {{
+              'pages.order.promo.row_applied_amount'
+                | translate: { code: facade.promoCode(), amount: promoSavings() }
+            }}
           </p>
+          } @else {
+          <p class="cl-wiz__promo-note cl-wiz__promo-note--info">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            {{ 'pages.order.promo.row_superseded' | translate: { code: facade.promoCode() } }}
+          </p>
+          }
+          <button type="button" class="cl-wiz__promo-remove" (click)="removePromo()">
+            {{ 'pages.order.promo.remove' | translate }}
+          </button>
           }
           @case ('invalid') {
           <p class="cl-wiz__promo-note cl-wiz__promo-note--bad" role="alert">

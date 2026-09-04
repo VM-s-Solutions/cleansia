@@ -494,7 +494,7 @@
         "contact_button": "Contact Us",
         "q1": {
           "question": "Do you also travel outside Prague?",
-          "answer": "Yes, we also travel to the areas around Prague. For more distant locations, contact us — we will find a solution."
+          "answer": "Yes — beyond Prague too. Enter your address when you book and we will tell you straight away whether we cover it; if we do not, write to us and we will look for a way."
         },
         "q2": {
           "question": "Do I have to be at home during the cleaning?",
@@ -510,7 +510,7 @@
         },
         "q5": {
           "question": "Can I ask for the same cleaner?",
-          "answer": "Yes. After a clean you can mark a cleaner as preferred, and they get first refusal on your next order for up to 12 hours."
+          "answer": "Yes, with Cleansia Plus. After a clean you can mark a cleaner as preferred, and they get first refusal on your next order for up to 12 hours."
         },
         "q6": {
           "question": "What if I am not satisfied?",
@@ -580,8 +580,8 @@
         "we_cancel_value": "Everything back + 500 CZK",
         "we_cancel_desc": "If the cleaner does not arrive we refund the full amount and add credit towards your next clean.",
         "lead_label": "Earliest slot",
-        "lead_value": "in 4 hours",
-        "express_label": "Express surcharge",
+        "lead_value": "in 2 hours",
+        "express_label": "Express (2–4 h)",
         "express_value": "+20%",
         "window_label": "Daily windows",
         "window_value": "08:00-20:00"

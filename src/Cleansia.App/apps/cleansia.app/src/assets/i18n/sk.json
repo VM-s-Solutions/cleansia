@@ -494,7 +494,7 @@
         "contact_button": "Kontaktujte nás",
         "q1": {
           "question": "Chodíte aj mimo Prahy?",
-          "answer": "Áno, vychádzame aj do okolia Prahy. Pre vzdialenejšie lokality nás kontaktujte — riešenie nájdeme."
+          "answer": "Áno — aj mimo Prahy. Pri objednávke zadajte adresu a hneď vám povieme, či k vám chodíme; ak nie, napíšte nám a budeme hľadať riešenie."
         },
         "q2": {
           "question": "Musím byť počas upratovania doma?",
@@ -510,7 +510,7 @@
         },
         "q5": {
           "question": "Môžem chcieť toho istého upratovača?",
-          "answer": "Áno. Po upratovaní si upratovača môžete označiť ako preferovaného a vašu ďalšiu zákazku dostane prednostne, až 12 hodín dopredu."
+          "answer": "Áno, s Cleansia Plus. Po upratovaní si môžete upratovača označiť ako obľúbeného a ten potom dostane vašu ďalšiu objednávku prednostne, až na 12 hodín."
         },
         "q6": {
           "question": "Čo ak nebudem spokojný?",
@@ -580,8 +580,8 @@
         "we_cancel_value": "Všetko späť + 500 Kč",
         "we_cancel_desc": "Keď upratovač nepríde, vraciame celú sumu a pridáme kredit na ďalšie upratovanie.",
         "lead_label": "Najbližší termín",
-        "lead_value": "za 4 hodiny",
-        "express_label": "Expresný príplatok",
+        "lead_value": "o 2 hodiny",
+        "express_label": "Expres (2–4 h)",
         "express_value": "+20 %",
         "window_label": "Denné okná",
         "window_value": "08:00–20:00"

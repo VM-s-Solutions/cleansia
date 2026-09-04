@@ -494,7 +494,7 @@
         "contact_button": "Kontaktujte nás",
         "q1": {
           "question": "Vyjíždíte i mimo Prahu?",
-          "answer": "Ano, vyjíždíme i do okolí Prahy. Pro vzdálenější lokality nás kontaktujte — řešení najdeme."
+          "answer": "Ano — i mimo Prahu. Při objednávce zadejte adresu a hned vám řekneme, jestli k vám jezdíme; pokud ne, napište nám a budeme hledat řešení."
         },
         "q2": {
           "question": "Musím být během úklidu doma?",
@@ -510,7 +510,7 @@
         },
         "q5": {
           "question": "Můžu chtít stejného uklízeče?",
-          "answer": "Ano. Po úklidu si uklízeče můžete označit jako preferovaného a vaši další zakázku dostane přednostně, až na 12 hodin dopředu."
+          "answer": "Ano, s Cleansia Plus. Po úklidu si můžete uklízeče označit jako oblíbeného a ten pak dostane vaši další objednávku přednostně, až na 12 hodin."
         },
         "q6": {
           "question": "Co když nebudu spokojen?",
@@ -580,8 +580,8 @@
         "we_cancel_value": "Vše zpět + 500 Kč",
         "we_cancel_desc": "Když uklízeč nedorazí, vracíme celou částku a přidáme kredit na příští úklid.",
         "lead_label": "Nejbližší termín",
-        "lead_value": "za 4 hodiny",
-        "express_label": "Expresní příplatek",
+        "lead_value": "za 2 hodiny",
+        "express_label": "Expres (2–4 h)",
         "express_value": "+20 %",
         "window_label": "Denní okna",
         "window_value": "08:00–20:00"

@@ -2039,31 +2039,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "50% poplatek"
+            "value": "25% poplatek"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "50% charge"
+            "value": "25% charge"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "50% сбор"
+            "value": "25% сбор"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "50% poplatok"
+            "value": "25% poplatok"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "50% комісія"
+            "value": "25% комісія"
           }
         }
       }
@@ -2109,31 +2109,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "100% poplatek"
+            "value": "50% poplatek"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "100% charge"
+            "value": "50% charge"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "100% сбор"
+            "value": "50% сбор"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "100% poplatok"
+            "value": "50% poplatok"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "100% комісія"
+            "value": "50% комісія"
           }
         }
       }

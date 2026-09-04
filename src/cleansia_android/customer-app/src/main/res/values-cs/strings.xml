@@ -591,9 +591,9 @@
     <string name="booking_cancel_tier1_when_plus">%1$d+ hodin předem</string>
     <string name="booking_cancel_tier1_value">Zdarma</string>
     <string name="booking_cancel_tier2_when_range">%1$d–%2$d hodin předem</string>
-    <string name="booking_cancel_tier2_value">50% poplatek</string>
+    <string name="booking_cancel_tier2_value">25% poplatek</string>
     <string name="booking_cancel_tier3_when_under">Méně než %1$d hodin</string>
-    <string name="booking_cancel_tier3_value">100% poplatek</string>
+    <string name="booking_cancel_tier3_value">50% poplatek</string>
     <string name="booking_cancel_plus_badge">VÝHODA PLUS</string>
     <string name="booking_cancel_plus_subtitle">Jako člen Plus máte %1$d hodin na bezplatné zrušení.</string>
 

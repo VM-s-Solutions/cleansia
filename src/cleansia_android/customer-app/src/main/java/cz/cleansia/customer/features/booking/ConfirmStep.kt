@@ -505,8 +505,13 @@ private fun CancellationPolicyCard(
 ) {
     val membershipState by membershipRepository.current.collectAsState()
     // Backend BookingPolicy constants (mirror these exactly):
-    //   StandardFreeWindowHours = 24  (free cancel ≥24h ahead)
-    //   PenaltyWindowHours      = 4   (50% charge in 4–24h band; 100% under 4h)
+    //   FreeCancellationHours        = 24    (free cancel ≥24h ahead)
+    //   PartialCancellationHours     = 4
+    //   PartialCancellationFeeRate   = 0.25  (25% in the 4–24h band)
+    //   LastMinuteCancellationFeeRate = 0.50 (50% under 4h)
+    // The rates were written here as 50% and 100%, and the strings said the same
+    // — double the real fee at both tiers, in the direction that talks a
+    // customer out of booking.
     val standardFreeHours = 24
     val penaltyHours = 4
     // Plus may extend the free window. Only counts as a real perk when it's
@@ -518,7 +523,7 @@ private fun CancellationPolicyCard(
         ?.takeIf { it > 0 }
     val plusFreeHours = rawPlusHours?.takeIf { it > standardFreeHours }
     val freeHours = plusFreeHours ?: standardFreeHours
-    // Mid-tier (50% charge) only renders when there's room between the free
+    // Mid-tier (25% charge) only renders when there's room between the free
     // window and the no-refund threshold. Plus members with a free window
     // wider than [penaltyHours] still see the mid-tier; if a future config
     // ever extends free below 4h the mid-tier vanishes (one-tier collapse).

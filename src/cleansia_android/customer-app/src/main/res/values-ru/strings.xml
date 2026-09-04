@@ -588,9 +588,9 @@
     <string name="booking_cancel_tier1_when_plus">%1$d+ часов до</string>
     <string name="booking_cancel_tier1_value">Бесплатно</string>
     <string name="booking_cancel_tier2_when_range">%1$d–%2$d часов до</string>
-    <string name="booking_cancel_tier2_value">50% сбор</string>
+    <string name="booking_cancel_tier2_value">25% сбор</string>
     <string name="booking_cancel_tier3_when_under">Менее %1$d часов</string>
-    <string name="booking_cancel_tier3_value">100% сбор</string>
+    <string name="booking_cancel_tier3_value">50% сбор</string>
     <string name="booking_cancel_plus_badge">ПРЕИМУЩЕСТВО PLUS</string>
     <string name="booking_cancel_plus_subtitle">Как участник Plus у вас %1$d часов на бесплатную отмену.</string>
 

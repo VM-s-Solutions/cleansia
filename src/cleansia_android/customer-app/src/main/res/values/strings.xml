@@ -597,10 +597,10 @@
     <string name="booking_cancel_tier1_value">Free</string>
     <!-- %1$d = penalty threshold (4), %2$d = free threshold (24 or Plus value). -->
     <string name="booking_cancel_tier2_when_range">%1$d–%2$d hours before</string>
-    <string name="booking_cancel_tier2_value">50% charge</string>
-    <!-- %1$d = penalty threshold (4) — under this it's a full charge. -->
+    <string name="booking_cancel_tier2_value">25% charge</string>
+    <!-- %1$d = penalty threshold (4) — under this it's the last-minute rate. -->
     <string name="booking_cancel_tier3_when_under">Less than %1$d hours</string>
-    <string name="booking_cancel_tier3_value">100% charge</string>
+    <string name="booking_cancel_tier3_value">50% charge</string>
     <string name="booking_cancel_plus_badge">PLUS PERK</string>
     <!-- %1$d = the user's extended free window in hours. -->
     <string name="booking_cancel_plus_subtitle">You get %1$d hours of free cancellation as a Plus member.</string>

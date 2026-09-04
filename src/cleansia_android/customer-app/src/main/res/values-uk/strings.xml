@@ -588,9 +588,9 @@
     <string name="booking_cancel_tier1_when_plus">%1$d+ годин до</string>
     <string name="booking_cancel_tier1_value">Безкоштовно</string>
     <string name="booking_cancel_tier2_when_range">%1$d–%2$d годин до</string>
-    <string name="booking_cancel_tier2_value">50% комісія</string>
+    <string name="booking_cancel_tier2_value">25% комісія</string>
     <string name="booking_cancel_tier3_when_under">Менше %1$d годин</string>
-    <string name="booking_cancel_tier3_value">100% комісія</string>
+    <string name="booking_cancel_tier3_value">50% комісія</string>
     <string name="booking_cancel_plus_badge">ПЕРЕВАГА PLUS</string>
     <string name="booking_cancel_plus_subtitle">Як учасник Plus у вас %1$d годин на безкоштовне скасування.</string>
 

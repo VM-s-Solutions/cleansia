@@ -633,16 +633,43 @@ describe('OrderWizardFacade', () => {
   });
 
   describe('submitOrder', () => {
+    // A COMPLETE order, not the minimum that used to reach the network. Submit now refuses an
+    // incomplete one — that is the whole point of the gate — and the single-letter names and absent
+    // address this set up would be rejected by the step rules the wizard already had, which is
+    // exactly the payload that reached the server and came back 400.
     beforeEach(() => {
       facade.updateFormData({
         selectedServiceIds: ['s1'],
         cleaningDate: new Date('2026-07-01T00:00:00Z'),
         cleaningTime: '10:00',
-        customerFirstName: 'A',
-        customerLastName: 'B',
+        address: createAddressDto({
+          street: 'Wenceslas Square',
+          city: 'Prague',
+          zipCode: '11000',
+          countryId: 'cz',
+          state: '',
+        }),
+        addressLatitude: 50.08,
+        addressLongitude: 14.42,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
         customerEmail: 'a@b.com',
         customerPhone: '+420123456789',
       });
+    });
+
+    it('refuses an order that is still missing a required field, and says which', async () => {
+      // The defect, exactly: an account with no phone number reached submit and the server
+      // answered `{ NotEmptyValidator: "common.required" }`, which named nothing the customer
+      // could act on.
+      facade.updateFormData({ customerPhone: '' });
+
+      await facade.submitOrder();
+
+      expect(paymentClient.createOrder).not.toHaveBeenCalled();
+      expect(orderClient.createOrder).not.toHaveBeenCalled();
+      // …and it puts them on the step that holds the field.
+      expect(facade.activeStep()).toBe(1);
     });
 
     it('does nothing without a cleaning date', async () => {
@@ -971,6 +998,53 @@ describe('OrderWizardFacade', () => {
       facade.initialize();
 
       expect(facade.alreadyConsented()).toBe(false);
+    });
+  });
+  /**
+   * What the account fetch is allowed to do to the form.
+   *
+   * It wrote all four contact fields unconditionally, empty account values included — and an
+   * account with no phone number is the ordinary case, because nothing in registration asks for
+   * one. A signed-in customer who typed their phone into the wizard had it replaced with "" when
+   * this response landed, and every later gate read the blank as the customer's own answer. That is
+   * how `customerPhone: ""` reached the server.
+   */
+  describe('the account prefill', () => {
+    const account = (phoneNumber: string) => ({
+      firstName: 'Anna',
+      lastName: 'Brownova',
+      email: 'anna@example.com',
+      phoneNumber,
+    });
+
+    it('fills a field the customer has not answered', () => {
+      authService.isLoggedIn.mockReturnValue(true);
+      userClient.getCurrent.mockReturnValue(of(account('+420777123456')));
+
+      facade.initialize();
+
+      expect(facade.formData().customerPhone).toBe('+420777123456');
+      expect(facade.formData().customerFirstName).toBe('Anna');
+    });
+
+    it('does not blank what the customer typed with an account that has no phone on file', () => {
+      facade.updateFormData({ customerPhone: '+420777123456' });
+      authService.isLoggedIn.mockReturnValue(true);
+      userClient.getCurrent.mockReturnValue(of(account('')));
+
+      facade.initialize();
+
+      expect(facade.formData().customerPhone).toBe('+420777123456');
+    });
+
+    it('does not overwrite an answer that differs from the account', () => {
+      facade.updateFormData({ customerEmail: 'booking@example.com' });
+      authService.isLoggedIn.mockReturnValue(true);
+      userClient.getCurrent.mockReturnValue(of(account('+420777123456')));
+
+      facade.initialize();
+
+      expect(facade.formData().customerEmail).toBe('booking@example.com');
     });
   });
 });

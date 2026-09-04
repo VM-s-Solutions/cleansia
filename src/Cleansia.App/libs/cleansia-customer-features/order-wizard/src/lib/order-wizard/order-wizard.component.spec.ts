@@ -123,6 +123,10 @@ class FakeOrderWizardFacade {
   prefillFromRebook = jest.fn(() => [] as string[]);
   applyAddressSuggestion = jest.fn();
   submitOrder = jest.fn();
+  // Read by the component's on-destroy park, which runs on EVERY teardown — so a double without it
+  // fails every test in this file at cleanup, on a message that names neither the signal nor the
+  // hook ("1 component threw errors during cleanup").
+  orderPlaced = signal(false);
 }
 
 describe('OrderWizardComponent (a11y)', () => {
@@ -130,7 +134,7 @@ describe('OrderWizardComponent (a11y)', () => {
   let facade: FakeOrderWizardFacade;
   let el: HTMLElement;
 
-  async function setup(): Promise<void> {
+  async function setup(beforeCreate?: () => void): Promise<void> {
     facade = new FakeOrderWizardFacade();
     await TestBed.configureTestingModule({
       imports: [OrderWizardComponent, TranslateModule.forRoot()],
@@ -148,6 +152,10 @@ describe('OrderWizardComponent (a11y)', () => {
         set: { providers: [{ provide: OrderWizardFacade, useValue: facade }] },
       })
       .compileComponents();
+
+    // Anything that has to exist BEFORE ngOnInit runs — a basket already parked in
+    // storage, for instance.
+    beforeCreate?.();
 
     fixture = TestBed.createComponent(OrderWizardComponent);
     el = fixture.nativeElement;
@@ -554,6 +562,89 @@ describe('OrderWizardComponent (a11y)', () => {
 
       expect(fixture.componentInstance.savingAmount()).toContain('360');
       expect(fixture.componentInstance.savingAmount()).not.toContain('300 ');
+    });
+  });
+  /**
+   * A basket that survives leaving the page.
+   *
+   * The wizard parked a draft in exactly two places — the trip to sign in and the trip to Plus —
+   * so every other departure (the logo, a nav link, the back button) emptied it. It now parks on
+   * destroy, whatever the way out.
+   *
+   * The restore had a second defect that only showed once the first was fixed: it ran
+   * synchronously in `ngOnInit`, immediately after `initialize()` DISPATCHES the catalogue load.
+   * On a cold store it therefore checked the basket against an empty list, dropped every service
+   * in it, and announced a "partially restored" draft — an emptier basket than no restore at all.
+   */
+  describe('a parked basket', () => {
+    const parked = {
+      savedAt: Date.now(),
+      step: 2,
+      data: { ...ORDER_WIZARD_INITIAL_DATA, selectedServiceIds: ['s-1'] },
+    };
+
+    afterEach(() => sessionStorage.clear());
+
+    it('is not applied against a catalogue that has not arrived yet', async () => {
+      await setup(() =>
+        sessionStorage.setItem('cleansia_order_draft', JSON.stringify(parked))
+      );
+
+      // The store is cold — `facade.services()` is still []. Restoring here is what dropped the
+      // basket and then blamed the catalogue for it.
+      expect(facade.goToStep).not.toHaveBeenCalled();
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+    });
+
+    it('is applied once the catalogue lands, on the step it was parked from', async () => {
+      await setup(() =>
+        sessionStorage.setItem('cleansia_order_draft', JSON.stringify(parked))
+      );
+
+      facade.services.set([makeService('s-1', 'Deep clean')]);
+      fixture.detectChanges();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s-1']);
+      expect(facade.goToStep).toHaveBeenCalledWith(2);
+    });
+
+    it('drops what is no longer on offer rather than restoring a dead price', async () => {
+      await setup(() =>
+        sessionStorage.setItem('cleansia_order_draft', JSON.stringify(parked))
+      );
+
+      facade.services.set([makeService('s-9', 'Something else')]);
+      fixture.detectChanges();
+
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(TestBed.inject(SnackbarService).showError).toHaveBeenCalled();
+    });
+
+    it('parks on the way out, not only on the two trips that were instrumented', async () => {
+      await setup();
+      facade.updateFormData({ selectedServiceIds: ['s-1'] });
+
+      fixture.destroy();
+
+      expect(sessionStorage.getItem('cleansia_order_draft')).not.toBeNull();
+    });
+
+    it('does not park a basket that has already been bought', async () => {
+      await setup();
+      facade.updateFormData({ selectedServiceIds: ['s-1'] });
+      facade.orderPlaced.set(true);
+
+      fixture.destroy();
+
+      expect(sessionStorage.getItem('cleansia_order_draft')).toBeNull();
+    });
+
+    it('does not park an empty basket, which would offer nothing back', async () => {
+      await setup();
+
+      fixture.destroy();
+
+      expect(sessionStorage.getItem('cleansia_order_draft')).toBeNull();
     });
   });
 });

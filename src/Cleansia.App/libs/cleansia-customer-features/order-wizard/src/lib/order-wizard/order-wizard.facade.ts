@@ -346,11 +346,21 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       }
       this.customerClient.userClient.getCurrent().pipe(takeUntil(this.destroyed$)).subscribe({
         next: (user) => {
+          // PREFILL, not overwrite. This wrote all four fields unconditionally, empty account
+          // values included — and an account with no phone number on file is the ordinary case,
+          // because nothing in registration asks for one. So a customer who typed their phone into
+          // the wizard had it replaced with "" the moment this response landed, and the wizard let
+          // them carry on to a submit the server rejected as `customerPhone: ""`.
+          //
+          // Filling only what is blank is what a prefill means, and it is right in every direction:
+          // an account value appears in an empty field, and nothing the customer typed is taken
+          // away by a slower request.
+          const current = this.formData();
           this.updateFormData({
-            customerFirstName: user.firstName ?? '',
-            customerLastName: user.lastName ?? '',
-            customerEmail: user.email ?? '',
-            customerPhone: user.phoneNumber ?? '',
+            customerFirstName: current.customerFirstName || user.firstName || '',
+            customerLastName: current.customerLastName || user.lastName || '',
+            customerEmail: current.customerEmail || user.email || '',
+            customerPhone: current.customerPhone || user.phoneNumber || '',
           });
 
           const currentAddr = this.formData().address;
@@ -497,6 +507,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     }
   }
 
+  /**
+   * Deliberately ungated, in both directions. Looking ahead at a step you have not filled in is not
+   * a mistake to prevent — the existing specs pin that freedom — and SUBMIT is where an incomplete
+   * order has to be caught, because that is the only moment it can do harm. See `submitOrder`.
+   */
   goToStep(step: number): void {
     if (step >= 0 && step < this.steps.length) {
       this.activeStep.set(step);
@@ -533,11 +548,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * computed separately drift apart, and the drift is invisible until someone
    * is staring at an inert button with nothing to fix.
    */
-  missingReasons(): string[] {
+  missingReasons(step: number = this.activeStep()): string[] {
     const data = this.formData();
     const reasons: string[] = [];
 
-    switch (this.activeStep()) {
+    switch (step) {
       case 0:
         if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
           reasons.push('pages.order.missing.services');
@@ -616,6 +631,29 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     return this.missingReasons().length === 0;
   }
 
+  /**
+   * True once the order has been created. The wizard parks its basket on the way out; a basket that
+   * has just been paid for must not be offered back on the next visit.
+   */
+  readonly orderPlaced = signal(false);
+
+  /**
+   * Everything still missing anywhere in the wizard, and the first step that is missing it.
+   *
+   * `missingReasons` answers for ONE step, which is all a Continue button needs — and it was all
+   * anything ever asked. `goToStep` sets the step with no gate, so the review screen was reachable
+   * over an unsatisfied step, and `submitOrder` checked only the cleaning date. An account with no
+   * phone number therefore reached Stripe's door and came back with
+   * `{ NotEmptyValidator: "common.required" }`, which named neither the field nor a way forward.
+   */
+  firstIncompleteStep(): { step: number; reasons: string[] } | null {
+    for (let step = 0; step < this.steps.length; step++) {
+      const reasons = this.missingReasons(step);
+      if (reasons.length > 0) return { step, reasons };
+    }
+    return null;
+  }
+
   saveCurrentAddressAsSaved(label: string): Promise<boolean> {
     return this.savedAddress.saveCurrentAddressAsSaved(label);
   }
@@ -623,6 +661,18 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   async submitOrder(saveAddress?: { label: string } | null): Promise<void> {
     const data = this.formData();
     if (!data.cleaningDate) return;
+
+    // The LAST gate, and until now the only one that was not here: submit checked the date alone,
+    // so anything the per-step gates never got to ask about went to the server and came back as a
+    // 400 the customer could do nothing with. Sends them to the step that is short, rather than
+    // failing where they cannot see the field.
+    const blocked = this.firstIncompleteStep();
+    if (blocked) {
+      this.activeStep.set(blocked.step);
+      if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.snackbarService.showError(this.translate.instant(blocked.reasons[0]));
+      return;
+    }
 
     if (saveAddress && !this.selectedSavedAddressId()) {
       const saved = await this.saveCurrentAddressAsSaved(saveAddress.label);
@@ -736,6 +786,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
+          this.orderPlaced.set(true);
           if (response.stripeSessionId) {
             if (this.isBrowser) window.location.href = response.stripeSessionId;
           } else {
@@ -762,6 +813,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
+          this.orderPlaced.set(true);
           this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS], {
             queryParams: { type: 'cash' },
           });

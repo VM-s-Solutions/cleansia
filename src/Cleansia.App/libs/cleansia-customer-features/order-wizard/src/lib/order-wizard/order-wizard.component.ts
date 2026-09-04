@@ -36,6 +36,7 @@ import {
   PROMO_ERROR_KEYS,
   getFieldError,
   getItemTranslation,
+  OrderWizardFormData,
 } from './order-wizard.models';
 import {
   EXPRESS_LEAD_TIME_HOURS,
@@ -194,6 +195,69 @@ export class OrderWizardComponent implements OnInit {
     this.pendingRebook.set(null);
   });
 
+  /**
+   * A parked basket, out of storage and waiting for the catalogue.
+   *
+   * Held rather than applied because the restore CHECKS it against what is still
+   * on offer, and `initialize()` only dispatches that load. Restoring against the
+   * empty list it leaves behind dropped every service in the basket and then told
+   * the customer their draft was "partially restored" — an emptier basket than
+   * not restoring at all, and the loudest possible way to deliver it.
+   */
+  private readonly pendingDraft = signal<{
+    step: number;
+    data: OrderWizardFormData;
+  } | null>(null);
+
+  /**
+   * Put the parked basket back, once there is something to check it against.
+   *
+   * The catalogue is NOT trusted to be the same: a service can be withdrawn while
+   * the customer is away, and a basket restored with a price that no longer exists
+   * is worse than one restored without it. Anything no longer on offer is dropped
+   * and named, the same way a rebook does it.
+   */
+  private restoreDraftEffect = effect(() => {
+    const parked = this.pendingDraft();
+    if (!parked) return;
+
+    const services = this.facade.services();
+    const packages = this.facade.packages();
+
+    // Wait for the lists this basket actually needs — the same guard the rebook
+    // and preselect effects make, for the same reason.
+    const needsServices = parked.data.selectedServiceIds.length > 0;
+    const needsPackages = parked.data.selectedPackageIds.length > 0;
+    if ((needsServices && services.length === 0) || (needsPackages && packages.length === 0)) return;
+
+    const availableServices = new Set(services.map((service) => service.id));
+    const availablePackages = new Set(packages.map((pkg) => pkg.id));
+
+    const keptServices = parked.data.selectedServiceIds.filter((id) =>
+      availableServices.has(id)
+    );
+    const keptPackages = parked.data.selectedPackageIds.filter((id) =>
+      availablePackages.has(id)
+    );
+    const dropped =
+      keptServices.length !== parked.data.selectedServiceIds.length ||
+      keptPackages.length !== parked.data.selectedPackageIds.length;
+
+    this.facade.updateFormData({
+      ...parked.data,
+      selectedServiceIds: keptServices,
+      selectedPackageIds: keptPackages,
+    });
+    this.facade.goToStep(parked.step);
+    this.pendingDraft.set(null);
+
+    if (dropped) {
+      this.snackbar.showError(
+        this.translate.instant('pages.order.draft_partially_restored')
+      );
+    }
+  });
+
   private preselectEffect = effect(() => {
     const serviceId = this.pendingServiceId();
     const packageId = this.pendingPackageId();
@@ -203,7 +267,7 @@ export class OrderWizardComponent implements OnInit {
     const packages = this.facade.packages();
     if (services.length === 0 && packages.length === 0) return;
 
-    const update: Partial<import('./order-wizard.models').OrderWizardFormData> = {};
+    const update: Partial<OrderWizardFormData> = {};
     if (serviceId && services.some((s) => s.id === serviceId)) {
       update.selectedServiceIds = [serviceId];
       this.pendingServiceId.set(null);
@@ -242,10 +306,11 @@ export class OrderWizardComponent implements OnInit {
     // before the customer reaches it rather than on arrival.
     this.facade.loadPlans();
 
-    // A basket parked before a trip to sign-in comes back here. After
-    // initialize(), because the restore checks what it holds against the
-    // catalogue that call fetches.
-    this.restoreDraft();
+    // A parked basket comes back here — taken out of storage now, applied by
+    // `restoreDraftEffect` once the catalogue it is checked against has arrived.
+    // `initialize()` above only DISPATCHES the catalogue load, so reading
+    // `services()` on this line sees an empty list on a cold store.
+    this.pendingDraft.set(this.draft.take());
 
     // Pre-select service or package from query params (e.g., from services catalog)
     const serviceId = this.route.snapshot.queryParamMap.get('serviceId');
@@ -718,47 +783,26 @@ export class OrderWizardComponent implements OnInit {
   }
 
   /**
-   * Put a parked basket back, if there is one.
+   * Park on the way out, whatever the way out is.
    *
-   * The catalogue is NOT trusted to be the same: a service can be withdrawn
-   * while the customer is signing in, and a basket restored with a price that no
-   * longer exists is worse than one restored without it. Anything no longer on
-   * offer is dropped and named, the same way a rebook does it.
+   * The draft was parked in exactly two places — the trip to sign in and the trip to Plus — because
+   * it was built to survive those. Every other departure emptied the basket: the logo, a nav link,
+   * the back button, anything. A customer who left a half-filled order to go and read something
+   * came back to step one, which is not a feature that only works for the two routes someone
+   * remembered to instrument.
+   *
+   * On destroy, so it costs nothing until the wizard is actually being left, and so the two
+   * explicit calls above stay harmless — `park` overwrites, and `take` consumes.
    */
-  private restoreDraft(): void {
-    const parked = this.draft.take();
-    if (!parked) return;
-
-    const availableServices = new Set(
-      this.facade.services().map((service) => service.id)
-    );
-    const availablePackages = new Set(
-      this.facade.packages().map((pkg) => pkg.id)
-    );
-
-    const keptServices = parked.data.selectedServiceIds.filter((id) =>
-      availableServices.has(id)
-    );
-    const keptPackages = parked.data.selectedPackageIds.filter((id) =>
-      availablePackages.has(id)
-    );
-    const dropped =
-      keptServices.length !== parked.data.selectedServiceIds.length ||
-      keptPackages.length !== parked.data.selectedPackageIds.length;
-
-    this.facade.updateFormData({
-      ...parked.data,
-      selectedServiceIds: keptServices,
-      selectedPackageIds: keptPackages,
-    });
-    this.facade.goToStep(parked.step);
-
-    if (dropped) {
-      this.snackbar.showError(
-        this.translate.instant('pages.order.draft_partially_restored')
-      );
-    }
-  }
+  private readonly parkOnLeave = this.destroyRef.onDestroy(() => {
+    // A basket that has just been bought is not one to offer back on the next visit.
+    if (this.facade.orderPlaced()) return;
+    const data = this.facade.formData();
+    // Nothing chosen is nothing to come back to, and parking it would make the next visit offer an
+    // empty basket back.
+    if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) return;
+    this.parkDraft();
+  });
 
   // ── the review step ─────────────────────────────────────────────────────────
 

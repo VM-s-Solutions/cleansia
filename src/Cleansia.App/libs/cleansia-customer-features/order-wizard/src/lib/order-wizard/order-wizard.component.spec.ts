@@ -448,4 +448,56 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(fixture.componentInstance.promoOutcome()).toBe('none');
     });
   });
+
+  describe(`the summary rail's discount line`, () => {
+    /**
+     * The rail handled `membership` and `tier` and nothing else. A promo discount — the one a
+     * customer has just typed in and is watching for — appeared nowhere, and neither did the pair
+     * when Plus and a loyalty tier both applied, despite the facade's comment promising exactly
+     * that. Both are money off a price the customer is about to agree to.
+     */
+    function discountRows(): string[] {
+      return Array.from(el.querySelectorAll('.cl-wiz__summary-discount')).map((row) =>
+        (row.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      );
+    }
+
+    it('shows what a winning promo took off', async () => {
+      await setup();
+      facade.promoCode.set('SAVE300');
+      facade.effectivePromoDiscount.set(300);
+      facade.appliedDiscountKind.set('promo');
+      fixture.detectChanges();
+
+      const rows = discountRows();
+      expect(rows.length).toBe(1);
+      // The key, not the sentence: this suite loads no dictionary, so asserting the rendered
+      // Czech would be asserting the translate pipe rather than the branch that chose this row.
+      expect(rows[0]).toContain('summary.promo_discount');
+      expect(rows[0]).toContain('300');
+    });
+
+    it('stacks both labels when Plus and a loyalty tier apply together', async () => {
+      await setup();
+      facade.membershipDiscount.set(120);
+      facade.tierDiscount.set(80);
+      facade.appliedDiscountKind.set('combined');
+      fixture.detectChanges();
+
+      const rows = discountRows();
+      expect(rows.length).toBe(2);
+      expect(rows[0]).toContain('summary.membership_discount');
+      expect(rows[1]).toContain('summary.tier_discount');
+      expect(rows.join(' ')).toContain('120');
+      expect(rows.join(' ')).toContain('80');
+    });
+
+    it('shows no discount line when nothing came off', async () => {
+      await setup();
+      facade.appliedDiscountKind.set('none');
+      fixture.detectChanges();
+
+      expect(discountRows()).toEqual([]);
+    });
+  });
 });

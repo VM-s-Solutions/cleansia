@@ -1103,7 +1103,24 @@
           }
         </div>
 
+        <!--
+          What came off, and from where. `appliedDiscountKind` names the winning source — a promo
+          REPLACES the tier/membership pair when it is larger, it never stacks — so exactly one of
+          these branches renders, and it is the one the total was actually built from.
+
+          Two of the four were missing: a promo discount appeared nowhere in the rail, and neither
+          did the pair when both Plus and a loyalty tier applied, even though the facade's own
+          comment promised "the sidebar then renders both labels stacked".
+        -->
         @switch (facade.appliedDiscountKind()) {
+          @case ('promo') {
+          <div class="cl-wiz__summary-discount">
+            <span>{{
+              'pages.order.summary.promo_discount' | translate: { code: facade.promoCode() }
+            }}</span>
+            <span class="cl-num">− {{ formatPrice(facade.effectivePromoDiscount()) }}</span>
+          </div>
+          }
           @case ('membership') {
           <div class="cl-wiz__summary-discount">
             <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
@@ -1111,6 +1128,16 @@
           </div>
           }
           @case ('tier') {
+          <div class="cl-wiz__summary-discount">
+            <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+            <span class="cl-num">− {{ formatPrice(facade.tierDiscount()) }}</span>
+          </div>
+          }
+          @case ('combined') {
+          <div class="cl-wiz__summary-discount">
+            <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+            <span class="cl-num">− {{ formatPrice(facade.membershipDiscount()) }}</span>
+          </div>
           <div class="cl-wiz__summary-discount">
             <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
             <span class="cl-num">− {{ formatPrice(facade.tierDiscount()) }}</span>

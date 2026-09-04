@@ -575,7 +575,7 @@
         "cancel_desc": "Between 4 and 24 hours it is 25%, under 4 hours 50%.",
         "rethink_label": "Before a cleaner takes it",
         "rethink_value": "Always free",
-        "rethink_desc": "Until someone accepts the job, cancelling costs nothing however close the clean is. Once someone has, you still have 15 minutes from booking — an hour on your first.",
+        "rethink_desc": "Until someone accepts the job, cancelling costs nothing however close the clean is. Once someone has, you still have 15 minutes from when you booked.",
         "we_cancel_label": "If we cancel",
         "we_cancel_value": "Everything back + 500 CZK",
         "we_cancel_desc": "If the cleaner does not arrive we refund the full amount and add credit towards your next clean.",
@@ -807,7 +807,7 @@
       "summary": {
         "totals_title": "Total",
         "subtotal": "Subtotal",
-        "promo_discount": "Promo (-{{code}})",
+        "promo_discount": "Promo ({{code}})",
         "membership_discount": "Cleansia Plus discount",
         "tier_discount": "Loyalty tier discount",
         "tier_discount_min_not_met": "Loyalty discount applies on orders above {{amount}}"

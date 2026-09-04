@@ -575,7 +575,7 @@
         "cancel_desc": "Mezi 4 a 24 hodinami 25 %, pod 4 hodiny 50 %.",
         "rethink_label": "Než si to uklízeč vezme",
         "rethink_value": "Vždy zdarma",
-        "rethink_desc": "Dokud práci nikdo nepřijme, zrušení nic nestojí, ať je úklid jakkoli blízko. Jakmile ji někdo přijme, máte pořád 15 minut od objednání — u první objednávky hodinu.",
+        "rethink_desc": "Dokud práci nikdo nepřijme, zrušení nic nestojí, ať je úklid jakkoli blízko. Jakmile ji někdo přijme, máte pořád 15 minut od objednání.",
         "we_cancel_label": "Když zrušíme my",
         "we_cancel_value": "Vše zpět + 500 Kč",
         "we_cancel_desc": "Když uklízeč nedorazí, vracíme celou částku a přidáme kredit na příští úklid.",
@@ -817,7 +817,7 @@
       "summary": {
         "totals_title": "Celkem",
         "subtotal": "Mezisoučet",
-        "promo_discount": "Slevový kód (-{{code}})",
+        "promo_discount": "Slevový kód ({{code}})",
         "membership_discount": "Sleva Cleansia Plus",
         "tier_discount": "Věrnostní sleva",
         "tier_discount_min_not_met": "Věrnostní sleva platí pro objednávky nad {{amount}}"

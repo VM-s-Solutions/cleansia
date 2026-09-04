@@ -575,7 +575,7 @@
         "cancel_desc": "Medzi 4 a 24 hodinami 25 %, pod 4 hodiny 50 %.",
         "rethink_label": "Kým si to upratovač nevezme",
         "rethink_value": "Vždy zadarmo",
-        "rethink_desc": "Kým prácu nikto neprijme, zrušenie nič nestojí, nech je upratovanie akokoľvek blízko. Len čo ju niekto prijme, máte stále 15 minút od objednania — pri prvej objednávke hodinu.",
+        "rethink_desc": "Kým prácu nikto neprijme, zrušenie nič nestojí, nech je upratovanie akokoľvek blízko. Len čo ju niekto prijme, máte stále 15 minút od objednania.",
         "we_cancel_label": "Keď zrušíme my",
         "we_cancel_value": "Všetko späť + 500 Kč",
         "we_cancel_desc": "Keď upratovač nepríde, vraciame celú sumu a pridáme kredit na ďalšie upratovanie.",
@@ -817,7 +817,7 @@
       "summary": {
         "totals_title": "Celkom",
         "subtotal": "Medzisúčet",
-        "promo_discount": "Zľavový kód (-{{code}})",
+        "promo_discount": "Zľavový kód ({{code}})",
         "membership_discount": "Zľava Cleansia Plus",
         "tier_discount": "Vernostná zľava",
         "tier_discount_min_not_met": "Vernostná zľava platí pre objednávky nad {{amount}}"

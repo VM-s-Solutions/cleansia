@@ -200,8 +200,11 @@ coordinating multi-agent or multi-step work, start with **`agents/WAY-OF-WORKING
   ios, qa, reviewer, security, optimizer, docs). Invoke via the `Agent` tool with `subagent_type` set
   to the charter's `name`.
 - **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
-- **`agents/tools/check-*.mjs`** — 7 repo checkers, six with their own self-test. Five CI workflows
-  gate a PR: Backend, Frontend, Android, iOS, Docs.
+- **`agents/tools/check-*.mjs`** — 17 repo checkers, eight with their own self-test. Seven CI
+  workflows gate a PR: Backend, Frontend, Android, iOS, Docs, iOS symbols and booking-policy parity.
+  The last two are dependency-free Node gates with their own repo-root workflows, because the drift
+  they catch spans trees that no single existing job can see: `nx affected` selects nothing for a
+  C#-only diff, `backend-ci` excludes the mobile trees, and Gradle and Xcode cannot read C#.
 
 **Slash commands that exist** (`.claude/commands/`): `/feature` — the full-stack entry point, which
 invokes the PM end to end — plus `/backend` `/frontend` `/mobile` `/review` `/docs` `/sync` for small

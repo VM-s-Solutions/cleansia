@@ -67,34 +67,43 @@
             }
           </div>
 
-          <div class="cl-rec__fields">
-            <label class="cl-rec__field">
-              <span class="cl-rec__label">{{ 'recurring_booking.rooms_label' | translate }}</span>
-              <p-inputNumber
-                [ngModel]="facade.formData().rooms"
-                (ngModelChange)="setRooms($event)"
-                [min]="0"
-                [max]="20"
-                [showButtons]="true"
-                buttonLayout="horizontal"
-                incrementButtonIcon="pi pi-plus"
-                decrementButtonIcon="pi pi-minus"
-              />
-            </label>
-            <label class="cl-rec__field">
-              <span class="cl-rec__label">{{ 'recurring_booking.bathrooms_label' | translate }}</span>
-              <p-inputNumber
-                [ngModel]="facade.formData().bathrooms"
-                (ngModelChange)="setBathrooms($event)"
-                [min]="0"
-                [max]="20"
-                [showButtons]="true"
-                buttonLayout="horizontal"
-                incrementButtonIcon="pi pi-plus"
-                decrementButtonIcon="pi pi-minus"
-              />
-            </label>
+          <div class="cl-rec__counts">
+            <div>
+              <div class="cl-rec__label">{{ 'recurring_booking.rooms_label' | translate }}</div>
+              <div class="cl-rec__count-chips">
+                @for (n of COUNTS; track n) {
+                  <button
+                    type="button"
+                    class="cl-rec__chip cl-rec__chip--count"
+                    [class.cl-rec__chip--on]="facade.formData().rooms === n"
+                    [attr.aria-pressed]="facade.formData().rooms === n"
+                    (click)="setRooms(n)"
+                  >{{ n }}</button>
+                }
+              </div>
+            </div>
+            <div>
+              <div class="cl-rec__label">{{ 'recurring_booking.bathrooms_label' | translate }}</div>
+              <div class="cl-rec__count-chips">
+                @for (n of COUNTS; track n) {
+                  <button
+                    type="button"
+                    class="cl-rec__chip cl-rec__chip--count"
+                    [class.cl-rec__chip--on]="facade.formData().bathrooms === n"
+                    [attr.aria-pressed]="facade.formData().bathrooms === n"
+                    (click)="setBathrooms(n)"
+                  >{{ n }}</button>
+                }
+              </div>
+            </div>
           </div>
+
+          @if (showError('services')) {
+            <p class="cl-rec__error">
+              <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+              {{ 'recurring_booking.error_services' | translate }}
+            </p>
+          }
         </section>
 
         <!-- ── How often ─────────────────────────────────────────────── -->
@@ -135,20 +144,28 @@
           </div>
 
           <div class="cl-rec__fields">
-            <label class="cl-rec__field">
-              <span class="cl-rec__label">{{ 'recurring_booking.time_label' | translate }}</span>
-              <p-select
+            <div class="cl-rec__field">
+              <cleansia-select
+                [label]="'recurring_booking.time_label' | translate"
                 [options]="timeOptions"
                 [ngModel]="facade.formData().timeOfDay"
                 (ngModelChange)="selectTime($event)"
-                optionLabel="label"
-                optionValue="value"
+                [showClear]="false"
+                [required]="true"
+                [floatVariant]="null"
                 [appendTo]="'body'"
               />
-            </label>
-            <label class="cl-rec__field">
+              @if (showError('time')) {
+                <p class="cl-rec__error">
+                  <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                  {{ 'recurring_booking.error_time' | translate }}
+                </p>
+              }
+            </div>
+            <div class="cl-rec__field">
               <span class="cl-rec__label">{{ 'recurring_booking.starts_on_label' | translate }}</span>
               <p-datepicker
+                styleClass="cl-rec__datepicker"
                 [ngModel]="facade.formData().startsOn"
                 (ngModelChange)="onStartsOnChange($event)"
                 [minDate]="minStartsOn"
@@ -156,44 +173,99 @@
                 [showIcon]="true"
                 [appendTo]="'body'"
               />
-            </label>
+              @if (showError('startsOn')) {
+                <p class="cl-rec__error">
+                  <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                  {{ 'recurring_booking.error_starts_on' | translate }}
+                </p>
+              }
+            </div>
           </div>
         </section>
 
         <!-- ── Where and how it is paid ──────────────────────────────── -->
         <section class="cl-rec__section">
-          <h2 class="cl-rec__section-title">{{ 'recurring_booking.step_where_pay_title' | translate }}</h2>
+          <h2 class="cl-rec__section-title">
+            {{ 'recurring_booking.step_where_pay_title' | translate }}
+          </h2>
 
           <div class="cl-rec__fields">
-            <label class="cl-rec__field">
-              <span class="cl-rec__label">{{ 'recurring_booking.address_label' | translate }}</span>
-              <p-select
+            <div class="cl-rec__field">
+              <cleansia-select
+                [label]="'recurring_booking.address_label' | translate"
                 [options]="addressOptions()"
                 [ngModel]="facade.formData().savedAddressId"
                 (ngModelChange)="selectAddress($event)"
-                optionLabel="label"
-                optionValue="value"
                 [placeholder]="'recurring_booking.address_placeholder' | translate"
+                [showClear]="false"
+                [required]="true"
+                [floatVariant]="null"
                 [appendTo]="'body'"
               />
-            </label>
-            <label class="cl-rec__field">
-              <span class="cl-rec__label">{{ 'recurring_booking.payment_label' | translate }}</span>
-              <p-select
+              @if (showError('address')) {
+                <p class="cl-rec__error">
+                  <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                  {{ 'recurring_booking.error_address' | translate }}
+                </p>
+              }
+            </div>
+            <div class="cl-rec__field">
+              <cleansia-select
+                [label]="'recurring_booking.payment_label' | translate"
                 [options]="paymentOptions()"
                 [ngModel]="facade.formData().paymentType"
                 (ngModelChange)="selectPayment($event)"
-                optionLabel="label"
-                optionValue="value"
+                [showClear]="false"
+                [floatVariant]="null"
                 [appendTo]="'body'"
               />
-            </label>
+            </div>
           </div>
 
-          @if (facade.savedAddresses().length === 0) {
-            <p class="cl-rec__section-hint">
-              {{ 'recurring_booking.address_empty' | translate }}
-            </p>
+          <!--
+            Adding an address WITHOUT leaving the form. The alternative was to
+            abandon a half-filled schedule, go to the profile, add it there and
+            start over.
+          -->
+          @if (!addingAddress()) {
+            <button type="button" class="cl-rec__add-address" (click)="startAddingAddress()">
+              <i class="pi pi-plus" aria-hidden="true"></i>
+              {{ 'recurring_booking.add_address' | translate }}
+            </button>
+          } @else {
+            <div class="cl-rec__new-address">
+              <cleansia-text-input
+                [label]="'recurring_booking.new_address_label' | translate"
+                [placeholder]="'recurring_booking.new_address_label_hint' | translate"
+                [(ngModel)]="newAddressLabel"
+                [floatVariant]="null"
+              />
+              <cleansia-address-autocomplete (picked)="onAddressPicked($event)" />
+              @if (pickedAddress(); as picked) {
+                <p class="cl-rec__picked">
+                  <i class="pi pi-map-marker" aria-hidden="true"></i>
+                  {{ picked.placeName }}
+                </p>
+              }
+              <div class="cl-rec__new-address-actions">
+                <button
+                  type="button"
+                  class="cl-rec__ghost"
+                  (click)="cancelAddingAddress()"
+                >{{ 'global.cancel' | translate }}</button>
+                <button
+                  type="button"
+                  class="cl-btn"
+                  [disabled]="!pickedAddress() || savingAddress()"
+                  (click)="saveNewAddress()"
+                >
+                  @if (savingAddress()) {
+                    <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+                  }
+                  {{ 'recurring_booking.save_address' | translate }}
+                </button>
+              </div>
+            </div>
           }
         </section>
 
@@ -204,14 +276,26 @@
             <div class="cl-rec__summary-price">
               {{ formPrice() ?? ('recurring_booking.price_pending' | translate) }}
             </div>
-            <p class="cl-rec__summary-note">{{ 'recurring_booking.price_note' | translate }}</p>
+            @if (showSummaryError()) {
+              <p class="cl-rec__error cl-rec__error--summary">
+                <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                {{ 'recurring_booking.error_summary' | translate: { fields: missingLabels() } }}
+              </p>
+            } @else {
+              <p class="cl-rec__summary-note">{{ 'recurring_booking.price_note' | translate }}</p>
+            }
           </div>
           <div class="cl-rec__summary-actions">
             <a class="cl-link" [routerLink]="listRoute">{{ 'global.cancel' | translate }}</a>
+            <!--
+              NOT disabled on an incomplete form. A dead button is why pressing
+              save appeared to do nothing; this one always responds, and an
+              incomplete form answers by naming the fields.
+            -->
             <button
               type="button"
               class="cl-btn"
-              [disabled]="!facade.canSubmit() || facade.submitting()"
+              [disabled]="facade.submitting()"
               (click)="submit()"
             >
               @if (facade.submitting()) {

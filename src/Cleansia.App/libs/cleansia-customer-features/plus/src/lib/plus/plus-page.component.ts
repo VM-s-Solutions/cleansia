@@ -11,6 +11,7 @@ import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { MembershipManagementComponent } from '@cleansia-customer/profile';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import { EXPRESS_SURCHARGE_RATE } from '@cleansia/models';
+import { clearOnBackForwardRestore } from '@cleansia/utils';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PlusPageFacade } from './plus-page.facade';
@@ -49,6 +50,13 @@ export class PlusPageComponent implements OnInit {
   readonly facade = inject(PlusPageFacade);
 
   private readonly isLoggedIn = this.authService.isLoggedIn;
+
+  constructor() {
+    // Leaving for Stripe keeps `submitting` set on purpose — see startCheckout.
+    // Pressing Back restores this page with that flag still true, and the
+    // trial buttons come back permanently dead.
+    clearOnBackForwardRestore(this.facade.submitting);
+  }
 
   /**
    * Mirrors `BookingPolicy.ExpressSurchargeRate` via the shared booking-window

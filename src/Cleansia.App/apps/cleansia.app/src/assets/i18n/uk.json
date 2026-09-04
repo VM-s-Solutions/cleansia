@@ -25,7 +25,8 @@
     "pricing": "Ціни",
     "how_it_works": "Як це працює",
     "plus": "Cleansia Plus",
-    "login_short": "Увійти"
+    "login_short": "Увійти",
+    "my_recurring": "Повторювані прибирання"
   },
   "cookies": {
     "title": "Ваша конфіденційність важлива",
@@ -2082,7 +2083,17 @@
     "address_placeholder": "Оберіть адресу",
     "per_clean": "Кожне прибирання",
     "price_note": "Ціна перерахується, якщо зміниться прайс — ми завжди попередимо заздалегідь.",
-    "price_pending": "Оберіть послугу"
+    "price_pending": "Оберіть послугу",
+    "field_services": "Послуги",
+    "error_services": "Оберіть хоча б одну послугу або пакет.",
+    "error_time": "Оберіть час.",
+    "error_address": "Оберіть адресу або додайте нову нижче.",
+    "error_starts_on": "Оберіть дату початку.",
+    "error_summary": "Ще бракує: {{fields}}.",
+    "add_address": "Додати нову адресу",
+    "new_address_label": "Назва",
+    "new_address_label_hint": "Дім, Робота, Мама…",
+    "save_address": "Зберегти адресу"
   },
   "preferred_cleaner": {
     "title": "Запросіть улюбленого клінера",

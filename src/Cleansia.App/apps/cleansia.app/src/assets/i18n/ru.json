@@ -25,7 +25,8 @@
     "pricing": "Цены",
     "how_it_works": "Как это работает",
     "plus": "Cleansia Plus",
-    "login_short": "Войти"
+    "login_short": "Войти",
+    "my_recurring": "Повторяющиеся уборки"
   },
   "cookies": {
     "title": "Ваша конфиденциальность важна",
@@ -2082,7 +2083,17 @@
     "address_placeholder": "Выберите адрес",
     "per_clean": "Каждая уборка",
     "price_note": "Цена пересчитается, если изменится прайс — мы всегда предупредим заранее.",
-    "price_pending": "Выберите услугу"
+    "price_pending": "Выберите услугу",
+    "field_services": "Услуги",
+    "error_services": "Выберите хотя бы одну услугу или пакет.",
+    "error_time": "Выберите время.",
+    "error_address": "Выберите адрес или добавьте новый ниже.",
+    "error_starts_on": "Выберите дату начала.",
+    "error_summary": "Ещё не хватает: {{fields}}.",
+    "add_address": "Добавить новый адрес",
+    "new_address_label": "Название",
+    "new_address_label_hint": "Дом, Работа, Мама…",
+    "save_address": "Сохранить адрес"
   },
   "preferred_cleaner": {
     "title": "Запросите любимого клинера",

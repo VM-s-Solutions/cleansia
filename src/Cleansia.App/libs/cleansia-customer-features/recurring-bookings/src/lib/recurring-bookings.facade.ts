@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
+  AddSavedAddressCommand,
   CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
@@ -29,6 +30,7 @@ import {
   RECURRING_WIZARD_INITIAL_DATA,
   canAdvance,
   canSubmit,
+  missingFields,
   nextOccurrenceUtc,
 } from './recurring-bookings.models';
 
@@ -109,10 +111,27 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly canSubmit = computed(() => canSubmit(this.formData()));
 
   /**
+   * Set the first time the customer presses save. Until then the form says
+   * nothing — nobody wants to be told what is missing from a form they have not
+   * filled in yet — and after it, every gap is named.
+   */
+  readonly submitAttempted = signal(false);
+
+  /** Which required fields are still empty, in the order the form asks them. */
+  readonly missing = computed(() => missingFields(this.formData()));
+
+  /**
    * Bootstrap: load templates + addresses + catalog. Safe to call on every
    * list-screen entry — internal `loaded` guards skip redundant fetches.
    */
   async initialize(): Promise<void> {
+    // SYNCHRONOUSLY, before any await. This used to run at the END of
+    // initialize, three network round trips later, so the form spent that whole
+    // time with a null `startsOn` — which `canSubmit` reads — and the submit
+    // button was dead with nothing on screen explaining why. Touching the date
+    // picker "fixed" it, which is exactly what it looked like from outside.
+    this.applyDefaultStartDate();
+
     // Catalog dispatches are no-ops on already-loaded state. They flow into
     // the customer-stores reducers, populating the signals above.
     this.store.dispatch(loadCustomerServices());
@@ -132,23 +151,51 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     }
     await this.refreshList();
 
-    // Default startsOn to one week from today on first wizard entry, so the
-    // user doesn't see a blank field. They can change via the date picker.
-    if (!this.formData().startsOn) {
-      const nextWeek = new Date();
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      nextWeek.setHours(0, 0, 0, 0);
-      this.updateFormData({ startsOn: nextWeek });
-    }
+    this.applyDefaultAddress();
+  }
 
-    // Default savedAddressId to the user's default address if any.
-    if (!this.formData().savedAddressId) {
-      const defaultAddr =
-        this.savedAddresses().find((a) => a.isDefault) ?? this.savedAddresses()[0];
-      if (defaultAddr?.id) {
-        this.updateFormData({ savedAddressId: defaultAddr.id });
-      }
+  /** One week out, so the field is never blank. Cheap, and needs no network. */
+  private applyDefaultStartDate(): void {
+    if (this.formData().startsOn) return;
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(0, 0, 0, 0);
+    this.updateFormData({ startsOn: nextWeek });
+  }
+
+  private applyDefaultAddress(): void {
+    if (this.formData().savedAddressId) return;
+    const defaultAddr =
+      this.savedAddresses().find((a) => a.isDefault) ?? this.savedAddresses()[0];
+    if (defaultAddr?.id) {
+      this.updateFormData({ savedAddressId: defaultAddr.id });
     }
+  }
+
+  /**
+   * Save a new address from inside this form and select it.
+   *
+   * Without this the answer to "I want to clean somewhere else" was: leave the
+   * half-filled schedule, go to the profile, add the address, come back and
+   * start again. `CountryId` is optional on the command, so the autocomplete's
+   * street/city/zip/coordinates plus a label is the whole form.
+   */
+  async addAddress(label: string, picked: {
+    street: string; city: string; zipCode: string; latitude: number; longitude: number;
+  }): Promise<boolean> {
+    const command = new AddSavedAddressCommand();
+    command.label = label;
+    command.street = picked.street;
+    command.city = picked.city;
+    command.zipCode = picked.zipCode;
+    command.latitude = picked.latitude;
+    command.longitude = picked.longitude;
+    command.setAsDefault = this.savedAddresses().length === 0;
+
+    const created = await this.savedAddressStore.add(command);
+    if (!created?.id) return false;
+    this.updateFormData({ savedAddressId: created.id });
+    return true;
   }
 
   async refreshMembership(): Promise<void> {
@@ -337,6 +384,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.activeStep.set(1);
     this.editingId.set(null);
     this.formPrice.set(null);
+    this.submitAttempted.set(false);
     this.formData.set({ ...RECURRING_WIZARD_INITIAL_DATA });
   }
 

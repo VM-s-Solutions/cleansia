@@ -480,6 +480,112 @@
   color: var(--cl-muted);
 }
 
+// ---- Counting rooms ---------------------------------------------------------------------
+// Chips, not a number spinner: the booking wizard asks the same question this
+// way, and a schedule's form should not be the one screen with a stepper.
+.cl-rec__counts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-rec__count-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+// ---- Saying what is missing -------------------------------------------------------------
+.cl-rec__error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #b91c1c;
+
+  i {
+    font-size: 0.875rem;
+  }
+
+  &--summary {
+    margin-top: 4px;
+  }
+}
+
+// ---- A new address, without leaving the form --------------------------------------------
+.cl-rec__add-address {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: calc(1.125 * var(--cl-u));
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cl-heading);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--cl-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 3px;
+  }
+}
+
+.cl-rec__new-address {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-top: calc(1.125 * var(--cl-u));
+  padding: calc(1.25 * var(--cl-u));
+  border-radius: 1.25rem;
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border-tint);
+}
+
+.cl-rec__picked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--cl-body);
+
+  i {
+    color: var(--cl-heading);
+  }
+}
+
+.cl-rec__new-address-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+}
+
+// The date picker is the one control with no `cleansia-*` wrapper. Give it the
+// same field metrics as the wrapped ones so it does not read as a foreign
+// widget dropped into the form.
+.cl-rec__datepicker {
+  width: 100%;
+
+  input {
+    width: 100%;
+    min-height: 3rem;
+    border-radius: 0.875rem;
+  }
+}
+
 // ---- Cadence, days --------------------------------------------------------------------
 .cl-rec__cadence {
   display: flex;
@@ -529,6 +635,12 @@
   &--day {
     min-width: 52px;
     padding: 0 0.875rem;
+  }
+
+  &--count {
+    min-width: 44px;
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
   }
 
   &:focus-visible {

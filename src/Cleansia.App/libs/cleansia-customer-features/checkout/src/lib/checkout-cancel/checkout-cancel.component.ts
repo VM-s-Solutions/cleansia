@@ -14,6 +14,7 @@ import {
   ResumeOrderCheckoutCommand,
 } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { clearOnBackForwardRestore } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, take } from 'rxjs';
@@ -60,6 +61,12 @@ export class CheckoutCancelComponent {
   );
 
   readonly resuming = signal(false);
+
+  constructor() {
+    // The same trap as the Plus page: this hands the browser to Stripe with
+    // `resuming` set, and Back restores the page with a dead "Pay now".
+    clearOnBackForwardRestore(this.resuming);
+  }
 
   /**
    * Whether to offer finishing the payment at all.

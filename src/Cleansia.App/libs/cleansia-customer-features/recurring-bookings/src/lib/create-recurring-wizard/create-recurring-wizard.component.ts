@@ -14,15 +14,20 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import {
+  CleansiaAddressAutocompleteComponent,
+  CleansiaSelectComponent,
+  CleansiaTextInputComponent,
+} from '@cleansia/components';
+import { MapboxAddressSuggestion } from '@cleansia/services';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { SelectModule } from 'primeng/select';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import {
   DAY_OF_WEEK_CHIPS,
   FREQUENCY_OPTIONS,
+  MissingField,
   RecurrenceFrequency,
   RecurringPrefillParams,
   RECURRING_PREFILL_STORAGE_KEY,
@@ -52,9 +57,10 @@ import {
     TranslatePipe,
     FoamEdgeComponent,
     DatePickerModule,
-    InputNumberModule,
-    SelectModule,
     ConfirmDialogModule,
+    CleansiaSelectComponent,
+    CleansiaTextInputComponent,
+    CleansiaAddressAutocompleteComponent,
   ],
   providers: [RecurringBookingsFacade, ConfirmationService],
   templateUrl: './create-recurring-wizard.component.html',
@@ -74,12 +80,20 @@ export class CreateRecurringWizardComponent implements OnInit {
 
   /** Recurring schedules can't start in the past. */
   protected readonly minStartsOn = new Date();
+  /** The booking wizard's own range — a schedule is a home, not a hotel. */
+  protected readonly COUNTS = [0, 1, 2, 3, 4, 5, 6];
   protected readonly listRoute = ['/' + CleansiaCustomerRoute.MEMBERSHIP, 'recurring'];
 
   /** Flattened from the three period groups — the board draws one select. */
   protected readonly timeOptions = TIME_PERIOD_GROUPS.flatMap((group) =>
     group.slots.map((slot) => ({ label: slot, value: slot })),
   );
+
+  // ─── Adding an address without leaving the form ────────────────────
+  readonly addingAddress = signal(false);
+  readonly savingAddress = signal(false);
+  readonly pickedAddress = signal<MapboxAddressSuggestion | null>(null);
+  newAddressLabel = '';
 
   readonly isEditing = computed(() => this.facade.editingId() !== null);
 
@@ -215,6 +229,63 @@ export class CreateRecurringWizardComponent implements OnInit {
   }
 
   // ─── Field handlers ────────────────────────────────────────────────
+  // ─── Telling the customer what is missing ──────────────────────────
+  /** A field's own message, shown only once they have pressed save. */
+  showError(field: MissingField): boolean {
+    return this.facade.submitAttempted() && this.facade.missing().includes(field);
+  }
+
+  showSummaryError(): boolean {
+    return this.facade.submitAttempted() && this.facade.missing().length > 0;
+  }
+
+  /** "services, address" — the same names the field labels use. */
+  missingLabels(): string {
+    const keys: Record<MissingField, string> = {
+      services: 'recurring_booking.field_services',
+      time: 'recurring_booking.time_label',
+      address: 'recurring_booking.address_label',
+      startsOn: 'recurring_booking.starts_on_label',
+    };
+    return this.facade
+      .missing()
+      .map((field) => this.translate.instant(keys[field]).toLocaleLowerCase())
+      .join(', ');
+  }
+
+  // ─── The inline address form ───────────────────────────────────────
+  startAddingAddress(): void {
+    this.addingAddress.set(true);
+    this.pickedAddress.set(null);
+    this.newAddressLabel = '';
+  }
+
+  cancelAddingAddress(): void {
+    this.addingAddress.set(false);
+    this.pickedAddress.set(null);
+  }
+
+  onAddressPicked(suggestion: MapboxAddressSuggestion): void {
+    this.pickedAddress.set(suggestion);
+  }
+
+  async saveNewAddress(): Promise<void> {
+    const picked = this.pickedAddress();
+    if (!picked || this.savingAddress()) return;
+
+    this.savingAddress.set(true);
+    try {
+      // An unnamed address is still an address — the city is a better fallback
+      // than refusing to save one.
+      const label = this.newAddressLabel.trim() || picked.city || picked.placeName;
+      if (await this.facade.addAddress(label, picked)) {
+        this.cancelAddingAddress();
+      }
+    } finally {
+      this.savingAddress.set(false);
+    }
+  }
+
   selectFrequency(freq: RecurrenceFrequency): void {
     this.facade.updateFormData({ frequency: freq });
   }
@@ -265,6 +336,11 @@ export class CreateRecurringWizardComponent implements OnInit {
 
   // ─── Leaving the screen ────────────────────────────────────────────
   async submit(): Promise<void> {
+    // Reveals the field messages from here on, whether or not this attempt goes
+    // through — an incomplete form now answers instead of ignoring the press.
+    this.facade.submitAttempted.set(true);
+    if (this.facade.missing().length > 0) return;
+
     const ok = await this.facade.submit();
     if (ok) {
       this.facade.resetWizard();

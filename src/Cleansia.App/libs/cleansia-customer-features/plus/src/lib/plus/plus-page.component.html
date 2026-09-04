@@ -27,6 +27,9 @@
 
       <div class="cl-plusp__actions">
         <button type="button" class="cl-btn" [disabled]="facade.submitting()" (click)="startTrial()">
+          @if (facade.submitting()) {
+            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+          }
           {{ 'pages.plus.cta_trial' | translate: { days: facade.trialDays() } }}
         </button>
         <!--
@@ -235,6 +238,9 @@
               [disabled]="facade.submitting()"
               (click)="startTrial(monthly.code)"
             >
+              @if (facade.submitting()) {
+                <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+              }
               {{ 'pages.plus.cta_try_free' | translate }}
             </button>
           </div>
@@ -265,6 +271,9 @@
               [disabled]="facade.submitting()"
               (click)="startTrial(yearly.code)"
             >
+              @if (facade.submitting()) {
+                <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+              }
               {{ 'pages.plus.cta_try_free' | translate }}
             </button>
           </div>
@@ -360,6 +369,9 @@
       </div>
       <div class="cl-plusp__cta-actions">
         <button type="button" class="cl-btn" [disabled]="facade.submitting()" (click)="startTrial()">
+          @if (facade.submitting()) {
+            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+          }
           {{ 'pages.plus.closing_cta' | translate }}
         </button>
         <a class="cl-link" [routerLink]="orderLink">{{ 'pages.plus.closing_alt' | translate }}</a>

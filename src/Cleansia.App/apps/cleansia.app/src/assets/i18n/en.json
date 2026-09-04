@@ -25,7 +25,8 @@
     "pricing": "Pricing",
     "how_it_works": "How it works",
     "plus": "Cleansia Plus",
-    "login_short": "Log in"
+    "login_short": "Log in",
+    "my_recurring": "Recurring cleanings"
   },
   "cookies": {
     "title": "Your Privacy Matters",
@@ -2082,7 +2083,17 @@
     "address_placeholder": "Pick an address",
     "per_clean": "Every clean",
     "price_note": "The price is recalculated if the rates change — we always tell you first.",
-    "price_pending": "Pick a service"
+    "price_pending": "Pick a service",
+    "field_services": "Services",
+    "error_services": "Pick at least one service or package.",
+    "error_time": "Pick a time.",
+    "error_address": "Pick an address, or add a new one below.",
+    "error_starts_on": "Pick a start date.",
+    "error_summary": "Still needed: {{fields}}.",
+    "add_address": "Add a new address",
+    "new_address_label": "Name it",
+    "new_address_label_hint": "Home, Office, Mum…",
+    "save_address": "Save address"
   },
   "preferred_cleaner": {
     "title": "Request your favourite cleaner",

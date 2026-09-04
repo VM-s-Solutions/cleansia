@@ -25,7 +25,8 @@
     "pricing": "Cenník",
     "how_it_works": "Ako to chodí",
     "plus": "Cleansia Plus",
-    "login_short": "Prihlásiť"
+    "login_short": "Prihlásiť",
+    "my_recurring": "Opakované termíny"
   },
   "cookies": {
     "title": "Vaše súkromie je dôležité",
@@ -2082,7 +2083,17 @@
     "address_placeholder": "Vyberte adresu",
     "per_clean": "Každé upratovanie",
     "price_note": "Cena sa prepočíta, keď sa zmení cenník — vždy vám to povieme dopredu.",
-    "price_pending": "Vyberte službu"
+    "price_pending": "Vyberte službu",
+    "field_services": "Služby",
+    "error_services": "Vyberte aspoň jednu službu alebo balík.",
+    "error_time": "Vyberte čas.",
+    "error_address": "Vyberte adresu alebo nižšie pridajte novú.",
+    "error_starts_on": "Vyberte dátum začiatku.",
+    "error_summary": "Ešte chýba: {{fields}}.",
+    "add_address": "Pridať novú adresu",
+    "new_address_label": "Pomenujte ju",
+    "new_address_label_hint": "Domov, Práca, Mama…",
+    "save_address": "Uložiť adresu"
   },
   "preferred_cleaner": {
     "title": "Vyžiadajte si obľúbeného upratovača",

@@ -245,3 +245,25 @@ export function nextOccurrenceUtc(
   }
   return null;
 }
+
+/** A required field the form is still missing, in the order the form asks. */
+export type MissingField = 'services' | 'time' | 'address' | 'startsOn';
+
+/**
+ * What is stopping this schedule from being saved.
+ *
+ * `canSubmit` answers yes/no, which is all a disabled button needs and nothing
+ * a person does. The form presses a live button, gets this list back and says
+ * which field to look at — the previous behaviour was a dead button and a page
+ * that appeared to ignore the click.
+ */
+export function missingFields(data: RecurringWizardFormData): MissingField[] {
+  const missing: MissingField[] = [];
+  if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
+    missing.push('services');
+  }
+  if (!data.timeOfDay) missing.push('time');
+  if (!data.savedAddressId) missing.push('address');
+  if (!data.startsOn) missing.push('startsOn');
+  return missing;
+}

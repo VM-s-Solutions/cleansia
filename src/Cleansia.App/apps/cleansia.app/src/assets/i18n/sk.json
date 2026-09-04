@@ -2093,7 +2093,8 @@
     "add_address": "Pridať novú adresu",
     "new_address_label": "Pomenujte ju",
     "new_address_label_hint": "Domov, Práca, Mama…",
-    "save_address": "Uložiť adresu"
+    "save_address": "Uložiť adresu",
+    "address_loading": "Načítavame vaše adresy…"
   },
   "preferred_cleaner": {
     "title": "Vyžiadajte si obľúbeného upratovača",

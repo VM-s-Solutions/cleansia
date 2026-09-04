@@ -184,6 +184,10 @@ export class CreateRecurringWizardComponent implements OnInit {
 
   ngOnInit(): void {
     this.facade.initialize();
+    // The form's OWN addresses, not initialize's. That path is gated on
+    // membership and returns early for a non-member, which left this screen
+    // with an address select that could never fill.
+    this.facade.ensureAddresses();
 
     const prefillFlag = this.route.snapshot.queryParamMap.get('prefill');
     if (prefillFlag === 'true' && this.isBrowser) {

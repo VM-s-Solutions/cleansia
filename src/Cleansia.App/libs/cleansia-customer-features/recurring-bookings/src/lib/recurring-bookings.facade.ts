@@ -90,6 +90,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly formPrice = signal<{ amount: number; currency: string } | null>(null);
   readonly quoting = signal(false);
 
+  /** Drives the address field's own spinner — see `ensureAddresses`. */
+  readonly addressesLoading = signal(false);
+
   // ─── Wizard state ──────────────────────────────────────────────────
   readonly activeStep = signal(1);
   readonly formData = signal<RecurringWizardFormData>({
@@ -146,12 +149,33 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    if (!this.savedAddressStore.loaded()) {
-      await this.savedAddressStore.refresh();
-    }
+    await this.ensureAddresses();
     await this.refreshList();
+  }
 
-    this.applyDefaultAddress();
+  /**
+   * Load the customer's saved addresses, whoever is asking.
+   *
+   * Deliberately NOT part of `initialize`'s membership-gated tail. The create
+   * form is a route of its own, and `initialize` returns early for a
+   * non-member — so a form reached directly had no addresses at all, and its
+   * address select was permanently empty with nothing to explain it.
+   *
+   * It also does not trust another screen to have loaded them. The profile page
+   * happens to populate the same store, which made this look fine whenever the
+   * customer had been there first and broken whenever they had not.
+   */
+  async ensureAddresses(): Promise<void> {
+    if (this.addressesLoading()) return;
+    this.addressesLoading.set(true);
+    try {
+      if (!this.savedAddressStore.loaded()) {
+        await this.savedAddressStore.refresh();
+      }
+      this.applyDefaultAddress();
+    } finally {
+      this.addressesLoading.set(false);
+    }
   }
 
   /** One week out, so the field is never blank. Cheap, and needs no network. */

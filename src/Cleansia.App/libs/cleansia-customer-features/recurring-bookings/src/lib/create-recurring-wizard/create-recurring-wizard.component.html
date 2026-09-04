@@ -25,47 +25,74 @@
         <section class="cl-rec__section">
           <h2 class="cl-rec__section-title">{{ 'recurring_booking.step_what_title' | translate }}</h2>
 
-          <div class="cl-rec__picks">
-            @for (pkg of facade.packages(); track pkg.id) {
-              <button
-                type="button"
-                class="cl-rec__pick"
-                [class.cl-rec__pick--on]="isPackageSelected(pkg.id ?? '')"
-                [attr.aria-pressed]="isPackageSelected(pkg.id ?? '')"
-                (click)="togglePackage(pkg.id ?? '')"
-              >
-                <span class="cl-rec__pick-tick">
-                  @if (isPackageSelected(pkg.id ?? '')) {
-                    <i class="pi pi-check" aria-hidden="true"></i>
-                  }
-                </span>
-                <span class="cl-rec__pick-body">
-                  <span class="cl-rec__pick-name">{{ facade.packageName(pkg.id ?? '') }}</span>
-                  <span class="cl-rec__pick-note">{{ formatMoney(pkg.price) }}</span>
-                </span>
-              </button>
-            }
-            @for (service of facade.services(); track service.id) {
-              <button
-                type="button"
-                class="cl-rec__pick"
-                [class.cl-rec__pick--on]="isServiceSelected(service.id ?? '')"
-                [attr.aria-pressed]="isServiceSelected(service.id ?? '')"
-                (click)="toggleService(service.id ?? '')"
-              >
-                <span class="cl-rec__pick-tick">
-                  @if (isServiceSelected(service.id ?? '')) {
-                    <i class="pi pi-check" aria-hidden="true"></i>
-                  }
-                </span>
-                <span class="cl-rec__pick-body">
-                  <span class="cl-rec__pick-name">{{
-                    facade.serviceName(service.id ?? '')
-                  }}</span>
-                </span>
-              </button>
-            }
-          </div>
+          <!--
+            Packages and services are two different purchases — a package is a
+            bundle at one price, a service is a line on the bill — and running
+            them together in one grid asked the customer to tell them apart from
+            the price note alone. The booking wizard has always separated them.
+          -->
+          @if (facade.packages().length > 0) {
+            <div class="cl-rec__pick-group">
+              <div class="cl-rec__label">
+                {{ 'recurring_booking.section_packages' | translate }}
+              </div>
+              <div class="cl-rec__picks">
+                @for (pkg of facade.packages(); track pkg.id) {
+                  <button
+                    type="button"
+                    class="cl-rec__pick"
+                    [class.cl-rec__pick--on]="isPackageSelected(pkg.id ?? '')"
+                    [attr.aria-pressed]="isPackageSelected(pkg.id ?? '')"
+                    (click)="togglePackage(pkg.id ?? '')"
+                  >
+                    <span class="cl-rec__pick-tick">
+                      @if (isPackageSelected(pkg.id ?? '')) {
+                        <i class="pi pi-check" aria-hidden="true"></i>
+                      }
+                    </span>
+                    <span class="cl-rec__pick-body">
+                      <span class="cl-rec__pick-name">{{ facade.packageName(pkg.id ?? '') }}</span>
+                      <span class="cl-rec__pick-note">{{ formatMoney(pkg.price) }}</span>
+                    </span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (facade.services().length > 0) {
+            <div class="cl-rec__pick-group">
+              <div class="cl-rec__label">
+                {{ 'recurring_booking.section_services' | translate }}
+              </div>
+              <div class="cl-rec__picks">
+                @for (service of facade.services(); track service.id) {
+                  <button
+                    type="button"
+                    class="cl-rec__pick"
+                    [class.cl-rec__pick--on]="isServiceSelected(service.id ?? '')"
+                    [attr.aria-pressed]="isServiceSelected(service.id ?? '')"
+                    (click)="toggleService(service.id ?? '')"
+                  >
+                    <span class="cl-rec__pick-tick">
+                      @if (isServiceSelected(service.id ?? '')) {
+                        <i class="pi pi-check" aria-hidden="true"></i>
+                      }
+                    </span>
+                    <span class="cl-rec__pick-body">
+                      <span class="cl-rec__pick-name">{{
+                        facade.serviceName(service.id ?? '')
+                      }}</span>
+                    </span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (facade.services().length === 0 && facade.packages().length === 0) {
+            <p class="cl-rec__hint">{{ 'recurring_booking.services_loading' | translate }}</p>
+          }
 
           <div class="cl-rec__counts">
             <div>
@@ -196,12 +223,20 @@
                 [options]="addressOptions()"
                 [ngModel]="facade.formData().savedAddressId"
                 (ngModelChange)="selectAddress($event)"
-                [placeholder]="'recurring_booking.address_placeholder' | translate"
+                [placeholder]="
+                  (facade.addressesLoading()
+                    ? 'recurring_booking.address_loading'
+                    : 'recurring_booking.address_placeholder'
+                  ) | translate
+                "
                 [showClear]="false"
                 [required]="true"
                 [floatVariant]="null"
                 [appendTo]="'body'"
               />
+              @if (!facade.addressesLoading() && addressOptions().length === 0) {
+                <p class="cl-rec__hint">{{ 'recurring_booking.address_empty' | translate }}</p>
+              }
               @if (showError('address')) {
                 <p class="cl-rec__error">
                   <i class="pi pi-exclamation-circle" aria-hidden="true"></i>

@@ -2093,7 +2093,8 @@
     "add_address": "Добавить новый адрес",
     "new_address_label": "Название",
     "new_address_label_hint": "Дом, Работа, Мама…",
-    "save_address": "Сохранить адрес"
+    "save_address": "Сохранить адрес",
+    "address_loading": "Загружаем ваши адреса…"
   },
   "preferred_cleaner": {
     "title": "Запросите любимого клинера",

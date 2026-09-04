@@ -374,6 +374,23 @@
 }
 
 // ---- Picking what gets cleaned ------------------------------------------------------------
+.cl-rec__pick-group {
+  margin-top: calc(1.125 * var(--cl-u));
+
+  .cl-rec__picks {
+    margin-top: 8px;
+  }
+}
+
+// A quiet line for a field that is loading, empty, or has something to say
+// that is not an error.
+.cl-rec__hint {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--cl-muted);
+}
+
 .cl-rec__picks {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -637,10 +654,13 @@
     padding: 0 0.875rem;
   }
 
+  // Seven of these share half the form's width, so they are sized to fit one
+  // row rather than wrap a lone "6" onto a second.
   &--count {
-    min-width: 44px;
+    flex: 1;
+    min-width: 2.375rem;
     min-height: 2.5rem;
-    padding: 0 0.75rem;
+    padding: 0 0.375rem;
   }
 
   &:focus-visible {

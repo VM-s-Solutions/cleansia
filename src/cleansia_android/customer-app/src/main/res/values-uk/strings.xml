@@ -592,7 +592,7 @@
     <string name="booking_cancel_tier3_when_under">Менше %1$d годин</string>
     <string name="booking_cancel_tier3_value">50% комісія</string>
     <string name="booking_cancel_plus_badge">ПЕРЕВАГА PLUS</string>
-    <string name="booking_cancel_plus_subtitle">Як учасник Plus у вас %1$d годин на безкоштовне скасування.</string>
+    <string name="booking_cancel_plus_subtitle">Як учасник Plus ви можете скасувати безкоштовно всього за %1$d години до початку.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Зберегти цю адресу</string>

@@ -592,7 +592,7 @@
     <string name="booking_cancel_tier3_when_under">Менее %1$d часов</string>
     <string name="booking_cancel_tier3_value">50% сбор</string>
     <string name="booking_cancel_plus_badge">ПРЕИМУЩЕСТВО PLUS</string>
-    <string name="booking_cancel_plus_subtitle">Как участник Plus у вас %1$d часов на бесплатную отмену.</string>
+    <string name="booking_cancel_plus_subtitle">Как участник Plus вы можете отменить бесплатно всего за %1$d часа до начала.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Сохранить этот адрес</string>

@@ -595,7 +595,7 @@
     <string name="booking_cancel_tier3_when_under">Méně než %1$d hodin</string>
     <string name="booking_cancel_tier3_value">50% poplatek</string>
     <string name="booking_cancel_plus_badge">VÝHODA PLUS</string>
-    <string name="booking_cancel_plus_subtitle">Jako člen Plus máte %1$d hodin na bezplatné zrušení.</string>
+    <string name="booking_cancel_plus_subtitle">Jako člen Plus můžete zrušit zdarma až %1$d hodiny předem.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložit tuto adresu</string>
@@ -794,7 +794,7 @@
     <string name="delete_account_item_devices">• Odhlášení ze všech zařízení</string>
     <string name="delete_account_item_consents">• Všechny marketingové souhlasy</string>
     <string name="delete_account_confirm_label">Pro potvrzení zadejte svůj e-mail</string>
-    <string name="delete_account_confirm_hint">vas@email.cz</string>
+    <string name="delete_account_confirm_hint">vas@email.com</string>
     <string name="delete_account_confirm_mismatch">E-mail neodpovídá vašemu účtu</string>
     <string name="delete_account_confirm_button">Trvale smazat účet</string>
     <string name="delete_account_success">Váš účet byl smazán.</string>

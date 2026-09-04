@@ -603,7 +603,7 @@
     <string name="booking_cancel_tier3_value">50% charge</string>
     <string name="booking_cancel_plus_badge">PLUS PERK</string>
     <!-- %1$d = the user's extended free window in hours. -->
-    <string name="booking_cancel_plus_subtitle">You get %1$d hours of free cancellation as a Plus member.</string>
+    <string name="booking_cancel_plus_subtitle">As a Plus member you can cancel free up to %1$d hours before.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Save this address</string>

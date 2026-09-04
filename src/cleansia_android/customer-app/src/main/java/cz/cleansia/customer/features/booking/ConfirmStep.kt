@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.features.orders.roomsAndBathrooms
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
@@ -504,30 +505,11 @@ private fun CancellationPolicyCard(
     membershipRepository: cz.cleansia.customer.core.memberships.MembershipRepository,
 ) {
     val membershipState by membershipRepository.current.collectAsState()
-    // Backend BookingPolicy constants (mirror these exactly):
-    //   FreeCancellationHours        = 24    (free cancel ≥24h ahead)
-    //   PartialCancellationHours     = 4
-    //   PartialCancellationFeeRate   = 0.25  (25% in the 4–24h band)
-    //   LastMinuteCancellationFeeRate = 0.50 (50% under 4h)
-    // The rates were written here as 50% and 100%, and the strings said the same
-    // — double the real fee at both tiers, in the direction that talks a
-    // customer out of booking.
-    val standardFreeHours = 24
-    val penaltyHours = 4
-    // Plus may extend the free window. Only counts as a real perk when it's
-    // strictly larger than the standard window — otherwise the badge would
-    // be misleading.
-    val rawPlusHours = membershipState
-        ?.takeIf { it.hasMembership }
-        ?.freeCancellationWindowHours
-        ?.takeIf { it > 0 }
-    val plusFreeHours = rawPlusHours?.takeIf { it > standardFreeHours }
-    val freeHours = plusFreeHours ?: standardFreeHours
-    // Mid-tier (25% charge) only renders when there's room between the free
-    // window and the no-refund threshold. Plus members with a free window
-    // wider than [penaltyHours] still see the mid-tier; if a future config
-    // ever extends free below 4h the mid-tier vanishes (one-tier collapse).
-    val showMidTier = freeHours > penaltyHours
+    val policy = cancellationPolicyFor(membershipState)
+    val penaltyHours = policy.penaltyHours
+    val plusFreeHours = policy.plusFreeHours
+    val freeHours = policy.freeHours
+    val showMidTier = policy.showMidTier
 
     Column(
         modifier = Modifier
@@ -593,6 +575,60 @@ private fun CancellationPolicyCard(
             valueColor = MaterialTheme.colorScheme.error,
         )
     }
+}
+
+/**
+ * What the cancellation policy card states, derived from the caller's membership.
+ *
+ * Backend BookingPolicy constants (mirror these exactly):
+ *   FreeCancellationHours         = 24    (free cancel >= 24h ahead)
+ *   PartialCancellationHours      = 4
+ *   PartialCancellationFeeRate    = 0.25  (25% in the 4-24h band)
+ *   LastMinuteCancellationFeeRate = 0.50  (50% under 4h)
+ *
+ * Lifted out of the Composable so it can be tested. It shipped with the Plus comparison inverted
+ * and nothing could see it: the rule lived inside a `@Composable`, so the only way to exercise it
+ * was to render the screen. `agents/tools/check-booking-policy-parity.mjs` holds the STRINGS to the
+ * backend; this holds the arithmetic.
+ */
+internal data class CancellationPolicyDisplay(
+    val freeHours: Int,
+    val penaltyHours: Int,
+    val plusFreeHours: Int?,
+    val showMidTier: Boolean,
+) {
+    val hasPlusPerk: Boolean get() = plusFreeHours != null
+}
+
+internal fun cancellationPolicyFor(
+    membership: GetMyMembershipResponse?,
+    standardFreeHours: Int = 24,
+    penaltyHours: Int = 4,
+): CancellationPolicyDisplay {
+    val rawPlusHours = membership
+        ?.takeIf { it.hasMembership }
+        ?.freeCancellationWindowHours
+        ?.takeIf { it > 0 }
+    // Plus moves the free-cancellation deadline CLOSER to the cleaning, so the perk is a SMALLER
+    // number — the seeded plans carry 4 against a standard 24. `ClassifyCancellation` is
+    // `free when hoursBeforeStart >= freeWindow`, so a window of 4 means free right up to 4h
+    // before, where a non-member pays 25% from 24h.
+    //
+    // This read `> standardFreeHours`, which rejected every real plan as not-a-perk: the badge
+    // never showed and a paying member was told they had to cancel 24h ahead to cancel free. A
+    // window FURTHER out than the standard one is still ignored — it would make a member cancel
+    // EARLIER than a non-member to pay nothing, which is not a benefit to advertise.
+    val plusFreeHours = rawPlusHours?.takeIf { it < standardFreeHours }
+    val freeHours = plusFreeHours ?: standardFreeHours
+    return CancellationPolicyDisplay(
+        freeHours = freeHours,
+        penaltyHours = penaltyHours,
+        plusFreeHours = plusFreeHours,
+        // No room between the free window and the no-refund threshold means no band for a mid tier
+        // to describe: a Plus member whose window IS the threshold sees "free until 4h, 50% under",
+        // which is correct rather than a missing row.
+        showMidTier = freeHours > penaltyHours,
+    )
 }
 
 @Composable

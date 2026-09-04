@@ -1934,31 +1934,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jako člen Plus máte %d hodin na bezplatné zrušení."
+            "value": "Jako člen Plus můžete zrušit zdarma až %d hodiny předem."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You get %d hours of free cancellation as a Plus member."
+            "value": "As a Plus member you can cancel free up to %d hours before."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Как участник Plus у вас %d часов на бесплатную отмену."
+            "value": "Как участник Plus вы можете отменить бесплатно всего за %d часа до начала."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ako člen Plus máte %d hodín na bezplatné zrušenie."
+            "value": "Ako člen Plus môžete zrušiť zadarmo až %d hodiny vopred."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Як учасник Plus у вас %d годин на безкоштовне скасування."
+            "value": "Як учасник Plus ви можете скасувати безкоштовно всього за %d години до початку."
           }
         }
       }

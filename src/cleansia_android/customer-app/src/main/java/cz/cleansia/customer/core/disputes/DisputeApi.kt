@@ -3,6 +3,7 @@ package cz.cleansia.customer.core.disputes
 import cz.cleansia.customer.api.client.DisputeApi as GenDisputeApi
 import cz.cleansia.customer.api.model.AddDisputeMessageCommand as GenAddDisputeMessageCommand
 import cz.cleansia.customer.api.model.CreateDisputeCommand as GenCreateDisputeCommand
+import cz.cleansia.customer.api.model.CreateDisputeDisputeLineSelection as GenDisputeLineSelection
 import cz.cleansia.customer.api.model.DisputeDetails as GenDisputeDetails
 import cz.cleansia.customer.api.model.DisputeEvidenceDto as GenDisputeEvidenceDto
 import cz.cleansia.customer.api.model.DisputeListItem as GenDisputeListItem
@@ -39,14 +40,30 @@ class DisputeApi(
         return raw.mapWire { it.toAppDto() }
     }
 
+    /**
+     * Returns the new dispute's id.
+     *
+     * The refreshed spec TYPED this response. It used to have no schema, so the generator produced
+     * `Response<String>` and this method handed the raw body straight back as the id — while the
+     * backend has always returned the object `{ "disputeId": "..." }`, which kotlinx.serialization
+     * cannot decode into a String. The dispute was created and the caller could not learn its id, so
+     * the evidence photo attached to it had nowhere to go. The repository test never caught it because
+     * it stubs THIS method and returns a String directly; nothing exercised the wire.
+     */
     suspend fun create(body: CreateDisputeRequest): Response<String> =
         disputeApi.disputeCreateDispute(
             createDisputeCommand = GenCreateDisputeCommand(
                 orderId = body.orderId,
                 reason = body.reason.toWireReason(),
                 description = body.description,
+                // Null, not emptyList(), when the customer ticked nothing. The backend treats the two
+                // the same, but the web client omits the field entirely and the two wire shapes should
+                // not diverge for no reason.
+                lines = body.lines?.takeIf { it.isNotEmpty() }?.map {
+                    GenDisputeLineSelection(serviceId = it.serviceId, packageId = it.packageId)
+                },
             ),
-        )
+        ).mapWire { it?.disputeId.orEmpty() }
 
     suspend fun addMessage(body: AddDisputeMessageRequest): Response<Unit> =
         disputeApi.disputeAddMessage(

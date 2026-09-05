@@ -40,6 +40,10 @@ data class PackageListItem(
     val id: String,
     val name: String,
     val description: String? = null,
+    /** Short marketing line under the name. Present on the wire since the catalog redesign. */
+    val tagline: String? = null,
+    /** Drives the "most popular" ribbon the booking wizard draws. */
+    val isPopular: Boolean = false,
     val price: Double,
     val translations: Map<String, TranslationDto>? = null,
     val includedServices: List<PackageServiceSummary>? = null,

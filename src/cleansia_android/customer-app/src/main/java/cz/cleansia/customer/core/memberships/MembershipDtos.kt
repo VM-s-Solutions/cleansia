@@ -109,6 +109,8 @@ data class MembershipPlanDto(
     val billingInterval: Int,
     val discountPercentage: Double,
     val freeCancellationWindowHours: Int,
+    /** How many free express upgrades the plan grants each calendar month. */
+    val expressUpgradesPerMonth: Int? = null,
     val allowsExpressUpgrade: Boolean,
     val trialPeriodDays: Int,
     val savingsPercentVsMonthly: Double,

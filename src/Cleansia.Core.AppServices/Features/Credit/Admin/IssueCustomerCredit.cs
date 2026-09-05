@@ -50,7 +50,7 @@ public class IssueCustomerCredit
         /// <c>GrantPointsManually</c>'s 100k points cap. An admin who genuinely owes a customer more
         /// than this issues it twice, and both rows are in the ledger under their name.
         /// </summary>
-        public const decimal SanityCap = 50_000m;
+        public const decimal SanityCap = 10_000m;
 
         public Validator(IUserRepository userRepository)
         {

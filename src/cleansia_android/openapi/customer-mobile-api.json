@@ -766,6 +766,96 @@
         }
       }
     },
+    "/api/Credit/GetMy": {
+      "get": {
+        "tags": [
+          "Credit"
+        ],
+        "operationId": "Credit_GetMy",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMyCredit_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMyCredit_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMyCredit_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Device/Register": {
       "post": {
         "tags": [
@@ -1113,17 +1203,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/CreateDispute_Response"
                 }
               },
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/CreateDispute_Response"
                 }
               },
               "text/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/CreateDispute_Response"
                 }
               }
             }
@@ -3271,6 +3361,13 @@
           },
           {
             "name": "email",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "confirmationCode",
             "in": "query",
             "schema": {
               "type": "string"
@@ -6285,7 +6382,24 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSavedAddress_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSavedAddress_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteSavedAddress_Response"
+                }
+              }
+            }
           },
           "400": {
             "description": "Bad Request",
@@ -7149,6 +7263,37 @@
           "description": {
             "type": "string",
             "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateDispute_DisputeLineSelection"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDispute_DisputeLineSelection": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "packageId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDispute_Response": {
+        "type": "object",
+        "properties": {
+          "disputeId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7157,14 +7302,6 @@
         "type": "object",
         "properties": {
           "planCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "successUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "cancelUrl": {
             "type": "string",
             "nullable": true
           }
@@ -7313,6 +7450,18 @@
             "nullable": true
           },
           "accessInstructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerFloor": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerApartment": {
+            "type": "string",
+            "nullable": true
+          },
+          "accessMode": {
             "type": "string",
             "nullable": true
           }
@@ -7498,6 +7647,16 @@
         },
         "additionalProperties": false
       },
+      "DeleteSavedAddress_Response": {
+        "type": "object",
+        "properties": {
+          "savedAddressId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "DeviceDto": {
         "type": "object",
         "properties": {
@@ -7565,6 +7724,9 @@
             "format": "double",
             "nullable": true
           },
+          "currency": {
+            "$ref": "#/components/schemas/CurrencyDetailDto"
+          },
           "resolvedOn": {
             "type": "string",
             "format": "date-time",
@@ -7591,6 +7753,17 @@
           "updatedOn": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "filedWithinWindow": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisputeLineDto"
+            },
             "nullable": true
           }
         },
@@ -7622,6 +7795,28 @@
           "uploadedOn": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DisputeLineDto": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "serviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "packageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "packageName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8312,6 +8507,10 @@
           "allowsExpressUpgrade": {
             "type": "boolean"
           },
+          "expressUpgradesPerMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
           "trialPeriodDays": {
             "type": "integer",
             "format": "int32"
@@ -8319,6 +8518,27 @@
           "savingsPercentVsMonthly": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GetMyCredit_Response": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "maxShareOfOrder": {
+            "type": "number",
+            "format": "double"
+          },
+          "appliesAutomatically": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -9227,6 +9447,14 @@
             "format": "double",
             "nullable": true
           },
+          "creditAppliedAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "amountDueOnCard": {
+            "type": "number",
+            "format": "double"
+          },
           "estimatedTime": {
             "type": "integer",
             "format": "int32"
@@ -9261,6 +9489,18 @@
             "nullable": true
           },
           "accessInstructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerFloor": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerApartment": {
+            "type": "string",
+            "nullable": true
+          },
+          "accessMode": {
             "type": "string",
             "nullable": true
           },
@@ -9459,6 +9699,14 @@
             "format": "double",
             "nullable": true
           },
+          "creditAppliedAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "amountDueOnCard": {
+            "type": "number",
+            "format": "double"
+          },
           "estimatedTime": {
             "type": "integer",
             "format": "int32"
@@ -9594,6 +9842,31 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderReviewLineDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrderReviewLineDto": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "packageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "rating": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -9648,6 +9921,13 @@
             "type": "string",
             "nullable": true
           },
+          "tagline": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPopular": {
+            "type": "boolean"
+          },
           "price": {
             "type": "number",
             "format": "double"
@@ -9699,6 +9979,13 @@
             "type": "string",
             "nullable": true
           },
+          "tagline": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPopular": {
+            "type": "boolean"
+          },
           "price": {
             "type": "number",
             "format": "double"
@@ -9737,6 +10024,10 @@
       "PackageServiceSummary": {
         "type": "object",
         "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -10054,6 +10345,36 @@
         },
         "additionalProperties": false
       },
+      "QuoteOrder_QuoteLine": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemId": {
+            "type": "string",
+            "nullable": true
+          },
+          "baseAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "unitAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "units": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "QuoteOrder_Response": {
         "type": "object",
         "properties": {
@@ -10118,12 +10439,35 @@
             "type": "number",
             "format": "double"
           },
+          "estimatedDurationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "requiredEmployees": {
+            "type": "integer",
+            "format": "int32"
+          },
           "expressSurchargeWaivedByMembership": {
             "type": "boolean"
           },
           "expressUpgradesRemaining": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          },
+          "creditBalance": {
+            "type": "number",
+            "format": "double"
+          },
+          "creditMaxShareOfOrder": {
+            "type": "number",
+            "format": "double"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuoteOrder_QuoteLine"
+            },
             "nullable": true
           }
         },
@@ -10647,6 +10991,31 @@
               "$ref": "#/components/schemas/ReviewTag"
             },
             "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubmitOrderReview_ReviewLineScore"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SubmitOrderReview_ReviewLineScore": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "packageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "rating": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -10683,6 +11052,10 @@
             "nullable": true
           },
           "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagline": {
             "type": "string",
             "nullable": true
           }
@@ -10859,6 +11232,10 @@
           "endsOn": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "preferredEmployeeId": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -11060,6 +11437,9 @@
     },
     {
       "name": "Country"
+    },
+    {
+      "name": "Credit"
     },
     {
       "name": "Device"

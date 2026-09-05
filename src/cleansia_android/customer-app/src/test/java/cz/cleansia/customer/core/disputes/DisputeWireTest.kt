@@ -391,6 +391,9 @@ class DisputeWireTest {
             "evidence",
             "createdOn",
             "updatedOn",
+            "currency",
+            "filedWithinWindow",
+            "lines",
         )
 
         val MESSAGE_SPEC_PROPERTIES = setOf(

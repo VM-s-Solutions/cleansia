@@ -1345,4 +1345,12 @@
     <string name="tracker_step_counter">Крок %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Оплату не було завершено, тому це бронювання було скасовано.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Це повторне бронювання не було підтверджено вчасно, тому його скасовано безкоштовно.</string>
+    <string name="dispute_create_which_items">Що саме пішло не так?</string>
+    <string name="dispute_create_which_items_hint">Необов’язково. Позначте послуги, які виконані погано — це допоможе швидше все виправити. Якщо проблемою було все прибирання — залиште порожнім.</string>
+    <string name="dispute_create_item_in_package">у пакеті %1$s</string>
+    <string name="order_review_rate_items">Оцінити кожну послугу окремо</string>
+    <string name="order_review_rate_items_hint">Необов’язково. Корисно, коли одна частина вийшла добре, а інша ні — це покаже нам, куди саме дивитися.</string>
+    <string name="order_review_item_in_package">у пакеті %1$s</string>
+    <string name="order_review_rate_item_star">Поставити %1$s %2$d зірок</string>
+    <string name="error_dispute_line_not_on_order">Однієї з обраних послуг немає в цьому замовленні. Відкрийте форму знову та спробуйте ще раз.</string>
 </resources>

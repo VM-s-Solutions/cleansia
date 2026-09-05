@@ -16,6 +16,7 @@ import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
 import cz.cleansia.customer.core.orders.OrderRepository
+import cz.cleansia.customer.core.orders.ReviewLineScoreRequest
 import cz.cleansia.customer.core.orders.ReviewTag
 import cz.cleansia.customer.core.orders.OrderReviewDto
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
@@ -460,6 +461,11 @@ class OrderDetailViewModel @Inject constructor(
         comment: String?,
         tags: List<ReviewTag> = emptyList(),
         isEdit: Boolean = false,
+        /**
+         * Optional per-item scores. [rating] stays the headline and stays required — these add what
+         * one number cannot say, which is that the oven was spotless and the bathroom was skipped.
+         */
+        lines: List<ReviewLineScoreRequest> = emptyList(),
     ) {
         val id = orderId
         if (id.isNullOrBlank()) return
@@ -474,7 +480,11 @@ class OrderDetailViewModel @Inject constructor(
             val polar = tags.filter { it.isPositive == (rating >= ReviewTag.POSITIVE_RATING_FLOOR) }
                 .distinct()
                 .take(ReviewTag.MAX_TAGS)
-            val result = orderRepository.submitReview(id, rating, trimmed, polar)
+            // Only rows the customer actually scored, and only inside 1..5. An unscored item is not
+            // a zero — the server refuses a rating outside the range, and "not scored" is a real
+            // answer that simply carries no line.
+            val scored = lines.filter { it.rating in 1..5 }
+            val result = orderRepository.submitReview(id, rating, trimmed, polar, scored)
                 .surfaceError().getOrNull()
             if (result == null) {
                 _reviewState.value = ActionState.Error(

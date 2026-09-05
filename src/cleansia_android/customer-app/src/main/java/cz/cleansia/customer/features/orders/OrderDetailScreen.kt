@@ -376,12 +376,21 @@ fun OrderDetailScreen(
                     viewModel.dismissReviewError()
                 }
             },
-            onConfirm = { rating, comment, tags ->
-                viewModel.submitReview(rating, comment, tags, isEdit = currentReview != null)
+            onConfirm = { rating, comment, tags, lines ->
+                viewModel.submitReview(
+                    rating,
+                    comment,
+                    tags,
+                    isEdit = currentReview != null,
+                    lines = lines,
+                )
             },
             isSubmitting = submittingReview,
             errorMessage = reviewError,
             existingReview = currentReview,
+            // Built from the order already on screen — the detail carries its services and its
+            // packages' included items, so scoring them costs no extra request.
+            lineOptions = buildReviewLineOptions(loaded.order),
             // A prompt the customer did not ask for offers "Not now" and leads with the question; the
             // card they tapped themselves keeps "Cancel" and the editorial title. Same sheet, honest
             // about which one it is — and the same split iOS makes.

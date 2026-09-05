@@ -1358,4 +1358,12 @@
     <string name="tracker_step_counter">Step %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">The payment wasn\'t completed, so this booking was released.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">This repeat booking wasn\'t confirmed in time, so it was cancelled free of charge.</string>
+    <string name="dispute_create_which_items">Which parts went wrong?</string>
+    <string name="dispute_create_which_items_hint">Optional. Tick the services that were not done properly — it helps us put it right faster. Leave it empty if the whole clean was the problem.</string>
+    <string name="dispute_create_item_in_package">in %1$s</string>
+    <string name="order_review_rate_items">Rate each service separately</string>
+    <string name="order_review_rate_items_hint">Optional. Useful when one part went well and another did not — it tells us exactly where to look.</string>
+    <string name="order_review_item_in_package">in %1$s</string>
+    <string name="order_review_rate_item_star">Give %1$s %2$d stars</string>
+    <string name="error_dispute_line_not_on_order">One of the services you picked is not on that booking. Reopen the form and try again.</string>
 </resources>

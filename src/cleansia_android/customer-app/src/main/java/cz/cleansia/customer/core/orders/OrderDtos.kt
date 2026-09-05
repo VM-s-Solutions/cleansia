@@ -238,6 +238,14 @@ enum class ReviewTag(val code: Int, val isPositive: Boolean) {
     }
 }
 
+/** Mirrors backend `OrderReviewLineDto` — one item's score, as the server reports it back. */
+@Serializable
+data class OrderReviewLineDto(
+    val serviceId: String? = null,
+    val packageId: String? = null,
+    val rating: Int = 0,
+)
+
 /** Mirrors backend `OrderReviewDto`. */
 @Serializable
 data class OrderReviewDto(
@@ -251,6 +259,12 @@ data class OrderReviewDto(
     val tagCodes: List<Int> = emptyList(),
     val createdOn: String? = null,
     val updatedOn: String? = null,
+    /**
+     * The per-item scores this review carries. Empty on every review written before per-item scoring
+     * existed, and on every review where the customer just left an overall rating — which is most of
+     * them. Read on the EDIT path so reopening the sheet shows what they said last time.
+     */
+    val lines: List<OrderReviewLineDto> = emptyList(),
 ) {
     val tags: List<ReviewTag> get() = tagCodes.mapNotNull(ReviewTag::fromCode)
 }

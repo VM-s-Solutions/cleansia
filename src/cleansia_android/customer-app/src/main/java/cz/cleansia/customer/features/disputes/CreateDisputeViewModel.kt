@@ -5,7 +5,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.disputes.DisputeLineRequest
 import cz.cleansia.customer.core.disputes.DisputeRepository
+import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
@@ -38,6 +40,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class CreateDisputeViewModel @Inject constructor(
     private val disputeRepository: DisputeRepository,
+    private val orderRepository: OrderRepository,
     private val snackbar: SnackbarController,
     savedStateHandle: SavedStateHandle,
     @ApplicationContext private val appContext: Context,
@@ -52,6 +55,40 @@ class CreateDisputeViewModel @Inject constructor(
     private val _createdDisputeId = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val createdDisputeId: SharedFlow<String> = _createdDisputeId.asSharedFlow()
 
+    /**
+     * What was ON this order — the services bought alone, and the services inside each package — so
+     * the customer can point at the parts that were not done properly.
+     *
+     * <p>Empty until the order loads, empty for the FAB flow that arrives with no order at all, and
+     * empty if the fetch fails. In every one of those cases the screen simply omits the section: a
+     * dispute names no items by default, and failing to load them must not stop someone filing one.
+     * This is the whole reason the load is silent — no spinner, no error, no retry.</p>
+     */
+    private val _lineOptions = MutableStateFlow<List<DisputeLineOption>>(emptyList())
+    val lineOptions: StateFlow<List<DisputeLineOption>> = _lineOptions.asStateFlow()
+
+    /** Ticked rows, by [DisputeLineOption.key]. */
+    private val _pickedLineKeys = MutableStateFlow<Set<String>>(emptySet())
+    val pickedLineKeys: StateFlow<Set<String>> = _pickedLineKeys.asStateFlow()
+
+    init {
+        val id = orderId
+        if (id != null) {
+            viewModelScope.launch {
+                val result = orderRepository.getById(id)
+                if (result is ApiResult.Success) {
+                    _lineOptions.value = buildDisputeLineOptions(result.data)
+                }
+            }
+        }
+    }
+
+    fun toggleLine(key: String) {
+        _pickedLineKeys.value = _pickedLineKeys.value.let { current ->
+            if (key in current) current - key else current + key
+        }
+    }
+
     fun submit(reason: Int, description: String) {
         if (_submitState.value is ActionState.Submitting) return
         val id = orderId ?: run {
@@ -63,7 +100,14 @@ class CreateDisputeViewModel @Inject constructor(
 
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
-            when (val result = disputeRepository.create(id, reason, description.trim())) {
+            // Only rows still on the loaded order. Nothing can go stale here today — the order is
+            // fixed by the route — but the filter costs nothing and keeps the invariant local.
+            val picked = _pickedLineKeys.value
+            val lines = _lineOptions.value
+                .filter { it.key in picked }
+                .map { DisputeLineRequest(serviceId = it.serviceId, packageId = it.packageId) }
+
+            when (val result = disputeRepository.create(id, reason, description.trim(), lines)) {
                 is ApiResult.Success -> {
                     _submitState.value = ActionState.Idle
                     disputeRepository.refresh()

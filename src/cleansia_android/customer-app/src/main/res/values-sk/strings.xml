@@ -1345,4 +1345,12 @@
     <string name="tracker_step_counter">Krok %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Táto opakovaná rezervácia nebola včas potvrdená, a preto bola zadarmo zrušená.</string>
+    <string name="dispute_create_which_items">Čo konkrétne nedopadlo?</string>
+    <string name="dispute_create_which_items_hint">Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celé upratovanie, nechajte prázdne.</string>
+    <string name="dispute_create_item_in_package">v balíku %1$s</string>
+    <string name="order_review_rate_items">Ohodnotiť každú službu zvlášť</string>
+    <string name="order_review_rate_items_hint">Nepovinné. Hodí sa, keď jedna časť dopadla dobre a iná nie — povie nám presne, kam sa pozrieť.</string>
+    <string name="order_review_item_in_package">v balíku %1$s</string>
+    <string name="order_review_rate_item_star">Dať službe %1$s %2$d hviezdičiek</string>
+    <string name="error_dispute_line_not_on_order">Jedna z vybraných služieb na tej objednávke nie je. Otvorte formulár znova a skúste to ešte raz.</string>
 </resources>

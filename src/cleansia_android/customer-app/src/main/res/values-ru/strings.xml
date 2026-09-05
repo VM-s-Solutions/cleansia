@@ -1345,4 +1345,12 @@
     <string name="tracker_step_counter">Шаг %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Оплата не была завершена, поэтому это бронирование было отменено.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Это повторное бронирование не было подтверждено вовремя, поэтому оно отменено бесплатно.</string>
+    <string name="dispute_create_which_items">Что именно пошло не так?</string>
+    <string name="dispute_create_which_items_hint">Необязательно. Отметьте услуги, выполненные плохо — это поможет быстрее всё исправить. Если проблемой была вся уборка — оставьте пустым.</string>
+    <string name="dispute_create_item_in_package">в пакете %1$s</string>
+    <string name="order_review_rate_items">Оценить каждую услугу отдельно</string>
+    <string name="order_review_rate_items_hint">Необязательно. Полезно, когда одна часть вышла хорошо, а другая нет — это покажет, куда смотреть.</string>
+    <string name="order_review_item_in_package">в пакете %1$s</string>
+    <string name="order_review_rate_item_star">Поставить %1$s %2$d звёзд</string>
+    <string name="error_dispute_line_not_on_order">Одной из выбранных услуг нет в этом заказе. Откройте форму снова и попробуйте ещё раз.</string>
 </resources>

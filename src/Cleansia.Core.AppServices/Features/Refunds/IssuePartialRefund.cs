@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using System.Security.Cryptography;
 using System.Text;
@@ -171,7 +172,8 @@ public class IssuePartialRefund
 
             var consumedAfter = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
-            var paymentStatus = consumedAfter >= order.TotalPrice
+            // Against what the CARD was charged, not the sale — see AdminRefundOrder for why.
+            var paymentStatus = consumedAfter >= RefundService.CardChargedAmount(order)
                 ? PaymentStatus.Refunded
                 : PaymentStatus.PartiallyRefunded;
 

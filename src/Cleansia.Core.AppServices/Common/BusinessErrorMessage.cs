@@ -348,6 +348,12 @@ public static class BusinessErrorMessage
 
     /// <summary>A spend-side reason was used to ISSUE credit.</summary>
     public const string CreditReasonNotIssuable = "credit.reason_not_issuable";
+
+    /// <summary>Cash cannot settle an order part of which the customer already paid in credit.</summary>
+    public const string CashNotCollectableOnCreditOrder = "credit.cash_not_collectable_on_credit_order";
+
+    /// <summary>Erasure refused: the platform still owes this customer a credit balance.</summary>
+    public const string GdprDeletionBlockedByCreditBalance = "gdpr.deletion_blocked_by_credit_balance";
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";

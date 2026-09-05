@@ -1182,6 +1182,31 @@
         </div>
         }
         <div class="cl-num cl-wiz__total">{{ formatPrice(facade.displayedTotalPrice()) }}</div>
+        <!--
+          Credit applies automatically (owner ruling 2026-09-05), so the customer is told here rather
+          than left to discover a smaller charge on the Stripe page. Two lines, because the number
+          that matters is the second one: what the card is actually asked for. The note says why the
+          card is still paying something and why they cannot choose when the credit lands — both
+          things they would otherwise raise a ticket about.
+        -->
+        @if (facade.creditApplied() > 0) {
+        <div class="cl-wiz__credit">
+          <div class="cl-wiz__credit-line">
+            <span>{{ 'pages.order.summary.credit_applied' | translate }}</span>
+            <span class="cl-num cl-wiz__credit-amount">−{{ formatPrice(facade.creditApplied()) }}</span>
+          </div>
+          <div class="cl-wiz__credit-line cl-wiz__credit-line--due">
+            <span>{{ 'pages.order.summary.due_on_card' | translate }}</span>
+            <span class="cl-num">{{ formatPrice(facade.amountDueOnCard()) }}</span>
+          </div>
+          <p class="cl-muted cl-wiz__credit-note">
+            {{
+              'pages.order.summary.credit_note'
+                | translate: { balance: formatPrice(facade.creditBalance()) }
+            }}
+          </p>
+        </div>
+        }
         @if (facade.quote()?.estimatedDurationMinutes; as minutes) {
         <div class="cl-muted cl-wiz__summary-estimate">
           {{ 'pages.order.summary_estimate' | translate: { hours: estimateHours() } }}

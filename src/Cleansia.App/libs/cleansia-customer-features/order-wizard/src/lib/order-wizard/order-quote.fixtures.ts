@@ -36,6 +36,8 @@ const QUOTE_1000_NO_DISCOUNT: QuoteFields = {
   exchangeRate: 1,
   expressSurchargeWaivedByMembership: false,
   expressUpgradesRemaining: undefined,
+  creditBalance: 0,
+  creditMaxShareOfOrder: 0.8,
   // The 1000 basket is one standard clean: OrderDuration estimates 240 minutes,
   // and crew is ceil(240 / 120) = 2. Same arithmetic the handler runs, so the
   // fixture still describes what the server actually returns.
@@ -96,4 +98,6 @@ export const EXPRESS_DISCOUNTED_QUOTE = quoteFixture({
 export const WAIVED_EXPRESS_QUOTE = quoteFixture({
   expressSurchargeWaivedByMembership: true,
   expressUpgradesRemaining: 2,
+  creditBalance: 0,
+  creditMaxShareOfOrder: 0.8,
 });

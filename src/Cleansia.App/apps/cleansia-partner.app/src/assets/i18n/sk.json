@@ -1057,6 +1057,9 @@
       "error_occurred": "Došlo k chybe. Skúste to prosím znova.",
       "user_not_authenticated": "Používateľ nie je prihlásený"
     },
+    "credit": {
+      "cash_not_collectable_on_credit_order": "Časť tejto objednávky už bola uhradená z kreditu zákazníka. Požiadajte o vybavenie kanceláriu — sumu uvedenú v aplikácii nevyberajte."
+    },
     "validation": {
       "invalid_password": "Neplatné heslo",
       "invalid_date": "Neplatný dátum",

@@ -267,6 +267,7 @@ public static class PolicyBuilder
         // Refunds (admin-issued partial refund) — ADR-0001 D2
         [Policy.CanIssueRefund] = PhysicalPolicy.AdminOnly,
         [Policy.CanIssueCustomerCredit] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
 
         // Admin Action Audit Log (read surface — ADR-0012 D7)
         [Policy.CanViewAuditLog] = PhysicalPolicy.AdminOnly,

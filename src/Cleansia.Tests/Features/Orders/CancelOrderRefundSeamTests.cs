@@ -29,6 +29,7 @@ public class CancelOrderRefundSeamTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IRefundService> _refundService = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<ICancellationPolicyResolver> _policyResolver = new();
     private readonly Mock<INotificationProducer> _producer = new();
@@ -52,6 +53,7 @@ public class CancelOrderRefundSeamTests
             _orderRepository.Object,
             _session.Object,
             _refundService.Object,
+            _creditAccountRepository.Object,
             _loyaltyService.Object,
             _policyResolver.Object,
             _producer.Object,

@@ -78,12 +78,13 @@ public class IssueCustomerCredit
             RuleFor(x => x.Reason)
                 .IsInEnum()
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
-                // The two spend-side reasons describe money LEAVING the balance. Accepting one here
-                // would write a positive OrderPayment row, which reads as "the customer was credited
-                // for paying us".
-                .Must(reason => reason is CreditTransactionReason.DisputeSettlement
-                    or CreditTransactionReason.CleanerNoShow
-                    or CreditTransactionReason.Goodwill)
+                // OrderPayment is the one genuinely spend-side reason: it describes money LEAVING the
+                // balance, and a positive row carrying it would read as "the customer was credited for
+                // paying us". OrderPaymentReturned is NOT spend-side despite the name - it is the
+                // reason the automatic return path writes, and an admin correcting a return by hand
+                // (a refund that failed to give the credit back, say) needs to write the same reason
+                // rather than filing it as Goodwill and losing the provenance.
+                .Must(reason => reason != CreditTransactionReason.OrderPayment)
                 .WithMessage(BusinessErrorMessage.CreditReasonNotIssuable);
 
             // Free text, and the ONLY record of why a person decided this. Required for the same

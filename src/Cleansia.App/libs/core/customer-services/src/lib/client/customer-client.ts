@@ -11765,6 +11765,8 @@ export class OrderItem implements IOrderItem {
     tierDiscountAmount!: number | undefined;
     membershipDiscountAmount!: number | undefined;
     promoDiscountAmount!: number | undefined;
+    creditAppliedAmount!: number;
+    amountDueOnCard!: number;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
     completedAt!: Date | undefined;
@@ -11838,6 +11840,8 @@ export class OrderItem implements IOrderItem {
             this.tierDiscountAmount = Data["tierDiscountAmount"];
             this.membershipDiscountAmount = Data["membershipDiscountAmount"];
             this.promoDiscountAmount = Data["promoDiscountAmount"];
+            this.creditAppliedAmount = Data["creditAppliedAmount"];
+            this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
             this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
@@ -11935,6 +11939,8 @@ export class OrderItem implements IOrderItem {
         data["tierDiscountAmount"] = this.tierDiscountAmount;
         data["membershipDiscountAmount"] = this.membershipDiscountAmount;
         data["promoDiscountAmount"] = this.promoDiscountAmount;
+        data["creditAppliedAmount"] = this.creditAppliedAmount;
+        data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
         data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
@@ -12019,6 +12025,8 @@ export interface IOrderItem {
     tierDiscountAmount: number | undefined;
     membershipDiscountAmount: number | undefined;
     promoDiscountAmount: number | undefined;
+    creditAppliedAmount: number;
+    amountDueOnCard: number;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
     completedAt: Date | undefined;
@@ -12077,6 +12085,8 @@ export class OrderListItem implements IOrderListItem {
     tierDiscountAmount!: number | undefined;
     membershipDiscountAmount!: number | undefined;
     promoDiscountAmount!: number | undefined;
+    creditAppliedAmount!: number;
+    amountDueOnCard!: number;
     estimatedTime!: number;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
@@ -12131,6 +12141,8 @@ export class OrderListItem implements IOrderListItem {
             this.tierDiscountAmount = Data["tierDiscountAmount"];
             this.membershipDiscountAmount = Data["membershipDiscountAmount"];
             this.promoDiscountAmount = Data["promoDiscountAmount"];
+            this.creditAppliedAmount = Data["creditAppliedAmount"];
+            this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
@@ -12197,6 +12209,8 @@ export class OrderListItem implements IOrderListItem {
         data["tierDiscountAmount"] = this.tierDiscountAmount;
         data["membershipDiscountAmount"] = this.membershipDiscountAmount;
         data["promoDiscountAmount"] = this.promoDiscountAmount;
+        data["creditAppliedAmount"] = this.creditAppliedAmount;
+        data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
@@ -12250,6 +12264,8 @@ export interface IOrderListItem {
     tierDiscountAmount: number | undefined;
     membershipDiscountAmount: number | undefined;
     promoDiscountAmount: number | undefined;
+    creditAppliedAmount: number;
+    amountDueOnCard: number;
     estimatedTime: number;
     orderStatus: Code;
     confirmationCode: string | undefined;
@@ -13304,6 +13320,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
     requiredEmployees!: number;
     expressSurchargeWaivedByMembership!: boolean;
     expressUpgradesRemaining!: number | undefined;
+    creditBalance!: number;
+    creditMaxShareOfOrder!: number;
     lines!: QuoteOrderQuoteLine[] | undefined;
 
     constructor(data?: IQuoteOrderResponse) {
@@ -13336,6 +13354,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
             this.requiredEmployees = Data["requiredEmployees"];
             this.expressSurchargeWaivedByMembership = Data["expressSurchargeWaivedByMembership"];
             this.expressUpgradesRemaining = Data["expressUpgradesRemaining"];
+            this.creditBalance = Data["creditBalance"];
+            this.creditMaxShareOfOrder = Data["creditMaxShareOfOrder"];
             if (Array.isArray(Data["lines"])) {
                 this.lines = [] as any;
                 for (let item of Data["lines"])
@@ -13372,6 +13392,8 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
         data["requiredEmployees"] = this.requiredEmployees;
         data["expressSurchargeWaivedByMembership"] = this.expressSurchargeWaivedByMembership;
         data["expressUpgradesRemaining"] = this.expressUpgradesRemaining;
+        data["creditBalance"] = this.creditBalance;
+        data["creditMaxShareOfOrder"] = this.creditMaxShareOfOrder;
         if (Array.isArray(this.lines)) {
             data["lines"] = [];
             for (let item of this.lines)
@@ -13401,6 +13423,8 @@ export interface IQuoteOrderResponse {
     requiredEmployees: number;
     expressSurchargeWaivedByMembership: boolean;
     expressUpgradesRemaining: number | undefined;
+    creditBalance: number;
+    creditMaxShareOfOrder: number;
     lines: QuoteOrderQuoteLine[] | undefined;
 }
 

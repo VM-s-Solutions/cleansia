@@ -80,19 +80,32 @@ public class IssueCustomerCreditValidatorTests
     }
 
     /// <summary>
-    /// THE ONE WORTH HAVING: the spend-side reasons describe money LEAVING the balance. Accepting one
-    /// here writes a POSITIVE <c>OrderPayment</c> row, which reads as "credited for paying us" and
-    /// makes the ledger's own vocabulary a lie.
+    /// THE ONE WORTH HAVING: <c>OrderPayment</c> describes money LEAVING the balance. Accepting it
+    /// here writes a POSITIVE OrderPayment row, which reads as "credited for paying us" and makes the
+    /// ledger's own vocabulary a lie.
     /// </summary>
-    [Theory]
-    [InlineData(CreditTransactionReason.OrderPayment)]
-    [InlineData(CreditTransactionReason.OrderPaymentReturned)]
-    public async Task ASpendSideReasonCannotIssueCredit(CreditTransactionReason reason)
+    [Fact]
+    public async Task TheSpendSideReasonCannotIssueCredit()
     {
-        var result = await ValidatorFor().TestValidateAsync(Valid(reason: reason));
+        var result = await ValidatorFor()
+            .TestValidateAsync(Valid(reason: CreditTransactionReason.OrderPayment));
 
         result.ShouldHaveValidationErrorFor(x => x.Reason)
             .WithErrorMessage(BusinessErrorMessage.CreditReasonNotIssuable);
+    }
+
+    /// <summary>
+    /// <c>OrderPaymentReturned</c> is NOT spend-side despite the name — it is what the automatic
+    /// return path writes when an order is unwound. An admin correcting a return by hand needs to be
+    /// able to write the same reason rather than filing it as Goodwill and losing the provenance.
+    /// </summary>
+    [Fact]
+    public async Task AnAdminMayIssueAReturnByHand()
+    {
+        var result = await ValidatorFor()
+            .TestValidateAsync(Valid(reason: CreditTransactionReason.OrderPaymentReturned));
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Reason);
     }
 
     [Theory]

@@ -219,6 +219,7 @@ public class FrozenPermissionMapTests
         // Credit (additive)
         [Policy.CanViewMyCredit] = PhysicalPolicy.CustomerOnly,
         [Policy.CanIssueCustomerCredit] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
         [Policy.CanRedeemPromoCode] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewMyReferral] = PhysicalPolicy.CustomerOnly,
 

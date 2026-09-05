@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,7 @@ public class CancelOrder
         IOrderRepository orderRepository,
         IUserSessionProvider userSessionProvider,
         IRefundService refundService,
+        ICreditAccountRepository creditAccountRepository,
         ILoyaltyService loyaltyService,
         ICancellationPolicyResolver cancellationPolicyResolver,
         INotificationProducer notificationProducer,
@@ -131,6 +133,14 @@ public class CancelOrder
                         order.Id,
                         cancellationToken);
                 }
+            }
+            else if (order.PaymentStatus != PaymentStatus.Paid)
+            {
+                // The card was never charged, so there is nothing to refund - but credit WAS taken at
+                // checkout, and it is the only money the customer has actually paid. All of it comes
+                // back; the fee the assessor computed is unrecoverable on an unpaid order either way.
+                // -> CreditUnwind.ReturnUnpaidOrderCreditAsync
+                await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, userId, cancellationToken);
             }
 
             // Release the express waiver iff no cleaner was ever pulled onto this short-notice job —

@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
@@ -508,10 +509,19 @@ public class CreateOrder
                 await expressWaiverConsumer.AttachOrderAsync(reservation, order.Id, cancellationToken);
             }
 
-            // Credit is applied to the ORDER before the charge surface is minted, and TAKEN from the
-            // balance after. Owner ruling 2026-09-05: it applies automatically, to the next eligible
-            // order - there is no customer-facing "spend it now" control to consult.
-            var intendedCredit = await ResolveCreditForOrderAsync(order, userId, cancellationToken);
+            // TAKE THE CREDIT FIRST, then price the order from what was actually taken. Owner ruling
+            // 2026-09-05: credit applies automatically, to the next eligible order - there is no
+            // customer-facing "spend it now" control to consult.
+            //
+            // The order matters, and an earlier draft had it the other way round. Applying first and
+            // debiting after left the conditional UPDATE with nothing to arbitrate: two checkouts by
+            // the same customer in two tabs both read the same balance, both discounted their order by
+            // it, and only the first debit landed - the second order kept its discount for free. Two
+            // browser tabs is not an exotic race, and the loss is the whole balance, repeatable.
+            //
+            // Debiting first inverts the exposure: the balance is arbitrated by the database, and what
+            // is left is a failed dispatch, which the compensating return below covers.
+            var intendedCredit = await TakeCreditForOrderAsync(order, userId, cancellationToken);
             if (intendedCredit > 0m)
             {
                 order.ApplyCredit(intendedCredit, userId);
@@ -521,15 +531,14 @@ public class CreateOrder
                 order, command.Language, cancellationToken);
             if (dispatch.Failure is { } dispatchFailure)
             {
-                // Nothing has left the balance yet - the debit is deliberately after this line.
-                // Stripe being unreachable is an everyday event, and debiting first would burn a
-                // customer's credit on an order that was never created every time it happened.
-                return BusinessResult.Failure<Response>(dispatchFailure);
-            }
+                // Stripe is unreachable and this order will not exist - the pipeline commits nothing on
+                // a failure. Put the credit back before returning: TryReturnAsync is its own statement
+                // precisely so it survives a request that is about to roll back, and it is keyed on the
+                // order id so a retry cannot double-return.
+                await creditAccountRepository.ReturnCreditAsync(
+                    order, intendedCredit, $"dispatch-failed:{order.Id}", userId, cancellationToken);
 
-            if (intendedCredit > 0m)
-            {
-                await TakeCreditAsync(order, intendedCredit, userId, cancellationToken);
+                return BusinessResult.Failure<Response>(dispatchFailure);
             }
 
             // Promo persistence runs after the order is in the repo so the
@@ -547,17 +556,21 @@ public class CreateOrder
         }
 
         /// <summary>
-        /// How much of this customer's credit balance may settle this order. Zero for every order
-        /// that cannot take credit, and zero is the overwhelmingly common answer.
+        /// Take whatever credit this order may use, and answer with the amount actually taken.
         ///
-        /// <para>Three gates, each for its own reason. <b>Card only</b> — a cash order is settled to
-        /// the cleaner's hand on the doorstep, and there is no mechanism for them to collect a
-        /// different figure than the one on the job sheet. <b>Same currency</b> — a balance is held in
-        /// one currency and the platform will not convert it silently at spend time.
-        /// <b>Capped</b> — owner ruling 2026-09-05, the card always pays a share.
-        /// → BookingPolicy.CapCreditForOrder</para>
+        /// <para>Resolve and debit are ONE step because splitting them is what created the race: the
+        /// read takes no lock, so the only figure that can be trusted is the one the conditional UPDATE
+        /// actually removed. A false answer - the balance moved between the read and the write - is not
+        /// an error, it is zero: this order simply pays full price.</para>
+        ///
+        /// <para>Three gates decide whether any credit is eligible at all, each for its own reason.
+        /// <b>Card only</b> - a cash order is settled to the cleaner's hand on the doorstep, and there
+        /// is no mechanism for them to collect a different figure than the one on the job sheet.
+        /// <b>Same currency</b> - a balance is held in one currency and the platform will not convert
+        /// it silently at spend time. <b>Capped</b> - owner ruling 2026-09-05, the card always pays a
+        /// share. -&gt; BookingPolicy.CapCreditForOrder</para>
         /// </summary>
-        private async Task<decimal> ResolveCreditForOrderAsync(
+        private async Task<decimal> TakeCreditForOrderAsync(
             Order order, string userId, CancellationToken cancellationToken)
         {
             if (order.PaymentType != PaymentType.Card || string.IsNullOrEmpty(userId))
@@ -571,40 +584,18 @@ public class CreateOrder
                 return 0m;
             }
 
-            return BookingPolicy.CapCreditForOrder(spendable.Balance, order.TotalPrice);
-        }
-
-        /// <summary>
-        /// Take the credit the order was priced with, AFTER the charge surface exists.
-        ///
-        /// <para>The debit is its own auto-committing statement — the UnitOfWork pipeline opens no
-        /// ambient transaction — so its placement is the whole design. Everything that fails often
-        /// (address resolution, pricing, the waiver slot, Stripe) has already run; what is left is the
-        /// pipeline commit, and an order that fails to commit after this line leaves an orphaned
-        /// <c>OrderPayment</c> row pointing at an order id that does not exist. That is deliberately
-        /// findable: it is the one query reconciliation needs, and the alternative orderings all put
-        /// the orphan behind Stripe's uptime instead.</para>
-        ///
-        /// <para>A refused debit means a concurrent checkout drained the balance between the read and
-        /// here. The Stripe session is already minted for the reduced figure, so the order keeps
-        /// <c>CreditAppliedAmount</c> — it is the truthful record of what the card will be charged —
-        /// and the shortfall is logged rather than silently absorbed.</para>
-        /// </summary>
-        private async Task TakeCreditAsync(
-            Order order, decimal amount, string userId, CancellationToken cancellationToken)
-        {
-            var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
-            if (spendable == null)
+            var eligible = BookingPolicy.CapCreditForOrder(spendable.Balance, order.TotalPrice);
+            if (eligible <= 0m)
             {
-                return;
+                return 0m;
             }
 
-            // The order id IS the idempotency key. A retried request mints a new order with a new id,
-            // so this does not collapse retries — what it stops is one order being debited twice by
-            // any future caller that re-runs this step.
+            // The order id IS the idempotency key, so this order can never be debited twice however
+            // many times any future caller re-runs this step. A retried REQUEST mints a new order with
+            // a new id and is a new debit - which is correct: it is a different booking.
             var taken = await creditAccountRepository.TryDebitAsync(
                 creditAccountId: spendable.AccountId,
-                amount: amount,
+                amount: eligible,
                 reason: CreditTransactionReason.OrderPayment,
                 idempotencyKey: $"order-payment-{order.Id}",
                 actorId: userId,
@@ -613,11 +604,17 @@ public class CreateOrder
 
             if (!taken)
             {
-                logger.LogError(
-                    "Credit debit of {Amount} refused for order {OrderId} (account {AccountId}); the "
-                    + "order was already priced and charged net of it. Balance and order now disagree.",
-                    amount, order.Id, spendable.AccountId);
+                // A concurrent checkout drained the balance between the read and the write. Nothing is
+                // wrong and nothing is lost - this order is priced at full price, which is what the
+                // customer would have seen had they started it a second later.
+                logger.LogInformation(
+                    "Credit debit of {Amount} was refused for order {OrderId}; the balance moved between "
+                    + "the read and the write, so the order is priced at full price.",
+                    eligible, order.Id);
+                return 0m;
             }
+
+            return eligible;
         }
     }
 }

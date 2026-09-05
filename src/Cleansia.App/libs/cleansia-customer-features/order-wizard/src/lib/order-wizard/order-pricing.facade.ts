@@ -20,6 +20,7 @@ import {
   tap,
 } from 'rxjs';
 import {
+  capCreditForOrder,
   composeFinalPriceForUnquotedDiscount,
   composeSlotMoment,
   OrderWizardFormData,
@@ -146,6 +147,31 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
         )
       : quote.finalPriceAfterDiscount;
   });
+
+  /**
+   * The customer's spendable credit, and how much of it this booking would take.
+   *
+   * Owner ruling 2026-09-05: credit applies AUTOMATICALLY — there is no "use my credit" toggle, and
+   * the wizard's job is to say so plainly before the customer is sent to Stripe rather than let them
+   * discover a smaller charge afterwards. `creditBalance` is the whole balance so the summary can say
+   * "500 of your 800 applies here"; the card always pays the rest, which is the second half of the
+   * same ruling.
+   *
+   * Capped against `displayedTotalPrice` — the price actually being charged, promo included — through
+   * the one shared function that mirrors the server rule. → capCreditForOrder
+   */
+  readonly creditBalance = computed(() => this.quote()?.creditBalance ?? 0);
+
+  readonly creditApplied = computed(() =>
+    capCreditForOrder(
+      this.creditBalance(),
+      this.displayedTotalPrice(),
+      this.quote()?.creditMaxShareOfOrder ?? 0,
+    ),
+  );
+
+  /** What the card is asked for once credit has settled its share. */
+  readonly amountDueOnCard = computed(() => this.displayedTotalPrice() - this.creditApplied());
 
   /**
    * Express surcharge line item — the surcharge actually billed, which the server takes on the

@@ -131,6 +131,25 @@ public class MarkCashCollected
                     nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
+            // FAIL CLOSED on a credit-bearing order, for the same reason this handler already fails
+            // closed on an unreadable Stripe: it names no amount, and nothing the cleaner can see names
+            // one either. The job sheet carries TotalPrice, but on an order settled partly from the
+            // customer's credit balance TotalPrice is not what is owed at the door - the credit was
+            // already spent, and collecting the full figure charges the customer for it twice.
+            //
+            // Refusing is the smaller and safer half of the choice: an admin can still drive the job
+            // forward with AdminOverrideOrderStatus, whereas a cleaner who has already taken the wrong
+            // amount in cash cannot be undone from here. -> Order.AmountDueOnCard
+            if (order.CreditAppliedAmount > 0m)
+            {
+                logger.LogWarning(
+                    "Refusing cash collection on order {OrderId}: {Credit} of it was settled from the "
+                    + "customer's credit balance, and the cash figure on the job sheet is the full sale.",
+                    order.Id, order.CreditAppliedAmount);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentStatus), BusinessErrorMessage.CashNotCollectableOnCreditOrder));
+            }
+
             if (order.HasRefundableChargeSurface)
             {
                 var rejection = await ReconcileCardSurfaceAsync(order, cancellationToken);

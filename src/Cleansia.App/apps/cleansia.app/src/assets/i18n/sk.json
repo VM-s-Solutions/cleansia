@@ -822,7 +822,10 @@
         "tier_discount": "Vernostná zľava",
         "tier_discount_min_not_met": "Vernostná zľava platí pre objednávky nad {{amount}}",
         "you_save": "Ušetríte {{amount}}",
-        "price_before_discount": "Cena pred zľavou: {{amount}}"
+        "price_before_discount": "Cena pred zľavou: {{amount}}",
+        "credit_applied": "Váš kredit",
+        "due_on_card": "Na úhradu kartou",
+        "credit_note": "Zostáva vám {{balance}} kreditu. Použijeme ho na vašu najbližšiu objednávku automaticky, nie je teda čo nastavovať — a časť každej objednávky sa vždy platí kartou."
       },
       "summary_section_title": "Skontrolujte svoju objednávku",
       "summary_services": "Služby",
@@ -1898,7 +1901,8 @@
       "deletion_blocked_by_order": "Váš účet nie je možné zmazať, kým máte aktívne objednávky.",
       "deletion_blocked_by_invoice": "Váš účet nie je možné zmazať, kým máte nevyrovnané faktúry.",
       "consent_not_found": "Toto nastavenie súhlasu sme nenašli.",
-      "consent_already_granted": "Tento súhlas ste už udelili."
+      "consent_already_granted": "Tento súhlas ste už udelili.",
+      "deletion_blocked_by_credit_balance": "Váš účet sa nedá zmazať, kým u nás máte kredit. Využite ho pri objednávke, alebo nás kontaktujte kvôli vyplateniu."
     },
     "promo": {
       "not_found": "Tento zľavový kód neexistuje.",

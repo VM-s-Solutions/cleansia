@@ -230,6 +230,7 @@ public class Policy
     // Credit
     public const string CanViewMyCredit = nameof(CanViewMyCredit); // Customer (own credit balance)
     public const string CanIssueCustomerCredit = nameof(CanIssueCustomerCredit); // Admin (money out)
+    public const string CanViewUserCredit = nameof(CanViewUserCredit); // Admin (any customer balance + ledger)
 
     // Admin Promo Codes
     public const string CanViewPromoCodes = nameof(CanViewPromoCodes); // Admin

@@ -30,4 +30,19 @@ public class AdminCreditController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<IssueCustomerCredit.Response>(result);
     }
+
+    [HttpGet("user/{userId}")]
+    [Permission(Policy.CanViewUserCredit)]
+    [ProducesResponseType(typeof(GetUserCredit.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetUserCredit(
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(
+            new GetUserCredit.Query(userId), cancellationToken);
+        return HandleResult<GetUserCredit.Response>(result);
+    }
 }

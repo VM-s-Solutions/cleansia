@@ -812,7 +812,10 @@
         "tier_discount": "Loyalty tier discount",
         "tier_discount_min_not_met": "Loyalty discount applies on orders above {{amount}}",
         "you_save": "You save {{amount}}",
-        "price_before_discount": "Price before discount: {{amount}}"
+        "price_before_discount": "Price before discount: {{amount}}",
+        "credit_applied": "Your credit",
+        "due_on_card": "To pay by card",
+        "credit_note": "Your credit balance is {{balance}}. We apply it to your next booking automatically, so there is nothing to choose — and part of every booking is always paid by card."
       },
       "summary_section_title": "Review Your Order",
       "summary_services": "Services",
@@ -1898,7 +1901,8 @@
       "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
       "consent_not_found": "We couldn't find that consent setting.",
-      "consent_already_granted": "You've already granted this consent."
+      "consent_already_granted": "You've already granted this consent.",
+      "deletion_blocked_by_credit_balance": "Your account can’t be deleted while you still have credit with us. Use it on a booking, or contact support to be paid out."
     },
     "promo": {
       "not_found": "That promo code doesn't exist.",

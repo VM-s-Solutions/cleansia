@@ -38,6 +38,17 @@ public record OrderListItem(
     decimal? TierDiscountAmount,
     decimal? MembershipDiscountAmount,
     decimal? PromoDiscountAmount,
+    /// <summary>
+    /// How much of this order the customer's credit balance settled, and what the card was therefore
+    /// asked for. NOT a discount: <see cref="TotalPrice"/> is the size of the sale and does not move.
+    ///
+    /// <para>Every client that shows "what you pay" has to read <see cref="AmountDueOnCard"/>, and
+    /// none of them could before these two existed — the partner app quoted TotalPrice on the job
+    /// sheet and the customer app quoted it at checkout, both of which are the wrong number the moment
+    /// any credit is applied. -&gt; Order.CreditAppliedAmount</para>
+    /// </summary>
+    decimal CreditAppliedAmount,
+    decimal AmountDueOnCard,
     int EstimatedTime,
     Code OrderStatus,
     string ConfirmationCode,

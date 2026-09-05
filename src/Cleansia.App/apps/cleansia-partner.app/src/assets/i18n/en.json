@@ -1057,6 +1057,9 @@
       "error_occurred": "An error occurred. Please try again.",
       "user_not_authenticated": "User not authenticated"
     },
+    "credit": {
+      "cash_not_collectable_on_credit_order": "Part of this booking was already paid from the customer’s credit. Ask an office admin to settle it — do not collect the amount shown."
+    },
     "validation": {
       "invalid_password": "Invalid password",
       "invalid_date": "Invalid date",

@@ -1808,6 +1808,10 @@ export interface IAdminCreditClient {
      * @return OK
      */
     issue(body?: IssueCustomerCreditCommand | undefined): Observable<IssueCustomerCreditResponse>;
+    /**
+     * @return OK
+     */
+    user(userId: string): Observable<GetUserCreditResponse>;
 }
 
 @Injectable({
@@ -1869,6 +1873,81 @@ export class AdminCreditClient implements IAdminCreditClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = IssueCustomerCreditResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    user(userId: string): Observable<GetUserCreditResponse> {
+        let url = this.baseUrl + "/api/AdminCredit/user/{userId}";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url = url.replace("{userId}", encodeURIComponent("" + userId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUser(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUser(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetUserCreditResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetUserCreditResponse>;
+        }));
+    }
+
+    protected processUser(response: HttpResponseBase): Observable<GetUserCreditResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetUserCreditResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -22907,6 +22986,126 @@ export interface IGetReferralsByUserResponse {
     asReferred: AdminReferralListItem[] | undefined;
 }
 
+export class GetUserCreditLedgerEntry implements IGetUserCreditLedgerEntry {
+    id!: string | undefined;
+    amount!: number;
+    reason!: CreditTransactionReason;
+    orderId!: string | undefined;
+    disputeId!: string | undefined;
+    note!: string | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IGetUserCreditLedgerEntry) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.amount = Data["amount"];
+            this.reason = Data["reason"];
+            this.orderId = Data["orderId"];
+            this.disputeId = Data["disputeId"];
+            this.note = Data["note"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GetUserCreditLedgerEntry {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetUserCreditLedgerEntry();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["amount"] = this.amount;
+        data["reason"] = this.reason;
+        data["orderId"] = this.orderId;
+        data["disputeId"] = this.disputeId;
+        data["note"] = this.note;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGetUserCreditLedgerEntry {
+    id: string | undefined;
+    amount: number;
+    reason: CreditTransactionReason;
+    orderId: string | undefined;
+    disputeId: string | undefined;
+    note: string | undefined;
+    createdOn: Date;
+}
+
+export class GetUserCreditResponse implements IGetUserCreditResponse {
+    userId!: string | undefined;
+    hasAccount!: boolean;
+    balance!: number;
+    currencyCode!: string | undefined;
+    ledger!: GetUserCreditLedgerEntry[] | undefined;
+
+    constructor(data?: IGetUserCreditResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.hasAccount = Data["hasAccount"];
+            this.balance = Data["balance"];
+            this.currencyCode = Data["currencyCode"];
+            if (Array.isArray(Data["ledger"])) {
+                this.ledger = [] as any;
+                for (let item of Data["ledger"])
+                    this.ledger!.push(GetUserCreditLedgerEntry.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): GetUserCreditResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetUserCreditResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["hasAccount"] = this.hasAccount;
+        data["balance"] = this.balance;
+        data["currencyCode"] = this.currencyCode;
+        if (Array.isArray(this.ledger)) {
+            data["ledger"] = [];
+            for (let item of this.ledger)
+                data["ledger"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IGetUserCreditResponse {
+    userId: string | undefined;
+    hasAccount: boolean;
+    balance: number;
+    currencyCode: string | undefined;
+    ledger: GetUserCreditLedgerEntry[] | undefined;
+}
+
 export class GetUserLoyaltyAccountResponse implements IGetUserLoyaltyAccountResponse {
     userId!: string | undefined;
     currentTier!: LoyaltyTier;
@@ -24400,6 +24599,8 @@ export class OrderItem implements IOrderItem {
     tierDiscountAmount!: number | undefined;
     membershipDiscountAmount!: number | undefined;
     promoDiscountAmount!: number | undefined;
+    creditAppliedAmount!: number;
+    amountDueOnCard!: number;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
     completedAt!: Date | undefined;
@@ -24473,6 +24674,8 @@ export class OrderItem implements IOrderItem {
             this.tierDiscountAmount = Data["tierDiscountAmount"];
             this.membershipDiscountAmount = Data["membershipDiscountAmount"];
             this.promoDiscountAmount = Data["promoDiscountAmount"];
+            this.creditAppliedAmount = Data["creditAppliedAmount"];
+            this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
             this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
@@ -24570,6 +24773,8 @@ export class OrderItem implements IOrderItem {
         data["tierDiscountAmount"] = this.tierDiscountAmount;
         data["membershipDiscountAmount"] = this.membershipDiscountAmount;
         data["promoDiscountAmount"] = this.promoDiscountAmount;
+        data["creditAppliedAmount"] = this.creditAppliedAmount;
+        data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
         data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
@@ -24654,6 +24859,8 @@ export interface IOrderItem {
     tierDiscountAmount: number | undefined;
     membershipDiscountAmount: number | undefined;
     promoDiscountAmount: number | undefined;
+    creditAppliedAmount: number;
+    amountDueOnCard: number;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
     completedAt: Date | undefined;
@@ -24712,6 +24919,8 @@ export class OrderListItem implements IOrderListItem {
     tierDiscountAmount!: number | undefined;
     membershipDiscountAmount!: number | undefined;
     promoDiscountAmount!: number | undefined;
+    creditAppliedAmount!: number;
+    amountDueOnCard!: number;
     estimatedTime!: number;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
@@ -24766,6 +24975,8 @@ export class OrderListItem implements IOrderListItem {
             this.tierDiscountAmount = Data["tierDiscountAmount"];
             this.membershipDiscountAmount = Data["membershipDiscountAmount"];
             this.promoDiscountAmount = Data["promoDiscountAmount"];
+            this.creditAppliedAmount = Data["creditAppliedAmount"];
+            this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
@@ -24832,6 +25043,8 @@ export class OrderListItem implements IOrderListItem {
         data["tierDiscountAmount"] = this.tierDiscountAmount;
         data["membershipDiscountAmount"] = this.membershipDiscountAmount;
         data["promoDiscountAmount"] = this.promoDiscountAmount;
+        data["creditAppliedAmount"] = this.creditAppliedAmount;
+        data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
@@ -24885,6 +25098,8 @@ export interface IOrderListItem {
     tierDiscountAmount: number | undefined;
     membershipDiscountAmount: number | undefined;
     promoDiscountAmount: number | undefined;
+    creditAppliedAmount: number;
+    amountDueOnCard: number;
     estimatedTime: number;
     orderStatus: Code;
     confirmationCode: string | undefined;

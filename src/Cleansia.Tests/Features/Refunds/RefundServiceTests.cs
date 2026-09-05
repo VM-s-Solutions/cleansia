@@ -35,12 +35,14 @@ public class RefundServiceTests
 
     private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly RecordingStripeClient _stripe = new();
 
     private RefundService CreateService() =>
         new(
             _refundRepository.Object,
             _orderRepository.Object,
+            _creditAccountRepository.Object,
             new StubStripeClientFactory(_stripe),
             NullLogger<RefundService>.Instance);
 

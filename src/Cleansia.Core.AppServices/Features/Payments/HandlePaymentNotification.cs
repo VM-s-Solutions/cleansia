@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -111,9 +112,13 @@ public class HandlePaymentNotification
 
     public record Command(string JsonPayload, string SignatureHeader, string Language = Constants.Language.English) : ICommand;
 
+    /// <summary>Webhooks are anonymous — no JWT. Matches the sweeps and LoyaltyService.</summary>
+    private const string SystemActor = "system";
+
     public class Handler(
         IStripeConfig stripeConfig,
         IOrderRepository orderRepository,
+        ICreditAccountRepository creditAccountRepository,
         IDisputeRepository disputeRepository,
         IProcessedStripeEventRepository processedStripeEventRepository,
         IStripeSubscriptionWebhookHandler subscriptionWebhookHandler,
@@ -312,6 +317,13 @@ public class HandlePaymentNotification
 
             order.UpdatePaymentStatus(PaymentStatus.Failed);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+
+            // The session expired without a charge, but CreateOrder debits credit BEFORE the customer
+            // ever reaches Stripe - so an abandoned checkout is the single most common way a customer
+            // would lose credit for nothing. Keyed on the order id, so a re-delivered webhook and the
+            // stale-order sweep that may also reach this order return it exactly once.
+            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                order, SystemActor, cancellationToken);
 
             if (!string.IsNullOrEmpty(order.UserId))
             {

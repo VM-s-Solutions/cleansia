@@ -31,6 +31,7 @@ public class AdminCancelOrderHandlerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IRefundService> _refundService = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<INotificationProducer> _producer = new();
     private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
@@ -46,6 +47,7 @@ public class AdminCancelOrderHandlerTests
             _orderRepository.Object,
             _session.Object,
             _refundService.Object,
+            _creditAccountRepository.Object,
             _loyaltyService.Object,
             _producer.Object,
             _liveActivityProducer.Object,

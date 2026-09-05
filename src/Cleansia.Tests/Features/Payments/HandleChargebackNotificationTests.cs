@@ -47,6 +47,7 @@ public class HandleChargebackNotificationTests
 
     private readonly Mock<IStripeConfig> _stripeConfig = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<IDisputeRepository> _disputeRepository = new();
     private readonly Mock<IProcessedStripeEventRepository> _processedEvents = new();
     private readonly Mock<IStripeSubscriptionWebhookHandler> _subscriptionHandler = new();
@@ -73,6 +74,7 @@ public class HandleChargebackNotificationTests
             typeof(HandlePaymentNotification.Handler),
             _stripeConfig.Object,
             _orderRepository.Object,
+            _creditAccountRepository.Object,
             _disputeRepository.Object,
             _processedEvents.Object,
             _subscriptionHandler.Object,

@@ -74,6 +74,11 @@ class FakeOrderWizardFacade {
   totalPrice = signal(0);
   preSurchargeSubtotal = signal(0);
   displayedTotalPrice = signal(0);
+  // Credit lines in the summary panel. Zero by default: the overwhelming majority of these
+  // cases are about a customer who has never been credited, and that is what zero renders as.
+  creditBalance = signal(0);
+  creditApplied = signal(0);
+  amountDueOnCard = signal(0);
   membershipDiscount = signal(0);
   tierDiscount = signal(0);
   effectivePromoDiscount = signal(0);

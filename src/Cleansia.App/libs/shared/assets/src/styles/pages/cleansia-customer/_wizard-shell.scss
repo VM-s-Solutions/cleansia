@@ -1418,6 +1418,44 @@
   color: #166534;
 }
 
+// Credit lines under the total. Deliberately quieter than the price above them: the total is still
+// the size of the booking, and these two say how it is settled. The card figure is the emphasised
+// one, because it is the number that leaves the customer's account today.
+.cl-wiz__credit {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--cl-border-tint);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cl-wiz__credit-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.cl-wiz__credit-amount {
+  font-weight: 800;
+  color: #166534;
+}
+
+.cl-wiz__credit-line--due {
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 800;
+  color: var(--cl-ink);
+}
+
+.cl-wiz__credit-note {
+  margin: 2px 0 0;
+  font-size: calc(0.75 * var(--cl-u));
+  line-height: 1.45;
+}
+
 .cl-wiz__promo-remove {
   margin: 8px 0 0;
   padding: 0;

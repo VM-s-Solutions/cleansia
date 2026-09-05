@@ -323,6 +323,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.card_payment_already_settled',
   'order.card_payment_in_progress',
   'order.card_payment_unverified',
+  // Customer credit settled part of the order, so the cash figure on the job sheet is not what
+  // is owed at the door. MarkCashCollected fails closed rather than let a cleaner collect it.
+  'credit.cash_not_collectable_on_credit_order',
   'order.cash_already_collected',
   'order.cash_not_collected',
   'order.completion_notes.too_long',

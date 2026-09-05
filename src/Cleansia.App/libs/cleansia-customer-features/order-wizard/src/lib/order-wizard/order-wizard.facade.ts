@@ -178,6 +178,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly tierDiscount = this.pricing.tierDiscount;
   readonly membershipDiscount = this.pricing.membershipDiscount;
   readonly effectiveDiscount = this.pricing.effectiveDiscount;
+  // Credit: the balance, the slice this booking takes, and what the card is left to pay.
+  // Owner ruling 2026-09-05 — applied automatically, and never the whole booking.
+  readonly creditBalance = this.pricing.creditBalance;
+  readonly creditApplied = this.pricing.creditApplied;
+  readonly amountDueOnCard = this.pricing.amountDueOnCard;
 
   // ─── Membership (free-cancellation window + express waiver) ─────
   //

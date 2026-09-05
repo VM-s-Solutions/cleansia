@@ -10689,6 +10689,8 @@ export class OrderItem implements IOrderItem {
     tierDiscountAmount!: number | undefined;
     membershipDiscountAmount!: number | undefined;
     promoDiscountAmount!: number | undefined;
+    creditAppliedAmount!: number;
+    amountDueOnCard!: number;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
     completedAt!: Date | undefined;
@@ -10698,6 +10700,9 @@ export class OrderItem implements IOrderItem {
     notes!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
+    customerFloor!: string | undefined;
+    customerApartment!: string | undefined;
+    accessMode!: string | undefined;
     recurringTemplateId!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
     currency!: CurrencyDetailDto;
@@ -10759,6 +10764,8 @@ export class OrderItem implements IOrderItem {
             this.tierDiscountAmount = Data["tierDiscountAmount"];
             this.membershipDiscountAmount = Data["membershipDiscountAmount"];
             this.promoDiscountAmount = Data["promoDiscountAmount"];
+            this.creditAppliedAmount = Data["creditAppliedAmount"];
+            this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
             this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
@@ -10768,6 +10775,9 @@ export class OrderItem implements IOrderItem {
             this.notes = Data["notes"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
+            this.customerFloor = Data["customerFloor"];
+            this.customerApartment = Data["customerApartment"];
+            this.accessMode = Data["accessMode"];
             this.recurringTemplateId = Data["recurringTemplateId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
@@ -10853,6 +10863,8 @@ export class OrderItem implements IOrderItem {
         data["tierDiscountAmount"] = this.tierDiscountAmount;
         data["membershipDiscountAmount"] = this.membershipDiscountAmount;
         data["promoDiscountAmount"] = this.promoDiscountAmount;
+        data["creditAppliedAmount"] = this.creditAppliedAmount;
+        data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
         data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
@@ -10862,6 +10874,9 @@ export class OrderItem implements IOrderItem {
         data["notes"] = this.notes;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
+        data["customerFloor"] = this.customerFloor;
+        data["customerApartment"] = this.customerApartment;
+        data["accessMode"] = this.accessMode;
         data["recurringTemplateId"] = this.recurringTemplateId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
@@ -10934,6 +10949,8 @@ export interface IOrderItem {
     tierDiscountAmount: number | undefined;
     membershipDiscountAmount: number | undefined;
     promoDiscountAmount: number | undefined;
+    creditAppliedAmount: number;
+    amountDueOnCard: number;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
     completedAt: Date | undefined;
@@ -10943,6 +10960,9 @@ export interface IOrderItem {
     notes: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
+    customerFloor: string | undefined;
+    customerApartment: string | undefined;
+    accessMode: string | undefined;
     recurringTemplateId: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
     currency: CurrencyDetailDto;
@@ -10989,6 +11009,8 @@ export class OrderListItem implements IOrderListItem {
     tierDiscountAmount!: number | undefined;
     membershipDiscountAmount!: number | undefined;
     promoDiscountAmount!: number | undefined;
+    creditAppliedAmount!: number;
+    amountDueOnCard!: number;
     estimatedTime!: number;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
@@ -11043,6 +11065,8 @@ export class OrderListItem implements IOrderListItem {
             this.tierDiscountAmount = Data["tierDiscountAmount"];
             this.membershipDiscountAmount = Data["membershipDiscountAmount"];
             this.promoDiscountAmount = Data["promoDiscountAmount"];
+            this.creditAppliedAmount = Data["creditAppliedAmount"];
+            this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
@@ -11109,6 +11133,8 @@ export class OrderListItem implements IOrderListItem {
         data["tierDiscountAmount"] = this.tierDiscountAmount;
         data["membershipDiscountAmount"] = this.membershipDiscountAmount;
         data["promoDiscountAmount"] = this.promoDiscountAmount;
+        data["creditAppliedAmount"] = this.creditAppliedAmount;
+        data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
@@ -11162,6 +11188,8 @@ export interface IOrderListItem {
     tierDiscountAmount: number | undefined;
     membershipDiscountAmount: number | undefined;
     promoDiscountAmount: number | undefined;
+    creditAppliedAmount: number;
+    amountDueOnCard: number;
     estimatedTime: number;
     orderStatus: Code;
     confirmationCode: string | undefined;
@@ -11237,6 +11265,7 @@ export class OrderReviewDto implements IOrderReviewDto {
     tags!: ReviewTag[] | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
+    lines!: OrderReviewLineDto[] | undefined;
 
     constructor(data?: IOrderReviewDto) {
         if (data) {
@@ -11260,6 +11289,11 @@ export class OrderReviewDto implements IOrderReviewDto {
             }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            if (Array.isArray(Data["lines"])) {
+                this.lines = [] as any;
+                for (let item of Data["lines"])
+                    this.lines!.push(OrderReviewLineDto.fromJS(item));
+            }
         }
     }
 
@@ -11283,6 +11317,11 @@ export class OrderReviewDto implements IOrderReviewDto {
         }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        if (Array.isArray(this.lines)) {
+            data["lines"] = [];
+            for (let item of this.lines)
+                data["lines"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -11295,6 +11334,51 @@ export interface IOrderReviewDto {
     tags: ReviewTag[] | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+    lines: OrderReviewLineDto[] | undefined;
+}
+
+export class OrderReviewLineDto implements IOrderReviewLineDto {
+    serviceId!: string | undefined;
+    packageId!: string | undefined;
+    rating!: number;
+
+    constructor(data?: IOrderReviewLineDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceId = Data["serviceId"];
+            this.packageId = Data["packageId"];
+            this.rating = Data["rating"];
+        }
+    }
+
+    static fromJS(data: any): OrderReviewLineDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderReviewLineDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
+        data["packageId"] = this.packageId;
+        data["rating"] = this.rating;
+        return data;
+    }
+}
+
+export interface IOrderReviewLineDto {
+    serviceId: string | undefined;
+    packageId: string | undefined;
+    rating: number;
 }
 
 export enum OrderStatus {
@@ -11351,6 +11435,8 @@ export class PackageDetails implements IPackageDetails {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     estimatedTime!: number;
     currencyCode!: string | undefined;
@@ -11372,6 +11458,8 @@ export class PackageDetails implements IPackageDetails {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             this.estimatedTime = Data["estimatedTime"];
             this.currencyCode = Data["currencyCode"];
@@ -11407,6 +11495,8 @@ export class PackageDetails implements IPackageDetails {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         data["estimatedTime"] = this.estimatedTime;
         data["currencyCode"] = this.currencyCode;
@@ -11435,6 +11525,8 @@ export interface IPackageDetails {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     estimatedTime: number;
     currencyCode: string | undefined;
@@ -11447,6 +11539,8 @@ export class PackageListItem implements IPackageListItem {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceSummary[] | undefined;
@@ -11465,6 +11559,8 @@ export class PackageListItem implements IPackageListItem {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -11493,6 +11589,8 @@ export class PackageListItem implements IPackageListItem {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (this.translations) {
             data["translations"] = {};
@@ -11514,6 +11612,8 @@ export interface IPackageListItem {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceSummary[] | undefined;
@@ -14000,6 +14100,7 @@ export interface ITimeRange {
 export class Translation implements ITranslation {
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
 
     constructor(data?: ITranslation) {
         if (data) {
@@ -14014,6 +14115,7 @@ export class Translation implements ITranslation {
         if (Data) {
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
         }
     }
 
@@ -14028,6 +14130,7 @@ export class Translation implements ITranslation {
         data = typeof data === 'object' ? data : {};
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
         return data;
     }
 }
@@ -14035,6 +14138,7 @@ export class Translation implements ITranslation {
 export interface ITranslation {
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
 }
 
 export class UpdateBankDetailsCommand implements IUpdateBankDetailsCommand {

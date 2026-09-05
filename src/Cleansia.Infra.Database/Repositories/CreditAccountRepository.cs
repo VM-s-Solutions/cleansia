@@ -33,6 +33,94 @@ public class CreditAccountRepository(CleansiaDbContext context)
         return account;
     }
 
+    public async Task<bool> TryReturnAsync(
+        string userId,
+        string currencyId,
+        decimal amount,
+        string idempotencyKey,
+        string actorId,
+        CancellationToken cancellationToken,
+        string? orderId = null,
+        string? note = null)
+    {
+        if (amount <= 0m || string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            return false;
+        }
+
+        // The key check is not the guarantee - the unique index below is. It is here so a replay is a
+        // cheap no-op rather than an exception the caller has to catch: a re-driven refund and a
+        // re-delivered webhook both arrive on a key that is already used, routinely.
+        var alreadyReturned = await context.CreditTransactions
+            .AsNoTracking()
+            .AnyAsync(t => t.IdempotencyKey == idempotencyKey, cancellationToken);
+        if (alreadyReturned)
+        {
+            return false;
+        }
+
+        // An account may not exist yet: credit can only reach an order through one, but a customer
+        // whose account was created and then erased still needs somewhere for the money to land. This
+        // is the one part of a return that goes through the tracked graph, and it is followed by an
+        // explicit flush so the raw statement below has a row to update.
+        var account = await EnsureForUserAsync(userId, currencyId, cancellationToken);
+        if (context.Entry(account).State == EntityState.Added)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        // ONE STATEMENT, mirroring TryDebitAsync, and for a second reason on top of the shared one.
+        //
+        // Shared: balance and ledger move together or not at all, so
+        // Balance == SUM(Transactions.Amount) cannot drift.
+        //
+        // Its own: this must NOT enlist in the caller's unit of work. CreateOrder compensates a failed
+        // Stripe dispatch by calling it on a request that then returns a FAILURE, which the pipeline
+        // never commits - a tracked Issue would be thrown away along with the half-built order, and
+        // flushing it explicitly would persist that order. A self-contained statement is the only
+        // shape that puts the money back on a path that is about to roll back.
+        //
+        // TenantId is copied from the ACCOUNT rather than written as NULL: the ledger row belongs to
+        // whichever tenant the balance does, and hard-coding null would be right only for as long as
+        // single-tenant mode lasts.
+        var rowsAffected = await context.Database.ExecuteSqlAsync(
+            $"""
+            WITH returned AS (
+                UPDATE "CreditAccounts"
+                SET "Balance" = "Balance" + {amount},
+                    "UpdatedBy" = {actorId},
+                    "UpdatedOn" = NOW()
+                WHERE "Id" = {account.Id}
+                RETURNING "Id", "TenantId"
+            )
+            INSERT INTO "CreditTransactions" (
+                "Id", "CreditAccountId", "Amount", "Reason", "OrderId", "DisputeId",
+                "IdempotencyKey", "Note", "IsActive", "TenantId", "CreatedBy", "CreatedOn")
+            SELECT
+                {NewId()}, returned."Id", {amount}, {(int)CreditTransactionReason.OrderPaymentReturned},
+                {orderId}, NULL, {idempotencyKey}, {note}, TRUE, returned."TenantId", {actorId}, NOW()
+            FROM returned
+            """,
+            cancellationToken);
+
+        return rowsAffected > 0;
+    }
+
+    public async Task<decimal> GetReturnedTotalForOrderAsync(
+        string orderId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(orderId))
+        {
+            return 0m;
+        }
+
+        return await context.CreditTransactions
+            .AsNoTracking()
+            .Where(t => t.OrderId == orderId
+                && t.Reason == CreditTransactionReason.OrderPaymentReturned)
+            .SumAsync(t => t.Amount, cancellationToken);
+    }
+
     public async Task<CreditSpendable?> GetSpendableAsync(
         string userId, CancellationToken cancellationToken)
     {
@@ -90,14 +178,16 @@ public class CreditAccountRepository(CleansiaDbContext context)
                     "UpdatedBy" = {actorId},
                     "UpdatedOn" = NOW()
                 WHERE "Id" = {creditAccountId} AND "Balance" >= {amount}
-                RETURNING "Id"
+                -- TenantId comes back with the row so the ledger entry belongs to the same tenant the
+                -- balance does. Writing NULL was right only for as long as single-tenant mode lasts.
+                RETURNING "Id", "TenantId"
             )
             INSERT INTO "CreditTransactions" (
                 "Id", "CreditAccountId", "Amount", "Reason", "OrderId", "DisputeId",
                 "IdempotencyKey", "Note", "IsActive", "TenantId", "CreatedBy", "CreatedOn")
             SELECT
                 {NewId()}, debited."Id", {-amount}, {(int)reason}, {orderId}, NULL,
-                {idempotencyKey}, {note}, TRUE, NULL, {actorId}, NOW()
+                {idempotencyKey}, {note}, TRUE, debited."TenantId", {actorId}, NOW()
             FROM debited
             """,
             cancellationToken);

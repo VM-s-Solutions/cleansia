@@ -28,6 +28,44 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     Task<CreditSpendable?> GetSpendableAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Put credit BACK on a balance because the order it settled was unwound. Returns false when the
+    /// key has already been used, which is what makes a retried refund or a re-delivered webhook safe.
+    ///
+    /// <para>This is the writer of <see cref="CreditTransactionReason.OrderPaymentReturned"/>, and
+    /// without it credit is a one-way door: an order cancelled or refunded after credit settled part
+    /// of it would take the customer's money and give back only the card half — the card cannot refund
+    /// what the card never took.</para>
+    ///
+    /// <para><b>Its own statement, like the debit — never the tracked graph.</b> Two callers need it
+    /// that way and one of them cannot work otherwise: <c>CreateOrder</c> compensates a failed Stripe
+    /// dispatch by returning the credit it just took, on a request that is about to return a FAILURE
+    /// and therefore will never be committed by the pipeline. A tracked <c>Issue</c> there would be
+    /// discarded with the rest of the unit of work — and flushing it explicitly would persist the
+    /// half-built order the factory has already added to the same context.</para>
+    ///
+    /// <para>The same shape also makes it safe everywhere else: the money goes back even if the
+    /// caller's own commit later fails, and a replay is a no-op rather than a 23505 that would take
+    /// that commit down with it.</para>
+    /// </summary>
+    Task<bool> TryReturnAsync(
+        string userId,
+        string currencyId,
+        decimal amount,
+        string idempotencyKey,
+        string actorId,
+        CancellationToken cancellationToken,
+        string? orderId = null,
+        string? note = null);
+
+    /// <summary>
+    /// How much credit has already gone back for one order. The credit leg's counterpart to
+    /// <c>IRefundRepository.GetSucceededRefundTotalForOrderAsync</c>, and it exists for the same
+    /// reason: a second refund on the same order has to know what the first one already unwound, or
+    /// the two legs of one refund end up computed against different denominators.
+    /// </summary>
+    Task<decimal> GetReturnedTotalForOrderAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Take <paramref name="amount"/> from the balance, or take nothing.
     ///
     /// <para>Returns false when the balance is short. It is <b>the only</b> way credit is spent, and

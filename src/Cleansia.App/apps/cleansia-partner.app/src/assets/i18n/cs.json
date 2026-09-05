@@ -1057,6 +1057,9 @@
       "error_occurred": "Došlo k chybě. Zkuste to prosím znovu.",
       "user_not_authenticated": "Uživatel není přihlášen"
     },
+    "credit": {
+      "cash_not_collectable_on_credit_order": "Část této objednávky již byla uhrazena z kreditu zákazníka. Požádejte o vyřízení kancelář — částku uvedenou v aplikaci nevybírejte."
+    },
     "validation": {
       "invalid_password": "Neplatné heslo",
       "invalid_date": "Neplatné datum",

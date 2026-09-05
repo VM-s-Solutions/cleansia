@@ -363,6 +363,30 @@ export function composeFinalPriceForUnquotedDiscount(
   return Math.round((discountedSubtotal * grossSubtotal * 100) / rawSubtotal) / 100;
 }
 
+/**
+ * How much of a credit balance settles a booking of `chargedPrice`.
+ *
+ * Mirrors `BookingPolicy.CapCreditForOrder`, and exists on the client for the same reason
+ * `composeFinalPriceForUnquotedDiscount` does: the cap is a function of the CHARGED price, and a promo
+ * code is entered at checkout, so the server's quote cannot know the final price to cap against. The
+ * quote hands over the two inputs — balance and share — and the rule is applied here, once, against
+ * whatever price the wizard is actually displaying.
+ *
+ * A PREVIEW. Nothing is debited until the order is created, and the order's own `creditAppliedAmount`
+ * is the record of what happened; a booking started in another tab can still take the balance first.
+ *
+ * Floors to whole cents the way the server does, so the figure shown and the figure charged agree.
+ */
+export function capCreditForOrder(
+  balance: number,
+  chargedPrice: number,
+  maxShareOfOrder: number,
+): number {
+  if (balance <= 0 || chargedPrice <= 0 || maxShareOfOrder <= 0) return 0;
+  const ceiling = Math.floor(chargedPrice * maxShareOfOrder * 100) / 100;
+  return Math.min(balance, ceiling);
+}
+
 // ── Translation helpers ─────────────────────────────────────
 
 export function getItemTranslation(

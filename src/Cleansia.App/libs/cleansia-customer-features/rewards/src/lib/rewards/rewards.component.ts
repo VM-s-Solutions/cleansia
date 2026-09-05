@@ -155,22 +155,36 @@ export class RewardsComponent implements OnInit {
       return {
         key: 'pages.rewards.discount_min_order',
         params: {
-          percent: this.percentDisplay(tier.discountPercent),
+          percent: this.percentOf(tier.discountPercent),
           minAmount: tier.minimumOrderAmountForDiscount,
         },
       };
     }
     return {
       key: 'pages.rewards.discount_basic',
-      params: { percent: this.percentDisplay(tier.discountPercent) },
+      params: { percent: this.percentOf(tier.discountPercent) },
     };
   }
 
   /**
-   * Backend may emit either a fraction (0.05) or an integer percent (5).
-   * Normalise to an integer for display so we don't show "0.05% off".
+   * A tier discount as a NUMBER OF PERCENT, from the fraction the API sends.
+   *
+   * `LoyaltyTierConfig.DiscountPercent` is a fraction despite its name — `UpdateTierConfig`
+   * validates it as `p >= 0 && p <= 1`, and `LoyaltyService` spends it as
+   * `orderTotal * config.DiscountPercent` with no division. So the seeded tiers arrive as 0.05,
+   * 0.1 and 0.12, and printing them beside a `%` sign read "0.05%" — a fiftieth of the discount
+   * the customer actually gets.
+   *
+   * Public because the template needs it: this existed already, but only `discountLabel` went
+   * through it, and the two places that print the number on the page did not.
+   *
+   * The `<= 1` branch is kept as a guard, not a hedge: it makes an integer already in percent
+   * survive unchanged if the API's units ever move, rather than silently multiplying by 100.
    */
-  private percentDisplay(raw: number): number {
+  percentOf(raw: number | undefined): number {
+    if (!raw) {
+      return 0;
+    }
     return raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
   }
 

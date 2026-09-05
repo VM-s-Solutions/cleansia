@@ -47,7 +47,7 @@
           <i class="pi pi-star-fill"></i>
           {{ 'pages.rewards.tier.' + facade.tierKey(acc.currentTier) | translate }}
           @if (acc.currentDiscountPercent > 0) {
-          · {{ 'pages.rewards.discount_of' | translate: { percent: acc.currentDiscountPercent } }}
+          · {{ 'pages.rewards.discount_of' | translate: { percent: percentOf(acc.currentDiscountPercent) } }}
           }
         </span>
 
@@ -138,7 +138,7 @@
           <div class="cl-rwd__tier-discount">
             {{
               tier.discountPercent > 0
-                ? ('pages.rewards.percent_off' | translate: { percent: tier.discountPercent })
+                ? ('pages.rewards.percent_off' | translate: { percent: percentOf(tier.discountPercent) })
                 : ('pages.rewards.no_discount' | translate)
             }}
           </div>

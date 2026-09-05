@@ -204,8 +204,8 @@ Production:
 | Setting | Value |
 |---------|-------|
 | CORS | `http://localhost:4200`, `http://localhost:4201` |
-| Stripe Success URL | `http://localhost:4200/checkout/success` |
-| Stripe Cancel URL | `http://localhost:4200/checkout/cancel` |
+| Stripe Success URL | `http://localhost:4202/checkout/success` — the **customer** app's port |
+| Stripe Cancel URL | `http://localhost:4202/checkout/cancel` — same, and where Stripe's back-arrow goes |
 | Blob Storage | `UseDevelopmentStorage=true` (Azurite) |
 | SendGrid URLs | `http://localhost:4200/...` |
 | Logging | `Information` level |

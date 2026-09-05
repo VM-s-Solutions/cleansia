@@ -603,7 +603,7 @@
         "service_label": "Co je potřeba uklidit",
         "size_label": "Velikost bytu",
         "date_label": "Kdy",
-        "date_hint": "Nepovinné. Objednávka do 48 hodin má expresní příplatek.",
+        "date_hint": "Nepovinné. Objednávka méně než 4 hodiny předem má expresní příplatek.",
         "size_1kk": "1+kk",
         "size_2kk": "2+kk",
         "size_3kk": "3+kk",

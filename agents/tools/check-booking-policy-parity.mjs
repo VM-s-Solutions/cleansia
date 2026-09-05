@@ -195,6 +195,22 @@ for (const locale of LOCALES) {
     );
   }
 
+  // The calculator's own date hint states the surcharge band, and it sat OUTSIDE this check while
+  // its neighbours were inside it — so for as long as anyone can tell, five locales told a customer
+  // booking two days out that they would pay 20% more. The band is
+  // [ExpressLeadTimeHours, StandardLeadTimeHours): 2–4 hours. The hint names the upper edge, because
+  // "less than 4 hours ahead" is the sentence a customer can act on; under the lower edge the
+  // booking is refused outright rather than surcharged.
+  const dateHint = web.pages?.home?.quote?.date_hint ?? '';
+  const hintHours = firstNumberIn(dateHint);
+  if (dateHint && hintHours !== policy.StandardLeadTimeHours) {
+    note(
+      `web/${locale}`,
+      `pages.home.quote.date_hint = "${dateHint}" says ${hintHours} h; the express band ends at ` +
+        `${policy.StandardLeadTimeHours} h (BookingPolicy.StandardLeadTimeHours)`,
+    );
+  }
+
   // Android.
   for (const [key, expected] of [
     ['booking_cancel_tier2_value', partialPct],

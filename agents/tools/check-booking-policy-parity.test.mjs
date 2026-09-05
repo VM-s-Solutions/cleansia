@@ -61,6 +61,7 @@ function buildFixture(overrides = {}) {
     webCancelDesc: 'Between 4 and 24 hours it is 25%, under 4 hours 50%.',
     webLeadValue: 'in 2 hours',
     webExpressValue: '+20%',
+    webDateHint: 'Optional. Booking less than 4 hours ahead adds an express surcharge.',
     androidTier2: '25% charge',
     androidTier3: '50% charge',
     iosTier2: '25% charge',
@@ -106,6 +107,9 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
               cancel_desc: o.webCancelDesc,
               lead_value: o.webLeadValue,
               express_value: o.webExpressValue,
+            },
+            quote: {
+              date_hint: o.webDateHint,
             },
           },
         },
@@ -218,6 +222,19 @@ scenario(
   'catches the home page claiming a 4-hour floor',
   { webLeadValue: 'in 4 hours' },
   { code: 1, mentions: ['lead_value', 'the floor is 2 h'] },
+);
+// The calculator's date hint shipped saying "within 48 hours" in all five locales while the band is
+// 2-4 h — a customer booking two days out was told they would pay 20% more. It sat just outside this
+// gate while both its neighbours were inside it, which is the whole reason it drifted.
+scenario(
+  'catches the date hint overstating the express band',
+  { webDateHint: 'Optional. Booking within 48 hours adds an express surcharge.' },
+  { code: 1, mentions: ['date_hint', 'says 48 h', 'ends at 4 h'] },
+);
+scenario(
+  'reads the band from a localised hint wherever the number sits',
+  { webDateHint: 'Nepovinné. Objednávka méně než 4 hodiny předem má expresní příplatek.' },
+  { code: 0 },
 );
 scenario(
   'catches the unguarded web mirror drifting from BookingPolicy',

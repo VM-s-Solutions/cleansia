@@ -603,7 +603,7 @@
         "service_label": "What needs cleaning",
         "size_label": "Property size",
         "date_label": "When",
-        "date_hint": "Optional. Booking within 48 hours adds an express surcharge.",
+        "date_hint": "Optional. Booking less than 4 hours ahead adds an express surcharge.",
         "size_1kk": "1 room",
         "size_2kk": "2 rooms",
         "size_3kk": "3 rooms",

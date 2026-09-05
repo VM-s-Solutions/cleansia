@@ -8,7 +8,10 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using System.Security.Cryptography;
+using System.Text;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Refunds;
@@ -76,6 +79,7 @@ public class IssuePartialRefund
     public class Handler(
         IOrderRepository orderRepository,
         IRefundRepository refundRepository,
+        IExtraRepository extraRepository,
         ICountryConfigurationRepository countryConfigurationRepository,
         IRefundService refundService,
         ILoyaltyService loyaltyService,
@@ -111,7 +115,7 @@ public class IssuePartialRefund
                 windowOverridden = true;
             }
 
-            var lineGrosses = BuildOrderLineGrosses(order);
+            var lineGrosses = await BuildOrderLineGrossesAsync(order, extraRepository, cancellationToken);
             var selection = ResolveSelection(lineGrosses, command.Lines);
             if (selection is null)
             {
@@ -231,7 +235,8 @@ public class IssuePartialRefund
 
     private sealed record LineGross(string Key, decimal Gross, string ServiceId, string? PackageId);
 
-    private static List<LineGross> BuildOrderLineGrosses(Order order)
+    private static async Task<List<LineGross>> BuildOrderLineGrossesAsync(
+        Order order, IExtraRepository extraRepository, CancellationToken cancellationToken)
     {
         var lines = new List<LineGross>();
 
@@ -273,6 +278,36 @@ public class IssuePartialRefund
             }
         }
 
+        // EXTRAS BELONG IN THE DENOMINATOR. OrderPricingCalculator sums packages + services + EXTRAS
+        // into the subtotal that becomes TotalPrice, and the allocator multiplies each line's share of
+        // this list by that frozen TotalPrice. Omitting extras made the denominator smaller than the
+        // numerator it divides into, so every share was inflated: on a 1000 service + 200 extras
+        // order, refunding the one service paid back 1000/1000 × 1200 = the whole 1200. Every partial
+        // refund on an order carrying an extra over-paid, in proportion to the extras.
+        //
+        // They are NOT selectable, and that is deliberate rather than an omission. RefundLineSelection
+        // is (ServiceId, PackageId?) and has no way to name an extra, so adding one would change the
+        // wire contract and the admin picker — and it would buy nothing today, because a FULL refund
+        // does not come through here. AdminRefundOrder takes a plain amount, and the terminal
+        // PaymentStatus is computed from GetSucceededRefundTotalForOrderAsync, which is cumulative
+        // across every refund path. So "refund everything" still works and still lands on Refunded.
+        //
+        // Weights only, like the service lines above: the price is the catalogue's current one, read
+        // by slug exactly as OrderPricingCalculator reads it, and the ratio is what carries meaning.
+        var chosenSlugs = order.Extras.Where(e => e.Value).Select(e => e.Key).ToList();
+        if (chosenSlugs.Count > 0)
+        {
+            var extras = await extraRepository.GetAll()
+                .Where(e => chosenSlugs.Contains(e.Slug))
+                .Select(e => new { e.Slug, e.Price })
+                .ToListAsync(cancellationToken);
+
+            foreach (var extra in extras)
+            {
+                lines.Add(new LineGross($"extra:{extra.Slug}", extra.Price, ServiceId: string.Empty, PackageId: null));
+            }
+        }
+
         return lines;
     }
 
@@ -299,11 +334,34 @@ public class IssuePartialRefund
             .ToList();
     }
 
+    /// <summary>
+    /// A short, stable fingerprint of the chosen lines — the thing that makes two different partial
+    /// refunds on one order two different refunds.
+    /// <para>
+    /// It used to be the raw selection: the order id followed by every "packageId|serviceId" pair.
+    /// With 26-character ULIDs that is 94 characters for one standalone line, exactly 120 for one
+    /// bundled line, and 122 or more for ANY two — against a <c>RefundKey</c> column of
+    /// <c>varchar(120)</c>. Picking a second line failed on the insert with a Postgres 22001, before
+    /// Stripe was ever called, as a 500 with no explanation. "Refund the two rooms that were skipped"
+    /// is the first thing anyone asks of this screen.
+    /// </para>
+    /// <para>
+    /// SHA-256 over the same ordered material, truncated to 16 hex characters. Still deterministic on
+    /// the domain inputs and still never a Guid or a timestamp, so the retry and double-issue
+    /// collapse that <c>RefundService.BuildRefundKey</c> depends on is unchanged — only the length
+    /// is. Truncation is safe here because this is not a security boundary: it distinguishes
+    /// selections within ONE order, where a collision needs two different subsets of the same order's
+    /// handful of lines to share 64 bits.
+    /// </para>
+    /// </summary>
     private static string BuildSelectionIdentity(Command command)
     {
         var keys = command.Lines
             .Select(l => $"{l.PackageId}|{l.ServiceId}")
             .OrderBy(k => k, StringComparer.Ordinal);
-        return $"{command.OrderId}:{string.Join(",", keys)}";
+        var material = $"{command.OrderId}:{string.Join(",", keys)}";
+
+        var digest = SHA256.HashData(Encoding.UTF8.GetBytes(material));
+        return Convert.ToHexString(digest, 0, 8).ToLowerInvariant();
     }
 }

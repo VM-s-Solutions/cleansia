@@ -176,18 +176,49 @@ public sealed class RefundService(
             Status: existing.Status,
             ResolvedToExisting: true));
 
-    // RefundKey = refund:{OrderId}:{purpose}, purpose ∈ { cancel, dispute:{DisputeId}, admin:{RefundRequestId} }
-    // (ADR-0006 D3). Deterministic on the domain inputs, never a Guid/timestamp, so a retry/redelivery
-    // and a concurrent double-issue collapse onto the one key.
-    private static string BuildRefundKey(RefundRequest request)
+    // RefundKey = refund:{OrderId}:{purpose}[:{DisputeId}][:{RefundRequestId}] (ADR-0006 D3).
+    // Deterministic on the domain inputs, never a Guid/timestamp, so a retry/redelivery and a
+    // concurrent double-issue collapse onto the one key.
+    //
+    // THE DISTINGUISHING ID IS NOW HONOURED ON EVERY REASON. It used to appear only in the `admin`
+    // branch, so a caller that passed one under CustomerCancellation or DisputeResolution had it
+    // silently dropped — and IssuePartialRefund passes exactly that, its line selection. Two
+    // different partial refunds on one order therefore built the SAME key, the second resolved to
+    // the first's succeeded row, and the handler reported success while no money moved.
+    //
+    // Every shipped key is byte-identical under this shape, which is why it is safe: CancelOrder and
+    // AdminCancelOrder pass neither optional id (refund:{id}:cancel), ResolveDispute passes only a
+    // DisputeId (refund:{id}:dispute:{did}), and AdminRefundOrder passes only RefundRequestId "full"
+    // (refund:{id}:admin:full). Only the partial-refund path gains a segment — the one that needed it.
+    // Public for the same reason StripeClient.ToMinorUnits is: it is a pure function whose exact
+    // output is the contract, and the only honest way to test it is to call it. The fake in
+    // IssuePartialRefundHandlerTests used to RESTATE this algorithm instead — which is precisely why
+    // two of its three branches went unexercised while the suite stayed green.
+    public static string BuildRefundKey(RefundRequest request)
     {
-        var purpose = request.Reason switch
+        var segments = new List<string>
         {
-            RefundReason.CustomerCancellation => "cancel",
-            RefundReason.DisputeResolution => $"dispute:{request.DisputeId}",
-            _ => $"admin:{request.RefundRequestId}",
+            "refund",
+            request.OrderId,
+            request.Reason switch
+            {
+                RefundReason.CustomerCancellation => "cancel",
+                RefundReason.DisputeResolution => "dispute",
+                _ => "admin",
+            },
         };
-        return $"refund:{request.OrderId}:{purpose}";
+
+        if (!string.IsNullOrEmpty(request.DisputeId))
+        {
+            segments.Add(request.DisputeId);
+        }
+
+        if (!string.IsNullOrEmpty(request.RefundRequestId))
+        {
+            segments.Add(request.RefundRequestId);
+        }
+
+        return string.Join(':', segments);
     }
 
     private static bool IsUniqueViolation(DbUpdateException exception)

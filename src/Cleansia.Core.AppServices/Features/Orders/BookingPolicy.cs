@@ -93,6 +93,38 @@ public static class BookingPolicy
     public const decimal NoShowCreditCzk = 250m;
 
     /// <summary>
+    /// The most of one order a customer's credit balance may settle. The rest goes on the card.
+    ///
+    /// <para>Owner ruling 2026-09-05: a customer must never be able to pay for a clean with credit
+    /// alone - "some amount/percentage is paid from their credit card". 80% is generous enough that a
+    /// goodwill credit for a bad clean is normally spent in one go, while every order still produces a
+    /// real card charge: a capture surface to refund against if the next clean also goes wrong, and a
+    /// live payment method on file.</para>
+    ///
+    /// <para>It is a share of <c>TotalPrice</c>, not of the discounted subtotal, because credit is a
+    /// TENDER - the sale keeps its size and only the figure sent to Stripe moves.
+    /// -> Order.CreditAppliedAmount</para>
+    /// </summary>
+    public const decimal MaxCreditShareOfOrder = 0.80m;
+
+    /// <summary>
+    /// How much of <paramref name="balance"/> may be spent on an order of
+    /// <paramref name="totalPrice"/>. Rounded DOWN to whole minor units, so the figure recorded on the
+    /// order and the figure the card is asked for are always cent-identical - Stripe takes integers,
+    /// and a half-cent of credit would be silently absorbed by one side or the other.
+    /// </summary>
+    public static decimal CapCreditForOrder(decimal balance, decimal totalPrice)
+    {
+        if (balance <= 0m || totalPrice <= 0m)
+        {
+            return 0m;
+        }
+
+        var ceiling = Math.Floor(totalPrice * MaxCreditShareOfOrder * 100m) / 100m;
+        return Math.Min(balance, ceiling);
+    }
+
+    /// <summary>
     /// Seats beyond the crew the work needs. Zero by owner ruling — a filled spare seat is a second
     /// full wage against an unchanged customer price. → /product/business-rules#crew-size
     /// </summary>

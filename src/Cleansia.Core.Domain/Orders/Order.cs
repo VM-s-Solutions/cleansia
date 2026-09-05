@@ -226,6 +226,17 @@ public class Order : Auditable, ITenantEntity
     /// touches <see cref="TotalPrice"/>: credit is a tender, so the sale keeps its size and only the
     /// figure sent to the card changes.</para>
     /// </summary>
+    /// <summary>
+    /// What the card is asked for: the sale, less whatever the customer's credit balance settled.
+    ///
+    /// <para><b>Every charge surface reads this, never <see cref="TotalPrice"/>.</b> The Checkout
+    /// Session and the mobile PaymentIntent are the two places money is captured, and a credit
+    /// recorded on the order but not subtracted from the charge would take the credit AND the full
+    /// card amount. <see cref="TotalPrice"/> stays the size of the sale - it is what the fiscal
+    /// receipt registers and what loyalty earns on.</para>
+    /// </summary>
+    public decimal AmountDueOnCard => TotalPrice - CreditAppliedAmount;
+
     public Order ApplyCredit(decimal amount, string appliedBy)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);

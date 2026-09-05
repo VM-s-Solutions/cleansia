@@ -50,6 +50,7 @@ public class CreateOrderExpressWaiverConsentTests
     private readonly Mock<IOrderFactory> _orderFactory = new();
     private readonly Mock<IAddressGeocoder> _addressGeocoder = new();
     private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
 
     public CreateOrderExpressWaiverConsentTests()
     {
@@ -115,7 +116,12 @@ public class CreateOrderExpressWaiverConsentTests
                 _pending.Object,
                 new OrderChannelProvider(OrderChannel.Mobile),
                 NullLogger<OrderPaymentDispatcher>.Instance),
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            // No credit account: these suites characterize pricing, dispatch and the waiver slot, and
+            // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a
+            // customer who has never been credited looks like, and what every case here assumes.
+            _creditAccountRepository.Object,
+            NullLogger<CreateOrder.Handler>.Instance);
 
     /// <summary>
     /// The calculator's answer is what SET the price, so it is what the reservation must agree with.

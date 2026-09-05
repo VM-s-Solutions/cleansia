@@ -229,6 +229,7 @@ public static class PolicyBuilder
 
         // Loyalty
         [Policy.CanViewMyLoyalty] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanViewMyCredit] = PhysicalPolicy.CustomerOnly,
 
         // Promo codes
         [Policy.CanRedeemPromoCode] = PhysicalPolicy.CustomerOnly,
@@ -265,6 +266,7 @@ public static class PolicyBuilder
 
         // Refunds (admin-issued partial refund) — ADR-0001 D2
         [Policy.CanIssueRefund] = PhysicalPolicy.AdminOnly,
+        [Policy.CanIssueCustomerCredit] = PhysicalPolicy.AdminOnly,
 
         // Admin Action Audit Log (read surface — ADR-0012 D7)
         [Policy.CanViewAuditLog] = PhysicalPolicy.AdminOnly,

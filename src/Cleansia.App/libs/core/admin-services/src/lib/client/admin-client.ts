@@ -1802,6 +1802,105 @@ export class AdminCountryClient implements IAdminCountryClient {
     }
 }
 
+export interface IAdminCreditClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    issue(body?: IssueCustomerCreditCommand | undefined): Observable<IssueCustomerCreditResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminCreditClient implements IAdminCreditClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    issue(body?: IssueCustomerCreditCommand | undefined): Observable<IssueCustomerCreditResponse> {
+        let url = this.baseUrl + "/api/AdminCredit/issue";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processIssue(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processIssue(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<IssueCustomerCreditResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<IssueCustomerCreditResponse>;
+        }));
+    }
+
+    protected processIssue(response: HttpResponseBase): Observable<IssueCustomerCreditResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = IssueCustomerCreditResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminCurrencyClient {
     /**
      * @return OK
@@ -18891,6 +18990,14 @@ export interface ICreateServiceTranslationInput {
     description: string | undefined;
 }
 
+export enum CreditTransactionReason {
+    DisputeSettlement = 1,
+    CleanerNoShow = 2,
+    Goodwill = 3,
+    OrderPayment = 10,
+    OrderPaymentReturned = 11,
+}
+
 export class CurrencyDetailDto implements ICurrencyDetailDto {
     id!: string | undefined;
     code!: string | undefined;
@@ -23070,6 +23177,110 @@ export class GrantPointsManuallyResponse implements IGrantPointsManuallyResponse
 export interface IGrantPointsManuallyResponse {
     userId: string | undefined;
     points: number;
+}
+
+export class IssueCustomerCreditCommand implements IIssueCustomerCreditCommand {
+    userId!: string | undefined;
+    amount!: number;
+    reason!: CreditTransactionReason;
+    note!: string | undefined;
+    requestId!: string | undefined;
+    orderId!: string | undefined;
+    disputeId!: string | undefined;
+
+    constructor(data?: IIssueCustomerCreditCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.amount = Data["amount"];
+            this.reason = Data["reason"];
+            this.note = Data["note"];
+            this.requestId = Data["requestId"];
+            this.orderId = Data["orderId"];
+            this.disputeId = Data["disputeId"];
+        }
+    }
+
+    static fromJS(data: any): IssueCustomerCreditCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new IssueCustomerCreditCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["amount"] = this.amount;
+        data["reason"] = this.reason;
+        data["note"] = this.note;
+        data["requestId"] = this.requestId;
+        data["orderId"] = this.orderId;
+        data["disputeId"] = this.disputeId;
+        return data;
+    }
+}
+
+export interface IIssueCustomerCreditCommand {
+    userId: string | undefined;
+    amount: number;
+    reason: CreditTransactionReason;
+    note: string | undefined;
+    requestId: string | undefined;
+    orderId: string | undefined;
+    disputeId: string | undefined;
+}
+
+export class IssueCustomerCreditResponse implements IIssueCustomerCreditResponse {
+    userId!: string | undefined;
+    amount!: number;
+    newBalance!: number;
+
+    constructor(data?: IIssueCustomerCreditResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.amount = Data["amount"];
+            this.newBalance = Data["newBalance"];
+        }
+    }
+
+    static fromJS(data: any): IssueCustomerCreditResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new IssueCustomerCreditResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["amount"] = this.amount;
+        data["newBalance"] = this.newBalance;
+        return data;
+    }
+}
+
+export interface IIssueCustomerCreditResponse {
+    userId: string | undefined;
+    amount: number;
+    newBalance: number;
 }
 
 export class IssuePartialRefundCommand implements IIssuePartialRefundCommand {

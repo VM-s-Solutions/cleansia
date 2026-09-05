@@ -43,7 +43,10 @@ public class StripeClient : IStripeClient
 
     public async Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
     {
-        var unitAmount = ToMinorUnits(order.TotalPrice);
+        // AmountDueOnCard, not TotalPrice: credit is a tender, so the sale keeps its size and only
+        // the figure the card is asked for moves. Charging TotalPrice here would take the credit AND
+        // the full amount. -> Order.CreditAppliedAmount
+        var unitAmount = ToMinorUnits(order.AmountDueOnCard);
 
         var options = new SessionCreateOptions
         {

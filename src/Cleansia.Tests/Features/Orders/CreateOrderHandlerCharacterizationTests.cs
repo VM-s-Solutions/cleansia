@@ -40,6 +40,7 @@ public class CreateOrderHandlerCharacterizationTests
     private readonly Mock<IStripeClient> _stripeClient = new();
     private readonly Mock<IPendingDispatch> _pending = new();
     private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<IPromoCodeService> _promoCodeService = new();
     private readonly Mock<IReferralService> _referralService = new();
     private readonly Mock<IReferralRepository> _referralRepository = new();
@@ -130,7 +131,12 @@ public class CreateOrderHandlerCharacterizationTests
                 _pending.Object,
                 new OrderChannelProvider(channel),
                 NullLogger<OrderPaymentDispatcher>.Instance),
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            // No credit account: these suites characterize pricing, dispatch and the waiver slot, and
+            // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a
+            // customer who has never been credited looks like, and what every case here assumes.
+            _creditAccountRepository.Object,
+            NullLogger<CreateOrder.Handler>.Instance);
 
     private void ArrangeSavedAddress(string savedAddressId, string ownerUserId, Address? resolved = null)
     {

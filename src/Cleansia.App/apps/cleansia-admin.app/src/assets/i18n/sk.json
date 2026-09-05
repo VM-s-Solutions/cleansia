@@ -2369,6 +2369,11 @@
       "not_serviced": "V tejto krajine nepôsobíme.",
       "required": "Krajina je povinná."
     },
+    "credit": {
+      "amount_exceeds_sanity_cap": "Táto suma presahuje limit pre jeden kredit. Ak je správna, vystavte ju po menších sumách.",
+      "amount_not_whole_minor_units": "Suma kreditu nemôže byť menšia než stotina menovej jednotky.",
+      "reason_not_issuable": "Tento dôvod popisuje čerpanie kreditu, nie jeho pridelenie. Zvoľte vybavenie reklamácie, nedostavenie sa upratovačky alebo ústretový krok."
+    },
     "currency": {
       "cannot_delete_default": "Nie je možné odstrániť predvolenú menu",
       "code_already_exists": "Mena s týmto kódom už existuje",

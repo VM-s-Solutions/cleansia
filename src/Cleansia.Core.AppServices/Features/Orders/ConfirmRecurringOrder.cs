@@ -173,8 +173,12 @@ public class ConfirmRecurringOrder
                     stripeCustomerId, user.Id);
             }
 
+            // AmountDueOnCard on every charge surface without exception. Recurring orders never
+            // carry credit today (CreateOrder is the only path that applies it), so this is identical
+            // to TotalPrice right now - and it is written this way so that when they do, the third
+            // charge surface is not the one that quietly charges the card twice.
             var intent = await stripeClient.CreatePaymentIntentAsync(
-                amount: order.TotalPrice,
+                amount: order.AmountDueOnCard,
                 currency: order.Currency.Code,
                 stripeCustomerId: stripeCustomerId,
                 orderId: order.Id,

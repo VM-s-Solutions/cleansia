@@ -339,6 +339,15 @@ public static class BusinessErrorMessage
 
     /// <summary>A per-item review score names an item that is not on the order.</summary>
     public const string ReviewLineNotOnOrder = "review.line_not_on_order";
+
+    /// <summary>One manual credit grant is above the typo ceiling.</summary>
+    public const string CreditAmountExceedsSanityCap = "credit.amount_exceeds_sanity_cap";
+
+    /// <summary>A credit amount carrying more precision than the currency has minor units.</summary>
+    public const string CreditAmountNotWholeMinorUnits = "credit.amount_not_whole_minor_units";
+
+    /// <summary>A spend-side reason was used to ISSUE credit.</summary>
+    public const string CreditReasonNotIssuable = "credit.reason_not_issuable";
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";

@@ -2369,6 +2369,11 @@
       "not_serviced": "V této zemi nepůsobíme.",
       "required": "Země je povinná."
     },
+    "credit": {
+      "amount_exceeds_sanity_cap": "Tato částka přesahuje limit pro jeden kredit. Pokud je správná, vystavte ji po menších částkách.",
+      "amount_not_whole_minor_units": "Částka kreditu nemůže být menší než setina měnové jednotky.",
+      "reason_not_issuable": "Tento důvod popisuje čerpání kreditu, nikoli jeho přidělení. Zvolte vyřízení reklamace, nedostavení ýklidové pracovnice nebo vstřícný krok."
+    },
     "currency": {
       "cannot_delete_default": "Výchozí měnu nelze smazat",
       "code_already_exists": "Měna s tímto kódem již existuje",

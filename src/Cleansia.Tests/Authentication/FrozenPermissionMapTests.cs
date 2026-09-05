@@ -215,6 +215,10 @@ public class FrozenPermissionMapTests
 
         // Loyalty / Promo / Referral (customer)
         [Policy.CanViewMyLoyalty] = PhysicalPolicy.CustomerOnly,
+
+        // Credit (additive)
+        [Policy.CanViewMyCredit] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanIssueCustomerCredit] = PhysicalPolicy.AdminOnly,
         [Policy.CanRedeemPromoCode] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewMyReferral] = PhysicalPolicy.CustomerOnly,
 

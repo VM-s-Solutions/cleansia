@@ -14,37 +14,101 @@ public class CreditAccountRepository(CleansiaDbContext context)
             .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
     }
 
-    public async Task<bool> TryDebitAsync(
-        string creditAccountId, decimal amount, CancellationToken cancellationToken)
+    public async Task<CreditAccount> EnsureForUserAsync(
+        string userId, string currencyId, CancellationToken cancellationToken)
     {
-        if (amount <= 0m)
+        // No Include(Transactions). Issue() only APPENDS, and EF tracks an appended child without the
+        // collection pre-loaded - same reasoning as LoyaltyAccountRepository, and it matters more here
+        // because a long-lived customer's ledger is unbounded.
+        var existing = await GetDbSet()
+            .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
+
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var account = CreditAccount.Create(userId, currencyId, userId);
+        Add(account);
+        return account;
+    }
+
+    public async Task<CreditSpendable?> GetSpendableAsync(
+        string userId, CancellationToken cancellationToken)
+    {
+        var row = await GetDbSet()
+            .AsNoTracking()
+            .Where(a => a.UserId == userId)
+            .Select(a => new CreditSpendable(a.Id, a.Balance, a.CurrencyId))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return row;
+    }
+
+    public async Task<bool> TryDebitAsync(
+        string creditAccountId,
+        decimal amount,
+        CreditTransactionReason reason,
+        string idempotencyKey,
+        string actorId,
+        CancellationToken cancellationToken,
+        string? orderId = null,
+        string? note = null)
+    {
+        if (amount <= 0m || string.IsNullOrWhiteSpace(idempotencyKey))
         {
             return false;
         }
 
-        // A CONDITIONAL UPDATE is the arbiter, and nothing else can be.
+        // ONE STATEMENT, so the balance and the ledger cannot disagree.
         //
-        // A balance is an aggregate: two concurrent spends of 500 against a balance of 500 have no
-        // shared key to collide on, so no unique index can refuse the second one. Read-then-subtract
-        // in the app layer loses the race by construction. This is one SQL statement — Postgres
-        // evaluates `Balance >= amount` and applies the decrement under the same row lock — so the
-        // second spend matches zero rows and gets false.
+        // The first draft of this method decremented the balance and left the caller to record the
+        // movement. That is a footgun with money in it: the decrement auto-commits on its own, so a
+        // caller whose own transaction then rolled back would have taken the funds and written no
+        // ledger row, and nothing would ever notice — Balance == SUM(Transactions.Amount) is the one
+        // invariant this design has, and it would be quietly false.
         //
-        // It also refuses rather than clamping. LoyaltyAccount.RevokePoints does
-        // Math.Max(0, points - n), which on a tier counter is harmless and on money is a silent
-        // partial-spend: the customer would get the full discount and the ledger would floor at zero.
+        // A CTE rather than two statements in a transaction, deliberately. Postgres evaluates
+        // `Balance >= amount` and applies the decrement under one row lock, and the INSERT can only
+        // see rows the UPDATE actually returned — so insufficient funds writes nothing at all. It
+        // also needs no transaction management of its own, which matters because this is called from
+        // inside the UnitOfWork pipeline's transaction and opening a second one there would throw.
         //
-        // DELIBERATE EXCEPTION to "never commit outside the UnitOfWork pipeline", exactly as
-        // PromoCodeRepository.TryIncrementGlobalRedemptionsAsync documents: ExecuteUpdateAsync issues
-        // SQL immediately and is not change-tracked. That independence is REQUIRED — the funds must
-        // be taken (or refused) on their own, not at the end of whatever transaction the caller is in.
-        // The caller compensates by issuing the amount back if its own work then fails.
-        var rowsAffected = await GetQueryable()
-            .Where(a => a.Id == creditAccountId && a.Balance >= amount)
-            .ExecuteUpdateAsync(
-                s => s.SetProperty(a => a.Balance, a => a.Balance - amount),
-                cancellationToken);
+        // A balance is an AGGREGATE: two concurrent spends share no key, so no unique index can
+        // arbitrate them and a read-then-subtract loses the race by construction. The conditional
+        // UPDATE is the arbiter. It also REFUSES rather than clamping — LoyaltyAccount.RevokePoints
+        // does Math.Max(0, points - n), which is harmless on a tier counter and a silent
+        // partial-spend on money.
+        //
+        // The idempotency key is the second guard: CreditTransactions has a plain unique index on it,
+        // so a replayed spend raises 23505 and the whole statement — decrement included — rolls back.
+        var rowsAffected = await context.Database.ExecuteSqlAsync(
+            $"""
+            WITH debited AS (
+                UPDATE "CreditAccounts"
+                SET "Balance" = "Balance" - {amount},
+                    "UpdatedBy" = {actorId},
+                    "UpdatedOn" = NOW()
+                WHERE "Id" = {creditAccountId} AND "Balance" >= {amount}
+                RETURNING "Id"
+            )
+            INSERT INTO "CreditTransactions" (
+                "Id", "CreditAccountId", "Amount", "Reason", "OrderId", "DisputeId",
+                "IdempotencyKey", "Note", "IsActive", "TenantId", "CreatedBy", "CreatedOn")
+            SELECT
+                {NewId()}, debited."Id", {-amount}, {(int)reason}, {orderId}, NULL,
+                {idempotencyKey}, {note}, TRUE, NULL, {actorId}, NOW()
+            FROM debited
+            """,
+            cancellationToken);
 
         return rowsAffected > 0;
     }
+
+    /// <summary>
+    /// A ULID for the ledger row. The raw statement bypasses EF's key generation, so the id is
+    /// produced the same way <see cref="Core.Domain.Common.BaseEntity"/> produces it — a ULID —
+    /// rather than being invented here.
+    /// </summary>
+    private static string NewId() => Ulid.NewUlid().ToString();
 }

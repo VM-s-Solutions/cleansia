@@ -8,6 +8,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   FormBuilder,
@@ -35,6 +36,8 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DisputesFacade } from './disputes.facade';
 import {
   CustomerDisputeStatus,
+  DisputeLineOption,
+  disputeLineKey,
   DISPUTE_EVIDENCE_ALLOWED_CONTENT_TYPES,
   DISPUTE_EVIDENCE_MAX_FILE_SIZE_BYTES,
   DISPUTE_STATUS_LABEL_KEYS,
@@ -79,6 +82,7 @@ export class DisputesComponent implements OnInit {
   readonly disputeDetail = this.facade.disputeDetail;
   readonly detailLoading = this.facade.detailLoading;
   readonly orderOptions = this.facade.orderOptions;
+
   readonly sendingMessage = this.facade.sendingMessage;
 
   protected readonly descriptionMaxLength = DISPUTE_DESCRIPTION_MAX_LENGTH;
@@ -122,6 +126,69 @@ export class DisputesComponent implements OnInit {
       ],
     ],
   });
+
+  /**
+   * The order the form is about, as a signal, so the item list below can react to the select.
+   * `valueChanges` rather than reading the control in a computed: a FormControl is not a signal and a
+   * computed over one never re-evaluates.
+   */
+  private readonly selectedOrderId = toSignal(
+    this.createForm.controls.orderId.valueChanges,
+    { initialValue: '' },
+  );
+
+  /**
+   * WHAT WAS ON THIS ORDER — the services bought on their own, and the services inside each package.
+   *
+   * <p>The identity of every row is the server's own `(serviceId, packageId?)` pair, so a package's
+   * oven clean and a standalone oven clean on the same order are two different rows. That is not
+   * pedantry: an admin refunding one of them must not refund the other.</p>
+   *
+   * <p>Empty for an order with nothing on it, and empty before an order is picked — the section
+   * hides itself rather than showing an empty box.</p>
+   */
+  readonly disputeLineOptions = computed<DisputeLineOption[]>(() => {
+    const orderId = this.selectedOrderId();
+    if (!orderId) return [];
+
+    const order = this.facade.orders().find((o) => o.id === orderId);
+    if (!order) return [];
+
+    const options: DisputeLineOption[] = [];
+
+    for (const service of order.selectedServices ?? []) {
+      if (!service.id) continue;
+      options.push({
+        serviceId: service.id,
+        packageId: null,
+        key: disputeLineKey({ serviceId: service.id, packageId: null }),
+        label: this.itemName(service.name, service.translations),
+        packageLabel: null,
+      });
+    }
+
+    for (const pkg of order.selectedPackages ?? []) {
+      if (!pkg.id) continue;
+      const packageLabel = this.itemName(pkg.name, pkg.translations);
+      for (const included of pkg.includedServices ?? []) {
+        if (!included.serviceId) continue;
+        options.push({
+          serviceId: included.serviceId,
+          packageId: pkg.id,
+          key: disputeLineKey({ serviceId: included.serviceId, packageId: pkg.id }),
+          label: this.itemName(included.name, included.translations),
+          packageLabel,
+        });
+      }
+    }
+
+    return options;
+  });
+
+  /** Which rows are ticked. Keys, not objects, so the template can ask in constant time. */
+  readonly pickedLineKeys = signal<ReadonlySet<string>>(new Set());
+
+  readonly hasPickedLines = computed(() => this.pickedLineKeys().size > 0);
 
   readonly reasonOptions: ICleansiaSelectOption[] = [
     { label: this.translate.instant('pages.disputes.reasons.quality_issue'), value: DisputeReason.QualityIssue },
@@ -207,6 +274,7 @@ export class DisputesComponent implements OnInit {
       description: '',
     });
     this.pickedReason.set(DisputeReason.QualityIssue);
+    this.pickedLineKeys.set(new Set());
     this.evidenceControl.setValue([]);
   }
 
@@ -220,6 +288,33 @@ export class DisputesComponent implements OnInit {
     this.pickedReason.set(reason);
   }
 
+  /**
+   * The item's name in the reader's language, falling back to the stored name. Same shape the wizard
+   * uses; duplicated as four lines rather than imported, because reaching into the order-wizard
+   * library for a string lookup would cross a feature boundary for nothing.
+   */
+  private itemName(
+    name: string | undefined,
+    translations: { [key: string]: { name?: string } } | undefined,
+  ): string {
+    const lang = this.translate.currentLang || this.translate.getDefaultLang();
+    return translations?.[lang]?.name || name || '';
+  }
+
+  toggleLine(option: DisputeLineOption): void {
+    const next = new Set(this.pickedLineKeys());
+    if (next.has(option.key)) {
+      next.delete(option.key);
+    } else {
+      next.add(option.key);
+    }
+    this.pickedLineKeys.set(next);
+  }
+
+  isLinePicked(option: DisputeLineOption): boolean {
+    return this.pickedLineKeys().has(option.key);
+  }
+
   isUnread(dispute: DisputeListItem): boolean {
     return !!dispute.id && this.facade.unreadDisputeIds().has(dispute.id);
   }
@@ -231,12 +326,19 @@ export class DisputesComponent implements OnInit {
     }
 
     const { orderId, reason, description } = this.createForm.getRawValue();
+    // Only the rows still on the CURRENT order. Switching order after ticking something would
+    // otherwise send an item the server would reject as not-on-this-order, and the customer would see
+    // a validation error about a box they cannot see any more.
+    const picked = this.pickedLineKeys();
+    const lines = this.disputeLineOptions()
+      .filter((option) => picked.has(option.key))
+      .map(({ serviceId, packageId }) => ({ serviceId, packageId }));
     // The photos go with the dispute they are about, so they can only be sent
     // once it exists and has an id. Reading them BEFORE cancelNew clears the
     // form is the whole point — the reset empties the control.
     const evidence = [...this.evidenceControl.value];
 
-    this.facade.createDispute(orderId, reason, description, (disputeId) => {
+    this.facade.createDispute(orderId, reason, description, lines, (disputeId) => {
       this.cancelNew();
       // A brand-new dispute is the one to be looking at.
       this.selectedId.set(null);

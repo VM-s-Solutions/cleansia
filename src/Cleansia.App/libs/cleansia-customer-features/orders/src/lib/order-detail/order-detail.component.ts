@@ -21,6 +21,10 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
+import {
+  buildReviewLineOptions,
+  ReviewLineOption,
+} from './order-review-lines.models';
 import { OrderPreferredOfferFacade } from './order-preferred-offer.facade';
 
 /** One row on either status axis. -> the Detail artboard's "Kde to je" card. */
@@ -90,6 +94,26 @@ export class OrderDetailComponent implements OnInit {
 
   // Rating
   reviewRating = signal(0);
+
+  /**
+   * PER-ITEM SCORES — the second half of the original ask, and the half one overall number cannot
+   * carry: "the oven was spotless, the bathroom was skipped" is two facts, and a single 3 stars says
+   * neither of them.
+   *
+   * <p>Entirely optional and closed by default. The overall rating stays the required headline: a
+   * customer who wants to leave five stars and go should never meet this list.</p>
+   */
+  readonly reviewLinesOpen = signal(false);
+
+  readonly reviewLineOptions = computed(() =>
+    buildReviewLineOptions(this.order(), (name, translations) => {
+      const lang = this.translate.currentLang || this.translate.getDefaultLang();
+      return translations?.[lang]?.name || name || '';
+    }),
+  );
+
+  /** key -> 1..5. Absent means "not scored", which is different from scored badly. */
+  readonly reviewLineScores = signal<ReadonlyMap<string, number>>(new Map());
   reviewComment = signal('');
   reviewHover = signal(0);
   isCompleted = computed(
@@ -404,8 +428,39 @@ export class OrderDetailComponent implements OnInit {
     this.reviewRating.set(star);
   }
 
+  setReviewLineScore(option: ReviewLineOption, rating: number): void {
+    const next = new Map(this.reviewLineScores());
+    // Pressing the star you already chose clears it — the only way back to "not scored" once a row
+    // has been touched, and without it a mis-click is permanent.
+    if (next.get(option.key) === rating) {
+      next.delete(option.key);
+    } else {
+      next.set(option.key, rating);
+    }
+    this.reviewLineScores.set(next);
+  }
+
+  reviewLineScoreOf(option: ReviewLineOption): number {
+    return this.reviewLineScores().get(option.key) ?? 0;
+  }
+
+  toggleReviewLines(): void {
+    this.reviewLinesOpen.update((open) => !open);
+  }
+
   submitReview(): void {
-    this.facade.submitReview(this.reviewRating(), this.reviewComment());
+    // Only rows the customer actually scored. An unscored row is not a zero — the server would reject
+    // a rating outside 1..5, and "not scored" is a real answer that simply carries no line.
+    const scores = this.reviewLineScores();
+    const lines = this.reviewLineOptions()
+      .filter((option) => scores.has(option.key))
+      .map((option) => ({
+        serviceId: option.serviceId,
+        packageId: option.packageId,
+        rating: scores.get(option.key)!,
+      }));
+
+    this.facade.submitReview(this.reviewRating(), this.reviewComment(), lines);
   }
 
   protected getLocale(): string {

@@ -83,7 +83,6 @@
       "promo_code_edit": "Upravit promo kód",
       "promo_code_detail": "Detail promo kódu",
       "loyalty_tiers": "Věrnostní úrovně",
-      "loyalty_user_detail": "Věrnost uživatele",
       "loyalty_referrals": "Doporučení",
       "sitewide_push": "Hromadné oznámení",
       "not_found": "Stránka nenalezena",
@@ -93,7 +92,8 @@
       "membership_plan_create": "Vytvořit plán členství",
       "membership_plan_edit": "Upravit plán členství",
       "data_protection": "Ochrana údajů",
-      "profile": "Můj profil"
+      "profile": "Můj profil",
+      "customer_detail": "Zákazník"
     }
   },
   "components": {
@@ -1799,11 +1799,11 @@
       }
     },
     "loyalty_user_detail": {
-      "title": "Věrnost uživatele",
+      "title": "Zákazník",
       "title_for_user": "Věrnost pro {{email}}",
       "loading": "Načítání účtu...",
       "back": "Zpět na uživatele",
-      "view_link": "Zobrazit věrnost",
+      "view_link": "Zobrazit zákazníka",
       "tier_label": "Aktuální úroveň",
       "lifetime_points": "Celkové body",
       "completed_bookings_label": "Dokončené úklidy",

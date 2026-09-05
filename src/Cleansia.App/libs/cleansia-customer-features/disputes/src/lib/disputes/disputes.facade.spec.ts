@@ -285,7 +285,7 @@ describe('DisputesFacade', () => {
       disputeClient.create.mockReturnValue(of('new-dispute-id'));
       const onSuccess = jest.fn();
 
-      facade.createDispute('order-1', 1, 'description text', onSuccess);
+      facade.createDispute('order-1', 1, 'description text', [], onSuccess);
 
       expect(disputeClient.create).toHaveBeenCalledTimes(1);
       // Every member of a generated command is optional, so a dropped assignment
@@ -307,7 +307,7 @@ describe('DisputesFacade', () => {
       );
       const onSuccess = jest.fn();
 
-      facade.createDispute('order-1', 1, 'description text', onSuccess);
+      facade.createDispute('order-1', 1, 'description text', [], onSuccess);
 
       expect(anyErrorSnackbarShown()).toBe(true);
       expect(anySuccessSnackbarShown()).toBe(false);

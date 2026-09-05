@@ -17,10 +17,10 @@ public class CreditAtCheckoutTests
     [Theory]
     // Balance well under the ceiling: all of it is spendable.
     [InlineData(500, 2000, 500)]
-    // Balance above the ceiling: capped at 80% of the order, and the card pays the other 20%.
-    [InlineData(2000, 1000, 800)]
+    // Balance above the ceiling: capped at 70% of the order, and the card pays the other 30%.
+    [InlineData(2000, 1000, 700)]
     // Exactly at the ceiling.
-    [InlineData(800, 1000, 800)]
+    [InlineData(700, 1000, 700)]
     // No balance, no order, and negative nonsense all answer zero rather than throwing — this runs on
     // every card checkout, and it must be uneventful.
     [InlineData(0, 1000, 0)]
@@ -58,10 +58,10 @@ public class CreditAtCheckoutTests
     [Fact]
     public void CapCreditForOrder_IsWholeMinorUnits()
     {
-        // 80% of 33.33 is 26.664.
+        // 70% of 33.33 is 23.331.
         var applied = BookingPolicy.CapCreditForOrder(balance: 1000m, totalPrice: 33.33m);
 
-        Assert.Equal(26.66m, applied);
+        Assert.Equal(23.33m, applied);
     }
 
     /// <summary>

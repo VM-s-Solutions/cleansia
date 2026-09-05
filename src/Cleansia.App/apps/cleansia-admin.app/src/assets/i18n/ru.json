@@ -83,7 +83,6 @@
       "promo_code_edit": "Редактировать промо-код",
       "promo_code_detail": "Детали промо-кода",
       "loyalty_tiers": "Уровни лояльности",
-      "loyalty_user_detail": "Лояльность пользователя",
       "loyalty_referrals": "Рефералы",
       "sitewide_push": "Массовая рассылка",
       "not_found": "Страница не найдена",
@@ -93,7 +92,8 @@
       "membership_plan_create": "Создать план членства",
       "membership_plan_edit": "Редактировать план членства",
       "data_protection": "Защита данных",
-      "profile": "Мой профиль"
+      "profile": "Мой профиль",
+      "customer_detail": "Клиент"
     }
   },
   "components": {
@@ -1799,11 +1799,11 @@
       }
     },
     "loyalty_user_detail": {
-      "title": "Лояльность пользователя",
+      "title": "Клиент",
       "title_for_user": "Лояльность для {{email}}",
       "loading": "Загрузка аккаунта...",
       "back": "Назад к пользователю",
-      "view_link": "Просмотр лояльности",
+      "view_link": "Посмотреть клиента",
       "tier_label": "Текущий уровень",
       "lifetime_points": "Всего баллов",
       "completed_bookings_label": "Завершённые уборки",

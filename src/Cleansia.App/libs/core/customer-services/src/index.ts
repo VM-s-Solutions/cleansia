@@ -1,5 +1,9 @@
 export { CustomerClient, CUSTOMER_API_BASE_URL } from './lib/client/customer-base-client';
-export { SubmitOrderReviewCommand, OrderReviewDto } from './lib/client/customer-client';
+export {
+  SubmitOrderReviewCommand,
+  SubmitOrderReviewReviewLineScore,
+  OrderReviewDto,
+} from './lib/client/customer-client';
 export {
   LoyaltyClient,
   GetMyCreditResponse,
@@ -166,6 +170,7 @@ export {
   DisputeMessageDto,
   DisputeReason,
   CreateDisputeCommand,
+  CreateDisputeDisputeLineSelection,
   CreateDisputeResponse,
   AddDisputeMessageCommand,
   UploadDisputeEvidenceResponse,

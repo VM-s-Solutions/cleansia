@@ -12736,6 +12736,7 @@ export interface IPackageServiceRef {
 }
 
 export class PackageServiceSummary implements IPackageServiceSummary {
+    serviceId!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
 
@@ -12750,6 +12751,7 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 
     init(Data?: any) {
         if (Data) {
+            this.serviceId = Data["serviceId"];
             this.name = Data["name"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -12770,6 +12772,7 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
         data["name"] = this.name;
         if (this.translations) {
             data["translations"] = {};
@@ -12783,6 +12786,7 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 }
 
 export interface IPackageServiceSummary {
+    serviceId: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
 }

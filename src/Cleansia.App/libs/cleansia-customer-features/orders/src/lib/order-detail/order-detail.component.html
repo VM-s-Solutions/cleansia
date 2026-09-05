@@ -317,6 +317,67 @@
             (input)="reviewComment.set($any($event.target).value)"
             [placeholder]="'pages.order_detail.review.comment_placeholder' | translate"
           ></textarea>
+
+          <!--
+            PER-ITEM SCORES. Closed by default and behind a plain disclosure: the overall rating above
+            is the required one, and a customer who wants to leave five stars and go should never meet
+            this list. Opened, it is one star row per thing they actually bought — which is what an
+            overall number cannot say when the oven was spotless and the bathroom was skipped.
+          -->
+          @if (reviewLineOptions().length > 0) {
+          <div class="order-detail__review-lines">
+            <button
+              type="button"
+              class="order-detail__review-lines-toggle"
+              [attr.aria-expanded]="reviewLinesOpen()"
+              (click)="toggleReviewLines()"
+            >
+              <i [class]="reviewLinesOpen() ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
+              {{ 'pages.order_detail.review.rate_items' | translate }}
+            </button>
+
+            @if (reviewLinesOpen()) {
+            <p class="order-detail__review-lines-hint">
+              {{ 'pages.order_detail.review.rate_items_hint' | translate }}
+            </p>
+            <ul class="order-detail__review-line-list">
+              @for (option of reviewLineOptions(); track option.key) {
+              <li class="order-detail__review-line">
+                <span class="order-detail__review-line-text">
+                  <span class="order-detail__review-line-name">{{ option.label }}</span>
+                  @if (option.packageLabel) {
+                  <span class="order-detail__review-line-pkg">{{
+                    'pages.order_detail.review.item_in_package'
+                      | translate: { package: option.packageLabel }
+                  }}</span>
+                  }
+                </span>
+                <span class="order-detail__review-line-stars">
+                  @for (star of stars; track star) {
+                  <button
+                    type="button"
+                    class="order-detail__review-line-star"
+                    [attr.aria-label]="
+                      'pages.order_detail.review.rate_item_star'
+                        | translate: { item: option.label, stars: star }
+                    "
+                    [attr.aria-pressed]="reviewLineScoreOf(option) === star"
+                    (click)="setReviewLineScore(option, star)"
+                  >
+                    <i
+                      [class]="
+                        star <= reviewLineScoreOf(option) ? 'pi pi-star-fill' : 'pi pi-star'
+                      "
+                    ></i>
+                  </button>
+                  }
+                </span>
+              </li>
+              }
+            </ul>
+            }
+          </div>
+          }
           <cleansia-button
             [title]="'pages.order_detail.review.submit' | translate"
             [severity]="'primary'"

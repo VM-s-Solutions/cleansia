@@ -66,6 +66,41 @@
         </div>
       </div>
 
+      <!--
+        WHICH PARTS WENT WRONG. Appears only once an order is picked and only if that order had items
+        to point at — an empty box under a select the customer has not touched yet is noise.
+
+        Checkboxes rather than chips: unlike the reason above, this is a MULTI-select, and a row of
+        pressed-looking chips reads as "pick one". Optional throughout — a dispute about the whole job
+        names nothing, which is the common case and must stay the path of least resistance.
+      -->
+      @if (disputeLineOptions().length > 0) {
+      <div class="cl-dsp__field cl-dsp__lines">
+        <span class="cl-dsp__label">{{ 'pages.disputes.which_items' | translate }}</span>
+        <p class="cl-dsp__hint">{{ 'pages.disputes.which_items_hint' | translate }}</p>
+        <div class="cl-dsp__line-list">
+          @for (option of disputeLineOptions(); track option.key) {
+          <label class="cl-dsp__line" [class.cl-dsp__line--on]="isLinePicked(option)">
+            <input
+              type="checkbox"
+              class="cl-dsp__line-box"
+              [checked]="isLinePicked(option)"
+              (change)="toggleLine(option)"
+            />
+            <span class="cl-dsp__line-text">
+              <span class="cl-dsp__line-name">{{ option.label }}</span>
+              @if (option.packageLabel) {
+              <span class="cl-dsp__line-pkg">{{
+                'pages.disputes.item_in_package' | translate: { package: option.packageLabel }
+              }}</span>
+              }
+            </span>
+          </label>
+          }
+        </div>
+      </div>
+      }
+
       <div class="cl-dsp__field">
         <cleansia-textarea
           [floatVariant]="null"

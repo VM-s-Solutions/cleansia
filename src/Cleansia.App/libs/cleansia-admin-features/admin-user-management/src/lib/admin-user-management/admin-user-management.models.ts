@@ -8,7 +8,7 @@ export function getAdminUserTableDefinition(
   defs: {
     onEdit: (row: AdminUserListItem) => void;
     onToggleStatus: (row: AdminUserListItem) => void;
-    onViewLoyalty: (row: AdminUserListItem) => void;
+    onViewCustomer: (row: AdminUserListItem) => void;
   },
   translate: TranslateService,
   permissions: PermissionService,
@@ -80,7 +80,7 @@ export function getAdminUserTableDefinition(
         icon: 'pi pi-star',
         tooltip: translate.instant('pages.loyalty_user_detail.view_link'),
         color: 'info',
-        onClick: (row: AdminUserListItem) => defs.onViewLoyalty(row),
+        onClick: (row: AdminUserListItem) => defs.onViewCustomer(row),
         visible: () => permissions.hasPolicy(Policy.CanViewUserLoyalty),
       },
       {

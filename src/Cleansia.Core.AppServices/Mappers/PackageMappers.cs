@@ -15,6 +15,7 @@ public static class PackageMappers
             Price: package.Price,
             Translations: package.Translations.ToDictionary(),
             IncludedServices: package.IncludedServices.Select(ps => new PackageServiceSummary(
+                ps.ServiceId,
                 ps.Service.Name,
                 ps.Service.Translations.ToDictionary())));
     }

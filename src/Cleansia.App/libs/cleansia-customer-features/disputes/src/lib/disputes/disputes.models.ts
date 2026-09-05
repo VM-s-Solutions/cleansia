@@ -5,6 +5,33 @@ import {
 } from '@cleansia/customer-services';
 import { TagSeverity } from '@cleansia/types';
 
+/**
+ * One item of an order a customer can point at when filing a dispute.
+ *
+ * The identity is the pair the server uses — `(serviceId, packageId?)`. A standalone service leaves
+ * `packageId` null; a service that came inside a bundle carries both, because "the oven clean in the
+ * Deep Clean package" and "the oven clean I bought on its own" are different lines on the same order
+ * and an admin refunding one must not refund the other.
+ * -> CreateDispute.DisputeLineSelection
+ */
+export interface DisputeLineSelection {
+  serviceId: string;
+  packageId: string | null;
+}
+
+/** A selectable line, with the label the customer reads and a key the template can track by. */
+export interface DisputeLineOption extends DisputeLineSelection {
+  key: string;
+  label: string;
+  /** The bundle this item came in, so the list can say "Oven clean — in Deep Clean". */
+  packageLabel: string | null;
+}
+
+/** Stable within one order: the server's own identity, flattened. */
+export function disputeLineKey(line: DisputeLineSelection): string {
+  return `${line.packageId ?? ''}|${line.serviceId}`;
+}
+
 // Mirrors the backend DisputeStatus enum — the generated customer client does
 // not expose it (no customer endpoint takes it as a typed parameter yet).
 export enum CustomerDisputeStatus {

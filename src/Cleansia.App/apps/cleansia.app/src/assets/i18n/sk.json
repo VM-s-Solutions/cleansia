@@ -1093,7 +1093,11 @@
         "comment_placeholder": "Napíšte nám o svojom zážitku (nepovinné)",
         "submit": "Odoslať hodnotenie",
         "success": "Ďakujeme za vaše hodnotenie!",
-        "error": "Nepodarilo sa odoslať hodnotenie"
+        "error": "Nepodarilo sa odoslať hodnotenie",
+        "rate_items": "Ohodnotiť každú službu zvlášť",
+        "rate_items_hint": "Nepovinné. Hodí sa, keď jedna časť dopadla dobre a iná nie — povie nám presne, kam sa pozrieť.",
+        "item_in_package": "v balíku {{package}}",
+        "rate_item_star": "Dať službe {{item}} {{stars}} hviezdičiek"
       },
       "cancellation_reason": {
         "payment_not_completed": "Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.",
@@ -1239,7 +1243,10 @@
       "none_item2": "Poškodená vec — poistenie riešime za vás.",
       "none_item3": "Suma, ktorá nesedí, alebo platba, ktorú ste neschválili.",
       "my_orders": "Moje objednávky",
-      "attach_photo": "Priložiť fotku"
+      "attach_photo": "Priložiť fotku",
+      "which_items": "Čo konkrétne nedopadlo?",
+      "which_items_hint": "Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celý upratovanie, nechajte prázdne.",
+      "item_in_package": "v balíku {{package}}"
     },
     "rewards": {
       "title": "Odmeny",

@@ -96,16 +96,16 @@ public static class BookingPolicy
     /// The most of one order a customer's credit balance may settle. The rest goes on the card.
     ///
     /// <para>Owner ruling 2026-09-05: a customer must never be able to pay for a clean with credit
-    /// alone - "some amount/percentage is paid from their credit card". 80% is generous enough that a
-    /// goodwill credit for a bad clean is normally spent in one go, while every order still produces a
-    /// real card charge: a capture surface to refund against if the next clean also goes wrong, and a
-    /// live payment method on file.</para>
+    /// alone - "some amount/percentage is paid from their credit card". Owner set the share at 70%
+    /// (2026-09-05): generous enough that a goodwill credit for a bad clean is usually spent in one
+    /// go, while every order still produces a real card charge - a capture surface to refund against
+    /// if the next clean also goes wrong, and a live payment method on file.</para>
     ///
     /// <para>It is a share of <c>TotalPrice</c>, not of the discounted subtotal, because credit is a
     /// TENDER - the sale keeps its size and only the figure sent to Stripe moves.
     /// -> Order.CreditAppliedAmount</para>
     /// </summary>
-    public const decimal MaxCreditShareOfOrder = 0.80m;
+    public const decimal MaxCreditShareOfOrder = 0.70m;
 
     /// <summary>
     /// How much of <paramref name="balance"/> may be spent on an order of

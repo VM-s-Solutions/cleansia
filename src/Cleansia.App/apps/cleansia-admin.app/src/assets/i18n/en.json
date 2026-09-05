@@ -83,7 +83,6 @@
       "promo_code_edit": "Edit promo code",
       "promo_code_detail": "Promo code details",
       "loyalty_tiers": "Loyalty tiers",
-      "loyalty_user_detail": "User loyalty",
       "loyalty_referrals": "Referrals",
       "sitewide_push": "Sitewide Push",
       "not_found": "Page Not Found",
@@ -93,7 +92,8 @@
       "membership_plan_create": "Create Membership Plan",
       "membership_plan_edit": "Edit Membership Plan",
       "data_protection": "Data Protection",
-      "profile": "My Profile"
+      "profile": "My Profile",
+      "customer_detail": "Customer"
     }
   },
   "components": {
@@ -1799,11 +1799,11 @@
       }
     },
     "loyalty_user_detail": {
-      "title": "User loyalty",
+      "title": "Customer",
       "title_for_user": "Loyalty for {{email}}",
       "loading": "Loading account...",
       "back": "Back to user",
-      "view_link": "View loyalty",
+      "view_link": "View customer",
       "tier_label": "Current tier",
       "lifetime_points": "Lifetime points",
       "completed_bookings_label": "Completed bookings",

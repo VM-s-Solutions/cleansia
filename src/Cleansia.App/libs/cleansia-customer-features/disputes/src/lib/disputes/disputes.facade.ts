@@ -12,6 +12,7 @@ import {
   CustomerClient,
   AddDisputeMessageCommand,
   CreateDisputeCommand,
+  CreateDisputeDisputeLineSelection,
   DisputeListItem,
   DisputeReason,
   FileParameter,
@@ -34,10 +35,11 @@ import {
   CustomerDisputeStatus,
   DISPUTE_UPLOAD_ERROR_KEY_MAP,
   DISPUTE_UPLOAD_FALLBACK_ERROR_KEY,
+  DisputeLineSelection,
   hasUnreadStaffReply,
   latestStaffMessageTimestamp,
-  validateEvidenceFile,
   readCreatedDisputeId,
+  validateEvidenceFile,
 } from './disputes.models';
 
 const LAST_VIEWED_STORAGE_KEY = 'cleansia.customer.disputes.last_viewed';
@@ -64,7 +66,13 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     initialValue: false,
   });
 
-  private readonly orders = toSignal(this.store.select(selectCustomerOrders), {
+  /**
+   * The customer's orders, whole. Public because the dispute form needs more than a label per order:
+   * once a customer picks one, the form lists the services and packages that were ON it so they can
+   * point at the parts that went wrong. Every item is already here — the list endpoint returns them —
+   * so naming them costs no extra request.
+   */
+  readonly orders = toSignal(this.store.select(selectCustomerOrders), {
     initialValue: [] as OrderListItem[],
   });
   readonly orderOptions = computed(() =>
@@ -205,6 +213,7 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     orderId: string,
     reason: DisputeReason,
     description: string,
+    lines: DisputeLineSelection[],
     onSuccess: (disputeId: string | null) => void
   ): void {
     if (this.creatingDispute()) return;
@@ -214,6 +223,18 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     command.orderId = orderId;
     command.reason = reason;
     command.description = description;
+    // Which items went wrong. Optional and usually empty — a dispute about the whole job, or about a
+    // charge, names none — so an empty selection is sent as undefined rather than an empty array, and
+    // the server treats the two the same. One description per dispute, per the owner's ruling: these
+    // say WHICH, the description says WHAT.
+    command.lines = lines.length
+      ? lines.map((line) => {
+          const selection = new CreateDisputeDisputeLineSelection();
+          selection.serviceId = line.serviceId;
+          selection.packageId = line.packageId ?? undefined;
+          return selection;
+        })
+      : undefined;
 
     this.customerClient.disputeClient
       .create(command)

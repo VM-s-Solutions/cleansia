@@ -83,7 +83,6 @@
       "promo_code_edit": "Upraviť promo kód",
       "promo_code_detail": "Detail promo kódu",
       "loyalty_tiers": "Vernostné úrovne",
-      "loyalty_user_detail": "Vernosť používateľa",
       "loyalty_referrals": "Odporúčania",
       "sitewide_push": "Hromadné oznámenie",
       "not_found": "Stránka nebola nájdená",
@@ -93,7 +92,8 @@
       "membership_plan_create": "Vytvoriť plán členstva",
       "membership_plan_edit": "Upraviť plán členstva",
       "data_protection": "Ochrana údajov",
-      "profile": "Môj profil"
+      "profile": "Môj profil",
+      "customer_detail": "Zákazník"
     }
   },
   "components": {
@@ -1799,11 +1799,11 @@
       }
     },
     "loyalty_user_detail": {
-      "title": "Vernosť používateľa",
+      "title": "Zákazník",
       "title_for_user": "Vernosť pre {{email}}",
       "loading": "Načítavanie účtu...",
       "back": "Späť na používateľa",
-      "view_link": "Zobraziť vernosť",
+      "view_link": "Zobraziť zákazníka",
       "tier_label": "Aktuálna úroveň",
       "lifetime_points": "Celkové body",
       "completed_bookings_label": "Dokončené upratovania",

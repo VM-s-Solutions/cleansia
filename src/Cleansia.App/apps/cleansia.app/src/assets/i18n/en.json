@@ -1093,7 +1093,11 @@
         "comment_placeholder": "Tell us about your experience (optional)",
         "submit": "Submit Review",
         "success": "Thank you for your review!",
-        "error": "Failed to submit review"
+        "error": "Failed to submit review",
+        "rate_items": "Rate each service separately",
+        "rate_items_hint": "Optional. Useful when one part went well and another did not — it tells us exactly where to look.",
+        "item_in_package": "in {{package}}",
+        "rate_item_star": "Give {{item}} {{stars}} stars"
       },
       "cancellation_reason": {
         "payment_not_completed": "The payment wasn't completed, so this booking was released.",
@@ -1239,7 +1243,10 @@
       "none_item2": "Something damaged — we handle the insurance for you.",
       "none_item3": "An amount that doesn't add up, or a payment you didn't approve.",
       "my_orders": "My orders",
-      "attach_photo": "Attach photo"
+      "attach_photo": "Attach photo",
+      "which_items": "Which parts went wrong?",
+      "which_items_hint": "Optional. Tick the services that were not done properly — it helps us put it right faster. Leave it empty if the whole clean was the problem.",
+      "item_in_package": "in {{package}}"
     },
     "rewards": {
       "title": "Rewards",

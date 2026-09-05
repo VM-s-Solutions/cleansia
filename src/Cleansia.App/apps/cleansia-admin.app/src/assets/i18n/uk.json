@@ -83,7 +83,6 @@
       "promo_code_edit": "Редагувати промо-код",
       "promo_code_detail": "Деталі промо-коду",
       "loyalty_tiers": "Рівні лояльності",
-      "loyalty_user_detail": "Лояльність користувача",
       "loyalty_referrals": "Реферали",
       "sitewide_push": "Розсилка push",
       "not_found": "Сторінку не знайдено",
@@ -93,7 +92,8 @@
       "membership_plan_create": "Створити план членства",
       "membership_plan_edit": "Редагувати план членства",
       "data_protection": "Захист даних",
-      "profile": "Мій профіль"
+      "profile": "Мій профіль",
+      "customer_detail": "Клієнт"
     }
   },
   "components": {
@@ -1799,11 +1799,11 @@
       }
     },
     "loyalty_user_detail": {
-      "title": "Лояльність користувача",
+      "title": "Клієнт",
       "title_for_user": "Лояльність для {{email}}",
       "loading": "Завантаження облікового запису...",
       "back": "Назад до користувача",
-      "view_link": "Переглянути лояльність",
+      "view_link": "Переглянути клієнта",
       "tier_label": "Поточний рівень",
       "lifetime_points": "Загальні бали",
       "completed_bookings_label": "Завершені прибирання",

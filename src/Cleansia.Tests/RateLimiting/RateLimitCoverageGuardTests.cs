@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -107,6 +108,148 @@ public class RateLimitCoverageGuardTests
     private static string? EffectivePolicyOf(MethodInfo action) =>
         action.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName
         ?? action.DeclaringType!.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName;
+
+    /// <summary>
+    /// Every controller in the five host assemblies, found by reflection rather than by memory.
+    ///
+    /// <para>The list above is the contract; THIS is the thing that notices a controller that never
+    /// made it onto the list. A hand-enumerated roster fails OPEN: a new money endpoint on a new
+    /// controller is not weakly covered by it, it is invisible to it, and the suite stays green.</para>
+    /// </summary>
+    private static IEnumerable<Type> AllHostControllers() =>
+        new[]
+        {
+            typeof(Cleansia.Web.Customer.Controllers.PaymentController).Assembly,
+            typeof(Cleansia.Web.Mobile.Customer.Controllers.PaymentController).Assembly,
+            typeof(Cleansia.Web.Partner.Controllers.PaymentController).Assembly,
+            typeof(Cleansia.Web.Mobile.Partner.Controllers.OrderController).Assembly,
+            typeof(Cleansia.Web.Admin.Controllers.AdminAuthController).Assembly,
+        }
+        .SelectMany(a => a.GetTypes())
+        .Where(t => t is { IsAbstract: false, IsClass: true }
+            && typeof(ControllerBase).IsAssignableFrom(t)
+            && MutatingActionsOf(t).Any());
+
+    /// <summary>
+    /// Mutating actions that carry NO rate-limit window today.
+    ///
+    /// <para><b>These are gaps, not decisions.</b> Nothing here has been ruled safe — the list exists
+    /// so the sweep below can be fail-CLOSED about everything else while the owner decides what to do
+    /// about these 50. It is a baseline that may only ever SHRINK, which is
+    /// the same shape check-module-boundaries uses for its known violations.</para>
+    ///
+    /// <para>Several are worth reading rather than skimming: <c>AdminUserController.CreateAdminUser</c>
+    /// mints an administrator, <c>AdminPromoCodeController.CreatePromoCode</c> mints money, and both
+    /// <c>SavedAddressController</c> pairs are customer-facing writes on an authenticated surface.</para>
+    /// </summary>
+    private static readonly HashSet<string> KnownUncovered = new(StringComparer.Ordinal)
+    {
+        "Cleansia.Web.Admin.Controllers.AdminCompanyController.CreateCompanyInfo",
+        "Cleansia.Web.Admin.Controllers.AdminCompanyController.UpdateCompanyInfo",
+        "Cleansia.Web.Admin.Controllers.AdminCompanyController.DeleteCompanyInfo",
+        "Cleansia.Web.Admin.Controllers.AdminCountryController.CreateCountry",
+        "Cleansia.Web.Admin.Controllers.AdminCountryController.UpdateCountry",
+        "Cleansia.Web.Admin.Controllers.AdminCountryController.DeleteCountry",
+        "Cleansia.Web.Admin.Controllers.AdminCountryController.SetServiced",
+        "Cleansia.Web.Admin.Controllers.AdminCurrencyController.CreateCurrency",
+        "Cleansia.Web.Admin.Controllers.AdminCurrencyController.UpdateCurrency",
+        "Cleansia.Web.Admin.Controllers.AdminCurrencyController.DeleteCurrency",
+        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.GetPagedDocuments",
+        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.ApproveDocument",
+        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.RejectDocument",
+        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.SaveRequirement",
+        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.DeleteRequirement",
+        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.ResolveDeletionRequest",
+        "Cleansia.Web.Admin.Controllers.AdminFeatureFlagController.Create",
+        "Cleansia.Web.Admin.Controllers.AdminFeatureFlagController.Toggle",
+        "Cleansia.Web.Admin.Controllers.AdminFeatureFlagController.Delete",
+        "Cleansia.Web.Admin.Controllers.AdminFiscalFailureController.RetryFiscalRegistration",
+        "Cleansia.Web.Admin.Controllers.AdminFiscalFailureController.AcknowledgeFiscalFailure",
+        "Cleansia.Web.Admin.Controllers.AdminLanguageController.CreateLanguage",
+        "Cleansia.Web.Admin.Controllers.AdminLanguageController.UpdateLanguage",
+        "Cleansia.Web.Admin.Controllers.AdminLanguageController.DeleteLanguage",
+        "Cleansia.Web.Admin.Controllers.AdminLoyaltyTierController.UpdateTierConfig",
+        "Cleansia.Web.Admin.Controllers.AdminLoyaltyTierController.PreviewThresholdImpact",
+        "Cleansia.Web.Admin.Controllers.AdminPackageController.CreatePackage",
+        "Cleansia.Web.Admin.Controllers.AdminPackageController.UpdatePackage",
+        "Cleansia.Web.Admin.Controllers.AdminPackageController.DeletePackage",
+        "Cleansia.Web.Admin.Controllers.AdminPromoCodeController.CreatePromoCode",
+        "Cleansia.Web.Admin.Controllers.AdminPromoCodeController.UpdatePromoCode",
+        "Cleansia.Web.Admin.Controllers.AdminPromoCodeController.DeactivatePromoCode",
+        "Cleansia.Web.Admin.Controllers.AdminServiceCityController.CreateServiceCity",
+        "Cleansia.Web.Admin.Controllers.AdminServiceCityController.UpdateServiceCity",
+        "Cleansia.Web.Admin.Controllers.AdminServiceCityController.DeleteServiceCity",
+        "Cleansia.Web.Admin.Controllers.AdminServiceController.CreateService",
+        "Cleansia.Web.Admin.Controllers.AdminServiceController.UpdateService",
+        "Cleansia.Web.Admin.Controllers.AdminServiceController.DeleteService",
+        "Cleansia.Web.Admin.Controllers.AdminUserController.CreateAdminUser",
+        "Cleansia.Web.Admin.Controllers.AdminUserController.UpdateAdminUser",
+        "Cleansia.Web.Admin.Controllers.AdminUserController.DeactivateAdminUser",
+        "Cleansia.Web.Admin.Controllers.AdminUserController.ActivateAdminUser",
+        "Cleansia.Web.Customer.Controllers.SavedAddressController.Add",
+        "Cleansia.Web.Customer.Controllers.SavedAddressController.SetDefault",
+        "Cleansia.Web.Customer.Controllers.SavedAddressController.Update",
+        "Cleansia.Web.Customer.Controllers.SavedAddressController.Delete",
+        "Cleansia.Web.Mobile.Customer.Controllers.SavedAddressController.Add",
+        "Cleansia.Web.Mobile.Customer.Controllers.SavedAddressController.SetDefault",
+        "Cleansia.Web.Mobile.Customer.Controllers.SavedAddressController.Update",
+        "Cleansia.Web.Mobile.Customer.Controllers.SavedAddressController.Delete",
+    };
+
+    /// <summary>
+    /// Every mutating action in every host, not just the ones somebody remembered to list.
+    ///
+    /// <para>The roster above is a hand-written array. That shape fails OPEN: a money endpoint on a
+    /// controller nobody added is not weakly covered by it, it is invisible to it, and the suite
+    /// stays green. Nineteen controllers had already drifted off it. This finds them by reflection
+    /// instead, so the only way a new uncovered action can pass is if someone writes it into
+    /// <see cref="KnownUncovered"/> — a deliberate act with a name attached, not an omission.</para>
+    /// </summary>
+    [Fact]
+    public void No_Mutating_Action_In_Any_Host_Is_Silently_Unlimited()
+    {
+        var newlyUncovered = new List<string>();
+
+        foreach (var controller in AllHostControllers())
+        foreach (var action in MutatingActionsOf(controller))
+        {
+            var disabled = action.GetCustomAttribute<DisableRateLimitingAttribute>() is not null;
+            if (!disabled && EffectivePolicyOf(action) is not null)
+            {
+                continue;
+            }
+
+            var id = $"{controller.FullName}.{action.Name}";
+            if (!KnownUncovered.Contains(id))
+            {
+                newlyUncovered.Add(id);
+            }
+        }
+
+        Assert.True(newlyUncovered.Count == 0,
+            "S5 — these mutating actions carry no rate-limit window and are not in the recorded "
+            + "baseline. Add [EnableRateLimiting], or add them to KnownUncovered with a reason:\n  "
+            + string.Join("\n  ", newlyUncovered.OrderBy(x => x, StringComparer.Ordinal)));
+    }
+
+    /// <summary>
+    /// The baseline may only shrink. Without this an entry could outlive the action it names, and the
+    /// list would quietly become fiction.
+    /// </summary>
+    [Fact]
+    public void The_Uncovered_Baseline_Contains_Nothing_Stale()
+    {
+        var live = AllHostControllers()
+            .SelectMany(c => MutatingActionsOf(c).Select(a => $"{c.FullName}.{a.Name}"))
+            .ToHashSet(StringComparer.Ordinal);
+
+        var stale = KnownUncovered.Where(id => !live.Contains(id))
+            .OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+        Assert.True(stale.Count == 0,
+            "These KnownUncovered entries name actions that no longer exist. Remove them:\n  "
+            + string.Join("\n  ", stale));
+    }
 
     [Fact]
     public void Every_Mutating_Action_On_Money_Controllers_Carries_A_RateLimit_Window()

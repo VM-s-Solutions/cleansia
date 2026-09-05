@@ -252,6 +252,74 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
         Assert.Equal(0m, await repo.GetReturnedTotalForOrderAsync("other-order", CancellationToken.None));
     }
 
+    /// <summary>
+    /// THE ONE THAT WOULD ROT SILENTLY. Both the debit and the return are raw SQL that bypasses the
+    /// entity, so neither runs <c>CreditAccount.Touch()</c> — they set <c>ExpiresOn</c> themselves.
+    ///
+    /// <para>Get it wrong and nothing fails: a customer who spends credit today keeps an expiry date
+    /// from a year ago, and the nightly sweep takes the rest of their balance. There is no exception,
+    /// no log line and no test that would notice, which is exactly why this one exists.</para>
+    /// </summary>
+    [Fact]
+    public async Task SpendingAndReturningBothPushTheExpiryOut()
+    {
+        await ResetAsync();
+        var (userId, currencyId) = await SeedCustomerAsync(800m);
+
+        string accountId;
+        DateTimeOffset? afterGrant;
+        await using (var read = NewContext())
+        {
+            var account = await read.CreditAccounts.AsNoTracking().SingleAsync(a => a.UserId == userId);
+            accountId = account.Id;
+            afterGrant = account.ExpiresOn;
+        }
+        Assert.NotNull(afterGrant);
+
+        // Push the date into the past, as a year of sitting still would.
+        await using (var age = NewContext())
+        {
+            await age.Database.ExecuteSqlAsync(
+                $"""UPDATE "CreditAccounts" SET "ExpiresOn" = NOW() - INTERVAL '1 day' WHERE "Id" = {accountId}""");
+        }
+
+        await using (var spend = NewContext())
+        {
+            Assert.True(await new CreditAccountRepository(spend).TryDebitAsync(
+                accountId, 100m, CreditTransactionReason.OrderPayment,
+                "order-payment-expiry-probe", ActorId, CancellationToken.None, orderId: OrderId));
+        }
+
+        await using (var read = NewContext())
+        {
+            var afterSpend = (await read.CreditAccounts.AsNoTracking()
+                .SingleAsync(a => a.Id == accountId)).ExpiresOn;
+            Assert.NotNull(afterSpend);
+            Assert.True(
+                afterSpend > DateTimeOffset.UtcNow.AddDays(1),
+                $"spending must push the expiry out, but it is {afterSpend}");
+        }
+
+        // And again, for the return.
+        await using (var age = NewContext())
+        {
+            await age.Database.ExecuteSqlAsync(
+                $"""UPDATE "CreditAccounts" SET "ExpiresOn" = NOW() - INTERVAL '1 day' WHERE "Id" = {accountId}""");
+        }
+
+        Assert.True(await ReturnAsync(userId, currencyId, 100m, "credit-return:expiry-probe"));
+
+        await using (var read = NewContext())
+        {
+            var afterReturn = (await read.CreditAccounts.AsNoTracking()
+                .SingleAsync(a => a.Id == accountId)).ExpiresOn;
+            Assert.NotNull(afterReturn);
+            Assert.True(
+                afterReturn > DateTimeOffset.UtcNow.AddDays(1),
+                $"a return must push the expiry out, but it is {afterReturn}");
+        }
+    }
+
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
         private string? _tenantId = tenantId;

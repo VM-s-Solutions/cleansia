@@ -24,4 +24,13 @@ public enum CreditTransactionReason
 
     /// <summary>Returned to the balance because the order it paid for was refunded or cancelled.</summary>
     OrderPaymentReturned = 11,
+
+    /// <summary>
+    /// Taken because it expired, or because an admin discharged it at the customer's request.
+    ///
+    /// <para>One reason for both: the movement and its consequence are identical, and the note on the
+    /// row says which it was. An admin discharging a balance is how a customer who wants to be erased
+    /// gets past the positive-balance refusal. → CreditAccount.ExpiryMonths</para>
+    /// </summary>
+    Expired = 12,
 }

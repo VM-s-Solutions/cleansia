@@ -31,6 +31,24 @@ public class AdminCreditController(IMediator mediator) : ApiController(mediator)
         return HandleResult<IssueCustomerCredit.Response>(result);
     }
 
+    [HttpPost("expire")]
+    [Permission(Policy.CanExpireCustomerCredit)]
+    // S5 / ADR-0003: money OFF a balance. Same "auth" window as issuing it — the tightest registered
+    // one — because a retry storm here discharges balances, and the RequestId collapse is the
+    // idempotency half rather than the throttling one.
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ExpireCustomerCredit.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Expire(
+        [FromBody] ExpireCustomerCredit.Command command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ExpireCustomerCredit.Response>(result);
+    }
+
     [HttpGet("user/{userId}")]
     [Permission(Policy.CanViewUserCredit)]
     [ProducesResponseType(typeof(GetUserCredit.Response), StatusCodes.Status200OK)]

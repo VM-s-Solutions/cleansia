@@ -713,7 +713,8 @@
       "email_verified": "E-mail je overený. Zmena vyžaduje nové overenie.",
       "export_request": "Vyžiadať",
       "credit": {
-        "auto_applied": "Kredit — automaticky sa použije na vašu najbližšiu objednávku."
+        "auto_applied": "Kredit — automaticky sa použije na vašu najbližšiu objednávku.",
+        "expires_on": "Vyprší {{date}} — každá objednávka lehôtu predĺži."
       }
     },
     "services": {

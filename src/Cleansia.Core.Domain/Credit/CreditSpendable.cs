@@ -8,4 +8,9 @@ namespace Cleansia.Core.Domain.Credit;
 /// call sites; a positional tuple would let a caller swap <c>Balance</c> and <c>CurrencyId</c> —
 /// both of which are otherwise unremarkable — with no compiler complaint.</para>
 /// </summary>
-public record CreditSpendable(string AccountId, decimal Balance, string CurrencyId);
+public record CreditSpendable(
+    string AccountId,
+    decimal Balance,
+    string CurrencyId,
+    /// <summary>When the balance expires if nothing else happens to it. → CreditAccount.ExpiresOn</summary>
+    DateTimeOffset? ExpiresOn);

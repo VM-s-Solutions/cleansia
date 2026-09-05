@@ -32,11 +32,20 @@ public class GetMyCredit
     /// control, and a balance that silently does nothing until some unexplained future booking is
     /// worse than one the customer knows is queued.
     /// </param>
+    /// <param name="ExpiresOn">
+    /// When the balance expires if the customer does nothing. Null when there is nothing to expire.
+    ///
+    /// <para>Shown, not hidden. Owner ruling 2026-09-05: credit expires rather than being paid out,
+    /// and an expiry the customer only discovers after the fact is the version that generates a
+    /// complaint nobody can answer. Every movement pushes it out, so a customer who books once a year
+    /// never loses anything. → CreditAccount.ExpiryMonths</para>
+    /// </param>
     public record Response(
         decimal Balance,
         string CurrencyCode,
         decimal MaxShareOfOrder,
-        bool AppliesAutomatically);
+        bool AppliesAutomatically,
+        DateTimeOffset? ExpiresOn);
 
     public class Handler(
         ICreditAccountRepository creditAccountRepository,
@@ -60,7 +69,8 @@ public class GetMyCredit
                 Balance: spendable?.Balance ?? 0m,
                 CurrencyCode: currency?.Code ?? string.Empty,
                 MaxShareOfOrder: BookingPolicy.MaxCreditShareOfOrder,
-                AppliesAutomatically: true));
+                AppliesAutomatically: true,
+                ExpiresOn: spendable?.ExpiresOn));
         }
     }
 }

@@ -892,6 +892,7 @@ namespace Cleansia.Infra.Database.Migrations
                     UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Balance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ExpiresOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -2717,6 +2718,12 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "CountryInvoiceConfigs",
                 column: "CountryId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CreditAccounts_ExpiresOn",
+                table: "CreditAccounts",
+                column: "ExpiresOn",
+                filter: "\"ExpiresOn\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CreditAccounts_TenantId",

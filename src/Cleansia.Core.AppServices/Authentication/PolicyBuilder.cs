@@ -268,6 +268,7 @@ public static class PolicyBuilder
         [Policy.CanIssueRefund] = PhysicalPolicy.AdminOnly,
         [Policy.CanIssueCustomerCredit] = PhysicalPolicy.AdminOnly,
         [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
+        [Policy.CanExpireCustomerCredit] = PhysicalPolicy.AdminOnly,
 
         // Admin Action Audit Log (read surface — ADR-0012 D7)
         [Policy.CanViewAuditLog] = PhysicalPolicy.AdminOnly,

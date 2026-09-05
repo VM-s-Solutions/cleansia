@@ -88,6 +88,8 @@ public class CreditAccountRepository(CleansiaDbContext context)
             WITH returned AS (
                 UPDATE "CreditAccounts"
                 SET "Balance" = "Balance" + {amount},
+                    -- See TryDebitAsync: the raw statements push the expiry themselves.
+                    "ExpiresOn" = NOW() + MAKE_INTERVAL(months => {CreditAccount.ExpiryMonths}),
                     "UpdatedBy" = {actorId},
                     "UpdatedOn" = NOW()
                 WHERE "Id" = {account.Id}
@@ -104,6 +106,19 @@ public class CreditAccountRepository(CleansiaDbContext context)
             cancellationToken);
 
         return rowsAffected > 0;
+    }
+
+    public async Task<IReadOnlyList<CreditAccount>> GetExpiredAsync(
+        DateTimeOffset asOf, int take, CancellationToken cancellationToken)
+    {
+        // IGNORING TENANT, because the sweep runs as a system job with no JWT and must see every
+        // tenant's accounts. The caller groups by TenantId and commits inside the loop; a deferred
+        // commit would stamp every ledger row with whichever tenant was processed last.
+        return await GetQueryableIgnoringTenant()
+            .Where(a => a.ExpiresOn != null && a.ExpiresOn <= asOf && a.Balance > 0m)
+            .OrderBy(a => a.ExpiresOn)
+            .Take(take)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<decimal> GetReturnedTotalForOrderAsync(
@@ -127,7 +142,7 @@ public class CreditAccountRepository(CleansiaDbContext context)
         var row = await GetDbSet()
             .AsNoTracking()
             .Where(a => a.UserId == userId)
-            .Select(a => new CreditSpendable(a.Id, a.Balance, a.CurrencyId))
+            .Select(a => new CreditSpendable(a.Id, a.Balance, a.CurrencyId, a.ExpiresOn))
             .FirstOrDefaultAsync(cancellationToken);
 
         return row;
@@ -175,6 +190,10 @@ public class CreditAccountRepository(CleansiaDbContext context)
             WITH debited AS (
                 UPDATE "CreditAccounts"
                 SET "Balance" = "Balance" - {amount},
+                    -- The same push CreditAccount.Touch() does in memory. A balance that moved today
+                    -- must not expire on a clock started a year ago, and these statements bypass the
+                    -- entity entirely.
+                    "ExpiresOn" = NOW() + MAKE_INTERVAL(months => {CreditAccount.ExpiryMonths}),
                     "UpdatedBy" = {actorId},
                     "UpdatedOn" = NOW()
                 WHERE "Id" = {creditAccountId} AND "Balance" >= {amount}

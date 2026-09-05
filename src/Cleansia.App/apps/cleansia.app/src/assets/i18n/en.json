@@ -713,7 +713,8 @@
       "email_verified": "Your email is verified. Changing it needs a new verification.",
       "export_request": "Request",
       "credit": {
-        "auto_applied": "Credit — applied to your next booking automatically."
+        "auto_applied": "Credit — applied to your next booking automatically.",
+        "expires_on": "It expires on {{date}} — every booking pushes that back."
       }
     },
     "services": {

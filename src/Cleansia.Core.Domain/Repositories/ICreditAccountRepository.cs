@@ -58,6 +58,20 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
         string? note = null);
 
     /// <summary>
+    /// Accounts whose balance has expired, across every tenant, oldest first.
+    ///
+    /// <para>Tenant-ignoring on purpose: the sweep runs with no JWT and must see them all. The caller
+    /// groups by TenantId, sets the override and commits INSIDE the loop — a deferred commit stamps
+    /// every ledger row with whichever tenant was processed last.</para>
+    ///
+    /// <para><paramref name="take"/> bounds one pass. An expiry sweep that has never run has an
+    /// unbounded backlog, and loading all of it into one transaction is how a nightly job turns into
+    /// an outage.</para>
+    /// </summary>
+    Task<IReadOnlyList<CreditAccount>> GetExpiredAsync(
+        DateTimeOffset asOf, int take, CancellationToken cancellationToken);
+
+    /// <summary>
     /// How much credit has already gone back for one order. The credit leg's counterpart to
     /// <c>IRefundRepository.GetSucceededRefundTotalForOrderAsync</c>, and it exists for the same
     /// reason: a second refund on the same order has to know what the first one already unwound, or

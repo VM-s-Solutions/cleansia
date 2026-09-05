@@ -25,6 +25,7 @@ public sealed class SensitiveActionAuditLabelTests
     [InlineData(typeof(UpdatePayConfig.Command), "payconfig.update", "EmployeePayConfig")]
     [InlineData(typeof(GrantPointsManually.Command), "loyalty.points.grant", "LoyaltyAccount")]
     [InlineData(typeof(IssueCustomerCredit.Command), "credit.issue", "CreditAccount")]
+    [InlineData(typeof(ExpireCustomerCredit.Command), "credit.expire", "CreditAccount")]
     [InlineData(typeof(RevokePointsManually.Command), "loyalty.points.revoke", "LoyaltyAccount")]
     [InlineData(typeof(AdminDeleteUserAccount.Command), "gdpr.user.delete", "User")]
     public void Sensitive_Commands_Carry_The_Frozen_Sensitive_Label(Type commandType, string expectedLabel, string expectedResourceType)

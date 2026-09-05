@@ -1882,7 +1882,8 @@
         "empty": "Žádné pohyby kreditu.",
         "success": "Kredit přidělen.",
         "actions": {
-          "issue": "Přidělit kredit"
+          "issue": "Přidělit kredit",
+          "expire": "Odepsat zůstatek"
         },
         "error": {
           "generic": "Kredit se nepodařilo přidělit. Zkuste to znovu."
@@ -1893,7 +1894,8 @@
           "goodwill": "Vstřícný krok",
           "order_payment": "Čerpáno na objednávku",
           "order_payment_returned": "Vráceno ze zrušené objednávky",
-          "unknown": "Jiné"
+          "unknown": "Jiné",
+          "expired": "Vypršelo"
         },
         "dialog": {
           "title": "Přidělit kredit",
@@ -1918,6 +1920,17 @@
           "amount": "Částka",
           "reason": "Důvod",
           "note": "Co se stalo"
+        },
+        "expire_success": "Odepsáno {{amount}}.",
+        "expire_error": "Zůstatek se nepodařilo odepsat.",
+        "expire_dialog": {
+          "title": "Odepsat zůstatek kreditu",
+          "lede": "Odepíše celý zůstatek {{amount}} {{currency}} a nelze to vrátit zpět. Použijte, když zákazník odchází: dokud kredit zůstává, výmaz účtu se odmítne.",
+          "field": {
+            "note": "Důvod",
+            "note_help": "Jediný záznam o tom, proč firma přestala dlužit peníze. Uveďte, kdo o to požádal."
+          },
+          "submit": "Odepsat"
         }
       }
     },

@@ -115,6 +115,21 @@
             <span class="customer-profile__credit-note">
               {{ 'pages.profile.credit.auto_applied' | translate }}
             </span>
+            <!--
+              The expiry date, said out loud. Credit is discharged rather than paid out (owner ruling
+              2026-09-05), so the only version of this the customer must never meet is the one where
+              they find out afterwards. Every movement pushes the date back, which the line says so
+              that a balance sitting for eleven months does not read as a countdown they cannot stop.
+            -->
+            @if (credit.expiresOn; as expiresOn) {
+            <span class="customer-profile__credit-note">
+              {{
+                'pages.profile.credit.expires_on'
+                  | translate
+                    : { date: expiresOn | date: 'longDate' : undefined : currentLanguage }
+              }}
+            </span>
+            }
           </div>
           }
         </div>

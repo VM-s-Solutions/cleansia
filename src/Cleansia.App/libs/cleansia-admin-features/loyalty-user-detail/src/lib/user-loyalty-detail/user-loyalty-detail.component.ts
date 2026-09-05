@@ -42,6 +42,7 @@ import {
   IssueCreditDialogComponent,
   IssueCreditDialogSubmit,
 } from '../issue-credit-dialog/issue-credit-dialog.component';
+import { ExpireCreditDialogComponent } from '../expire-credit-dialog/expire-credit-dialog.component';
 import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
 
 @Component({
@@ -58,6 +59,7 @@ import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
     CleansiaTitleComponent,
     GrantPointsDialogComponent,
     IssueCreditDialogComponent,
+    ExpireCreditDialogComponent,
     CleansiaPermissionDirective,
   ],
   templateUrl: './user-loyalty-detail.component.html',
@@ -84,6 +86,7 @@ export class UserLoyaltyDetailComponent
   // Credit gets its OWN dialog, not a third mode of the points one — owner ruling 2026-09-05, and
   // the two forms have nothing in common beyond a free-text reason.
   readonly creditDialogVisible = signal<boolean>(false);
+  readonly expireCreditDialogVisible = signal<boolean>(false);
 
   activityColumns!: TableColumn<GetUserLoyaltyActivityActivityItem>[];
   creditColumns!: TableColumn<GetUserCreditLedgerEntry>[];
@@ -474,6 +477,18 @@ export class UserLoyaltyDetailComponent
     this.facade.issueCredit(payload, () => this.creditDialogVisible.set(false));
   }
 
+  openExpireCredit(): void {
+    this.expireCreditDialogVisible.set(true);
+  }
+
+  onExpireCreditDialogVisibleChange(value: boolean): void {
+    this.expireCreditDialogVisible.set(value);
+  }
+
+  onExpireCredit(note: string): void {
+    this.facade.expireCredit(note, () => this.expireCreditDialogVisible.set(false));
+  }
+
   /** Signed, so the ledger reads as a statement: a spend is negative, a grant is positive. */
   creditAmountClass(amount: number | undefined): string {
     return (amount ?? 0) < 0
@@ -493,6 +508,8 @@ export class UserLoyaltyDetailComponent
         return 'pages.loyalty_user_detail.credit.reason.order_payment';
       case CreditTransactionReason.OrderPaymentReturned:
         return 'pages.loyalty_user_detail.credit.reason.order_payment_returned';
+      case CreditTransactionReason.Expired:
+        return 'pages.loyalty_user_detail.credit.reason.expired';
       default:
         return 'pages.loyalty_user_detail.credit.reason.unknown';
     }

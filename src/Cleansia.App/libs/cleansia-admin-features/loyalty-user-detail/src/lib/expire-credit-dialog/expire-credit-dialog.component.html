@@ -1,0 +1,61 @@
+<p-dialog
+  [header]="'pages.loyalty_user_detail.credit.expire_dialog.title' | translate"
+  [visible]="visible()"
+  (visibleChange)="onVisibilityChanged($event)"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '480px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="expire-credit-dialog__form">
+    <!--
+      The amount is stated before the form, not implied by it: this takes the WHOLE balance and
+      there is no undo. An admin who thought they were trimming it should read the number here.
+    -->
+    <p class="expire-credit-dialog__lede">
+      {{
+        'pages.loyalty_user_detail.credit.expire_dialog.lede'
+          | translate: { amount: balance(), currency: currencyCode() }
+      }}
+    </p>
+
+    <div class="form-field">
+      <cleansia-textarea
+        [label]="'pages.loyalty_user_detail.credit.expire_dialog.field.note' | translate"
+        formControlName="note"
+        [rows]="4"
+      />
+      <small class="field-help">
+        {{ 'pages.loyalty_user_detail.credit.expire_dialog.field.note_help' | translate }}
+      </small>
+      @if (form.controls.note.touched && form.controls.note.errors?.['required']) {
+        <small class="field-error">
+          {{ 'pages.loyalty_user_detail.credit.dialog.validation.note_required' | translate }}
+        </small>
+      }
+      @if (form.controls.note.touched && form.controls.note.errors?.['maxlength']) {
+        <small class="field-error">
+          {{ 'pages.loyalty_user_detail.credit.dialog.validation.note_max' | translate }}
+        </small>
+      }
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <cleansia-button
+      [label]="'pages.loyalty_user_detail.credit.dialog.cancel' | translate"
+      [outlined]="true"
+      severity="secondary"
+      (onClick)="cancel()"
+    />
+    <cleansia-button
+      [label]="'pages.loyalty_user_detail.credit.expire_dialog.submit' | translate"
+      icon="pi pi-times-circle"
+      severity="danger"
+      [disabled]="submitting()"
+      [loading]="submitting()"
+      (onClick)="submit()"
+    />
+  </ng-template>
+</p-dialog>

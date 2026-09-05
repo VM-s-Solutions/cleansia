@@ -1882,7 +1882,8 @@
         "empty": "Žiadne pohyby kreditu.",
         "success": "Kredit pridelený.",
         "actions": {
-          "issue": "Prideľiť kredit"
+          "issue": "Prideľiť kredit",
+          "expire": "Odpísať zostatok"
         },
         "error": {
           "generic": "Kredit sa nepodarilo prideľiť. Skúste to znova."
@@ -1893,7 +1894,8 @@
           "goodwill": "Ústretový krok",
           "order_payment": "Čerpané na objednávku",
           "order_payment_returned": "Vrátené zo zrušenej objednávky",
-          "unknown": "Iné"
+          "unknown": "Iné",
+          "expired": "Vypršalo"
         },
         "dialog": {
           "title": "Prideľiť kredit",
@@ -1918,6 +1920,17 @@
           "amount": "Suma",
           "reason": "Dôvod",
           "note": "Čo sa stalo"
+        },
+        "expire_success": "Odpísané {{amount}}.",
+        "expire_error": "Zostatok sa nepodarilo odpísať.",
+        "expire_dialog": {
+          "title": "Odpísať zostatok kreditu",
+          "lede": "Odpíše celý zostatok {{amount}} {{currency}} a nedá sa to vrátiť späť. Použite, keď zákazník odchádza: kým kredit zostáva, výmaz účtu sa odmietne.",
+          "field": {
+            "note": "Dôvod",
+            "note_help": "Jediný záznam o tom, prečo firma prestala dlžiť peniaze. Uveďte, kto o to požiadal."
+          },
+          "submit": "Odpísať"
         }
       }
     },

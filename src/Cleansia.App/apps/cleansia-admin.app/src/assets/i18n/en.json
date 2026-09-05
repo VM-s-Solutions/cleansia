@@ -1882,7 +1882,8 @@
         "empty": "No credit movements yet.",
         "success": "Credit issued.",
         "actions": {
-          "issue": "Issue credit"
+          "issue": "Issue credit",
+          "expire": "Discharge balance"
         },
         "error": {
           "generic": "We couldn't issue the credit. Please try again."
@@ -1893,7 +1894,8 @@
           "goodwill": "Goodwill",
           "order_payment": "Spent on a booking",
           "order_payment_returned": "Returned from a cancelled booking",
-          "unknown": "Other"
+          "unknown": "Other",
+          "expired": "Expired"
         },
         "dialog": {
           "title": "Issue credit",
@@ -1918,6 +1920,17 @@
           "amount": "Amount",
           "reason": "Reason",
           "note": "What happened"
+        },
+        "expire_success": "Discharged {{amount}}.",
+        "expire_error": "The balance could not be discharged.",
+        "expire_dialog": {
+          "title": "Discharge credit balance",
+          "lede": "This writes off the whole balance of {{amount}} {{currency}} and cannot be undone. Use it when the customer is leaving: erasure is refused while credit is outstanding.",
+          "field": {
+            "note": "Why",
+            "note_help": "The only record of why money the company owed stopped being owed. Name the request."
+          },
+          "submit": "Discharge"
         }
       }
     },

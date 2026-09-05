@@ -128,10 +128,20 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
    * The credit balance for the rail row, null when there is nothing to say. Exposed through the
    * component rather than the private facade, exactly like `loyaltyTierKey` beside it.
    */
-  readonly creditBalance = computed<{ amount: number; currency: string } | null>(() => {
+  readonly creditBalance = computed<{
+    amount: number;
+    currency: string;
+    expiresOn: Date | null;
+  } | null>(() => {
     const credit = this.facade.credit();
     if (!credit || credit.balance <= 0) return null;
-    return { amount: credit.balance, currency: credit.currencyCode ?? '' };
+    return {
+      amount: credit.balance,
+      currency: credit.currencyCode ?? '',
+      // Null while the balance is zero, and null on an account the sweep has not dated yet. Both
+      // render as no line rather than as an empty date.
+      expiresOn: credit.expiresOn ?? null,
+    };
   });
 
   readonly loyaltyTierKey = computed<string | null>(() => {

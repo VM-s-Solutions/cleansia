@@ -10310,6 +10310,7 @@ export class GetMyCreditResponse implements IGetMyCreditResponse {
     currencyCode!: string | undefined;
     maxShareOfOrder!: number;
     appliesAutomatically!: boolean;
+    expiresOn!: Date | undefined;
 
     constructor(data?: IGetMyCreditResponse) {
         if (data) {
@@ -10326,6 +10327,7 @@ export class GetMyCreditResponse implements IGetMyCreditResponse {
             this.currencyCode = Data["currencyCode"];
             this.maxShareOfOrder = Data["maxShareOfOrder"];
             this.appliesAutomatically = Data["appliesAutomatically"];
+            this.expiresOn = Data["expiresOn"] ? new Date(Data["expiresOn"].toString()) : undefined as any;
         }
     }
 
@@ -10342,6 +10344,7 @@ export class GetMyCreditResponse implements IGetMyCreditResponse {
         data["currencyCode"] = this.currencyCode;
         data["maxShareOfOrder"] = this.maxShareOfOrder;
         data["appliesAutomatically"] = this.appliesAutomatically;
+        data["expiresOn"] = this.expiresOn ? this.expiresOn.toISOString() : undefined as any;
         return data;
     }
 }
@@ -10351,6 +10354,7 @@ export interface IGetMyCreditResponse {
     currencyCode: string | undefined;
     maxShareOfOrder: number;
     appliesAutomatically: boolean;
+    expiresOn: Date | undefined;
 }
 
 export class GetMyLoyaltyResponse implements IGetMyLoyaltyResponse {

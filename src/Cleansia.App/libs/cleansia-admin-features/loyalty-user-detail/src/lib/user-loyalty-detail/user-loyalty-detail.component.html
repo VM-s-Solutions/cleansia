@@ -117,6 +117,21 @@
               severity="success"
               (onClick)="openIssueCredit()"
             />
+            <!--
+              Absent at a zero balance rather than disabled: there is nothing to discharge, and a
+              greyed-out destructive button on a page an admin visits daily is an invitation to
+              find out what it does.
+            -->
+            @if ((facade.credit()?.balance ?? 0) > 0) {
+            <cleansia-button
+              *cleansiaPermission="Policy.CanExpireCustomerCredit"
+              [label]="'pages.loyalty_user_detail.credit.actions.expire' | translate"
+              icon="pi pi-times-circle"
+              severity="danger"
+              [outlined]="true"
+              (onClick)="openExpireCredit()"
+            />
+            }
           </div>
         </div>
 
@@ -206,4 +221,17 @@
   [submitting]="facade.creditSubmitting()"
   [currencyCode]="facade.credit()?.currencyCode ?? ''"
   (submitForm)="onIssueCredit($event)"
+/>
+
+<!--
+  And the way money comes back OFF. Separate from the one above for the same reason that one is
+  separate from points: the fields differ, and so does what happens if the admin is wrong.
+-->
+<cleansia-admin-expire-credit-dialog
+  [visible]="expireCreditDialogVisible()"
+  (visibleChange)="onExpireCreditDialogVisibleChange($event)"
+  [submitting]="facade.creditExpiring()"
+  [balance]="facade.credit()?.balance ?? 0"
+  [currencyCode]="facade.credit()?.currencyCode ?? ''"
+  (submitForm)="onExpireCredit($event)"
 />

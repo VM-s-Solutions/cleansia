@@ -8,6 +8,7 @@ import {
   GetUserLoyaltyAccountResponse,
   GetUserLoyaltyActivityActivityItem,
   GrantPointsManuallyCommand,
+  ExpireCustomerCreditCommand,
   IssueCustomerCreditCommand,
   RevokePointsManuallyCommand,
 } from '@cleansia/admin-services';
@@ -57,6 +58,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly credit = signal<GetUserCreditResponse | null>(null);
   readonly creditLoading = signal<boolean>(false);
   readonly creditSubmitting = signal<boolean>(false);
+  readonly creditExpiring = signal<boolean>(false);
 
   readonly submitting = signal<boolean>(false);
 
@@ -179,6 +181,55 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
         if (response) {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.loyalty_user_detail.credit.success')
+          );
+          if (this.currentUserId) {
+            this.loadCredit(this.currentUserId);
+          }
+          onSuccess?.();
+        }
+      });
+  }
+
+  /**
+   * Take the whole balance off the books.
+   *
+   * <p>The reason this exists is erasure: GdprDeletionService refuses to erase a customer while a
+   * balance is positive, and there are no Stripe payouts, so a leaving customer with credit was
+   * previously stuck. The admin discharges it, the erasure proceeds. → ExpireCustomerCredit</p>
+   *
+   * <p>No amount — the server only ever takes the lot. The note is required and is the only record
+   * of why money the company owed stopped being owed.</p>
+   */
+  expireCredit(note: string, onSuccess?: () => void): void {
+    if (!this.currentUserId) return;
+    this.creditExpiring.set(true);
+
+    const command = new ExpireCustomerCreditCommand();
+    command.userId = this.currentUserId;
+    command.note = note;
+    // S7a, same shape as the issue path: a transport retry replays this id and the ledger's unique
+    // index collapses it, while a second deliberate click is a new id. Less load-bearing here —
+    // draining an already-empty balance is a no-op — but the two paths stay the same shape.
+    command.requestId = crypto.randomUUID();
+
+    this.adminClient.adminCreditClient
+      .expire(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => {
+          this.snackbarService.showError(
+            this.translate.instant('pages.loyalty_user_detail.credit.expire_error')
+          );
+          return of(null);
+        }),
+        finalize(() => this.creditExpiring.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.loyalty_user_detail.credit.expire_success', {
+              amount: response.amountExpired,
+            })
           );
           if (this.currentUserId) {
             this.loadCredit(this.currentUserId);

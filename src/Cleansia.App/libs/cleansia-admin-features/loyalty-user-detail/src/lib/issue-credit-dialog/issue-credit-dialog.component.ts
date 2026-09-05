@@ -26,7 +26,7 @@ export interface IssueCreditDialogSubmit {
 }
 
 /** Mirrors IssueCustomerCredit.Validator.SanityCap — a typo guard, not a business rule. */
-const AMOUNT_MAX = 50000;
+const AMOUNT_MAX = 10000;
 const NOTE_MAX = 500;
 
 /**

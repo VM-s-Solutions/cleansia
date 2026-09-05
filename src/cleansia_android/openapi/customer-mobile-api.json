@@ -8539,6 +8539,11 @@
           },
           "appliesAutomatically": {
             "type": "boolean"
+          },
+          "expiresOn": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10299,7 +10304,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": { }
+        "additionalProperties": {}
       },
       "QuoteOrder_Command": {
         "type": "object",

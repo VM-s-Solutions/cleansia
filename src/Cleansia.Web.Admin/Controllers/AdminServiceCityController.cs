@@ -5,6 +5,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -26,6 +27,7 @@ public class AdminServiceCityController(IMediator mediator) : ApiController(medi
     [Permission(Policy.CanManageServiceCities)]
     [ProducesResponseType(typeof(CreateServiceCity.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreateServiceCity(
         [FromBody] CreateServiceCity.Command command,
         CancellationToken cancellationToken)
@@ -39,6 +41,7 @@ public class AdminServiceCityController(IMediator mediator) : ApiController(medi
     [ProducesResponseType(typeof(UpdateServiceCity.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdateServiceCity(
         string id,
         [FromBody] UpdateServiceCity.Command command,
@@ -57,6 +60,7 @@ public class AdminServiceCityController(IMediator mediator) : ApiController(medi
     [ProducesResponseType(typeof(DeleteServiceCity.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeleteServiceCity(
         string id,
         CancellationToken cancellationToken)

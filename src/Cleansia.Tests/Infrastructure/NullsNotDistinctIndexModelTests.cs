@@ -116,29 +116,16 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     };
 
     /// <summary>
-    /// Unique indexes that contain an unfiltered nullable column and do NOT declare
-    /// <c>.AreNullsDistinct(false)</c>.
+    /// Unique indexes knowingly left unenforced.
     ///
-    /// <para><b>These are gaps, not decisions.</b> Every one of them enforces nothing whenever that
-    /// column is null — which for the <c>TenantId</c> ones is the platform's entire single-tenant
-    /// deployment, i.e. production today. They are recorded so the sweep below can be fail-CLOSED
-    /// about everything else while the owner rules on them. The list may only ever SHRINK.</para>
-    ///
-    /// <para>The sharpest is <c>LoyaltyTransaction (TenantId, IdempotencyKey)</c>: its own
-    /// configuration comment calls it "the atomic backstop" against a double grant, and the admin UI
-    /// mints a fresh idempotency token per click — so a double-clicked grant doubles a customer's
-    /// points, their tier, and therefore a real discount.</para>
+    /// <para><b>Empty, and that is the point.</b> It held seven — every unique index carrying an
+    /// unfiltered nullable column, which in single-tenant mode (TenantId null, i.e. production)
+    /// enforced nothing at all. All seven now declare NULLS NOT DISTINCT, so the set emptied rather
+    /// than being maintained.</para>
     /// </summary>
     private static readonly HashSet<string> KnownUnenforced = new(StringComparer.Ordinal)
     {
-        "EmployeePayConfig (EmployeeId, ServiceId, PackageId)",
-        "FeatureFlag (Name, Scope, ScopeValue)",
-        "LoyaltyTierConfig (TenantId, Tier)",
-        "LoyaltyTransaction (TenantId, IdempotencyKey)",
-        "PromoCode (TenantId, Code)",
-        "ReferralCode (TenantId, Code)",
-        "TenantConfiguration (TenantId, Key)",
-    };
+        };
 
     private static string Describe(IEntityType entity, IIndex index) =>
         $"{entity.ClrType.Name} ({string.Join(", ", index.Properties.Select(pr => pr.Name))})";

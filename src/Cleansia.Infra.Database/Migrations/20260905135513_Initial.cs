@@ -3023,8 +3023,8 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_EmployeePayConfigs_EmployeeId_ServiceId_PackageId",
                 table: "EmployeePayConfigs",
                 columns: new[] { "EmployeeId", "ServiceId", "PackageId" },
-                unique: true,
-                filter: "\"EmployeeId\" IS NOT NULL");
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeePayConfigs_PackageId",
@@ -3115,7 +3115,8 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_FeatureFlags_Name_Scope_ScopeValue",
                 table: "FeatureFlags",
                 columns: new[] { "Name", "Scope", "ScopeValue" },
-                unique: true);
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_FeatureFlags_TenantId",
@@ -3186,7 +3187,8 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_LoyaltyTierConfigs_TenantId_Tier",
                 table: "LoyaltyTierConfigs",
                 columns: new[] { "TenantId", "Tier" },
-                unique: true);
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_LoyaltyTransactions_LoyaltyAccountId_OccurredOn",
@@ -3215,7 +3217,8 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "LoyaltyTransactions",
                 columns: new[] { "TenantId", "IdempotencyKey" },
                 unique: true,
-                filter: "\"IdempotencyKey\" IS NOT NULL");
+                filter: "\"IdempotencyKey\" IS NOT NULL")
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_MembershipBenefitUsages_OrderId",
@@ -3639,7 +3642,8 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_PromoCodes_TenantId_Code",
                 table: "PromoCodes",
                 columns: new[] { "TenantId", "Code" },
-                unique: true);
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_PromoCodes_ValidFrom_ValidUntil",
@@ -3686,7 +3690,8 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_ReferralCodes_TenantId_Code",
                 table: "ReferralCodes",
                 columns: new[] { "TenantId", "Code" },
-                unique: true);
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ReferralCodes_UserId",
@@ -3839,7 +3844,8 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_TenantConfigurations_TenantId_Key",
                 table: "TenantConfigurations",
                 columns: new[] { "TenantId", "Key" },
-                unique: true);
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserConsents_TenantId",

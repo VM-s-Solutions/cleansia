@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Features.SavedAddresses.DTOs;
 using Cleansia.Web.Customer.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Customer.Controllers;
 
@@ -24,6 +25,7 @@ public class SavedAddressController(IMediator mediator) : CustomerSavedAddressCo
     [ProducesResponseType(typeof(SavedAddressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [EnableRateLimiting("auth")]
     public Task<IActionResult> Add([FromBody] AddSavedAddress.Command command, CancellationToken cancellationToken)
         => AddCore(command, cancellationToken);
 
@@ -32,6 +34,7 @@ public class SavedAddressController(IMediator mediator) : CustomerSavedAddressCo
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [EnableRateLimiting("auth")]
     public Task<IActionResult> SetDefault([FromBody] SetDefaultSavedAddress.Command command, CancellationToken cancellationToken)
         => SetDefaultCore(command, cancellationToken);
 
@@ -40,6 +43,7 @@ public class SavedAddressController(IMediator mediator) : CustomerSavedAddressCo
     [ProducesResponseType(typeof(SavedAddressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [EnableRateLimiting("auth")]
     public Task<IActionResult> Update([FromBody] UpdateSavedAddress.Command command, CancellationToken cancellationToken)
         => UpdateCore(command, cancellationToken);
 
@@ -48,6 +52,7 @@ public class SavedAddressController(IMediator mediator) : CustomerSavedAddressCo
     [ProducesResponseType(typeof(DeleteSavedAddress.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [EnableRateLimiting("auth")]
     public Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
         => DeleteCore(id, cancellationToken);
 }

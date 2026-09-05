@@ -131,70 +131,16 @@ public class RateLimitCoverageGuardTests
             && MutatingActionsOf(t).Any());
 
     /// <summary>
-    /// Mutating actions that carry NO rate-limit window today.
+    /// Mutating actions deliberately left without a rate-limit window.
     ///
-    /// <para><b>These are gaps, not decisions.</b> Nothing here has been ruled safe — the list exists
-    /// so the sweep below can be fail-CLOSED about everything else while the owner decides what to do
-    /// about these 50. It is a baseline that may only ever SHRINK, which is
-    /// the same shape check-module-boundaries uses for its known violations.</para>
-    ///
-    /// <para>Several are worth reading rather than skimming: <c>AdminUserController.CreateAdminUser</c>
-    /// mints an administrator, <c>AdminPromoCodeController.CreatePromoCode</c> mints money, and both
-    /// <c>SavedAddressController</c> pairs are customer-facing writes on an authenticated surface.</para>
+    /// <para><b>Empty, and that is the point.</b> It held fifty entries — every mutating action the
+    /// old hand-written roster had drifted past, including CreateAdminUser, CreatePromoCode and both
+    /// SavedAddressController pairs. All fifty now carry a window, so the set emptied rather than
+    /// being maintained. Anything added here in future is a decision with a name attached.</para>
     /// </summary>
     private static readonly HashSet<string> KnownUncovered = new(StringComparer.Ordinal)
     {
-        "Cleansia.Web.Admin.Controllers.AdminCompanyController.CreateCompanyInfo",
-        "Cleansia.Web.Admin.Controllers.AdminCompanyController.UpdateCompanyInfo",
-        "Cleansia.Web.Admin.Controllers.AdminCompanyController.DeleteCompanyInfo",
-        "Cleansia.Web.Admin.Controllers.AdminCountryController.CreateCountry",
-        "Cleansia.Web.Admin.Controllers.AdminCountryController.UpdateCountry",
-        "Cleansia.Web.Admin.Controllers.AdminCountryController.DeleteCountry",
-        "Cleansia.Web.Admin.Controllers.AdminCountryController.SetServiced",
-        "Cleansia.Web.Admin.Controllers.AdminCurrencyController.CreateCurrency",
-        "Cleansia.Web.Admin.Controllers.AdminCurrencyController.UpdateCurrency",
-        "Cleansia.Web.Admin.Controllers.AdminCurrencyController.DeleteCurrency",
-        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.GetPagedDocuments",
-        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.ApproveDocument",
-        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.RejectDocument",
-        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.SaveRequirement",
-        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.DeleteRequirement",
-        "Cleansia.Web.Admin.Controllers.AdminEmployeeDocumentController.ResolveDeletionRequest",
-        "Cleansia.Web.Admin.Controllers.AdminFeatureFlagController.Create",
-        "Cleansia.Web.Admin.Controllers.AdminFeatureFlagController.Toggle",
-        "Cleansia.Web.Admin.Controllers.AdminFeatureFlagController.Delete",
-        "Cleansia.Web.Admin.Controllers.AdminFiscalFailureController.RetryFiscalRegistration",
-        "Cleansia.Web.Admin.Controllers.AdminFiscalFailureController.AcknowledgeFiscalFailure",
-        "Cleansia.Web.Admin.Controllers.AdminLanguageController.CreateLanguage",
-        "Cleansia.Web.Admin.Controllers.AdminLanguageController.UpdateLanguage",
-        "Cleansia.Web.Admin.Controllers.AdminLanguageController.DeleteLanguage",
-        "Cleansia.Web.Admin.Controllers.AdminLoyaltyTierController.UpdateTierConfig",
-        "Cleansia.Web.Admin.Controllers.AdminLoyaltyTierController.PreviewThresholdImpact",
-        "Cleansia.Web.Admin.Controllers.AdminPackageController.CreatePackage",
-        "Cleansia.Web.Admin.Controllers.AdminPackageController.UpdatePackage",
-        "Cleansia.Web.Admin.Controllers.AdminPackageController.DeletePackage",
-        "Cleansia.Web.Admin.Controllers.AdminPromoCodeController.CreatePromoCode",
-        "Cleansia.Web.Admin.Controllers.AdminPromoCodeController.UpdatePromoCode",
-        "Cleansia.Web.Admin.Controllers.AdminPromoCodeController.DeactivatePromoCode",
-        "Cleansia.Web.Admin.Controllers.AdminServiceCityController.CreateServiceCity",
-        "Cleansia.Web.Admin.Controllers.AdminServiceCityController.UpdateServiceCity",
-        "Cleansia.Web.Admin.Controllers.AdminServiceCityController.DeleteServiceCity",
-        "Cleansia.Web.Admin.Controllers.AdminServiceController.CreateService",
-        "Cleansia.Web.Admin.Controllers.AdminServiceController.UpdateService",
-        "Cleansia.Web.Admin.Controllers.AdminServiceController.DeleteService",
-        "Cleansia.Web.Admin.Controllers.AdminUserController.CreateAdminUser",
-        "Cleansia.Web.Admin.Controllers.AdminUserController.UpdateAdminUser",
-        "Cleansia.Web.Admin.Controllers.AdminUserController.DeactivateAdminUser",
-        "Cleansia.Web.Admin.Controllers.AdminUserController.ActivateAdminUser",
-        "Cleansia.Web.Customer.Controllers.SavedAddressController.Add",
-        "Cleansia.Web.Customer.Controllers.SavedAddressController.SetDefault",
-        "Cleansia.Web.Customer.Controllers.SavedAddressController.Update",
-        "Cleansia.Web.Customer.Controllers.SavedAddressController.Delete",
-        "Cleansia.Web.Mobile.Customer.Controllers.SavedAddressController.Add",
-        "Cleansia.Web.Mobile.Customer.Controllers.SavedAddressController.SetDefault",
-        "Cleansia.Web.Mobile.Customer.Controllers.SavedAddressController.Update",
-        "Cleansia.Web.Mobile.Customer.Controllers.SavedAddressController.Delete",
-    };
+        };
 
     /// <summary>
     /// Every mutating action in every host, not just the ones somebody remembered to list.

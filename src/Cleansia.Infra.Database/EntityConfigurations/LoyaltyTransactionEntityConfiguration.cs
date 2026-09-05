@@ -63,8 +63,22 @@ public class LoyaltyTransactionEntityConfiguration : AuditableEntityConfiguratio
         // CLIENT token, so two tenants can legitimately produce the same value — a bare GLOBAL unique
         // index would collapse tenant B's grant onto tenant A's row. Filtered on NOT NULL so the
         // order-driven and referral rows (NULL key) are unaffected. → /architecture/security-rules
+        // NULLS NOT DISTINCT is what makes this the arbiter its own name claims. Single-tenant mode
+        // is TenantId = null, so a nulls-distinct index never fires and
+        // FlushCollapsingUniqueViolationAsync — which exists solely to catch this index's 23505 —
+        // never runs. The live callers are server-generated deterministic keys, not a UI:
+        // ForceQualifyReferral, ReverseReferral, and the partial-refund clawback keyed on
+        // RefundService's refundKey, which is driven from Stripe webhooks and therefore genuinely
+        // retried and genuinely concurrent.
+        //
+        // The TENANT TERM STAYS: the key is a caller-supplied token, so a bare global index would
+        // read a cross-tenant collision as this tenant's own replay and silently swallow a real
+        // grant. The FILTER STAYS too — order-completion earns carry a null key, and NULLS NOT
+        // DISTINCT without the filter would collapse every one of them onto a single key and cap the
+        // platform at one such earn per tenant, ever.
         builder.HasIndex(t => new { t.TenantId, t.IdempotencyKey })
             .IsUnique()
+            .AreNullsDistinct(false)
             .HasFilter("\"IdempotencyKey\" IS NOT NULL");
     }
 }

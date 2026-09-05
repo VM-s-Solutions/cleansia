@@ -529,6 +529,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("Name", "Scope", "ScopeValue")
                         .IsUnique();
 
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("Name", "Scope", "ScopeValue"), false);
+
                     b.ToTable("FeatureFlags");
                 });
 
@@ -663,6 +665,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId", "Key")
                         .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Key"), false);
 
                     b.ToTable("TenantConfigurations");
                 });
@@ -1855,8 +1859,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("ServiceId", "PackageId");
 
                     b.HasIndex("EmployeeId", "ServiceId", "PackageId")
-                        .IsUnique()
-                        .HasFilter("\"EmployeeId\" IS NOT NULL");
+                        .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("EmployeeId", "ServiceId", "PackageId"), false);
 
                     b.ToTable("EmployeePayConfigs");
                 });
@@ -2506,6 +2511,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("TenantId", "Tier")
                         .IsUnique();
 
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Tier"), false);
+
                     b.ToTable("LoyaltyTierConfigs", (string)null);
                 });
 
@@ -2588,6 +2595,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("TenantId", "IdempotencyKey")
                         .IsUnique()
                         .HasFilter("\"IdempotencyKey\" IS NOT NULL");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "IdempotencyKey"), false);
 
                     b.ToTable("LoyaltyTransactions", (string)null);
                 });
@@ -2680,6 +2689,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId", "Code")
                         .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Code"), false);
 
                     b.HasIndex("ValidFrom", "ValidUntil");
 
@@ -2914,6 +2925,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId", "Code")
                         .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Code"), false);
 
                     b.ToTable("ReferralCodes", (string)null);
                 });

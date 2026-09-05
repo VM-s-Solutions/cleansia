@@ -1874,7 +1874,8 @@
       "already_exists": "You already have an open dispute on this order.",
       "invalid_refund_amount": "The refund amount isn't valid for this order.",
       "max_length_exceeded": "Your message is too long. Please shorten it.",
-      "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it."
+      "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it.",
+      "line_not_on_order": "That item isn't on this order."
     },
     "file": {
       "invalid_file_type": "This file type isn't allowed.",
@@ -1956,6 +1957,9 @@
       "invalid_date": "Please enter a valid date.",
       "invalid_password": "That password isn't valid.",
       "must_be_positive": "The value must be greater than zero."
+    },
+    "review": {
+      "line_not_on_order": "You can't rate an item that isn't on this order."
     }
   },
   "loyalty": {

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Repositories;
 using Moq;
 
@@ -127,6 +128,100 @@ public class CreateDisputeHandlerTests
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Once);
+    }
+
+    // ── the items the customer names ────────────────────────────────────────
+
+    private static Service Svc(string id, string name)
+    {
+        var s = Service.Create("cat-1", name, "", 100m, 0m);
+        s.Id = id;
+        return s;
+    }
+
+    [Fact]
+    public async Task ADisputeCanNameTheItemsThatWereNotDoneProperly()
+    {
+        var order = ArrangeOrder(OwnedOrderId, CallerUserId);
+        order.AddSelectedServices([OrderService.Create(order, Svc("svc-oven", "Oven cleaning"))]);
+
+        Dispute? saved = null;
+        _disputeRepository.Setup(r => r.Add(It.IsAny<Dispute>())).Callback<Dispute>(d => saved = d);
+
+        var result = await CreateHandler().Handle(
+            ValidCommand(OwnedOrderId) with
+            {
+                Lines = [new CreateDispute.DisputeLineSelection("svc-oven", null)],
+            },
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var line = Assert.Single(saved!.Lines);
+        Assert.Equal("svc-oven", line.ServiceId);
+        Assert.Null(line.PackageId);
+    }
+
+    /// <summary>
+    /// A line that is not on the order is refused — otherwise a customer could attach any service in
+    /// the catalogue to their dispute and an admin resolving it would be reading a claim about work
+    /// that was never bought.
+    /// </summary>
+    [Fact]
+    public async Task AnItemThatIsNotOnTheOrder_IsRefused()
+    {
+        var order = ArrangeOrder(OwnedOrderId, CallerUserId);
+        order.AddSelectedServices([OrderService.Create(order, Svc("svc-oven", "Oven cleaning"))]);
+
+        var result = await CreateHandler().Handle(
+            ValidCommand(OwnedOrderId) with
+            {
+                Lines = [new CreateDispute.DisputeLineSelection("svc-never-bought", null)],
+            },
+            CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.DisputeLineNotOnOrder, result.Error!.Message);
+        _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Never);
+    }
+
+    /// <summary>
+    /// THE ENUMERATION ORACLE, denied. Someone else's order with a bogus line must answer exactly the
+    /// same thing as someone else's order with a valid one — OrderNotFound, never "that line is not on
+    /// it". Checking line membership before the ownership gate would have made this endpoint tell an
+    /// attacker what another customer bought.
+    /// </summary>
+    [Fact]
+    public async Task ALineOnSomebodyElsesOrder_IsIndistinguishableFromAMissingOrder()
+    {
+        var other = ArrangeOrder(OtherOrderId, OtherUserId);
+        other.AddSelectedServices([OrderService.Create(other, Svc("svc-oven", "Oven cleaning"))]);
+
+        var withRealLine = await CreateHandler().Handle(
+            ValidCommand(OtherOrderId) with
+            {
+                Lines = [new CreateDispute.DisputeLineSelection("svc-oven", null)],
+            },
+            CancellationToken.None);
+
+        var withBogusLine = await CreateHandler().Handle(
+            ValidCommand(OtherOrderId) with
+            {
+                Lines = [new CreateDispute.DisputeLineSelection("svc-nonsense", null)],
+            },
+            CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.OrderNotFound, withRealLine.Error!.Message);
+        Assert.Equal(withRealLine.Error!.Message, withBogusLine.Error!.Message);
+    }
+
+    [Fact]
+    public async Task NamingNoItemsIsOrdinary()
+    {
+        ArrangeOrder(OwnedOrderId, CallerUserId);
+
+        var result = await CreateHandler().Handle(ValidCommand(OwnedOrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
     }
 
     private static CreateDispute.Command ValidCommand(string orderId) =>

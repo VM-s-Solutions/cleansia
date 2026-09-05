@@ -408,6 +408,8 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'dispute.not_found',
   'dispute.already_exists',
   'dispute.cleaning_not_started',
+  'dispute.line_not_on_order',
+  'review.line_not_on_order',
   'dispute.invalid_refund_amount',
   'dispute.not_owned_by_user',
   'dispute.max_length_exceeded',

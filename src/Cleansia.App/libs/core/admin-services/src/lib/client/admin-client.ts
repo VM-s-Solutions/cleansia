@@ -19641,6 +19641,7 @@ export class DisputeDetails implements IDisputeDetails {
     createdOn!: Date;
     updatedOn!: Date | undefined;
     filedWithinWindow!: boolean | undefined;
+    lines!: DisputeLineDto[] | undefined;
 
     constructor(data?: IDisputeDetails) {
         if (data) {
@@ -19678,6 +19679,11 @@ export class DisputeDetails implements IDisputeDetails {
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
             this.filedWithinWindow = Data["filedWithinWindow"];
+            if (Array.isArray(Data["lines"])) {
+                this.lines = [] as any;
+                for (let item of Data["lines"])
+                    this.lines!.push(DisputeLineDto.fromJS(item));
+            }
         }
     }
 
@@ -19715,6 +19721,11 @@ export class DisputeDetails implements IDisputeDetails {
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
         data["filedWithinWindow"] = this.filedWithinWindow;
+        if (Array.isArray(this.lines)) {
+            data["lines"] = [];
+            for (let item of this.lines)
+                data["lines"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -19737,6 +19748,7 @@ export interface IDisputeDetails {
     createdOn: Date;
     updatedOn: Date | undefined;
     filedWithinWindow: boolean | undefined;
+    lines: DisputeLineDto[] | undefined;
 }
 
 export class DisputeEvidenceDto implements IDisputeEvidenceDto {
@@ -19869,6 +19881,54 @@ export class DisputeInvoiceResponse implements IDisputeInvoiceResponse {
 
 export interface IDisputeInvoiceResponse {
     invoiceId: string | undefined;
+}
+
+export class DisputeLineDto implements IDisputeLineDto {
+    serviceId!: string | undefined;
+    serviceName!: string | undefined;
+    packageId!: string | undefined;
+    packageName!: string | undefined;
+
+    constructor(data?: IDisputeLineDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceId = Data["serviceId"];
+            this.serviceName = Data["serviceName"];
+            this.packageId = Data["packageId"];
+            this.packageName = Data["packageName"];
+        }
+    }
+
+    static fromJS(data: any): DisputeLineDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DisputeLineDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
+        data["serviceName"] = this.serviceName;
+        data["packageId"] = this.packageId;
+        data["packageName"] = this.packageName;
+        return data;
+    }
+}
+
+export interface IDisputeLineDto {
+    serviceId: string | undefined;
+    serviceName: string | undefined;
+    packageId: string | undefined;
+    packageName: string | undefined;
 }
 
 export class DisputeListItem implements IDisputeListItem {
@@ -24689,6 +24749,7 @@ export class OrderReviewDto implements IOrderReviewDto {
     tags!: ReviewTag[] | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
+    lines!: OrderReviewLineDto[] | undefined;
 
     constructor(data?: IOrderReviewDto) {
         if (data) {
@@ -24712,6 +24773,11 @@ export class OrderReviewDto implements IOrderReviewDto {
             }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            if (Array.isArray(Data["lines"])) {
+                this.lines = [] as any;
+                for (let item of Data["lines"])
+                    this.lines!.push(OrderReviewLineDto.fromJS(item));
+            }
         }
     }
 
@@ -24735,6 +24801,11 @@ export class OrderReviewDto implements IOrderReviewDto {
         }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        if (Array.isArray(this.lines)) {
+            data["lines"] = [];
+            for (let item of this.lines)
+                data["lines"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -24747,6 +24818,51 @@ export interface IOrderReviewDto {
     tags: ReviewTag[] | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+    lines: OrderReviewLineDto[] | undefined;
+}
+
+export class OrderReviewLineDto implements IOrderReviewLineDto {
+    serviceId!: string | undefined;
+    packageId!: string | undefined;
+    rating!: number;
+
+    constructor(data?: IOrderReviewLineDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceId = Data["serviceId"];
+            this.packageId = Data["packageId"];
+            this.rating = Data["rating"];
+        }
+    }
+
+    static fromJS(data: any): OrderReviewLineDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderReviewLineDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
+        data["packageId"] = this.packageId;
+        data["rating"] = this.rating;
+        return data;
+    }
+}
+
+export interface IOrderReviewLineDto {
+    serviceId: string | undefined;
+    packageId: string | undefined;
+    rating: number;
 }
 
 export enum OrderStatus {

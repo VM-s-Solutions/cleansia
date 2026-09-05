@@ -6,6 +6,13 @@ public static class DisputeLimits
     public const int DescriptionMax = 2000;
 
     /// <summary>
+    /// A ceiling on how many items one dispute may name. An order has a handful of lines, so
+    /// this is not a product rule — it is the bound that stops an unbounded list arriving from
+    /// a public client and being written row by row.
+    /// </summary>
+    public const int MaxLines = 50;
+
+    /// <summary>
     /// The window the platform advertises for reporting a problem with a clean.
     ///
     /// <para><b>It gates the GUARANTEE, not the door.</b> Owner ruling, 2026-09-05: 24 hours is the

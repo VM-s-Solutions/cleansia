@@ -1874,7 +1874,8 @@
       "already_exists": "K této objednávce už máte otevřenou reklamaci.",
       "invalid_refund_amount": "Částka vrácení není pro tuto objednávku platná.",
       "max_length_exceeded": "Vaše zpráva je příliš dlouhá. Zkraťte ji prosím.",
-      "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit."
+      "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit.",
+      "line_not_on_order": "Tato položka na této objednávce není."
     },
     "file": {
       "invalid_file_type": "Tento typ souboru není povolen.",
@@ -1956,6 +1957,9 @@
       "invalid_date": "Zadejte platné datum.",
       "invalid_password": "Toto heslo není platné.",
       "must_be_positive": "Hodnota musí být větší než nula."
+    },
+    "review": {
+      "line_not_on_order": "Nelze hodnotit položku, která na této objednávce není."
     }
   },
   "loyalty": {

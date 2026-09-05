@@ -40,5 +40,10 @@ public record DisputeDetails(
     /// <para>Null when the dispute's order could not be loaded, which is the same condition that
     /// leaves <see cref="Currency"/> null.</para>
     /// </summary>
-    bool? FiledWithinWindow
+    bool? FiledWithinWindow,
+    /// <summary>
+    /// The order items the customer said were not done properly. Empty is ordinary — a dispute about
+    /// the whole job, or about a charge, names none.
+    /// </summary>
+    IEnumerable<DisputeLineDto> Lines
 );

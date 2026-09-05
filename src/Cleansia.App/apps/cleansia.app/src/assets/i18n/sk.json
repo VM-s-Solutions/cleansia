@@ -1874,7 +1874,8 @@
       "already_exists": "K tejto objednávke už máte otvorenú reklamáciu.",
       "invalid_refund_amount": "Suma vrátenia nie je pre túto objednávku platná.",
       "max_length_exceeded": "Vaša správa je príliš dlhá. Skráťte ju prosím.",
-      "cleaning_not_started": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť."
+      "cleaning_not_started": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť.",
+      "line_not_on_order": "Táto položka na tejto objednávke nie je."
     },
     "file": {
       "invalid_file_type": "Tento typ súboru nie je povolený.",
@@ -1956,6 +1957,9 @@
       "invalid_date": "Zadajte platný dátum.",
       "invalid_password": "Toto heslo nie je platné.",
       "must_be_positive": "Hodnota musí byť väčšia ako nula."
+    },
+    "review": {
+      "line_not_on_order": "Nemožno hodnotiť položku, ktorá na tejto objednávke nie je."
     }
   },
   "loyalty": {

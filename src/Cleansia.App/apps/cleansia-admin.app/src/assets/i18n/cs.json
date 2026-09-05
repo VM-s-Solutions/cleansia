@@ -2389,7 +2389,8 @@
       "max_length_exceeded": "Překročena maximální délka",
       "not_found": "Spor nenalezen",
       "not_owned_by_user": "Tento spor patří jinému uživateli.",
-      "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit."
+      "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit.",
+      "line_not_on_order": "Tato položka na této objednávce není."
     },
     "email": {
       "invalid_email": "Neplatná e-mailová adresa",
@@ -2656,6 +2657,9 @@
         "scheme_not_supported": "Výplaty na tento typ účtu zatím nejsou podporovány",
         "swift_required": "Banka je v jiné zemi, než ve které zaměstnanec pracuje, proto je nutný také SWIFT/BIC kód banky."
       }
+    },
+    "review": {
+      "line_not_on_order": "Nelze hodnotit položku, která na této objednávce není."
     }
   },
   "cookies": {

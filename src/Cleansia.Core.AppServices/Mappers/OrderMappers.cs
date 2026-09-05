@@ -339,7 +339,10 @@ public static class OrderMappers
             Comment: review.Comment,
             Tags: review.Tags,
             CreatedOn: review.CreatedOn,
-            UpdatedOn: review.UpdatedOn
+            UpdatedOn: review.UpdatedOn,
+            Lines: review.Lines
+                .Select(line => new OrderReviewLineDto(line.ServiceId, line.PackageId, line.Rating))
+                .ToList()
         );
     }
 

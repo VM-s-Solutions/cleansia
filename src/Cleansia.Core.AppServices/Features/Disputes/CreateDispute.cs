@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -34,13 +35,43 @@ public class CreateDispute
                 .WithMessage(BusinessErrorMessage.MinLength)
                 .MaximumLength(DisputeLimits.DescriptionMax)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+
+            // SHAPE only. Whether a line is actually ON the order is checked in the handler, AFTER
+            // the ownership gate — deliberately. FluentValidation runs first, and a membership rule
+            // here would answer "does service X belong to order Y" for an order the caller does not
+            // own, which is exactly the enumeration difference the handler's not-found-not-forbidden
+            // shape exists to deny. The handler already loads the order graph it needs, so the check
+            // costs nothing extra there and a second load here would be the only way to do it.
+            RuleForEach(x => x.Lines)
+                .Must(line => !string.IsNullOrWhiteSpace(line.ServiceId))
+                .WithMessage(BusinessErrorMessage.Required)
+                .When(x => x.Lines is not null);
+
+            RuleFor(x => x.Lines)
+                .Must(lines => lines!.Count <= DisputeLimits.MaxLines)
+                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
+                .When(x => x.Lines is not null);
         }
     }
+
+    /// <summary>
+    /// One item of the order the customer says was not done properly. The identity is the same
+    /// <c>(ServiceId, PackageId?)</c> pair <c>IssuePartialRefund.RefundLineSelection</c> already uses,
+    /// so the selection a customer authors and the one an admin authors are the same thing named the
+    /// same way. A standalone service leaves <see cref="PackageId"/> null; a service inside a bundle
+    /// names both.
+    /// </summary>
+    public record DisputeLineSelection(string ServiceId, string? PackageId);
 
     public record Command(
         string OrderId,
         DisputeReason Reason,
-        string Description
+        string Description,
+        /// <summary>
+        /// Which items were unsatisfactory. Optional and empty by default — a dispute about the whole
+        /// job, or about a charge, names no lines at all.
+        /// </summary>
+        IReadOnlyList<DisputeLineSelection>? Lines = null
     ) : ICommand<Response>;
 
     public record Response(string DisputeId);
@@ -91,6 +122,18 @@ public class CreateDispute
                 return BusinessResult.Failure<Response>(new Error(nameof(request.OrderId), BusinessErrorMessage.DisputeAlreadyExists));
             }
 
+            // Behind the ownership gate, against the graph GetByIdAsync already loaded.
+            var selected = request.Lines ?? [];
+            if (selected.Count > 0)
+            {
+                var onOrder = OrderLineIdentities(order);
+                if (selected.Any(line => !onOrder.Contains((line.ServiceId, line.PackageId))))
+                {
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(request.Lines), BusinessErrorMessage.DisputeLineNotOnOrder));
+                }
+            }
+
             var dispute = new Dispute(
                 orderId: request.OrderId,
                 userId: userId,
@@ -99,9 +142,40 @@ public class CreateDispute
                 createdBy: userId
             );
 
+            if (selected.Count > 0)
+            {
+                dispute.AddLines(selected.Select(l => (l.ServiceId, l.PackageId)), userId);
+            }
+
             disputeRepository.Add(dispute);
 
             return BusinessResult.Success(new Response(dispute.Id));
         }
+
+        /// <summary>
+        /// Every item identity this order actually contains — standalone services, and the services
+        /// inside each package. Mirrors <c>IssuePartialRefund.BuildOrderLineGrosses</c>, because a
+        /// customer must not be able to dispute a line an admin could never refund.
+        /// </summary>
+        private static HashSet<(string ServiceId, string? PackageId)> OrderLineIdentities(Order order)
+        {
+            var identities = new HashSet<(string, string?)>();
+
+            foreach (var service in order.SelectedServices)
+            {
+                identities.Add((service.ServiceId, null));
+            }
+
+            foreach (var orderPackage in order.SelectedPackages)
+            {
+                foreach (var included in orderPackage.Package?.IncludedServices ?? [])
+                {
+                    identities.Add((included.ServiceId, orderPackage.PackageId));
+                }
+            }
+
+            return identities;
+        }
+
     }
 }

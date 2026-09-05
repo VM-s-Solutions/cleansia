@@ -2389,7 +2389,8 @@
       "max_length_exceeded": "Bola prekročená maximálna dĺžka",
       "not_found": "Reklamácia nebola nájdená",
       "not_owned_by_user": "Táto reklamácia patrí inému používateľovi.",
-      "cleaning_not_started": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť."
+      "cleaning_not_started": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť.",
+      "line_not_on_order": "Táto položka na tejto objednávke nie je."
     },
     "email": {
       "invalid_email": "Neplatná e-mailová adresa",
@@ -2656,6 +2657,9 @@
         "scheme_not_supported": "Výplaty na tento typ účtu zatiaľ nie sú podporované",
         "swift_required": "Banka je v inej krajine, než v ktorej zamestnanec pracuje, preto je potrebný aj SWIFT/BIC kód banky."
       }
+    },
+    "review": {
+      "line_not_on_order": "Nemožno hodnotiť položku, ktorá na tejto objednávke nie je."
     }
   },
   "cookies": {

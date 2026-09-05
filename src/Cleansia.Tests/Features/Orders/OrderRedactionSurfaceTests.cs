@@ -365,7 +365,8 @@ public class OrderRedactionSurfaceTests
             OrderNotes: [new OrderNoteDto("note-1", "employee-1", "Second bathroom needed a re-do.", DateTimeOffset.UtcNow)],
             OrderIssues: [new OrderIssueDto("issue-1", "employee-1", "Broken tile.", false, null, DateTimeOffset.UtcNow)],
             Review: new OrderReviewDto(
-                "review-1", "order-1", 5, "Spotless.", [ReviewTag.Thorough], DateTimeOffset.UtcNow, null),
+                "review-1", "order-1", 5, "Spotless.", [ReviewTag.Thorough], DateTimeOffset.UtcNow, null,
+                [new OrderReviewLineDto("svc-1", null, 5)]),
             EstimatedCleanerPay: 620m,
             IsAssignedToCurrentUser: false,
             HasAfterPhotos: true,

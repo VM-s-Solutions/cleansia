@@ -56,6 +56,18 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             // order, and without this the detail screen has nothing to format it in.
             .Include(d => d.Order)
                 .ThenInclude(o => o.Currency)
+            // The lines the customer selected, and the ORDER graph their names resolve against — the
+            // mapper reads the name off the order rather than the catalogue, so a service renamed
+            // after the fact still reads as what was bought.
+            .Include(d => d.Lines)
+            .Include(d => d.Order)
+                .ThenInclude(o => o.SelectedServices)
+                    .ThenInclude(s => s.Service)
+            .Include(d => d.Order)
+                .ThenInclude(o => o.SelectedPackages)
+                    .ThenInclude(op => op.Package)
+                        .ThenInclude(p => p!.IncludedServices)
+                            .ThenInclude(s => s.Service)
             .Include(d => d.User)
             .Include(d => d.Messages)
                 .ThenInclude(m => m.Author)

@@ -2389,7 +2389,8 @@
       "max_length_exceeded": "Maximum length exceeded",
       "not_found": "Dispute not found",
       "not_owned_by_user": "This dispute belongs to a different user.",
-      "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it."
+      "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it.",
+      "line_not_on_order": "That item isn't on this order."
     },
     "email": {
       "invalid_email": "Invalid email address",
@@ -2656,6 +2657,9 @@
         "scheme_not_supported": "Payouts to this kind of account are not supported yet",
         "swift_required": "The bank is in a different country than the employee's work country, so the bank's SWIFT/BIC code is also required."
       }
+    },
+    "review": {
+      "line_not_on_order": "You can't rate an item that isn't on this order."
     }
   },
   "cookies": {

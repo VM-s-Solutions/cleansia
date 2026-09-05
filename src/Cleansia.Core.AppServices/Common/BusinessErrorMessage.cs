@@ -333,6 +333,12 @@ public static class BusinessErrorMessage
 
     /// <summary>The clean has not happened yet — there is nothing to report about it.</summary>
     public const string DisputeCleaningNotStarted = "dispute.cleaning_not_started";
+
+    /// <summary>A selected item is not on the order being disputed.</summary>
+    public const string DisputeLineNotOnOrder = "dispute.line_not_on_order";
+
+    /// <summary>A per-item review score names an item that is not on the order.</summary>
+    public const string ReviewLineNotOnOrder = "review.line_not_on_order";
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";

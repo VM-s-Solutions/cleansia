@@ -525,8 +525,22 @@ const isUiStatePhaseBag = (lines, at) => {
 
     // (a) One phase signal has nothing to contradict. SettingsUiState is a lone
     //     `isSignedOut: Boolean`; a union over it would be ceremony, not clarity.
+    //
+    //     Fields are counted by NAME as well as by type, and that over-counts in one direction: a
+    //     field called `outcome` whose TYPE is already a sealed class IS the phase union this rule
+    //     asks for, not a flag standing in for one. AuthUiState(loading, outcome: AuthOutcome?)
+    //     was flagged on exactly that basis while holding the shape E1 prescribes — and the cure it
+    //     named, Loading/Error/Loaded, would have had to invent an Error case, because that screen
+    //     reports failures over a snackbar and never puts one in state. Sealed types declared
+    //     anywhere in the file are subtracted before the count; a Boolean beside one still counts,
+    //     so a genuine flag-bag that happens to share a file with a union is still caught.
+    const sealedTypes = new Set(
+        [...lines.join("\n").matchAll(/\bsealed\s+(?:class|interface)\s+(\w+)/g)].map((m) => m[1]),
+    );
     const phase = fields.filter(
-        (x) => x.type === "Boolean" || /error|outcome|status/i.test(x.name),
+        (x) =>
+            !sealedTypes.has(x.type.replace(/\?$/, "").trim()) &&
+            (x.type === "Boolean" || /error|outcome|status/i.test(x.name)),
     );
     if (phase.length < 2) return false;
 
@@ -607,9 +621,15 @@ function checkMobile(roots) {
         });
         if (/Repository(Impl)?\.kt$/.test(f))
             lines.forEach((ln, i) => {
+                // ApiError joins the exclusions. ADR-0011's three harms are a discarded typed
+                // error, a snackbar in the data layer, and failure colliding with empty success.
+                // `suspend fun refresh(...): ApiError?` commits none of them: the typed error IS
+                // the return, the snackbar is in the ViewModel, and null cannot be mistaken for an
+                // empty body because there is no body on this channel — the data leaves over a
+                // StateFlow. The regex listed ApiResult|Flow|Unit and simply never named this one.
                 if (
                     /suspend fun .*\)\s*:\s*[A-Za-z0-9_<>]+\?\s*$/.test(ln) &&
-                    !/ApiResult|Flow|Unit/.test(ln)
+                    !/ApiResult|ApiError|Flow|Unit/.test(ln)
                 )
                     add(
                         f,

@@ -1838,6 +1838,57 @@ FROM public."Countries" co
 WHERE ps."CountryId" = co."Id" AND ps."Code" NOT LIKE '%\_%';
 
 
+-- ============================================================
+-- DEVELOPMENT ADMINISTRATOR
+-- ============================================================
+-- Replaces the three manual steps a fresh database used to cost: register through the customer
+-- app, confirm the email, then run set-admin-role.sql to flip Profile to 100. A dev database is
+-- dropped often enough that those three steps were being paid over and over.
+--
+--     admin@cleansia.local  /  Admin123!
+--
+-- WHY THIS IS NOT A PRODUCTION HOLE. This file is read from exactly one place —
+-- CleansiaStartupBase.SeedDevelopmentData — and only inside `if (environment.IsDevelopment())`,
+-- and only when the Languages table comes back empty. It cannot execute against a deployed
+-- environment: deployed hosts apply the EF migration bundle from CI and never call the seeder. The
+-- address is deliberately `.local`, a reserved suffix that cannot resolve to a real mailbox, so
+-- this account can never be confused for a real one or receive real mail.
+--
+-- WHY THE HASH IS A LITERAL. Password is stored as v2$ + base64(salt[16] ‖
+-- PBKDF2-SHA256(password, salt, 600000, 32)) — see PasswordExtensions.HashAndSaltPassword. Postgres
+-- cannot produce that here: pgcrypto is unavailable by design (Azure blocks it unless allow-listed,
+-- which is why generate_ulid() above uses md5(random()) for its bytes), and there is no core
+-- PBKDF2. So the hash is precomputed. SeededAdminCredentialsTests runs this exact literal through
+-- the real VerifyPassword, so a change to the hashing parameters fails a test instead of silently
+-- locking the seeded admin out.
+--
+-- Profile 100 = Administrator, AuthenticationType 1 = Internal (email + password, not Google/Apple).
+-- TenantId NULL is the single-tenant default; IX_Users_TenantId_Email is NULLS NOT DISTINCT, so the
+-- guard below really does prevent a duplicate rather than merely appearing to.
+--
+-- THE GUARD IS "NO USERS AT ALL", not "this email is free". That is deliberate. The app's seeder can
+-- only run in Development, and execute-sql.yml now refuses this file against PRO — but a fixture
+-- that mints an administrator should not depend solely on the callers being careful. An empty
+-- Users table is something only a brand-new database has; any environment with a single real
+-- account in it, for any reason, silently skips this insert instead of gaining an account whose
+-- password is published in README.md. It stays idempotent either way: run it twice and the second
+-- run is a no-op.
+INSERT INTO public."Users" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "Email", "Password", "FirstName", "LastName",
+  "Profile", "AuthenticationType", "IsEmailConfirmed",
+  "FailedLoginAttempts", "ConfirmationCodeAttempts", "ResetPasswordCodeAttempts",
+  "PreferredLanguageCode", "TenantId"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP,
+       'admin@cleansia.local',
+       'v2$qZh8Ie/E1KhtIu0D3H9/nYe8kBsd96nMjcmoUiAbE8to1ifT7R6D4ZQ2yoe6tCyW',
+       'Dev', 'Administrator',
+       100, 1, true,
+       0, 0, 0,
+       'en', NULL
+WHERE NOT EXISTS (SELECT 1 FROM public."Users");
+
 -- Constraints are checked at COMMIT when using SET CONSTRAINTS ALL DEFERRED
 
 COMMIT;

@@ -1534,7 +1534,9 @@
       "messages": {
         "revenue_load_error": "Failed to load revenue report",
         "payroll_load_error": "Failed to load payroll report"
-      }
+      },
+      "settled_from_credit": "From customer credit",
+      "settled_on_tender": "Taken by this tender"
     },
     "invoice_detail": {
       "title": "Invoice Details",
@@ -2477,6 +2479,18 @@
       "size_exceeded": "File size exceeded maximum allowed size",
       "size_exceeded_10mb": "File size must not exceed 10 MB",
       "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
+    },
+    "gdpr": {
+      "export_failed": "We couldn't export this user's data. Please try again.",
+      "deletion_failed": "We couldn't delete this account. Please try again.",
+      "deletion_already_pending": "A deletion request for this account is already in progress.",
+      "deletion_blocked_by_order": "This account has active orders and cannot be deleted yet.",
+      "deletion_blocked_by_credit_balance": "This customer still has a credit balance. It has to be spent or paid out before the account can be deleted.",
+      "deletion_blocked_by_invoice": "This account has outstanding invoices and cannot be deleted yet.",
+      "deletion_blocked_by_assigned_order": "This cleaner is still assigned to a job and cannot be deleted yet.",
+      "deletion_blocked_by_unsettled_pay": "This cleaner is still owed pay. Settle it before deleting the account.",
+      "consent_not_found": "We couldn't find that consent setting.",
+      "consent_already_granted": "That consent has already been granted."
     },
     "general": {
       "not_found": "Resource not found"

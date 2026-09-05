@@ -1905,7 +1905,9 @@
       "deletion_blocked_by_invoice": "Váš účet nie je možné zmazať, kým máte nevyrovnané faktúry.",
       "consent_not_found": "Toto nastavenie súhlasu sme nenašli.",
       "consent_already_granted": "Tento súhlas ste už udelili.",
-      "deletion_blocked_by_credit_balance": "Váš účet sa nedá zmazať, kým u nás máte kredit. Využite ho pri objednávke, alebo nás kontaktujte kvôli vyplateniu."
+      "deletion_blocked_by_credit_balance": "Váš účet sa nedá zmazať, kým u nás máte kredit. Využite ho pri objednávke, alebo nás kontaktujte kvôli vyplateniu.",
+      "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
+      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou."
     },
     "promo": {
       "not_found": "Tento zľavový kód neexistuje.",

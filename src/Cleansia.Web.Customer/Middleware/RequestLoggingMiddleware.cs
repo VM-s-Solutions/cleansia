@@ -254,6 +254,15 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                // and a cleaner's note about a customer's household. No field-name denylist can reach
                // free text, so the whole body is suppressed.
                pathValue.Contains("/savemydocuments") ||
+               // ADMIN FREE TEXT ABOUT A CUSTOMER. Each of these bodies carries a required prose field
+               // an operator wrote about a named person - why this customer was compensated, why those
+               // points were granted or taken - and the same reasoning as the document paths applies:
+               // no field-name denylist reaches free text, so the whole body is suppressed. Present on
+               // every host, like the upload paths beside it: these middlewares are five independent
+               // copies, and a route that moves hosts must not lose its suppression on the way.
+               pathValue.Contains("/admincredit/issue") ||
+               pathValue.Contains("/grant-points") ||
+               pathValue.Contains("/revoke-points") ||
                // Replacing carries the same pair as saving: a base64 document beside the
                // cleaner's own description of it. Redacting the payload frees the window that
                // pulls the description into the log, so the whole body goes.

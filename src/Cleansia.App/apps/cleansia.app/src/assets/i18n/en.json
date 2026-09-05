@@ -1905,7 +1905,9 @@
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
       "consent_not_found": "We couldn't find that consent setting.",
       "consent_already_granted": "You've already granted this consent.",
-      "deletion_blocked_by_credit_balance": "Your account can’t be deleted while you still have credit with us. Use it on a booking, or contact support to be paid out."
+      "deletion_blocked_by_credit_balance": "Your account can’t be deleted while you still have credit with us. Use it on a booking, or contact support to be paid out.",
+      "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
+      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first."
     },
     "promo": {
       "not_found": "That promo code doesn't exist.",

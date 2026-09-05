@@ -299,7 +299,16 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
         });
     }
 
-    protected virtual void BuildSummary(IContainer container, ReceiptPdfData data)
+    /// <summary>
+    /// The money block, as label/value/bold triples.
+    ///
+    /// <para>Separate from <see cref="BuildSummary"/> for the same reason the invoice builder's
+    /// <c>SummaryLines</c> is: these are the numbers a customer will hold against their bank
+    /// statement, and composing them inside a QuestPDF container makes them assertable only by
+    /// rendering a PDF and reading it back.</para>
+    /// </summary>
+    protected virtual IReadOnlyList<(string Label, string Value, bool IsBold)> SummaryLines(
+        ReceiptPdfData data)
     {
         var lines = new List<(string Label, string Value, bool IsBold)>();
 
@@ -315,6 +324,28 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
         }
 
         lines.Add(("Total", $"{data.Currency}{data.Total:N2}", true));
+
+        // How the total was SETTLED, under the total itself. Only when credit was used: on every other
+        // receipt these rows would state the obvious, and the block is deliberately short.
+        //
+        // TOTAL DOES NOT MOVE. Credit is a tender, not a discount — the sale keeps its size and the VAT
+        // block above it is the taxable base the fiscal authority registered. These two answer the
+        // different question the customer is actually asking, which is why their card statement is
+        // lighter than the number at the top.
+        //
+        // The card line is last and bold because it is the figure they will go looking for.
+        if (data.CreditApplied > 0)
+        {
+            lines.Add(("Paid with credit", $"-{data.Currency}{data.CreditApplied:N2}", false));
+            lines.Add(("Paid by card", $"{data.Currency}{data.AmountDueOnCard:N2}", true));
+        }
+
+        return lines;
+    }
+
+    protected virtual void BuildSummary(IContainer container, ReceiptPdfData data)
+    {
+        var lines = SummaryLines(data);
 
         container.Column(col =>
         {

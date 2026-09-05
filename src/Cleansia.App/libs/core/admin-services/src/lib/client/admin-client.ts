@@ -28324,6 +28324,8 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
     paymentTypeName!: string | undefined;
     totalRevenue!: number;
     orderCount!: number;
+    settledFromCredit!: number;
+    readonly settledOnTender!: number;
 
     constructor(data?: IRevenueByPaymentType) {
         if (data) {
@@ -28340,6 +28342,8 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
             this.paymentTypeName = Data["paymentTypeName"];
             this.totalRevenue = Data["totalRevenue"];
             this.orderCount = Data["orderCount"];
+            this.settledFromCredit = Data["settledFromCredit"];
+            (this as any).settledOnTender = Data["settledOnTender"];
         }
     }
 
@@ -28356,6 +28360,8 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
         data["paymentTypeName"] = this.paymentTypeName;
         data["totalRevenue"] = this.totalRevenue;
         data["orderCount"] = this.orderCount;
+        data["settledFromCredit"] = this.settledFromCredit;
+        data["settledOnTender"] = this.settledOnTender;
         return data;
     }
 }
@@ -28365,6 +28371,8 @@ export interface IRevenueByPaymentType {
     paymentTypeName: string | undefined;
     totalRevenue: number;
     orderCount: number;
+    settledFromCredit: number;
+    settledOnTender: number;
 }
 
 export class RevenueByService implements IRevenueByService {
@@ -28427,6 +28435,7 @@ export class RevenueReportDto implements IRevenueReportDto {
     revenueByPackage!: RevenueByPackage[] | undefined;
     revenueByPaymentType!: RevenueByPaymentType[] | undefined;
     revenueByPaymentStatus!: RevenueByPaymentStatus[] | undefined;
+    totalSettledFromCredit!: number;
 
     constructor(data?: IRevenueReportDto) {
         if (data) {
@@ -28470,6 +28479,7 @@ export class RevenueReportDto implements IRevenueReportDto {
                 for (let item of Data["revenueByPaymentStatus"])
                     this.revenueByPaymentStatus!.push(RevenueByPaymentStatus.fromJS(item));
             }
+            this.totalSettledFromCredit = Data["totalSettledFromCredit"];
         }
     }
 
@@ -28513,6 +28523,7 @@ export class RevenueReportDto implements IRevenueReportDto {
             for (let item of this.revenueByPaymentStatus)
                 data["revenueByPaymentStatus"].push(item ? item.toJSON() : undefined as any);
         }
+        data["totalSettledFromCredit"] = this.totalSettledFromCredit;
         return data;
     }
 }
@@ -28529,6 +28540,7 @@ export interface IRevenueReportDto {
     revenueByPackage: RevenueByPackage[] | undefined;
     revenueByPaymentType: RevenueByPaymentType[] | undefined;
     revenueByPaymentStatus: RevenueByPaymentStatus[] | undefined;
+    totalSettledFromCredit: number;
 }
 
 export class ReverseReferralCommand implements IReverseReferralCommand {

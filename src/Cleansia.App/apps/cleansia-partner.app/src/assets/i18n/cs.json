@@ -1273,7 +1273,15 @@
     },
     "gdpr": {
       "consent_not_found": "Toto nastavení souhlasu jsme nenašli",
-      "consent_already_granted": "Tento souhlas jste už udělili"
+      "consent_already_granted": "Tento souhlas jste už udělili",
+      "export_failed": "Vaše údaje se nepodařilo exportovat. Zkuste to znovu.",
+      "deletion_failed": "Váš účet se nepodařilo smazat. Zkuste to znovu.",
+      "deletion_already_pending": "Žádost o smazání účtu již probíhá.",
+      "deletion_blocked_by_order": "Váš účet nelze smazat, dokud máte aktívní objednávky.",
+      "deletion_blocked_by_invoice": "Váš účet nelze smazat, dokud jsou nevyřízené faktury.",
+      "deletion_blocked_by_assigned_order": "Váš účet nelze smazat, dokud jste přiřazeni k zakázce.",
+      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří.",
+      "deletion_blocked_by_credit_balance": "Váš účet nelze smazat, dokud u nás máte kredit. Využijte jej při objednávce, nebo kontaktujte kancelář kvůli vyplacení."
     },
     "company": {
       "not_found": "Informace o společnosti nenalezeny",

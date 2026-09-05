@@ -160,6 +160,23 @@ export class ReportsComponent implements OnInit {
         header: this.translate.instant('pages.reports.total_revenue'),
         getValue: (row) => this.facade.formatCurrency(row?.totalRevenue),
       },
+      // Revenue is the SALE and stays as it is: credit is a tender, not a discount. These two say how
+      // the sale was SETTLED, and the second is the one that reconciles against a Stripe statement —
+      // without it the Card row read as though the gateway had taken the whole figure, and a month
+      // checked against Stripe came up short by exactly the credit total with nothing here to explain
+      // the gap.
+      {
+        id: 'settledFromCredit',
+        field: 'settledFromCredit',
+        header: this.translate.instant('pages.reports.settled_from_credit'),
+        getValue: (row) => this.facade.formatCurrency(row?.settledFromCredit),
+      },
+      {
+        id: 'settledOnTender',
+        field: 'settledOnTender',
+        header: this.translate.instant('pages.reports.settled_on_tender'),
+        getValue: (row) => this.facade.formatCurrency(row?.settledOnTender),
+      },
     ];
 
     // Payroll Tables

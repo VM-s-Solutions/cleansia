@@ -7911,8 +7911,6 @@ export interface ICreateDisputeResponse {
 
 export class CreateMembershipCheckoutSessionCommand implements ICreateMembershipCheckoutSessionCommand {
     planCode!: string | undefined;
-    successUrl!: string | undefined;
-    cancelUrl!: string | undefined;
 
     constructor(data?: ICreateMembershipCheckoutSessionCommand) {
         if (data) {
@@ -7926,8 +7924,6 @@ export class CreateMembershipCheckoutSessionCommand implements ICreateMembership
     init(Data?: any) {
         if (Data) {
             this.planCode = Data["planCode"];
-            this.successUrl = Data["successUrl"];
-            this.cancelUrl = Data["cancelUrl"];
         }
     }
 
@@ -7941,16 +7937,12 @@ export class CreateMembershipCheckoutSessionCommand implements ICreateMembership
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["planCode"] = this.planCode;
-        data["successUrl"] = this.successUrl;
-        data["cancelUrl"] = this.cancelUrl;
         return data;
     }
 }
 
 export interface ICreateMembershipCheckoutSessionCommand {
     planCode: string | undefined;
-    successUrl: string | undefined;
-    cancelUrl: string | undefined;
 }
 
 export class CreateMembershipCheckoutSessionResponse implements ICreateMembershipCheckoutSessionResponse {
@@ -14870,6 +14862,7 @@ export class UpdateRecurringBookingCommand implements IUpdateRecurringBookingCom
     paymentType!: number;
     startsOn!: Date;
     endsOn!: Date | undefined;
+    preferredEmployeeId!: string | undefined;
 
     constructor(data?: IUpdateRecurringBookingCommand) {
         if (data) {
@@ -14902,6 +14895,7 @@ export class UpdateRecurringBookingCommand implements IUpdateRecurringBookingCom
             this.paymentType = Data["paymentType"];
             this.startsOn = Data["startsOn"] ? new Date(Data["startsOn"].toString()) : undefined as any;
             this.endsOn = Data["endsOn"] ? new Date(Data["endsOn"].toString()) : undefined as any;
+            this.preferredEmployeeId = Data["preferredEmployeeId"];
         }
     }
 
@@ -14934,6 +14928,7 @@ export class UpdateRecurringBookingCommand implements IUpdateRecurringBookingCom
         data["paymentType"] = this.paymentType;
         data["startsOn"] = this.startsOn ? this.startsOn.toISOString() : undefined as any;
         data["endsOn"] = this.endsOn ? this.endsOn.toISOString() : undefined as any;
+        data["preferredEmployeeId"] = this.preferredEmployeeId;
         return data;
     }
 }
@@ -14951,6 +14946,7 @@ export interface IUpdateRecurringBookingCommand {
     paymentType: number;
     startsOn: Date;
     endsOn: Date | undefined;
+    preferredEmployeeId: string | undefined;
 }
 
 export class UpdateSavedAddressCommand implements IUpdateSavedAddressCommand {

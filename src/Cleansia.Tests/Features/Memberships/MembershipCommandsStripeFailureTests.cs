@@ -233,7 +233,7 @@ public class MembershipCommandsStripeFailureTests
             .ThrowsAsync(TransientStripeFault());
 
         var result = await CheckoutHandler().Handle(
-            new CreateMembershipCheckoutSession.Command(PlanCode, "https://ok", "https://cancel"),
+            new CreateMembershipCheckoutSession.Command(PlanCode),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -248,11 +248,11 @@ public class MembershipCommandsStripeFailureTests
             .Setup(c => c.CreateMembershipCheckoutSessionAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<CancellationToken>()))
             .ThrowsAsync(TransientStripeFault());
 
         var result = await CheckoutHandler().Handle(
-            new CreateMembershipCheckoutSession.Command(PlanCode, "https://ok", "https://cancel"),
+            new CreateMembershipCheckoutSession.Command(PlanCode),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -267,12 +267,12 @@ public class MembershipCommandsStripeFailureTests
             .Setup(c => c.CreateMembershipCheckoutSessionAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("misconfigured DI"));
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => CheckoutHandler().Handle(
-                new CreateMembershipCheckoutSession.Command(PlanCode, "https://ok", "https://cancel"),
+                new CreateMembershipCheckoutSession.Command(PlanCode),
                 CancellationToken.None));
     }
 

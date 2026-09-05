@@ -72,21 +72,19 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
   /**
    * Start Stripe's hosted Checkout for a plan.
    *
-   * Moved here from the retired `/membership/subscribe`, which was a second
-   * sales page for the same product. The success URL still lands on
-   * `/membership/welcome` — that is the page Stripe has always returned to and
-   * the one that celebrates the purchase; only the CANCEL url changes, because
-   * the page the customer backed out of is now this one.
+   * Moved here from the retired `/membership/subscribe`, which was a second sales page for the same
+   * product. Stripe still returns a buyer to `/membership/welcome` and a leaver to `/plus` — but
+   * this no longer says so. Those two URLs used to be built here and sent with the command, and the
+   * server passed them to Stripe unchecked, so any authenticated caller could name the page a
+   * customer landed on after paying. The server derives them now, from the same config value the
+   * order flow returns to. → `StripeClient.MembershipReturnUrl`
    */
   startCheckout(planCode: string): void {
     if (this.submitting() || !planCode) return;
     this.submitting.set(true);
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const command = new CreateMembershipCheckoutSessionCommand();
     command.planCode = planCode;
-    command.successUrl = `${origin}/membership/welcome`;
-    command.cancelUrl = `${origin}/plus`;
 
     this.membershipClient
       .createCheckoutSession(command)

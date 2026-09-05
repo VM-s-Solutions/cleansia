@@ -390,8 +390,6 @@ public class StripeClient : IStripeClient
         string userId,
         string membershipPlanCode,
         int trialPeriodDays,
-        string successUrl,
-        string cancelUrl,
         string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
@@ -420,8 +418,8 @@ public class StripeClient : IStripeClient
                     Quantity = 1,
                 },
             ],
-            SuccessUrl = successUrl,
-            CancelUrl = cancelUrl,
+            SuccessUrl = MembershipReturnUrl(MembershipWelcomePath),
+            CancelUrl = MembershipReturnUrl(PlusPagePath),
             SubscriptionData = subscriptionData,
         };
         // attemptId scopes idempotency to a single open-checkout attempt;
@@ -434,6 +432,34 @@ public class StripeClient : IStripeClient
             () => service.CreateAsync(options, requestOptions, cancellationToken));
         return session.Url;
     }
+
+    // The two customer-app routes a membership checkout returns to. Pinned by
+    // MembershipReturnPathTests, which reads them back out of the Angular route table — because a
+    // frontend path living in a backend assembly is invisible to `nx affected`, to every Angular
+    // test, and to the compiler, which is precisely how SuccessUrlBase came to point at the partner
+    // app's port for as long as it did.
+    private const string MembershipWelcomePath = "/membership/welcome";
+    private const string PlusPagePath = "/plus";
+
+    /// <summary>
+    /// Where Stripe sends the browser back to after a membership checkout.
+    /// <para>
+    /// The ORIGIN comes from <c>Stripe:SuccessUrlBase</c> — the same value the order flow returns
+    /// to — and the PATH is a constant here. Neither comes from the caller any more. Deriving it
+    /// rather than accepting it is the whole fix: an authenticated caller used to hand these
+    /// straight to Stripe, so it could send a paying customer anywhere, including a page that looked
+    /// like ours.
+    /// </para>
+    /// <para>
+    /// A consequence worth knowing rather than fixing here: auth cookies are host-scoped
+    /// (AuthCookieWriter sets no Domain), so a visitor browsing a non-canonical host — www, say —
+    /// returns to the canonical one and arrives signed out. That is already true of every card
+    /// ORDER, which has derived its return URL from this same key since it was written; this makes
+    /// membership consistent with it rather than introducing anything new.
+    /// </para>
+    /// </summary>
+    private string MembershipReturnUrl(string path) =>
+        new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + path;
 
     // Classify + meter + log every Stripe failure at the adapter boundary, then re-throw so the
     // existing caller contracts (callers handle StripeException; the handler shapes the BusinessResult)

@@ -610,7 +610,7 @@ public class RefundServiceTests
         public Task CancelSubscriptionAtPeriodEndAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
-        public Task<string> CreateMembershipCheckoutSessionAsync(string stripeCustomerId, string stripePriceId, string userId, string membershipPlanCode, int trialPeriodDays, string successUrl, string cancelUrl, string idempotencyAttemptId, CancellationToken cancellationToken)
+        public Task<string> CreateMembershipCheckoutSessionAsync(string stripeCustomerId, string stripePriceId, string userId, string membershipPlanCode, int trialPeriodDays, string idempotencyAttemptId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
     }
 

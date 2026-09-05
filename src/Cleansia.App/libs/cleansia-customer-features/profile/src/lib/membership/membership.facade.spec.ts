@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import {
-  CreateMembershipCheckoutSessionCommand,
   CustomerClient,
   GetMyMembershipResponse,
   SwapMembershipPlanCommand,
@@ -28,7 +27,6 @@ describe('MembershipFacade — express waiver state', () => {
   let membershipClient: {
     getMine: jest.Mock;
     swapPlan: jest.Mock;
-    createCheckoutSession: jest.Mock;
   };
   let snackbar: {
     showApiError: jest.Mock;
@@ -40,7 +38,6 @@ describe('MembershipFacade — express waiver state', () => {
     membershipClient = {
       getMine: jest.fn(),
       swapPlan: jest.fn(),
-      createCheckoutSession: jest.fn(),
     };
     snackbar = {
       showApiError: jest.fn(),
@@ -149,25 +146,6 @@ describe('MembershipFacade — express waiver state', () => {
         membershipClient.swapPlan.mock.calls[0][0];
       expect(command).toBeInstanceOf(SwapMembershipPlanCommand);
       expect(command.toJSON()).toEqual({ newPlanCode: 'plus-yearly' });
-    });
-
-    it('serializes a checkout session with the plan code and both return urls', () => {
-      membershipClient.createCheckoutSession.mockReturnValue(of(null));
-
-      facade.createCheckoutSession(
-        'plus-monthly',
-        'https://app.test/success',
-        'https://app.test/cancel',
-      );
-
-      const command: CreateMembershipCheckoutSessionCommand =
-        membershipClient.createCheckoutSession.mock.calls[0][0];
-      expect(command).toBeInstanceOf(CreateMembershipCheckoutSessionCommand);
-      expect(command.toJSON()).toEqual({
-        planCode: 'plus-monthly',
-        successUrl: 'https://app.test/success',
-        cancelUrl: 'https://app.test/cancel',
-      });
     });
   });
 });

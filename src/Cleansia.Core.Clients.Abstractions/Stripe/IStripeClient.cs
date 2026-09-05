@@ -150,10 +150,16 @@ public interface IStripeClient
     /// <summary>
     /// Create a Stripe Checkout Session in subscription mode for the web
     /// customer flow. The customer is redirected to Stripe-hosted Checkout,
-    /// completes payment, and returns to <c>SuccessUrl</c>. The
+    /// completes payment, and returns to the membership welcome page. The
     /// <c>customer.subscription.created</c> webhook is what creates the local
     /// <see cref="Cleansia.Core.Domain.Memberships.UserMembership"/> row —
     /// success-url polling is not required.
+    /// <para>
+    /// The return URLs are NOT parameters. They used to be, taken from the client and passed
+    /// through unchecked, which let any authenticated caller choose where Stripe sent a browser
+    /// after payment. They are now derived from <c>Stripe:SuccessUrlBase</c> — the same authority
+    /// the order flow has always used, one method up in this same interface.
+    /// </para>
     /// </summary>
     Task<string> CreateMembershipCheckoutSessionAsync(
         string stripeCustomerId,
@@ -161,8 +167,6 @@ public interface IStripeClient
         string userId,
         string membershipPlanCode,
         int trialPeriodDays,
-        string successUrl,
-        string cancelUrl,
         string idempotencyAttemptId,
         CancellationToken cancellationToken);
 }

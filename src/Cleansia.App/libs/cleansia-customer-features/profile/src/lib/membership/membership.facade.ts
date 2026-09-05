@@ -1,7 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
-  CreateMembershipCheckoutSessionCommand,
   CustomerClient,
   ExpressWaiverStatus,
   GetMembershipPlansResponse,
@@ -20,10 +19,14 @@ import { catchError, of, takeUntil } from 'rxjs';
  * NOTE: Always go through CustomerClient — direct injection of MembershipClient
  * hits NSwag's empty-string default baseUrl and bypasses CUSTOMER_API_BASE_URL.
  *
- * NOTE: Web subscribes ONLY via Stripe-hosted Checkout (createCheckoutSession) and
- * deliberately never calls the `subscribe` endpoint. That endpoint is the native-SDK
- * SetupIntent/PaymentSheet flow consumed by the MOBILE app; the split is intentional,
- * so the absence of a subscribe() call here is by design, not a missing feature.
+ * NOTE: Web subscribes ONLY via Stripe-hosted Checkout, and that flow lives on the /plus page
+ * (`PlusPageFacade.startCheckout`) — this facade manages an EXISTING membership. It deliberately
+ * never calls the `subscribe` endpoint: that one is the native-SDK SetupIntent/PaymentSheet flow
+ * consumed by the MOBILE app. The split is intentional, so the absence of a subscribe() call here
+ * is by design, not a missing feature.
+ *
+ * It used to carry its own `createCheckoutSession` too — a second web checkout entry point with no
+ * caller, left behind when /membership/subscribe was retired into /plus.
  */
 @Injectable()
 export class MembershipFacade extends UnsubscribeControlDirective {
@@ -142,40 +145,4 @@ export class MembershipFacade extends UnsubscribeControlDirective {
       });
   }
 
-  /**
-   * Start a Stripe-hosted Checkout Session and redirect the browser to it.
-   * Calls the optional `onMissingUrl` callback if the API returns no URL —
-   * the component is then responsible for resetting `submitting` if needed.
-   */
-  createCheckoutSession(
-    planCode: string,
-    successUrl: string,
-    cancelUrl: string,
-  ): void {
-    if (this.submitting()) return;
-    this.submitting.set(true);
-
-    const command = new CreateMembershipCheckoutSessionCommand();
-    command.planCode = planCode;
-    command.successUrl = successUrl;
-    command.cancelUrl = cancelUrl;
-
-    this.client
-      .createCheckoutSession(command)
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe({
-        next: (response) => {
-          if (response?.checkoutUrl && typeof window !== 'undefined') {
-            window.location.href = response.checkoutUrl;
-          } else {
-            this.submitting.set(false);
-            this.snackbar.showErrorTranslated('membership.stripe_customer_required');
-          }
-        },
-        error: (err) => {
-          this.submitting.set(false);
-          this.snackbar.showApiError(err, 'membership.stripe_customer_required');
-        },
-      });
-  }
 }

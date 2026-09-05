@@ -885,6 +885,34 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CreditAccounts",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Balance = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CreditAccounts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CreditAccounts_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Devices",
                 columns: table => new
                 {
@@ -1117,6 +1145,7 @@ namespace Cleansia.Infra.Database.Migrations
                     UserId = table.Column<string>(type: "character varying(26)", nullable: true),
                     ReceiptId = table.Column<string>(type: "text", nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreditAppliedAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     CancellationRefundAmount = table.Column<decimal>(type: "numeric", nullable: true),
                     CancellationFeeRate = table.Column<decimal>(type: "numeric", nullable: true),
                     CancelledBy = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
@@ -1535,6 +1564,38 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Services",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CreditTransactions",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CreditAccountId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    Reason = table.Column<int>(type: "integer", nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    DisputeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    IdempotencyKey = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CreditTransactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CreditTransactions_CreditAccounts_CreditAccountId",
+                        column: x => x.CreditAccountId,
+                        principalTable: "CreditAccounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -2386,6 +2447,46 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DisputeLines",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    DisputeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DisputeLines", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DisputeLines_Disputes_DisputeId",
+                        column: x => x.DisputeId,
+                        principalTable: "Disputes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_DisputeLines_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DisputeLines_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DisputeMessages",
                 columns: table => new
                 {
@@ -2459,6 +2560,47 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Refunds_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderReviewLines",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderReviewId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    Rating = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderReviewLines", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderReviewLines_OrderReviews_OrderReviewId",
+                        column: x => x.OrderReviewId,
+                        principalTable: "OrderReviews",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderReviewLines_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderReviewLines_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2577,6 +2719,33 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_CreditAccounts_TenantId",
+                table: "CreditAccounts",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CreditAccounts_UserId",
+                table: "CreditAccounts",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CreditTransactions_CreditAccountId",
+                table: "CreditTransactions",
+                column: "CreditAccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CreditTransactions_IdempotencyKey",
+                table: "CreditTransactions",
+                column: "IdempotencyKey",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CreditTransactions_TenantId",
+                table: "CreditTransactions",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Currencies_TenantId",
                 table: "Currencies",
                 column: "TenantId");
@@ -2626,6 +2795,28 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_DisputeEvidence_UploadedOn",
                 table: "DisputeEvidence",
                 column: "UploadedOn");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DisputeLines_DisputeId_ServiceId_PackageId",
+                table: "DisputeLines",
+                columns: new[] { "DisputeId", "ServiceId", "PackageId" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DisputeLines_PackageId",
+                table: "DisputeLines",
+                column: "PackageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DisputeLines_ServiceId",
+                table: "DisputeLines",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DisputeLines_TenantId",
+                table: "DisputeLines",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DisputeMessages_AuthorId",
@@ -3212,6 +3403,28 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderReviewLines_OrderReviewId_ServiceId_PackageId",
+                table: "OrderReviewLines",
+                columns: new[] { "OrderReviewId", "ServiceId", "PackageId" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReviewLines_PackageId",
+                table: "OrderReviewLines",
+                column: "PackageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReviewLines_ServiceId",
+                table: "OrderReviewLines",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReviewLines_TenantId",
+                table: "OrderReviewLines",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderReviews_OrderId",
                 table: "OrderReviews",
                 column: "OrderId");
@@ -3785,6 +3998,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "CountryInvoiceConfigs");
 
             migrationBuilder.DropTable(
+                name: "CreditTransactions");
+
+            migrationBuilder.DropTable(
                 name: "DeadLetters");
 
             migrationBuilder.DropTable(
@@ -3792,6 +4008,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "DisputeEvidence");
+
+            migrationBuilder.DropTable(
+                name: "DisputeLines");
 
             migrationBuilder.DropTable(
                 name: "DisputeMessages");
@@ -3857,7 +4076,7 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "OrderPhotos");
 
             migrationBuilder.DropTable(
-                name: "OrderReviews");
+                name: "OrderReviewLines");
 
             migrationBuilder.DropTable(
                 name: "OrderServices");
@@ -3920,6 +4139,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Carts");
 
             migrationBuilder.DropTable(
+                name: "CreditAccounts");
+
+            migrationBuilder.DropTable(
                 name: "EmployeeDocuments");
 
             migrationBuilder.DropTable(
@@ -3930,6 +4152,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "EmployeeInvoices");
+
+            migrationBuilder.DropTable(
+                name: "OrderReviews");
 
             migrationBuilder.DropTable(
                 name: "Packages");

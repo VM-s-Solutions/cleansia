@@ -57,7 +57,7 @@ public sealed class RefundService(
             // stale amount would over-refund; clamp it to the live ceiling (or fail if nothing remains).
             var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
-            var refundable = order.TotalPrice - consumed;
+            var refundable = CardRefundCeiling(order, consumed);
             if (refundable <= 0m)
             {
                 return BusinessResult.Failure<RefundResult>(new Error(
@@ -71,7 +71,7 @@ public sealed class RefundService(
         {
             var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
-            var refundable = order.TotalPrice - consumed;
+            var refundable = CardRefundCeiling(order, consumed);
             var amount = Math.Min(request.Amount, refundable);
             if (amount <= 0m)
             {
@@ -175,6 +175,23 @@ public sealed class RefundService(
             Amount: existing.Amount,
             Status: existing.Status,
             ResolvedToExisting: true));
+
+    /// <summary>
+    /// The most that can still go back to the CARD.
+    ///
+    /// <para>It is not the order total. Credit is a tender: an order settled with 500 of credit and
+    /// 1500 of card is a 2000 sale, but only 1500 ever reached Stripe — and the card cannot give back
+    /// money the card never took. Without subtracting it, a customer who paid partly in credit could
+    /// be refunded the whole 2000 in cash, converting credit into money at will.</para>
+    ///
+    /// <para>The credit half is returned by an admin re-issuing it, not automatically. That is the
+    /// human-in-the-loop ruling, and it keeps this a subtraction rather than a second money path.</para>
+    ///
+    /// <para>Both call sites above compute this, which is why it is one function: they drifted apart
+    /// once already in this file's history and the result was a stale amount being re-driven.</para>
+    /// </summary>
+    public static decimal CardRefundCeiling(Order order, decimal consumed) =>
+        order.TotalPrice - order.CreditAppliedAmount - consumed;
 
     // RefundKey = refund:{OrderId}:{purpose}[:{DisputeId}][:{RefundRequestId}] (ADR-0006 D3).
     // Deterministic on the domain inputs, never a Guid/timestamp, so a retry/redelivery and a

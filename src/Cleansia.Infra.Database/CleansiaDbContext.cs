@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.DeadLettering;
 using Cleansia.Core.Domain.Devices;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Emails;
@@ -325,6 +326,15 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<UserConsent> UserConsents { get; set; }
     public virtual DbSet<GdprRequest> GdprRequests { get; set; }
     public virtual DbSet<LoyaltyAccount> LoyaltyAccounts { get; set; }
+
+    /// <summary>
+    /// Customer credit — money owed back to a customer, usually because a clean went wrong. The
+    /// balance is a tender, never a discount: it changes what the card is charged, not what the
+    /// order cost. → Order.CreditAppliedAmount
+    /// </summary>
+    public virtual DbSet<CreditAccount> CreditAccounts { get; set; }
+
+    public virtual DbSet<CreditTransaction> CreditTransactions { get; set; }
     public virtual DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
     public virtual DbSet<LoyaltyTierConfig> LoyaltyTierConfigs { get; set; }
     public virtual DbSet<PromoCode> PromoCodes { get; set; }

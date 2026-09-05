@@ -46,6 +46,16 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .IsRequired()
             .HasPrecision(18, 2);
 
+        // How much of the order the customer's credit balance settled. NOT NULL because "no credit"
+        // is zero, not unknown — but with a DATABASE DEFAULT, which is the part that matters: the
+        // integration suite inserts orders with raw SQL that names its columns explicitly, and a
+        // NOT NULL column with no default breaks every one of those the moment it is added. It is
+        // also what an existing row would need if this ever ran as a real migration.
+        builder.Property(o => o.CreditAppliedAmount)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
         // Loyalty tier discount applied at create-time. Nullable; not
         // required on existing/anon orders.
         builder.Property(o => o.TierDiscountAmount)

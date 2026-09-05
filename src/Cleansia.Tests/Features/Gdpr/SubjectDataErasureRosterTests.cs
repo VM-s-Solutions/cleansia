@@ -278,6 +278,18 @@ public class SubjectDataErasureRosterTests
             Verdict.RetainedPseudonymous,
             "A points balance and tier keyed to an anonymized user id."),
 
+        // NOT the same answer as LoyaltyAccount above, and the difference is the point. A points
+        // balance is a score; a credit balance is a DEBT the company owes. Pasting the pseudonymous
+        // verdict onto it would quietly write that debt off at the moment a customer asks to be
+        // forgotten, which is the version that generates a complaint nobody can answer.
+        [typeof(Core.Domain.Credit.CreditAccount)] = new(
+            Verdict.RetainedByPolicy,
+            "MONEY OWED, so erasure is REFUSED while the balance is positive (owner ruling 2026-09-05) — "
+                + "the same shape already shipped for a cleaner with unsettled pay. The customer spends it "
+                + "or is paid out, and then the erasure proceeds and this row goes with the user. A zero "
+                + "balance never blocks anything."),
+
+
         [typeof(Core.Domain.Loyalty.Referral)] = new(
             Verdict.RetainedPseudonymous,
             "A TWO-PARTY ledger: deleting the erased party's row would destroy the counterparty's record of "

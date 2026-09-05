@@ -201,6 +201,42 @@ public class Order : Auditable, ITenantEntity
     public DateTime? CancelledAt { get; private set; }
 
     /// <summary>
+    /// How much of this order was settled from the customer's credit balance rather than their card.
+    ///
+    /// <para><b>Credit is a TENDER, not a discount</b> — owner ruling 2026-09-05. A 2000 clean paid
+    /// with 500 of credit is still a 2000 clean: <see cref="TotalPrice"/>, <see cref="NetAmount"/>
+    /// and <see cref="VatAmount"/> do not move, the fiscal receipt registers the full sale, and
+    /// loyalty earns on the full amount. What changes is the figure sent to Stripe.</para>
+    ///
+    /// <para>The alternative — treating credit as a fourth discount — would shrink the taxable base
+    /// of THIS sale to apologise for a PREVIOUS one whose VAT was already declared, and register a
+    /// 2000 clean with the authority as 1500. Credit settles a debt the company already owes; it is
+    /// not a price concession on a new job.</para>
+    ///
+    /// <para>Zero on every order that used none, which is every order written before this existed.
+    /// The refund ceiling subtracts it: the card cannot give back money the card never took.</para>
+    /// </summary>
+    public decimal CreditAppliedAmount { get; private set; }
+
+    /// <summary>
+    /// Record how much of this order the customer's credit balance settled.
+    ///
+    /// <para>Called AFTER the balance has actually been debited — the repository's conditional UPDATE
+    /// is what decides whether the funds were there, and this only records the outcome. It never
+    /// touches <see cref="TotalPrice"/>: credit is a tender, so the sale keeps its size and only the
+    /// figure sent to the card changes.</para>
+    /// </summary>
+    public Order ApplyCredit(decimal amount, string appliedBy)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, TotalPrice);
+
+        CreditAppliedAmount = amount;
+        Updated(appliedBy, DateTimeOffset.UtcNow);
+        return this;
+    }
+
+    /// <summary>
     /// Amount actually refunded to the customer on cancellation.
     /// Zero if the full fee applied (100% no-refund charge).
     /// </summary>

@@ -8,6 +8,8 @@ using Cleansia.Core.Domain.SeedWork;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using Cleansia.Core.AppServices.Common;
+
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
@@ -68,8 +70,29 @@ public sealed class ReferralService(
                 // can't validate the code their friend shared because the
                 // row never persisted. Safe to commit here because the only
                 // pending change is the new ReferralCode itself.
-                await unitOfWork.CommitAsync(cancellationToken);
-                return rc;
+                // The CodeExistsAsync check above can only see COMMITTED rows, so two users can
+                // generate the same candidate at once and both pass it. (TenantId, Code) UNIQUE
+                // arbitrates — and only began to once it was declared NULLS NOT DISTINCT; before
+                // that both rows landed and ProcessOrderCompletedAsync paid the referral points to
+                // whichever one the unordered lookup returned.
+                //
+                // The loser does not throw: it detaches its row (Remove on an Added entity untracks
+                // it) and takes another attempt, which is precisely what this loop is for. It used
+                // to retry only on the read collision, i.e. on the case that was already handled.
+                try
+                {
+                    await unitOfWork.CommitAsync(cancellationToken);
+                    return rc;
+                }
+                catch (DbUpdateException ex)
+                    when (DbConstraintViolation.IsUniqueViolation(ex))
+                {
+                    referralCodeRepository.Remove(rc);
+                    logger.LogWarning(
+                        "ReferralCode {Code} lost the insert race on attempt {Attempt} for user {UserId}; retrying.",
+                        candidate, attempt + 1, userId);
+                    continue;
+                }
             }
             logger.LogWarning(
                 "ReferralCode collision on attempt {Attempt} for user {UserId} (code={Code}); retrying.",

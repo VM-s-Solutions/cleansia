@@ -2725,6 +2725,10 @@
     "messages": {
       "retry_scheduled": "Opakování naplánováno",
       "acknowledged": "Fiskální selhání potvrzeno"
+    },
+    "errors": {
+      "retry_scheduled": "Akci se nepodařilo provést. Zkuste to prosím znovu.",
+      "acknowledged": "Akci se nepodařilo provést. Zkuste to prosím znovu."
     }
   },
   "gdpr": {

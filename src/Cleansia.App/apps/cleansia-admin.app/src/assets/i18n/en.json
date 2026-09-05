@@ -2725,6 +2725,10 @@
     "messages": {
       "retry_scheduled": "Retry scheduled",
       "acknowledged": "Fiscal failure acknowledged"
+    },
+    "errors": {
+      "retry_scheduled": "That could not be done. Please try again.",
+      "acknowledged": "That could not be done. Please try again."
     }
   },
   "gdpr": {

@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -94,6 +95,26 @@ public class RequestPromoCode
                     description: "First-order code issued on request from the public site");
 
                 promoCodeRepository.Add(promo);
+
+                // The code is derived from the e-mail, so two simultaneous requests for one address
+                // both read null and both insert the SAME code. (TenantId, Code) UNIQUE arbitrates
+                // that — and only started doing so once it was declared NULLS NOT DISTINCT.
+                //
+                // The loser does not get an error, because the loser's desired outcome ALREADY
+                // HAPPENED: the winner created exactly the code this request would have created.
+                // Detaching the duplicate (Remove on an Added entity untracks it) lets the pipeline
+                // commit carry the e-mail through, so the visitor gets their code either way. The
+                // alternative — flushing and failing — would answer a public form with an error for
+                // a race the visitor cannot see and did not cause.
+                try
+                {
+                    await promoCodeRepository.CommitAsync(cancellationToken);
+                }
+                catch (DbUpdateException ex)
+                    when (DbConstraintViolation.IsUniqueViolation(ex))
+                {
+                    promoCodeRepository.Remove(promo);
+                }
             }
 
             // Post-commit: the row and the message are written in one transaction by

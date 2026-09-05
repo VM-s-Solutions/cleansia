@@ -514,7 +514,7 @@
         },
         "q6": {
           "question": "What if I am not satisfied?",
-          "answer": "Tell us within 48 hours of the clean. We will send someone back to put it right, or refund the part that was not done."
+          "answer": "Tell us within 24 hours of the clean and we will put it right — normally by refunding the part that was not done. Later than that, write to us anyway: we look at every serious case on its merits."
         }
       },
       "cta": {
@@ -577,7 +577,7 @@
         "rethink_value": "Always free",
         "rethink_desc": "Until someone accepts the job, cancelling costs nothing however close the clean is. Once someone has, you still have 15 minutes from when you booked.",
         "we_cancel_label": "If we cancel",
-        "we_cancel_value": "Everything back + 500 CZK",
+        "we_cancel_value": "Everything back + 250 CZK",
         "we_cancel_desc": "If the cleaner does not arrive we refund the full amount and add credit towards your next clean.",
         "lead_label": "Earliest slot",
         "lead_value": "in 2 hours",
@@ -1873,7 +1873,8 @@
       "not_owned_by_user": "You don't have access to this dispute.",
       "already_exists": "You already have an open dispute on this order.",
       "invalid_refund_amount": "The refund amount isn't valid for this order.",
-      "max_length_exceeded": "Your message is too long. Please shorten it."
+      "max_length_exceeded": "Your message is too long. Please shorten it.",
+      "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it."
     },
     "file": {
       "invalid_file_type": "This file type isn't allowed.",

@@ -1,4 +1,4 @@
-﻿namespace Cleansia.Core.AppServices.Common;
+namespace Cleansia.Core.AppServices.Common;
 
 public static class BusinessErrorMessage
 {
@@ -330,6 +330,9 @@ public static class BusinessErrorMessage
     // Dispute
     public const string DisputeNotFound = "dispute.not_found";
     public const string DisputeAlreadyExists = "dispute.already_exists";
+
+    /// <summary>The clean has not happened yet — there is nothing to report about it.</summary>
+    public const string DisputeCleaningNotStarted = "dispute.cleaning_not_started";
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";

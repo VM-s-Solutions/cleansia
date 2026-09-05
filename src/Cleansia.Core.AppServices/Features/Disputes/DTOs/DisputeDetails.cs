@@ -27,5 +27,18 @@ public record DisputeDetails(
     IEnumerable<DisputeMessageDto> Messages,
     IEnumerable<DisputeEvidenceDto> Evidence,
     DateTimeOffset CreatedOn,
-    DateTimeOffset? UpdatedOn
+    DateTimeOffset? UpdatedOn,
+    /// <summary>
+    /// Whether the customer reported this inside the advertised window
+    /// (<see cref="Cleansia.Core.Domain.Disputes.DisputeLimits.FilingWindowHours"/>).
+    ///
+    /// <para>The window gates the GUARANTEE, not the door: a late dispute is accepted and judged on
+    /// its merits — a serious case has to be investigable — so this is the flag that lets an admin
+    /// tell "we promised to fix this" from "we are choosing to". Without it the 24 hours would be a
+    /// number in the copy that nothing in the platform can act on.</para>
+    ///
+    /// <para>Null when the dispute's order could not be loaded, which is the same condition that
+    /// leaves <see cref="Currency"/> null.</para>
+    /// </summary>
+    bool? FiledWithinWindow
 );

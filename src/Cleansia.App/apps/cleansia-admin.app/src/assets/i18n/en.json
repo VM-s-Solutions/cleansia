@@ -2388,7 +2388,8 @@
       "invalid_status_transition": "This status change is not allowed for the current dispute state.",
       "max_length_exceeded": "Maximum length exceeded",
       "not_found": "Dispute not found",
-      "not_owned_by_user": "This dispute belongs to a different user."
+      "not_owned_by_user": "This dispute belongs to a different user.",
+      "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it."
     },
     "email": {
       "invalid_email": "Invalid email address",

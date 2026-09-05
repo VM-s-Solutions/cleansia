@@ -68,6 +68,21 @@ public class CreateDispute
                 return BusinessResult.Failure<Response>(new Error(nameof(request.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
+            // You cannot report a clean that has not happened yet. Nothing stopped it before: the
+            // validator checks the order exists, the reason enum and the description length, and
+            // there was no timing rule of any kind — so a dispute could be filed against tomorrow's
+            // booking, or one from last year.
+            //
+            // The gate is the SCHEDULED TIME, not the order status, and that distinction matters. A
+            // status gate ("must be Completed") would refuse the one case the guarantee exists for:
+            // a cleaner who never arrives leaves the order sitting at Confirmed or OnTheWay forever,
+            // with no completion to point at. The slot passing is what makes a no-show reportable.
+            if (order.CleaningDateTime > DateTime.UtcNow)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(request.OrderId), BusinessErrorMessage.DisputeCleaningNotStarted));
+            }
+
             var existingDispute = await disputeRepository.GetOpenDisputeForOrderAsync(
                 request.OrderId, cancellationToken);
 

@@ -514,7 +514,7 @@
         },
         "q6": {
           "question": "Co když nebudu spokojen?",
-          "answer": "Napište nám do 48 hodin od úklidu. Pošleme někoho zpět, aby to napravil, nebo vrátíme částku za to, co nebylo uděláno."
+          "answer": "Napište nám do 24 hodin od úklidu a napravíme to — obvykle vrácením částky za to, co nebylo uděláno. Pokud je to později, napište i tak: každý vážný případ posuzujeme individuálně."
         }
       },
       "cta": {
@@ -577,7 +577,7 @@
         "rethink_value": "Vždy zdarma",
         "rethink_desc": "Dokud práci nikdo nepřijme, zrušení nic nestojí, ať je úklid jakkoli blízko. Jakmile ji někdo přijme, máte pořád 15 minut od objednání.",
         "we_cancel_label": "Když zrušíme my",
-        "we_cancel_value": "Vše zpět + 500 Kč",
+        "we_cancel_value": "Vše zpět + 250 Kč",
         "we_cancel_desc": "Když uklízeč nedorazí, vracíme celou částku a přidáme kredit na příští úklid.",
         "lead_label": "Nejbližší termín",
         "lead_value": "za 2 hodiny",
@@ -1873,7 +1873,8 @@
       "not_owned_by_user": "K této reklamaci nemáte přístup.",
       "already_exists": "K této objednávce už máte otevřenou reklamaci.",
       "invalid_refund_amount": "Částka vrácení není pro tuto objednávku platná.",
-      "max_length_exceeded": "Vaše zpráva je příliš dlouhá. Zkraťte ji prosím."
+      "max_length_exceeded": "Vaše zpráva je příliš dlouhá. Zkraťte ji prosím.",
+      "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit."
     },
     "file": {
       "invalid_file_type": "Tento typ souboru není povolen.",

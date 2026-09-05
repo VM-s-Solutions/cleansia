@@ -8702,6 +8702,7 @@ export class DisputeDetails implements IDisputeDetails {
     evidence!: DisputeEvidenceDto[] | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
+    filedWithinWindow!: boolean | undefined;
 
     constructor(data?: IDisputeDetails) {
         if (data) {
@@ -8738,6 +8739,7 @@ export class DisputeDetails implements IDisputeDetails {
             }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            this.filedWithinWindow = Data["filedWithinWindow"];
         }
     }
 
@@ -8774,6 +8776,7 @@ export class DisputeDetails implements IDisputeDetails {
         }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        data["filedWithinWindow"] = this.filedWithinWindow;
         return data;
     }
 }
@@ -8795,6 +8798,7 @@ export interface IDisputeDetails {
     evidence: DisputeEvidenceDto[] | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+    filedWithinWindow: boolean | undefined;
 }
 
 export class DisputeEvidenceDto implements IDisputeEvidenceDto {

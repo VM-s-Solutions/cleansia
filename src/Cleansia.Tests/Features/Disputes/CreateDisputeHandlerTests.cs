@@ -51,7 +51,12 @@ public class CreateDisputeHandlerTests
             _orderRepository.Object,
             _session.Object)!;
 
-    private Order ArrangeOrder(string orderId, string? ownerUserId)
+    /// <summary>
+    /// The clean defaults to YESTERDAY. It used to default to tomorrow, which every happy-path test
+    /// here relied on without noticing — a dispute could be filed against a booking that had not
+    /// happened, and nothing said no.
+    /// </summary>
+    private Order ArrangeOrder(string orderId, string? ownerUserId, DateTime? cleaningDateTime = null)
     {
         var order = Order.Create(
             customerName: "Test Customer",
@@ -61,7 +66,7 @@ public class CreateDisputeHandlerTests
             rooms: 2,
             bathrooms: 1,
             extras: new Dictionary<string, bool>(),
-            cleaningDateTime: DateTime.UtcNow.AddDays(1),
+            cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "currency-1",
@@ -73,6 +78,55 @@ public class CreateDisputeHandlerTests
             .Setup(r => r.GetByIdAsync(orderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         return order;
+    }
+
+    // ── the clean has to have happened ──────────────────────────────────────
+
+    [Fact]
+    public async Task ACleaningStillInTheFuture_CannotBeDisputed()
+    {
+        ArrangeOrder(OwnedOrderId, CallerUserId, cleaningDateTime: DateTime.UtcNow.AddDays(1));
+
+        var result = await CreateHandler().Handle(ValidCommand(OwnedOrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.DisputeCleaningNotStarted, result.Error!.Message);
+        _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The gate is the SCHEDULED TIME, not the order status — and this is the case that forces it. A
+    /// cleaner who never arrives leaves the order at Confirmed with no completion to point at, so a
+    /// "must be Completed" rule would refuse the one thing the guarantee exists for.
+    /// </summary>
+    [Fact]
+    public async Task ANoShow_IsStillDisputable_ThoughTheOrderNeverCompleted()
+    {
+        var order = ArrangeOrder(OwnedOrderId, CallerUserId, cleaningDateTime: DateTime.UtcNow.AddHours(-3));
+
+        var result = await CreateHandler().Handle(
+            new CreateDispute.Command(
+                OwnedOrderId, DisputeReason.ServiceNotProvided, "Nobody came and nobody called."),
+            CancellationToken.None);
+
+        Assert.NotEqual(OrderStatus.Completed, order.CurrentStatus);
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Late is not refused. The window gates the guarantee, not the door — owner ruling 2026-09-05 —
+    /// so a serious claim arriving after 24 h is still recorded and judged on its merits.
+    /// </summary>
+    [Fact]
+    public async Task ALateDispute_IsAcceptedRatherThanRefused()
+    {
+        ArrangeOrder(OwnedOrderId, CallerUserId, cleaningDateTime: DateTime.UtcNow.AddDays(-30));
+
+        var result = await CreateHandler().Handle(ValidCommand(OwnedOrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Once);
     }
 
     private static CreateDispute.Command ValidCommand(string orderId) =>

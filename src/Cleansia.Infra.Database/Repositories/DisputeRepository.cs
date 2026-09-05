@@ -18,8 +18,18 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
 
     public Task<Dispute?> GetOpenDisputeForOrderAsync(string orderId, CancellationToken cancellationToken)
     {
+        // TERMINAL, not merely Closed. Resolved has no outgoing transitions (Dispute.AllowedTransitions)
+        // and the only Close() callers go through CanTransitionTo, so a resolved dispute could never
+        // become closed — and this filter therefore locked its order out of disputes forever. Order-
+        // level that read as a one-shot policy; it becomes a trap the moment a customer is invited to
+        // itemise what went wrong, because itemising implies you can come back for the rest.
+        //
+        // Owner ruling, 2026-09-05: resolve, then a later problem may be raised as a new dispute.
+        // Dispute.IsTerminal is the existing name for "this one is finished", so it is the one used.
         return GetDbSet()
-            .Where(d => d.OrderId == orderId && d.Status != DisputeStatus.Closed)
+            .Where(d => d.OrderId == orderId
+                && d.Status != DisputeStatus.Closed
+                && d.Status != DisputeStatus.Resolved)
             .FirstOrDefaultAsync(cancellationToken);
     }
 

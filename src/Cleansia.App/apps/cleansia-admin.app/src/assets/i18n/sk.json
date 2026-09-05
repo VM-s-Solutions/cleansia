@@ -2388,7 +2388,8 @@
       "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav reklamácie povolená.",
       "max_length_exceeded": "Bola prekročená maximálna dĺžka",
       "not_found": "Reklamácia nebola nájdená",
-      "not_owned_by_user": "Táto reklamácia patrí inému používateľovi."
+      "not_owned_by_user": "Táto reklamácia patrí inému používateľovi.",
+      "cleaning_not_started": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť."
     },
     "email": {
       "invalid_email": "Neplatná e-mailová adresa",

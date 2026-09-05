@@ -43,7 +43,13 @@ public static class DisputeMappers
             Messages: dispute.Messages.Select(m => m.MapToDto()).ToList(),
             Evidence: dispute.Evidence.Select(e => e.MapToDto(evidenceBlobClient)).ToList(),
             CreatedOn: dispute.CreatedOn,
-            UpdatedOn: dispute.UpdatedOn
+            UpdatedOn: dispute.UpdatedOn,
+            // Measured from when the clean ended, or from when it was due to start if it never did —
+            // a no-show has no completion time, and that is exactly the case the window covers.
+            FiledWithinWindow: dispute.Order is null
+                ? null
+                : DisputeLimits.IsWithinFilingWindow(
+                    dispute.Order.CompletedAt, dispute.Order.CleaningDateTime, dispute.CreatedOn)
         );
     }
 

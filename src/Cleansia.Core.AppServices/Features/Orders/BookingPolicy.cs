@@ -81,8 +81,16 @@ public static class BookingPolicy
     /// <summary>"Oops window" for first-time customers. More lenient to build trust.</summary>
     public const int OopsWindowMinutesFirstTime = 60;
 
-    /// <summary>Refund + credit issued when cleaner cancels or no-shows.</summary>
-    public const decimal NoShowCreditCzk = 500m;
+    /// <summary>
+    /// Refund + credit issued when a cleaner cancels or no-shows. Owner ruling 2026-09-05: 250, down
+    /// from 500.
+    ///
+    /// <para><b>Still read by nothing.</b> No production code writes <c>CancelledBy.Cleaner</c>, so
+    /// neither the refund nor the credit half of the home page's "Everything back + 250 CZK" happens
+    /// today — the path is scheduled behind customer credit, which does not exist yet either. The
+    /// number lives here so the copy and the eventual implementation cannot disagree about it.</para>
+    /// </summary>
+    public const decimal NoShowCreditCzk = 250m;
 
     /// <summary>
     /// Seats beyond the crew the work needs. Zero by owner ruling — a filled spare seat is a second

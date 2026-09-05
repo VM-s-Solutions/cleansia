@@ -2388,7 +2388,8 @@
       "invalid_status_transition": "Tato změna stavu není pro aktuální stav sporu povolena.",
       "max_length_exceeded": "Překročena maximální délka",
       "not_found": "Spor nenalezen",
-      "not_owned_by_user": "Tento spor patří jinému uživateli."
+      "not_owned_by_user": "Tento spor patří jinému uživateli.",
+      "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit."
     },
     "email": {
       "invalid_email": "Neplatná e-mailová adresa",

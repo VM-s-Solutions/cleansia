@@ -19634,11 +19634,13 @@ export class DisputeDetails implements IDisputeDetails {
     status!: Code;
     resolutionNotes!: string | undefined;
     refundAmount!: number | undefined;
+    currency!: CurrencyDetailDto;
     resolvedOn!: Date | undefined;
     messages!: DisputeMessageDto[] | undefined;
     evidence!: DisputeEvidenceDto[] | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
+    filedWithinWindow!: boolean | undefined;
 
     constructor(data?: IDisputeDetails) {
         if (data) {
@@ -19661,6 +19663,7 @@ export class DisputeDetails implements IDisputeDetails {
             this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
             this.resolutionNotes = Data["resolutionNotes"];
             this.refundAmount = Data["refundAmount"];
+            this.currency = Data["currency"] ? CurrencyDetailDto.fromJS(Data["currency"]) : undefined as any;
             this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
             if (Array.isArray(Data["messages"])) {
                 this.messages = [] as any;
@@ -19674,6 +19677,7 @@ export class DisputeDetails implements IDisputeDetails {
             }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            this.filedWithinWindow = Data["filedWithinWindow"];
         }
     }
 
@@ -19696,6 +19700,7 @@ export class DisputeDetails implements IDisputeDetails {
         data["status"] = this.status ? this.status.toJSON() : undefined as any;
         data["resolutionNotes"] = this.resolutionNotes;
         data["refundAmount"] = this.refundAmount;
+        data["currency"] = this.currency ? this.currency.toJSON() : undefined as any;
         data["resolvedOn"] = this.resolvedOn ? this.resolvedOn.toISOString() : undefined as any;
         if (Array.isArray(this.messages)) {
             data["messages"] = [];
@@ -19709,6 +19714,7 @@ export class DisputeDetails implements IDisputeDetails {
         }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        data["filedWithinWindow"] = this.filedWithinWindow;
         return data;
     }
 }
@@ -19724,11 +19730,13 @@ export interface IDisputeDetails {
     status: Code;
     resolutionNotes: string | undefined;
     refundAmount: number | undefined;
+    currency: CurrencyDetailDto;
     resolvedOn: Date | undefined;
     messages: DisputeMessageDto[] | undefined;
     evidence: DisputeEvidenceDto[] | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+    filedWithinWindow: boolean | undefined;
 }
 
 export class DisputeEvidenceDto implements IDisputeEvidenceDto {
@@ -24132,6 +24140,7 @@ export class OrderItem implements IOrderItem {
     accessInstructions!: string | undefined;
     customerFloor!: string | undefined;
     customerApartment!: string | undefined;
+    accessMode!: string | undefined;
     recurringTemplateId!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
     currency!: CurrencyDetailDto;
@@ -24204,6 +24213,7 @@ export class OrderItem implements IOrderItem {
             this.accessInstructions = Data["accessInstructions"];
             this.customerFloor = Data["customerFloor"];
             this.customerApartment = Data["customerApartment"];
+            this.accessMode = Data["accessMode"];
             this.recurringTemplateId = Data["recurringTemplateId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
@@ -24300,6 +24310,7 @@ export class OrderItem implements IOrderItem {
         data["accessInstructions"] = this.accessInstructions;
         data["customerFloor"] = this.customerFloor;
         data["customerApartment"] = this.customerApartment;
+        data["accessMode"] = this.accessMode;
         data["recurringTemplateId"] = this.recurringTemplateId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
@@ -24383,6 +24394,7 @@ export interface IOrderItem {
     accessInstructions: string | undefined;
     customerFloor: string | undefined;
     customerApartment: string | undefined;
+    accessMode: string | undefined;
     recurringTemplateId: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
     currency: CurrencyDetailDto;

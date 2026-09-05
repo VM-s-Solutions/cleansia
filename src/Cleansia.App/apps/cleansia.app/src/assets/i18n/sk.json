@@ -514,7 +514,7 @@
         },
         "q6": {
           "question": "Čo ak nebudem spokojný?",
-          "answer": "Napíšte nám do 48 hodín od upratovania. Pošleme niekoho späť, aby to napravil, alebo vrátime sumu za to, čo nebolo urobené."
+          "answer": "Napíšte nám do 24 hodín od upratovania a napravíme to — zvyčajne vrátením sumy za to, čo nebolo urobené. Ak je to neskôr, napíšte aj tak: každý vážny prípad posudzujeme individuálne."
         }
       },
       "cta": {
@@ -577,7 +577,7 @@
         "rethink_value": "Vždy zadarmo",
         "rethink_desc": "Kým prácu nikto neprijme, zrušenie nič nestojí, nech je upratovanie akokoľvek blízko. Len čo ju niekto prijme, máte stále 15 minút od objednania.",
         "we_cancel_label": "Keď zrušíme my",
-        "we_cancel_value": "Všetko späť + 500 Kč",
+        "we_cancel_value": "Všetko späť + 250 Kč",
         "we_cancel_desc": "Keď upratovač nepríde, vraciame celú sumu a pridáme kredit na ďalšie upratovanie.",
         "lead_label": "Najbližší termín",
         "lead_value": "o 2 hodiny",
@@ -1873,7 +1873,8 @@
       "not_owned_by_user": "K tejto reklamácii nemáte prístup.",
       "already_exists": "K tejto objednávke už máte otvorenú reklamáciu.",
       "invalid_refund_amount": "Suma vrátenia nie je pre túto objednávku platná.",
-      "max_length_exceeded": "Vaša správa je príliš dlhá. Skráťte ju prosím."
+      "max_length_exceeded": "Vaša správa je príliš dlhá. Skráťte ju prosím.",
+      "cleaning_not_started": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť."
     },
     "file": {
       "invalid_file_type": "Tento typ súboru nie je povolený.",

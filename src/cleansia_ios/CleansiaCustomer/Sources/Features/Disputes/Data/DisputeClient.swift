@@ -5,7 +5,12 @@ import Foundation
 protocol DisputeClient: Sendable {
     func getPaged(offset: Int, limit: Int) async -> ApiResult<DisputesPage>
     func getById(disputeId: String) async -> ApiResult<DisputeDetail>
-    func create(orderId: String, reason: Int, description: String) async -> ApiResult<String>
+    func create(
+        orderId: String,
+        reason: Int,
+        description: String,
+        lines: [OrderItemLine]
+    ) async -> ApiResult<String>
     func addMessage(disputeId: String, message: String) async -> ApiResult<Void>
     func uploadEvidence(disputeId: String, file: URL) async -> ApiResult<DisputeEvidence>
 }
@@ -28,11 +33,21 @@ struct LiveDisputeClient: DisputeClient {
         }
     }
 
-    func create(orderId: String, reason: Int, description: String) async -> ApiResult<String> {
+    func create(
+        orderId: String,
+        reason: Int,
+        description: String,
+        lines: [OrderItemLine]
+    ) async -> ApiResult<String> {
         let command = CreateDisputeCommand(
             orderId: orderId,
             reason: DisputeReason(rawValue: reason),
-            description: description
+            description: description,
+            // nil, not [], when the customer ticked nothing. The backend treats the two the same, but
+            // every other client omits the field entirely and the wire shapes should not diverge.
+            lines: lines.isEmpty ? nil : lines.map {
+                CreateDisputeDisputeLineSelection(serviceId: $0.serviceId, packageId: $0.packageId)
+            }
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerDisputeAPI.disputeCreateDispute(createDisputeCommand: command)

@@ -197,13 +197,14 @@ struct OrderDetailView: View {
                 existingReview: order.review,
                 isSubmitting: vm.reviewState.isSubmitting,
                 errorMessage: vm.reviewState.errorMessage,
-                onConfirm: { rating, comment, tags in
+                onConfirm: { rating, comment, tags, lines in
                     Task {
                         await vm.submitReview(
                             rating: rating,
                             comment: comment,
                             tags: tags,
-                            isEdit: order.review != nil
+                            isEdit: order.review != nil,
+                            lines: lines
                         )
                     }
                 },
@@ -216,7 +217,10 @@ struct OrderDetailView: View {
                 // A prompt the customer did not ask for offers "Not now"; the card they tapped
                 // themselves offers "Cancel". Same sheet, honest about which one it is.
                 dismissLabel: reviewAutoOpened ? L10n.OrderReview.promptNotNow : L10n.OrderReview.cancel,
-                titleOverride: reviewAutoOpened ? L10n.OrderReview.promptTitle : nil
+                titleOverride: reviewAutoOpened ? L10n.OrderReview.promptTitle : nil,
+                // Built from the order already on screen — the detail carries its services and its
+                // packages' included items, so scoring them costs no extra request.
+                lineOptions: OrderItemLine.lines(of: order)
             )
             .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
         }

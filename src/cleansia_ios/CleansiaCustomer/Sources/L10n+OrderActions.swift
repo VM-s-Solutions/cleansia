@@ -197,7 +197,23 @@ extension L10n {
         }
 
         // swiftlint:enable cyclomatic_complexity
-    }
+    
+        static var rateItems: String {
+            localized("order_review_rate_items")
+        }
+
+        static var rateItemsHint: String {
+            localized("order_review_rate_items_hint")
+        }
+
+        static func itemInPackage(_ package: String) -> String {
+            format("order_review_item_in_package", package)
+        }
+
+        static func rateItemStar(_ item: String, _ stars: Int) -> String {
+            format("order_review_rate_item_star", item, stars)
+        }
+}
 
     enum OrderPhotos {
         static var sectionTitle: String {

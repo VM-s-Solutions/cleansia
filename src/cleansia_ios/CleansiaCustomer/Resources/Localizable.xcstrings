@@ -8162,6 +8162,41 @@
         }
       }
     },
+    "dispute_create_item_in_package": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in %1$@"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "v balíčku %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "v balíku %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "у пакеті %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "в пакете %1$@"
+          }
+        }
+      }
+    },
     "dispute_create_missing_order": {
       "extractionState": "stale",
       "localizations": {
@@ -8368,6 +8403,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Повідомити про проблему"
+          }
+        }
+      }
+    },
+    "dispute_create_which_items": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which parts went wrong?"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co konkrétně nedopadlo?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čo konkrétne nedopadlo?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Що саме пішло не так?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что именно пошло не так?"
+          }
+        }
+      }
+    },
+    "dispute_create_which_items_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional. Tick the services that were not done properly — it helps us put it right faster. Leave it empty if the whole clean was the problem."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné. Označte služby, které nebyly udělány pořádně — pomůže nám to rychleji to napravít. Pokud byl problém celý üklid, nechte prázdné."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celé upratovanie, nechajte prázdne."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необов’язково. Позначте послуги, які виконані погано — це допоможе швидше все виправити. Якщо проблемою було все прибирання — залиште порожнім."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необязательно. Отметьте услуги, выполненные плохо — это поможет быстрее всё исправить. Если проблемой была вся уборка — оставьте пустым."
           }
         }
       }
@@ -21468,6 +21573,41 @@
         }
       }
     },
+    "order_review_item_in_package": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in %1$@"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "v balíčku %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "v balíku %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "у пакеті %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "в пакете %1$@"
+          }
+        }
+      }
+    },
     "order_review_prompt_not_now": {
       "extractionState": "manual",
       "localizations": {
@@ -21534,6 +21674,111 @@
           "stringUnit": {
             "state": "translated",
             "value": "Как прошла уборка?"
+          }
+        }
+      }
+    },
+    "order_review_rate_item_star": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give %1$@ %2$d stars"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dát službě %1$@ %2$d hvězdiček"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dať službe %1$@ %2$d hviezdičiek"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поставити %1$@ %2$d зірок"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поставить %1$@ %2$d звёзд"
+          }
+        }
+      }
+    },
+    "order_review_rate_items": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate each service separately"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ohodnotit každou službu zvlášť"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ohodnotiť každú službu zvlášť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оцінити кожну послугу окремо"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оценить каждую услугу отдельно"
+          }
+        }
+      }
+    },
+    "order_review_rate_items_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional. Useful when one part went well and another did not — it tells us exactly where to look."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné. Hodí se, když jedna část dopadla dobře a jiná ne — řekne nám přesně, kam se podívat."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepovinné. Hodí sa, keď jedna časť dopadla dobre a iná nie — povie nám presne, kam sa pozrieť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необов’язково. Корисно, коли одна частина вийшла добре, а інша ні — це покаже нам, куди саме дивитися."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Необязательно. Полезно, когда одна часть вышла хорошо, а другая нет — это покажет, куда смотреть."
           }
         }
       }

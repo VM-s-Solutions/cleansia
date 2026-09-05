@@ -264,7 +264,10 @@ final class OrderDetailViewModel: ViewModel {
         rating: Int,
         comment: String?,
         tags: [CustomerReviewTag] = [],
-        isEdit: Bool
+        isEdit: Bool,
+        /// Optional per-item scores. `rating` stays the headline and stays required — these add what
+        /// one number cannot say, which is that the oven was spotless and the bathroom was skipped.
+        lines: [OrderItemLineScore] = []
     ) async {
         guard !orderId.isBlank, (1 ... 5).contains(rating), !reviewState.isSubmitting else { return }
         reviewState = .submitting
@@ -281,8 +284,11 @@ final class OrderDetailViewModel: ViewModel {
                 }
                 .prefix(CustomerReviewTag.maxTags)
         )
+        // Only rows actually scored, and only inside 1...5. An unscored item is not a zero — the
+        // server refuses a rating outside the range, and "not scored" is a real answer with no line.
+        let scored = lines.filter { (1 ... 5).contains($0.rating) }
         switch await client.submitReview(
-            orderId: orderId, rating: rating, comment: payload, tags: polar
+            orderId: orderId, rating: rating, comment: payload, tags: polar, lines: scored
         ) {
         case let .success(review):
             snackbar.showSuccess(isEdit ? L10n.OrderReview.updated : L10n.OrderReview.success)

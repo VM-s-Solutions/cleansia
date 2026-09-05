@@ -1872,6 +1872,51 @@
         "as_referred": "Jako doporučený",
         "empty_as_referrer": "Žádná odeslaná doporučení",
         "empty_as_referred": "Nikým nedoporučen"
+      },
+      "credit": {
+        "title": "Kredit zákazníka",
+        "balance": "Zůstatek",
+        "never_credited": "Tento zákazník zatím žádný kredit nedostal.",
+        "empty": "Žádné pohyby kreditu.",
+        "success": "Kredit přidělen.",
+        "actions": {
+          "issue": "Přidělit kredit"
+        },
+        "error": {
+          "generic": "Kredit se nepodařilo přidělit. Zkuste to znovu."
+        },
+        "reason": {
+          "dispute_settlement": "Vyřízení reklamace",
+          "cleaner_no_show": "Nedostavení üklidové pracovnice",
+          "goodwill": "Vstřícný krok",
+          "order_payment": "Čerpáno na objednávku",
+          "order_payment_returned": "Vráceno ze zrušené objednávky",
+          "unknown": "Jiné"
+        },
+        "dialog": {
+          "title": "Přidělit kredit",
+          "lede": "Od potvrzení jde o částku, kterou společnost zákazníkovi dluží. Odsud ji nelze vzít zpět — zákazník ji využije při objednávce, nebo požádá o vyplacení.",
+          "cancel": "Zrušit",
+          "submit": "Přidělit kredit",
+          "field": {
+            "amount": "Částka ({{currency}})",
+            "reason": "Důvod",
+            "note": "Co se stalo",
+            "note_help": "Zaznamenáno pod vaším jménem. Napište to, co byste sami chtěli číst, než tomuto zákazníkovi znovu něco přidělíte."
+          },
+          "validation": {
+            "amount_min": "Zadejte částku větší než nula.",
+            "amount_max": "To přesahuje limit pro jeden kredit. Vystavte jej po menších částkách.",
+            "note_required": "Uveďte, co se stalo.",
+            "note_max": "Maximálně 500 znaků."
+          }
+        },
+        "column": {
+          "date": "Kdy",
+          "amount": "Částka",
+          "reason": "Důvod",
+          "note": "Co se stalo"
+        }
       }
     },
     "loyalty_referrals": {

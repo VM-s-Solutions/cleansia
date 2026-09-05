@@ -267,7 +267,8 @@ public class ExpressSurchargeDiscountCompositionTests
             session.Object,
             loyaltyService.Object,
             new Mock<ILoyaltyTierConfigRepository>().Object,
-            membershipRepository.Object);
+            membershipRepository.Object,
+            new Mock<ICreditAccountRepository>().Object);
 
         var result = await handler.Handle(
             new QuoteOrder.Command(

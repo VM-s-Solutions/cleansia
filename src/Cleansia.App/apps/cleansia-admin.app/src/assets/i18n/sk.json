@@ -1872,6 +1872,51 @@
         "as_referred": "Ako odporúčaný",
         "empty_as_referrer": "Žiadne odoslané odporúčania",
         "empty_as_referred": "Nikým neodporúčaný"
+      },
+      "credit": {
+        "title": "Kredit zákazníka",
+        "balance": "Zostatok",
+        "never_credited": "Tento zákazník zatiaľ žiadny kredit nedostal.",
+        "empty": "Žiadne pohyby kreditu.",
+        "success": "Kredit pridelený.",
+        "actions": {
+          "issue": "Prideľiť kredit"
+        },
+        "error": {
+          "generic": "Kredit sa nepodarilo prideľiť. Skúste to znova."
+        },
+        "reason": {
+          "dispute_settlement": "Vybavenie reklamácie",
+          "cleaner_no_show": "Nedostavenie sa upratovačky",
+          "goodwill": "Ústretový krok",
+          "order_payment": "Čerpané na objednávku",
+          "order_payment_returned": "Vrátené zo zrušenej objednávky",
+          "unknown": "Iné"
+        },
+        "dialog": {
+          "title": "Prideľiť kredit",
+          "lede": "Od potvrdenia ide o sumu, ktorú spoločnosť zákazníkovi dlží. Odtiaľto sa nedá vziať späť — zákazník ju využije pri objednávke, alebo požiada o vyplatenie.",
+          "cancel": "Zrušiť",
+          "submit": "Prideľiť kredit",
+          "field": {
+            "amount": "Suma ({{currency}})",
+            "reason": "Dôvod",
+            "note": "Čo sa stalo",
+            "note_help": "Zaznamenané pod vaším menom. Napíšte to, čo by ste sami chceli čítať, než tomuto zákazníkovi znova niečo prideliťe."
+          },
+          "validation": {
+            "amount_min": "Zadajte sumu väčšiu ako nula.",
+            "amount_max": "To presahuje limit pre jeden kredit. Vystavte ho po menších sumách.",
+            "note_required": "Uveďte, čo sa stalo.",
+            "note_max": "Maximálne 500 znakov."
+          }
+        },
+        "column": {
+          "date": "Kedy",
+          "amount": "Suma",
+          "reason": "Dôvod",
+          "note": "Čo sa stalo"
+        }
       }
     },
     "loyalty_referrals": {

@@ -3,9 +3,12 @@ import { Router } from '@angular/router';
 import {
   AdminClient,
   AdminReferralListItem,
+  CreditTransactionReason,
+  GetUserCreditResponse,
   GetUserLoyaltyAccountResponse,
   GetUserLoyaltyActivityActivityItem,
   GrantPointsManuallyCommand,
+  IssueCustomerCreditCommand,
   RevokePointsManuallyCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -16,6 +19,12 @@ import { catchError, finalize, of, takeUntil } from 'rxjs';
 export interface ManualPointsInput {
   points: number;
   reason: string;
+}
+
+export interface IssueCreditInput {
+  amount: number;
+  reason: CreditTransactionReason;
+  note: string;
 }
 
 @Injectable()
@@ -36,6 +45,18 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly referralsAsReferred = signal<AdminReferralListItem[]>([]);
   readonly referralsLoading = signal<boolean>(false);
   readonly referralsError = signal<boolean>(false);
+
+  /**
+   * The customer's credit balance and ledger.
+   *
+   * <p>Loaded beside loyalty and kept separate from it in every other respect — owner ruling
+   * 2026-09-05, credit is its own feature. The LEDGER is the point: an admin about to compensate
+   * someone needs to see whether a colleague already did, and that question is most of what
+   * human-in-the-loop means.</p>
+   */
+  readonly credit = signal<GetUserCreditResponse | null>(null);
+  readonly creditLoading = signal<boolean>(false);
+  readonly creditSubmitting = signal<boolean>(false);
 
   readonly submitting = signal<boolean>(false);
 
@@ -106,9 +127,71 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
     this.loadActivity(this.currentUserId, offset, limit);
   }
 
+  loadCredit(userId: string): void {
+    this.currentUserId = userId;
+    this.creditLoading.set(true);
+    this.adminClient.adminCreditClient
+      .user(userId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+        finalize(() => this.creditLoading.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.credit.set(response);
+        }
+      });
+  }
+
+  /**
+   * Put money on the balance. The company owes it from the moment this succeeds, and there is no
+   * "undo" endpoint — a mistake is corrected by spending it or by a payout, both of which involve a
+   * person. That is the ruling, not a gap.
+   */
+  issueCredit(input: IssueCreditInput, onSuccess?: () => void): void {
+    if (!this.currentUserId) return;
+    this.creditSubmitting.set(true);
+
+    const command = new IssueCustomerCreditCommand();
+    command.userId = this.currentUserId;
+    command.amount = input.amount;
+    command.reason = input.reason;
+    command.note = input.note;
+    // S7a. One id per submission attempt: a network-layer retry reuses this command and the server's
+    // unique index collapses it onto one grant, while a fresh click generates a new id and is a
+    // genuinely new grant. Without it a double-click gives the money twice.
+    command.requestId = crypto.randomUUID();
+
+    this.adminClient.adminCreditClient
+      .issue(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => {
+          this.snackbarService.showError(
+            this.translate.instant('pages.loyalty_user_detail.credit.error.generic')
+          );
+          return of(null);
+        }),
+        finalize(() => this.creditSubmitting.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.loyalty_user_detail.credit.success')
+          );
+          if (this.currentUserId) {
+            this.loadCredit(this.currentUserId);
+          }
+          onSuccess?.();
+        }
+      });
+  }
+
   refresh(): void {
     if (!this.currentUserId) return;
     this.loadAccount(this.currentUserId);
+    this.loadCredit(this.currentUserId);
     this.loadActivity(
       this.currentUserId,
       this.currentActivityOffset,

@@ -124,6 +124,16 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
    * imported, because reaching into a sibling feature for a switch would cross
    * a module boundary to save eight lines.
    */
+  /**
+   * The credit balance for the rail row, null when there is nothing to say. Exposed through the
+   * component rather than the private facade, exactly like `loyaltyTierKey` beside it.
+   */
+  readonly creditBalance = computed<{ amount: number; currency: string } | null>(() => {
+    const credit = this.facade.credit();
+    if (!credit || credit.balance <= 0) return null;
+    return { amount: credit.balance, currency: credit.currencyCode ?? '' };
+  });
+
   readonly loyaltyTierKey = computed<string | null>(() => {
     switch (this.facade.loyaltyTier()) {
       case LoyaltyTier.PlatinumSparkler:

@@ -12,6 +12,8 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   AdminReferralListItem,
+  CreditTransactionReason,
+  GetUserCreditLedgerEntry,
   GetUserLoyaltyActivityActivityItem,
   LoyaltyEarnSource,
   LoyaltyTier,
@@ -36,6 +38,10 @@ import {
   GrantPointsDialogMode,
   GrantPointsDialogSubmit,
 } from '../grant-points-dialog/grant-points-dialog.component';
+import {
+  IssueCreditDialogComponent,
+  IssueCreditDialogSubmit,
+} from '../issue-credit-dialog/issue-credit-dialog.component';
 import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
 
 @Component({
@@ -51,6 +57,7 @@ import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
     CleansiaTableComponent,
     CleansiaTitleComponent,
     GrantPointsDialogComponent,
+    IssueCreditDialogComponent,
     CleansiaPermissionDirective,
   ],
   templateUrl: './user-loyalty-detail.component.html',
@@ -74,7 +81,12 @@ export class UserLoyaltyDetailComponent
   readonly dialogVisible = signal<boolean>(false);
   readonly dialogMode = signal<GrantPointsDialogMode>('grant');
 
+  // Credit gets its OWN dialog, not a third mode of the points one — owner ruling 2026-09-05, and
+  // the two forms have nothing in common beyond a free-text reason.
+  readonly creditDialogVisible = signal<boolean>(false);
+
   activityColumns!: TableColumn<GetUserLoyaltyActivityActivityItem>[];
+  creditColumns!: TableColumn<GetUserCreditLedgerEntry>[];
   referralsAsReferrerColumns!: TableColumn<AdminReferralListItem>[];
   referralsAsReferredColumns!: TableColumn<AdminReferralListItem>[];
 
@@ -149,16 +161,19 @@ export class UserLoyaltyDetailComponent
     this.facade.loadAccount(id);
     this.facade.loadActivity(id, 0, 20);
     this.facade.loadReferrals(id);
+    this.facade.loadCredit(id);
   }
 
   ngAfterViewInit(): void {
     this.rebuildActivityColumns();
     this.rebuildReferralColumns();
+    this.rebuildCreditColumns();
     this.translate.onLangChange
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.rebuildActivityColumns();
         this.rebuildReferralColumns();
+        this.rebuildCreditColumns();
       });
   }
 
@@ -210,6 +225,50 @@ export class UserLoyaltyDetailComponent
   }
 
   formatPoints(value: number): string {
+    return value > 0 ? `+${value}` : `${value}`;
+  }
+
+  /**
+   * The ledger, as a statement. Amount FIRST and signed, because the question an admin brings to this
+   * table is "how much, and which way" — a reason column read before the number tells them nothing.
+   */
+  private rebuildCreditColumns(): void {
+    const t = this.translate;
+    this.creditColumns = [
+      {
+        id: 'createdOn',
+        field: 'createdOn',
+        header: t.instant('pages.loyalty_user_detail.credit.column.date'),
+        getValue: (row) => this.formatDate(row.createdOn),
+        width: '22%',
+      },
+      {
+        id: 'amount',
+        field: 'amount',
+        header: t.instant('pages.loyalty_user_detail.credit.column.amount'),
+        getValue: (row) => this.formatCreditAmount(row.amount),
+        width: '16%',
+      },
+      {
+        id: 'reason',
+        field: 'reason',
+        header: t.instant('pages.loyalty_user_detail.credit.column.reason'),
+        getValue: (row) => t.instant(this.creditReasonKey(row.reason)),
+        width: '24%',
+      },
+      {
+        id: 'note',
+        field: 'note',
+        header: t.instant('pages.loyalty_user_detail.credit.column.note'),
+        getValue: (row) => row.note ?? '—',
+        width: '38%',
+      },
+    ];
+  }
+
+  /** Signed and explicit: a spend reads as a spend without the reader decoding the reason column. */
+  private formatCreditAmount(amount: number | undefined): string {
+    const value = amount ?? 0;
     return value > 0 ? `+${value}` : `${value}`;
   }
 
@@ -400,6 +459,42 @@ export class UserLoyaltyDetailComponent
         { points: payload.points, reason: payload.reason },
         () => this.dialogVisible.set(false)
       );
+    }
+  }
+
+  openIssueCredit(): void {
+    this.creditDialogVisible.set(true);
+  }
+
+  onCreditDialogVisibleChange(value: boolean): void {
+    this.creditDialogVisible.set(value);
+  }
+
+  onIssueCredit(payload: IssueCreditDialogSubmit): void {
+    this.facade.issueCredit(payload, () => this.creditDialogVisible.set(false));
+  }
+
+  /** Signed, so the ledger reads as a statement: a spend is negative, a grant is positive. */
+  creditAmountClass(amount: number | undefined): string {
+    return (amount ?? 0) < 0
+      ? 'user-loyalty-detail__credit-amount--out'
+      : 'user-loyalty-detail__credit-amount--in';
+  }
+
+  creditReasonKey(reason: CreditTransactionReason | undefined): string {
+    switch (reason) {
+      case CreditTransactionReason.DisputeSettlement:
+        return 'pages.loyalty_user_detail.credit.reason.dispute_settlement';
+      case CreditTransactionReason.CleanerNoShow:
+        return 'pages.loyalty_user_detail.credit.reason.cleaner_no_show';
+      case CreditTransactionReason.Goodwill:
+        return 'pages.loyalty_user_detail.credit.reason.goodwill';
+      case CreditTransactionReason.OrderPayment:
+        return 'pages.loyalty_user_detail.credit.reason.order_payment';
+      case CreditTransactionReason.OrderPaymentReturned:
+        return 'pages.loyalty_user_detail.credit.reason.order_payment_returned';
+      default:
+        return 'pages.loyalty_user_detail.credit.reason.unknown';
     }
   }
 

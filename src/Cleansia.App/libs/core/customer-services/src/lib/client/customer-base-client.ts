@@ -2,46 +2,48 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, InjectionToken } from '@angular/core';
 import {
   AddressSearchClient,
-  ApiClient,
-  AuthClient as CustomerAuthClient,
-  ConsentsClient,
-  CountryClient,
-  DisputeClient,
-  ExtraClient,
-  GdprClient,
   IAddressSearchClient,
+  ApiClient,
   IApiClient,
+  AuthClient as CustomerAuthClient,
   IAuthClient as ICustomerAuthClient,
+  ConsentsClient,
   IConsentsClient,
+  CountryClient,
   ICountryClient,
+  CreditClient,
+  ICreditClient,
+  DisputeClient,
   IDisputeClient,
+  ExtraClient,
   IExtraClient,
+  GdprClient,
   IGdprClient,
   ILanguageClient,
-  ILoyaltyClient,
-  IMembershipClient,
-  INotificationPreferencesClient,
-  IOrderClient as ICustomerOrderClient,
-  IPackageClient,
-  IPaymentClient,
-  IPromoCodeClient,
-  IRecurringBookingClient,
-  IReferralClient,
-  ISavedAddressClient,
-  IServiceClient,
-  IUserClient,
   LanguageClient,
+  ILoyaltyClient,
   LoyaltyClient,
+  IMembershipClient,
   MembershipClient,
+  INotificationPreferencesClient,
   NotificationPreferencesClient,
   OrderClient as CustomerOrderClient,
+  IOrderClient as ICustomerOrderClient,
+  IPackageClient,
   PackageClient,
+  IPaymentClient,
   PaymentClient,
+  IPromoCodeClient,
   PromoCodeClient,
+  IRecurringBookingClient,
   RecurringBookingClient,
+  IReferralClient,
   ReferralClient,
+  ISavedAddressClient,
   SavedAddressClient,
+  IServiceClient,
   ServiceClient,
+  IUserClient,
   UserClient,
 } from './customer-client';
 
@@ -67,6 +69,7 @@ interface ICustomerClient {
   disputeClient: IDisputeClient;
   savedAddressClient: ISavedAddressClient;
   loyaltyClient: ILoyaltyClient;
+  creditClient: ICreditClient;
   promoCodeClient: IPromoCodeClient;
   referralClient: IReferralClient;
   membershipClient: IMembershipClient;
@@ -135,6 +138,10 @@ export class CustomerClient implements ICustomerClient {
     this.apiBaseUrl
   );
   loyaltyClient: ILoyaltyClient = new LoyaltyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  creditClient: ICreditClient = new CreditClient(
     this.httpClient,
     this.apiBaseUrl
   );

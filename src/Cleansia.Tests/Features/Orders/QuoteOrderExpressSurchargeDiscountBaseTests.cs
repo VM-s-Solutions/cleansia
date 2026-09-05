@@ -34,6 +34,7 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<ILoyaltyTierConfigRepository> _tierConfigRepository = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
 
     // The quote estimates a duration and a crew from the chosen services and
     // packages, so the handler queries both repositories on every call. These
@@ -111,7 +112,8 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
             _session.Object,
             _loyaltyService.Object,
             _tierConfigRepository.Object,
-            _membershipRepository.Object);
+            _membershipRepository.Object,
+            _creditAccountRepository.Object);
 
     private static QuoteOrder.Command ExpressCommand() =>
         new([ "service-1" ], [], Rooms: 2, Bathrooms: 1, CurrencyId: null,

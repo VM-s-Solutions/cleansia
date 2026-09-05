@@ -287,6 +287,39 @@
   white-space: nowrap;
 }
 
+// Credit the platform owes this customer. Same rail rhythm as the tier row above it, wrapping so the
+// explanation sits under the amount rather than squeezing it — the amount is what they scan for, the
+// sentence is what stops them looking for a button to spend it with.
+.customer-profile__credit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(0.625 * var(--cl-u));
+  margin-top: var(--cl-u);
+  padding-top: var(--cl-u);
+  border-top: 1px solid var(--cl-border);
+  text-align: left;
+
+  > i {
+    flex-shrink: 0;
+    color: var(--cl-heading);
+    font-size: calc(1.125 * var(--cl-u));
+  }
+}
+
+.customer-profile__credit-amount {
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 800;
+  color: var(--cl-heading);
+}
+
+.customer-profile__credit-note {
+  flex-basis: 100%;
+  font-size: calc(0.75 * var(--cl-u));
+  line-height: 1.45;
+  color: var(--cl-muted);
+}
+
 // ---- The rail's own nav -----------------------------------------------------
 .customer-profile__nav {
   display: flex;

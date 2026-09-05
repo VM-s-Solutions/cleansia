@@ -711,7 +711,10 @@
       },
       "addresses_manage": "Spravovat",
       "email_verified": "E-mail je ověřený. Změna vyžaduje nové ověření.",
-      "export_request": "Vyžádat"
+      "export_request": "Vyžádat",
+      "credit": {
+        "auto_applied": "Kredit — automaticky se použije na vaši nejbližší objednávku."
+      }
     },
     "services": {
       "title": "Naše služby",

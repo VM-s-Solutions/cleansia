@@ -99,6 +99,24 @@
             </a>
           </div>
           }
+
+          <!--
+            Money the platform owes this customer. Shown here because the booking summary only shows
+            it once they are already mid-booking, and a balance nobody can find is a balance they do
+            not know they have. There is nothing to press: it applies to the next booking on its own,
+            which the line says rather than leaving them looking for a button. Absent at zero.
+          -->
+          @if (creditBalance(); as credit) {
+          <div class="customer-profile__credit">
+            <i class="pi pi-wallet"></i>
+            <span class="customer-profile__credit-amount">
+              {{ credit.amount }} {{ credit.currency }}
+            </span>
+            <span class="customer-profile__credit-note">
+              {{ 'pages.profile.credit.auto_applied' | translate }}
+            </span>
+          </div>
+          }
         </div>
 
         <!-- Section Navigation -->

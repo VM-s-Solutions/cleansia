@@ -7,9 +7,10 @@ import {
   ChangePasswordCommand,
   CustomerClient,
   GetCurrentUserQuery,
+  GetMyCreditResponse,
   LoyaltyTier,
-  UpdateCurrentUserPhotoCommand,
   MyProfileDto,
+  UpdateCurrentUserPhotoCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
 import { SavedAddressStore } from '@cleansia/customer-stores';
@@ -48,6 +49,17 @@ export class ProfileFacade extends UnsubscribeControlDirective {
    */
   readonly loyaltyTier = signal<LoyaltyTier | null>(null);
 
+  /**
+   * The customer's credit balance, for the rail row that tells them the platform owes them money.
+   *
+   * <p>Owner ruling 2026-09-05: credit applies automatically to the next booking, so there is nothing
+   * to manage here and no control to offer — but a balance the customer cannot see anywhere is a
+   * balance they do not know they have, and the booking summary only shows it once they are already
+   * mid-booking. Read the same way the tier row is, and just as non-blocking: a failure leaves it null
+   * and the rail omits the row.</p>
+   */
+  readonly credit = signal<GetMyCreditResponse | null>(null);
+
   private avatarFileName: string | null = null;
   private avatarRetryAvailable = true;
   private adoptNextAvatarUrl = false;
@@ -69,12 +81,24 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           this.applyAvatar(user.profilePhoto);
           this.loading.set(false);
           this.loadLoyaltyTier();
+          this.loadCredit();
           onSuccess?.(user);
         },
         error: () => {
           this.loading.set(false);
         },
       });
+  }
+
+  /** Never blocks the page: a customer with no credit is the common case, and renders as nothing. */
+  private loadCredit(): void {
+    this.customerClient.creditClient
+      .getMy()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+      )
+      .subscribe((credit) => this.credit.set(credit));
   }
 
   /** Never blocks the page: the rail's tier row is decoration on an account screen. */

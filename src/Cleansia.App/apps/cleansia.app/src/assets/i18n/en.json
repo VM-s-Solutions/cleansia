@@ -711,7 +711,10 @@
       },
       "addresses_manage": "Manage",
       "email_verified": "Your email is verified. Changing it needs a new verification.",
-      "export_request": "Request"
+      "export_request": "Request",
+      "credit": {
+        "auto_applied": "Credit — applied to your next booking automatically."
+      }
     },
     "services": {
       "title": "Our Services",

@@ -85,6 +85,9 @@ describe('ProfileFacade', () => {
             countryClient: { getServiced: jest.fn() },
             // The rail reads the loyalty tier after the profile resolves.
             loyaltyClient: { getMy: jest.fn(() => of({ currentTier: 2 })) },
+            // A customer who has never been credited — the ordinary case, and the one that
+            // must render as nothing rather than as a zero-balance row.
+            creditClient: { getMy: jest.fn(() => of({ balance: 0, currencyCode: 'CZK' })) },
           },
         },
         { provide: SnackbarService, useValue: snackbar },

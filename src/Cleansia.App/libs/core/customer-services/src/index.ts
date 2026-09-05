@@ -2,6 +2,7 @@ export { CustomerClient, CUSTOMER_API_BASE_URL } from './lib/client/customer-bas
 export { SubmitOrderReviewCommand, OrderReviewDto } from './lib/client/customer-client';
 export {
   LoyaltyClient,
+  GetMyCreditResponse,
   GetMyLoyaltyResponse,
   GetMyLoyaltyTierPerk,
   GetLoyaltyTiersResponse,
@@ -15,6 +16,7 @@ export {
 } from './lib/client/customer-client';
 export type {
   ILoyaltyClient,
+  IGetMyCreditResponse,
   IGetMyLoyaltyResponse,
   IGetMyLoyaltyTierPerk,
   IGetLoyaltyTiersResponse,

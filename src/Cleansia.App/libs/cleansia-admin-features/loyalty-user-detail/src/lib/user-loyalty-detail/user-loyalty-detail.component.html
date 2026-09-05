@@ -75,6 +75,59 @@
         </div>
       </cleansia-section>
 
+      <!--
+        Credit. Its own section, its own endpoints, its own copy — owner ruling 2026-09-05, credit is
+        not a mode of loyalty. It sits on this screen because this is where an admin already is when
+        they are looking at a customer, not because the two are related.
+
+        The LEDGER is the point, not the balance. "Has someone already compensated this person for
+        this?" is the question a human-in-the-loop rule exists to make answerable, and a number alone
+        cannot answer it.
+      -->
+      <cleansia-section
+        [title]="'pages.loyalty_user_detail.credit.title' | translate"
+      >
+        @if (facade.creditLoading()) {
+        <cleansia-loader />
+        } @else {
+        <div class="user-loyalty-detail__credit">
+          <div class="user-loyalty-detail__credit-balance">
+            <span class="user-loyalty-detail__credit-balance-label">
+              {{ 'pages.loyalty_user_detail.credit.balance' | translate }}
+            </span>
+            <span class="user-loyalty-detail__credit-balance-value">
+              {{ facade.credit()?.balance ?? 0 }} {{ facade.credit()?.currencyCode }}
+            </span>
+            <!--
+              "No account" and "a zero balance" mean different things to the person reading this, so
+              they are not collapsed into one.
+            -->
+            @if (facade.credit() && !facade.credit()!.hasAccount) {
+            <span class="user-loyalty-detail__credit-none">
+              {{ 'pages.loyalty_user_detail.credit.never_credited' | translate }}
+            </span>
+            }
+          </div>
+
+          <div class="user-loyalty-detail__actions">
+            <cleansia-button
+              *cleansiaPermission="Policy.CanIssueCustomerCredit"
+              [label]="'pages.loyalty_user_detail.credit.actions.issue' | translate"
+              icon="pi pi-wallet"
+              severity="success"
+              (onClick)="openIssueCredit()"
+            />
+          </div>
+        </div>
+
+        <cleansia-table
+          [data]="facade.credit()?.ledger ?? []"
+          [columns]="creditColumns"
+          [config]="{ paginator: false, emptyMessage: 'pages.loyalty_user_detail.credit.empty' }"
+        />
+        }
+      </cleansia-section>
+
       <!-- Activity log -->
       <cleansia-section
         [title]="'pages.loyalty_user_detail.activity.title' | translate"
@@ -141,4 +194,16 @@
   [submitting]="facade.submitting()"
   (visibleChange)="onDialogVisibleChange($event)"
   (submitForm)="onDialogSubmit($event)"
+/>
+
+<!--
+  Credit's own dialog. Not a third mode of the points one: points are a score, credit is a debt, and
+  a form that treats them the same invites the mistake of typing one into the other.
+-->
+<cleansia-admin-issue-credit-dialog
+  [visible]="creditDialogVisible()"
+  (visibleChange)="onCreditDialogVisibleChange($event)"
+  [submitting]="facade.creditSubmitting()"
+  [currencyCode]="facade.credit()?.currencyCode ?? ''"
+  (submitForm)="onIssueCredit($event)"
 />

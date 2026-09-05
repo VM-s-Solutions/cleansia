@@ -1872,6 +1872,51 @@
         "as_referred": "As referred",
         "empty_as_referrer": "No referrals sent",
         "empty_as_referred": "Not referred by anyone"
+      },
+      "credit": {
+        "title": "Customer credit",
+        "balance": "Balance",
+        "never_credited": "This customer has never been credited.",
+        "empty": "No credit movements yet.",
+        "success": "Credit issued.",
+        "actions": {
+          "issue": "Issue credit"
+        },
+        "error": {
+          "generic": "We couldn't issue the credit. Please try again."
+        },
+        "reason": {
+          "dispute_settlement": "Dispute settlement",
+          "cleaner_no_show": "Cleaner no-show",
+          "goodwill": "Goodwill",
+          "order_payment": "Spent on a booking",
+          "order_payment_returned": "Returned from a cancelled booking",
+          "unknown": "Other"
+        },
+        "dialog": {
+          "title": "Issue credit",
+          "lede": "This is money the company owes from the moment you confirm it. It cannot be taken back here — the customer spends it on a booking, or asks to be paid out.",
+          "cancel": "Cancel",
+          "submit": "Issue credit",
+          "field": {
+            "amount": "Amount ({{currency}})",
+            "reason": "Reason",
+            "note": "What happened",
+            "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."
+          },
+          "validation": {
+            "amount_min": "Enter an amount above zero.",
+            "amount_max": "That is above the limit for a single credit. Issue it in smaller amounts.",
+            "note_required": "Say what happened.",
+            "note_max": "Keep this under 500 characters."
+          }
+        },
+        "column": {
+          "date": "When",
+          "amount": "Amount",
+          "reason": "Reason",
+          "note": "What happened"
+        }
       }
     },
     "loyalty_referrals": {

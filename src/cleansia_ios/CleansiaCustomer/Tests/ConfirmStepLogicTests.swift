@@ -137,19 +137,35 @@ final class PreferredCleanerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.cleaners.count, 2)
     }
 
+    /// 4, not 48. `CancellationPolicyTests` above was corrected when the inverted comparison was
+    /// found — the perk is the deadline moving CLOSER to the cleaning, and the seeded plans carry 4
+    /// against a standard 24 — but this one was missed and kept asserting the old meaning, so it
+    /// demanded that a 48-hour window be advertised as a benefit. It only surfaced now because the
+    /// customer target had not compiled since, and a suite that cannot build cannot fail.
     func testCancellationPolicyReflectsPlusWindow() async {
+        let vm = PreferredCleanerViewModel(cleanersClient: FakeServingCleanersClient(result: .success([])))
+
+        await vm.load(membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 4))
+
+        XCTAssertEqual(vm.cancellationPolicy.freeHours, 4)
+        XCTAssertTrue(vm.cancellationPolicy.hasPlusPerk)
+    }
+
+    /// The other half of the same rule, through the view model rather than the builder: a window
+    /// further from the cleaning than the standard one is ignored, not surfaced as a perk.
+    func testAWindowFurtherOutThanStandardIsNotShownAsAPerk() async {
         let vm = PreferredCleanerViewModel(cleanersClient: FakeServingCleanersClient(result: .success([])))
 
         await vm.load(membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48))
 
-        XCTAssertEqual(vm.cancellationPolicy.freeHours, 48)
-        XCTAssertTrue(vm.cancellationPolicy.hasPlusPerk)
+        XCTAssertEqual(vm.cancellationPolicy.freeHours, 24)
+        XCTAssertFalse(vm.cancellationPolicy.hasPlusPerk)
     }
 
     func testLoadIsIdempotent() async {
         let cleaners = FakeServingCleanersClient(result: .success([ServingCleaner(id: "e-1", fullName: "Eva")]))
         let vm = PreferredCleanerViewModel(cleanersClient: cleaners)
-        let membership = MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
+        let membership = MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 4)
 
         await vm.load(membership: membership)
         await vm.load(membership: membership)

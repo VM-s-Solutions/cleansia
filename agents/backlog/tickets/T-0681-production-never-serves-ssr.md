@@ -62,11 +62,14 @@ that must not ride along inside a large feature PR.
 
 ## Acceptance criteria
 
-- [x] **AC0** — The premise could not be checked against the live site: `cleansia.cz` answers with an
-      Azure Static Web Apps 404 and is not bound to the SSR app. It was instead reproduced locally
-      against the built server, which is the same artefact production runs — see the measurements
-      below. **The owner should still confirm which host he measured at 60-65**; if that deployment
-      already SSRs, the gain there will be smaller than 38 points.
+- [x] **AC0** — **Answered by the owner on 2026-09-06: the 60-65 was measured against localhost**, not
+      a deployed host. That resolves the open question and moves the conclusion the wrong way. A
+      localhost run pays no DNS, no TLS handshake, no real RTT and no CDN latency, so a deployed
+      environment scores **lower than 60-65, not higher** — the same page, plus a network. The
+      client-side fallback this ticket fixes is exactly the shape that degrades worst over a real
+      connection, because the render cannot begin until the JS has been fetched and parsed.
+      (`cleansia.cz` remains unbound to the SSR app — it answers with an Azure Static Web Apps 404 —
+      so there is still no deployed SSR host to measure. Worth confirming after this ships.)
 - [x] **AC1** — Given the SSR site's app settings, Then `NG_ALLOWED_HOSTS` lists every hostname that
       can reach it, including the staging slot the deploy workflow's warm probe hits.
 - [x] **AC2** — Given a request carrying `X-Forwarded-For`, Then the response is the full SSR
@@ -130,6 +133,8 @@ becomes more important, not less, once this ticket lands.
 ## Status log
 
 - 2026-09-06 — filed from a measured Lighthouse investigation of the customer home page.
+- 2026-09-06 — owner confirmed the 60-65 baseline was localhost, so deployed is strictly worse; see
+  AC0. The fix is more urgent than filed, not less.
 - 2026-09-06 — the owner heard the outage concern and asked for it shipped. Two app settings added to
   the SSR module, and the `server.ts` comment that promised a mechanism nobody had wired now says
   where it actually lives. Verified end to end on the built server: 12,182 → 227,446 bytes.

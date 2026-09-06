@@ -96,8 +96,12 @@ export class MembershipFacade extends UnsubscribeControlDirective {
         catchError(() => of<GetMembershipPlansResponse[]>([])),
       )
       .subscribe((plans) => {
-        this.plans.set(plans);
-        onLoaded?.(plans);
+        // The same null the wizard's read can get — see order-membership.facade.ts. Coalesced ONCE
+        // and handed to both: the callback's argument is indexed by its callers just as the signal
+        // is, so passing the raw value through would leave half the fix undone.
+        const list = plans ?? [];
+        this.plans.set(list);
+        onLoaded?.(list);
       });
   }
 

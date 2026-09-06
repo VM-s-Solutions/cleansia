@@ -82,7 +82,13 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
       // A failed read leaves the step with no plans to show, which the template
       // renders as no plan cards — the same silence the membership read uses,
       // and better than a half-priced offer.
-      .subscribe((plans) => this.plans.set(plans));
+      // … and `?? []` because the generated client answers a 200 whose body is not a JSON array
+      // with NULL, not an empty list — see `processGetPlans` in customer-client.ts, which falls to
+      // `result200 = null as any` while its declared type promises an array. Nothing above catches
+      // it: null is not an error, so `catchError` never fires and TypeScript never complains. Five
+      // readers then index or measure this signal, and the first to run is the plus-savings effect
+      // on step ONE, so the whole wizard goes down long before anyone reaches the Plus step.
+      .subscribe((plans) => this.plans.set(plans ?? []));
   }
 
   /**

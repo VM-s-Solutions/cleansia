@@ -22,7 +22,7 @@ function buildMembership(fields: {
 
 describe('OrderMembershipFacade', () => {
   let facade: OrderMembershipFacade;
-  let membershipClient: { getMine: jest.Mock };
+  let membershipClient: { getMine: jest.Mock; getPlans: jest.Mock };
 
   function build(platform: 'server' | 'browser'): void {
     membershipClient = {
@@ -35,6 +35,7 @@ describe('OrderMembershipFacade', () => {
           }),
         ),
       ),
+      getPlans: jest.fn().mockReturnValue(of([])),
     };
 
     TestBed.configureTestingModule({
@@ -153,4 +154,24 @@ describe('OrderMembershipFacade', () => {
       expect(facade.expressWaiverStatus()).toBe('none');
     });
   });
+
+  /**
+   * THE GENERATED CLIENT CAN ANSWER WITH NULL. Its declared type is
+   * `GetMembershipPlansResponse[]`, but `processGetPlans` falls to `result200 = null as any` for any
+   * 200 whose body is not a JSON array — an empty body, a `{}`, a 204. Null is not an error, so
+   * `catchError` never fires, and the declared type means TypeScript never complains either. Five
+   * readers then index or measure this signal.
+   */
+  describe('plans', () => {
+    beforeEach(() => build('browser'));
+
+    it('holds an empty list when the client answers null instead of an array', () => {
+      membershipClient.getPlans.mockReturnValue(of(null));
+
+      facade.loadPlans();
+
+      expect(facade.plans()).toEqual([]);
+    });
+  });
+
 });

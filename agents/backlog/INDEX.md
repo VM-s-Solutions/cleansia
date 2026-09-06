@@ -113,5 +113,7 @@
 | T-0680 | The generated clients answer a non-array 200 with `null` while declaring an array — 21 unguarded call sites | M | `done` | — | all 21 fixed; mutation-verified (reverting all 21 gives exactly 21 distinct failures, no more) |
 | T-0681 | Production never serves SSR — `NG_ALLOWED_HOSTS` was set nowhere and Azure's `X-Forwarded-*` deopted the rest | S | `done` | — | verified on the built server, 12,182 → 227,446 bytes; the feared hard-400 on an unlisted host could NOT be reproduced |
 | T-0682 | Customer home JS diet — component entry points, dead providers, i18n via TransferState | M | `done` | — | −239 KB eager JS, −1.1 s/−1.6 s load (en/ru) on Slow 4G; items 1 and 4 refuted by measurement, not built |
+| T-0683 | PrimeFlex is a CDN dependency for 37 classes - self-host the subset or drop it | M | `todo` | — | 31.8 KB gzipped on the wire (not 373 KB, that was decompressed); the navbar mobile drawer has NO project fallback |
+| T-0684 | CreateDispute with no id: empty string on Android, a refusal on iOS | S | `todo` | — | both behaviours now pinned by tests; the id addresses the evidence upload |
 
 *Next id: **T-0683**.*

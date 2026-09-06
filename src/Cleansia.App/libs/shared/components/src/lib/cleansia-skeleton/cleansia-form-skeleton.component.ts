@@ -20,6 +20,9 @@ import { Skeleton } from 'primeng/skeleton';
       display: flex;
       flex-direction: column;
       align-items: center;
+      /* Was PrimeFlex's mt-2 on the second bar. Only the customer app loads PrimeFlex, so in
+         partner and admin the two bars sat flush against each other. 0.5rem is what mt-2 was. */
+      gap: 0.5rem;
     }
     .skeleton-section {
       display: flex;

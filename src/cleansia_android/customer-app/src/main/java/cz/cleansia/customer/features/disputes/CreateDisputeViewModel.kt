@@ -114,7 +114,14 @@ class CreateDisputeViewModel @Inject constructor(
                     _createdDisputeId.emit(result.data)
                 }
                 is ApiResult.Error -> {
-                    if (result.error !is ApiError.Network) snackbar.showError(result.error)
+                    if (result.error !is ApiError.Network) {
+                        snackbar.showError(result.error)
+                        // Anything that is not a transport failure means the server answered, so the
+                        // dispute may well exist despite the error — a refused response body is
+                        // exactly that case. Refresh so the customer finds it in the list instead of
+                        // filing a second dispute about the same money. → T-0684
+                        disputeRepository.refresh()
+                    }
                     _submitState.value = ActionState.Error(appContext.getString(R.string.dispute_create_retry_hint))
                 }
             }

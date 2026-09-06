@@ -276,16 +276,26 @@ class DisputeWireTest {
     }
 
     /**
-     * PINS TODAY'S BEHAVIOUR, and it differs from iOS on purpose-by-accident: Android maps a missing
-     * id to "" (`.orEmpty()`), where iOS refuses with `dispute.malformed`. Neither can happen against
-     * the real backend, whose property is non-nullable. Reported for an owner ruling rather than
-     * silently aligned here. → T-0683
+     * A missing id is REFUSED, not mapped to "". The generator types the property optional because the
+     * schema declares no `required` array, but `CreateDispute.Response.DisputeId` is non-nullable, so
+     * an absent id means the answer is wrong. It matters more than tidiness: the id addresses the
+     * evidence upload that follows, so "" would upload the customer's photo against an empty id.
+     * iOS refuses the same shape. → T-0684
      */
     @Test
-    fun aCreateResponseWithNoIdCurrentlyYieldsAnEmptyIdRatherThanRefusing() = runTest {
-        assertEquals("", serving("{}") {
-            it.create(CreateDisputeRequest(orderId = "o-1", reason = 1, description = "x"))
-        }.body())
+    fun aCreateResponseWithNoIdIsRefusedRatherThanReadAsAnEmptyId() = runTest {
+        refuses("disputeId") {
+            serving("{}") { it.create(CreateDisputeRequest(orderId = "o-1", reason = 1, description = "x")) }
+        }
+    }
+
+    @Test
+    fun aCreateResponseWithAnExplicitlyNullIdIsRefusedToo() = runTest {
+        refuses("disputeId") {
+            serving("""{"disputeId":null}""") {
+                it.create(CreateDisputeRequest(orderId = "o-1", reason = 1, description = "x"))
+            }
+        }
     }
 
     // --- the refused body ---------------------------------------------------------

@@ -49,6 +49,12 @@ class DisputeApi(
      * cannot decode into a String. The dispute was created and the caller could not learn its id, so
      * the evidence photo attached to it had nowhere to go. The repository test never caught it because
      * it stubs THIS method and returns a String directly; nothing exercised the wire.
+     *
+     * A MISSING id is refused rather than mapped to "". The generator types the property optional
+     * because the schema declares no `required` array, but the backend's `DisputeId` is non-nullable,
+     * so an absent id means the answer is wrong. Handing back "" was worse than failing: the evidence
+     * upload that follows is addressed to this id, so the customer's photo would have been uploaded
+     * against an empty one. iOS refuses the same shape. → T-0684
      */
     suspend fun create(body: CreateDisputeRequest): Response<String> =
         disputeApi.disputeCreateDispute(
@@ -63,7 +69,7 @@ class DisputeApi(
                     GenDisputeLineSelection(serviceId = it.serviceId, packageId = it.packageId)
                 },
             ),
-        ).mapWire { it?.disputeId.orEmpty() }
+        ).mapWire { it?.disputeId.required("disputeId") }
 
     suspend fun addMessage(body: AddDisputeMessageRequest): Response<Unit> =
         disputeApi.disputeAddMessage(

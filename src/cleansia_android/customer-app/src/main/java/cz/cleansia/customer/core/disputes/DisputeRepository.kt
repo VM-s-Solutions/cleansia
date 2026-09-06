@@ -132,7 +132,7 @@ class DisputeRepository @Inject constructor(
         reason: Int,
         description: String,
         lines: List<DisputeLineRequest> = emptyList(),
-    ): ApiResult<String> {
+    ): ApiResult<String> = wireResult {
         val resp = networkCall {
             api.create(
                 CreateDisputeRequest(
@@ -142,11 +142,11 @@ class DisputeRepository @Inject constructor(
                     lines = lines.takeIf { it.isNotEmpty() },
                 ),
             )
-        } ?: return networkError()
+        } ?: return@wireResult networkError()
         if (!resp.isSuccessful) {
-            return httpError(resp.errorBody(), resp.code())
+            return@wireResult httpError(resp.errorBody(), resp.code())
         }
-        return ApiResult.Success(resp.requiredBody())
+        ApiResult.Success(resp.requiredBody())
     }
 
     /**

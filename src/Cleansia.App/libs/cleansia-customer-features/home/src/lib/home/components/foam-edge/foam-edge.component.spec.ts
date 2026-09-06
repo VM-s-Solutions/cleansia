@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ComponentRef } from '@angular/core';
 import { FoamEdgeComponent, FoamVariant } from './foam-edge.component';
 
@@ -21,13 +21,14 @@ describe('FoamEdgeComponent', () => {
   const VARIANTS: FoamVariant[] = ['cap', 'cap-short', 'hood', 'hood-short'];
 
   function build(variant: FoamVariant): {
+    fixture: ComponentFixture<FoamEdgeComponent>;
     ref: ComponentRef<FoamEdgeComponent>;
     component: FoamEdgeComponent;
   } {
     const fixture = TestBed.createComponent(FoamEdgeComponent);
     fixture.componentRef.setInput('variant', variant);
     fixture.detectChanges();
-    return { ref: fixture.componentRef, component: fixture.componentInstance };
+    return { fixture, ref: fixture.componentRef, component: fixture.componentInstance };
   }
 
   /**
@@ -107,16 +108,29 @@ describe('FoamEdgeComponent', () => {
   it('draws the bubbles in one colour and nothing else', () => {
     // No second path and no rim: an outline made the divider read as a graphic
     // rather than as foam. Owner, 2026-09-02.
-    const { component } = build('hood');
+    //
+    // Asserted on the RENDERED SVG. This read `Object.keys(component)` for an absent
+    // `rimOffset`, which is a claim about the instance's property names and cannot see a second
+    // <path> in the template at all — the only place a rim could actually come back.
+    const { fixture } = build('hood');
+    const host = fixture.nativeElement as HTMLElement;
 
-    expect(Object.keys(component)).not.toContain('rimOffset');
+    expect(host.querySelectorAll('path')).toHaveLength(1);
+    expect(host.querySelector('path')!.getAttribute('stroke')).toBeNull();
   });
 
   it('lets the caller name the colour the bubbles are cut out of', () => {
     // It has to equal the section the edge leads into, or a hard band appears.
-    const { ref, component } = build('hood');
+    //
+    // Asserted on the path's attribute, not on `component.fill()`: reading the input signal back
+    // after setInput only proves Angular stored it, and would still pass if the template stopped
+    // binding [attr.fill] entirely — which is the whole failure this test is named for.
+    const { fixture, ref } = build('hood');
     ref.setInput('fill', 'var(--cl-cta-3)');
+    fixture.detectChanges();
 
-    expect(component.fill()).toBe('var(--cl-cta-3)');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('path')!.getAttribute('fill'),
+    ).toBe('var(--cl-cta-3)');
   });
 });

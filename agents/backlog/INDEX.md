@@ -111,5 +111,7 @@
 | T-0678 | One button and one title component everywhere — `.cl-title` deleted, `cleansia-title` adopts the fluid Sky700 scale (owner ruling) | M | `done` | — | visual check of the partner/admin heading shift is the owner's |
 | T-0679 | Serialise PDF rendering — concurrent renders emit an all-zero `/ToUnicode` CMap, so an invoice or receipt looks perfect and its text cannot be copied or searched | S | `done` | — | root cause proven empirically (0/300 serial, 39/1200 concurrent, 0/1200 locked); gate test fails 3/3 without the lock |
 | T-0680 | The generated clients answer a non-array 200 with `null` while declaring an array — 21 unguarded call sites | M | `done` | — | all 21 fixed; mutation-verified (reverting all 21 gives exactly 21 distinct failures, no more) |
+| T-0681 | Production never serves SSR — `NG_ALLOWED_HOSTS` is set nowhere and Azure's `X-Forwarded-*` deopts the rest; measured 35 vs 73 | S | `todo` | — | infra only, no code; a wrong host list turns a slow page into a hard 400, so it must not ride a feature PR |
+| T-0682 | Customer home page JS diet — removing all app JS measures 72 → 94; PrimeNG is eager via the hero quick-quote | M | `todo` | T-0681 | fonts and critical CSS measured worth ZERO and NEGATIVE respectively; every estimate labelled |
 
-*Next id: **T-0681**.*
+*Next id: **T-0683**.*

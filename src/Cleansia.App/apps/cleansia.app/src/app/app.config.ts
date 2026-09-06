@@ -35,7 +35,7 @@ import {
   MAPBOX_AUTOCOMPLETE_ENABLED,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
-import { provideStore, StoreModule } from '@ngrx/store';
+import { StoreModule } from '@ngrx/store';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import * as Sentry from '@sentry/angular';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -140,7 +140,6 @@ export const appConfig: ApplicationConfig = {
         csrfToken: 'customer_csrf',
       },
     },
-    provideStore(),
     importProvidersFrom(
       StoreModule.forRoot(customerReducers, {
         runtimeChecks: {

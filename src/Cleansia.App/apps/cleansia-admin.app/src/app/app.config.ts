@@ -32,7 +32,7 @@ import {
   JsonTranslationLoader,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
-import { provideStore, StoreModule } from '@ngrx/store';
+import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import * as Sentry from '@sentry/angular';
@@ -108,7 +108,6 @@ export const appConfig: ApplicationConfig = {
         csrfToken: 'admin_csrf',
       },
     },
-    provideStore(),
     importProvidersFrom(
       BrowserAnimationsModule,
       StoreModule.forRoot(adminReducers, {

@@ -23,23 +23,3 @@
   right: 0 !important;
   z-index: 1000 !important;
 }
-
-.background {
-  background-image: url('/assets/images/mascot/mascot-mopping.png');
-  background-size: 25rem 25rem;
-  background-repeat: no-repeat;
-}
-
-.bg-typek-napad-inline {
-  background-image: url('/assets/images/mascot/mascot-idea.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-@media (max-width: 600px) {
-  .background {
-    background-size: 18rem 18rem;
-    position: absolute;
-  }
-}

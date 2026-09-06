@@ -25,12 +25,15 @@
             <i class="pi pi-check" aria-hidden="true"></i>{{ 'pages.home.promises.item1_fact' | translate }}
           </p>
         </div>
+        <!-- 480x480 is this file's real size. It declared 340x280 — the TILE variant's size — so
+             the browser reserved a 1.21 box for a 1.00 image and the card reflowed when the lazy
+             load landed. The SCSS sets height only, width auto, so the rendered size is unchanged. -->
         <img
           class="cl-promises__mascot"
           src="assets/images/mascot/mascot-idea-480.webp"
           alt=""
-          width="340"
-          height="280"
+          width="480"
+          height="480"
           loading="lazy"
         />
       </article>

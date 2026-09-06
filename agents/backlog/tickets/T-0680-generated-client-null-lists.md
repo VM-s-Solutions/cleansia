@@ -1,7 +1,7 @@
 ---
 id: T-0680
-title: The generated clients answer a non-array 200 with null, and 20 call sites assume an array
-status: todo
+title: The generated clients answer a non-array 200 with null, and 21 call sites assumed an array
+status: done
 size: M
 owner: —
 created: 2026-09-06
@@ -18,9 +18,10 @@ sprint: 16
 
 ## Context
 
-**This is a record of a class, not a sweep.** Owner ruling 2026-09-06: file it with the site list and
-fix a site when a lane is already in that file for another reason. Do not schedule a pass over all of
-them, and do not build machinery for it.
+**Filed as a record, then worked in full.** The owner first ruled the opportunistic approach — file
+the site list, fix a site when a lane is already in that file — and then asked for it done. Both
+rulings are kept here because the second does not retract the first: the ONE thing that stayed
+refused throughout is the machinery, and the Out of scope list below is still in force.
 
 ### The mechanism
 
@@ -44,10 +45,9 @@ Nothing catches it. `catchError` never fires because null is not an error. TypeS
 because the declared return type is non-nullable. **36 methods carry the branch** (12 admin, 14
 customer, 10 partner).
 
-### What was already fixed
+### Fixed ahead of this ticket
 
-`getPlans`, both readers — see the commit for T-0679's sibling work. That is the only one addressed;
-everything below is open.
+`getPlans`, both readers — see the commit for T-0679's sibling work.
 
 Two admin templates were also fixed at the same time, and they are worth separating out because they
 were a **different and live** defect: `service-form.component.html` and `package-form.component.html`
@@ -55,11 +55,12 @@ read `facade.languages()[0].code`, which throws on an **empty** array — and bo
 `catchError` sets the signal to `[]` on any failed read. A transient network failure took the form
 down. Those are done.
 
-### The 20 remaining unguarded sites
+### The 21 sites, all now fixed
 
-Traced across `libs/` outside `libs/core/`: **41 call sites, 22 unguarded**, of which two are now
-fixed. They assign or dereference the raw client value with no `?? []`, no `|| []` and no truthiness
-check.
+Traced across `libs/` outside `libs/core/`: **41 call sites, 22 unguarded.** Every one is now
+coalesced at the point the value enters its facade. Line numbers below are as filed; several had
+drifted by one or two lines by the time they were worked, which the lanes reported rather than
+silently followed.
 
 **Dereference immediately — these throw rather than merely storing a lie:**
 
@@ -104,14 +105,16 @@ admits, which is exactly how this was found.
 
 ## Acceptance criteria
 
-- [ ] **AC1** — Given a lane is editing one of the 20 sites for any reason, When it touches the
-      client read, Then it coalesces with `?? []` and the site is struck off this list.
-- [ ] **AC2** — Given a site is fixed, Then a test asserts the null case, seeded by mocking the
+- [x] **AC1** — Given each of the 21 sites, When the client answers `null`, Then the facade's signal
+      holds `[]` and no reader dereferences a null.
+- [x] **AC2** — Given a site is fixed, Then a test asserts the null case, seeded by mocking the
       client to return `null` — not by a plausible array.
+- [x] **AC3** — Given ALL 21 coalesces are reverted at once, When the suites run, Then exactly 21
+      distinct tests fail — one per site, and no others. (Verified; this is what proves none of the
+      21 tests is vacuous.)
 
 ## Out of scope
 
-- **A sweep of all 20.** Owner ruling: opportunistic only.
 - **A shared `orEmpty()` helper or an RxJS operator.** An import at every call site plus a file plus a
   barrel export, to save four characters over `?? []`.
 - **A repo checker.** It would have to trace a generated method's value through an RxJS pipe, a
@@ -137,6 +140,9 @@ to both; its callers index it exactly as the signal's readers do.
 
 - 2026-09-06 — filed. Found while stubbing the customer booking e2e smoke, where a catch-all `{}`
   stub produced the null the real client admits.
+- 2026-09-06 — owner ruled the opportunistic approach, then asked for it worked in full. All 21
+  sites fixed in one pass. Mutation-verified: reverting all 21 coalesces at once produces exactly
+  21 distinct test failures, one per site and no others.
 
 ## Review
 

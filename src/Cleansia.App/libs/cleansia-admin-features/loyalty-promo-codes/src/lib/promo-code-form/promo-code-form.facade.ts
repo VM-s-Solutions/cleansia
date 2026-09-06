@@ -88,8 +88,12 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
         catchError(() => of([] as CurrencyListItem[]))
       )
       .subscribe((items) => {
+        // `?? []` because the generated client returns NULL, not an empty list, for a 200 whose body
+        // is not a JSON array and for a 204, while its declared type promises an array — neither
+        // `catchError` nor the compiler can see it. Reasoned out in full in
+        // service-management/service-form.facade.ts; the `.filter` below is this file's crash site.
         this.currencies.set(
-          items
+          (items ?? [])
             .filter(
               (c): c is CurrencyListItem & { id: string; code: string } =>
                 Boolean(c.id) && Boolean(c.code)

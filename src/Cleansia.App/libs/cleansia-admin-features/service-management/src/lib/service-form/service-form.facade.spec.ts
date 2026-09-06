@@ -16,6 +16,8 @@ describe('ServiceFormFacade', () => {
   let updateMock: jest.Mock;
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
   let navigate: jest.Mock;
+  let getLanguagesMock: jest.Mock;
+  let getCategoriesMock: jest.Mock;
 
   const formData: ServiceFormData = {
     name: 'Deep clean',
@@ -36,6 +38,8 @@ describe('ServiceFormFacade', () => {
     updateMock = jest.fn().mockReturnValue(of({ id: 'svc-1' }));
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
     navigate = jest.fn();
+    getLanguagesMock = jest.fn().mockReturnValue(of([]));
+    getCategoriesMock = jest.fn().mockReturnValue(of([]));
 
     TestBed.configureTestingModule({
       providers: [
@@ -47,8 +51,9 @@ describe('ServiceFormFacade', () => {
               create: createMock,
               update: updateMock,
               details: jest.fn().mockReturnValue(of(null)),
+              categories: getCategoriesMock,
             },
-            adminLanguageClient: { getOverview: jest.fn().mockReturnValue(of([])) },
+            adminLanguageClient: { getOverview: getLanguagesMock },
             adminCategoryClient: { getAll: jest.fn().mockReturnValue(of([])) },
           },
         },
@@ -78,6 +83,33 @@ describe('ServiceFormFacade', () => {
 
     expect(facade.saving()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  // A 200 whose body is not a JSON array, and a 204, reach the subscriber as NULL from the
+  // generated client even though the declared type is an array. Seeding a plausible array here
+  // would assert nothing — that is exactly how this class of defect stayed hidden.
+  describe('a null list from the generated client', () => {
+    it('leaves the language list an empty array', () => {
+      // Seeded non-empty first, deliberately: an exception thrown inside a `subscribe` handler is
+      // reported asynchronously and never reaches the signal, so a facade that still crashes on the
+      // null would leave the signal at its INITIAL `[]` and an assertion against a fresh facade would
+      // pass for the wrong reason. The seed makes the difference observable.
+      facade.languages.set([{ code: 'cs', name: 'Čeština' }]);
+      getLanguagesMock.mockReturnValue(of(null));
+
+      facade.loadLanguages();
+
+      expect(facade.languages()).toEqual([]);
+    });
+
+    it('leaves the category list an empty array', () => {
+      facade.categories.set([{ id: 'cat-1', name: 'Deep clean' }]);
+      getCategoriesMock.mockReturnValue(of(null));
+
+      facade.loadCategories();
+
+      expect(facade.categories()).toEqual([]);
+    });
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.

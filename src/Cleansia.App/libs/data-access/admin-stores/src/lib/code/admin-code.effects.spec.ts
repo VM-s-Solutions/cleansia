@@ -53,6 +53,18 @@ describe('AdminCodeEffects', () => {
     expect(emitted).toEqual([AdminCodeActions.loadAdminCodesSuccess({ data: [] })]);
   });
 
+  // The generated client emits NULL — not `[]` — for a 200 with a non-array body or a 204, and
+  // `catchError` cannot see it because null is not an error. The reducer spreads the payload
+  // straight into state, so an unguarded null becomes the code list every admin dropdown reads.
+  it('turns a null body into an empty list rather than putting null in the store', () => {
+    adminCodeClient.getOverview.mockReturnValue(of(null));
+
+    const emitted = collect(createEffects().loadAdminCodes$);
+    actions$.next(AdminCodeActions.loadAdminCodes());
+
+    expect(emitted).toEqual([AdminCodeActions.loadAdminCodesSuccess({ data: [] })]);
+  });
+
   it('maps a failed load to loadAdminCodesFailure carrying the error', () => {
     const failure = { message: 'offline' };
     adminCodeClient.getOverview.mockReturnValue(throwError(() => failure));

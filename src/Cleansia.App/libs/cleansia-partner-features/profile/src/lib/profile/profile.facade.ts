@@ -115,7 +115,14 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         this.email.set(employee.email ?? '');
         this.jobRadiusFacade.seed(employee);
 
-        const countryOptions: ICleansiaSelectOption[] = countries.map(
+        // `?? []` because the generated client answers a 200 whose body is not a JSON array — an
+        // empty body, a `{}`, a bare `null` — with NULL rather than an empty list, and a 204 falls
+        // past every branch to the same. `processGetServiced` ends `result200 = null as any` while
+        // its declared `CountryListItem[]` return type says that cannot happen. The `catchError`
+        // below cannot see it: null is not an error, so `.map()` throws inside this `tap`, which
+        // DOES route to that `catchError` — and it clears `profileData$`, marks the job radius
+        // unavailable and leaves the whole profile page blank on an otherwise successful read.
+        const countryOptions: ICleansiaSelectOption[] = (countries ?? []).map(
           (country) => {
             const translation =
               country.translations?.[this.translate.currentLang]?.name;

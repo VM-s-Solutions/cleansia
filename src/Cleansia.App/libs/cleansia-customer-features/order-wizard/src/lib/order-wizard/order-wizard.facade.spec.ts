@@ -852,6 +852,33 @@ describe('OrderWizardFacade', () => {
       expect(extraClient.getOverview).toHaveBeenCalledTimes(1);
       expect(facade.isAuthenticated()).toBe(false);
     });
+
+    // The generated clients emit NULL from an array-returning method for a 200 whose body is not
+    // a JSON array, and for a 204. The declared type says otherwise, so nothing — not
+    // `catchError`, not the compiler — stands between that null and these signals. Seeding the
+    // mocks with a plausible array is exactly how that stayed invisible.
+    it('holds an empty country list when the served-countries read emits null', () => {
+      countryClient.getServiced.mockReturnValue(of(null));
+
+      facade.initialize();
+
+      expect(facade.countries()).toEqual([]);
+      expect(facade.formData().address.countryId).toBe('');
+    });
+
+    // `[...null]` throws "not iterable" — but it throws INSIDE a subscribe next handler, which
+    // RxJS does not propagate to the caller and does not route to the `error` handler: it reports
+    // it on a timer. So `initialize()` returns cleanly and `extras()` keeps its initial `[]`, and
+    // asserting either of those ALONE passes with the coalesce removed. `tick()` is the assertion
+    // — it is where the unhandled error lands.
+    it('holds an empty extras catalog when the overview read emits null', fakeAsync(() => {
+      extraClient.getOverview.mockReturnValue(of(null));
+
+      facade.initialize();
+      tick();
+
+      expect(facade.extras()).toEqual([]);
+    }));
   });
 
   describe('pricing display', () => {
@@ -999,6 +1026,20 @@ describe('OrderWizardFacade', () => {
 
       expect(facade.alreadyConsented()).toBe(false);
     });
+
+    // A null body is a SUCCESS as far as the stream is concerned, so the `catchError` above never
+    // fires — the coalesce is the only thing standing between it and `.some`. `tick()` carries
+    // the assertion: a throw in a subscribe next handler is reported by RxJS on a timer rather
+    // than raised at the caller, so `alreadyConsented()` reads false either way.
+    it('is asked when the consent read emits null rather than a list', fakeAsync(() => {
+      gdprClient.consentsGet.mockReturnValue(of(null));
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+      tick();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    }));
   });
   /**
    * What the account fetch is allowed to do to the form.

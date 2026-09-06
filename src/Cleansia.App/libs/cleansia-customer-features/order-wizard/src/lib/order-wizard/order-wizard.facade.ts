@@ -322,21 +322,35 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     // planning/active/service-areas.md.
     this.customerClient.countryClient.getServiced().pipe(takeUntil(this.destroyed$)).subscribe({
       next: (countries) => {
-        this.countries.set(countries);
+        // `?? []` because the generated client answers a 200 whose body is not a JSON array — an
+        // empty body, a `{}`, a `null` — and a 204 with NULL, while its declared type promises an
+        // array (see `processGetServiced` in customer-client.ts, which falls to
+        // `result200 = null as any`). Nothing above catches it: null is not an error, so a
+        // `catchError` would not fire even if this read had one, and TypeScript never complains
+        // because the declared type is non-nullable. Coalesced ONCE into a local because the
+        // auto-select below measures and indexes the same list the signal holds.
+        const served = countries ?? [];
+        this.countries.set(served);
         // Auto-select country ONLY when there's exactly one served — otherwise
         // require the user to pick. With multiple served countries we'd hit
         // the same silent-default bug if we auto-picked here, just with a
         // different country.
-        if (countries.length === 1 && !this.formData().address.countryId) {
+        if (served.length === 1 && !this.formData().address.countryId) {
           const address = new AddressDto(this.formData().address);
-          address.countryId = countries[0].id ?? '';
+          address.countryId = served[0].id ?? '';
           this.updateFormData({ address });
         }
       },
     });
     // Best-effort load — empty catalog just hides the extras section.
+    // `?? []` for the same generated-client null as the countries read above; spreading null
+    // throws "not iterable", so this one takes the whole wizard init down rather than storing
+    // a lie — and it does so past the `error` handler, which sees a failed request, not a bad body.
     this.customerClient.extraClient.getOverview().pipe(takeUntil(this.destroyed$)).subscribe({
-      next: (extras) => this.extras.set([...extras].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))),
+      next: (extras) =>
+        this.extras.set(
+          [...(extras ?? [])].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)),
+        ),
       error: () => this.extras.set([]),
     });
 
@@ -396,8 +410,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         catchError(() => of([] as UserConsentDto[])),
       )
       .subscribe((consents) => {
+        // `?? []` for the same generated-client null as in `initialize` — the `catchError` above
+        // covers a failed request, not a 200 whose body is not an array. Coalesced once, because
+        // `granted` runs over it twice.
+        const onRecord = consents ?? [];
         const granted = (type: ConsentType) =>
-          consents.some(
+          onRecord.some(
             (c) => c.consentType === type && c.isGranted && !c.withdrawnAt,
           );
         this.alreadyConsented.set(

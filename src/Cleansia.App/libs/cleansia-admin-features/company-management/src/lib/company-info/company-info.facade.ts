@@ -49,7 +49,10 @@ export class CompanyInfoFacade extends UnsubscribeControlDirective {
         catchError(() => of([]))
       )
       .subscribe((countries) => {
-        this.countries.set(countries);
+        // `?? []` — the generated client can put a NULL in a signal typed as an array; reasoned out
+        // in service-management/service-form.facade.ts. Nothing dereferences it here, so the null
+        // would travel as far as the country picker before it threw.
+        this.countries.set(countries ?? []);
       });
   }
 

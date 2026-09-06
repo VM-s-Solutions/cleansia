@@ -124,6 +124,16 @@ describe('CompanyInfoFormFacade', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  // Seeded with `of(null)`, not a plausible array: the generated client answers a non-array 200
+  // and a 204 with NULL. → service-form.facade.spec.ts
+  it('leaves the country list an empty array when the client answers null', () => {
+    getOverviewMock.mockReturnValue(of(null));
+
+    facade.loadCountries();
+
+    expect(facade.countries()).toEqual([]);
+  });
+
   describe('command bodies on the wire', () => {
     it('serializes a create with every filled field and undefined for the blanks', () => {
       facade.createCompanyInfo(formData);

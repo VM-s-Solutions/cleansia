@@ -23,6 +23,7 @@ describe('PromoCodeFormFacade', () => {
   let createMock: jest.Mock;
   let updateMock: jest.Mock;
   let navigate: jest.Mock;
+  let getCurrenciesMock: jest.Mock;
 
   const percentInput: PromoCodeCreateInput = {
     code: 'SPRING20',
@@ -51,6 +52,7 @@ describe('PromoCodeFormFacade', () => {
     createMock = jest.fn().mockReturnValue(of({ promoCodeId: 'promo-1' }));
     updateMock = jest.fn().mockReturnValue(of({ promoCodeId: 'promo-1' }));
     navigate = jest.fn();
+    getCurrenciesMock = jest.fn().mockReturnValue(of([]));
 
     TestBed.configureTestingModule({
       providers: [
@@ -63,7 +65,7 @@ describe('PromoCodeFormFacade', () => {
               update: updateMock,
               details: jest.fn().mockReturnValue(of(null)),
             },
-            adminCurrencyClient: { getOverview: jest.fn().mockReturnValue(of([])) },
+            adminCurrencyClient: { getOverview: getCurrenciesMock },
           },
         },
         {
@@ -83,6 +85,18 @@ describe('PromoCodeFormFacade', () => {
 
     expect(navigate).toHaveBeenCalledWith(['/loyalty/promos', 'promo-1']);
     expect(facade.saving()).toBe(false);
+  });
+
+  // Seeded with `of(null)`, not a plausible array: the generated client answers a non-array 200
+  // and a 204 with NULL. → service-form.facade.spec.ts
+  it('leaves the currency list an empty array when the client answers null', () => {
+      // Seeded non-empty first so an unchanged signal cannot pass. → service-form.facade.spec.ts
+    facade.currencies.set([{ id: 'cur-1', code: 'CZK', symbol: 'Kč' }]);
+    getCurrenciesMock.mockReturnValue(of(null));
+
+    facade.loadCurrencies();
+
+    expect(facade.currencies()).toEqual([]);
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.

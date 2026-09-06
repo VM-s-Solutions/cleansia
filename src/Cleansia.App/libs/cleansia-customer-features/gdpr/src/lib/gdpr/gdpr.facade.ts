@@ -36,7 +36,13 @@ export class GdprFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (consents) => {
-          this.consents.set(consents);
+          // `?? []` because the generated client answers a 200 whose body is not a JSON array —
+          // an empty body, a `{}`, a `null` — and a 204 with NULL, while its declared type
+          // promises an array. The `error` handler below never sees it: null is not an error, and
+          // TypeScript does not object because the declared type is non-nullable. A null parked
+          // here reaches `isConsentGranted`, which is called once per toggle row the page renders,
+          // so the whole GDPR page would throw on an answer the server considers a success.
+          this.consents.set(consents ?? []);
           this.loadingConsents.set(false);
         },
         error: () => {

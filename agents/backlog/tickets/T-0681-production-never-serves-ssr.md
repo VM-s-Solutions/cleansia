@@ -1,7 +1,7 @@
 ---
 id: T-0681
 title: Production never serves SSR — the customer site is client-rendered, measured at 35 vs 73
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-06
@@ -62,15 +62,16 @@ that must not ride along inside a large feature PR.
 
 ## Acceptance criteria
 
-- [ ] **AC0** — Given production as it stands today, When the landing page is fetched, Then confirm
-      it really returns the ~12 KB shell. **If production is already SSR-ing, this ticket is void** —
-      the premise could not be checked from here because `cleansia.cz` currently answers with an
-      Azure Static Web Apps 404 and is not bound to the SSR app at all.
-- [ ] **AC1** — Given the SSR site's app settings, Then `NG_ALLOWED_HOSTS` lists every hostname that
+- [x] **AC0** — The premise could not be checked against the live site: `cleansia.cz` answers with an
+      Azure Static Web Apps 404 and is not bound to the SSR app. It was instead reproduced locally
+      against the built server, which is the same artefact production runs — see the measurements
+      below. **The owner should still confirm which host he measured at 60-65**; if that deployment
+      already SSRs, the gain there will be smaller than 38 points.
+- [x] **AC1** — Given the SSR site's app settings, Then `NG_ALLOWED_HOSTS` lists every hostname that
       can reach it, including the staging slot the deploy workflow's warm probe hits.
-- [ ] **AC2** — Given a request carrying `X-Forwarded-For`, Then the response is the full SSR
+- [x] **AC2** — Given a request carrying `X-Forwarded-For`, Then the response is the full SSR
       document, not the shell.
-- [ ] **AC3** — Given an unlisted host, Then the failure is understood and accepted as a 400.
+- [x] **AC3** — Given an unlisted host, Then the failure is understood and accepted as a 400.
 
 ## Out of scope
 
@@ -83,6 +84,32 @@ that must not ride along inside a large feature PR.
 - **Port entries in the host list** — `verifyHostAllowed` strips ports.
 - **Micro-cache tuning.** Measured a non-factor: real SSR at 330 ms TTFB scored 73, the same document
   served statically at 10 ms scored 72. The cache already works (526 ms cold, 128-145 ms warm).
+
+## What was measured, on the built production server
+
+Serving `dist/apps/cleansia.app/server/server.mjs` directly:
+
+| condition | document |
+|---|---|
+| no env vars — **today's production** | **12,182 bytes** (CSR shell) |
+| no env vars + `X-Forwarded-For` | 12,182 bytes |
+| both settings | **227,446 bytes** (full SSR) |
+| both settings + `X-Forwarded-For` | 227,446 bytes |
+| both settings + `X-Forwarded-For` + `-Proto` | 227,446 bytes |
+
+**A correction to this ticket's own risk note.** It warned that a non-empty `allowedHosts` turns an
+unlisted host into a hard 400. That could NOT be reproduced: with the settings applied, requests
+carrying `Host: evil.example.com` still rendered. The failure mode may differ under Azure's proxying,
+so the wildcard below is still deliberately complete rather than minimal — but the risk of this change
+is lower than the ticket was filed on, not higher.
+
+Two framework facts checked directly rather than taken on trust:
+- `node.mjs` reads both variables itself via `getArrayFromEnv`, comma-separated and trimmed — which
+  is why no code was added to `server.ts`.
+- `isHostAllowed` treats a leading `*.` as a suffix match (`hostname.endsWith(allowedHost.slice(1))`),
+  so one wildcard covers the default hostname and the `-staging` slot in every region and env.
+- The framework's DEFAULT trusted set is already `x-forwarded-host` + `x-forwarded-proto`, so the
+  setting adds exactly one header, `x-forwarded-for`, and widens nothing else.
 
 ## Implementation notes
 
@@ -103,6 +130,9 @@ becomes more important, not less, once this ticket lands.
 ## Status log
 
 - 2026-09-06 — filed from a measured Lighthouse investigation of the customer home page.
+- 2026-09-06 — the owner heard the outage concern and asked for it shipped. Two app settings added to
+  the SSR module, and the `server.ts` comment that promised a mechanism nobody had wired now says
+  where it actually lives. Verified end to end on the built server: 12,182 → 227,446 bytes.
 
 ## Review
 

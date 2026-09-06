@@ -20,8 +20,17 @@ async function getAngularApp(): Promise<AngularNodeAppEngine> {
     const engineManifest = await import(manifestPath);
     // @angular/ssr >= 19.2.16 (SSRF fix) iterates manifest.allowedHosts
     // unconditionally, but @angular/build < 19.2.16 emits a manifest without
-    // it — default the field so the engine doesn't crash on startup. Hosts
-    // are authorized at runtime via the NG_ALLOWED_HOSTS env var.
+    // it — default the field so the engine doesn't crash on startup.
+    //
+    // The hosts themselves come from NG_ALLOWED_HOSTS, which the framework reads
+    // itself (node.mjs getArrayFromEnv) — do NOT add code here to do it. That
+    // env var, and NG_TRUST_PROXY_HEADERS beside it, are set on the SSR App
+    // Service in deploy/bicep/main.bicep. Until 2026-09-06 they were set nowhere
+    // and this comment was the only mention of either in the repository, so every
+    // production request fell back to client-side rendering with a 200. → T-0681
+    //
+    // An empty list still means CSR-for-everything, which is what a LOCAL run of
+    // the built server does unless you export NG_ALLOWED_HOSTS=localhost.
     ɵsetAngularAppEngineManifest({ allowedHosts: [], ...engineManifest.default });
     manifestLoaded = true;
   }

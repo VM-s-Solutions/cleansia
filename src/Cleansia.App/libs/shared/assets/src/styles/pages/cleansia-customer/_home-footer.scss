@@ -78,6 +78,18 @@
     i {
       color: $primary-accent;
     }
+
+    // Quieter than the store name it qualifies: the chip still reads "App Store" first, and this
+    // says why it does not do anything. Not italic despite the <em> — the tag is for emphasis in
+    // the accessibility tree, and slanted 11px on a navy ground is hard to read.
+    .cl-footer__app-soon {
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(186, 230, 253, 0.75);
+    }
   }
 
   &__col-title {

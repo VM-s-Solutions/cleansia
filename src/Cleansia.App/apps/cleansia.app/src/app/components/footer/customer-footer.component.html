@@ -18,14 +18,25 @@
         <a class="cl-footer__brand-logo" routerLink="/">Cleansia</a>
         <p class="cl-footer__brand-desc">{{ 'pages.home.footer.description' | translate }}</p>
 
+        <!--
+          Neither app has shipped. These were bare store names on a non-link <span>, which reads as
+          "download here" to anyone who does not notice there is nothing to tap. The badge says so
+          instead. One key under both, not two, so the pair cannot drift.
+        -->
         <div class="cl-footer__apps">
           <span class="cl-footer__app">
             <i class="pi pi-apple" aria-hidden="true"></i>
             App Store
+            <em class="cl-footer__app-soon">{{
+              'pages.home.footer.apps_coming_soon' | translate
+            }}</em>
           </span>
           <span class="cl-footer__app">
             <i class="pi pi-google" aria-hidden="true"></i>
             Google Play
+            <em class="cl-footer__app-soon">{{
+              'pages.home.footer.apps_coming_soon' | translate
+            }}</em>
           </span>
         </div>
       </div>

@@ -415,7 +415,7 @@
           <cleansia-select
             [floatVariant]="null"
             [label]="'pages.profile.pref_language' | translate"
-            [options]="languageOptions"
+            [options]="languageOptions()"
             [ngModel]="currentLanguage"
             (ngModelChange)="onLanguageChange($event)"
             [showClear]="false"

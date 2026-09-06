@@ -1,7 +1,7 @@
 ---
 id: T-0684
 title: A CreateDispute response with no id is an empty string on Android and a refusal on iOS
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-06
@@ -39,9 +39,9 @@ written that way when the compile error was fixed.
 
 ## Acceptance criteria
 
-- [ ] **AC1** — Given a CreateDispute response with no id, When either mobile client handles it,
+- [x] **AC1** — Given a CreateDispute response with no id, When either mobile client handles it,
       Then both behave the same way, and the pinned test on the platform that changes is updated.
-- [ ] **AC2** — If the answer is "refuse", Then the refusal reaches the customer as a message rather
+- [x] **AC2** — If the answer is "refuse", Then the refusal reaches the customer as a message rather
       than a silent no-op, and the dispute they just created is still reachable from the list.
 
 ## Out of scope
@@ -52,6 +52,17 @@ written that way when the compile error was fixed.
 
 ## Status log
 
+- 2026-09-06 — **settled on the refusal, and Android moved to meet iOS.**
+  `DisputeApi.create` now maps with `.required("disputeId")`, and
+  `DisputeRepository.create` wraps in `wireResult` — which is what turns the refusal into an
+  `ApiResult.Error`. Without that wrapper it would have CRASHED rather than refused: `networkCall`
+  re-throws `WireContractViolation` on purpose so `wireResult` can catch it, and this repository
+  imported the wrapper without ever calling it.
+  AC2's second clause is met by refreshing the list on any non-transport error: a refused body means
+  the server answered, so the dispute may well exist, and without the refresh the customer cannot
+  see it and files a second dispute about the same money.
+  Both refusal shapes are covered (`{}` and an explicit null) and the test that pinned the old
+  empty-string behaviour is replaced. 59 Android dispute tests green.
 - 2026-09-06 — filed while adding the wire tests that were missing on both platforms. Neither client
   can reach this against the real backend today; it is a divergence waiting for a schema change, a
   proxy, or a partial outage to expose it.

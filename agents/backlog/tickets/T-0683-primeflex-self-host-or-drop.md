@@ -87,6 +87,15 @@ Three traps, each of which silently breaks a naive extraction:
 
 ## Findings this ticket carries
 
+> **FIXED 2026-09-06**, and it was smaller than estimated once measured properly: two classes, not
+> ~33. `w-full` (x32) became `full-width`, which `sizing.scss` already defines as the identical
+> `width: 100% !important` and which all three apps load; `mt-2` on the form skeleton was its
+> header's only spacing, so the two bars sat flush in partner and admin, and the component now owns
+> a 0.5rem gap. `active` turned out not to be a PrimeFlex class at all, and text-center/text-right
+> resolve to project rules. What is left is `field` x8 on the admin dispute-detail screen — but that
+> component has **no stylesheet at all**, so its grid, labels and values are equally unstyled. That
+> is a screen to design, not a class to rename, and it is not this ticket.
+
 **Partner and admin use ~33 PrimeFlex classes and never load PrimeFlex.** Neither
 `apps/cleansia-partner.app/src/index.html` nor `apps/cleansia-admin.app/src/index.html` carries the
 link, and neither `cleansia-partner.scss` nor `cleansia-admin.scss` imports it. Those class

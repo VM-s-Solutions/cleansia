@@ -28433,6 +28433,40 @@
         }
       }
     },
+    "recurring_confirm_cta_cash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm booking"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrdit rezervaci"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potvrdiť rezerváciu"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подтвердить бронирование"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підтвердити замовлення"
+          }
+        }
+      }
+    },
     "recurring_confirm_success": {
       "extractionState": "stale",
       "localizations": {

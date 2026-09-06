@@ -1211,6 +1211,7 @@
     <string name="notification_recurring_scheduled_title">Підтвердіть завтрашнє прибирання</string>
     <string name="notification_recurring_scheduled_body">Ваше повторюване замовлення #%1$s заплановано на завтра. Натисніть, щоб підтвердити та сплатити.</string>
     <string name="recurring_confirm_cta">Підтвердити та сплатити</string>
+    <string name="recurring_confirm_cta_cash">Підтвердити замовлення</string>
     <string name="recurring_confirm_success">Замовлення підтверджено</string>
     <string name="notification_loyalty_tier_upgrade_title">Ви перейшли на новий рівень!</string>
     <string name="notification_loyalty_tier_upgrade_body">Вітаємо в рівні %1$s — нові переваги вже чекають.</string>

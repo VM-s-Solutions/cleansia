@@ -1211,6 +1211,7 @@
     <string name="notification_recurring_scheduled_title">Potvrďte zajtrajšie upratovanie</string>
     <string name="notification_recurring_scheduled_body">Vaša opakovaná rezervácia #%1$s je zajtra. Ťuknite pre potvrdenie a platbu.</string>
     <string name="recurring_confirm_cta">Potvrdiť a zaplatiť</string>
+    <string name="recurring_confirm_cta_cash">Potvrdiť rezerváciu</string>
     <string name="recurring_confirm_success">Rezervácia potvrdená</string>
     <string name="notification_loyalty_tier_upgrade_title">Postup na novú úroveň!</string>
     <string name="notification_loyalty_tier_upgrade_body">Vitajte v úrovni %1$s — nové výhody čakajú.</string>

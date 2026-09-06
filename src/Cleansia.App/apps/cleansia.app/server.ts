@@ -111,9 +111,15 @@ app.use((req, res, next) => {
         const body = Buffer.from(await response.clone().arrayBuffer());
         // A transient SSR failure still responds 200 with the bare app shell;
         // caching that would serve the broken page to every visitor of this
-        // language for the whole TTL. The landing page always contains the
-        // hero section, so its absence marks a render to skip.
-        if (body.includes('cl-hero')) {
+        // language for the whole TTL.
+        //
+        // The test is the EMPTY app-root, not the presence of the hero. It was
+        // `body.includes('cl-hero')`, and the shell passes that: its inlined
+        // critical CSS declares the custom property `--cl-hero-1`, so the
+        // substring is there in all 12,182 bytes of a render that produced
+        // nothing. The guard was inert on exactly the input it was written for.
+        // A real render always fills app-root; a fallback never does.
+        if (!body.includes('<app-root></app-root>')) {
           const headers: [string, string][] = [];
           response.headers.forEach((value, key) => {
             if (!['set-cookie', 'content-length'].includes(key.toLowerCase())) {

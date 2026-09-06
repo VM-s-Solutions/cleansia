@@ -234,6 +234,12 @@ extension L10n {
             localized("recurring_confirm_cta")
         }
 
+        /// The same action on a CASH booking, where nothing is paid: ConfirmRecurringOrder's cash arm
+        /// mints no PaymentIntent and returns a null client secret.
+        static var confirmCtaCash: String {
+            localized("recurring_confirm_cta_cash")
+        }
+
         static var confirmSuccess: String {
             localized("recurring_confirm_success")
         }

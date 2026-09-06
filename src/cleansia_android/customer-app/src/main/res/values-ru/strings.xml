@@ -1211,6 +1211,7 @@
     <string name="notification_recurring_scheduled_title">Подтвердите завтрашнюю уборку</string>
     <string name="notification_recurring_scheduled_body">Ваше повторяющееся бронирование #%1$s завтра. Нажмите, чтобы подтвердить и оплатить.</string>
     <string name="recurring_confirm_cta">Подтвердить и оплатить</string>
+    <string name="recurring_confirm_cta_cash">Подтвердить бронирование</string>
     <string name="recurring_confirm_success">Бронирование подтверждено</string>
     <string name="notification_loyalty_tier_upgrade_title">Вы перешли на новый уровень!</string>
     <string name="notification_loyalty_tier_upgrade_body">Добро пожаловать в уровень %1$s — новые привилегии уже ждут.</string>

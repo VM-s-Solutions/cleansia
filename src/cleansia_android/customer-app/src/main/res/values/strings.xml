@@ -1240,6 +1240,7 @@
     <string name="notification_recurring_scheduled_title">Confirm tomorrow\'s cleaning</string>
     <string name="notification_recurring_scheduled_body">Your recurring booking #%1$s is tomorrow. Tap to confirm and pay.</string>
     <string name="recurring_confirm_cta">Confirm and pay</string>
+    <string name="recurring_confirm_cta_cash">Confirm booking</string>
     <string name="recurring_confirm_success">Booking confirmed</string>
     <string name="notification_loyalty_tier_upgrade_title">You leveled up!</string>
     <string name="notification_loyalty_tier_upgrade_body">Welcome to %1$s — your new perks are waiting.</string>

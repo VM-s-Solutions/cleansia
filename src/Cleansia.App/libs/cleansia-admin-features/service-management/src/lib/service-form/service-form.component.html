@@ -80,14 +80,10 @@
       </cleansia-section>
 
       <cleansia-section [title]="'pages.service_form.translations' | translate">
-        <!--
-          `?.` and not `[0].code`: the facade's own catchError sets this signal to [] on ANY failed
-          languages read, and `[0].code` on an empty array is a TypeError that takes the whole form
-          down — a transient network blip, not an exotic response. The `|| ''` never helped, because
-          it applies to `.code` AFTER the throw. The tablist below already renders nothing on an empty
-          list, so an empty value is the correct degradation.
-        -->
-        <p-tabs [value]="facade.languages()[0]?.code ?? ''">
+        <p-tabs
+          [value]="activeLanguage()"
+          (valueChange)="onLanguageTabChange($event)"
+        >
           <p-tablist>
             @for (lang of facade.languages(); track lang.code) {
             <p-tab [value]="lang.code">{{ lang.name }}</p-tab>

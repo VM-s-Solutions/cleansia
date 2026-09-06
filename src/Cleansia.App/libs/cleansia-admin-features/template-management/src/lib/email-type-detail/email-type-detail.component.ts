@@ -98,6 +98,29 @@ export class EmailTypeDetailComponent implements OnInit, OnDestroy {
     );
   });
 
+  /**
+   * Which translation tab is open — a signal the USER's click owns. `p-tabs` exposes `value` as a
+   * two-way `model()`, and this was bound one-way to `languages()[0].code`: the component could not
+   * read the selection, Angular wrote the expression back whenever it changed, and `[0]` was
+   * dereferenced on a list that is `[]` for an email type with no translations yet.
+   */
+  readonly activeLanguage = signal<string>('');
+
+  onLanguageTabChange(value: string | number | undefined): void {
+    if (typeof value === 'string') {
+      this.activeLanguage.set(value);
+    }
+  }
+
+  // Open the first language once it is known, and never again — re-deriving would drag the user's
+  // tab back on every re-emit.
+  private activeLanguageDefault = effect(() => {
+    const first = this.languages()[0]?.code;
+    if (first && !this.activeLanguage()) {
+      this.activeLanguage.set(first);
+    }
+  });
+
   private formInitEffect = effect(() => {
     const detail = this.facade.emailTypeDetail();
     if (detail?.translations) {

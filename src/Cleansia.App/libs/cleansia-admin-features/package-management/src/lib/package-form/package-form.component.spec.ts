@@ -306,19 +306,49 @@ describe('PackageFormComponent', () => {
   });
 
   /**
-   * THE LANGUAGES LIST CAN BE EMPTY, and the template used to die on it. The facade's own
-   * `catchError` sets this signal to `[]` on ANY failed languages read, and the translations tab
-   * strip read `languages()[0].code` — a TypeError on an empty array, which takes the whole form
-   * down. A transient network blip, not an exotic response.
+   * WHO OWNS THE TRANSLATION TAB. `p-tabs` exposes `value` as a two-way `model()`, and this was bound
+   * ONE-WAY to `facade.languages()[0].code`. Two things were wrong with that and only one of them was
+   * a crash:
    *
-   * The stub above seeds one language, which is exactly why no existing test could see this: a
-   * hand-written stub always returns a plausible array.
+   *  - `[0]` on an empty array is `undefined.code`, a TypeError that takes the form down — and the
+   *    facade's own `catchError` sets the list to `[]` on any failed read, so a network blip was
+   *    enough. The stub below seeds a language, which is exactly why no test could see it.
+   *  - the component could not read the selection at all, and Angular wrote the expression back over
+   *    the user's choice whenever it changed.
    */
   it('renders with no languages rather than dying on the tab strip', () => {
     facade.languages.set([]);
 
     expect(() => fixture.detectChanges()).not.toThrow();
     expect(fixture.nativeElement.querySelectorAll('p-tab')).toHaveLength(0);
+  });
+
+  it('opens the first language once the list arrives', () => {
+    // The stub seeds one language before the fixture is built, so the defaulting effect has already
+    // run by the time the test body starts — which is the behaviour, not an artefact: it opens the
+    // first language the moment one exists and does not wait to be asked.
+    expect(component.activeLanguage()).toBe('en');
+  });
+
+  it("keeps the user's chosen language when the list re-emits", () => {
+    facade.languages.set([
+      { code: 'cs', name: 'Cestina' },
+      { code: 'en', name: 'English' },
+    ]);
+    fixture.detectChanges();
+
+    component.onLanguageTabChange('en');
+    fixture.detectChanges();
+
+    // A reload, a retry, a second loadLanguages(). The old binding re-derived from [0] and would
+    // have dragged the tab back to Czech.
+    facade.languages.set([
+      { code: 'cs', name: 'Cestina' },
+      { code: 'en', name: 'English' },
+    ]);
+    fixture.detectChanges();
+
+    expect(component.activeLanguage()).toBe('en');
   });
 
 });

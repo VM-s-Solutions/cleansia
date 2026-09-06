@@ -334,6 +334,7 @@ public class FcmMessageFactoryTests
             "order.reminder_not_started",
             "order.reminder_soon",
             "order.reminder_tomorrow",
+            "order.seat_open",
             "order.starting_soon",
             "payroll.invoice_paid",
             "recurring.scheduled",

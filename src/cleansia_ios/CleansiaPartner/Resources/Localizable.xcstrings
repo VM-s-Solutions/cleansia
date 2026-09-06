@@ -17969,6 +17969,74 @@
         }
       }
     },
+    "push.order.seat_open.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A cleaner has come off booking #%1$@. Tap to take it."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z objednávky #%1$@ odstoupil uklízeč. Klepnutím ji převezmete."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z objednávky #%1$@ odstúpil upratovač. Ťuknutím ju prevezmete."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уборщик отказался от заказа #%1$@. Нажмите, чтобы взять его."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибиральник відмовився від замовлення #%1$@. Натисніть, щоб взяти його."
+          }
+        }
+      }
+    },
+    "push.order.seat_open.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A job needs cover"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka potřebuje záskok"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka potrebuje záskok"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказу нужна замена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовленню потрібна заміна"
+          }
+        }
+      }
+    },
     "push.order.starting_soon.body": {
       "extractionState": "manual",
       "localizations": {

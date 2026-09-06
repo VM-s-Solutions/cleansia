@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -57,6 +58,8 @@ public class DropOrder
     public class Handler(
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
+        IEmployeeRepository employeeRepository,
+        INotificationProducer notificationProducer,
         IEmployeeActionAuditRepository employeeActionAuditRepository) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(
@@ -105,6 +108,11 @@ public class DropOrder
                     order.PreferredEmployeeId, order.PreferredHoldUntilUtc, nowUtc)
                 && order.PreferredEmployeeId == employeeId;
 
+            // Captured BEFORE the unassign: the row is hard-deleted by it, and the push dedup subject
+            // is built from the assignment that ended.
+            var releasedAssignmentId = order.AssignedEmployees
+                .First(oe => oe.EmployeeId == employeeId).Id;
+
             order.UnassignEmployee(employeeId);
 
             // A live hold makes the order invisible to EVERYONE but its beneficiary, for up to 12
@@ -125,6 +133,16 @@ public class DropOrder
 
             employeeActionAuditRepository.Add(EmployeeActionAudit.Create(
                 employeeId, order.Id, EmployeeAuditAction.OrderDropped));
+
+            // Wake the cleaners who could take it. More urgent than a cover request, because this seat
+            // is empty from now rather than held until somebody answers.
+            await SeatOpenedNotifier.NotifySeatOpenAsync(
+                order,
+                employeeId,
+                releasedAssignmentId,
+                employeeRepository,
+                notificationProducer,
+                cancellationToken);
 
             return BusinessResult.Success(
                 new Response(order.Id, order.AssignedEmployees.Count));

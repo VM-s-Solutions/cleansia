@@ -621,6 +621,7 @@
           "action": "Přiřadit jiného uklízeče",
           "confirm": "Přesunout přiřazení ze současného uklízeče na jiného uklízeče.",
           "none_assigned": "K této objednávce není přiřazen žádný uklízeč, kterého by bylo možné přeřadit.",
+          "add_only_hint": "Na této zakázce nikdo není. Zadejte uklízeče, kterýho na ni chcete přiřadit.",
           "from": "Od uklízeče",
           "to": "Na uklízeče (ID zaměstnance)",
           "to_hint": "Zadejte ID cílového zaměstnance.",

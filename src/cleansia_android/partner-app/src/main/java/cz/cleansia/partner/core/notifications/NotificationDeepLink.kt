@@ -67,6 +67,8 @@ object NotificationDeepLink {
         // Still the order detail even though the cleaner is off the job: the copy says the job
         // moved, and the detail is where they can read which day just came off their schedule.
         "order.assignment_revoked",
+        // Straight to the job so the cleaner can take it without hunting the board.
+        "order.seat_open",
         // The targeted offer stays on the DETAIL rather than moving to the pending-offers surface.
         // The push announces on a recipient; the offers list is `hold > now`, so the two do not
         // coincide. PreferredCleanerHoldResolver builds its recipient BEFORE the lead-time gate and

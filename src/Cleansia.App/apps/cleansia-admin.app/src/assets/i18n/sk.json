@@ -621,6 +621,7 @@
           "action": "Priradiť iného upratovača",
           "confirm": "Presunúť priradenie zo súčasného upratovača na iného upratovača.",
           "none_assigned": "K tejto objednávke nie je priradený žiadny upratovač, ktorého by bolo možné preradiť.",
+          "add_only_hint": "Na tejto zakázke nikto nie je. Zadajte upratovača, ktorého na ňu chcete priradiť.",
           "from": "Od upratovača",
           "to": "Na upratovača (ID zamestnanca)",
           "to_hint": "Zadajte ID cieľového zamestnanca.",

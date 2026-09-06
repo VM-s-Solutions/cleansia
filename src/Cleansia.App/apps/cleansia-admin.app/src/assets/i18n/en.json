@@ -621,6 +621,7 @@
           "action": "Reassign cleaner",
           "confirm": "Move the assignment from the current cleaner to another cleaner.",
           "none_assigned": "This order has no assigned cleaner to reassign.",
+          "add_only_hint": "Nobody is on this job. Enter a cleaner to put one on it.",
           "from": "From cleaner",
           "to": "To cleaner (employee ID)",
           "to_hint": "Enter the target employee ID.",

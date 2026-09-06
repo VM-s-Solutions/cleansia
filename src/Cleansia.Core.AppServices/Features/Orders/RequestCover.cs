@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -58,6 +59,8 @@ public class RequestCover
     public class Handler(
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
+        IEmployeeRepository employeeRepository,
+        INotificationProducer notificationProducer,
         IEmployeeActionAuditRepository employeeActionAuditRepository) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(
@@ -119,6 +122,17 @@ public class RequestCover
 
                 employeeActionAuditRepository.Add(EmployeeActionAudit.Create(
                     employeeId, order.Id, EmployeeAuditAction.CoverRequested));
+
+                // Wake the cleaners who could take it. The seat is already released and re-advertised
+                // above, so this is an accelerant rather than the mechanism: the hourly digest stays
+                // the floor if this finds nobody.
+                await SeatOpenedNotifier.NotifySeatOpenAsync(
+                    order,
+                    employeeId,
+                    assignment.Id,
+                    employeeRepository,
+                    notificationProducer,
+                    cancellationToken);
             }
 
             return BusinessResult.Success(

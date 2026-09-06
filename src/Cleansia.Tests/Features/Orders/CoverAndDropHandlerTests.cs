@@ -1,9 +1,11 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using MockQueryable;
 using Moq;
 
@@ -32,6 +34,8 @@ public class CoverAndDropHandlerTests
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
+    private readonly Mock<IEmployeeRepository> _employees = new();
+    private readonly Mock<INotificationProducer> _notifications = new();
     private readonly Mock<IEmployeeActionAuditRepository> _audit = new();
 
     private static Order OrderWith(params string[] assignedEmployeeIds)
@@ -54,13 +58,19 @@ public class CoverAndDropHandlerTests
             .Returns(new[] { order }.AsQueryable().BuildMock());
         _accessService.Setup(a => a.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(callerEmployeeId);
+        // The seat-open fan-out reads this. Empty is the honest default here: who gets woken is
+        // SeatOpenedNotifier's own concern and has its own tests, and these are about the release.
+        _employees.Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
     }
 
     private RequestCover.Handler CoverHandler() =>
-        new(_orderRepository.Object, _accessService.Object, _audit.Object);
+        new(_orderRepository.Object, _accessService.Object, _employees.Object,
+            _notifications.Object, _audit.Object);
 
     private DropOrder.Handler DropHandler() =>
-        new(_orderRepository.Object, _accessService.Object, _audit.Object);
+        new(_orderRepository.Object, _accessService.Object, _employees.Object,
+            _notifications.Object, _audit.Object);
 
     // ── RequestCover ──
 

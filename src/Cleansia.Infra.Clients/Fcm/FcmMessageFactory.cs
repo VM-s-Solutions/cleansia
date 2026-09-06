@@ -42,6 +42,7 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.OrderNoCleanerRefunded] = OrderNumberArg,
             [NotificationEventCatalog.RecurringScheduled] = OrderNumberArg,
             [NotificationEventCatalog.NewJobsAvailable] = CountArg,
+            [NotificationEventCatalog.OrderSeatOpen] = OrderNumberArg,
             [NotificationEventCatalog.ReminderTomorrow] = CountArg,
             [NotificationEventCatalog.ReminderSoon] = OrderNumberArg,
             [NotificationEventCatalog.ReminderNotStarted] = OrderNumberArg,

@@ -89,6 +89,7 @@ public class NotificationFeedEventKeysTests
         Assert.Equal(
             [
                 NotificationEventCatalog.NewJobsAvailable,
+                NotificationEventCatalog.OrderSeatOpen,
                 NotificationEventCatalog.ReminderTomorrow,
                 NotificationEventCatalog.PreferredOffer,
                 NotificationEventCatalog.OrderAssignmentCancelled,

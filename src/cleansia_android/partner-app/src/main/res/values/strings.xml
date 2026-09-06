@@ -1292,6 +1292,8 @@
     <string name="notification_order_assigned_body">You\'ve been assigned job #%1$s. Tap to see the details.</string>
     <string name="notification_order_assignment_revoked_title">Job reassigned</string>
     <string name="notification_order_assignment_revoked_body">Job #%1$s has been reassigned and is no longer on your schedule. Tap for details.</string>
+    <string name="notification_order_seat_open_title">A job needs cover</string>
+    <string name="notification_order_seat_open_body">A cleaner has come off booking #%1$s. Tap to take it.</string>
     <string name="notification_employee_weekly_limit_set_title">Weekly job limit updated</string>
     <string name="notification_employee_weekly_limit_set_body">You can now take up to %1$d jobs per week.</string>
     <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>

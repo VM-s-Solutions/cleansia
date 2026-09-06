@@ -33,6 +33,7 @@ public static class NotificationFeedEventKeys
         NotificationEventCatalog.OrderCompleted,
         NotificationEventCatalog.OrderCancelled,
         NotificationEventCatalog.OrderRefunded,
+        NotificationEventCatalog.OrderNoCleanerRefunded,
         NotificationEventCatalog.DisputeReply,
         NotificationEventCatalog.RecurringScheduled,
         NotificationEventCatalog.MembershipExpiringSoon,

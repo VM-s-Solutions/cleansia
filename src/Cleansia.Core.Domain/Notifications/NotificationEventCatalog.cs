@@ -174,6 +174,29 @@ public static class NotificationEventCatalog
     /// </summary>
     public const string EmployeeWeeklyLimitSet = "employee.weekly_limit_set";
 
+    /// <summary>
+    /// Customer-targeted: the booking's time arrived with no cleaner on it, so the platform cancelled
+    /// it, refunded in full and added the apology credit. Args: <c>orderNumber</c> (loc) +
+    /// <c>orderId</c> (deep link).
+    ///
+    /// <para><b>Why not the plain <see cref="OrderCancelled"/>.</b> Owner ruling 2026-09-06: the 250 is
+    /// to be announced explicitly. "Your booking was cancelled" and "we failed you, here is all your
+    /// money back plus credit towards the next one" are different news, and the second read as the
+    /// first is the platform quietly under-selling the one apology it makes.</para>
+    ///
+    /// <para><b>The amount is in the COPY, not in an arg.</b> The lock-screen allowlist is a closed
+    /// <c>{orderNumber, count}</c> set (ADR-0025 D3) and <c>count</c> does not honestly mean an amount
+    /// of money. So the number is written into the five locales — which is a drift risk, and is why
+    /// <c>BookingPolicy.NoShowCreditCzk</c> joined <c>check-booking-policy-parity.mjs</c> in the same
+    /// change. Move the constant and the checker fails until the copy follows.</para>
+    ///
+    /// <para>Sent only when the credit was actually issued. A guest has no account to hold it and a
+    /// non-default-currency order is refused the grant, and both of those get the plain
+    /// <see cref="OrderCancelled"/> instead — promising credit nobody received would be worse than
+    /// saying less.</para>
+    /// </summary>
+    public const string OrderNoCleanerRefunded = "order.no_cleaner_refunded";
+
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
         OrderConfirmed => NotificationCategory.OrderUpdates,
@@ -181,6 +204,10 @@ public static class NotificationEventCatalog
         OrderInProgress => NotificationCategory.OrderUpdates,
         OrderCompleted => NotificationCategory.OrderCompleted,
         OrderCancelled => NotificationCategory.OrderCancelled,
+        // Same category as the plain cancellation it replaces: a customer who silenced cancellation
+        // notices has already answered this question, and a second toggle for the same event in a
+        // worse flavour would be a preference nobody asked for.
+        OrderNoCleanerRefunded => NotificationCategory.OrderCancelled,
         OrderRefunded => NotificationCategory.RefundIssued,
         MembershipExpiringSoon => NotificationCategory.MembershipExpiring,
         MembershipCancellationEffective => NotificationCategory.MembershipCancelled,

@@ -1204,6 +1204,8 @@
     <string name="notification_order_cancelled_body">Rezervácia #%1$s bola zrušená. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_order_refunded_title">Vrátenie peňazí</string>
     <string name="notification_order_refunded_body">Vaše vrátenie peňazí za rezerváciu #%1$s sa spracováva.</string>
+    <string name="notification_order_no_cleaner_refunded_title">Žiadny upratovač nebol k dispozícii</string>
+    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit 250 Kč na ďalšie upratovanie. Ospravedlňujeme sa.</string>
     <string name="notification_dispute_reply_title">Podpora odpovedala</string>
     <string name="notification_dispute_reply_body">Máte novú správu k vašej reklamácii. Ťuknutím si ju prečítate.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zajtrajšie upratovanie</string>

@@ -1204,6 +1204,8 @@
     <string name="notification_order_cancelled_body">Заказ #%1$s был отменён. Нажмите для деталей.</string>
     <string name="notification_order_refunded_title">Возврат средств</string>
     <string name="notification_order_refunded_body">Возврат за заказ #%1$s обрабатывается.</string>
+    <string name="notification_order_no_cleaner_refunded_title">Свободных уборщиков не нашлось</string>
+    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и добавили 250 Kč бонусов на следующую уборку. Простите.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>
     <string name="notification_dispute_reply_body">У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать.</string>
     <string name="notification_recurring_scheduled_title">Подтвердите завтрашнюю уборку</string>

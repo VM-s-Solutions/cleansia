@@ -1204,6 +1204,8 @@
     <string name="notification_order_cancelled_body">Замовлення #%1$s було скасовано. Натисніть для деталей.</string>
     <string name="notification_order_refunded_title">Повернення коштів</string>
     <string name="notification_order_refunded_body">Повернення коштів за замовлення #%1$s обробляється.</string>
+    <string name="notification_order_no_cleaner_refunded_title">Вільних прибиральників не знайшлося</string>
+    <string name="notification_order_no_cleaner_refunded_body">Замовлення #%1$s ніхто не взяв, тому ми повернули всю суму та додали 250 Kč бонусів на наступне прибирання. Вибачте.</string>
     <string name="notification_dispute_reply_title">Підтримка відповіла</string>
     <string name="notification_dispute_reply_body">У вас нове повідомлення щодо вашої скарги. Натисніть, щоб прочитати.</string>
     <string name="notification_recurring_scheduled_title">Підтвердіть завтрашнє прибирання</string>

@@ -169,8 +169,13 @@ export function getAvailableOrdersTableDefinition(
         onClick: (row: OrderListItem) => defs.onTakeOrder(row),
         visible: (row: OrderListItem) => {
           const status = row.orderStatus?.value;
+          // Mirrors OrderAvailability.OfferableStatuses — started is not over, so a job whose first
+          // cleaner is already travelling can still be taken while a seat remains.
           const isTakeable =
-            status === OrderStatus.New || status === OrderStatus.Confirmed;
+            status === OrderStatus.New ||
+            status === OrderStatus.Confirmed ||
+            status === OrderStatus.OnTheWay ||
+            status === OrderStatus.InProgress;
           return isTakeable && (row.availableSpots ?? 0) > 0;
         },
         disabled: (row: OrderListItem) => defs.isTakeInFlight(row),

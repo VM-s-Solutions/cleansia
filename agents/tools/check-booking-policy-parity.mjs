@@ -88,6 +88,11 @@ export function percentagesIn(text) {
   );
 }
 
+/** Every bare integer in a sentence, for copy that quotes an AMOUNT rather than a percentage. */
+export function amountsIn(text) {
+  return [...String(text).matchAll(/(\d+)/g)].map((m) => Number(m[1]));
+}
+
 /** The first integer in a short claim like "in 2 hours" / "za 2 hodiny" / "через 2 часа". */
 export function firstNumberIn(text) {
   const match = /(\d+)/.exec(String(text));
@@ -118,6 +123,7 @@ const policy = {
   StandardLeadTimeHours: readCsConst(policySource, 'StandardLeadTimeHours'),
   ExpressSurchargeRate: readCsConst(policySource, 'ExpressSurchargeRate'),
   FirstWindowHour: readCsConst(policySource, 'FirstWindowHour'),
+  NoShowCreditCzk: readCsConst(policySource, 'NoShowCreditCzk'),
   LastWindowHour: readCsConst(policySource, 'LastWindowHour'),
 };
 
@@ -238,6 +244,43 @@ for (const locale of LOCALES) {
   }
 }
 
+// ─── 3. The no-show apology, which is quoted as a NUMBER in copy ────────────
+// The home page promises it and the push announces it, and neither can pass it as an argument: the
+// lock-screen loc-arg allowlist is a closed {orderNumber, count} set, so the amount is written into
+// every locale by hand. That is exactly the shape this tool exists for — it was added the day the
+// push started stating the figure.
+const noShow = policy.NoShowCreditCzk;
+
+for (const locale of LOCALES) {
+  const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
+  // The VALUE line is the one that quotes the figure; the desc beside it explains who qualifies for
+  // it and deliberately carries no number.
+  const value = web.pages?.home?.rules?.we_cancel_value;
+  if (value === undefined) {
+    note(`web/${locale}`, 'pages.home.rules.we_cancel_value is missing');
+  } else if (!amountsIn(value).includes(noShow)) {
+    note(`web/${locale}`, `pages.home.rules.we_cancel_value = "${value}" does not state ${noShow}`);
+  }
+}
+
+for (const [locale, dir] of Object.entries(ANDROID_DIRS)) {
+  const body = androidString(dir, 'notification_order_no_cleaner_refunded_body');
+  if (body === null) {
+    note(`android/${locale}`, 'notification_order_no_cleaner_refunded_body is missing');
+  } else if (!amountsIn(body).includes(noShow)) {
+    note(`android/${locale}`, `the no-cleaner push does not state ${noShow}`);
+  }
+}
+
+for (const locale of LOCALES) {
+  const value = iosString(iosCatalog, 'push.order.no_cleaner_refunded.body', locale);
+  if (value === null) {
+    note(`ios/${locale}`, 'push.order.no_cleaner_refunded.body is missing');
+  } else if (!amountsIn(value).includes(noShow)) {
+    note(`ios/${locale}`, `the no-cleaner push does not state ${noShow}`);
+  }
+}
+
 // ─── Report ─────────────────────────────────────────────────────────────────
 if (findings.length) {
   console.log('booking-policy-parity violations:');
@@ -250,7 +293,8 @@ if (findings.length) {
   console.log(
     `booking-policy-parity: ${LOCALES.length} locale(s) × web + android + ios agree with ` +
       `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, express +${expressPct}% ` +
-      `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00`,
+      `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00, ` +
+      `no-show credit ${noShow}`,
   );
 }
 

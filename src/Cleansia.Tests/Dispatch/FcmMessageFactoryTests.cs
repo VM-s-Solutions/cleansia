@@ -326,6 +326,7 @@ public class FcmMessageFactoryTests
             "order.confirmed",
             "order.in_progress",
             "order.new_available",
+            "order.no_cleaner_refunded",
             "order.on_the_way",
             "order.preferred_offer",
             "order.preferred_offer_closed",

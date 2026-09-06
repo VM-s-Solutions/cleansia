@@ -1233,6 +1233,8 @@
     <string name="notification_order_cancelled_body">Booking #%1$s was cancelled. Tap to see what happened.</string>
     <string name="notification_order_refunded_title">Refund on its way</string>
     <string name="notification_order_refunded_body">Your refund for booking #%1$s is being processed.</string>
+    <string name="notification_order_no_cleaner_refunded_title">No cleaner was available</string>
+    <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry.</string>
     <string name="notification_dispute_reply_title">Support replied</string>
     <string name="notification_dispute_reply_body">You have a new message about your dispute. Tap to read.</string>
     <string name="notification_recurring_scheduled_title">Confirm tomorrow\'s cleaning</string>

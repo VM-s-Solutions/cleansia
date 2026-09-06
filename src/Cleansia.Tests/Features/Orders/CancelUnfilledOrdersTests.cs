@@ -291,13 +291,39 @@ public class CancelUnfilledOrdersTests
     }
 
     /// <summary>
-    /// The customer must be told. One message, keyed on the order — a cancellation happens once per
-    /// order, so the bare id is a safe subject here, unlike a refund.
+    /// The customer must be told, and told about the money. Owner ruling 2026-09-06: the 250 is
+    /// announced explicitly rather than left for them to find in the order detail.
+    ///
+    /// <para>One message, keyed on the order — a cancellation happens once per order, so the bare id
+    /// is a safe subject here, unlike a refund.</para>
     /// </summary>
     [Fact]
-    public async Task TheCustomerIsTold()
+    public async Task TheCustomerIsToldAboutTheMoney()
     {
         var order = UnfilledOrder();
+        Arrange(order);
+
+        await Sweep();
+
+        _notifications.Verify(n => n.NotifyAsync(
+            UserId,
+            NotificationEventCatalog.OrderNoCleanerRefunded,
+            It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(),
+            order.Id,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// THE HONESTY GUARD. The announcing key promises credit, so it is sent only when credit was
+    /// actually issued. A non-default currency is refused the grant and a guest has nowhere to hold
+    /// it — both get the plain cancellation instead. Promising money nobody received would be worse
+    /// than saying less.
+    /// </summary>
+    [Fact]
+    public async Task ACustomerWhoGotNoCreditIsNotPromisedAny()
+    {
+        var order = UnfilledOrder(currencyId: ForeignCurrencyId);
         Arrange(order);
 
         await Sweep();
@@ -309,6 +335,13 @@ public class CancelUnfilledOrdersTests
             It.IsAny<string?>(),
             order.Id,
             It.IsAny<CancellationToken>()), Times.Once);
+        _notifications.Verify(n => n.NotifyAsync(
+            It.IsAny<string>(),
+            NotificationEventCatalog.OrderNoCleanerRefunded,
+            It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>

@@ -56,6 +56,7 @@ object NotificationDeepLink {
         "order.completed",
         "order.cancelled",
         "order.refunded",
+        "order.no_cleaner_refunded",
         "order.on_the_way",
         // recurring.scheduled also carries an orderId — the materialized
         // Pending order the customer needs to confirm + pay for. Route to

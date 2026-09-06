@@ -50,14 +50,19 @@ enum OrderPrimaryAction: Equatable {
             // Confirmed: takeable by a non-assignee; the assignee notifies.
             return isMine ? .notifyOnTheWay : .take
         case ._3:
-            // OnTheWay: only the assignee starts.
-            return isMine ? .start : .none
+            // OnTheWay: the assignee starts. A NON-assignee can still take a seat — the status is on
+            // the ORDER, not on a person, so one crew mate setting off used to remove the whole job
+            // from every board with its other seats empty (owner ruling 2026-09-06). The server gate
+            // is the authority; browse-detail only returns this order while a seat remains.
+            return isMine ? .start : .take
         case ._4:
             // InProgress: only the assignee completes, gated first on an
             // after-photo, then on payment — a cash order settles only once the
             // cleaner collects (the `OrderPrimaryAction.kt` canComplete →
             // needsCashCollection ordering).
-            guard isMine else { return .none }
+            // Same as OnTheWay: the work has begun short-crewed and a seat is open. A late joiner
+            // is worth more to the customer than an empty seat.
+            guard isMine else { return .take }
             let cashPending = isCashPayment && !isPaymentSettled
             guard hasAfterPhotos else { return .completeBlocked(cashPending: cashPending) }
             if cashPending { return .collectCash }

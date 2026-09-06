@@ -192,19 +192,29 @@ public class CancelUnfilledOrders
                     await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                         order, SystemActor, cancellationToken);
 
-                    if (await TryIssueApologyCreditAsync(order, defaultCurrency, cancellationToken))
+                    var apologised = await TryIssueApologyCreditAsync(
+                        order, defaultCurrency, cancellationToken);
+                    if (apologised)
                     {
                         credited++;
                     }
 
-                    // One message, keyed on the order. A cancellation happens once per order, so the
+                    // ONE message, keyed on the order. A cancellation happens once per order, so the
                     // bare id is a safe subject here — unlike a refund, which an order can see more
                     // than one of.
+                    //
+                    // Which message depends on what the customer actually got. Owner ruling 2026-09-06
+                    // is that the 250 is announced explicitly, and the key that says so is sent only
+                    // when the credit was really issued: a guest has no account to hold it and a
+                    // non-default-currency order is refused the grant, so both of those get the plain
+                    // cancellation. Promising credit nobody received would be worse than saying less.
                     if (!string.IsNullOrEmpty(order.UserId))
                     {
                         await notificationProducer.NotifyAsync(
                             order.UserId,
-                            NotificationEventCatalog.OrderCancelled,
+                            apologised
+                                ? NotificationEventCatalog.OrderNoCleanerRefunded
+                                : NotificationEventCatalog.OrderCancelled,
                             new Dictionary<string, string>
                             {
                                 ["orderId"] = order.Id,

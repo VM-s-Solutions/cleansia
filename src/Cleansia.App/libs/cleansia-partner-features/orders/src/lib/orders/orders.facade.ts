@@ -147,9 +147,14 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     const filter = new OrderFilter({
       ...additionalFilters,
       employeeId: undefined,
+      // Mirrors OrderAvailability.OfferableStatuses. Started is not over: a half-crewed job stays
+      // fillable after the first cleaner taps "on my way" (owner ruling 2026-09-06), and the
+      // hasAvailableSpots term below is what keeps a FULL job off the list.
       orderStatuses: additionalFilters?.orderStatuses || [
         OrderStatus.New,
         OrderStatus.Confirmed,
+        OrderStatus.OnTheWay,
+        OrderStatus.InProgress,
       ],
       hasAvailableSpots: true,
       excludeEmployeeId: employeeId || undefined,

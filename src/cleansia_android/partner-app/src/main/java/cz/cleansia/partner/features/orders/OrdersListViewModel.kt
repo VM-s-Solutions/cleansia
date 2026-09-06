@@ -260,7 +260,10 @@ class OrdersListViewModel @Inject constructor(
 
             val (statuses, isUnassigned, scopedEmployeeId) = when (tab) {
                 OrdersTab.Available -> Triple(
-                    listOf(OrderStatus._0, OrderStatus._2),
+                    // Mirrors OrderAvailability.OfferableStatuses. Started is not over: a half-crewed
+                    // job stays fillable after its first cleaner sets off (owner ruling 2026-09-06),
+                    // and isUnassigned/hasAvailableSpots is what keeps a FULL job off this tab.
+                    listOf(OrderStatus._0, OrderStatus._2, OrderStatus._3, OrderStatus._4),
                     true,
                     null,
                 )

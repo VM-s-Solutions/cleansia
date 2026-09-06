@@ -19,6 +19,21 @@ namespace Cleansia.Tests.Infrastructure.Pdf;
 /// <see cref="QuestPdfService"/> over the REAL <c>CreatePdfData</c> mapper and reads the symbol back
 /// out of the produced PDF bytes.
 /// </summary>
+// Serialised with the only other class that drives the real renderer. QuestPDF 2024.12.1's native
+// Skia is not thread-safe when it builds a subsetted font's /ToUnicode CMap: with two GeneratePdf
+// calls in flight, ~1-3% of renders emit a CMap mapping every glyph to U+0000 instead of its real
+// code point, which changes that one stream's deflated length and so the document's bytes. Measured
+// in one process: 0 divergences in 300 sequential renders, 39 in 1200 concurrent, 0 in 1200
+// concurrent behind a lock. One render at a time the output is byte-exact, which is the precondition
+// the equality assertion below was written against.
+//
+// xUnit groups classes by collection NAME; no [CollectionDefinition] type is needed, and
+// FcmPushDispatcherDisabledStateTests already relies on exactly that.
+//
+// The renderer's behaviour is a PRODUCT defect in its own right — a real invoice rendered
+// concurrently gets an unusable text layer — and is reported separately. It is not this attribute's
+// job to fix it.
+[Collection("QuestPdfRenderer")]
 public class PayoutInvoiceRenderedSymbolTests
 {
     private const string VariableSymbol = PayrollMockFactory.TestVariableSymbol;

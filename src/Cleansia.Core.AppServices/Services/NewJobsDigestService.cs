@@ -124,7 +124,9 @@ public class NewJobsDigestService(
                     .Where(o => o.CustomerAddress != null
                         && o.CustomerAddress.CountryId == cleaner.WorkCountryId
                         && o.CleaningDateTime >= sweepStartedAtUtc
-                        && o.AssignedEmployees.Count < o.MaxEmployees
+                        // A cover-requested seat is takeable, so the digest advertises it: its
+                        // holder is still assigned but a taker displaces them. → Order.HasTakeableSeat
+                        && o.AssignedEmployees.Count(ae => ae.CoverRequestedAt == null) < o.MaxEmployees
                         && o.AssignedEmployees.All(ae => ae.EmployeeId != cleaner.EmployeeId))
                     .Where(OrderAvailability.IsOfferableSql)
                     .Where(OrderVisibility.NotHeldFrom(cleaner.EmployeeId, sweepStartedAtUtc));

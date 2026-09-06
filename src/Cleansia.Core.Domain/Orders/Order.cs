@@ -128,6 +128,25 @@ public class Order : Auditable, ITenantEntity
     public int AvailableSpots => MaxEmployees - _assignedEmployees.Count;
     public bool HasAvailableSpots => AvailableSpots > 0;
 
+    /// <summary>
+    /// Seats held by a cleaner who has asked to be taken off the job. They are still ASSIGNED — that
+    /// is the whole point of a cover request rather than a drop — so they do not count as available.
+    /// → <see cref="OrderEmployee.CoverRequestedAt"/>
+    /// </summary>
+    public int CoverSeatsOpen => _assignedEmployees.Count(oe => oe.CoverRequestedAt is not null);
+
+    /// <summary>
+    /// May another cleaner take a seat here? A DIFFERENT question from
+    /// <see cref="HasAvailableSpots"/>, which asks how many seats are unfilled, and the two were being
+    /// conflated because until cover requests existed they had the same answer.
+    ///
+    /// <para><see cref="HasAvailableSpots"/> keeps its meaning exactly, because four things depend on
+    /// it meaning capacity: the customer-facing DTO, <c>AddAssignedEmployee</c>'s capacity guard,
+    /// <c>AdminReassignOrder</c>'s ceiling, and the preferred-offer disclosure. A taker asks this one
+    /// instead; a cover-requested seat is taken by DISPLACING its holder, not by adding beside them.</para>
+    /// </summary>
+    public bool HasTakeableSeat => HasAvailableSpots || CoverSeatsOpen > 0;
+
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
 

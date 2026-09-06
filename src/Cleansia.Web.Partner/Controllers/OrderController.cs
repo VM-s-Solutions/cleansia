@@ -234,4 +234,41 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<DeclinePreferredOffer.Response>(result);
     }
+
+    // The cleaner cannot make it, but does not want to leave the job uncovered. They stay ASSIGNED and
+    // obliged until somebody takes it — the seat becomes takeable, not empty. Owner ruling 2026-09-06.
+    [HttpPost("RequestCover")]
+    [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(RequestCover.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RequestCover(
+        [FromBody] RequestCover.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<RequestCover.Response>(result);
+    }
+
+    // The way out when nobody answers. Releases the seat outright; the booking is NOT cancelled and no
+    // money moves here — an order that reaches its slot with nobody on it is the sweep's business.
+    //
+    // Same permission as taking a job, deliberately: Policy.CanTakeOrder already means "may act on
+    // their own assignments", DeclinePreferredOffer ships under it for the same reason, and a policy
+    // of its own would map to the same physical policy and distinguish nothing.
+    [HttpPost("DropOrder")]
+    [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(DropOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DropOrder(
+        [FromBody] DropOrder.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<DropOrder.Response>(result);
+    }
+
 }

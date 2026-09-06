@@ -91,7 +91,10 @@ public class OrderAccessService : IOrderAccessService
         return !string.IsNullOrEmpty(employeeId)
             && OrderAvailability.IsOfferable(
                 order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId)
-            && order.HasAvailableSpots
+            // TakeableSeat, not AvailableSpots: the browse gate exists so a cleaner can READ what they
+            // may TAKE. A cover-requested seat is takeable, so gating on capacity here would show the
+            // job on the board and then 403 the cleaner opening it.
+            && order.HasTakeableSeat
             && OrderVisibility.NotHeldFrom(order, employeeId, DateTime.UtcNow);
     }
 

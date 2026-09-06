@@ -83,13 +83,6 @@ public class OrderEmployee : BaseEntity
         return this;
     }
 
-    /// <summary>The cleaner changed their mind and is keeping the job.</summary>
-    public OrderEmployee ClearCoverRequest()
-    {
-        CoverRequestedAt = null;
-        return this;
-    }
-
     public static OrderEmployee Create(Order order, Employee employee) => new()
     {
         Order = order,

@@ -18,7 +18,9 @@ struct OrderItemLine: Equatable, Identifiable, Hashable {
     let packageLabel: String?
 
     /// Stable within one order: the server's own identity, flattened.
-    var id: String { "\(packageId ?? "")|\(serviceId)" }
+    var id: String {
+        "\(packageId ?? "")|\(serviceId)"
+    }
 }
 
 extension OrderItemLine {

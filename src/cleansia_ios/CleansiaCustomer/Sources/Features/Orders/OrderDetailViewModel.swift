@@ -265,8 +265,8 @@ final class OrderDetailViewModel: ViewModel {
         comment: String?,
         tags: [CustomerReviewTag] = [],
         isEdit: Bool,
-        /// Optional per-item scores. `rating` stays the headline and stays required — these add what
-        /// one number cannot say, which is that the oven was spotless and the bathroom was skipped.
+        // Optional per-item scores. `rating` stays the headline and stays required — these add what
+        // one number cannot say, which is that the oven was spotless and the bathroom was skipped.
         lines: [OrderItemLineScore] = []
     ) async {
         guard !orderId.isBlank, (1 ... 5).contains(rating), !reviewState.isSubmitting else { return }

@@ -549,7 +549,7 @@ reach it.*
 
 | Name | Where | Actually asks |
 |---|---|---|
-| `OrdersComponent.isUpcoming` | `libs/cleansia-customer-features/orders/src/lib/orders/orders.component.ts:124-126` | `cleaningDateTime >= now` — a **clock** rule. **A cancelled future booking passes it.** Its one caller is a CSS class (`libs/cleansia-customer-features/orders/src/lib/orders/orders.component.html:166`) |
+| `OrdersComponent.isUpcoming` | `libs/cleansia-customer-features/orders/src/lib/orders/orders.component.ts:203-205` | `cleaningDateTime >= now` — a **clock** rule. **A cancelled future booking passes it.** Its one caller was a CSS class in the template; the design-pass rebuild removed it, so the method now has **no caller at all** and is dead. It stays in this table because the NAME is the trap, and the name is still here |
 | `OrderStatusGroup.isUpcoming` (iOS) | `src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/Data/OrderStatusMapping.swift:37-40` | `status != Completed && status != Cancelled` — a **status** rule under the same name |
 | `OrderDetailsFacade.isActiveOrderStatus` | `libs/cleansia-partner-features/orders/src/lib/order-details/order-details.facade.ts:278-285` | `{Confirmed, OnTheWay, InProgress}` — private, partner-only, and its subject is *may notes and issues be added*. It is iOS's `isActive`, **not** iOS's `isUpcoming` |
 

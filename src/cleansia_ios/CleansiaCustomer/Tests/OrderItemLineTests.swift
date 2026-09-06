@@ -12,7 +12,6 @@ import XCTest
 /// row the customer can tick but the server would reject as not-on-this-order is worse than no row —
 /// the error it produces names a box they cannot un-tick.
 final class OrderItemLineTests: XCTestCase {
-
     private func service(id: String?, name: String) -> CustomerOrderService {
         CustomerOrderService(
             id: id,
@@ -49,7 +48,7 @@ final class OrderItemLineTests: XCTestCase {
                         id: "pkg-deep",
                         name: "Deep Clean",
                         items: [CustomerOrderPackageService(id: "svc-oven", name: "Oven clean")]
-                    ),
+                    )
                 ]
             )
         )
@@ -62,7 +61,7 @@ final class OrderItemLineTests: XCTestCase {
         let lines = OrderItemLine.lines(
             of: order(packages: [
                 package(id: "pkg-a", name: "A", items: [CustomerOrderPackageService(id: "svc", name: "Oven")]),
-                package(id: "pkg-b", name: "B", items: [CustomerOrderPackageService(id: "svc", name: "Oven")]),
+                package(id: "pkg-b", name: "B", items: [CustomerOrderPackageService(id: "svc", name: "Oven")])
             ])
         )
 
@@ -86,7 +85,7 @@ final class OrderItemLineTests: XCTestCase {
                     id: "pkg-deep",
                     name: "Deep Clean",
                     items: [CustomerOrderPackageService(id: "svc-oven", name: "Oven")]
-                ),
+                )
             ])
         ).first
 
@@ -107,9 +106,9 @@ final class OrderItemLineTests: XCTestCase {
                         name: "Bundle",
                         items: [
                             CustomerOrderPackageService(id: nil, name: "Nameless too"),
-                            CustomerOrderPackageService(id: "svc-in", name: "Also fine"),
+                            CustomerOrderPackageService(id: "svc-in", name: "Also fine")
                         ]
-                    ),
+                    )
                 ]
             )
         )
@@ -120,7 +119,7 @@ final class OrderItemLineTests: XCTestCase {
     func testAPackageWithNoIdContributesNothing() {
         let lines = OrderItemLine.lines(
             of: order(packages: [
-                package(id: nil, name: "Bundle", items: [CustomerOrderPackageService(id: "svc", name: "Oven")]),
+                package(id: nil, name: "Bundle", items: [CustomerOrderPackageService(id: "svc", name: "Oven")])
             ])
         )
 

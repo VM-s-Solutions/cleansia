@@ -169,7 +169,7 @@ extension L10n {
             default: localized("dispute_reason_other")
             }
         }
-    
+
         static var createWhichItems: String {
             localized("dispute_create_which_items")
         }
@@ -181,5 +181,5 @@ extension L10n {
         static func createItemInPackage(_ package: String) -> String {
             format("dispute_create_item_in_package", package)
         }
-}
+    }
 }

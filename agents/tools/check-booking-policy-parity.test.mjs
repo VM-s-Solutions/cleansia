@@ -66,6 +66,10 @@ function buildFixture(overrides = {}) {
     androidTier3: '50% charge',
     iosTier2: '25% charge',
     iosTier3: '50% charge',
+    noShowCredit: '250m',
+    webWeCancelValue: 'Everything back + 250 CZK credit',
+    androidNoShowBody: 'Nobody could take booking #%1$s, so we refunded it and added 250 Kč credit.',
+    iosNoShowBody: 'Nobody could take booking #%1$@, so we refunded it and added 250 Kč credit.',
     ...overrides,
   };
 
@@ -81,6 +85,7 @@ public static class BookingPolicy
     public const decimal PartialCancellationFeeRate = ${o.partialRate};
     public const decimal LastMinuteCancellationFeeRate = ${o.lastMinuteRate};
     public const int PartialCancellationHours = 4;
+    public const decimal NoShowCreditCzk = ${o.noShowCredit};
 }
 `);
 
@@ -107,6 +112,7 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
               cancel_desc: o.webCancelDesc,
               lead_value: o.webLeadValue,
               express_value: o.webExpressValue,
+              we_cancel_value: o.webWeCancelValue,
             },
             quote: {
               date_hint: o.webDateHint,
@@ -122,6 +128,7 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
       `<resources>
     <string name="booking_cancel_tier2_value">${o.androidTier2}</string>
     <string name="booking_cancel_tier3_value">${o.androidTier3}</string>
+    <string name="notification_order_no_cleaner_refunded_body">${o.androidNoShowBody}</string>
 </resources>`,
     );
   }
@@ -135,6 +142,7 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
       strings: {
         booking_cancel_tier2_value: { localizations: localizations(o.iosTier2) },
         booking_cancel_tier3_value: { localizations: localizations(o.iosTier3) },
+        'push.order.no_cleaner_refunded.body': { localizations: localizations(o.iosNoShowBody) },
       },
     }, null, 2),
   );
@@ -201,6 +209,33 @@ scenario('a tree whose four surfaces agree passes', {}, { code: 0 });
     rmSync(root, { recursive: true, force: true });
   }
 }
+
+// ─── 2b. The no-show apology, which is quoted as an AMOUNT rather than a percentage ─────
+// Added the day the push started stating the figure. The 250 cannot be a loc arg — the lock-screen
+// allowlist is a closed {orderNumber, count} set — so it is written into fifteen strings by hand,
+// and this is the half of the gate that holds them to the constant.
+scenario(
+  'catches a home page still quoting the old apology amount',
+  { noShowCredit: '300m' },
+  { code: 1, mentions: ['web/en', 'does not state 300'] },
+);
+scenario(
+  'catches an Android push still quoting the old apology amount',
+  { androidNoShowBody: 'We refunded it and added 500 Kč credit.' },
+  { code: 1, mentions: ['android/en', 'does not state 250'] },
+);
+scenario(
+  'catches an iOS push still quoting the old apology amount',
+  { iosNoShowBody: 'We refunded it and added 500 Kč credit.' },
+  { code: 1, mentions: ['ios/en', 'does not state 250'] },
+);
+// The desc line beside the value explains WHO qualifies and carries no number on purpose; asserting
+// on it would have made the gate cry wolf on honest copy, which the header calls the worse failure.
+scenario(
+  'says nothing about the we_cancel_desc line, which quotes no amount',
+  {},
+  { code: 0, silentAbout: ['we_cancel_desc'] },
+);
 
 // ─── 3. The two defects that motivated this gate ────────────────────────────
 scenario(

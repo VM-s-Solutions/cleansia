@@ -38,6 +38,10 @@ public class OrderEmployeeEntityConfiguration : BaseEntityConfiguration<OrderEmp
         builder.Property(oe => oe.ReminderSoonSentAt).IsRequired(false);
         builder.Property(oe => oe.ReminderNotStartedSentAt).IsRequired(false);
 
+        // Unindexed on the same argument. Every reader is already narrowed by the order's status and
+        // date before it looks at a seat, and cover requests are a vanishing fraction of assignments.
+        builder.Property(oe => oe.CoverRequestedAt).IsRequired(false);
+
         builder.HasIndex(oe => new { oe.OrderId, oe.SeatOrdinal })
             .IsUnique()
             .HasDatabaseName("IX_OrderEmployees_OrderId_SeatOrdinal");

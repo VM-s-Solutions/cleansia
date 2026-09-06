@@ -254,6 +254,14 @@ public class SubjectDataErasureRosterTests
                 + "subject — unless the erased subject is themselves an admin, in which case their actor "
                 + "rows are retained on the same ADR-0012 ground."),
 
+        [typeof(Core.Domain.Auditing.EmployeeActionAudit)] = new(
+            Verdict.RetainedByPolicy,
+            "The employee-side twin of AdminActionAudit, on the same ADR-0012 append-only ground and "
+                + "kept in its own table on owner ruling 2026-09-06. It records what a CLEANER did to a "
+                + "job whose assignment row the act itself deletes, so it is the only surviving evidence "
+                + "that they held the seat — and it carries two ids and an enum, no name, contact or "
+                + "free text."),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeeInvoice)] = new(
             Verdict.RetainedByPolicy,
             "ADR-0007 D4 financial record. The erasure refuses to run at all while one is Pending, Approved "

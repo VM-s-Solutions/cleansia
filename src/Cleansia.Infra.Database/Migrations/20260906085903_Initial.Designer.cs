@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260905220359_Initial")]
+    [Migration("20260906085903_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -107,6 +107,65 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasDatabaseName("IX_AdminActionAudits_TenantId_OccurredOn");
 
                     b.ToTable("AdminActionAudits", (string)null);
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Auditing.EmployeeActionAudit", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmployeeId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("EmployeeId", "CreatedOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_EmployeeActionAudits_EmployeeId_CreatedOn");
+
+                    b.ToTable("EmployeeActionAudits", (string)null);
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Bookings.RecurringBookingTemplate", b =>
@@ -3792,6 +3851,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("Id")
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
+
+                    b.Property<DateTime?>("CoverRequestedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("EmployeeId")
                         .IsRequired()

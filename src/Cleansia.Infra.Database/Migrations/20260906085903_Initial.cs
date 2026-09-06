@@ -127,6 +127,28 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "EmployeeActionAudits",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Action = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeeActionAudits", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Extras",
                 columns: table => new
                 {
@@ -1911,6 +1933,7 @@ namespace Cleansia.Infra.Database.Migrations
                     SeatOrdinal = table.Column<int>(type: "integer", nullable: false),
                     ReminderSoonSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ReminderNotStartedSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CoverRequestedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -2909,6 +2932,17 @@ namespace Cleansia.Infra.Database.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_EmailTranslations_TenantId",
                 table: "EmailTranslations",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeActionAudits_EmployeeId_CreatedOn",
+                table: "EmployeeActionAudits",
+                columns: new[] { "EmployeeId", "CreatedOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeActionAudits_TenantId",
+                table: "EmployeeActionAudits",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
@@ -4036,6 +4070,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "EmailTranslations");
+
+            migrationBuilder.DropTable(
+                name: "EmployeeActionAudits");
 
             migrationBuilder.DropTable(
                 name: "EmployeeDocumentRequirements");

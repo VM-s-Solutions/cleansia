@@ -351,4 +351,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<DeadLetter> DeadLetters { get; set; }
     public virtual DbSet<OutboxMessage> OutboxMessages { get; set; }
     public virtual DbSet<AdminActionAudit> AdminActionAudits { get; set; }
+
+    /// <summary>The employee-side twin, kept separate on owner ruling 2026-09-06.</summary>
+    public virtual DbSet<EmployeeActionAudit> EmployeeActionAudits { get; set; }
 }

@@ -13,6 +13,20 @@ namespace Cleansia.Core.Domain.Orders;
 /// evaluation forms below are deliberately NOT one shared expression — SQL and C# disagree on null
 /// semantics — and are pinned to each other by an equivalence test over real Postgres, never by
 /// review. → /domain/offerability</para>
+///
+/// <para><b>The fulfilment axis says the work is not OVER — not that it has not STARTED</b> (owner
+/// ruling 2026-09-06). A crew is <c>ceil(EstimatedTime / 120)</c> and the catalogue carries single
+/// 180- and 240-minute services, so a two-seat job is an ordinary booking — and <c>NotifyOnTheWay</c>
+/// writes an ORDER-level <c>OnTheWay</c> the moment ONE cleaner sets off. While "started" meant "not
+/// offerable", that single tap took a half-crewed job off every board and made <c>TakeOrder</c> refuse
+/// it with the other seat still empty. Only <c>Completed</c>, <c>Cancelled</c> and the dead
+/// <c>Pending</c> are out.</para>
+///
+/// <para><b>It still does not read seats, and must not.</b> "While a seat remains" is
+/// <c>Order.HasAvailableSpots</c>, and every consumer already conjoins it for itself —
+/// <c>PreferredOfferExit</c> by the stricter <c>AssignedEmployees.Count == 0</c>. Folding it in here
+/// would make this type read a collection, force a join into both evaluation forms, and break
+/// <c>TakeOrder</c>'s offerability probe, which projects exactly these four scalars.</para>
 /// </summary>
 public static class OrderAvailability
 {
@@ -21,9 +35,15 @@ public static class OrderAvailability
     /// <c>New</c> is conditional. It exists because the clients cannot evaluate the money term
     /// (they filter on none of the three money columns) and because it is the index-served
     /// prefilter on <c>Orders.CurrentStatus</c>.
+    ///
+    /// <para><b>Keep it an ARRAY.</b> <c>OrderSpecification</c> spends it as <c>Contains</c>, which EF
+    /// emits as <c>= ANY (@p)</c> — the leading index condition on
+    /// <c>IX_Orders_CurrentStatus_CleaningDateTime</c>. Re-expressing these members as an OR over
+    /// <c>CurrentStatus</c> keeps the index but demotes the term to a residual filter, which is why the
+    /// array survives ALONGSIDE the OR below and must not be "simplified" away as redundant.</para>
     /// </summary>
     public static readonly IReadOnlyList<OrderStatus> OfferableStatuses =
-        [OrderStatus.New, OrderStatus.Confirmed];
+        [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress];
 
     /// <summary>
     /// Queryable form, composed into <c>OrderSpecification</c> and the digest sweep. <c>CurrentStatus</c>
@@ -32,17 +52,24 @@ public static class OrderAvailability
     /// </summary>
     public static Expression<Func<Order, bool>> IsOfferableSql { get; } = order =>
         (order.CurrentStatus == OrderStatus.Confirmed
+            || order.CurrentStatus == OrderStatus.OnTheWay
+            || order.CurrentStatus == OrderStatus.InProgress
             || (order.CurrentStatus == OrderStatus.New && order.PaymentType == PaymentType.Cash))
         && (order.PaymentStatus == PaymentStatus.Paid
             || (order.PaymentType == PaymentType.Cash && order.RecurringTemplateId == null));
 
-    /// <summary>In-memory form — the <c>TakeOrder</c> write gate. Same rule, C# semantics.</summary>
+    /// <summary>
+    /// In-memory form — the <c>TakeOrder</c> write gate. Same rule, C# semantics, and the SAME operand
+    /// order, so the equivalence test stays a genuine pin rather than a coincidence.
+    /// </summary>
     public static bool IsOfferable(
         OrderStatus currentStatus,
         PaymentType paymentType,
         PaymentStatus paymentStatus,
         string? recurringTemplateId) =>
         (currentStatus == OrderStatus.Confirmed
+            || currentStatus == OrderStatus.OnTheWay
+            || currentStatus == OrderStatus.InProgress
             || (currentStatus == OrderStatus.New && paymentType == PaymentType.Cash))
         && (paymentStatus == PaymentStatus.Paid
             || (paymentType == PaymentType.Cash && recurringTemplateId is null));

@@ -125,6 +125,21 @@ public static class BookingPolicy
     }
 
     /// <summary>
+    /// How far PAST its cleaning time an order stays on the take-a-job board.
+    ///
+    /// <para>The board admits started jobs (owner ruling 2026-09-06: a half-crewed order must stay
+    /// fillable after the first cleaner sets off), and nothing ever moves an order out of
+    /// <c>InProgress</c> except a cleaner tapping complete. Without a floor, one job somebody started
+    /// and never finished would sit in every cleaner's available-jobs count forever.</para>
+    ///
+    /// <para>Named here because two panes answer the same question and must not drift:
+    /// <c>GetPagedOrders</c> applied this floor as a bare <c>AddHours(-2)</c> literal on the Available
+    /// pane, and <c>DashboardSpecifications</c> applied none at all — so the count and the list it
+    /// belongs to already disagreed before this rule widened.</para>
+    /// </summary>
+    public const int BoardBacklogHours = 2;
+
+    /// <summary>
     /// Seats beyond the crew the work needs. Zero by owner ruling — a filled spare seat is a second
     /// full wage against an unchanged customer price. → /product/business-rules#crew-size
     /// </summary>

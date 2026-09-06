@@ -27,14 +27,14 @@ final class OrderItemLineTests: XCTestCase {
         name: String,
         items: [CustomerOrderPackageService]
     ) -> CustomerOrderPackage {
-        OrderFakes.package(id: id, name: name, includedServiceItems: items)
+        OrderFixtures.package(id: id, name: name, includedServiceItems: items)
     }
 
     private func order(
         services: [CustomerOrderService] = [],
         packages: [CustomerOrderPackage] = []
     ) -> CustomerOrderDetail {
-        OrderFakes.detail(services: services, packages: packages)
+        OrderFixtures.detail(services: services, packages: packages)
     }
 
     // MARK: - the identity
@@ -133,7 +133,7 @@ final class OrderItemLineTests: XCTestCase {
     /// `includedServices` is a list of NAMES and cannot be sent back to the server. Building rows from
     /// it would produce ticks the server always rejects.
     func testTheNameOnlyIncludedServicesListIsNeverUsed() {
-        var pkg = OrderFakes.package(id: "pkg-1", name: "Bundle")
+        var pkg = OrderFixtures.package(id: "pkg-1", name: "Bundle")
         pkg = CustomerOrderPackage(
             id: pkg.id,
             name: pkg.name,

@@ -35,11 +35,10 @@ import { ButtonModule } from 'primeng/button';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { Subject, takeUntil } from 'rxjs';
 
-import {
-  CleansiaBrandNameComponent,
-  CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
-} from '@cleansia/components';
+// Entry-point imports — see the note in app.ts. → T-0682
+import { CleansiaBrandNameComponent } from '@cleansia/components/cleansia-brand-name';
+import { CleansiaButtonComponent } from '@cleansia/components/cleansia-button';
+import { CleansiaLanguageSwitcherComponent } from '@cleansia/components/cleansia-language-switcher';
 
 /**
  * Width at which the full bar fits inside the floating pill.

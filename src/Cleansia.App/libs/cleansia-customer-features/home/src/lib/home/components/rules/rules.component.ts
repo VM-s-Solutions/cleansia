@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import {
-  CleansiaTitleComponent,
-} from '@cleansia/components';
+import { CleansiaTitleComponent } from '@cleansia/components/cleansia-title';
 
 /**
  * The operating rules, stated on the page rather than buried in the terms.

@@ -1,7 +1,7 @@
 ---
 id: T-0682
 title: Customer home page — the remaining Lighthouse gap is JavaScript, measured 72 → 94 with app JS removed
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-06
@@ -69,10 +69,65 @@ directly.
 
 ## Acceptance criteria
 
-- [ ] **AC1** — Given each change below, When the same Lighthouse command is re-run, Then the score
-      movement is recorded. **A change that does not move the number is reverted, not kept.**
-- [ ] **AC2** — Given the PrimeNG deferral, Then the quick-quote widget still works on first
-      interaction.
+- [x] **AC1** — Recorded below. Two of the five ranked items were **refuted by measurement and not
+      built**; one was built against a cause this ticket had identified wrongly.
+- [x] **AC2** — Void: the quick-quote deferral was never built, because removing those two controls
+      outright saves **999 bytes** (see below). The widget is untouched.
+
+## What was measured, and what it refuted
+
+Two harnesses, because the score alone could not carry a verdict:
+
+- **Eager JS on the landing page** — every script the page actually requests, summed. Deterministic,
+  zero variance. This is the metric the verdicts below rest on.
+- **Lighthouse mobile**, same preset as the baselines above. **It could not resolve a change on this
+  machine.** `benchmarkIndex` ranged **712 to 3683 across runs** — a 5x CPU swing — against an
+  effect worth a couple of points. An interleaved A/B/A/B (both servers up, one Chrome, alternating)
+  put the entry-point fix at a **median +2 points, per-round deltas [2, -3, 3, 1]**: noise. The
+  absolute scores here (39-40) also disagree with this ticket's own 73 baseline, so the harness, not
+  the change, is what moved. Load time under Slow 4G + 4x CPU is reported instead.
+
+| | eager JS (raw) | vs baseline |
+|---|---|---|
+| baseline | 1,743,385 | — |
+| dead providers only | 1,725,076 | -18,309 |
+| **+ removing both PrimeNG controls from quick-quote** | 1,724,077 | **-999 more** |
+| + component entry points | 1,503,767 | -221,309 more |
+| **shipped** | **1,503,904** | **-239,481 (-13.7%)** |
+
+Page load, Slow 4G + 4x CPU throttling, median of 3, to `networkidle`:
+
+| | baseline | shipped | |
+|---|---|---|---|
+| `en` | 9,511 ms | 8,383 ms | **-1,128 ms (-11.9%)** |
+| `ru` | 10,275 ms | 8,653 ms | **-1,622 ms (-15.8%)** |
+
+### Item 1's stated cause was wrong
+
+This ticket said quick-quote's static `DatePicker`/`Select` imports are "what pulls 859 KB raw into
+the eager chunk". Removing **both controls outright** — the ceiling for any deferral — moved
+**999 bytes**. The chunk stayed at 877 KB.
+
+The real cause is `@cleansia/components`: a barrel of `export * from './lib'` over 32 components
+reaching **17 distinct PrimeNG modules**. Importing one name from it puts all 17 on the critical
+path. The fingerprints were in the eager chunk all along — `MULTISELECT_INSTANCE`,
+`FLOATLABEL_INSTANCE`, "Jump to Page Dropdown" — components the landing page never renders. Five
+files reached the barrel: three in the shell, two in the home feature.
+
+`"sideEffects": false` was tried first as the one-line fix and made **no difference at all**, so it
+was reverted; the mechanism is chunk assignment, not side-effect retention.
+
+### Item 4's asset is not on the critical path
+
+`mascot-idea-480.webp` is `loading="lazy"` and never requested during load. The LCP element is
+`mascot-mopping-480.webp` (45,894 B), a different asset this ticket does not mention. The swap is
+still worth 28,100 B for readers who scroll — see the findings, it needs a visual call.
+
+### Item 5 has nothing to fix
+
+Lighthouse reports **no render-blocking resources**: the CDN stylesheets already load through a
+`media="print"` swap. Splitting the global stylesheet was predicted near-zero by this ticket and the
+measurement agrees, so it was not built.
 
 ## Ranked, with the basis stated
 
@@ -111,6 +166,20 @@ directly.
 
 - 2026-09-06 — filed from a measured investigation. Every number above is observed on a production
   build; every estimate is labelled as one.
+- 2026-09-06 — **shipped three changes; two ranked items were refuted and left unbuilt.**
+  1. **Component entry points** (`@cleansia/components/*` in `tsconfig.base.json`, five call sites) —
+     -221 KB. This is the fix item 1 was reaching for, against the cause it named wrongly.
+  2. **Dead providers** — `BrowserAnimationsModule` (which defeated `provideAnimationsAsync()` by
+     ordering: a bug, not just weight), `StoreDevtoolsModule` and `withJsonpSupport()`. All three were
+     confirmed present in the production bundle before removal. -18 KB.
+  3. **i18n via TransferState** — the one change with a large, clearly attributable timing win. The
+     fetch was 106,382 bytes starting at **909 ms**, and it could not begin until `main.js` parsed;
+     because the `APP_INITIALIZER` awaits it, it blocked bootstrap and so hydration. Now zero
+     requests. Verified in all five locales: TransferState present, no HTTP fetch, no raw keys, right
+     `html lang`. It is a **trade**, not a free win — Cyrillic escapes to `\uXXXX` inside HTML and
+     compresses worse, so brotli-over-the-wire is `en` -1,696 B but `cs`/`ru` **+16 KB**. It still
+     wins on time in both, because one blocking round trip costs more than parallel early bytes.
+  Verified: typecheck, lint, unit tests, and all three production builds green.
 
 ## Review
 

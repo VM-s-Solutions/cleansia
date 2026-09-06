@@ -112,6 +112,6 @@
 | T-0679 | Serialise PDF rendering — concurrent renders emit an all-zero `/ToUnicode` CMap, so an invoice or receipt looks perfect and its text cannot be copied or searched | S | `done` | — | root cause proven empirically (0/300 serial, 39/1200 concurrent, 0/1200 locked); gate test fails 3/3 without the lock |
 | T-0680 | The generated clients answer a non-array 200 with `null` while declaring an array — 21 unguarded call sites | M | `done` | — | all 21 fixed; mutation-verified (reverting all 21 gives exactly 21 distinct failures, no more) |
 | T-0681 | Production never serves SSR — `NG_ALLOWED_HOSTS` was set nowhere and Azure's `X-Forwarded-*` deopted the rest | S | `done` | — | verified on the built server, 12,182 → 227,446 bytes; the feared hard-400 on an unlisted host could NOT be reproduced |
-| T-0682 | Customer home page JS diet — removing all app JS measures 72 → 94; PrimeNG is eager via the hero quick-quote | M | `todo` | T-0681 | fonts and critical CSS measured worth ZERO and NEGATIVE respectively; every estimate labelled |
+| T-0682 | Customer home JS diet — component entry points, dead providers, i18n via TransferState | M | `done` | — | −239 KB eager JS, −1.1 s/−1.6 s load (en/ru) on Slow 4G; items 1 and 4 refuted by measurement, not built |
 
 *Next id: **T-0683**.*

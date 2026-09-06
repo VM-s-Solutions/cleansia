@@ -3,10 +3,9 @@ import { RouterModule } from '@angular/router';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import { ThemeService } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
-import {
-  CleansiaLanguageSwitcherComponent,
-  CookieConsentService,
-} from '@cleansia/components';
+// Entry-point imports — see the note in app.ts. → T-0682
+import { CleansiaLanguageSwitcherComponent } from '@cleansia/components/cleansia-language-switcher';
+import { CookieConsentService } from '@cleansia/components/cleansia-cookie-consent';
 
 @Component({
   selector: 'cleansia-customer-footer',

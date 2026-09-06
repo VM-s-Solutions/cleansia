@@ -3,9 +3,11 @@ import {
   inject,
   mergeApplicationConfig,
   REQUEST,
+  TransferState,
 } from '@angular/core';
 import { provideServerRendering, withRoutes } from '@angular/ssr';
 import { CUSTOMER_API_BASE_URL } from '@cleansia/customer-services';
+import { i18nStateKey } from '@cleansia/services';
 import { TranslateLoader } from '@ngx-translate/core';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -22,6 +24,8 @@ import { serverRoutes } from './app.routes.server';
  * guaranteed layout shift when the client swaps the real text in.
  */
 class ServerJsonTranslationLoader implements TranslateLoader {
+  private readonly transferState = inject(TransferState);
+
   getTranslation(lang: string): Observable<Record<string, unknown>> {
     // Built layout: dist/<app>/server/*.mjs next to dist/<app>/browser/assets.
     // The source path covers the dev-server, where no dist assets exist.
@@ -32,7 +36,12 @@ class ServerJsonTranslationLoader implements TranslateLoader {
     for (const path of candidates) {
       try {
         if (existsSync(path)) {
-          return of(JSON.parse(readFileSync(path, 'utf-8')));
+          const dictionary = JSON.parse(readFileSync(path, 'utf-8'));
+          // Hand it to the browser inside the document. Without this the client
+          // re-fetches the same file over HTTP, and cannot start until main.js
+          // has parsed — which blocks bootstrap, and so hydration. → T-0682
+          this.transferState.set(i18nStateKey(lang), dictionary);
+          return of(dictionary);
         }
       } catch {
         // fall through to the next candidate

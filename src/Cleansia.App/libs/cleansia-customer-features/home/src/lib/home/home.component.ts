@@ -14,7 +14,7 @@ import {
   loadCustomerServices,
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
-import { CleansiaScrollTopComponent } from '@cleansia/components';
+import { CleansiaScrollTopComponent } from '@cleansia/components/cleansia-scroll-top';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeroComponent } from './components/hero/hero.component';

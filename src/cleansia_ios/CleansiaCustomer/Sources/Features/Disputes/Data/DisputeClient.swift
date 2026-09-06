@@ -50,7 +50,15 @@ struct LiveDisputeClient: DisputeClient {
             }
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerDisputeAPI.disputeCreateDispute(createDisputeCommand: command)
+            // The endpoint answers `{ "disputeId": "..." }`, never a bare string. The id is not
+            // cosmetic: the evidence upload that follows is addressed to it, so substituting an
+            // empty stand-in would strand the customer's photo instead of failing visibly.
+            // Android met the same wire shape — see `DisputeApi.create`.
+            let response = try await CustomerDisputeAPI.disputeCreateDispute(createDisputeCommand: command)
+            guard let disputeId = response.disputeId, !disputeId.isEmpty else {
+                throw ApiError(code: "dispute.malformed")
+            }
+            return disputeId
         }
     }
 

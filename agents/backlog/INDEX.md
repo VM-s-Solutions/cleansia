@@ -110,5 +110,6 @@
 | T-0677 | Migrate the six existing e-mails off hosted templates and delete the six `*TemplateId` settings | M | `done` | — | AC4 (a real send) is the owner's; see MS-13 |
 | T-0678 | One button and one title component everywhere — `.cl-title` deleted, `cleansia-title` adopts the fluid Sky700 scale (owner ruling) | M | `done` | — | visual check of the partner/admin heading shift is the owner's |
 | T-0679 | Serialise PDF rendering — concurrent renders emit an all-zero `/ToUnicode` CMap, so an invoice or receipt looks perfect and its text cannot be copied or searched | S | `done` | — | root cause proven empirically (0/300 serial, 39/1200 concurrent, 0/1200 locked); gate test fails 3/3 without the lock |
+| T-0680 | The generated clients answer a non-array 200 with `null` while declaring an array — 20 unguarded call sites recorded, fixed opportunistically | M | `todo` | — | owner ruling: a record, not a sweep; 36 generated methods carry the branch, the 2 live ones are already fixed |
 
-*Next id: **T-0680**.*
+*Next id: **T-0681**.*

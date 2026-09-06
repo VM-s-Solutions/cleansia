@@ -304,4 +304,21 @@ describe('PackageFormComponent', () => {
     ]);
     expect(facade.syncWeightRows).toHaveBeenCalled();
   });
+
+  /**
+   * THE LANGUAGES LIST CAN BE EMPTY, and the template used to die on it. The facade's own
+   * `catchError` sets this signal to `[]` on ANY failed languages read, and the translations tab
+   * strip read `languages()[0].code` — a TypeError on an empty array, which takes the whole form
+   * down. A transient network blip, not an exotic response.
+   *
+   * The stub above seeds one language, which is exactly why no existing test could see this: a
+   * hand-written stub always returns a plausible array.
+   */
+  it('renders with no languages rather than dying on the tab strip', () => {
+    facade.languages.set([]);
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(fixture.nativeElement.querySelectorAll('p-tab')).toHaveLength(0);
+  });
+
 });

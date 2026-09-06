@@ -85,7 +85,7 @@ public class SystemCancellationReasonTests
     }
 
     /// <summary>
-    /// Both sweeps write keys from the same closed set, so a client that can translate one can
+    /// All three sweeps write keys from the same closed set, so a client that can translate one can
     /// translate the other — and neither is a sentence that would ship untranslated.
     /// </summary>
     [Fact]
@@ -95,6 +95,7 @@ public class SystemCancellationReasonTests
         {
             OrderCancellationReasons.PaymentNotCompleted,
             OrderCancellationReasons.RecurringNotConfirmed,
+            OrderCancellationReasons.NoCleanerAvailable,
         })
         {
             Assert.StartsWith("order.cancelled.", reason, StringComparison.Ordinal);

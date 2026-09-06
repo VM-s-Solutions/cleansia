@@ -53,6 +53,12 @@ public class TimerSweepFailureBranchTests
             .Setup(m => m.Send(
                 It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Fail<ReleaseOrphanedBenefitReservations.Response>());
+        // The third command on this tick is the one that moves money, so its failure branch matters
+        // most: a refund that could not be issued must log and let the other two finish, never throw.
+        _mediator
+            .Setup(m => m.Send(
+                It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<CancelUnfilledOrders.Response>());
 
         var handler = new CleanupStalePendingOrdersHandler(
             _mediator.Object, NullLogger<CleanupStalePendingOrdersHandler>.Instance);

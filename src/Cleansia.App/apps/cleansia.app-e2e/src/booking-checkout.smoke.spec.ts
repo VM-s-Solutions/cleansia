@@ -7,8 +7,8 @@ import { expect, Page, Route, test } from '@playwright/test';
  * Playwright `webServer` (`nx run cleansia.app:serve`) and every `**\/api/**`
  * call is intercepted at the browser boundary and answered with deterministic
  * fixtures. We chose stubbing over a live seeded Customer API because:
- *   - the address step REQUIRES a Mapbox geocode pick (lat/lng); a real Mapbox
- *     call needs a server-side token proxy and is non-deterministic;
+ *   - the address step REQUIRES a geocode pick (lat/lng); a real lookup needs a
+ *     server-side token and is non-deterministic;
  *   - the checkout step hands off to Stripe — stubbing the create-order response
  *     with a synthetic `stripeSessionId` lets us assert the handoff without any
  *     Stripe dependency, which is exactly where this smoke must STOP (no card
@@ -50,7 +50,7 @@ const SERVICE_CITIES_FIXTURE = [
   { id: '55555555-5555-5555-5555-555555555555', name: 'Praha', countryId: CZ_COUNTRY_ID },
 ];
 
-const MAPBOX_SUGGESTION = {
+const ADDRESS_SUGGESTION = {
   placeName: 'Vinohradská 12, 120 00 Praha, Česko',
   street: 'Vinohradská 12',
   city: 'Praha',
@@ -75,6 +75,42 @@ const QUOTE_FIXTURE = {
   expressSurchargeApplied: false,
   expressSurchargeAmount: 0,
   exchangeRate: 1,
+  estimatedDurationMinutes: 120,
+  requiredEmployees: 1,
+  expressSurchargeWaivedByMembership: false,
+  creditBalance: 0,
+  creditMaxShareOfOrder: 0,
+  lines: [],
+};
+
+/**
+ * The Plus step prints every number from the plan catalogue and dereferences
+ * `plans()[0]` for its perk list, so this one has to be a real row rather than
+ * the catch-all's `{}` — a null plans array is a template crash, not a step
+ * with nothing to offer.
+ */
+const MEMBERSHIP_PLANS_FIXTURE = [
+  {
+    code: 'PLUS_MONTHLY',
+    name: 'Cleansia Plus Monthly',
+    price: 299,
+    monthlyEquivalentPrice: 299,
+    billingInterval: 1,
+    discountPercentage: 10,
+    freeCancellationWindowHours: 24,
+    allowsExpressUpgrade: true,
+    expressUpgradesPerMonth: 2,
+    trialPeriodDays: 14,
+    savingsPercentVsMonthly: 0,
+  },
+];
+
+const PLUS_SAVINGS_FIXTURE = {
+  wouldSaveAmount: 120,
+  wouldPayTotal: 1080,
+  currentTotal: 1200,
+  currencyCode: 'CZK',
+  planCode: 'PLUS_MONTHLY',
 };
 
 const CREATE_ORDER_FIXTURE = {
@@ -92,24 +128,13 @@ function json(route: Route, body: unknown): Promise<void> {
 }
 
 /**
- * Mapbox geocode shape — the autocomplete service maps `features[].text`,
- * `features[].address`, `features[].context[]` and `center` into a suggestion.
+ * Address search is a platform endpoint now (`/api/AddressSearch/search`),
+ * called through the generated client — the browser never holds the provider
+ * token. The response is the client's `SearchAddressesResponse`, which the
+ * app's port maps into the picker's suggestion shape.
  */
-function mapboxFeatureBody() {
-  return {
-    features: [
-      {
-        place_name: MAPBOX_SUGGESTION.placeName,
-        text: 'Vinohradská',
-        address: '12',
-        center: [MAPBOX_SUGGESTION.longitude, MAPBOX_SUGGESTION.latitude],
-        context: [
-          { id: 'postcode.1', text: MAPBOX_SUGGESTION.zipCode },
-          { id: 'place.1', text: MAPBOX_SUGGESTION.city },
-        ],
-      },
-    ],
-  };
+function addressSearchBody() {
+  return { suggestions: [ADDRESS_SUGGESTION] };
 }
 
 async function stubBackend(page: Page): Promise<void> {
@@ -119,7 +144,7 @@ async function stubBackend(page: Page): Promise<void> {
   // backend in this seam).
   await page.route('**/api/**', (route) => json(route, {}));
 
-  await page.route('**/api/mapbox/geocode**', (route) => json(route, mapboxFeatureBody()));
+  await page.route('**/api/AddressSearch/search**', (route) => json(route, addressSearchBody()));
   await page.route('**/api/Service/GetOverview', (route) => json(route, SERVICES_FIXTURE));
   await page.route('**/api/Package/GetOverview', (route) => json(route, []));
   await page.route('**/api/Country/GetServiced', (route) => json(route, SERVICED_COUNTRIES_FIXTURE));
@@ -127,6 +152,8 @@ async function stubBackend(page: Page): Promise<void> {
   await page.route('**/api/Extra/GetOverview', (route) => json(route, []));
   await page.route('**/api/ServiceCity**', (route) => json(route, SERVICE_CITIES_FIXTURE));
   await page.route('**/api/Order/Quote', (route) => json(route, QUOTE_FIXTURE));
+  await page.route('**/api/Order/QuotePlusSavings', (route) => json(route, PLUS_SAVINGS_FIXTURE));
+  await page.route('**/api/Membership/GetPlans', (route) => json(route, MEMBERSHIP_PLANS_FIXTURE));
   await page.route('**/api/Payment/CreateOrder', (route) => json(route, CREATE_ORDER_FIXTURE));
 }
 
@@ -141,61 +168,100 @@ test.beforeEach(async ({ page, context }) => {
 test('customer can drive the booking wizard to the checkout handoff', async ({ page }) => {
   // ── Land on the customer app and start a booking from the real CTA ──
   await page.goto('/');
-  const bookCta = page.getByRole('button', { name: 'Book a Cleaning' });
+  // A LINK, not a button, and the copy is "Book a clean" — the design pass made both CTAs
+  // `<a routerLink="/order">`, which is the right role for something that navigates. `.first()`
+  // because the hero and the closing band both render one.
+  const bookCta = page.getByRole('link', { name: 'Book a clean' });
   await expect(bookCta.first()).toBeVisible();
   await bookCta.first().click();
 
+  // One button carries the wizard forward from every step, in the price summary
+  // beside the panel. `exact` because the Plus step's own "Continue without
+  // Plus" would otherwise match it — and that one skips a step rather than
+  // completing it.
+  const continueButton = page.getByRole('button', { name: 'Continue', exact: true });
+
   // ── Step 0 — services ──
-  await expect(page.getByRole('heading', { name: 'Book Your Cleaning' })).toBeVisible();
-  await page.getByRole('button', { name: /Standard Home Cleaning/ }).click();
+  await expect(page.getByRole('heading', { name: 'Choose Your Services' })).toBeVisible();
+  // Each service row's add control is named for the service it adds, so the
+  // accessible name pins us to THIS row rather than to whatever the catalogue
+  // happens to list first.
+  const addService = page.getByRole('button', { name: 'Select service: Standard Home Cleaning' });
+  await addService.click();
+  // The button reports selection through `aria-pressed`; asserting it here is
+  // what makes the Continue below a real transition rather than a click that
+  // happened to land on an already-satisfied step.
+  await expect(addService).toHaveAttribute('aria-pressed', 'true');
+  await continueButton.click();
 
-  // `exact` so the wizard's "Next" CTA never collides with the datepicker's
-  // "Next Month" nav button on the date step.
-  const nextButton = page.getByRole('button', { name: 'Next', exact: true });
-  await expect(nextButton).toBeEnabled();
-  await nextButton.click();
-
-  // ── Step 1 — contact + address ──
-  await expect(page.getByRole('heading', { name: 'Contact Information' })).toBeVisible();
+  // ── Step 1 — address + contact ──
+  await expect(page.getByRole('heading', { name: 'Where should we come?' })).toBeVisible();
   await page.locator('#wizard-first-name').fill('Jana');
   await page.locator('#wizard-last-name').fill('Novakova');
   await page.locator('#wizard-email').fill('jana@example.com');
   // The telephone wrapper renders a native tel input; target it by type.
   await page.locator('input[type="tel"]').first().fill('+420123456789');
 
-  // Mapbox autocomplete: type >= 3 chars, then pick the stubbed suggestion.
+  // Address autocomplete: type >= 3 chars, then pick the stubbed suggestion.
   // Scope to the autocomplete container so we don't grab the header language
   // selector (also a combobox).
   const addressInput = page.locator('.cleansia-address-autocomplete input');
   await addressInput.click();
   // Type char-by-char so PrimeNG's autocomplete fires its `completeMethod`
-  // (which drives the stubbed Mapbox search) after its internal debounce.
+  // (which drives the stubbed lookup) after its internal debounce.
   await addressInput.pressSequentially('Vinohradska', { delay: 50 });
-  const suggestion = page.getByText(MAPBOX_SUGGESTION.placeName);
+  const suggestion = page.getByText(ADDRESS_SUGGESTION.placeName);
   await expect(suggestion.first()).toBeVisible();
   await suggestion.first().click();
-  // The resolved-address block echoes the picked street verbatim.
+  // The resolved-address block echoes the picked street verbatim. Only a PICK
+  // sets lat/lng, and only lat/lng lets the step advance — so this is the
+  // assertion that says the geocode actually landed.
   await expect(page.getByText('Vinohradská 12', { exact: true })).toBeVisible();
 
-  await expect(nextButton).toBeEnabled();
-  await nextButton.click();
+  await continueButton.click();
 
-  // ── Step 2 — date & time (a future date keeps every slot available) ──
-  await expect(page.getByRole('heading', { name: 'When Should We Come?' })).toBeVisible();
-  // PrimeNG inline calendar: advance to next month so every day sits past the
-  // min-date, then pick the first selectable cell. A future date keeps the
-  // pre-selected 09:00 slot valid (no express/unavailable annotations).
-  await page.locator('.p-datepicker-next-button').click();
-  await page.locator('.p-datepicker-day:not(.p-disabled)').first().click();
-  await expect(nextButton).toBeEnabled();
-  await nextButton.click();
+  // ── Step 2 — date & time ──
+  await expect(page.getByRole('heading', { name: 'When should we come?' })).toBeVisible();
+  // The calendar is the wizard's own grid, not PrimeNG's: month nav by its
+  // aria-label, then the first cell the component left enabled. Advancing a
+  // month puts every day past the min-date, so the pick is never a same-day
+  // slot whose availability depends on the wall clock.
+  await page.getByRole('button', { name: 'Next month' }).click();
+  const firstBookableDay = page.locator('button.cl-wiz__cal-day:not([disabled])').first();
+  await firstBookableDay.click();
+  await expect(firstBookableDay).toHaveAttribute('aria-pressed', 'true');
+  // The slot is chosen explicitly rather than left to the component's snap:
+  // `hasValidTime()` gates this step, and an unavailable slot is disabled here,
+  // so picking an enabled chip is the same thing the customer does.
+  const firstBookableTime = page.locator('button.cl-wiz__time:not([disabled])').first();
+  await firstBookableTime.click();
+  await expect(firstBookableTime).toHaveAttribute('aria-pressed', 'true');
+  await continueButton.click();
 
   // ── Step 3 — payment (Card is the default selection) ──
   await expect(page.getByRole('heading', { name: 'How Would You Like to Pay?' })).toBeVisible();
-  await expect(nextButton).toBeEnabled();
-  await nextButton.click();
+  // Card is what the wizard defaults to and what routes the submit through
+  // `Payment/CreateOrder` — the Stripe handoff asserted at the end only exists
+  // on this branch, so the default is worth stating rather than assuming.
+  await expect(page.getByRole('button', { name: /Card online/ })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  await continueButton.click();
 
-  // ── Step 4 — summary + place order ──
+  // ── Step 4 — Cleansia Plus (declined, which is the smoke's path) ──
+  await expect(page.getByRole('heading', { name: 'Add Cleansia Plus?' })).toBeVisible();
+  // The step's real way past. Not the shared Continue: the decline card is the
+  // only exit that leaves the basket without a subscription, and a smoke that
+  // took the other one would be booking a membership.
+  await page.getByRole('button', { name: 'Continue without Plus' }).click();
+
+  // ── Step 5 — review + place order ──
+  await expect(page.getByRole('heading', { name: 'Check your order' })).toBeVisible();
+  // A guest has no consent on record, so the tick is asked for and the
+  // place-order button refuses without it.
+  await page.getByRole('checkbox', { name: /I agree to the terms/ }).check();
+
   const placeOrder = page.getByRole('button', { name: 'Place Order' });
   await expect(placeOrder).toBeVisible();
 

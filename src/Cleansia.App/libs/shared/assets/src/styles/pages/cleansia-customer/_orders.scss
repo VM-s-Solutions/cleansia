@@ -284,6 +284,22 @@
   align-items: center;
   gap: calc(2 * var(--cl-u));
   margin-top: calc(2.125 * var(--cl-u));
+  // The page gutter has to be MARGIN on this one, not padding.
+  //
+  // The group rule above gives every block `padding-inline: var(--cl-gutter)`,
+  // which is right for the list and the skeleton — they paint nothing, so
+  // padding reads as a gutter. This block paints a background, a border and a
+  // radius, so the same padding only inset its CONTENTS and left the card
+  // itself running to both page edges. The `padding` shorthand below then reset
+  // that padding anyway, which is why the card sat flush against the window
+  // while the hero above it was correctly indented.
+  //
+  // Width rather than margin-inline so the card lands on exactly the same
+  // vertical as the hero's text at every viewport: below $home-width it insets
+  // by one gutter each side, above it the max-width caps it and the auto
+  // margins (inherited from the group rule) centre it.
+  max-width: $home-width;
+  width: calc(100% - 2 * var(--cl-gutter));
   padding: calc(2 * var(--cl-u));
   border-radius: calc(2 * var(--cl-u));
   background: var(--cl-surface);

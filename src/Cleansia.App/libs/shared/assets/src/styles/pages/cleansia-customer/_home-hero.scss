@@ -64,7 +64,11 @@ cleansia-hero {
     grid-template-columns: minmax(0, 1fr) 650px;
     gap: 48px;
     align-items: end;
-    padding: calc(3.25 * var(--cl-u)) var(--cl-gutter) 0;
+    // 1.5, not 3.25. The hero sat 104px below the navbar at 1280px wide, which
+    // read as a gap rather than as breathing room and pushed the calculator
+    // card's fixed price below the fold on a laptop. The navbar payback on
+    // `.cl-hero` above is untouched — that one is structural.
+    padding: calc(1.5 * var(--cl-u)) var(--cl-gutter) 0;
     max-width: $home-width;
     margin: 0 auto;
 

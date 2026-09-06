@@ -32,9 +32,11 @@ import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers'
 import { ProfileFacade } from './profile.facade';
 import {
   AVATAR_ACCEPT_ATTRIBUTE,
+  CreditRow,
   SavedAddressFields,
   buildAddSavedAddressCommand,
   buildChangePasswordCommand,
+  buildCreditRow,
   buildUpdateSavedAddressCommand,
 } from './profile.models';
 
@@ -126,24 +128,17 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
    * a module boundary to save eight lines.
    */
   /**
-   * The credit balance for the rail row, null when there is nothing to say. Exposed through the
-   * component rather than the private facade, exactly like `loyaltyTierKey` beside it.
+   * The credit balance for the rail row. Exposed through the component rather than the private
+   * facade, exactly like `loyaltyTierKey` beside it.
+   *
+   * Null means ONLY that the read failed — `loadCredit` maps an error to null — and the row is then
+   * omitted rather than claiming a balance nobody verified. A balance of zero is NOT that case:
+   * `GetMyCredit` answers `Balance: 0` in the platform's default currency for a customer who has
+   * never had an account, precisely "so the client renders one shape either way". Hiding the row at
+   * zero left a customer unable to tell "you have no credit" from "this screen does not mention
+   * credit", which is the question the row exists to answer. Owner remark 2026-09-06.
    */
-  readonly creditBalance = computed<{
-    amount: number;
-    currency: string;
-    expiresOn: Date | null;
-  } | null>(() => {
-    const credit = this.facade.credit();
-    if (!credit || credit.balance <= 0) return null;
-    return {
-      amount: credit.balance,
-      currency: credit.currencyCode ?? '',
-      // Null while the balance is zero, and null on an account the sweep has not dated yet. Both
-      // render as no line rather than as an empty date.
-      expiresOn: credit.expiresOn ?? null,
-    };
-  });
+  readonly creditBalance = computed<CreditRow | null>(() => buildCreditRow(this.facade.credit()));
 
   readonly loyaltyTierKey = computed<string | null>(() => {
     switch (this.facade.loyaltyTier()) {

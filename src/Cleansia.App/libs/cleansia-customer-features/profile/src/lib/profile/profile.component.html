@@ -104,7 +104,12 @@
             Money the platform owes this customer. Shown here because the booking summary only shows
             it once they are already mid-booking, and a balance nobody can find is a balance they do
             not know they have. There is nothing to press: it applies to the next booking on its own,
-            which the line says rather than leaving them looking for a button. Absent at zero.
+            which the line says rather than leaving them looking for a button.
+
+            Shown AT ZERO too. `@if (creditBalance(); as credit)` reads the object, not the amount —
+            a zero balance is a fact the customer asked to see, and it is the row's absence, not a
+            nought, that reads as "this screen forgot about credit". The row disappears only when the
+            read failed.
           -->
           @if (creditBalance(); as credit) {
           <div class="customer-profile__credit">

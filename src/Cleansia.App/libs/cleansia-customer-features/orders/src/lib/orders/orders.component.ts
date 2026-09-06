@@ -200,10 +200,6 @@ export class OrdersComponent implements OnInit {
     this.router.navigate(['/order'], { queryParams: { rebook: 'true' } });
   }
 
-  isUpcoming(order: OrderListItem): boolean {
-    return new Date(order.cleaningDateTime) >= new Date();
-  }
-
   private getLocale(): string {
     const localeMap: Record<string, string> = {
       cs: 'cs-CZ',

@@ -545,17 +545,21 @@ lifecycle gate (*when is this datum useful*) — those legitimately read a statu
 (ADR-0047 §D1). *If a field would still be worth showing with no sentence around it, this rule does not
 reach it.*
 
-### `isUpcoming` means two different things in this repo — never name a status predicate with a time word
+### Never name a status predicate with a time word
 
 | Name | Where | Actually asks |
 |---|---|---|
-| `OrdersComponent.isUpcoming` | `libs/cleansia-customer-features/orders/src/lib/orders/orders.component.ts:203-205` | `cleaningDateTime >= now` — a **clock** rule. **A cancelled future booking passes it.** Its one caller was a CSS class in the template; the design-pass rebuild removed it, so the method now has **no caller at all** and is dead. It stays in this table because the NAME is the trap, and the name is still here |
-| `OrderStatusGroup.isUpcoming` (iOS) | `src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/Data/OrderStatusMapping.swift:37-40` | `status != Completed && status != Cancelled` — a **status** rule under the same name |
+| `OrderStatusGroup.isUpcoming` (iOS) | `src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/Data/OrderStatusMapping.swift:25` | `status != Completed && status != Cancelled` — a **status** rule under a TIME name. The rule's one live violator |
 | `OrderDetailsFacade.isActiveOrderStatus` | `libs/cleansia-partner-features/orders/src/lib/order-details/order-details.facade.ts:278-285` | `{Confirmed, OnTheWay, InProgress}` — private, partner-only, and its subject is *may notes and issues be added*. It is iOS's `isActive`, **not** iOS's `isUpcoming` |
 
 `libs/shared/models/src/lib/models/order-status.models.ts:19-27` carries the enum and **no**
-predicates, which is why each of the three above grew locally. **Reaching for one of them because the
-name sounds right is the trap** — a web lane reached for the first one and stopped. A predicate over
+predicates, which is why each of the two above grew locally. **Reaching for one of them because the
+name sounds right is the trap** — and the web side has already paid for it. `OrdersComponent.isUpcoming`
+was `cleaningDateTime >= now`, a clock rule under a status-sounding name, which **a cancelled future
+booking passes**; a web lane reached for it because the name sounded right, and stopped. Its last
+caller went with the design-pass rebuild and the method was deleted. The same question is now answered
+correctly at `orders.component.ts` `filterArgs()`, where "upcoming" is a date **and** a status set,
+resolved server-side. A predicate over
 `OrderStatus` is not named `upcoming`, `current` or `recent`; time words belong to predicates over
 `cleaningDateTime`. And before promoting any of them to `@cleansia/models`, read ADR-0049 §D7 —
 **including amendment C1, because the sentence that used to sit here is dead.** It said *"the backend's

@@ -115,5 +115,11 @@
 | T-0682 | Customer home JS diet — component entry points, dead providers, i18n via TransferState | M | `done` | — | −239 KB eager JS, −1.1 s/−1.6 s load (en/ru) on Slow 4G; items 1 and 4 refuted by measurement, not built |
 | T-0683 | PrimeFlex is a CDN dependency for 37 classes - self-host the subset or drop it | M | `todo` | — | 31.8 KB gzipped on the wire (not 373 KB, that was decompressed); the navbar mobile drawer has NO project fallback |
 | T-0684 | CreateDispute with no id: empty string on Android, a refusal on iOS | S | `done` | — | settled on the refusal; Android moved to meet iOS, via wireResult so it refuses instead of crashing |
+| T-0685 | GDPR retention sweep has never run in production - an absent feature flag reads as disabled | S | `todo` | — | verified 4 ways; the job logs success while deleting nothing. Release blocker |
+| T-0686 | Nothing records that a customer accepted the terms, or which version | S | `todo` | — | Register persists nothing; Google/Apple validate a TermsAccepted bool and discard it; no TermsVersion field exists |
+| T-0687 | Admin order list renders a blank status pill for every New order | S | `todo` | — | OrderStatus.New is 0 and the guard is `if (!value)`; this is what makes card-vs-cash look broken |
+| T-0688 | Multicurrency has never run at a rate other than 1, and CreateOrder accepts any currency id | M | `todo` | — | decide single-currency-at-launch first; that decision changes the size by an order of magnitude |
+| T-0689 | Six feature flags and a beta gate that control nothing | S | `todo` | — | an admin can switch StripePayments off and payments keep working; do together with T-0685 |
+| T-0690 | Remove the 14-day membership free trial | M | `todo` | — | the 5% discount is the THIRD-largest giveaway; recurring schedules created in a trial keep running forever |
 
 *Next id: **T-0683**.*

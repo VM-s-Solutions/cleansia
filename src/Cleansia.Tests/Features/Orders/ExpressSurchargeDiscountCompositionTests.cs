@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Orders;
+﻿using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -248,12 +248,27 @@ public class ExpressSurchargeDiscountCompositionTests
             .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ActiveMembership(plusPercentage));
 
+        // Local, because this helper is static and cannot reach the class
+        // fixtures. Empty but ASYNC: the handler materialises both with
+        // ToListAsync to estimate the duration and the crew.
+        var serviceRepository = new Mock<IServiceRepository>();
+        serviceRepository
+            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(Array.Empty<Service>().AsQueryable().BuildMock());
+        var packageRepository = new Mock<IPackageRepository>();
+        packageRepository
+            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
+
         var handler = new QuoteOrder.Handler(
             pricingCalculator.Object,
+            serviceRepository.Object,
+            packageRepository.Object,
             session.Object,
             loyaltyService.Object,
             new Mock<ILoyaltyTierConfigRepository>().Object,
-            membershipRepository.Object);
+            membershipRepository.Object,
+            new Mock<ICreditAccountRepository>().Object);
 
         var result = await handler.Handle(
             new QuoteOrder.Command(

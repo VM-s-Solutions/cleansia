@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import {
-  CreateMembershipCheckoutSessionCommand,
   CustomerClient,
   GetMyMembershipResponse,
   SwapMembershipPlanCommand,
@@ -28,7 +27,7 @@ describe('MembershipFacade — express waiver state', () => {
   let membershipClient: {
     getMine: jest.Mock;
     swapPlan: jest.Mock;
-    createCheckoutSession: jest.Mock;
+    getPlans: jest.Mock;
   };
   let snackbar: {
     showApiError: jest.Mock;
@@ -40,7 +39,7 @@ describe('MembershipFacade — express waiver state', () => {
     membershipClient = {
       getMine: jest.fn(),
       swapPlan: jest.fn(),
-      createCheckoutSession: jest.fn(),
+      getPlans: jest.fn().mockReturnValue(of([])),
     };
     snackbar = {
       showApiError: jest.fn(),
@@ -150,24 +149,25 @@ describe('MembershipFacade — express waiver state', () => {
       expect(command).toBeInstanceOf(SwapMembershipPlanCommand);
       expect(command.toJSON()).toEqual({ newPlanCode: 'plus-yearly' });
     });
-
-    it('serializes a checkout session with the plan code and both return urls', () => {
-      membershipClient.createCheckoutSession.mockReturnValue(of(null));
-
-      facade.createCheckoutSession(
-        'plus-monthly',
-        'https://app.test/success',
-        'https://app.test/cancel',
-      );
-
-      const command: CreateMembershipCheckoutSessionCommand =
-        membershipClient.createCheckoutSession.mock.calls[0][0];
-      expect(command).toBeInstanceOf(CreateMembershipCheckoutSessionCommand);
-      expect(command.toJSON()).toEqual({
-        planCode: 'plus-monthly',
-        successUrl: 'https://app.test/success',
-        cancelUrl: 'https://app.test/cancel',
-      });
-    });
   });
+
+  /**
+   * THE GENERATED CLIENT CAN ANSWER WITH NULL. Its declared type is
+   * `GetMembershipPlansResponse[]`, but `processGetPlans` falls to `result200 = null as any` for any
+   * 200 whose body is not a JSON array — an empty body, a `{}`, a 204. Null is not an error, so
+   * `catchError` never fires, and the declared type means TypeScript never complains either. Five
+   * readers then index or measure this signal.
+   */
+  it('holds an empty list, and hands the callback one, when the client answers null', () => {
+    membershipClient.getPlans.mockReturnValue(of(null));
+    const onLoaded = jest.fn();
+
+    facade.loadPlans(onLoaded);
+
+    expect(facade.plans()).toEqual([]);
+    // The callback's argument is indexed by its callers just as the signal is, so both halves are
+    // pinned — which is why the facade coalesces once and passes the same list to both.
+    expect(onLoaded).toHaveBeenCalledWith([]);
+  });
+
 });

@@ -17,7 +17,9 @@ final class OrdersListLogicTests: XCTestCase {
         let query = OrdersQueryBuilder.query(
             tab: .available, ownEmployeeId: "emp-self", sort: .earningsHighToLow, period: .all
         )
-        XCTAssertEqual(query.statuses, [._0, ._2])
+        // Mirrors OrderAvailability.OfferableStatuses, which now admits the two started statuses so a
+        // half-crewed job stays fillable. isUnassigned below is what keeps a FULL job off this tab.
+        XCTAssertEqual(query.statuses, [._0, ._2, ._3, ._4])
         XCTAssertEqual(query.isUnassigned, true)
         XCTAssertNil(query.employeeId)
         XCTAssertEqual(query.sortField, "estimatedCleanerPay")

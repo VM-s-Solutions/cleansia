@@ -7,6 +7,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -20,6 +21,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("interactive")]
     public async Task<PagedData<EmployeeDocumentItem>> GetPagedDocuments([FromBody] GetEmployeeDocuments.Request request, CancellationToken cancellationToken)
     {
         return await Mediator.Send(request, cancellationToken);
@@ -31,6 +33,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ApproveDocument(string documentId, [FromBody] ApproveDocument.Command? request, CancellationToken cancellationToken)
     {
         var command = new ApproveDocument.Command
@@ -48,6 +51,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> RejectDocument(string documentId, [FromBody] RejectDocument.Command? request, CancellationToken cancellationToken)
     {
         var command = new RejectDocument.Command
@@ -123,6 +127,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> SaveRequirement(
         [FromBody] SaveDocumentRequirement.Request request,
         CancellationToken cancellationToken)
@@ -144,6 +149,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeleteRequirement(string requirementId, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new DeleteDocumentRequirement.Command(requirementId), cancellationToken);
@@ -177,6 +183,7 @@ public class AdminEmployeeDocumentController(IMediator mediator) : ApiController
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ResolveDeletionRequest(
         string requestId,
         [FromBody] ResolveDocumentDeletionRequest.Request request,

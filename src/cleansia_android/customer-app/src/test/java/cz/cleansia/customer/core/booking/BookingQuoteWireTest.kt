@@ -303,6 +303,11 @@ class BookingQuoteWireTest {
             "exchangeRate",
             "expressSurchargeWaivedByMembership",
             "expressUpgradesRemaining",
+            "estimatedDurationMinutes",
+            "requiredEmployees",
+            "creditBalance",
+            "creditMaxShareOfOrder",
+            "lines",
         )
 
         val QUOTE_REQUIRED_MONEY = listOf(

@@ -227,6 +227,12 @@ public class Policy
     // Referrals
     public const string CanViewMyReferral = nameof(CanViewMyReferral); // Customer (own referral code + invitees)
 
+    // Credit
+    public const string CanViewMyCredit = nameof(CanViewMyCredit); // Customer (own credit balance)
+    public const string CanIssueCustomerCredit = nameof(CanIssueCustomerCredit); // Admin (money out)
+    public const string CanViewUserCredit = nameof(CanViewUserCredit); // Admin (any customer balance + ledger)
+    public const string CanExpireCustomerCredit = nameof(CanExpireCustomerCredit); // Admin (discharge a balance)
+
     // Admin Promo Codes
     public const string CanViewPromoCodes = nameof(CanViewPromoCodes); // Admin
     public const string CanCreatePromoCode = nameof(CanCreatePromoCode); // Admin

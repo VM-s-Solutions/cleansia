@@ -1,0 +1,60 @@
+{
+  "_comment": "Same two sections as the other step maps. `_ignore` is text the artboard shows as SAMPLE — a name, an address, a price, a summary line — which the running page renders from what the visitor entered. Everything NOT listed there is structural copy and has to appear. The remaining keys are the BOX map, { appSelector: artboardSelector }; only the pairing is declared, every expected value is read off the artboard.",
+
+  "_plus_note": "The artboard's fourth card is \"Platba a členství\" and lists a Cleansia Plus trial, and its back link reads \"Zpět na Cleansia Plus\". The Plus step it refers to is not built — its concepts are still with the owner — so this step's fourth card is payment alone and the rail has five steps, not six. Both artboard strings are in _ignore for that reason, not because they are sample data. The Plus step, the membership line on this card, and moving the preferred-cleaner picker onto it are one piece of work waiting on that decision.",
+
+  "_ignore": [
+    "^[0-9][0-9\\s]*Kč$",
+    "^−[0-9][0-9\\s]*Kč$",
+    "^Cleansia$",
+    "^Služby$",
+    "^Jak to chodí$",
+    "^Cleansia Plus$",
+    "^Sledovat objednávku$",
+    "^CZ$",
+    "^Přihlásit$",
+    "^Objednat úklid$",
+    "^Adresa$",
+    "^Termín$",
+    "^Platba$",
+    "^Souhrn$",
+    "^Zpět na Cleansia Plus$",
+    "^Platba a členství$",
+    "^Cleansia Plus — 14 dní zdarma$",
+    "^Michal Novák$",
+    "^\\+420 739 788 108",
+    "^Dělnická 12",
+    "^út 2\\. 9\\.",
+    "^Vstup: budu doma$",
+    "^Úklid domácnosti",
+    "^Hloubkový úklid kuchyně",
+    "^Mytí oken",
+    "^3 pokoje",
+    "^Praha 7$",
+    "^bez příplatku$",
+    "^Kartou online$",
+    "^Slevový kód PRVNI10",
+    "^Sleva PRVNI10$",
+    "^Sleva Plus 5 %$",
+    "^Pevná cena$",
+    "^Odhadem 3,5 h",
+    "^Objednat závazně$",
+    "^Zrušení zdarma do 24 h$",
+    "^Například: kočka je doma"
+  ],
+
+  ".cl-wiz__review": "[style*='repeat(2, minmax(0,1fr)); gap:16px']",
+  ".cl-wiz__review-card": "[style*='border-radius:24px; padding:22px 24px']",
+  ".cl-wiz__review-head": "[style*='border-radius:24px; padding:22px 24px'] > [style*='justify-content:space-between']",
+  ".cl-wiz__review-lines": {
+    "sel": "[style*='margin-top:12px; display:flex; flex-direction:column; gap:6px']",
+    "typography": true
+  },
+  ".cl-wiz__note-input": {
+    "sel": "[style*='min-height:78px']",
+    "skip": ["color", "whiteSpace"],
+    "typography": true,
+    "why": "The artboard draws this as a div holding sample text at placeholder grey, so its `color` is the placeholder's and not a value's — the real control is empty at check time and reports its text colour. `whiteSpace` is `pre-wrap` on every textarea and `normal` on that div. Size, weight, padding, radius and border are all still asserted."
+  },
+  ".cl-wiz__consent": { "sel": "label[style*='gap:10px; margin-top:20px']", "typography": true }
+}

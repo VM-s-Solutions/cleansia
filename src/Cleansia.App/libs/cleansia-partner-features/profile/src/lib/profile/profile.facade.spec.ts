@@ -21,6 +21,7 @@ import { ProfileFacade } from './profile.facade';
  */
 describe('ProfileFacade — job radius seeding', () => {
   let getCurrentEmployee: jest.Mock;
+  let getServiced: jest.Mock;
 
   const createFacade = (): ProfileFacade => {
     TestBed.configureTestingModule({
@@ -34,7 +35,7 @@ describe('ProfileFacade — job radius seeding', () => {
           useValue: {
             employeeClient: { getCurrentEmployee },
             countryClient: {
-              getServiced: jest.fn().mockReturnValue(of([])),
+              getServiced,
               getOverview: jest.fn().mockReturnValue(of([])),
             },
           },
@@ -73,6 +74,24 @@ describe('ProfileFacade — job radius seeding', () => {
       .mockReturnValue(
         of(EmployeeItem.fromJS({ id: 'emp-1', jobRadiusKm: 120 }))
       );
+    getServiced = jest.fn().mockReturnValue(of([]));
+  });
+
+  it('holds an empty country list, not null, when the read answers a null body', () => {
+    // The generated client emits NULL — not `[]` — for a 200 with a non-array body or a 204, and
+    // `catchError` cannot see it because null is not an error. Unguarded, `.map()` throws inside
+    // the `tap` and the catchError below it blanks the entire profile page.
+    getServiced.mockReturnValue(of(null));
+    const facade = createFacade();
+
+    facade.loadProfile();
+
+    expect(facade.countries()).toEqual([]);
+    // `countries` starts at `[]`, so the line above passes either way — what proves the guard is
+    // that the read completed normally. Unguarded, the throw routes into the facade's own
+    // `catchError`, which calls `markUnavailable()` and blanks the page.
+    expect(facade.jobRadiusFacade.loadFailed()).toBe(false);
+    expect(facade.profileLoading()).toBe(false);
   });
 
   it('seeds the section off the profile read, with no second round trip', () => {

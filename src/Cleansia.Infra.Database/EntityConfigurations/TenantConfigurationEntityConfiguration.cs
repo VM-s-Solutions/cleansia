@@ -24,7 +24,13 @@ public class TenantConfigurationEntityConfiguration : AuditableEntityConfigurati
         builder.Property(e => e.Category)
             .HasMaxLength(50);
 
+        // One value per key per tenant. NULLS NOT DISTINCT because single-tenant mode is
+        // TenantId = null. The table has no writer today and that is the whole point: it costs one
+        // builder call now, on a migration already being regenerated, and spares the first writer a
+        // constraint that reads as enforcing while GetTenantSettingAsync picks between two
+        // configured values with FirstOrDefault and no ORDER BY.
         builder.HasIndex(e => new { e.TenantId, e.Key })
-            .IsUnique();
+            .IsUnique()
+            .AreNullsDistinct(false);
     }
 }

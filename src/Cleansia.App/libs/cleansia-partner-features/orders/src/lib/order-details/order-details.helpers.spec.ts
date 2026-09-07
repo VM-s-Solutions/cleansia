@@ -20,14 +20,22 @@ describe('canTakeOrder', () => {
     expect(canTakeOrder(OrderStatus.Pending, [], EMPLOYEE_ID)).toBe(false);
   });
 
-  it.each([
-    OrderStatus.OnTheWay,
-    OrderStatus.InProgress,
-    OrderStatus.Completed,
-    OrderStatus.Cancelled,
-  ])('does not show Take for status %s', (status) => {
-    expect(canTakeOrder(status, [], EMPLOYEE_ID)).toBe(false);
-  });
+  // Started is NOT over. NotifyOnTheWay writes the status on the ORDER, so one cleaner setting off
+  // used to take a half-crewed job off every board with its other seats empty. Owner ruling
+  // 2026-09-06 made a started job stay fillable. → OrderAvailability.OfferableStatuses
+  it.each([OrderStatus.OnTheWay, OrderStatus.InProgress])(
+    'still shows Take on a started order with room, status %s',
+    (status) => {
+      expect(canTakeOrder(status, [], EMPLOYEE_ID)).toBe(true);
+    }
+  );
+
+  it.each([OrderStatus.Completed, OrderStatus.Cancelled])(
+    'does not show Take for the terminal status %s',
+    (status) => {
+      expect(canTakeOrder(status, [], EMPLOYEE_ID)).toBe(false);
+    }
+  );
 
   it('does not show Take to a cleaner already assigned to the order', () => {
     expect(canTakeOrder(OrderStatus.New, assigned(EMPLOYEE_ID), EMPLOYEE_ID)).toBe(

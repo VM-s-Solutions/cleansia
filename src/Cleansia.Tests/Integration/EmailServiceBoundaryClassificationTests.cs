@@ -51,7 +51,6 @@ public class EmailServiceBoundaryClassificationTests
         var config = new Mock<ISendGridConfig>();
         config.SetupGet(c => c.ApiKey).Returns("SG.test");
         config.SetupGet(c => c.AddressFrom).Returns("noreply@example.test");
-        config.SetupGet(c => c.EmailConfirmationTemplateId).Returns("d-template-1");
         config.SetupGet(c => c.ClientDomainUrl).Returns("https://app.test");
 
         var translations = new Mock<IEmailTemplateTranslationRepository>();
@@ -69,7 +68,8 @@ public class EmailServiceBoundaryClassificationTests
             config.Object,
             NullLogger<EmailService>.Instance,
             httpClientFactory.Object,
-            translations.Object);
+            translations.Object,
+            new EmailTemplateRenderer());
     }
 
     private sealed class AttemptCountingHandler(HttpStatusCode status) : HttpMessageHandler

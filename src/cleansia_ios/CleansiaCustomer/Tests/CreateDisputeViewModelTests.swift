@@ -13,7 +13,13 @@ final class CreateDisputeViewModelTests: XCTestCase {
         client: FakeDisputeClient
     ) -> (CreateDisputeViewModel, DisputeRepository) {
         let repo = DisputeRepository(client: client, pageSize: 1)
-        let vm = CreateDisputeViewModel(orderId: orderId, repository: repo, snackbar: SnackbarController())
+        let vm = CreateDisputeViewModel(
+            orderId: orderId,
+            repository: repo,
+            // These cases are about the submit path; the item list has its own test.
+            orderClient: FakeOrderClient(),
+            snackbar: SnackbarController()
+        )
         return (vm, repo)
     }
 

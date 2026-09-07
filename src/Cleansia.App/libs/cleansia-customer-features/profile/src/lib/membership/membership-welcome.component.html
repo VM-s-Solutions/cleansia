@@ -1,43 +1,66 @@
-<section class="membership-welcome">
-  <div class="celebration-card">
-    <div class="badge">
-      <i class="pi pi-star-fill" aria-hidden="true"></i>
-      <span>{{ 'pages.membership.welcome_badge' | translate }}</span>
-    </div>
+<!--
+  After the payment — the board's "Po zaplacení". Centred, because there is one
+  thing to say and nothing to manage yet.
+-->
+<div class="cl-mbr cl-mbr--welcome">
+  <div class="cl-mbr__welcome">
+    <img
+      class="cl-mbr__welcome-art"
+      src="assets/images/mascot/mascot-plus.webp"
+      alt=""
+      width="360"
+      height="360"
+      aria-hidden="true"
+    />
+    <h1 class="cl-mbr__welcome-title">{{ 'pages.membership.welcome_title' | translate }}</h1>
+    <p class="cl-mbr__welcome-lead">{{ 'pages.membership.welcome_subtitle' | translate }}</p>
 
-    <h1>{{ 'pages.membership.welcome_title' | translate }}</h1>
-    <p class="lead">{{ 'pages.membership.welcome_subtitle' | translate }}</p>
-
-    <ul class="perk-list">
-      <li>
-        <i class="pi pi-percentage" aria-hidden="true"></i>
-        <span>{{ 'pages.membership.welcome_perk_discount' | translate }}</span>
-      </li>
-      <li>
-        <i class="pi pi-replay" aria-hidden="true"></i>
-        <span>{{ 'pages.membership.welcome_perk_recurring' | translate }}</span>
-      </li>
-      <li>
-        <i class="pi pi-times-circle" aria-hidden="true"></i>
-        <span>{{ 'pages.membership.welcome_perk_cancellation' | translate }}</span>
-      </li>
-      @if (expressWaiverAdvertised()) {
+    <section class="cl-mbr__card cl-mbr__welcome-card">
+      <span class="cl-mbr__welcome-label">{{ 'pages.membership.from_now' | translate }}</span>
+      <ul class="cl-mbr__perks">
         <li>
-          <i class="pi pi-bolt" aria-hidden="true"></i>
-          <span>{{ 'pages.membership.welcome_perk_express' | translate }}</span>
+          <i class="pi pi-star"></i>
+          {{ 'pages.membership.welcome_perk_discount' | translate }}
         </li>
-      }
-    </ul>
+        <li>
+          <i class="pi pi-calendar"></i>
+          {{ 'pages.membership.welcome_perk_cancellation' | translate }}
+        </li>
+        @if (expressWaiverAdvertised()) {
+        <li>
+          <i class="pi pi-bolt"></i>
+          {{ 'pages.membership.welcome_perk_express' | translate }}
+        </li>
+        }
+        <li>
+          <i class="pi pi-sync"></i>
+          {{ 'pages.membership.welcome_perk_recurring' | translate }}
+        </li>
+      </ul>
 
-    <div class="actions">
+      <!--
+        Said out loud, because it is the one perk that is NOT on yet: a trialing
+        member has the discount and the shorter cancellation window, but the
+        express waiver starts when the trial ends. → /product/business-rules
+      -->
+      @if (expressWaiverAdvertised()) {
+      <p class="cl-mbr__note cl-mbr__note--warn">
+        <i class="pi pi-bolt"></i>
+        {{ 'pages.membership.welcome_express_after_trial' | translate }}
+      </p>
+      }
+    </section>
+
+    <div class="cl-mbr__welcome-actions">
       <cleansia-button
-        [label]="'pages.membership.welcome_cta_setup_recurring' | translate"
-        icon="pi pi-calendar-plus"
-        (click)="goToSetupRecurring()"
-      ></cleansia-button>
-      <a class="secondary-link" [routerLink]="['/' + routes.MEMBERSHIP]">
-        {{ 'pages.membership.welcome_cta_back' | translate }}
+        [title]="'pages.membership.welcome_cta_book' | translate"
+        [severity]="'primary'"
+        [style]="'raised-button'"
+        (clickFn)="goToBook()"
+      />
+      <a class="cl-mbr__link" [routerLink]="['/' + routes.MEMBERSHIP, 'recurring', 'create']">
+        {{ 'pages.membership.welcome_cta_setup_recurring' | translate }}
       </a>
     </div>
   </div>
-</section>
+</div>

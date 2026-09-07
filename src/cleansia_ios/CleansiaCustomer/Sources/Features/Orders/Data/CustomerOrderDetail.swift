@@ -12,6 +12,17 @@ struct CustomerOrderService: Equatable, Hashable {
     let translations: [String: Translation]?
 }
 
+/// One service inside a package, addressable by id.
+///
+/// `includedServices` beside it is a list of NAMES — printable, but impossible to send back, so a
+/// customer could read what a package contained and never point at one part of it. Both are kept:
+/// the name list is what the detail card renders, this is what a dispute line or a review score is
+/// built from.
+struct CustomerOrderPackageService: Equatable, Hashable {
+    let id: String?
+    let name: String?
+}
+
 struct CustomerOrderPackage: Equatable, Hashable {
     let id: String?
     let name: String?
@@ -20,6 +31,7 @@ struct CustomerOrderPackage: Equatable, Hashable {
     let estimatedMinutes: Int
     let currencyCode: String?
     let includedServices: [String]
+    let includedServiceItems: [CustomerOrderPackageService]
     let translations: [String: Translation]?
 }
 
@@ -29,6 +41,10 @@ struct CustomerOrderReview: Equatable {
     let rating: Int
     let comment: String?
     let tags: [CustomerReviewTag]
+    /// The per-item scores this review carries. Empty on every review written before per-item
+    /// scoring existed and on every review that only left an overall rating — most of them. Read on
+    /// the EDIT path, so reopening the sheet shows what the customer said last time.
+    let lines: [OrderItemLineScore]
 }
 
 /// The order detail as the screen renders it, with the mobile API contract re-asserted at the boundary
@@ -155,6 +171,11 @@ extension CustomerOrderPackage {
         estimatedMinutes = try details.estimatedTime.require("estimatedTime")
         currencyCode = details.currencyCode
         includedServices = details.includedServices ?? []
+        // Plain map, NOT `.require(...)`: a package with no listed items is ordinary, and an absent
+        // array must not refuse the whole order detail the way a missing price deliberately does.
+        includedServiceItems = (details.includedServiceItems ?? []).map {
+            CustomerOrderPackageService(id: $0.id, name: $0.name)
+        }
         translations = details.translations
     }
 }
@@ -163,6 +184,16 @@ extension CustomerOrderReview {
     init(_ dto: OrderReviewDto) throws {
         rating = try dto.rating.require("rating")
         comment = dto.comment
+        // Plain map: a review with no per-item scores is ordinary, and a line missing its serviceId
+        // is dropped rather than refusing the whole review.
+        lines = (dto.lines ?? []).compactMap { line in
+            guard let serviceId = line.serviceId else { return nil }
+            return OrderItemLineScore(
+                serviceId: serviceId,
+                packageId: line.packageId,
+                rating: line.rating ?? 0
+            )
+        }
         // Unknown codes are DROPPED, not refused: a newer server may name a chip this build has never
         // heard of, and losing one label is not worth failing the whole order detail over.
         tags = (dto.tags ?? []).compactMap { CustomerReviewTag(rawValue: $0.rawValue) }

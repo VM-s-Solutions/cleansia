@@ -10,6 +10,8 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.int
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -234,6 +236,68 @@ class DisputeWireTest {
         assertEquals("d-1", dto.data.first().id)
     }
 
+    // --- create: the response is an OBJECT, not a bare id ------------------------
+    //
+    // `CreateDispute.Response` is `record Response(string DisputeId)`, so the endpoint answers
+    // `{"disputeId":"..."}`. Both mobile clients once typed it as a bare String. Nothing caught it
+    // because every test stubbed the client method and handed back a String — the wire was never
+    // exercised on either platform. These three go through Retrofit and the real serializer.
+
+    @Test
+    fun theCreatedDisputeIdIsReadOutOfTheObjectTheServerSends() = runTest {
+        val id = serving("""{"disputeId":"d-77"}""") {
+            it.create(CreateDisputeRequest(orderId = "o-1", reason = 1, description = "not clean"))
+        }.body()
+
+        assertEquals("d-77", id)
+    }
+
+    /**
+     * The id is not cosmetic: the evidence upload that follows is addressed to it, so a client that
+     * cannot read it strands the customer's photo. Pins the path and the body the server binds.
+     */
+    @Test
+    fun theCreateRequestKeepsThePathAndTheBodyTheServerBinds() = runTest {
+        var path: String? = null
+        var body: JsonObject? = null
+        serving("""{"disputeId":"d-77"}""", onRequest = {
+            path = it.path
+            body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject
+        }) {
+            it.create(CreateDisputeRequest(orderId = "o-1", reason = 3, description = "late"))
+        }
+
+        assertEquals("/api/Dispute/Create", path)
+        assertEquals("o-1", body!!["orderId"]!!.jsonPrimitive.content)
+        assertEquals(3, body!!["reason"]!!.jsonPrimitive.int)
+        // Absent, not [], when nothing was ticked — the web client omits it and the two wire shapes
+        // should not diverge. → DisputeApi.create
+        assertNull(body!!["lines"])
+    }
+
+    /**
+     * A missing id is REFUSED, not mapped to "". The generator types the property optional because the
+     * schema declares no `required` array, but `CreateDispute.Response.DisputeId` is non-nullable, so
+     * an absent id means the answer is wrong. It matters more than tidiness: the id addresses the
+     * evidence upload that follows, so "" would upload the customer's photo against an empty id.
+     * iOS refuses the same shape. → T-0684
+     */
+    @Test
+    fun aCreateResponseWithNoIdIsRefusedRatherThanReadAsAnEmptyId() = runTest {
+        refuses("disputeId") {
+            serving("{}") { it.create(CreateDisputeRequest(orderId = "o-1", reason = 1, description = "x")) }
+        }
+    }
+
+    @Test
+    fun aCreateResponseWithAnExplicitlyNullIdIsRefusedToo() = runTest {
+        refuses("disputeId") {
+            serving("""{"disputeId":null}""") {
+                it.create(CreateDisputeRequest(orderId = "o-1", reason = 1, description = "x"))
+            }
+        }
+    }
+
     // --- the refused body ---------------------------------------------------------
 
     @Test
@@ -391,6 +455,9 @@ class DisputeWireTest {
             "evidence",
             "createdOn",
             "updatedOn",
+            "currency",
+            "filedWithinWindow",
+            "lines",
         )
 
         val MESSAGE_SPEC_PROPERTIES = setOf(

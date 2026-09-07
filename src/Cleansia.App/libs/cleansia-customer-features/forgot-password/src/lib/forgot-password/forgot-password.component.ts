@@ -5,12 +5,11 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import {
-  CleansiaBrandNameComponent,
   CleansiaButtonComponent,
-  CleansiaDynamicBackgroundComponent,
+  CleansiaCodeInputComponent,
   CleansiaTextInputComponent,
-  CleansiaTitleComponent,
 } from '@cleansia/components';
+import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { ForgotPasswordFacade } from './forgot-password.facade';
 import { checkIfPasswordsValid, PasswordCheck } from './forgot-password.models';
 
@@ -24,10 +23,9 @@ import { checkIfPasswordsValid, PasswordCheck } from './forgot-password.models';
     TranslatePipe,
     ReactiveFormsModule,
     CleansiaButtonComponent,
-    CleansiaBrandNameComponent,
+    CleansiaCodeInputComponent,
     CleansiaTextInputComponent,
-    CleansiaDynamicBackgroundComponent,
-    CleansiaTitleComponent,
+    FoamEdgeComponent,
   ],
   providers: [ForgotPasswordFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,

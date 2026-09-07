@@ -14,7 +14,7 @@ namespace Cleansia.Core.AppServices.Features.Memberships;
 
 public class CreateMembershipCheckoutSession
 {
-    public record Command(string PlanCode, string SuccessUrl, string CancelUrl) : ICommand<Response>;
+    public record Command(string PlanCode) : ICommand<Response>;
 
     public record Response(string CheckoutUrl);
 
@@ -23,8 +23,14 @@ public class CreateMembershipCheckoutSession
         public Validator()
         {
             RuleFor(x => x.PlanCode).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-            RuleFor(x => x.SuccessUrl).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-            RuleFor(x => x.CancelUrl).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+
+            // There is deliberately nothing here about the return URLs. They used to be two more
+            // NotEmpty rules over two caller-supplied strings that went straight to Stripe's
+            // success_url / cancel_url — an authenticated caller picked where the browser landed
+            // after paying. Validating that input against an allow-list was the obvious fix and the
+            // weaker one: it keeps a parser in the attack surface and still permits any path on an
+            // allowed origin. The input is gone instead, derived server-side in StripeClient from
+            // Stripe:SuccessUrlBase — which is what the ORDER checkout flow has always done.
         }
     }
 
@@ -99,8 +105,6 @@ public class CreateMembershipCheckoutSession
                     userId: user.Id,
                     membershipPlanCode: plan.Code,
                     trialPeriodDays: trial.Days,
-                    successUrl: command.SuccessUrl,
-                    cancelUrl: command.CancelUrl,
                     idempotencyAttemptId: attemptId,
                     cancellationToken: cancellationToken);
             }

@@ -1,0 +1,60 @@
+{
+  "_comment": "Same two sections as the other step maps. `_ignore` is text the artboard shows as SAMPLE — a month, a day number, a summary line — which the running page renders from real data or from what the visitor chose. Everything NOT listed there is structural copy and has to appear. The remaining keys are the BOX map, { appSelector: artboardSelector }; only the pairing is declared, every expected value is read off the artboard. A value may be {sel, skip, why, typography}.",
+
+  "_lead_note": "The artboard's lead reads \"Objednávka do 48 hodin má expresní příplatek +20 %\". The rule is 2 to 4 hours — BookingPolicy.ExpressLeadTimeHours and StandardLeadTimeHours, mirrored in libs/shared/models booking-window.models.ts. The shipped copy states the rule, so the artboard's sentence is in _ignore. Copy that misquotes a price rule is worse than copy that differs from a mockup, and this one would have told a customer their surcharge window was twelve times wider than it is.",
+
+  "_weekday_note": "The weekday initials and the day numbers are in _ignore because they are generated: the app builds them from the ACTIVE LOCALE and the real calendar, so a check pinned to the artboard's September 2026 would fail every other month and every other language. Their box is asserted instead, which is the part that is design.",
+
+  "_ignore": [
+    "^[0-9][0-9\\s]*Kč$",
+    "^Cleansia$",
+    "^Služby$",
+    "^Jak to chodí$",
+    "^Cleansia Plus$",
+    "^Sledovat objednávku$",
+    "^CZ$",
+    "^Přihlásit$",
+    "^Objednat úklid$",
+    "^Adresa$",
+    "^Termín$",
+    "^Platba$",
+    "^Souhrn$",
+    "^Zpět na adresu$",
+    "^Září 2026$",
+    "^(Po|Út|St|Čt|Pá|So|Ne)$",
+    "^[0-9]{1,2}$",
+    "^[0-2][0-9]:00$",
+    "^Nejbližší volný termín je za",
+    "^Úklid domácnosti$",
+    "^Hloubkový úklid kuchyně$",
+    "^Mytí oken",
+    "^3 pokoje",
+    "^Praha 7$",
+    "^út 2\\. 9\\.",
+    "^bez příplatku$",
+    "^Pevná cena$",
+    "^Odhadem 3,5 h",
+    "^Pokračovat$",
+    "^Zrušení zdarma do 24 h$"
+  ],
+
+  ".cl-wiz__when": "[style*='grid-template-columns:1fr 1fr; gap:34px']",
+  ".cl-wiz__cal": "[style*='repeat(7, minmax(0,1fr))']",
+  ".cl-wiz__cal-head": { "sel": "[style*='repeat(7, minmax(0,1fr))'] > .lbl", "typography": true },
+  ".cl-wiz__cal-day": {
+    "sel": "[style*='height:40px; border-radius:12px']",
+    "skip": ["color", "borderTopColor"],
+    "typography": true,
+    "why": "The artboard's first cell is the 1st of September, a day already behind the earliest bookable date, so it is drawn in the unbookable grey. Which day the app's first cell falls on depends on the real month, so the two are not comparable states. Neither element has a border, so borderTopColor is that same colour under another name and is skipped with it. Size, weight, height and radius are still asserted; the unbookable colour is a token with its own dark-theme value and is covered by the contrast checker."
+  },
+  ".cl-wiz__cal-day--on": {
+    "sel": "[style*='background:#0284C7'][style*='height:40px']",
+    "skip": ["backgroundColor"],
+    "why": "The artboard fills the chosen day with Sky600 #0284C7. Its number is white at 15px/800, which measures 4.08 there against the 4.5 a sub-18px label needs, so the day ships on Sky700 — the same resolution, and the same reason, as .cl-chip--on and the featured package card. Size, weight, radius, padding and the white foreground are all still asserted."
+  },
+
+  ".cl-wiz__times": "[style*='repeat(3, minmax(0,1fr)); gap:9px']",
+  ".cl-wiz__time-note": { "sel": "p.muted[style*='margin:12px 0 0']", "typography": true },
+
+  ".cl-wiz__access": "[style*='flex-wrap:wrap; gap:10px; margin-top:12px']"
+}

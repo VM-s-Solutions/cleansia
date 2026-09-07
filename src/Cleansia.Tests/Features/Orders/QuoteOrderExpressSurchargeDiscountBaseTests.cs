@@ -1,8 +1,11 @@
-using Cleansia.Core.AppServices.Features.Orders;
+﻿using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Packages;
+using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -31,6 +34,15 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<ILoyaltyTierConfigRepository> _tierConfigRepository = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
+
+    // The quote estimates a duration and a crew from the chosen services and
+    // packages, so the handler queries both repositories on every call. These
+    // tests are about surcharge-vs-discount arithmetic and choose nothing, so an
+    // empty result is right - but it has to be an ASYNC queryable, because the
+    // handler materialises it with ToListAsync.
+    private readonly Mock<IServiceRepository> _serviceRepository = new();
+    private readonly Mock<IPackageRepository> _packageRepository = new();
 
     public QuoteOrderExpressSurchargeDiscountBaseTests()
     {
@@ -42,6 +54,12 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
         _membershipRepository
             .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ArrangeActiveMembership());
+        _serviceRepository
+            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(Array.Empty<Service>().AsQueryable().BuildMock());
+        _packageRepository
+            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
     }
 
     private static UserMembership ArrangeActiveMembership()
@@ -89,10 +107,13 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
     private QuoteOrder.Handler CreateHandler() =>
         new(
             _pricingCalculator.Object,
+            _serviceRepository.Object,
+            _packageRepository.Object,
             _session.Object,
             _loyaltyService.Object,
             _tierConfigRepository.Object,
-            _membershipRepository.Object);
+            _membershipRepository.Object,
+            _creditAccountRepository.Object);
 
     private static QuoteOrder.Command ExpressCommand() =>
         new([ "service-1" ], [], Rooms: 2, Bathrooms: 1, CurrencyId: null,

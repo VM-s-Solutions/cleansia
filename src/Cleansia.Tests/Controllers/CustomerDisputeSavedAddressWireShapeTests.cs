@@ -16,12 +16,24 @@ namespace Cleansia.Tests.Controllers;
 
 /// <summary>
 /// Pins the on-the-wire success shape of the customer-facing Dispute and SavedAddress routes on both
-/// hosts (Customer Web + Customer Mobile). Two routes return an EMPTY 200 body — CreateDispute and
-/// SavedAddress Delete — because the controller asks <c>HandleResult&lt;string&gt;</c> /
-/// <c>HandleResult&lt;bool&gt;</c> while the handler returns <c>BusinessResult&lt;Response&gt;</c>, so
-/// <c>HandleSuccess&lt;T&gt;</c> never matches the <c>BusinessResult&lt;Response&gt;</c> arm and falls
-/// through to a bodyless <c>Ok()</c>. Returning the id instead would change the generated client and is
-/// a separate ticket. The remaining routes return an object-bodied 200 carrying the handler value.
+/// hosts (Customer Web + Customer Mobile).
+///
+/// <para>CreateDispute used to be pinned here as an EMPTY 200 body: the controller asked
+/// <c>HandleResult&lt;string&gt;</c> while the handler returns <c>BusinessResult&lt;Response&gt;</c>, so
+/// <c>HandleSuccess&lt;T&gt;</c> never matched the <c>BusinessResult&lt;Response&gt;</c> arm and fell
+/// through to a bodyless <c>Ok()</c>. This class called the fix "a separate ticket". Owner,
+/// 2026-09-03: that ticket arrived, because a photo attached while FILING a dispute never reached
+/// the server — the caller was handed no id to upload the evidence against. It returns the id now,
+/// on both hosts, and the generated client was regenerated to match.</para>
+///
+/// <para>SavedAddress Delete had the same defect — <c>HandleResult&lt;bool&gt;</c> against a
+/// <c>BusinessResult&lt;Response&gt;</c> — and was closed in the same pass. Nothing read its body
+/// yet, which is exactly why it was worth closing before something did: the identical mismatch on
+/// CreateDispute cost a customer their attached photo, and it was invisible until someone needed
+/// the value that was never there.</para>
+
+/// <para>SetDefault is NOT the same case and stays a bodyless 200: its command is a plain
+/// <c>ICommand</c> with no response type, so there is no value being dropped.</para>
 /// </summary>
 public class CustomerDisputeSavedAddressWireShapeTests
 {
@@ -55,52 +67,81 @@ public class CustomerDisputeSavedAddressWireShapeTests
     private static UpdateSavedAddress.Command UpdateBody() =>
         new("addr-1", "Home", "Main St 1", "Prague", "10000", "CZ", 0, 0);
 
+    /// <summary>
+    /// The mechanism itself, so this cannot come back by another route. Asking for a T the result is
+    /// not silently drops the body: nothing throws, nothing warns, the status is still 200, and the
+    /// only symptom is a caller receiving nothing. That is exactly how the dispute id went missing
+    /// for as long as it did — and how the SavedAddress Delete body is still going missing.
+    /// </summary>
     [Fact]
-    public async Task Customer_CreateDispute_Returns_Empty_200_Body()
+    public void Asking_HandleResult_For_The_Wrong_Type_Silently_Empties_The_Body()
+    {
+        var mediator = MediatorReturning(BusinessResult.Success(new CreateDispute.Response("dispute-1")));
+        var controller = new WrongTypeController(mediator.Object);
+
+        Assert.IsType<OkResult>(
+            controller.Handle<string>(BusinessResult.Success(new CreateDispute.Response("dispute-1"))));
+        Assert.IsType<OkObjectResult>(
+            controller.Handle<CreateDispute.Response>(
+                BusinessResult.Success(new CreateDispute.Response("dispute-1"))));
+    }
+
+    private sealed class WrongTypeController(IMediator mediator)
+        : Cleansia.Config.Abstractions.CleansiaApiController(mediator)
+    {
+        public IActionResult Handle<T>(BusinessResult result) => HandleResult<T>(result);
+    }
+
+    [Fact]
+    public async Task Customer_CreateDispute_Answers_With_The_New_Dispute_Id()
     {
         var mediator = MediatorReturning(BusinessResult.Success(new CreateDispute.Response("dispute-1")));
         var controller = new CustomerDispute(mediator.Object);
 
         var actionResult = await controller.CreateDispute(CreateBody(), CancellationToken.None);
 
-        Assert.IsType<OkResult>(actionResult);
-        Assert.IsNotType<OkObjectResult>(actionResult);
+        var ok = Assert.IsType<OkObjectResult>(actionResult);
+        var body = Assert.IsType<CreateDispute.Response>(ok.Value);
+        Assert.Equal("dispute-1", body.DisputeId);
     }
 
     [Fact]
-    public async Task MobileCustomer_CreateDispute_Returns_Empty_200_Body()
+    public async Task MobileCustomer_CreateDispute_Answers_With_The_New_Dispute_Id()
     {
         var mediator = MediatorReturning(BusinessResult.Success(new CreateDispute.Response("dispute-1")));
         var controller = new MobileDispute(mediator.Object);
 
         var actionResult = await controller.CreateDispute(CreateBody(), CancellationToken.None);
 
-        Assert.IsType<OkResult>(actionResult);
-        Assert.IsNotType<OkObjectResult>(actionResult);
+        var ok = Assert.IsType<OkObjectResult>(actionResult);
+        var body = Assert.IsType<CreateDispute.Response>(ok.Value);
+        Assert.Equal("dispute-1", body.DisputeId);
     }
 
     [Fact]
-    public async Task Customer_DeleteSavedAddress_Returns_Empty_200_Body()
+    public async Task Customer_DeleteSavedAddress_Answers_With_The_Deleted_Id()
     {
         var mediator = MediatorReturning(BusinessResult.Success(new DeleteSavedAddress.Response("addr-1")));
         var controller = new CustomerSavedAddress(mediator.Object);
 
         var actionResult = await controller.Delete("addr-1", CancellationToken.None);
 
-        Assert.IsType<OkResult>(actionResult);
-        Assert.IsNotType<OkObjectResult>(actionResult);
+        var ok = Assert.IsType<OkObjectResult>(actionResult);
+        var body = Assert.IsType<DeleteSavedAddress.Response>(ok.Value);
+        Assert.Equal("addr-1", body.SavedAddressId);
     }
 
     [Fact]
-    public async Task MobileCustomer_DeleteSavedAddress_Returns_Empty_200_Body()
+    public async Task MobileCustomer_DeleteSavedAddress_Answers_With_The_Deleted_Id()
     {
         var mediator = MediatorReturning(BusinessResult.Success(new DeleteSavedAddress.Response("addr-1")));
         var controller = new MobileSavedAddress(mediator.Object);
 
         var actionResult = await controller.Delete("addr-1", CancellationToken.None);
 
-        Assert.IsType<OkResult>(actionResult);
-        Assert.IsNotType<OkObjectResult>(actionResult);
+        var ok = Assert.IsType<OkObjectResult>(actionResult);
+        var body = Assert.IsType<DeleteSavedAddress.Response>(ok.Value);
+        Assert.Equal("addr-1", body.SavedAddressId);
     }
 
     [Fact]

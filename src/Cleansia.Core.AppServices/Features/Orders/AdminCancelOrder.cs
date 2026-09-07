@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +47,7 @@ public class AdminCancelOrder
         IOrderRepository orderRepository,
         IUserSessionProvider userSessionProvider,
         IRefundService refundService,
+        ICreditAccountRepository creditAccountRepository,
         ILoyaltyService loyaltyService,
         INotificationProducer notificationProducer,
         ILiveActivityProducer liveActivityProducer,
@@ -146,6 +148,13 @@ public class AdminCancelOrder
                         refund.Value!.RefundId,
                         cancellationToken);
                 }
+            }
+            else if (order.PaymentStatus != PaymentStatus.Paid)
+            {
+                // The card was never charged, so there is nothing to refund - but credit WAS taken at
+                // checkout and is the only money this customer actually paid. An admin cancellation is
+                // fee-free anyway, so all of it comes back.
+                await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, adminId, cancellationToken);
             }
 
             // Unconditionally, even with a cleaner assigned: an admin cancellation is OUR action, not the

@@ -4,8 +4,8 @@ using Cleansia.Core.Domain.Orders;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// ADR-0037 D1 — offerability is a two-axis predicate: the fulfilment axis says the work has not
-/// started, the money axis says no scheduled sweep can still retract the order out from under the
+/// ADR-0037 D1 — offerability is a two-axis predicate: the fulfilment axis says the work is not
+/// OVER, the money axis says no scheduled sweep can still retract the order out from under the
 /// cleaner who takes it. These pin the in-memory form; <c>OrderAvailabilityEquivalenceTests</c>
 /// (real Postgres) pins that the queryable form answers identically.
 /// </summary>
@@ -36,9 +36,17 @@ public class OrderAvailabilityTests
     // Pending is a dead status (ADR-0037 D5) and never offerable, whatever the money axis says.
     [InlineData(OrderStatus.Pending, PaymentType.Cash, PaymentStatus.Paid, null, false)]
     [InlineData(OrderStatus.Pending, PaymentType.Card, PaymentStatus.Paid, null, false)]
-    // Work has begun, or the order is over.
-    [InlineData(OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Paid, null, false)]
-    [InlineData(OrderStatus.InProgress, PaymentType.Card, PaymentStatus.Paid, null, false)]
+    // Work has begun but the job is NOT over: a half-crewed order stays offerable so its empty seat
+    // can still be filled (owner ruling 2026-09-06). One cleaner tapping "on my way" writes an
+    // ORDER-level status, and while that meant "not offerable" it took the whole job off every board
+    // with the other seat still empty. Every consumer conjoins the free-seat term for itself, so this
+    // can never offer a FULL order.
+    [InlineData(OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Paid, null, true)]
+    [InlineData(OrderStatus.InProgress, PaymentType.Card, PaymentStatus.Paid, null, true)]
+    // The money axis still bites after the work starts — the widened status axis must not swallow it.
+    [InlineData(OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Pending, null, false)]
+    [InlineData(OrderStatus.InProgress, PaymentType.Cash, PaymentStatus.Pending, RecurringTemplateId, false)]
+    // The order is over.
     [InlineData(OrderStatus.Completed, PaymentType.Card, PaymentStatus.Paid, null, false)]
     [InlineData(OrderStatus.Cancelled, PaymentType.Card, PaymentStatus.Paid, null, false)]
     [InlineData(OrderStatus.Cancelled, PaymentType.Cash, PaymentStatus.Pending, null, false)]
@@ -56,7 +64,10 @@ public class OrderAvailabilityTests
     public void The_Coarse_Client_Floor_Is_The_Statuses_The_Rule_Can_Ever_Admit()
     {
         Assert.Equal(
-            new[] { OrderStatus.New, OrderStatus.Confirmed },
+            new[]
+            {
+                OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress,
+            },
             OrderAvailability.OfferableStatuses);
 
         foreach (var status in Enum.GetValues<OrderStatus>())

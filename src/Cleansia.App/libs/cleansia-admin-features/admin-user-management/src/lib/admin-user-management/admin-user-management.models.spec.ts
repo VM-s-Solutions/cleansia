@@ -16,7 +16,7 @@ describe('getAdminUserTableDefinition - last login column', () => {
   const defs = {
     onEdit: () => undefined,
     onToggleStatus: () => undefined,
-    onViewLoyalty: () => undefined,
+    onViewCustomer: () => undefined,
   };
 
   function getLastLoginColumn(): TableColumn<AdminUserListItem> {

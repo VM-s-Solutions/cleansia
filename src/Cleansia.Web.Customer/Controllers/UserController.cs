@@ -37,6 +37,23 @@ public class UserController(IMediator mediator) : CustomerApiController(mediator
         return HandleResult<UpdateCurrentUser.Response>(result);
     }
 
+    /// <summary>
+    /// The avatar on its own. Separate from UpdateCurrentUser because a picture upload has one
+    /// precondition — that it is an image — and used to be rejected by the profile save's rules on
+    /// fields the customer had not touched.
+    /// </summary>
+    [HttpPut("UpdateCurrentUserPhoto")]
+    [Permission(Policy.CanUpdateCurrentUser)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(UpdateCurrentUserPhoto.Response), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateCurrentUserPhoto([FromBody] UpdateCurrentUserPhoto.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+
+        return HandleResult<UpdateCurrentUserPhoto.Response>(result);
+    }
+
     [AllowAnonymous]
     [EnableRateLimiting("auth")]
     [HttpPut("RequestPasswordChange")]

@@ -11,6 +11,12 @@ namespace Cleansia.Functions.Core.Handlers;
 /// PaymentSheet on mobile and closed it without paying — without this they'd
 /// stay visible to cleaners (matching pool pollution) until Stripe eventually
 /// expires the underlying PaymentIntent ~24h later.
+///
+/// <para>THREE commands ride this one schedule. Each is sent separately so a failure in one does not
+/// suppress the others, and each logs its own outcome. A new timer costs a trigger shell, a handler, a
+/// DI registration, a cron token in two settings files, a bicep entry and two test rows — and the
+/// eight tokenised timers silently never fired in Azure for months, which is the argument against
+/// adding a ninth for work an existing tick can carry.</para>
 /// </summary>
 public class CleanupStalePendingOrdersHandler(
     IMediator mediator,
@@ -50,6 +56,27 @@ public class CleanupStalePendingOrdersHandler(
             logger.LogError(
                 "ReleaseOrphanedBenefitReservations failed: {Error}",
                 orphans.Error?.Message ?? "unknown");
+        }
+
+        // A THIRD command on the same schedule, and the only one of the three that moves money.
+        // Orders that reached their cleaning time with nobody assigned: nothing in the platform saw
+        // these before, because every sweep that could have requires an assignment. Fifteen minutes
+        // plus the command's own 30-minute grace means a customer hears within about three quarters of
+        // an hour of the slot they were waiting through.
+        var unfilled = await mediator.Send(new CancelUnfilledOrders.Command(), ct);
+        if (unfilled.IsSuccess && unfilled.Value != null)
+        {
+            logger.LogInformation(
+                "CancelUnfilledOrders completed; cancelled {Cancelled}, refunded {Refunded}, credited {Credited}",
+                unfilled.Value.CancelledCount,
+                unfilled.Value.RefundedCount,
+                unfilled.Value.CreditedCount);
+        }
+        else
+        {
+            logger.LogError(
+                "CancelUnfilledOrders failed: {Error}",
+                unfilled.Error?.Message ?? "unknown");
         }
     }
 }

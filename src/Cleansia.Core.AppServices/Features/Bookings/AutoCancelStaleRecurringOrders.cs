@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -46,8 +47,12 @@ public class AutoCancelStaleRecurringOrders
 
     public record Response(int Cancelled, int Considered);
 
+    /// <summary>No JWT on a sweep. Matches ExpireStaleReferrals and LoyaltyService.</summary>
+    private const string SystemActor = "system";
+
     public class Handler(
         IOrderRepository orderRepository,
+        ICreditAccountRepository creditAccountRepository,
         INotificationProducer notificationProducer,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
@@ -100,6 +105,12 @@ public class AutoCancelStaleRecurringOrders
                     try
                     {
                         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+
+                        // An unconfirmed occurrence was never charged, but if credit was applied
+                        // when it was materialized it has to come back. Inside the loop for the same
+                        // tenant-stamping reason as the commit below.
+                        await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                            order, SystemActor, cancellationToken);
 
                         // Fee-free by this sweep's own rule, and now it says so on the order.
                         order.Cancel(

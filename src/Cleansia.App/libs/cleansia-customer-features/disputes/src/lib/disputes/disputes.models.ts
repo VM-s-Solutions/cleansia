@@ -1,12 +1,36 @@
-import { TemplateRef } from '@angular/core';
 import {
-  DisputeListItem,
+  CreateDisputeResponse,
   DisputeMessageDto,
   DisputeReason,
 } from '@cleansia/customer-services';
-import { TableAction, TableColumn } from '@cleansia/components';
 import { TagSeverity } from '@cleansia/types';
-import { TranslateService } from '@ngx-translate/core';
+
+/**
+ * One item of an order a customer can point at when filing a dispute.
+ *
+ * The identity is the pair the server uses — `(serviceId, packageId?)`. A standalone service leaves
+ * `packageId` null; a service that came inside a bundle carries both, because "the oven clean in the
+ * Deep Clean package" and "the oven clean I bought on its own" are different lines on the same order
+ * and an admin refunding one must not refund the other.
+ * -> CreateDispute.DisputeLineSelection
+ */
+export interface DisputeLineSelection {
+  serviceId: string;
+  packageId: string | null;
+}
+
+/** A selectable line, with the label the customer reads and a key the template can track by. */
+export interface DisputeLineOption extends DisputeLineSelection {
+  key: string;
+  label: string;
+  /** The bundle this item came in, so the list can say "Oven clean — in Deep Clean". */
+  packageLabel: string | null;
+}
+
+/** Stable within one order: the server's own identity, flattened. */
+export function disputeLineKey(line: DisputeLineSelection): string {
+  return `${line.packageId ?? ''}|${line.serviceId}`;
+}
 
 // Mirrors the backend DisputeStatus enum — the generated customer client does
 // not expose it (no customer endpoint takes it as a typed parameter yet).
@@ -146,57 +170,22 @@ export const DISPUTE_UPLOAD_ERROR_KEY_MAP: Record<string, string> = {
 export const DISPUTE_UPLOAD_FALLBACK_ERROR_KEY =
   'pages.disputes.evidence.upload_error';
 
-export function getDisputesTableDefinition(
-  defs: { onOpen: (row: DisputeListItem) => void },
-  translate: TranslateService,
-  templates: {
-    order?: TemplateRef<DisputeListItem>;
-    reason?: TemplateRef<DisputeListItem>;
-    status?: TemplateRef<DisputeListItem>;
-    created?: TemplateRef<DisputeListItem>;
-  }
-): {
-  columns: TableColumn<DisputeListItem>[];
-  actions: TableAction<DisputeListItem>[];
-} {
-  return {
-    columns: [
-      {
-        id: 'displayOrderNumber',
-        field: 'displayOrderNumber',
-        header: translate.instant('pages.disputes.table.order'),
-        customTemplate: templates.order,
-        width: '25%',
-      },
-      {
-        id: 'reason',
-        field: 'reason',
-        header: translate.instant('pages.disputes.table.reason'),
-        customTemplate: templates.reason,
-        width: '30%',
-      },
-      {
-        id: 'status',
-        field: 'status',
-        header: translate.instant('pages.disputes.table.status'),
-        customTemplate: templates.status,
-        width: '25%',
-      },
-      {
-        id: 'createdOn',
-        field: 'createdOn',
-        header: translate.instant('pages.disputes.table.created'),
-        customTemplate: templates.created,
-        width: '20%',
-      },
-    ],
-    actions: [
-      {
-        icon: 'pi pi-chevron-right',
-        tooltip: translate.instant('pages.disputes.title'),
-        color: 'primary',
-        onClick: (row: DisputeListItem) => defs.onOpen(row),
-      },
-    ],
-  };
+/**
+ * The id of a dispute that was just created, or null when the server did not
+ * send one.
+ *
+ * `Dispute/Create` used to answer with an EMPTY 200 body — `HandleResult<string>`
+ * never matched a `BusinessResult<CreateDispute.Response>` and fell through to
+ * `Ok()` — so a caller had no id to attach the customer's photo to and the file
+ * was dropped in silence. It returns `{ disputeId }` now.
+ *
+ * The check that remains is not paranoia about the shape: `disputeId` is typed
+ * `string | undefined`, and uploading a photo against an empty id would put it
+ * nowhere just as quietly as before.
+ */
+export function readCreatedDisputeId(
+  response: CreateDisputeResponse | null | undefined,
+): string | null {
+  const id = response?.disputeId;
+  return typeof id === 'string' && id.length > 0 ? id : null;
 }

@@ -116,6 +116,7 @@ public sealed class DisputeEvidenceErasureTests : IDisposable
             new EmployeeDocumentRepository(ctx),
             new DocumentDeletionRequestRepository(ctx),
             new EmployeeInvoiceRepository(ctx),
+            new CreditAccountRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
             new OrderPhotoRepository(ctx),

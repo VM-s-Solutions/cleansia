@@ -12,6 +12,7 @@ import {
   buildAddSavedAddressCommand,
   buildAvatarBlobFile,
   buildChangePasswordCommand,
+  buildCreditRow,
   buildUpdateCurrentUserCommand,
   buildUpdateSavedAddressCommand,
   validateAvatarFile,
@@ -201,5 +202,35 @@ describe('command bodies on the wire', () => {
       latitude: 50.08,
       longitude: 14.42,
     });
+  });
+});
+
+describe('buildCreditRow', () => {
+  it('shows a ZERO balance rather than hiding the row', () => {
+    // The whole point of the owner's remark: a customer with no credit could not tell "you have
+    // none" from "this screen forgot about credit".
+    const row = buildCreditRow({ balance: 0, currencyCode: 'CZK', expiresOn: null });
+
+    expect(row).toEqual({ amount: 0, currency: 'CZK', expiresOn: null });
+  });
+
+  it('shows a positive balance', () => {
+    const expires = new Date('2027-01-31T00:00:00Z');
+    const row = buildCreditRow({ balance: 350, currencyCode: 'CZK', expiresOn: expires });
+
+    expect(row).toEqual({ amount: 350, currency: 'CZK', expiresOn: expires });
+  });
+
+  it('omits the row when the read FAILED, which is the only thing null means', () => {
+    // Not the same as zero: claiming a balance nobody verified is worse than saying nothing.
+    expect(buildCreditRow(null)).toBeNull();
+  });
+
+  it('falls back to an empty currency rather than rendering undefined next to the amount', () => {
+    expect(buildCreditRow({ balance: 0, currencyCode: null, expiresOn: null })?.currency).toBe('');
+  });
+
+  it('carries no expiry when there is nothing to expire', () => {
+    expect(buildCreditRow({ balance: 0, currencyCode: 'CZK' })?.expiresOn).toBeNull();
   });
 });

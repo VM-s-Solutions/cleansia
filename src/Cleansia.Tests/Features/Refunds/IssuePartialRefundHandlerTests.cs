@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Refunds;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
@@ -12,6 +13,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging.Abstractions;
+using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.Refunds;
@@ -31,6 +33,10 @@ public class IssuePartialRefundHandlerTests
     private const string CountryId = "cz";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
+
+    // No extras on these fixtures' orders, so the allocation denominator is unchanged by
+    // them — but the handler reads the repository unconditionally, so it has to answer.
+    private readonly Mock<IExtraRepository> _extraRepository = new();
     private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<ICountryConfigurationRepository> _countryConfigurationRepository = new();
     private readonly RecordingRefundService _refundService = new();
@@ -48,6 +54,7 @@ public class IssuePartialRefundHandlerTests
         new(
             _orderRepository.Object,
             _refundRepository.Object,
+            _extraRepository.Object,
             _countryConfigurationRepository.Object,
             _refundService,
             _loyaltyService,
@@ -72,7 +79,8 @@ public class IssuePartialRefundHandlerTests
         IEnumerable<Package>? packages = null,
         string? countryId = CountryId,
         int rooms = 2,
-        int bathrooms = 1)
+        int bathrooms = 1,
+        Dictionary<string, bool>? extras = null)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
         var address = countryId is null
@@ -85,7 +93,7 @@ public class IssuePartialRefundHandlerTests
             customerAddress: address,
             rooms: rooms,
             bathrooms: bathrooms,
-            extras: new Dictionary<string, bool>(),
+            extras: extras ?? new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
@@ -123,11 +131,79 @@ public class IssuePartialRefundHandlerTests
             .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(consumed);
 
+    private void ArrangeExtras(params (string Slug, decimal Price)[] extras) =>
+        _extraRepository
+            .Setup(r => r.GetAll())
+            .Returns(extras
+                .Select(e => Extra.Create(e.Slug, e.Slug, null, e.Price))
+                .AsQueryable()
+                .BuildMock());
+
     private static Service Svc(string id, decimal basePrice, decimal perRoomPrice = 0m)
     {
         var s = Service.Create("cat-1", $"Service {id}", "", basePrice, perRoomPrice);
         s.Id = id;
         return s;
+    }
+
+    /// <summary>
+    /// Extras are billed into TotalPrice but were absent from the allocation denominator, so every
+    /// line's share was computed against a base smaller than the total it multiplies — and every
+    /// partial refund on an order carrying an extra over-paid.
+    ///
+    /// The arithmetic here is the whole point: one 1000 service plus a 200 extra is a 1200 order.
+    /// Refunding the service must return 1000. Before the fix the denominator was 1000, so the share
+    /// was 1000/1000 = 1 and the refund was the entire 1200 — the customer got their extra back too,
+    /// for free, on every such order.
+    /// </summary>
+    [Fact]
+    public async Task ExtrasAreInTheDenominator_SoRefundingAServiceDoesNotAlsoRefundTheExtra()
+    {
+        var svc = Svc("svc-a", 1000m);
+        var order = CreateOrder(
+            1200m, appliedVatRate: null, completed: true, services: [svc],
+            extras: new Dictionary<string, bool> { ["window-clean"] = true });
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeExtras(("window-clean", 200m));
+
+        var result = await CreateHandler().Handle(
+            new IssuePartialRefund.Command(
+                OrderId,
+                [new IssuePartialRefund.RefundLineSelection("svc-a", null)],
+                RefundReason.AdminDiscretion,
+                OverrideReason: null),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(1000m, _refundService.LastRequest!.Amount);
+    }
+
+    /// <summary>
+    /// An extra the customer did NOT take must not dilute anyone's share. The dictionary carries
+    /// false entries, and reading them as chosen would under-refund by exactly their weight.
+    /// </summary>
+    [Fact]
+    public async Task UnchosenExtras_DoNotEnterTheDenominator()
+    {
+        var svc = Svc("svc-a", 1000m);
+        var order = CreateOrder(
+            1000m, appliedVatRate: null, completed: true, services: [svc],
+            extras: new Dictionary<string, bool> { ["window-clean"] = false });
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeExtras(("window-clean", 200m));
+
+        var result = await CreateHandler().Handle(
+            new IssuePartialRefund.Command(
+                OrderId,
+                [new IssuePartialRefund.RefundLineSelection("svc-a", null)],
+                RefundReason.AdminDiscretion,
+                OverrideReason: null),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(1000m, _refundService.LastRequest!.Amount);
     }
 
     // TC-REFUND-WINDOW — within window, no override needed.
@@ -516,7 +592,11 @@ public class IssuePartialRefundHandlerTests
             LastRequest = request;
             return Task.FromResult(BusinessResult.Success(new RefundResult(
                 RefundId: "refund-1",
-                RefundKey: $"refund:{request.OrderId}:admin:{request.RefundRequestId}",
+                // The REAL builder, not a restatement of it. This fake used to hardcode
+                // "refund:{OrderId}:admin:{RefundRequestId}" — one of three branches — so the two
+                // branches that silently dropped the line selection were never exercised by any test
+                // in this file, and the suite stayed green over a refund that moved no money.
+                RefundKey: RefundService.BuildRefundKey(request),
                 Amount: request.Amount,
                 Status: RefundStatus.Succeeded,
                 ResolvedToExisting: false)));

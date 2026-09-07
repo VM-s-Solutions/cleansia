@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -25,6 +26,7 @@ public class AdminFeatureFlagController(IMediator mediator, ITenantProvider tena
     [HttpPost]
     [Permission(Policy.CanCreateFeatureFlag)]
     [ProducesResponseType(typeof(CreateFeatureFlag.Response), StatusCodes.Status200OK)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Create([FromBody] CreateFeatureFlag.Command command, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(command, cancellationToken);
@@ -34,6 +36,7 @@ public class AdminFeatureFlagController(IMediator mediator, ITenantProvider tena
     [HttpPost("{id}/toggle")]
     [Permission(Policy.CanToggleFeatureFlag)]
     [ProducesResponseType(typeof(ToggleFeatureFlag.Response), StatusCodes.Status200OK)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Toggle(string id, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new ToggleFeatureFlag.Command(id), cancellationToken);
@@ -43,6 +46,7 @@ public class AdminFeatureFlagController(IMediator mediator, ITenantProvider tena
     [HttpDelete("{id}")]
     [Permission(Policy.CanDeleteFeatureFlag)]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new DeleteFeatureFlag.Command(id), cancellationToken);

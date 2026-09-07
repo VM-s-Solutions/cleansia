@@ -35,6 +35,29 @@ public class OrderReview : Auditable, ITenantEntity
     /// </summary>
     public IReadOnlyList<ReviewTag> Tags { get; private set; } = [];
 
+    /// <summary>
+    /// Per-item scores, when the customer gave them. Empty is ordinary and is what every review
+    /// written before this existed carries.
+    /// </summary>
+    private readonly List<OrderReviewLine> _lines = [];
+    public IReadOnlyCollection<OrderReviewLine> Lines => _lines.AsReadOnly();
+
+    /// <summary>
+    /// Replace the per-item scores. Editing a review re-states them wholesale rather than merging,
+    /// so the stored set is always exactly what the customer last submitted.
+    /// </summary>
+    public OrderReview SetLines(
+        IEnumerable<(string ServiceId, string? PackageId, int Rating)> lines, string setBy)
+    {
+        _lines.Clear();
+        foreach (var (serviceId, packageId, rating) in lines)
+        {
+            _lines.Add(OrderReviewLine.Create(Id, serviceId, packageId, rating, setBy));
+        }
+
+        return this;
+    }
+
     public static OrderReview Create(
         string orderId,
         string userId,

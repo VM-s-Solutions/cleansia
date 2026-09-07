@@ -1,0 +1,207 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Where a payment ends — confirmed, or backed out of
+// =============================================================================
+// One shell, two outcomes. The owner picked the "Katalog" board for the
+// confirmation (2026-09-02): a page on the site rather than a receipt slip,
+// because the slip's job is done by the confirmation e-mail and this moment is
+// the start of something rather than the end of a transaction. The cancel page
+// is drawn as the same page's second state, which is how the board has it.
+
+.cl-done {
+  position: relative;
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding-top: var(--cl-nav-h);
+  background: radial-gradient(
+    120% 92% at 76% 6%,
+    var(--cl-hero-1) 0%,
+    var(--cl-hero-2) 44%,
+    var(--cl-surface) 100%
+  );
+
+  // Backing out of a payment is not a celebration. Same shell, one step
+  // calmer — the gradient opens on the tint rather than on the deepest stop.
+  &--quiet {
+    background: radial-gradient(
+      120% 92% at 76% 6%,
+      var(--cl-hero-2) 0%,
+      var(--cl-hero-3) 48%,
+      var(--cl-surface) 100%
+    );
+  }
+}
+
+.cl-done__inner {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  // The bottom value is not 0: the actions row sat directly on the divider's
+  // tabs with nothing between them. The mascot beside it hangs INTO the strip
+  // on purpose, so the padding is on the inner rather than on the section.
+  padding: calc(3.5 * var(--cl-u)) var(--cl-gutter) calc(2 * var(--cl-u));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: calc(2.5 * var(--cl-u));
+  align-items: end;
+}
+
+.cl-done__num {
+  color: var(--cl-muted);
+}
+
+.cl-done__title {
+  margin-top: calc(0.75 * var(--cl-u));
+  max-width: 14em;
+}
+
+.cl-done__lead {
+  margin: var(--cl-u) 0 0;
+  max-width: 34em;
+}
+
+.cl-done__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(1.5 * var(--cl-u));
+  margin-top: calc(1.75 * var(--cl-u));
+}
+
+// The one fact a customer who backed out would otherwise guess wrong.
+.cl-done__panel {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.75 * var(--cl-u));
+  max-width: 34em;
+  margin-top: calc(1.25 * var(--cl-u));
+  padding: calc(1 * var(--cl-u));
+  border-radius: var(--cl-u);
+  background: var(--cl-warn-soft);
+  border: 1px solid var(--cl-warn-line);
+
+  > i {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--cl-warn-ink);
+    font-size: calc(1.125 * var(--cl-u));
+  }
+
+  p {
+    margin: 0;
+    font-size: calc(0.9375 * var(--cl-u));
+    color: var(--cl-body);
+  }
+}
+
+// Feet 20px into the foam strip, standing on the divider — the same figure the
+// auth pages and the catalogue use. -> _auth.scss $auth-foot
+.cl-done__mascot {
+  height: calc(8.75 * var(--cl-u));
+  width: auto;
+  display: block;
+  margin-bottom: -20px;
+}
+
+// ---- What happens next ------------------------------------------------------
+.cl-done__below {
+  background: var(--cl-band);
+}
+
+.cl-done__below-inner {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(2.25 * var(--cl-u)) var(--cl-gutter) calc(3.5 * var(--cl-u));
+}
+
+.cl-done__next-title {
+  color: var(--cl-heading);
+}
+
+.cl-done__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: var(--cl-u);
+}
+
+.cl-done__step {
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.5 * var(--cl-u));
+  padding: calc(1.375 * var(--cl-u));
+
+  p {
+    margin: 0;
+    font-size: calc(0.9375 * var(--cl-u));
+    color: var(--cl-body);
+  }
+}
+
+// Numbered because these ARE a sequence — the e-mail, then the cleaner, then
+// the reminder, in that order. On the cancel page the same cards carry reasons,
+// which are not a sequence, so they carry no number.
+.cl-done__step-num {
+  display: block;
+  margin-bottom: calc(0.375 * var(--cl-u));
+  color: var(--cl-heading);
+}
+
+// ---- The order it is confirming ---------------------------------------------
+.cl-done__strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.25 * var(--cl-u));
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.5 * var(--cl-u));
+  padding: calc(1.5 * var(--cl-u));
+}
+
+.cl-done__cell {
+  min-width: 0;
+}
+
+.cl-done__value {
+  margin-top: 2px;
+  font-size: var(--cl-u);
+  font-weight: 700;
+  color: var(--cl-heading);
+  overflow-wrap: anywhere;
+}
+
+.cl-done__total {
+  font-family: $font-heading;
+  font-size: calc(1.625 * var(--cl-u));
+  letter-spacing: -0.6px;
+  color: var(--cl-accent);
+}
+
+.cl-done__home {
+  margin-top: calc(1.5 * var(--cl-u));
+}
+
+// ---- Narrow -----------------------------------------------------------------
+@media (max-width: 900px) {
+  .cl-done__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-done__mascot {
+    display: none;
+  }
+
+  .cl-done__steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-done__strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .cl-done__strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

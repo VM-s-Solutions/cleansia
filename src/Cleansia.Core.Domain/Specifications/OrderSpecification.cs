@@ -138,7 +138,15 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
         if (HasAvailableSpots.HasValue && HasAvailableSpots.Value)
         {
-            specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.Count < x.MaxEmployees);
+            // A seat whose holder has asked to be covered is TAKEABLE though not AVAILABLE: they are
+            // still assigned, and a taker displaces them rather than sitting beside them. Counting only
+            // the un-covered assignments is the SQL twin of Order.HasTakeableSeat.
+            //
+            // Count(predicate) over the collection navigation, not a filtered Any/All: it stays one
+            // correlated aggregate served by IX_OrderEmployees_OrderId, and introduces no OR on
+            // Orders.CurrentStatus, so the leading index condition above is untouched.
+            specification &= new DirectSpecification<Order>(
+                x => x.AssignedEmployees.Count(ae => ae.CoverRequestedAt == null) < x.MaxEmployees);
         }
 
         if (!string.IsNullOrEmpty(ExcludeEmployeeId))
@@ -160,7 +168,8 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             Specification<Order> assignedToCaller = new DirectSpecification<Order>(x =>
                 x.AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId));
             Specification<Order> openAndOfferable =
-                new DirectSpecification<Order>(x => x.AssignedEmployees.Count < x.MaxEmployees)
+                new DirectSpecification<Order>(
+                    x => x.AssignedEmployees.Count(ae => ae.CoverRequestedAt == null) < x.MaxEmployees)
                 & new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
 
             specification &= assignedToCaller | openAndOfferable;

@@ -149,7 +149,10 @@ struct OrderDetailView: View {
     @ViewBuilder
     private func footer(_ order: CustomerOrderDetail) -> some View {
         if OrderRecurringConfirm.needsConfirmation(order) {
-            ConfirmRecurringFooter(submitting: vm.confirmRecurringState.isSubmitting) {
+            ConfirmRecurringFooter(
+                submitting: vm.confirmRecurringState.isSubmitting,
+                label: OrderRecurringConfirm.ctaLabel(order)
+            ) {
                 Task { await vm.confirmRecurring() }
             }
         } else if OrderDetailFooterActions.showFooter(order.status, authoring: vm.recurringAuthoring) {
@@ -197,13 +200,14 @@ struct OrderDetailView: View {
                 existingReview: order.review,
                 isSubmitting: vm.reviewState.isSubmitting,
                 errorMessage: vm.reviewState.errorMessage,
-                onConfirm: { rating, comment, tags in
+                onConfirm: { rating, comment, tags, lines in
                     Task {
                         await vm.submitReview(
                             rating: rating,
                             comment: comment,
                             tags: tags,
-                            isEdit: order.review != nil
+                            isEdit: order.review != nil,
+                            lines: lines
                         )
                     }
                 },
@@ -216,7 +220,10 @@ struct OrderDetailView: View {
                 // A prompt the customer did not ask for offers "Not now"; the card they tapped
                 // themselves offers "Cancel". Same sheet, honest about which one it is.
                 dismissLabel: reviewAutoOpened ? L10n.OrderReview.promptNotNow : L10n.OrderReview.cancel,
-                titleOverride: reviewAutoOpened ? L10n.OrderReview.promptTitle : nil
+                titleOverride: reviewAutoOpened ? L10n.OrderReview.promptTitle : nil,
+                // Built from the order already on screen — the detail carries its services and its
+                // packages' included items, so scoring them costs no extra request.
+                lineOptions: OrderItemLine.lines(of: order)
             )
             .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
         }
@@ -249,16 +256,24 @@ enum OrderRecurringConfirm {
         guard let templateId = order.recurringTemplateId, !templateId.isBlank else { return false }
         return order.paymentStatus?.value == 1
     }
+
+    /// "Confirm and pay" is false on a CASH booking — the server's cash arm takes no payment at all.
+    /// Branch on Card (value 2) so anything unexpected falls to the label that is true of BOTH
+    /// flavours rather than the one that over-promises.
+    static func ctaLabel(_ order: CustomerOrderDetail) -> String {
+        order.paymentType?.value == 2 ? L10n.Recurring.confirmCta : L10n.Recurring.confirmCtaCash
+    }
 }
 
 private struct ConfirmRecurringFooter: View {
     let submitting: Bool
+    let label: String
     let onConfirm: () -> Void
 
     var body: some View {
         VStack {
             CleansiaPrimaryButton(
-                L10n.Recurring.confirmCta,
+                label,
                 leadingIcon: "checkmark.circle",
                 loading: submitting,
                 enabled: !submitting,

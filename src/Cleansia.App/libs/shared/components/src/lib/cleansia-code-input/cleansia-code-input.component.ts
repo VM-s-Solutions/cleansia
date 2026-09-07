@@ -78,8 +78,14 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
   length = input(6);
   digits: string[] = [];
 
-  private onChange: (value: string) => void = () => {};
-  private onTouched: () => void = () => {};
+  // Placeholders until Angular calls registerOnChange / registerOnTouched. A
+  // ControlValueAccessor has to be callable before the form binds to it.
+  private onChange: (value: string) => void = () => {
+    /* replaced by registerOnChange */
+  };
+  private onTouched: () => void = () => {
+    /* replaced by registerOnTouched */
+  };
 
   constructor() {
     this.digits = Array(this.length()).fill('');

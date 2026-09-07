@@ -16,10 +16,13 @@ describe('PackageFormFacade', () => {
   let createMock: jest.Mock;
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
   let navigate: jest.Mock;
+  let getLanguagesMock: jest.Mock;
 
   const formData: PackageFormData = {
     name: 'Move-out bundle',
     description: 'desc',
+    tagline: 'Handover day',
+    isPopular: false,
     price: 100,
     serviceIds: ['svc-a', 'svc-b'],
     translations: {},
@@ -31,8 +34,11 @@ describe('PackageFormFacade', () => {
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
     navigate = jest.fn();
 
+    getLanguagesMock = jest.fn().mockReturnValue(of([]));
+
     const adminClient = {
       adminPackageClient: { update: updateMock, create: createMock },
+      adminLanguageClient: { getOverview: getLanguagesMock },
     };
 
     TestBed.configureTestingModule({
@@ -188,14 +194,26 @@ describe('PackageFormFacade', () => {
     );
   });
 
+  // Seeded with `of(null)`, not a plausible array: the generated client answers a non-array 200
+  // and a 204 with NULL. → service-form.facade.spec.ts
+  it('leaves the language list an empty array when the client answers null', () => {
+      // Seeded non-empty first so an unchanged signal cannot pass. → service-form.facade.spec.ts
+    facade.languages.set([{ code: 'cs', name: 'Čeština' }]);
+    getLanguagesMock.mockReturnValue(of(null));
+
+    facade.loadLanguages();
+
+    expect(facade.languages()).toEqual([]);
+  });
+
   // Every member of a generated command is optional, so a dropped assignment type-checks.
   // These pin the serialized body instead (ADR-0031).
   describe('command bodies on the wire', () => {
     const translatedData: PackageFormData = {
       ...formData,
       translations: {
-        cs: { name: 'Balíček', description: 'Popis' },
-        en: { name: '', description: '' },
+        cs: { name: 'Balíček', description: 'Popis', tagline: 'Předání bytu' },
+        en: { name: '', description: '', tagline: '' },
       },
     };
 
@@ -209,9 +227,13 @@ describe('PackageFormFacade', () => {
       expect(command.toJSON()).toEqual({
         name: 'Move-out bundle',
         description: 'desc',
+        tagline: 'Handover day',
+        isPopular: false,
         price: 100,
         serviceIds: ['svc-a', 'svc-b'],
-        translations: { cs: { name: 'Balíček', description: 'Popis' } },
+        translations: {
+          cs: { name: 'Balíček', description: 'Popis', tagline: 'Předání bytu' },
+        },
       });
     });
 
@@ -231,6 +253,8 @@ describe('PackageFormFacade', () => {
         packageId: 'pkg-1',
         name: 'Move-out bundle',
         description: 'desc',
+        tagline: 'Handover day',
+        isPopular: false,
         price: 100,
         serviceIds: ['svc-a', 'svc-b'],
         serviceWeights: { 'svc-a': 3, 'svc-b': 1 },

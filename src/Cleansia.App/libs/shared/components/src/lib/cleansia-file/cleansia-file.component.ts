@@ -36,6 +36,22 @@ export class CleansiaFileComponent extends CleansiaBaseFormInputComponent implem
   maxFileSize = input(10_000_000); // 10MB default
   id = input<string>(this.getDefaultLabelId());
 
+  /**
+   * A one-line strip instead of the full drop panel: the icon, a line of copy
+   * and the button, on a single row.
+   *
+   * The panel is right where a file IS the form — a document upload, an ID
+   * check. It is wrong where a file is the OPTIONAL extra beside a message or a
+   * description, because it is then the largest thing on the page and reads as
+   * the main event. Both dispute surfaces are that second shape.
+   *
+   * Drag-and-drop still works on the strip; it just does not announce itself.
+   */
+  compact = input(false);
+
+  /** The line under the label in compact mode — why bothering is worth it. */
+  hint = input('');
+
   filesChanged = output<File[]>();
 
   selectedFiles: File[] = [];

@@ -588,11 +588,11 @@
     <string name="booking_cancel_tier1_when_plus">%1$d+ часов до</string>
     <string name="booking_cancel_tier1_value">Бесплатно</string>
     <string name="booking_cancel_tier2_when_range">%1$d–%2$d часов до</string>
-    <string name="booking_cancel_tier2_value">50% сбор</string>
+    <string name="booking_cancel_tier2_value">25% сбор</string>
     <string name="booking_cancel_tier3_when_under">Менее %1$d часов</string>
-    <string name="booking_cancel_tier3_value">100% сбор</string>
+    <string name="booking_cancel_tier3_value">50% сбор</string>
     <string name="booking_cancel_plus_badge">ПРЕИМУЩЕСТВО PLUS</string>
-    <string name="booking_cancel_plus_subtitle">Как участник Plus у вас %1$d часов на бесплатную отмену.</string>
+    <string name="booking_cancel_plus_subtitle">Как участник Plus вы можете отменить бесплатно всего за %1$d часа до начала.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Сохранить этот адрес</string>
@@ -1204,11 +1204,14 @@
     <string name="notification_order_cancelled_body">Заказ #%1$s был отменён. Нажмите для деталей.</string>
     <string name="notification_order_refunded_title">Возврат средств</string>
     <string name="notification_order_refunded_body">Возврат за заказ #%1$s обрабатывается.</string>
+    <string name="notification_order_no_cleaner_refunded_title">Свободных уборщиков не нашлось</string>
+    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и добавили 250 Kč бонусов на следующую уборку. Простите.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>
     <string name="notification_dispute_reply_body">У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать.</string>
     <string name="notification_recurring_scheduled_title">Подтвердите завтрашнюю уборку</string>
     <string name="notification_recurring_scheduled_body">Ваше повторяющееся бронирование #%1$s завтра. Нажмите, чтобы подтвердить и оплатить.</string>
     <string name="recurring_confirm_cta">Подтвердить и оплатить</string>
+    <string name="recurring_confirm_cta_cash">Подтвердить бронирование</string>
     <string name="recurring_confirm_success">Бронирование подтверждено</string>
     <string name="notification_loyalty_tier_upgrade_title">Вы перешли на новый уровень!</string>
     <string name="notification_loyalty_tier_upgrade_body">Добро пожаловать в уровень %1$s — новые привилегии уже ждут.</string>
@@ -1345,4 +1348,12 @@
     <string name="tracker_step_counter">Шаг %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Оплата не была завершена, поэтому это бронирование было отменено.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Это повторное бронирование не было подтверждено вовремя, поэтому оно отменено бесплатно.</string>
+    <string name="dispute_create_which_items">Что именно пошло не так?</string>
+    <string name="dispute_create_which_items_hint">Необязательно. Отметьте услуги, выполненные плохо — это поможет быстрее всё исправить. Если проблемой была вся уборка — оставьте пустым.</string>
+    <string name="dispute_create_item_in_package">в пакете %1$s</string>
+    <string name="order_review_rate_items">Оценить каждую услугу отдельно</string>
+    <string name="order_review_rate_items_hint">Необязательно. Полезно, когда одна часть вышла хорошо, а другая нет — это покажет, куда смотреть.</string>
+    <string name="order_review_item_in_package">в пакете %1$s</string>
+    <string name="order_review_rate_item_star">Поставить %1$s %2$d звёзд</string>
+    <string name="error_dispute_line_not_on_order">Одной из выбранных услуг нет в этом заказе. Откройте форму снова и попробуйте ещё раз.</string>
 </resources>

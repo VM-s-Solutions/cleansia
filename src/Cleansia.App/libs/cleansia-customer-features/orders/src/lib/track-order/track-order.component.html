@@ -1,225 +1,298 @@
-<section class="track-order__hero">
-  <div class="track-order__hero-bubble track-order__hero-bubble--1" aria-hidden="true"></div>
-  <div class="track-order__hero-bubble track-order__hero-bubble--2" aria-hidden="true"></div>
-  <div class="track-order__hero-bubble track-order__hero-bubble--3" aria-hidden="true"></div>
-  <div class="track-order__hero-inner">
-    <h1 class="track-order__title">{{ 'pages.track_order.title' | translate }}</h1>
-    <p class="track-order__subtitle">{{ 'pages.track_order.subtitle' | translate }}</p>
+<!--
+  Track an order — three states on ONE page, as the board draws them:
+  the form ("Vyhledání objednávky"), the order it found ("Sledování"), and the
+  empty answer ("Nenalezeno"), which is the form wearing an amber panel.
+
+  This page is now the only guest lookup. `/orders/lookup` was a second form and
+  a second result screen doing the same job; it redirects here.
+-->
+
+@if (found(); as order) {
+<!-- ========================== THE ORDER IT FOUND ========================== -->
+<section class="cl-trk cl-trk--found">
+  <div class="cl-trk__masthead">
+    <div>
+      <span class="cl-trk__eyebrow">{{ 'pages.track_order.order' | translate }}</span>
+      <h1 class="cl-trk__number cl-num">{{ order.displayOrderNumber }}</h1>
+      <p class="cl-trk__headline">{{ headline() }}</p>
+    </div>
+    <span class="cl-trk__pill" [class.cl-trk__pill--off]="isCancelled()">
+      <i [class]="order.orderStatus | orderStatusIcon"></i>
+      {{ order.orderStatus | orderStatusLabel }}
+    </span>
   </div>
-  <div class="track-order__hero-wave" aria-hidden="true">
-    <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
-      <path d="M0,40 C280,100 720,0 1440,60 L1440,100 L0,100 Z" />
-    </svg>
-  </div>
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-page)'" />
 </section>
 
-<div class="track-order">
-  <!-- Guest banner -->
-  <div class="track-order__guest-banner">
-    <i class="pi pi-info-circle"></i>
-    <p class="track-order__guest-banner-text">{{ 'pages.track_order.guest_limit' | translate }}</p>
-    <span class="track-order__guest-banner-divider" aria-hidden="true"></span>
-    <a [routerLink]="'/' + routes.REGISTER" class="track-order__guest-banner-link">
-      <i class="pi pi-user-plus"></i>
-      {{ 'pages.track_order.guest_cta' | translate }}
-    </a>
-  </div>
+<div class="cl-trk__body">
+  <div class="cl-trk__grid">
+    <!-- ---------------------------- LEFT ---------------------------- -->
+    <div class="cl-trk__col">
+      <!--
+        Two axes, not one list. An order's progress and its money move
+        independently — a cash job reaches Completed while still unpaid, and a
+        card job is paid before anyone is assigned — so merging them would
+        interleave two sequences with no order between them.
+        -> /domain/order-lifecycle
+      -->
+      <section class="cl-trk__panel">
+        <h2 class="cl-trk__panel-title">{{ 'pages.track_order.where_it_is' | translate }}</h2>
+        <p class="cl-trk__panel-lead">{{ 'pages.track_order.two_axes_lead' | translate }}</p>
 
-  <!-- Loading -->
-  @if (loading() && recentOrders().length === 0 && !searched()) {
-    <div class="track-order__loading">
-      <i class="pi pi-spin pi-spinner"></i>
-      <span>{{ 'global.loading' | translate }}</span>
+        <div class="cl-trk__axes">
+          <div class="cl-trk__axis">
+            <div class="cl-trk__axis-name">
+              {{ 'pages.track_order.axis_order' | translate }}
+            </div>
+            <p class="cl-trk__axis-lead">
+              {{ 'pages.track_order.axis_order_lead' | translate }}
+            </p>
+            @for (step of orderSteps(); track step.key) {
+            <div
+              class="cl-trk__step"
+              [class.cl-trk__step--done]="step.done"
+              [class.cl-trk__step--now]="step.current"
+            >
+              <span class="cl-trk__marker">
+                @if (step.done && !step.current) { <i class="pi pi-check"></i> }
+              </span>
+              <span class="cl-trk__step-text">
+                <span class="cl-trk__step-name">{{ step.label }}</span>
+                @if (step.when) {
+                <span class="cl-trk__step-when">{{ step.when }}</span>
+                }
+              </span>
+            </div>
+            }
+          </div>
+
+          <div class="cl-trk__axis">
+            <div class="cl-trk__axis-name">
+              {{ 'pages.track_order.axis_payment' | translate }}
+            </div>
+            <p class="cl-trk__axis-lead">
+              {{ 'pages.track_order.axis_payment_lead' | translate }}
+            </p>
+            @for (step of paymentSteps(); track step.key) {
+            <div
+              class="cl-trk__step"
+              [class.cl-trk__step--done]="step.done"
+              [class.cl-trk__step--now]="step.current"
+            >
+              <span class="cl-trk__marker">
+                @if (step.done && !step.current) { <i class="pi pi-check"></i> }
+              </span>
+              <span class="cl-trk__step-text">
+                <span class="cl-trk__step-name">{{ step.label }}</span>
+                @if (step.when) {
+                <span class="cl-trk__step-when">{{ step.when }}</span>
+                }
+              </span>
+            </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      @if (lineItems().length > 0) {
+      <section class="cl-trk__panel">
+        <h2 class="cl-trk__panel-title">{{ 'pages.track_order.whats_booked' | translate }}</h2>
+        <div class="cl-trk__lines">
+          @for (line of lineItems(); track line) {
+          <span class="cl-trk__chip">{{ line }}</span>
+          }
+        </div>
+      </section>
+      }
     </div>
-  }
 
-  <!-- Recent Orders (auto-loaded from localStorage) -->
-  @if (recentOrders().length > 0) {
-    <h3 class="track-order__section-title">
-      <i class="pi pi-history"></i>
-      {{ 'pages.track_order.recent_orders' | translate }}
-    </h3>
+    <!-- ---------------------------- RIGHT ---------------------------- -->
+    <div class="cl-trk__col">
+      <!--
+        The facts a guest is allowed to see. The board also draws the address
+        and the assigned cleaner; the guest lookup returns neither, on purpose
+        — it answers to an order number, an e-mail and a code, so it withholds
+        what those three should not unlock. -> LookupOrder.cs
+      -->
+      <section class="cl-trk__panel">
+        <h2 class="cl-trk__panel-title">{{ 'pages.track_order.the_order' | translate }}</h2>
 
-    @for (order of recentOrders(); track order.id) {
-      <div class="track-order__order-card">
-        <div class="track-order__order-card-header">
-          <div class="track-order__order-card-info">
-            <h4>#{{ order.displayOrderNumber }}</h4>
-            <span class="track-order__order-card-date">{{ formatDate(order.createdOn) }}</span>
-          </div>
-          <div class="track-order__order-card-badges">
-            <p-tag [value]="order.orderStatus | orderStatusLabel" [severity]="order.orderStatus | orderStatusSeverity" />
-            <p-tag [value]="order.paymentStatus | paymentStatusLabel" [severity]="order.paymentStatus | paymentStatusSeverity" />
+        <div class="cl-trk__fact">
+          <i class="pi pi-calendar"></i>
+          <div>
+            <span class="cl-trk__fact-label">
+              {{ 'pages.track_order.cleaning_date' | translate }}
+            </span>
+            <div class="cl-trk__fact-value">{{ formatDate(order.cleaningDateTime) }}</div>
           </div>
         </div>
 
-        <div class="track-order__order-card-body">
-          <div class="track-order__order-card-detail">
-            <i class="pi pi-calendar"></i>
-            <span>{{ formatDate(order.cleaningDateTime) }}</span>
-          </div>
-          <div class="track-order__order-card-detail">
-            <i class="pi pi-clock"></i>
-            <span>{{ order.estimatedTime }} min</span>
-          </div>
-          <div class="track-order__order-card-detail">
-            <i class="pi pi-tag"></i>
-            <span>{{ order.confirmationCode }}</span>
+        <div class="cl-trk__fact">
+          <i class="pi pi-clock"></i>
+          <div>
+            <span class="cl-trk__fact-label">
+              {{ 'pages.track_order.estimated_time' | translate }}
+            </span>
+            <div class="cl-trk__fact-value">{{ formatDuration(order.estimatedTime) }}</div>
           </div>
         </div>
 
-        <!-- Services/Packages summary -->
-        @if ((order.selectedPackages && order.selectedPackages.length > 0) || (order.selectedServices && order.selectedServices.length > 0)) {
-          <div class="track-order__order-card-items">
-            @for (pkg of order.selectedPackages; track pkg.id) {
-              <span class="track-order__order-card-chip">{{ pkg.name }}</span>
-            }
-            @for (svc of order.selectedServices; track svc.id) {
-              <span class="track-order__order-card-chip">{{ svc.name }}</span>
-            }
+        <div class="cl-trk__fact">
+          <i class="pi pi-credit-card"></i>
+          <div>
+            <span class="cl-trk__fact-label">
+              {{ 'pages.track_order.payment_type' | translate }}
+            </span>
+            <div class="cl-trk__fact-value">{{ order.paymentType | orderStatusLabel }}</div>
           </div>
-        }
-
-        <div class="track-order__order-card-footer">
-          <span class="track-order__order-card-total">
-            {{ formatPriceFor(order, order.totalPrice) }}
-          </span>
-          <cleansia-button
-            [title]="'pages.track_order.view_details' | translate"
-            [severity]="'secondary'"
-            [icon]="'pi pi-arrow-right'"
-            (clickFn)="viewDetails(order.id!)"
-          />
         </div>
+      </section>
 
-        <!-- Timeline -->
-        @if (order.statusHistory && order.statusHistory.length > 0) {
-          <div class="track-order__order-card-timeline">
-            <p-timeline [value]="order.statusHistory" layout="vertical">
-              <ng-template #content let-event>
-                <div class="track-order__timeline-event">
-                  <strong>{{ event.status | orderStatusLabel }}</strong>
-                  <small>{{ formatDate(event.createdOn) }}</small>
-                </div>
-              </ng-template>
-              <ng-template #marker let-event>
-                <span class="track-order__timeline-marker">
-                  <i [class]="event.status?.value | orderStatusIcon"></i>
-                </span>
-              </ng-template>
-            </p-timeline>
-          </div>
-        }
+      <section class="cl-trk__panel">
+        <h2 class="cl-trk__panel-title">{{ 'pages.track_order.total' | translate }}</h2>
+        <div class="cl-trk__total cl-num">{{ formatPriceFor(order, order.totalPrice) }}</div>
+        <p class="cl-trk__total-note">{{ priceNote() | translate }}</p>
+
+        <a class="cl-trk__action" [routerLink]="'/' + routes.DISPUTES">
+          <i class="pi pi-question-circle"></i>
+          {{ 'pages.track_order.need_help' | translate }}
+        </a>
+        <button type="button" class="cl-trk__action" (click)="reset()">
+          <i class="pi pi-search"></i>
+          {{ 'pages.track_order.lookup_another' | translate }}
+        </button>
+      </section>
+
+      <!--
+        Only for someone who has no account. A signed-in visitor reached this
+        page by choice and does not need to be sold the thing they already have.
+      -->
+      @if (!isLoggedIn()) {
+      <div class="cl-trk__invite">
+        <i class="pi pi-user"></i>
+        <span>
+          {{ 'pages.track_order.guest_cta_lead' | translate }}
+          <a [routerLink]="'/' + routes.REGISTER">
+            {{ 'pages.track_order.guest_cta' | translate }}
+          </a>
+        </span>
       </div>
+      }
+    </div>
+  </div>
+</div>
+} @else {
+
+<!-- ============================ THE FORM ============================ -->
+<section class="cl-trk">
+  <div class="cl-trk__ask">
+    <h1 class="cl-trk__title">{{ 'pages.track_order.title' | translate }}</h1>
+    <p class="cl-trk__lead">{{ 'pages.track_order.lead' | translate }}</p>
+
+    <!--
+      Orders this browser remembers. Not on the board, but a real feature: the
+      wizard writes each guest booking to local storage, so a returning visitor
+      should not have to type a number nobody asked them to keep. A row opens
+      the order in place — the answer is this page.
+    -->
+    @if (recentOrders().length > 0) {
+    <div class="cl-trk__recent">
+      <div class="cl-trk__recent-label">
+        {{ 'pages.track_order.recent_orders' | translate }}
+      </div>
+      @for (order of recentOrders(); track order.id) {
+      <button type="button" class="cl-trk__row" (click)="showOrder(order)">
+        <span class="cl-trk__row-num cl-num">{{ order.displayOrderNumber }}</span>
+        <span class="cl-trk__row-when">{{ formatDate(order.cleaningDateTime) }}</span>
+        <span class="cl-trk__row-pill">{{ order.orderStatus | orderStatusLabel }}</span>
+      </button>
+      }
+      <p class="cl-trk__recent-note">{{ 'pages.track_order.guest_limit' | translate }}</p>
+    </div>
     }
-  }
 
-  <!-- Manual Lookup Toggle -->
-  @if (recentOrders().length > 0) {
-    <button class="track-order__toggle-manual" (click)="toggleManualLookup()">
-      <i class="pi pi-search"></i>
-      {{ 'pages.track_order.lookup_another' | translate }}
-    </button>
-  }
-
-  <!-- Manual Lookup Form -->
-  @if (showManualLookup()) {
-    <div class="track-order__form-card">
-      <h3 class="track-order__form-title">
-        {{ 'pages.track_order.manual_lookup' | translate }}
-      </h3>
-      <div class="track-order__form">
-        <div class="track-order__field">
-          <label>{{ 'pages.track_order.order_number' | translate }}</label>
-          <div class="track-order__input-wrap">
-            <i class="pi pi-hashtag"></i>
-            <input
-              type="text"
-              [placeholder]="'pages.track_order.order_number_placeholder' | translate"
-              [ngModel]="orderNumber()"
-              (ngModelChange)="orderNumber.set($event)"
-              (keyup.enter)="lookup()"
-            />
-          </div>
-        </div>
-        <div class="track-order__field">
-          <label>{{ 'pages.track_order.email' | translate }}</label>
-          <div class="track-order__input-wrap">
-            <i class="pi pi-envelope"></i>
-            <input
-              type="email"
-              [placeholder]="'pages.track_order.email_placeholder' | translate"
-              [ngModel]="email()"
-              (ngModelChange)="email.set($event)"
-              (keyup.enter)="lookup()"
-            />
-          </div>
-        </div>
-        <cleansia-button
-          [title]="'pages.track_order.search' | translate"
-          [severity]="'primary'"
-          [icon]="'pi pi-search'"
-          [loading]="loading()"
-          (clickFn)="lookup()"
+    <!--
+      The submit is the FORM's, not the button's. The button is
+      `buttonType="submit"`, so binding clickFn as well fired the lookup twice
+      per press — two requests against a rate-limited endpoint, and the second
+      cleared the first one's answer before replacing it.
+    -->
+    <form class="cl-trk__card" [formGroup]="form" (ngSubmit)="lookup()">
+      <div class="cl-trk__fields">
+        <cleansia-text-input
+          [floatVariant]="null"
+          [label]="'pages.track_order.order_number' | translate"
+          [placeholder]="'pages.track_order.order_number_placeholder' | translate"
+          formControlName="orderNumber"
+          [required]="true"
+          [showErrors]="true"
+        />
+        <cleansia-text-input
+          [floatVariant]="null"
+          [label]="'pages.track_order.email' | translate"
+          [placeholder]="'pages.track_order.email_placeholder' | translate"
+          formControlName="email"
+          dataType="email"
+          [required]="true"
+          [showErrors]="true"
+        />
+        <!--
+          The third factor, and the reason this endpoint is safe to leave open.
+          An order number is sequential and an e-mail is not a secret; the code
+          only ever reaches the inbox that booked the clean. Six hex characters,
+          so the field says so rather than letting the customer spend a round
+          trip finding out. The board draws two fields — it predates the third
+          factor, and the server requires it. -> LookupOrder.cs
+        -->
+        <cleansia-text-input
+          class="cl-trk__field--wide"
+          [floatVariant]="null"
+          [label]="'pages.track_order.confirmation_code' | translate"
+          [placeholder]="'pages.track_order.confirmation_code_placeholder' | translate"
+          formControlName="confirmationCode"
+          [required]="true"
+          [showErrors]="true"
         />
       </div>
-    </div>
 
-    <!-- Manual lookup error -->
-    @if (error()) {
-      <div class="track-order__error">
-        <i class="pi pi-info-circle"></i>
-        <div>
-          <h4>{{ 'pages.track_order.not_found_title' | translate }}</h4>
-          <p>{{ error() }}</p>
-        </div>
+      <!--
+        The empty answer sits between the fields and the button, where the
+        values that produced it can be corrected. Amber, not red: nothing
+        failed — the three simply matched no order.
+      -->
+      @if (error(); as message) {
+      <div class="cl-trk__miss" role="status">
+        <i class="pi pi-question-circle"></i>
+        <p>{{ message }}</p>
       </div>
-    }
+      }
 
-    <!-- Manual lookup result -->
-    @if (manualResult(); as order) {
-      <div class="track-order__order-card">
-        <div class="track-order__order-card-header">
-          <div class="track-order__order-card-info">
-            <h4>#{{ order.displayOrderNumber }}</h4>
-            <span class="track-order__order-card-date">{{ formatDate(order.createdOn) }}</span>
-          </div>
-          <div class="track-order__order-card-badges">
-            <p-tag [value]="order.orderStatus | orderStatusLabel" [severity]="order.orderStatus | orderStatusSeverity" />
-            <p-tag [value]="order.paymentStatus | paymentStatusLabel" [severity]="order.paymentStatus | paymentStatusSeverity" />
-          </div>
-        </div>
+      <cleansia-button
+        class="cl-trk__submit"
+        [buttonType]="'submit'"
+        [title]="(error() ? 'pages.track_order.retry' : 'pages.track_order.search') | translate"
+        [severity]="'primary'"
+        [size]="'full-width'"
+        [loading]="loading()"
+      />
 
-        <div class="track-order__order-card-body">
-          <div class="track-order__order-card-detail">
-            <i class="pi pi-calendar"></i>
-            <span>{{ formatDate(order.cleaningDateTime) }}</span>
-          </div>
-          <div class="track-order__order-card-detail">
-            <i class="pi pi-clock"></i>
-            <span>{{ order.estimatedTime }} min</span>
-          </div>
-          <div class="track-order__order-card-detail">
-            <i class="pi pi-tag"></i>
-            <span>{{ order.confirmationCode }}</span>
-          </div>
-        </div>
+      <p class="cl-trk__hint">
+        <i class="pi pi-envelope"></i>
+        <span>
+          {{ (error() ? 'pages.track_order.hint_missed' : 'pages.track_order.hint') | translate }}
+          <a [routerLink]="'/' + routes.DISPUTES">
+            {{ 'pages.track_order.write_us' | translate }}</a
+          >{{ 'pages.track_order.hint_end' | translate }}
+        </span>
+      </p>
+    </form>
 
-        <div class="track-order__order-card-footer">
-          <span class="track-order__order-card-total">
-            {{ formatPriceFor(order, order.totalPrice) }}
-          </span>
-        </div>
-      </div>
-    }
-  }
+    <p class="cl-trk__account">
+      {{ 'pages.track_order.have_account' | translate }}
+      <a [routerLink]="'/' + routes.LOGIN">{{ 'pages.track_order.sign_in' | translate }}</a>
+    </p>
+  </div>
+</section>
+}
 
-  <!-- Empty state — no recent orders and no manual lookup yet -->
-  @if (!loading() && recentOrders().length === 0 && !searched() && showManualLookup()) {
-    <div class="track-order__hint">
-      <i class="pi pi-info-circle"></i>
-      <p>{{ 'pages.track_order.hint' | translate }}</p>
-    </div>
-  }
-</div>
-<cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />
+<cleansia-scroll-top />

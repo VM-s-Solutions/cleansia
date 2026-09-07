@@ -17411,6 +17411,74 @@
         }
       }
     },
+    "push.order.no_cleaner_refunded.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit 250 Kč na příští úklid. Omlouváme se."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit 250 Kč na ďalšie upratovanie. Ospravedlňujeme sa."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили 250 Kč бонусов на следующую уборку. Простите."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали 250 Kč бонусів на наступне прибирання. Вибачте."
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_refunded.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner was available"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádný uklízeč nebyl k dispozici"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadny upratovač nebol k dispozícii"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свободных уборщиков не нашлось"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вільних прибиральників не знайшлося"
+          }
+        }
+      }
+    },
     "push.order.on_the_way.body": {
       "extractionState": "stale",
       "localizations": {
@@ -17897,6 +17965,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "Завтрашні замовлення"
+          }
+        }
+      }
+    },
+    "push.order.seat_open.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A cleaner has come off booking #%1$@. Tap to take it."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z objednávky #%1$@ odstoupil uklízeč. Klepnutím ji převezmete."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z objednávky #%1$@ odstúpil upratovač. Ťuknutím ju prevezmete."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уборщик отказался от заказа #%1$@. Нажмите, чтобы взять его."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибиральник відмовився від замовлення #%1$@. Натисніть, щоб взяти його."
+          }
+        }
+      }
+    },
+    "push.order.seat_open.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A job needs cover"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka potřebuje záskok"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakázka potrebuje záskok"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказу нужна замена"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовленню потрібна заміна"
           }
         }
       }

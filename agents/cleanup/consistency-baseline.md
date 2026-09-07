@@ -53,7 +53,10 @@ also violated *"Commands never return collections"*.
 ## The declared 46 — now **15**, and the drop is mostly the checker
 
 `B3` (21) was the rule being wrong; `D2` (8) was a stated risk that did not exist; `conv` (2) went with
-`CL-024`. What remains is `E1` ×9, `B1` ×5 and `E5` ×1, all declared below with reasons and none with a
+`CL-024`. `E1` and `E5` were retired on 2026-09-05 — both turned out to be the checker misreading
+correct code, and both were fixed in the checker with paired STILL-FLAGS self-tests rather than by
+churning shipped Kotlin. `check-consistency` now exits 0 on a clean tree. What remains is `B1` ×5 and
+the `conv` ×2, declared below with reasons and none with a
 user-visible cost.
 
 ### `B3` ×21 — **RESOLVED 2026-08-14: the rule was wrong, not the code**
@@ -96,10 +99,19 @@ user-visible gain.
 > Nothing observed has gone wrong, and I found no defect. But if the base validators carry rules whose
 > order matters, that is where it would hide.
 
-### `E1` ×9 — Android `UiState` as a flag-bag data class — **not doing**
+### `E1` ×9 — Android `UiState` as a flag-bag data class — **RESOLVED 2026-09-05. The rule was wrong on the last one.**
 
-Nine ViewModels across both apps. Converting to sealed interfaces means rewriting each ViewModel and
-every `when` that reads it. Real churn, no user impact, no observed defect.
+Nine ViewModels originally. The heuristic was narrowed on 2026-08-28 down to a single hit, and that
+last hit turned out to be the rule misreading the shape it asks for: `AuthUiState(loading, outcome:
+AuthOutcome?)` was counted as a flag-bag because a field NAMED `outcome` matches the phase-signal
+regex — while `AuthOutcome` is already a sealed class, i.e. exactly the union E1 prescribes. The
+prescribed cure would have made it worse: a `Loading/Error/Loaded` union needs an `Error` case, and
+that screen reports failures over a snackbar and never puts one in state.
+
+Fixed in the checker rather than the Kotlin: a field whose type is a sealed class declared in the
+file is subtracted before the phase count. A Boolean beside a union still counts, so a genuine
+flag-bag sharing a file with a sealed class is still caught — pinned by a STILL-FLAGS self-test.
+**No Android code changed.**
 
 ### `D2` ×8 — **DONE 2026-08-14. The stated risk did not exist.**
 
@@ -130,9 +142,16 @@ for no behaviour difference at all.
 (`(translate, value?: any) => string`). Both are deliberate generic escape hatches in the design
 system; `unknown` would push narrowing onto every consumer.
 
-### `E5` ×1 — repository returning a nullable body — **not doing**
+### `E5` ×1 — repository returning a nullable body — **RESOLVED 2026-09-05. It was never a nullable body.**
 
-Already flagged by the rule itself as a *tracked migration* to `ApiResult<T>`.
+`DashboardRepository.refresh(...): ApiError?` returns the TYPED ERROR, not a body — the dashboard
+data leaves over a `StateFlow`. Measured against ADR-0011's three stated harms it commits none: the
+error is not discarded (it is the return), the snackbar lives in the ViewModel, and failure cannot
+collide with empty success because there is no body on this channel at all. The exclusion list read
+`ApiResult|Flow|Unit` and simply never named `ApiError`.
+
+Fixed in the checker, with a STILL-FLAGS self-test proving a real nullable body is still caught.
+**No Android code changed.**
 
 ---
 

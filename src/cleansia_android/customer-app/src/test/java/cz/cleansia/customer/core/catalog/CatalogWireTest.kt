@@ -394,7 +394,10 @@ class CatalogWireTest {
             setOf("id", "name", "description", "category", "basePrice", "perRoomPrice", "translations")
 
         val PACKAGE_SPEC_PROPERTIES =
-            setOf("id", "name", "description", "price", "translations", "includedServices")
+            setOf("id", "name", "description", "price", "translations", "includedServices",
+            "tagline",
+            "isPopular",
+        )
 
         val EXTRA_SPEC_PROPERTIES =
             setOf("id", "slug", "name", "description", "price", "displayOrder", "translations")

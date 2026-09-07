@@ -127,14 +127,26 @@ class DisputeRepository @Inject constructor(
      *
      * Frontend should validate `description.length in 10..2000` before calling.
      */
-    suspend fun create(orderId: String, reason: Int, description: String): ApiResult<String> {
+    suspend fun create(
+        orderId: String,
+        reason: Int,
+        description: String,
+        lines: List<DisputeLineRequest> = emptyList(),
+    ): ApiResult<String> = wireResult {
         val resp = networkCall {
-            api.create(CreateDisputeRequest(orderId = orderId, reason = reason, description = description))
-        } ?: return networkError()
+            api.create(
+                CreateDisputeRequest(
+                    orderId = orderId,
+                    reason = reason,
+                    description = description,
+                    lines = lines.takeIf { it.isNotEmpty() },
+                ),
+            )
+        } ?: return@wireResult networkError()
         if (!resp.isSuccessful) {
-            return httpError(resp.errorBody(), resp.code())
+            return@wireResult httpError(resp.errorBody(), resp.code())
         }
-        return ApiResult.Success(resp.requiredBody())
+        ApiResult.Success(resp.requiredBody())
     }
 
     /**

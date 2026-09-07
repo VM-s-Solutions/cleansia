@@ -67,6 +67,13 @@ object NotificationTemplates {
             R.string.notification_order_refunded_body,
             NotificationCategoryDto.RefundIssued,
         )
+        // Nobody took the job before its slot. Its own key rather than order.cancelled because the
+        // news is different: the money is already back and there is credit on top.
+        "order.no_cleaner_refunded" -> Template(
+            R.string.notification_order_no_cleaner_refunded_title,
+            R.string.notification_order_no_cleaner_refunded_body,
+            NotificationCategoryDto.OrderCancelled,
+        )
         "dispute.reply" -> Template(
             R.string.notification_dispute_reply_title,
             R.string.notification_dispute_reply_body,
@@ -120,6 +127,7 @@ object NotificationTemplates {
             "order.completed",
             "order.cancelled",
             "order.refunded",
+            "order.no_cleaner_refunded",
             "order.assignment_cancelled",
             "recurring.scheduled" -> {
                 val orderNumber = args["orderNumber"].orEmpty()

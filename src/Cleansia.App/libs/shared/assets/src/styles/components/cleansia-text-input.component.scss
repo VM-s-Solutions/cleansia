@@ -14,7 +14,7 @@
 
 .cleansia-text-input__eye {
   position: absolute;
-  right: 0.75rem;
+  right: 0.25rem;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
@@ -36,5 +36,37 @@
     &:hover {
       color: #cbd5e1;
     }
+  }
+}
+
+// These three were <i>, <div> and <li> with click handlers, which meant a
+// reveal, a collapse and a whole country list that no keyboard could reach.
+// They are <button> now; each needs the UA's own button chrome removed so it
+// renders exactly as it did before, and a visible focus ring so the keyboard
+// route it just gained can actually be seen.
+
+button.cleansia-text-input__eye {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  // A 40px hit area around a 16px glyph. As an <i> this was a 14x14 target;
+  // becoming a real button made it a real CONTROL, and a control a thumb has
+  // to hit needs the room. It carried `margin: -12px` from that era, which on
+  // a box already centred by translateY(-50%) pushed it 12px above the field.
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 1;
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent, #0284c7);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  &:disabled {
+    cursor: default;
   }
 }

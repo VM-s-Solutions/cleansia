@@ -75,8 +75,8 @@ the Reviewer treats a new deviation as a hard fail. Known existing deviations ar
   all come from a named home.
 - **No inline templates or styles** in Angular; **no XML layouts** in Android (Compose only).
 - **CancellationToken propagation** through every async IO path (backend).
-- **No dead code.** Delete unreferenced methods/classes; for DB columns, never delete in code —
-  flag a migration `manual_step`.
+- **No dead code.** Delete unreferenced methods/classes; for a DB column, drop it in the model and
+  regenerate the migration rather than deleting it in code alone.
 - **Comment discipline — see the dedicated section below.** The default is *no comment*; the code is
   the documentation.
 
@@ -502,13 +502,18 @@ workflow, or change the tenancy filter?* The answer must be **no** — only a ne
 entry + an owner `HomeRegion` column-migration. Region is INFRA/config; tenancy stays the unchanged
 app-level `TenantId` filter (see [`patterns-backend.md`](./patterns-backend.md)).
 
-## Owner-only steps (agents flag, never run)
+## Steps that used to be owner-only (run them)
 
-- **EF Core migrations** — no longer a manual step (owner ruling 2026-08-15). Regenerate `Initial`
-  yourself and verify with the integration suite; flag `manual_step: dev-db-drop` for the drop the new
-  migration id forces.
-- **NSwag client regeneration** — flag `manual_step: nswag-regen` whenever a backend DTO/endpoint
-  changes; hold dependent frontend/mobile work until the owner confirms.
+**Nothing here is owner-only any more** — owner ruling 2026-09-07, `CLAUDE.md` → "Manual steps —
+there are none left". Do not write `manual_step:` on a ticket, and never hold work waiting for the
+owner to run something.
+
+- **EF Core migrations** — regenerate `Initial` (`CLAUDE.md` → "Database migrations"), **drop the DEV
+  database** yourself, and verify with the integration suite: it builds a real Postgres from the
+  migration and is the only thing that proves the model and the schema agree.
+- **NSwag client regeneration** — run `npm run generate-*-client` whenever a backend DTO or endpoint
+  changes, before the frontend/mobile work that needs it, and commit the regenerated client with the
+  change. Never hand-edit a generated file; regenerate it.
 - **DB seed edits** (`sql-scripts/insert_seed_data.sql`) — seeds carry tenant/user ids matched to
   dev tooling; don't touch without explicit owner approval.
 - **Real secrets** — never in `appsettings*.json`, **and never in Bicep, a `.bicepparam`, or a workflow

@@ -65,8 +65,18 @@ final class DisputeRepository: SessionScopedCache {
         await client.getById(disputeId: id)
     }
 
-    func create(orderId: String, reason: Int, description: String) async -> ApiResult<String> {
-        await client.create(orderId: orderId, reason: reason, description: description)
+    func create(
+        orderId: String,
+        reason: Int,
+        description: String,
+        lines: [OrderItemLine] = []
+    ) async -> ApiResult<String> {
+        await client.create(
+            orderId: orderId,
+            reason: reason,
+            description: description,
+            lines: lines
+        )
     }
 
     func addMessage(disputeId: String, message: String) async -> ApiResult<Void> {

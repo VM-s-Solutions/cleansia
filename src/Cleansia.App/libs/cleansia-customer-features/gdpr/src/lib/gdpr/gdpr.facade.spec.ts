@@ -47,6 +47,21 @@ describe('GdprFacade (customer)', () => {
     facade = TestBed.inject(GdprFacade);
   });
 
+  // The generated client emits NULL from an array-returning method for a 200 whose body is not a
+  // JSON array, and for a 204 — while `consentsGet` is declared to return a list. Neither the
+  // `error` handler nor the compiler stands between that null and `consents`, and every toggle row
+  // the page renders calls `isConsentGranted`, which reads it. Seeding this mock with a plausible
+  // array is exactly how that stayed invisible.
+  it('holds an empty consent list when the read emits null', () => {
+    gdprClient.consentsGet.mockReturnValue(of(null));
+
+    facade.loadConsents();
+
+    expect(facade.consents()).toEqual([]);
+    expect(facade.loadingConsents()).toBe(false);
+    expect(facade.isConsentGranted(ConsentType.MarketingEmails)).toBe(false);
+  });
+
   it('grants through the gdpr endpoint and re-reads the consent list', () => {
     facade.toggleConsent(ConsentType.MarketingEmails, true);
 

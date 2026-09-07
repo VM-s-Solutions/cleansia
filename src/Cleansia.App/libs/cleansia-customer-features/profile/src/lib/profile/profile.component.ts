@@ -9,7 +9,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import {
   CleansiaAddressAutocompleteComponent,
   CleansiaButtonComponent,
@@ -17,24 +17,26 @@ import {
   CleansiaTelephoneComponent,
   CleansiaCalendarComponent,
   CleansiaSelectComponent,
+  ICleansiaSelectOption,
 } from '@cleansia/components';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
-import { SavedAddressDto } from '@cleansia/customer-services';
+import { LoyaltyTier, SavedAddressDto } from '@cleansia/customer-services';
 import { persistPreferredLanguage, ThemeService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DialogModule } from 'primeng/dialog';
-import { RewardsCardComponent } from '@cleansia-customer/rewards';
 import { NotificationPreferencesComponent } from '../notification-preferences/notification-preferences.component';
 import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
 import { ProfileFacade } from './profile.facade';
 import {
   AVATAR_ACCEPT_ATTRIBUTE,
+  CreditRow,
   SavedAddressFields,
   buildAddSavedAddressCommand,
   buildChangePasswordCommand,
+  buildCreditRow,
   buildUpdateSavedAddressCommand,
 } from './profile.models';
 
@@ -43,6 +45,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     FormsModule,
     ReactiveFormsModule,
     TranslatePipe,
@@ -56,7 +59,6 @@ import {
     CleansiaCalendarComponent,
     CleansiaSelectComponent,
     CleansiaAddressAutocompleteComponent,
-    RewardsCardComponent,
     NotificationPreferencesComponent,
   ],
   providers: [ProfileFacade],
@@ -118,11 +120,75 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   // Preferences
   readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');
 
-  languageOptions = [
-    { label: 'Čeština', value: 'cs' },
-    { label: 'English', value: 'en' },
-    { label: 'Polski', value: 'pl' },
-  ];
+  /**
+   * i18n suffix for the tier the rail names, or null when the account has no
+   * loyalty record yet — the row is then omitted rather than shown as blank.
+   * Mirrors RewardsFacade.tierKey; duplicated as four cases rather than
+   * imported, because reaching into a sibling feature for a switch would cross
+   * a module boundary to save eight lines.
+   */
+  /**
+   * The credit balance for the rail row. Exposed through the component rather than the private
+   * facade, exactly like `loyaltyTierKey` beside it.
+   *
+   * Null means ONLY that the read failed — `loadCredit` maps an error to null — and the row is then
+   * omitted rather than claiming a balance nobody verified. A balance of zero is NOT that case:
+   * `GetMyCredit` answers `Balance: 0` in the platform's default currency for a customer who has
+   * never had an account, precisely "so the client renders one shape either way". Hiding the row at
+   * zero left a customer unable to tell "you have no credit" from "this screen does not mention
+   * credit", which is the question the row exists to answer. Owner remark 2026-09-06.
+   */
+  readonly creditBalance = computed<CreditRow | null>(() => buildCreditRow(this.facade.credit()));
+
+  readonly loyaltyTierKey = computed<string | null>(() => {
+    switch (this.facade.loyaltyTier()) {
+      case LoyaltyTier.PlatinumSparkler:
+        return 'platinum_sparkler';
+      case LoyaltyTier.GoldPolisher:
+        return 'gold_polisher';
+      case LoyaltyTier.SilverMopper:
+        return 'silver_mopper';
+      case LoyaltyTier.BronzeCleaner:
+        return 'bronze_cleaner';
+      default:
+        return null;
+    }
+  });
+
+  /**
+   * The languages the PLATFORM has, in their own names — read from ngx-translate rather than typed
+   * out here.
+   *
+   * <p>It was a hardcoded list of three, and it was wrong in both directions: it offered <b>Polski</b>,
+   * which the platform does not have, and omitted Slovak, Ukrainian and Russian, which it does. This
+   * control writes the user's `PreferredLanguageCode`, a column with an FK to `Languages`, so `pl`
+   * was not merely a dead option — it was a value the server has no row for.</p>
+   *
+   * <p>`addLangs` is called with the app's supported set at bootstrap, so `getLangs()` IS that set;
+   * the native name comes from `Intl.DisplayNames`, exactly as the shared header switcher does it.
+   * Neither needs a list anybody has to remember to update.</p>
+   */
+  readonly languageOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.availableLanguages().map((code) => ({
+      label: ProfileComponent.nativeLanguageName(code),
+      value: code,
+    })),
+  );
+
+  /** Re-read on language change so the list survives ngx-translate finishing its own bootstrap. */
+  private readonly availableLanguages = signal<string[]>([]);
+
+  private static nativeLanguageName(code: string): string {
+    try {
+      const name = new Intl.DisplayNames([code], { type: 'language' }).of(code);
+      if (name && name !== code) {
+        return name.charAt(0).toLocaleUpperCase(code) + name.slice(1);
+      }
+    } catch {
+      // An unknown locale falls through to the code itself, which is still selectable.
+    }
+    return code.toUpperCase();
+  }
 
   readonly userInitials = computed(() => {
     const u = this.user();
@@ -173,6 +239,14 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   showScrollTop = signal(false);
 
   ngOnInit(): void {
+    // ngx-translate registers the app's supported set at bootstrap; read it once here and again on
+    // every language change, because on a cold SSR hydrate `getLangs()` can still be empty when the
+    // component first runs.
+    this.availableLanguages.set(this.translate.getLangs());
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.availableLanguages.set(this.translate.getLangs()));
+
     this.loadProfile();
     this.facade.refreshSavedAddresses();
     this.facade.loadCountries();
@@ -424,5 +498,15 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   toggleTheme(): void {
     this.themeService.toggleTheme();
+  }
+
+  /**
+   * The board shows light and dark as a segmented pair rather than one button
+   * that toggles, so the control has to be able to SET a side rather than flip.
+   */
+  setTheme(dark: boolean): void {
+    if (this.isDarkMode() !== dark) {
+      this.themeService.toggleTheme();
+    }
   }
 }

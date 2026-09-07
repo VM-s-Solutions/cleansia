@@ -21,6 +21,7 @@ object CustomerFeedEventKeys {
         "order.completed",
         "order.cancelled",
         "order.refunded",
+        "order.no_cleaner_refunded",
         "dispute.reply",
         "recurring.scheduled",
         "membership.expiring_soon",

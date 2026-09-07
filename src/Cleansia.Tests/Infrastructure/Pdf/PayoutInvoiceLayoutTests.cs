@@ -12,6 +12,9 @@ namespace Cleansia.Tests.Infrastructure.Pdf;
 /// is the point: the supplier block must be the cleaner and the customer block must be Cleansia.
 /// Swap the two block builders back and <c>Supplier_Block_Is_The_Cleaner_Not_Cleansia</c> fails.
 /// </summary>
+// Serialised with PayoutInvoiceRenderedSymbolTests: its byte-equality assertion cannot survive a
+// concurrent render, and these are the only other real renders in the assembly.
+[Collection("QuestPdfRenderer")]
 public class PayoutInvoiceLayoutTests
 {
     private static readonly ProbeLayout Default = new();

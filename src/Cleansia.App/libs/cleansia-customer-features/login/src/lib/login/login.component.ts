@@ -3,13 +3,11 @@ import { isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
-  CleansiaBrandNameComponent,
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
-  CleansiaDynamicBackgroundComponent,
   CleansiaTextInputComponent,
-  CleansiaTitleComponent,
 } from '@cleansia/components';
+import { FoamEdgeComponent } from '@cleansia-customer/home';
 import {
   APPLE_CLIENT_ID,
   APPLE_ID_SCRIPT_URL,
@@ -32,12 +30,10 @@ import { LoginFacade } from './login.facade';
     RouterLink,
     TranslatePipe,
     ReactiveFormsModule,
-    CleansiaTitleComponent,
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
-    CleansiaBrandNameComponent,
     CleansiaTextInputComponent,
-    CleansiaDynamicBackgroundComponent,
+    FoamEdgeComponent,
   ],
   providers: [LoginFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,

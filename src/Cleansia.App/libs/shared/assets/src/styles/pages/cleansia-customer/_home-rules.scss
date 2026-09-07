@@ -1,0 +1,142 @@
+@use './home-variables' as *;
+
+// =============================
+// Rules — the operating numbers, stated
+// =============================
+// One tonal family rather than a traffic-light palette: the cards carry no
+// semantic meaning (nothing here is a success or a warning), so green and
+// near-black would have been decoration pretending to be information.
+// -> agents/knowledge/design-language.md#21-colour
+
+// The section was cramped: the heading, the three cards and the fact rail all
+// sat within a few pixels of each other, so the numbers read as one block
+// instead of three claims and a footnote. The artboard gives the grid 28px of
+// air under the lead and the rail another 20px under the cards.
+.cl-section--rules {
+  padding: calc(1.5 * var(--cl-u)) var(--cl-gutter) 0;
+
+  .cl-section__header {
+    margin-bottom: 28px;
+  }
+
+  .cl-section__desc {
+    max-width: 46em;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.cl-rules {
+  display: grid;
+  // Three fixed tracks, as the artboard draws them. `auto-fit` collapsed to two
+  // wide cards plus one orphan at some widths, which is not a layout anyone
+  // chose.
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  // 24px, not the artboard's 18: at 18 the three cards' labels sat close enough
+  // to read as one block. That was a deliberate earlier ruling and reverting it
+  // to the raw artboard number undid it.
+  gap: 24px;
+  margin-top: 28px;
+
+  // On the filled third card everything is white; the label was a muted grey
+  // inherited from .cl-lbl and scored 3.09 on that blue.
+  &__card {
+    background: var(--cl-tint);
+    border: 1px solid var(--cl-border-tint);
+    border-radius: 36px;
+    padding: 30px 32px;
+
+    &--tinted {
+      background: var(--cl-tint-strong);
+      border-color: #bae6fd;
+    }
+
+    // Sky700 rather than Sky600: the 12px label above the value is small text,
+    // and white on Sky600 is 4.0 against a 4.5 floor. Same hue family, one step
+    // deeper, and the card still reads as the filled one of the three.
+    &--solid {
+      background: $primary-dark;
+      border-color: $primary-dark;
+
+      .cl-rules__label {
+        color: #ffffff;
+      }
+
+      .cl-rules__value,
+      .cl-rules__desc {
+        color: $white;
+      }
+    }
+  }
+
+  &__label {
+    display: block;
+    margin-bottom: 10px;
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--cl-heading);
+  }
+
+  &__value {
+    font-family: $font-heading;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.14;
+    letter-spacing: -0.7px;
+    color: var(--cl-heading);
+    margin: 8px 0 0;
+  }
+
+  &__desc {
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--cl-body);
+    margin: 10px 0 0;
+  }
+
+  // The three facts under the cards, as chips — the artboard's own treatment.
+  // They are not controls, so they never take the hover or the pointer the
+  // interactive chips do; they borrow only the shape.
+  &__facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    // The artboard sets 16px; owner asked for more air between the cards and
+    // the three footnote chips under them.
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+
+    .cl-chip {
+      cursor: default;
+      gap: 5px;
+
+      &:hover {
+        border-color: var(--cl-border);
+        background: var(--cl-surface);
+      }
+    }
+
+    strong {
+      font-weight: 700;
+      color: var(--cl-body);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .cl-rules {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .cl-rules {
+    grid-template-columns: 1fr;
+  }
+}

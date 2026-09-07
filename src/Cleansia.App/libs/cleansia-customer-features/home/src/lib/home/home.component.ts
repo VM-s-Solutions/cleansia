@@ -14,16 +14,15 @@ import {
   loadCustomerServices,
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
-import { CleansiaScrollTopComponent } from '@cleansia/components';
+import { CleansiaScrollTopComponent } from '@cleansia/components/cleansia-scroll-top';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { HeroComponent } from './components/hero/hero.component';
 import { FeaturesComponent } from './components/features/features.component';
-import { ProcessComponent } from './components/process/process.component';
-import { BenefitsComponent } from './components/benefits/benefits.component';
 import { ServicesComponent } from './components/services/services.component';
 import { GalleryComponent } from './components/gallery/gallery.component';
-import { TestimonialsComponent } from './components/testimonials/testimonials.component';
+import { RulesComponent } from './components/rules/rules.component';
+import { PlusComponent } from './components/plus/plus.component';
 import { FaqComponent } from './components/faq/faq.component';
 import { CtaComponent } from './components/cta/cta.component';
 
@@ -31,19 +30,7 @@ import { CtaComponent } from './components/cta/cta.component';
   selector: 'cleansia-home',
   templateUrl: './home.component.html',
   standalone: true,
-  imports: [
-    HeroComponent,
-    FeaturesComponent,
-    ProcessComponent,
-    BenefitsComponent,
-    ServicesComponent,
-    GalleryComponent,
-    TestimonialsComponent,
-    FaqComponent,
-    CtaComponent,
-    CleansiaScrollTopComponent,
-    TranslatePipe,
-  ],
+  imports: [HeroComponent, FeaturesComponent, ServicesComponent, GalleryComponent, RulesComponent, PlusComponent, FaqComponent, CtaComponent, CleansiaScrollTopComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {

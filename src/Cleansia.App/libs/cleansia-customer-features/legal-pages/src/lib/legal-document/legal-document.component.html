@@ -1,0 +1,73 @@
+<div class="cl-lgl">
+  <div class="cl-lgl__hero">
+    <span class="cl-lgl__eyebrow">{{ 'legal.eyebrow' | translate }}</span>
+    <h1 class="cl-lgl__title">{{ namespace() + '.title' | translate }}</h1>
+    <p class="cl-lgl__lead">{{ namespace() + '.intro' | translate }}</p>
+    @if (namespace() + '.last_updated_date' | translate; as updated) {
+    <p class="cl-lgl__updated">
+      {{ namespace() + '.last_updated' | translate: { date: updated } }}
+    </p>
+    }
+  </div>
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-surface)'" />
+</div>
+
+<div class="cl-lgl__body">
+  <div class="cl-lgl__page">
+    <!--
+      The contents rail. These pages are SEARCHED rather than read — somebody
+      arrives wanting the cancellation rule — so the sections are numbered and
+      the rail says which one is under the reader right now.
+    -->
+    <nav class="cl-lgl__toc" [attr.aria-label]="'legal.contents' | translate">
+      <span class="cl-lgl__toc-label">{{ 'legal.contents' | translate }}</span>
+      @for (i of sections(); track i) {
+      <button
+        type="button"
+        class="cl-lgl__toc-item"
+        [class.cl-lgl__toc-item--on]="activeSection() === i"
+        [attr.aria-current]="activeSection() === i ? 'true' : null"
+        (click)="jumpTo(i)"
+      >
+        {{ i }}. {{ namespace() + '.section' + i + '_title' | translate }}
+      </button>
+      }
+    </nav>
+
+    <div class="cl-lgl__doc">
+      @if (namespace() + '.review_notice' | translate; as notice) {
+      <p class="cl-lgl__notice" role="note">
+        <i class="pi pi-info-circle"></i>
+        <span>{{ notice }}</span>
+      </p>
+      }
+
+      @for (i of sections(); track i) {
+      <section class="cl-lgl__section" [attr.data-section]="i" [id]="'section-' + i">
+        <span class="cl-lgl__section-num cl-num">{{ ordinal(i) }}</span>
+        <div class="cl-lgl__section-body">
+          <h2 class="cl-lgl__section-title">
+            {{ namespace() + '.section' + i + '_title' | translate }}
+          </h2>
+          <p class="cl-lgl__section-text">
+            {{ namespace() + '.section' + i + '_text' | translate }}
+          </p>
+        </div>
+      </section>
+      }
+
+      <!--
+        The way out of a legal page. Somebody who did not find their answer in
+        nine paragraphs should not have to go looking for an address.
+      -->
+      <p class="cl-lgl__ask">
+        <i class="pi pi-envelope"></i>
+        <span>
+          {{ 'legal.ask_lead' | translate }}
+          <a href="mailto:info@cleansia.cz">info&#64;cleansia.cz</a>
+          {{ 'legal.ask_tail' | translate }}
+        </span>
+      </p>
+    </div>
+  </div>
+</div>

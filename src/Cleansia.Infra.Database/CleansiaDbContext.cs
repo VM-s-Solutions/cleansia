@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.DeadLettering;
 using Cleansia.Core.Domain.Devices;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Emails;
@@ -315,10 +316,25 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<DisputeEvidence> DisputeEvidence { get; set; }
     public virtual DbSet<TenantConfiguration> TenantConfigurations { get; set; }
     public virtual DbSet<CountryConfiguration> CountryConfigurations { get; set; }
+
+    /// <summary>
+    /// Per-country property-size labels. Catalogue data — the order stores the
+    /// integers, never the preset. -> /decisions/adr-0056
+    /// </summary>
+    public virtual DbSet<PropertySizePreset> PropertySizePresets { get; set; }
     public virtual DbSet<FeatureFlag> FeatureFlags { get; set; }
     public virtual DbSet<UserConsent> UserConsents { get; set; }
     public virtual DbSet<GdprRequest> GdprRequests { get; set; }
     public virtual DbSet<LoyaltyAccount> LoyaltyAccounts { get; set; }
+
+    /// <summary>
+    /// Customer credit — money owed back to a customer, usually because a clean went wrong. The
+    /// balance is a tender, never a discount: it changes what the card is charged, not what the
+    /// order cost. → Order.CreditAppliedAmount
+    /// </summary>
+    public virtual DbSet<CreditAccount> CreditAccounts { get; set; }
+
+    public virtual DbSet<CreditTransaction> CreditTransactions { get; set; }
     public virtual DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
     public virtual DbSet<LoyaltyTierConfig> LoyaltyTierConfigs { get; set; }
     public virtual DbSet<PromoCode> PromoCodes { get; set; }
@@ -335,4 +351,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<DeadLetter> DeadLetters { get; set; }
     public virtual DbSet<OutboxMessage> OutboxMessages { get; set; }
     public virtual DbSet<AdminActionAudit> AdminActionAudits { get; set; }
+
+    /// <summary>The employee-side twin, kept separate on owner ruling 2026-09-06.</summary>
+    public virtual DbSet<EmployeeActionAudit> EmployeeActionAudits { get; set; }
 }

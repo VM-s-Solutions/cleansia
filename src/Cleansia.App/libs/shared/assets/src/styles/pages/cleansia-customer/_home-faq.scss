@@ -1,27 +1,33 @@
 @use './home-variables' as *;
 
+.cl-section--faq {
+  padding: var(--cl-gutter) var(--cl-gutter) 0;
+}
+
+
 // =============================
 // FAQ
 // =============================
 .cl-faq-layout {
   display: flex;
-  gap: 4rem;
+  gap: 64px;
   align-items: flex-start;
 
   &__left {
     flex: 0 0 340px;
     position: sticky;
     top: 100px;
-    .cl-title {
-      margin-bottom: 1.5rem;
+    .cl-heading {
+      margin-bottom: 24px;
     }
   }
 
   &__desc {
-    font-size: 0.95rem;
+    margin: 12px 0 0;
+    font-size: 15px;
     color: var(--cl-text-secondary);
     line-height: 1.8;
-    margin: 0 0 1.5rem;
+    margin: 0 0 24px;
   }
 
   &__cta {
@@ -35,7 +41,7 @@
 }
 
 .cl-faq__answer {
-  font-size: 0.95rem;
+  font-size: 15px;
   color: var(--cl-text-secondary);
   line-height: 1.7;
   margin: 0;
@@ -48,7 +54,7 @@
   .cl-faq-layout {
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
+    gap: 32px;
     &__left {
       flex: none;
       position: static;
@@ -56,7 +62,7 @@
       max-width: 560px;
       margin: 0 auto;
       text-align: center;
-      .cl-title {
+      .cl-heading {
         text-align: center;
       }
     }
@@ -71,48 +77,82 @@
 // =============================
 // Dark Mode — FAQ
 // =============================
-:root.dark-mode {
-  .cl-faq-layout {
-    &__desc {
-      color: #94a3b8;
+
+// =============================
+// Accordion — the artboard's bordered card
+// =============================
+// The design draws the questions as ONE bordered, rounded surface with hairline
+// dividers, and the open panel's header tinted so the current question is
+// obvious. PrimeNG's default is a stack of separate cards, which reads as six
+// things rather than one list.
+.cl-faq-layout__right {
+  .p-accordion {
+    border: 1px solid var(--cl-border);
+    border-radius: 24px;
+    overflow: hidden;
+    background: var(--cl-surface);
+    display: block;
+  }
+
+  .p-accordionpanel {
+    border: 0;
+    border-bottom: 1px solid var(--cl-border);
+    border-radius: 0;
+    background: transparent;
+
+    &:last-child {
+      border-bottom: 0;
     }
   }
 
-  .cl-faq__answer {
-    color: #94a3b8;
+  .p-accordionheader {
+    cursor: pointer;
+    padding: 22px 26px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    font-family: $font-heading;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.3;
+    letter-spacing: -0.1px;
+    color: var(--cl-heading);
+
+    &:hover {
+      background: var(--cl-tint);
+    }
   }
 
-  // Same flat divider list as light mode — no card boxes, text stays on one
-  // left edge (header and answer share PrimeNG's panel padding).
-  .cl-section--faq {
-    .p-accordion {
-      .p-accordionpanel {
-        background: transparent;
-        border: 0;
-        border-bottom: 1px solid #334155;
-        border-radius: 0;
-        margin-bottom: 0;
+  // The open question keeps its tint so the eye can find it again.
+  .p-accordionpanel-active > .p-accordionheader {
+    background: var(--cl-tint);
+  }
 
-        &:last-child {
-          border-bottom: 0;
-        }
-      }
+  .p-accordioncontent-content {
+    padding: 20px 26px 24px;
+    background: transparent;
+    border: 0;
+  }
+}
 
-      .p-accordionheader {
-        background: transparent;
-        color: #e2e8f0;
-        text-align: left;
+.cl-faq-layout__title {
+  margin-top: 16px;
+}
 
-        &:hover {
-          background: transparent;
-          color: #7dd3fc;
-        }
-      }
+// The artboard's contact pill: an envelope beside the label, sized to its text
+// rather than to the column. It was a full-width button, which made the left
+// column read as a form.
+.cl-faq-layout__cta {
+  gap: 10px;
+  margin-top: 22px;
+}
 
-      .p-accordioncontent-content {
-        background: transparent;
-        border: 0;
-      }
-    }
+// Artboard values, stated last. The intro column and the accordion are 56px
+// apart, and the lead sits 12px under the heading.
+.cl-faq-layout {
+  gap: 56px;
+
+  &__desc {
+    margin: 12px 0 0;
   }
 }

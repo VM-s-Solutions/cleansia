@@ -1,0 +1,520 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Cleansia Plus — the PUBLIC page
+// =============================================================================
+// Not `membership.component.scss`, which styles the signed-in management and
+// subscribe screens behind `customerAuthGuard`. This is the surface an
+// anonymous visitor reads, and the one the nav bar's "Cleansia Plus" link and
+// the home page's Plus CTA now open for them.
+//
+// Layout only. Type, buttons, links, shadows and the foam edge come from
+// _home-design.scss and the home lib — the approved system. Nothing here
+// redefines a token, and there is no local palette of hexes: that is exactly
+// what made the four auth sheets and the old catalogue sheet drift.
+
+// The annual card's ground. A pair rather than a reused token because nothing
+// in the palette is dark in BOTH themes at the depth this needs: --cl-plus-2 is
+// sky-600 in light, and white on it measures 4.10 against a 4.5 floor;
+// --cl-heading flips to sky-300 in dark and would put pale ink on a pale card.
+// --cl-footer-bg is dark enough in both but is what the flag uses, and a flag
+// the same colour as the card it sits on is not a flag.
+:root {
+  --cl-plusp-card: #{$primary-darker};
+}
+
+:root.dark-mode {
+  --cl-plusp-card: #0a3a5c;
+}
+
+// ---- Controls ---------------------------------------------------------------
+// The two plan cards use plain <a class="cl-btn">, so none of the PrimeNG
+// button correction the catalogue and auth pages carry is needed here. If a
+// <cleansia-button> is ever added to this page it will need it, and at that
+// point the override has four call sites and belongs in _home-design.scss
+// rather than a fifth copy.
+
+// The ghost action: the monthly card's CTA, which must not compete with the
+// yearly card's. The board draws it as a bordered white pill rather than as a
+// `.cl-link` underline, because the two cards' actions have to read as the
+// same KIND of choice — one is not secondary to the other, it is cheaper.
+.cl-btn--ghost {
+  background: var(--cl-surface);
+  color: var(--cl-heading);
+  border: 1px solid var(--cl-border-tint);
+  box-shadow: none;
+
+  &:hover {
+    background: var(--cl-tint);
+    color: var(--cl-heading);
+  }
+
+  &:active {
+    background: var(--cl-tint-strong);
+  }
+}
+
+// ---- The band the page opens on ---------------------------------------------
+.cl-plusp__hero {
+  position: relative;
+  // Reclaim the shell's navbar spacer and pay it back as padding, so the
+  // gradient runs to the top of the page and the floating white pill sits ON
+  // it. Same two lines, same order, as `.cl-hero` and `.cl-cat-hero` — a page
+  // that opens on a white band instead is the one that looks unrelated to the
+  // rest of the site.
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding-top: var(--cl-nav-h);
+  // Ends on --cl-surface, and the divider's tabs are the TINT of the section
+  // below rather than white. Written the other way round first — white tabs on
+  // a gradient that had already faded to white — the edge measured 1.00 and
+  // rendered as nothing at all. The catalogue's hero is this exact
+  // arrangement.
+  background: radial-gradient(
+    120% 92% at 76% 6%,
+    var(--cl-hero-1) 0%,
+    var(--cl-hero-2) 44%,
+    var(--cl-surface) 100%
+  );
+}
+
+.cl-plusp__hero-inner {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  // The bottom value is not 0: the trial-price note was landing directly on the
+  // divider's tabs with nothing between them. Owner, 2026-09-02.
+  padding: calc(3.5 * var(--cl-u)) var(--cl-gutter) calc(2 * var(--cl-u));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: calc(3 * var(--cl-u));
+  align-items: center;
+}
+
+.cl-plusp__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  min-height: calc(2.375 * var(--cl-u));
+  padding: 0 var(--cl-u);
+  border-radius: 999px;
+  background: var(--cl-heading);
+  color: var(--cl-surface);
+  font-size: calc(0.875 * var(--cl-u));
+  font-weight: 700;
+
+  i {
+    font-size: var(--cl-u);
+  }
+}
+
+.cl-plusp__title {
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-plusp__lead {
+  font-size: calc(1.1875 * var(--cl-u));
+  margin: var(--cl-u) 0 0;
+  max-width: 30em;
+}
+
+.cl-plusp__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(1.5 * var(--cl-u));
+  margin-top: calc(1.875 * var(--cl-u));
+}
+
+// Muted ink reads --cl-muted at 4.76 on white, which is why it passes inside
+// the perk cards and the table — and 4.15 on the tinted band, which is why it
+// does not out here. The two notes and the FAQ answers are the text that sits
+// directly on the tint, so they take the body ink instead; the hierarchy is
+// carried by size and weight, which it already was.
+.cl-plusp__note {
+  margin: calc(0.875 * var(--cl-u)) 0 0;
+  color: var(--cl-body);
+}
+
+// The one character on the page that is not a normalised 340x280 tile —
+// mascot-plus is a 600x600 square drawn for this product, and the home page's
+// Plus band already renders it at this size.
+.cl-plusp__hero-mascot {
+  height: calc(18.75 * var(--cl-u));
+  width: auto;
+  display: block;
+}
+
+// ---- The tinted middle ------------------------------------------------------
+// The board draws this white, with white cards on it separated by hairlines.
+// It is tinted here for two reasons that turned out to be the same reason: a
+// divider is exactly as visible as the difference between the sections it
+// separates, so a white band under a gradient that ends white has no edge at
+// all; and white cards on a white ground are carried entirely by a 1px border.
+// One step of tint fixes both, and it is the ground the services catalogue
+// already uses — which is the page most visitors arrive from.
+.cl-plusp__body {
+  background: var(--cl-band);
+}
+
+.cl-plusp__inner {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  // The trailing space before the closing band is PADDING on the tinted body,
+  // not margin on the band below it. As a margin it fell outside both
+  // backgrounds and let the page ground show through as a white stripe across
+  // a tinted page — which read as a rendering fault rather than as spacing.
+  padding: calc(2.5 * var(--cl-u)) var(--cl-gutter) calc(3.5 * var(--cl-u));
+}
+
+.cl-plusp__section-lead {
+  margin: calc(0.625 * var(--cl-u)) 0 0;
+  max-width: 44em;
+}
+
+.cl-plusp__h2 {
+  margin-top: calc(4 * var(--cl-u));
+}
+
+// ---- The perks --------------------------------------------------------------
+.cl-plusp__perks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.75 * var(--cl-u));
+}
+
+.cl-plusp__perk {
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.75 * var(--cl-u));
+  padding: calc(1.625 * var(--cl-u)) calc(1.625 * var(--cl-u)) calc(1.5 * var(--cl-u));
+
+  p {
+    margin: calc(0.5 * var(--cl-u)) 0 0;
+  }
+
+  // An odd number of cards in a two-column grid leaves the last one alone with
+  // a hole beside it, which reads as a layout bug; spanning it reads as
+  // deliberate. Keyed on the COUNT rather than on a class, because the count is
+  // conditional: the express card is only drawn when the plan waives one, so
+  // the list is five cards or four depending on data. A `--wide` class on the
+  // last card would span it either way — including at four, where it would
+  // orphan the card before it.
+  //
+  // Angular's `@if` leaves comment anchors rather than elements, so nth-child
+  // counts the cards that actually rendered.
+  &:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+.cl-plusp__perk-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(3 * var(--cl-u));
+  height: calc(3 * var(--cl-u));
+  border-radius: var(--cl-u);
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+  margin-bottom: var(--cl-u);
+
+  i {
+    font-size: calc(1.4375 * var(--cl-u));
+  }
+}
+
+// ---- With and without -------------------------------------------------------
+.cl-plusp__table {
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.75 * var(--cl-u));
+  margin-top: calc(1.375 * var(--cl-u));
+  overflow: hidden;
+}
+
+.cl-plusp__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: calc(1.25 * var(--cl-u));
+  padding: var(--cl-u) calc(1.5 * var(--cl-u));
+  border-bottom: 1px solid var(--cl-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &--head {
+    background: var(--cl-tint);
+
+    // --cl-muted on --cl-tint is 4.46, which misses the floor by a hair.
+    .cl-lbl {
+      color: var(--cl-body);
+    }
+  }
+}
+
+.cl-plusp__lbl-on {
+  color: var(--cl-heading);
+}
+
+.cl-plusp__row-label {
+  font-size: var(--cl-u);
+  font-weight: 700;
+  color: var(--cl-heading);
+}
+
+// The "with Plus" cell. A tick AND a value — the tick alone says yes without
+// saying what, and colour alone would carry the whole distinction.
+.cl-plusp__yes {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 800;
+  color: var(--cl-heading);
+
+  i {
+    flex-shrink: 0;
+    font-size: calc(1.0625 * var(--cl-u));
+  }
+}
+
+// ---- The two plans ----------------------------------------------------------
+.cl-plusp__plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.625 * var(--cl-u));
+  align-items: stretch;
+}
+
+.cl-plusp__plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(2 * var(--cl-u));
+  padding: calc(1.875 * var(--cl-u)) calc(1.875 * var(--cl-u)) calc(1.75 * var(--cl-u));
+
+  // The yearly card is drawn ON the deep blue rather than outlined in it, so
+  // the cheaper-per-month option is the one the eye lands on. --cl-plus-2 is
+  // the token the home page's Plus band already uses for exactly this ground,
+  // and it flips in dark mode; the board's #075985 does not.
+  &--best {
+    background: var(--cl-plusp-card);
+    border-color: var(--cl-plusp-card);
+
+    .cl-plusp__plan-lbl,
+    .cl-muted {
+      color: var(--cl-plus-ink);
+    }
+
+    .cl-plusp__price,
+    .cl-plusp__plan-text {
+      color: var(--cl-plus-ink);
+    }
+  }
+}
+
+.cl-plusp__plan-flag {
+  position: absolute;
+  top: calc(-0.8125 * var(--cl-u));
+  left: calc(1.75 * var(--cl-u));
+  padding: calc(0.4375 * var(--cl-u)) calc(0.875 * var(--cl-u));
+  border-radius: 999px;
+  background: var(--cl-footer-bg);
+  // --cl-plus-ink, not --cl-surface. Both are near-white in light mode, so the
+  // wrong one reads correctly there and goes dark-on-dark in the other theme:
+  // --cl-surface flips to #0f1b2d against a #0a2438 flag, which measured 1.11
+  // and rendered as an unreadable smudge on the card it is meant to promote.
+  color: var(--cl-plus-ink);
+  font-size: calc(0.6875 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cl-plusp__plan-lbl {
+  color: var(--cl-heading);
+}
+
+.cl-plusp__price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  letter-spacing: -0.9px;
+  line-height: 1.16;
+  color: var(--cl-accent);
+  margin-top: calc(0.625 * var(--cl-u));
+}
+
+.cl-plusp__plan-text {
+  margin: calc(0.875 * var(--cl-u)) 0 0;
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+// Pushes the two cards' actions onto a shared baseline whatever their copy
+// runs to, so the row does not read as two different components.
+.cl-plusp__plan-spacer {
+  flex-grow: 1;
+  min-height: calc(1.25 * var(--cl-u));
+}
+
+// ---- Questions --------------------------------------------------------------
+.cl-plusp__faq {
+  margin-top: calc(0.625 * var(--cl-u));
+}
+
+.cl-plusp__qa {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.75 * var(--cl-u));
+  padding: calc(1.375 * var(--cl-u)) 0;
+  border-bottom: 1px solid var(--cl-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  > i {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: calc(1.25 * var(--cl-u));
+    color: var(--cl-heading);
+  }
+
+  p {
+    margin: calc(0.4375 * var(--cl-u)) 0 0;
+    max-width: 52em;
+    color: var(--cl-body);
+  }
+
+  .cl-h4 {
+    font-size: calc(1.0625 * var(--cl-u));
+  }
+}
+
+// ---- The closing band -------------------------------------------------------
+.cl-plusp__closing {
+  position: relative;
+  overflow: hidden;
+  // The same first-stop deepening the catalogue's closing band needed, and for
+  // the same measured reason: the divider's tabs are --cl-surface and the band
+  // has to be a real step away from them or the edge reads as nothing.
+  // --cl-cat-close is already a :root pair defined in _catalog.scss — a second
+  // token holding the identical two values is a thing to keep in sync for no
+  // benefit.
+  background: radial-gradient(
+    110% 130% at 20% 10%,
+    var(--cl-cat-close) 0%,
+    var(--cl-cta-1) 55%,
+    var(--cl-cta-3) 100%
+  );
+}
+
+.cl-plusp__closing .cl-plusp__inner {
+  padding-top: calc(1.5 * var(--cl-u));
+  padding-bottom: 0;
+}
+
+.cl-plusp__cta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: calc(2 * var(--cl-u));
+  align-items: center;
+  background: var(--cl-surface);
+  border-radius: calc(2.5 * var(--cl-u));
+  padding: calc(2.5 * var(--cl-u)) calc(2.75 * var(--cl-u)) calc(2.25 * var(--cl-u));
+  margin-bottom: calc(3.75 * var(--cl-u));
+}
+
+.cl-plusp__cta-mascot {
+  height: calc(8.25 * var(--cl-u));
+  width: auto;
+  display: block;
+  align-self: end;
+  margin-bottom: -4px;
+}
+
+.cl-plusp__cta-title {
+  font-size: clamp(26px, 2.3612vw, 34px); // 34px at 1440
+}
+
+.cl-plusp__cta-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(1.5 * var(--cl-u));
+  white-space: nowrap;
+}
+
+// ---- Narrow -----------------------------------------------------------------
+// The characters are decorative — they carry nothing the copy does not — so
+// they are the first thing to go, exactly as on the catalogue and auth pages.
+@media (max-width: 900px) {
+  .cl-plusp__hero-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-plusp__hero-mascot,
+  .cl-plusp__cta-mascot {
+    display: none;
+  }
+
+  .cl-plusp__perks,
+  .cl-plusp__plans {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-plusp__cta {
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(1.25 * var(--cl-u));
+  }
+
+  .cl-plusp__cta-actions {
+    white-space: normal;
+    flex-wrap: wrap;
+  }
+}
+
+// Three columns of comparison do not survive a phone. The row becomes a stack
+// with its label on top, which keeps every value attached to what it describes
+// — a horizontally scrolling table loses the row label as soon as it scrolls.
+@media (max-width: 640px) {
+  .cl-plusp__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(0.25 * var(--cl-u));
+
+    // The head row is what told the reader which column was which, and stacking
+    // takes it away. Each value carries its own column name instead, off the
+    // translated `data-label` the template sets — without it the stack is a row
+    // label, a dash and a number, with nothing saying which is the Plus one.
+    &--head {
+      display: none;
+    }
+  }
+
+  .cl-plusp__row .cl-muted[data-label],
+  .cl-plusp__yes[data-label] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: calc(0.375 * var(--cl-u));
+
+    &::before {
+      content: attr(data-label) ':';
+      flex-shrink: 0;
+      font-size: calc(0.75 * var(--cl-u));
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--cl-muted);
+    }
+  }
+
+  .cl-plusp__row-label {
+    margin-bottom: calc(0.25 * var(--cl-u));
+  }
+}

@@ -1,0 +1,571 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Services catalogue — the approved artboard's layout
+// =============================================================================
+// A `cl-cat-*` namespace replacing the 943 lines of `services-catalog__*` that
+// styled the previous page. Not a rename: the old sheet carried its own local
+// `$primary` palette of hardcoded hexes and its own dark-mode block, so it
+// drifted from the rest of the customer surface every time the tokens moved.
+//
+// Type, buttons, chips, the mascot plate and the foam edge are NOT redefined
+// here — `.cl-d1`, `.cl-btn`, `.cl-chip`, `.cl-mascot-disc` and
+// <cleansia-foam-edge> come from _home-design.scss and the home lib, which are
+// the approved system. This file is layout only.
+
+// ---- Controls -----------------------------------------------------------------
+// The shared cleansia-button paints its primary with sky-500 and sets PrimeNG's
+// own label type, but the approved system's primary action is 17px/800 white on
+// sky-600 — and white on sky-500 measures 2.77 against a 4.5 floor. Corrected
+// here, for this page, rather than in the shared component: that button is also
+// the partner and admin apps' primary, and restyling all three is the owner's
+// call. Same treatment, and the same reason, as .cl-wiz.
+// -> _wizard-shell.scss
+.cl-cat-hero,
+.cl-cat,
+.cl-cat-closing {
+  .p-button {
+    min-height: max(40px, calc(2.5 * var(--cl-u)));
+    border-radius: 999px;
+    font-family: $font-body;
+    font-size: var(--cl-u);
+    font-weight: 800;
+    letter-spacing: normal;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  }
+
+  .p-button .p-button-label {
+    font-size: var(--cl-u);
+    font-weight: 800;
+    letter-spacing: normal;
+    // Inert — the label is a flex child of a centred container either way. It
+    // is here so a real <button> and the artboard's <span> compare equal
+    // instead of differing on a property neither of them renders.
+    text-align: left;
+  }
+
+  // The primary action's COLOUR correction is in _home-design.scss now — three
+  // pages had each grown a copy of it. Only the sizing is per page, and the
+  // catalogue's action is 16px where the auth and wizard ones are 17.
+
+  // `.cl-chip` was drawn for a <span>; as a real control it centres its text.
+  // `.cl-link`'s button spelling is handled in _home-design.scss, where the
+  // class itself lives — this page was the third to need it.
+  button.cl-chip {
+    text-align: left;
+    font-family: inherit;
+  }
+}
+
+// The featured card's action inverts with the card: white fill, Sky700 label.
+.cl-cat-pkg--best .p-button {
+  background: #{$white};
+  border-color: #{$white};
+
+  .p-button-label {
+    color: #{$primary-dark};
+  }
+
+  &:enabled:hover {
+    background: #{$primary-light};
+    border-color: #{$primary-light};
+
+    .p-button-label {
+      color: #{$primary-darker};
+    }
+  }
+}
+
+// The colour the closing band opens on. It has to be a real step away from the
+// tinted section above it in BOTH themes, and no existing token is: --cl-cta-1
+// is that section's own colour in light, --cl-hero-1 is only 1.19 from it, and
+// --cl-accent-soft does not flip at all — it stayed sky-300 and painted a lit
+// slab across the bottom of a dark page.
+:root {
+  // The closing band's first gradient stop — the ground the last divider's tabs
+  // sit on, and therefore that divider's whole visibility.
+  //
+  // Was sky-400 / #1d5f87, which measured 1.67 and 1.98 against the tabs and
+  // read as a hard stripe. Owner, 2026-09-02: turn it down. One step lighter in
+  // each theme puts both at ~1.35, which is the same step the dividers higher
+  // up the page make. Not the SAME numbers in the two themes on purpose — an
+  // equal ratio reads as a smaller step against a dark ground.
+  //
+  // Lowered twice. sky-400 measured 1.67 and read as a stripe; sky-300 came
+  // down to 1.40 and still read as too bright — owner, 2026-09-02: "not so
+  // toxically bright". This is 1.23 against the tabs, which separates the two
+  // sections without the edge announcing itself.
+  --cl-cat-close: #a5e2fd;
+}
+
+:root.dark-mode {
+  --cl-cat-close: #154257;
+}
+
+// ---- The band the page opens on ---------------------------------------------
+.cl-cat-hero {
+  position: relative;
+  // Reclaim the shell's navbar spacer and pay it back as padding, so the
+  // gradient runs to the very top of the page and the floating white pill sits
+  // ON it. Without this the catalogue opened on a white band the home page does
+  // not have, which is the whole reason the two pages looked unrelated at the
+  // top. Same two lines, same order, as `.cl-hero`. -> _home-hero.scss
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding-top: var(--cl-nav-h);
+  // The same gradient as the home hero except at the very last stop, which runs
+  // out to white rather than to --cl-hero-3. The divider's tabs are the tint of
+  // the section below, so they need a lighter ground than themselves to be seen
+  // against; against --cl-hero-3 they measured 1.06, which is nothing. The top
+  // of the band — the part anyone compares with the home page — is unchanged.
+  background: radial-gradient(
+    120% 92% at 76% 6%,
+    var(--cl-hero-1) 0%,
+    var(--cl-hero-2) 44%,
+    var(--cl-surface) 100%
+  );
+}
+
+.cl-cat-hero__row {
+  max-width: calc(1312px + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(3.25 * var(--cl-u)) var(--cl-gutter) 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: calc(1.5 * var(--cl-u));
+  align-items: end;
+}
+
+// The two characters that frame the headline. Decorative — they carry no
+// information the copy does not, so they are the first thing to go when the
+// column gets narrow.
+.cl-cat-hero__mascot {
+  // 140, not 180. The artwork is a 340x280 tile, so at 180 a 2x screen asked for
+  // 360 device pixels from a 280-pixel source and upscaled it — which is what
+  // made the characters look soft. At 140 the tile renders 1:1 on a 2x screen
+  // and is downsampled on a 1x one, which is the direction that looks good.
+  height: calc(8.75 * var(--cl-u));
+  width: auto;
+  display: block;
+  // Feet 20px INTO the foam strip, so the characters stand on the divider
+  // rather than stopping dead at it. Measured: they landed at exactly 0 here
+  // against 20 on the auth pages, which is what read as clipped. Owner,
+  // 2026-09-02: match the login page. -> _auth.scss $auth-foot
+  margin-bottom: -20px;
+  // ...and IN FRONT of it. The divider follows the row in the DOM, so without
+  // a stacking context of its own the mascot is painted over by the tabs it is
+  // supposed to be standing on — the feet looked cut off rather than planted.
+  // The auth mascots have carried this since they were built.
+  position: relative;
+  z-index: 1;
+}
+
+.cl-cat-hero__copy {
+  text-align: center;
+  padding-bottom: calc(1.75 * var(--cl-u));
+}
+
+.cl-cat-hero__lead {
+  font-size: calc(1.1875 * var(--cl-u));
+  margin: calc(1 * var(--cl-u)) auto 0;
+  max-width: 32em;
+}
+
+.cl-cat-hero__trust {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: calc(0.75 * var(--cl-u));
+  margin-top: calc(1.5 * var(--cl-u));
+}
+
+// ---- The column both sections sit in ----------------------------------------
+.cl-cat {
+  // Tinted, not white — and that is what makes the square divider legible.
+  // --cl-hero-2 rather than --cl-tint-strong: the latter is an overlay, and in
+  // dark mode it is rgba(56, 189, 248, 0.12), so a whole section painted with it
+  // is translucent and the divider cut out of it shows the ground straight
+  // through. Same colour in light, opaque in both.
+  //
+  // The square variant shows as narrow notches between tabs rather than as
+  // whole bubbles, so it has a fraction of the shape the round one does. Where
+  // it leads into WHITE those notches are isolated slivers against a near-white
+  // ground and the eye reads a row of spikes, whatever the contrast: measured
+  // 1.068 plain, 1.145 with a band behind the strip, 1.31 pushed hard — and the
+  // harder it went the more it read as spikes. Where it leads into a tinted
+  // area the same notches join that area, so what you see is a scalloped
+  // boundary between two large fields, which is legible at this palette's very
+  // small tint steps. It is how the home page's closing band reads too.
+  // Owner decision 2026-09-02, having been shown all three.
+  //
+  // The cards gain from it as well: they were white on white, told apart by a
+  // hairline and a soft shadow alone.
+  background: var(--cl-band);
+}
+
+.cl-cat__inner {
+  max-width: calc(1312px + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(2.75 * var(--cl-u)) var(--cl-gutter) 0;
+}
+
+// Title on the left, the section's one affordance on the right — a reveal link
+// over the packages, the sort chips over the services.
+.cl-cat__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: calc(1.5 * var(--cl-u));
+
+  &--spaced {
+    margin-top: calc(4 * var(--cl-u));
+  }
+}
+
+.cl-cat__lead {
+  margin: calc(0.625 * var(--cl-u)) 0 0;
+}
+
+.cl-cat__sorts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.5 * var(--cl-u));
+}
+
+// ---- Packages ----------------------------------------------------------------
+.cl-cat-packages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.875 * var(--cl-u));
+  align-items: stretch;
+}
+
+.cl-cat-pkg {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(2.25 * var(--cl-u));
+  padding: calc(2 * var(--cl-u)) calc(1.875 * var(--cl-u)) calc(1.75 * var(--cl-u));
+}
+
+// The one the platform actually recommends, inverted. A second colourway rather
+// than a second component — same box, same spacing — and Sky800 where the
+// artboard draws Sky600, for the reason already settled on the wizard's
+// featured package card: the dimmed tagline measures 3.09 on Sky600 and pure
+// white only reaches 4.08, so no text colour could have carried a 12px label
+// and the ground had to move.
+// -> _wizard-shell.scss .cl-wiz__pack--featured
+.cl-cat-pkg--best {
+  background: $primary-darker;
+  border: 2px solid $primary-darker;
+  // Off the padding, so the two cards' contents sit on the same lines instead
+  // of the featured one shifting by the extra border.
+  padding: calc(2 * var(--cl-u) - 1px) calc(1.875 * var(--cl-u) - 1px)
+    calc(1.75 * var(--cl-u) - 1px);
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+
+  .cl-cat-pkg__tag {
+    color: #bae6fd;
+  }
+
+  .cl-cat-pkg__name,
+  .cl-cat-pkg__price {
+    color: $white;
+  }
+
+  .cl-cat-pkg__per,
+  .cl-cat-pkg__include {
+    color: #e0f2fe;
+  }
+}
+
+// Sits on the card's top edge, so the card cannot clip it.
+.cl-cat-pkg__badge {
+  position: absolute;
+  top: -13px;
+  left: calc(1.875 * var(--cl-u));
+  background: $text-heading;
+  color: $white;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+
+.cl-cat-pkg__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: calc(0.75 * var(--cl-u));
+}
+
+.cl-cat-pkg__tag {
+  color: var(--cl-heading);
+}
+
+.cl-cat-pkg__name {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.6875 * var(--cl-u));
+  line-height: 1.2;
+  color: var(--cl-heading);
+  margin: calc(0.5 * var(--cl-u)) 0 0;
+}
+
+.cl-cat-pkg__mascot {
+  height: calc(5.125 * var(--cl-u));
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+  margin-bottom: -4px;
+}
+
+.cl-cat-pkg__price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  letter-spacing: -0.9px;
+  color: var(--cl-accent);
+  margin-top: calc(0.875 * var(--cl-u));
+}
+
+.cl-cat-pkg__includes {
+  list-style: none;
+  margin: calc(1.125 * var(--cl-u)) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.625 * var(--cl-u));
+}
+
+.cl-cat-pkg__include {
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+// Pushes the action to the bottom edge, so a card with two included services
+// and a card with four still line their buttons up.
+.cl-cat__grow {
+  flex-grow: 1;
+}
+
+.cl-cat-pkg__cta {
+  margin-top: calc(1.375 * var(--cl-u));
+}
+
+// ---- Individual services -----------------------------------------------------
+.cl-cat-services {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.625 * var(--cl-u));
+  align-items: stretch;
+}
+
+.cl-cat-svc {
+  display: flex;
+  flex-direction: column;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(2 * var(--cl-u));
+  padding: calc(1.625 * var(--cl-u)) calc(1.75 * var(--cl-u)) calc(1.5 * var(--cl-u));
+}
+
+.cl-cat-svc__plate {
+  align-self: center;
+}
+
+.cl-cat-svc__name {
+  margin-top: calc(1 * var(--cl-u));
+}
+
+.cl-cat-svc__desc {
+  margin: calc(0.5 * var(--cl-u)) 0 0;
+}
+
+// Price on the left, what it buys on the right. The unit is derived from the
+// service, not decoration: a service with a per-room rate cannot state a single
+// number, so it says what the number is the floor of.
+.cl-cat-svc__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: calc(1.125 * var(--cl-u));
+  padding-top: calc(0.875 * var(--cl-u));
+  border-top: 1px solid var(--cl-rule);
+}
+
+.cl-cat-svc__price {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.375 * var(--cl-u));
+  color: var(--cl-heading);
+  white-space: nowrap;
+}
+
+.cl-cat-svc__from {
+  font-weight: 700;
+}
+
+.cl-cat-svc__unit {
+  text-align: right;
+}
+
+.cl-cat-svc__cta {
+  margin-top: calc(1 * var(--cl-u));
+}
+
+// ---- Nothing to show ---------------------------------------------------------
+.cl-cat__empty {
+  text-align: center;
+  padding: calc(4 * var(--cl-u)) 0;
+}
+
+.cl-cat__empty-mascot {
+  height: calc(8 * var(--cl-u));
+  width: auto;
+  display: block;
+  margin: 0 auto calc(1 * var(--cl-u));
+}
+
+.cl-cat__empty-text {
+  margin: calc(0.5 * var(--cl-u)) 0 0;
+}
+
+// ---- Loading -----------------------------------------------------------------
+.cl-cat__skeletons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.875 * var(--cl-u));
+}
+
+.cl-cat__skeleton {
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(2.25 * var(--cl-u));
+  padding: calc(2 * var(--cl-u)) calc(1.875 * var(--cl-u));
+}
+
+// ---- The band that closes the page -------------------------------------------
+.cl-cat-closing {
+  position: relative;
+  margin-top: calc(4 * var(--cl-u));
+  overflow: hidden;
+  // A divider is exactly as visible as the difference between the two sections
+  // it separates: its tabs carry the colour of one and sit on the colour of the
+  // other, and nothing about the shape can change that. Against the tinted
+  // section above, --cl-hero-1 gave 1.19 and the edge read as almost nothing.
+  // This opens a real step deeper — 1.72 — and still runs out to white behind
+  // the card, so the band keeps its shape and only its first stop moves.
+  background: radial-gradient(
+    110% 130% at 20% 10%,
+    var(--cl-cat-close) 0%,
+    var(--cl-cta-1) 55%,
+    var(--cl-cta-3) 100%
+  );
+}
+
+.cl-cat-closing__inner {
+  max-width: calc(1312px + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(1.5 * var(--cl-u)) var(--cl-gutter) calc(3.75 * var(--cl-u));
+}
+
+.cl-cat-closing__card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: calc(2 * var(--cl-u));
+  align-items: center;
+  background: var(--cl-surface);
+  border-radius: calc(2.5 * var(--cl-u));
+  padding: calc(2.5 * var(--cl-u)) calc(2.75 * var(--cl-u)) calc(2.25 * var(--cl-u));
+}
+
+.cl-cat-closing__mascot {
+  height: calc(8.25 * var(--cl-u));
+  width: auto;
+  display: block;
+  align-self: end;
+  margin-bottom: -4px;
+}
+
+.cl-cat-closing__title {
+  font-size: clamp(26px, 2.3612vw, 34px); // 34px at 1440
+}
+
+.cl-cat-closing__lead {
+  margin: calc(0.5 * var(--cl-u)) 0 0;
+}
+
+.cl-cat-closing__actions {
+  display: flex;
+  align-items: center;
+  gap: calc(1.5 * var(--cl-u));
+  white-space: nowrap;
+}
+
+// The one action on the page drawn at the full `.btn` size rather than `.btn-s`.
+.cl-cat-closing__card .p-button,
+.cl-cat-closing__card .p-button .p-button-label {
+  font-size: calc(1.0625 * var(--cl-u));
+}
+
+// ---- Narrower than the canvas ------------------------------------------------
+@media (max-width: 1100px) {
+  .cl-cat-services {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .cl-cat-packages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  // The framing characters go before the headline has to shrink for them.
+  .cl-cat-hero__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-cat-hero__mascot {
+    display: none;
+  }
+
+  .cl-cat-closing__card {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .cl-cat-closing__mascot {
+    align-self: center;
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .cl-cat-packages,
+  .cl-cat-services,
+  .cl-cat__skeletons {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  // Stacked, the affordance reads as belonging to the section above it rather
+  // than sitting on the heading's baseline.
+  .cl-cat__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(0.75 * var(--cl-u));
+  }
+
+  .cl-cat-closing__actions {
+    flex-direction: column;
+    align-items: stretch;
+    white-space: normal;
+  }
+}

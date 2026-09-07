@@ -83,7 +83,6 @@
       "promo_code_edit": "Upravit promo kód",
       "promo_code_detail": "Detail promo kódu",
       "loyalty_tiers": "Věrnostní úrovně",
-      "loyalty_user_detail": "Věrnost uživatele",
       "loyalty_referrals": "Doporučení",
       "sitewide_push": "Hromadné oznámení",
       "not_found": "Stránka nenalezena",
@@ -93,17 +92,16 @@
       "membership_plan_create": "Vytvořit plán členství",
       "membership_plan_edit": "Upravit plán členství",
       "data_protection": "Ochrana údajů",
-      "profile": "Můj profil"
+      "profile": "Můj profil",
+      "customer_detail": "Zákazník"
     }
   },
   "components": {
     "not_found": {
-      "title": "Stránka nenalezena",
-      "description": "Stránka, kterou hledáte, byla pravděpodobně odstraněna, přejmenována nebo je dočasně nedostupná.",
-      "suggestion_home": "Vraťte se na domovskou stránku",
-      "suggestion_url": "Zkontrolujte správnost URL adresy",
-      "suggestion_contact": "Kontaktujte nás, pokud problém přetrvává",
-      "go_home": "Na domovskou stránku"
+      "title": "Tuhle stránku nemáme",
+      "description": "Odkaz je nejspíš starý, nebo v adrese chybí písmenko. Zkuste to od začátku.",
+      "go_home": "Na úvodní stránku",
+      "error_code": "Chyba {{code}}"
     },
     "availability": {
       "days": {
@@ -209,7 +207,9 @@
       "de": "Němčina",
       "sk": "Slovenština",
       "pl": "Polština"
-    }
+    },
+    "show_password": "Zobrazit heslo",
+    "hide_password": "Skrýt heslo"
   },
   "sidebar": {
     "employees": "Zaměstnanci",
@@ -621,6 +621,7 @@
           "action": "Přiřadit jiného uklízeče",
           "confirm": "Přesunout přiřazení ze současného uklízeče na jiného uklízeče.",
           "none_assigned": "K této objednávce není přiřazen žádný uklízeč, kterého by bylo možné přeřadit.",
+          "add_only_hint": "Na této zakázce nikdo není. Zadejte uklízeče, kterýho na ni chcete přiřadit.",
           "from": "Od uklízeče",
           "to": "Na uklízeče (ID zaměstnance)",
           "to_hint": "Zadejte ID cílového zaměstnance.",
@@ -1090,7 +1091,9 @@
         "create_error": "Nepodařilo se vytvořit balíček",
         "update_success": "Balíček byl úspěšně aktualizován",
         "update_error": "Nepodařilo se aktualizovat balíček"
-      }
+      },
+      "tagline": "Krátký popisek na kartě",
+      "is_popular": "Nejoblíbenější balíček"
     },
     "admin_user_management": {
       "title": "Správa administrátorů",
@@ -1642,7 +1645,9 @@
       "messages": {
         "revenue_load_error": "Nepodařilo se načíst přehled tržeb",
         "payroll_load_error": "Nepodařilo se načíst přehled mezd"
-      }
+      },
+      "settled_from_credit": "Z kreditu zákazníků",
+      "settled_on_tender": "Skutečně přijato"
     },
     "promo_codes": {
       "title": "Promo kódy",
@@ -1795,11 +1800,11 @@
       }
     },
     "loyalty_user_detail": {
-      "title": "Věrnost uživatele",
+      "title": "Zákazník",
       "title_for_user": "Věrnost pro {{email}}",
       "loading": "Načítání účtu...",
       "back": "Zpět na uživatele",
-      "view_link": "Zobrazit věrnost",
+      "view_link": "Zobrazit zákazníka",
       "tier_label": "Aktuální úroveň",
       "lifetime_points": "Celkové body",
       "completed_bookings_label": "Dokončené úklidy",
@@ -1870,6 +1875,64 @@
         "as_referred": "Jako doporučený",
         "empty_as_referrer": "Žádná odeslaná doporučení",
         "empty_as_referred": "Nikým nedoporučen"
+      },
+      "credit": {
+        "title": "Kredit zákazníka",
+        "balance": "Zůstatek",
+        "never_credited": "Tento zákazník zatím žádný kredit nedostal.",
+        "empty": "Žádné pohyby kreditu.",
+        "success": "Kredit přidělen.",
+        "actions": {
+          "issue": "Přidělit kredit",
+          "expire": "Odepsat zůstatek"
+        },
+        "error": {
+          "generic": "Kredit se nepodařilo přidělit. Zkuste to znovu."
+        },
+        "reason": {
+          "dispute_settlement": "Vyřízení reklamace",
+          "cleaner_no_show": "Nedostavení üklidové pracovnice",
+          "goodwill": "Vstřícný krok",
+          "order_payment": "Čerpáno na objednávku",
+          "order_payment_returned": "Vráceno ze zrušené objednávky",
+          "unknown": "Jiné",
+          "expired": "Vypršelo"
+        },
+        "dialog": {
+          "title": "Přidělit kredit",
+          "lede": "Od potvrzení jde o částku, kterou společnost zákazníkovi dluží. Odsud ji nelze vzít zpět — zákazník ji využije při objednávce, nebo požádá o vyplacení.",
+          "cancel": "Zrušit",
+          "submit": "Přidělit kredit",
+          "field": {
+            "amount": "Částka ({{currency}})",
+            "reason": "Důvod",
+            "note": "Co se stalo",
+            "note_help": "Zaznamenáno pod vaším jménem. Napište to, co byste sami chtěli číst, než tomuto zákazníkovi znovu něco přidělíte."
+          },
+          "validation": {
+            "amount_min": "Zadejte částku větší než nula.",
+            "amount_max": "To přesahuje limit pro jeden kredit. Vystavte jej po menších částkách.",
+            "note_required": "Uveďte, co se stalo.",
+            "note_max": "Maximálně 500 znaků."
+          }
+        },
+        "column": {
+          "date": "Kdy",
+          "amount": "Částka",
+          "reason": "Důvod",
+          "note": "Co se stalo"
+        },
+        "expire_success": "Odepsáno {{amount}}.",
+        "expire_error": "Zůstatek se nepodařilo odepsat.",
+        "expire_dialog": {
+          "title": "Odepsat zůstatek kreditu",
+          "lede": "Odepíše celý zůstatek {{amount}} {{currency}} a nelze to vrátit zpět. Použijte, když zákazník odchází: dokud kredit zůstává, výmaz účtu se odmítne.",
+          "field": {
+            "note": "Důvod",
+            "note_help": "Jediný záznam o tom, proč firma přestala dlužit peníze. Uveďte, kdo o to požádal."
+          },
+          "submit": "Odepsat"
+        }
       }
     },
     "loyalty_referrals": {
@@ -2367,6 +2430,11 @@
       "not_serviced": "V této zemi nepůsobíme.",
       "required": "Země je povinná."
     },
+    "credit": {
+      "amount_exceeds_sanity_cap": "Tato částka přesahuje limit pro jeden kredit. Pokud je správná, vystavte ji po menších částkách.",
+      "amount_not_whole_minor_units": "Částka kreditu nemůže být menší než setina měnové jednotky.",
+      "reason_not_issuable": "Tento důvod popisuje čerpání kreditu, nikoli jeho přidělení. Zvolte vyřízení reklamace, nedostavení ýklidové pracovnice nebo vstřícný krok."
+    },
     "currency": {
       "cannot_delete_default": "Výchozí měnu nelze smazat",
       "code_already_exists": "Měna s tímto kódem již existuje",
@@ -2386,7 +2454,9 @@
       "invalid_status_transition": "Tato změna stavu není pro aktuální stav sporu povolena.",
       "max_length_exceeded": "Překročena maximální délka",
       "not_found": "Spor nenalezen",
-      "not_owned_by_user": "Tento spor patří jinému uživateli."
+      "not_owned_by_user": "Tento spor patří jinému uživateli.",
+      "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit.",
+      "line_not_on_order": "Tato položka na této objednávce není."
     },
     "email": {
       "invalid_email": "Neplatná e-mailová adresa",
@@ -2423,6 +2493,18 @@
       "size_exceeded": "Velikost souboru překročila maximální povolenou velikost",
       "size_exceeded_10mb": "Velikost souboru nesmí překročit 10 MB",
       "type_not_allowed": "Typ souboru není povolen. Povolené: PDF, JPEG, PNG, DOC, DOCX"
+    },
+    "gdpr": {
+      "export_failed": "Údaje tohoto uživatele se nepodařilo exportovat. Zkuste to znovu.",
+      "deletion_failed": "Tento účet se nepodařilo smazat. Zkuste to znovu.",
+      "deletion_already_pending": "Žádost o smazání tohoto účtu již probíhá.",
+      "deletion_blocked_by_order": "Tento účet má aktívní objednávky a zatím jej nelze smazat.",
+      "deletion_blocked_by_credit_balance": "Tento zákazník má stále kredit. Než půjde účet smazat, musí být vyčerpán nebo vyplacen.",
+      "deletion_blocked_by_invoice": "Tento účet má nevyřízené faktury a zatím jej nelze smazat.",
+      "deletion_blocked_by_assigned_order": "Tato üklidová pracovnice je přiřazena k zakázce a zatím ji nelze smazat.",
+      "deletion_blocked_by_unsettled_pay": "Této üklidové pracovnici stále dlužíme odměnu. Vyřešte to před smazáním účtu.",
+      "consent_not_found": "Toto nastavení souhlasu se nepodařilo najít.",
+      "consent_already_granted": "Tento souhlas již byl udělen."
     },
     "general": {
       "not_found": "Zdroj nenalezen"
@@ -2653,6 +2735,9 @@
         "scheme_not_supported": "Výplaty na tento typ účtu zatím nejsou podporovány",
         "swift_required": "Banka je v jiné zemi, než ve které zaměstnanec pracuje, proto je nutný také SWIFT/BIC kód banky."
       }
+    },
+    "review": {
+      "line_not_on_order": "Nelze hodnotit položku, která na této objednávce není."
     }
   },
   "cookies": {
@@ -2722,6 +2807,10 @@
     "messages": {
       "retry_scheduled": "Opakování naplánováno",
       "acknowledged": "Fiskální selhání potvrzeno"
+    },
+    "errors": {
+      "retry_scheduled": "Akci se nepodařilo provést. Zkuste to prosím znovu.",
+      "acknowledged": "Akci se nepodařilo provést. Zkuste to prosím znovu."
     }
   },
   "gdpr": {

@@ -11,10 +11,8 @@ import {
 } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ButtonModule } from 'primeng/button';
-import { ProgressBarModule } from 'primeng/progressbar';
+import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TagModule } from 'primeng/tag';
 import { RewardsFacade } from './rewards.facade';
 
 type TierStatus = 'unlocked' | 'current' | 'locked';
@@ -25,13 +23,10 @@ type TierStatus = 'unlocked' | 'current' | 'locked';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    RouterLink,
     TranslatePipe,
-    TagModule,
-    ProgressBarModule,
     SkeletonModule,
-    ButtonModule,
     CleansiaButtonComponent,
+    FoamEdgeComponent,
   ],
   templateUrl: './rewards.component.html',
 })
@@ -46,6 +41,37 @@ export class RewardsComponent implements OnInit {
   protected readonly LoyaltyTransactionType = LoyaltyTransactionType;
   protected readonly LoyaltyEarnSource = LoyaltyEarnSource;
   protected readonly LoyaltyTier = LoyaltyTier;
+
+  /**
+   * The three things a customer has to know before a points balance means
+   * anything, in the order the board puts them. Copy only — every rule they
+   * describe is enforced on the server. -> /product/business-rules
+   */
+  protected readonly howItWorks = [
+    { key: 'rate', icon: 'pi pi-star' },
+    { key: 'on_completion', icon: 'pi pi-check-circle' },
+    { key: 'referral', icon: 'pi pi-gift' },
+  ] as const;
+
+  /**
+   * The ceiling a tier discount and a Plus discount reach TOGETHER. It is not
+   * the platinum discount by coincidence — platinum reaches the cap on its own,
+   * which is why Plus adds nothing on top of it. -> /product/business-rules
+   */
+  protected readonly discountCapPercent = 12;
+
+  /**
+   * Roughly what has been cleaned for, read back out of the points. A point is
+   * a fixed tenth of a koruna of order total, so this is a restatement rather
+   * than an estimate — the "roughly" is the flooring, not the rate.
+   */
+  cleanedForLabel(points: number): string {
+    return new Intl.NumberFormat(this.getLocale(), {
+      style: 'currency',
+      currency: 'CZK',
+      maximumFractionDigits: 0,
+    }).format(points * 10);
+  }
 
   /**
    * Progress 0..100 to the next tier. Computed against the current tier's
@@ -129,22 +155,36 @@ export class RewardsComponent implements OnInit {
       return {
         key: 'pages.rewards.discount_min_order',
         params: {
-          percent: this.percentDisplay(tier.discountPercent),
+          percent: this.percentOf(tier.discountPercent),
           minAmount: tier.minimumOrderAmountForDiscount,
         },
       };
     }
     return {
       key: 'pages.rewards.discount_basic',
-      params: { percent: this.percentDisplay(tier.discountPercent) },
+      params: { percent: this.percentOf(tier.discountPercent) },
     };
   }
 
   /**
-   * Backend may emit either a fraction (0.05) or an integer percent (5).
-   * Normalise to an integer for display so we don't show "0.05% off".
+   * A tier discount as a NUMBER OF PERCENT, from the fraction the API sends.
+   *
+   * `LoyaltyTierConfig.DiscountPercent` is a fraction despite its name — `UpdateTierConfig`
+   * validates it as `p >= 0 && p <= 1`, and `LoyaltyService` spends it as
+   * `orderTotal * config.DiscountPercent` with no division. So the seeded tiers arrive as 0.05,
+   * 0.1 and 0.12, and printing them beside a `%` sign read "0.05%" — a fiftieth of the discount
+   * the customer actually gets.
+   *
+   * Public because the template needs it: this existed already, but only `discountLabel` went
+   * through it, and the two places that print the number on the page did not.
+   *
+   * The `<= 1` branch is kept as a guard, not a hedge: it makes an integer already in percent
+   * survive unchanged if the API's units ever move, rather than silently multiplying by 100.
    */
-  private percentDisplay(raw: number): number {
+  percentOf(raw: number | undefined): number {
+    if (!raw) {
+      return 0;
+    }
     return raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
   }
 
@@ -152,27 +192,39 @@ export class RewardsComponent implements OnInit {
    * Pick the right transaction-row translation key + params from the
    * ledger entry so templates stay declarative.
    */
+  /**
+   * What the movement WAS, and nothing else.
+   *
+   * These keys used to carry the points and the order number into the sentence
+   * — "+170 pts — Cleaning #CL-2026-0301" — beside a pill already showing +170
+   * and a line already showing the order. Three copies of two facts. The row
+   * says each thing once now: the pill is the amount, this is the event, the
+   * line under it is the order.
+   */
   txLabel(item: GetLoyaltyActivityActivityItem): { key: string; params: Record<string, unknown> } {
-    const points = item.points;
-    const number = item.orderDisplayNumber ?? '';
     if (item.source === LoyaltyEarnSource.Referral) {
-      return { key: 'pages.rewards.tx_referral', params: { points } };
+      return { key: 'pages.rewards.tx.referral', params: {} };
     }
     if (item.source === LoyaltyEarnSource.ManualGrant) {
-      return { key: 'pages.rewards.tx_manual', params: { points } };
+      return { key: 'pages.rewards.tx.manual', params: {} };
     }
-    if (item.type === LoyaltyTransactionType.Revoke || item.source === LoyaltyEarnSource.OrderCancelled) {
-      return { key: 'pages.rewards.tx_revoke_order', params: { points, number } };
+    if (
+      item.type === LoyaltyTransactionType.Revoke ||
+      item.source === LoyaltyEarnSource.OrderCancelled
+    ) {
+      return { key: 'pages.rewards.tx.cancelled', params: {} };
     }
-    return { key: 'pages.rewards.tx_earn_order', params: { points, number } };
+    if (item.source === LoyaltyEarnSource.OrderPartiallyRefunded) {
+      return { key: 'pages.rewards.tx.refunded', params: {} };
+    }
+    return { key: 'pages.rewards.tx.completed', params: {} };
   }
 
   /**
    * Format the ledger timestamp using the active language. Falls back to en-US
    * when the runtime locale isn't in our explicit map.
    */
-  formatDate(date: Date | undefined | null): string {
-    if (!date) return '';
+  private getLocale(): string {
     const localeMap: Record<string, string> = {
       en: 'en-US',
       cs: 'cs-CZ',
@@ -180,13 +232,17 @@ export class RewardsComponent implements OnInit {
       uk: 'uk-UA',
       ru: 'ru-RU',
     };
-    const locale = localeMap[this.translate.currentLang] || 'en-US';
-    return new Date(date).toLocaleString(locale, {
-      day: '2-digit',
-      month: '2-digit',
+    return localeMap[this.translate.currentLang] || 'en-US';
+  }
+
+  // The board's activity rows carry a date, not a timestamp: a points movement
+  // is a thing that happened on a day, and the minute it landed says nothing.
+  formatDate(date: Date | undefined | null): string {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString(this.getLocale(), {
+      day: 'numeric',
+      month: 'numeric',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   }
 

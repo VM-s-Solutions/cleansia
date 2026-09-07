@@ -1,52 +1,48 @@
-<div class="cleansia-not-found">
-  <cleansia-dynamic-background />
+<div class="cl-out">
+  <div class="cl-out__inner">
+    <img class="cl-out__art" [src]="mascotSrc()" alt="" aria-hidden="true" loading="lazy" />
 
-  <div class="cleansia-not-found__container">
-    <div class="cleansia-not-found__illustration">
-      <img [src]="mascotSrc()" alt="" class="cleansia-not-found__mascot" loading="lazy" />
-    </div>
-
-    <h1 class="cleansia-not-found__code">{{ code() }}</h1>
-    <h2 class="cleansia-not-found__title">
+    <span class="cl-out__eyebrow">
+      {{ 'components.not_found.error_code' | translate: { code: code() } }}
+    </span>
+    <h1 class="cl-out__title">
       {{ title() ?? ('components.not_found.title' | translate) }}
-    </h2>
-    <p class="cleansia-not-found__msg">
+    </h1>
+    <p class="cl-out__lead">
       {{ message() ?? ('components.not_found.description' | translate) }}
     </p>
 
-    <div class="cleansia-not-found__suggestions">
-      <div class="cleansia-not-found__suggestion">
-        <i class="pi pi-home"></i>
-        <span>{{ 'components.not_found.suggestion_home' | translate }}</span>
-      </div>
-      <div class="cleansia-not-found__suggestion">
-        <i class="pi pi-search"></i>
-        <span>{{ 'components.not_found.suggestion_url' | translate }}</span>
-      </div>
-      <div class="cleansia-not-found__suggestion">
-        <i class="pi pi-envelope"></i>
-        <span>{{ 'components.not_found.suggestion_contact' | translate }}</span>
-      </div>
-    </div>
+    <!--
+      Somewhere else to go. A dead end with no exits is the only thing worse
+      than a dead end — but the exits are the HOST APP's: this component renders
+      on the customer, partner and admin apps, and a hardcoded "Cleansia Plus"
+      would be nonsense on two of them. Empty by default, so an app that says
+      nothing shows nothing.
+    -->
+    @if (links().length > 0) {
+    <nav class="cl-out__links" [attr.aria-label]="'components.not_found.title' | translate">
+      @for (link of links(); track link.route) {
+      <a
+        class="cl-out__link-chip"
+        [routerLink]="link.route"
+        [fragment]="link.fragment"
+      >{{ link.labelKey | translate }}</a>
+      }
+    </nav>
+    }
 
     @if (showBackButtons()) {
-    <div class="cleansia-not-found__actions">
-      <cleansia-button
-        [label]="
-          isHistoryAvailable
-            ? ('global.actions.go_back' | translate)
-            : ('global.actions.go_home' | translate)
-        "
-        severity="primary"
-        icon="pi pi-arrow-left"
-        (onClick)="goBack()"
-      />
-      <a href="/" class="cleansia-not-found__home-link">
-        <i class="pi pi-home"></i>
-        {{ 'components.not_found.go_home' | translate }}
-      </a>
+    <div class="cl-out__actions">
+      <a class="cl-out__cta" href="/">{{ 'components.not_found.go_home' | translate }}</a>
+      <button type="button" class="cl-out__alt" (click)="goBack()">
+        {{
+          (isHistoryAvailable ? 'global.actions.go_back' : 'global.actions.go_home') | translate
+        }}
+      </button>
     </div>
-    } @if (customButtonTemplate()) {
+    }
+
+    @if (customButtonTemplate()) {
     <ng-container *ngTemplateOutlet="customButtonTemplate()!" />
     }
   </div>

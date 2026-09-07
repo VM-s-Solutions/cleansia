@@ -64,6 +64,14 @@ object NotificationTemplates {
             R.string.notification_order_assignment_revoked_body,
             NotificationChannels.CHANNEL_ORDER_UPDATES,
         )
+        // A seat came free on a job this cleaner could take, targeted rather than digested. Its own
+        // key, not order.new_available: that one COLLAPSES its feed row, so a targeted count would
+        // rewrite an unread "12 new jobs" as "1".
+        "order.seat_open" -> Template(
+            R.string.notification_order_seat_open_title,
+            R.string.notification_order_seat_open_body,
+            NotificationChannels.CHANNEL_NEW_JOBS,
+        )
         "order.new_available" -> Template(
             R.string.notification_new_jobs_title,
             R.string.notification_new_jobs_body,
@@ -122,6 +130,7 @@ object NotificationTemplates {
             "order.assignment_cancelled",
             "order.assigned",
             "order.assignment_revoked",
+            "order.seat_open",
             "order.preferred_offer",
             "order.reminder_soon",
             "order.reminder_not_started",

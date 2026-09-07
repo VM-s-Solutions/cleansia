@@ -8,6 +8,33 @@ namespace Cleansia.Infra.Services.Pdf;
 
 public class QuestPdfService : IPdfService
 {
+    /// <summary>
+    /// One render at a time, process-wide.
+    ///
+    /// <para><b>QuestPDF 2024.12.1's native Skia is not thread-safe when it builds a subsetted font's
+    /// <c>/ToUnicode</c> CMap.</b> With two <c>GeneratePdf</c> calls in flight, ~1-3% of renders emit a
+    /// CMap mapping EVERY glyph to U+0000 instead of its real code point. The document looks perfect;
+    /// its text layer is dead, so copy, search and extraction return nothing usable. Measured in one
+    /// process: 0 corrupt in 300 sequential renders, 39 in 1200 concurrent, 0 in 1200 concurrent behind
+    /// this lock. → T-0679</para>
+    ///
+    /// <para><b>Why a global lock is not the throughput risk it looks like.</b> QuestPDF ALREADY blocks
+    /// every render on a static process-wide semaphore —
+    /// <c>QuestPDF.Drawing.DocumentGenerator.RenderDocumentSemaphore</c>, verified by reflection at
+    /// <c>CurrentCount == 2</c>. The process already parks threads on a global render gate; this moves
+    /// it from two to one. One extra parked thread per burst, against a real demand near 0.01
+    /// renders/second, and no customer request pays any of it: a receipt download is a blob read, and
+    /// the receipt queue is pinned at one message in flight.</para>
+    ///
+    /// <para>STATIC, not an instance field: <c>IPdfService</c> is registered SCOPED, so every request
+    /// gets its own service and an instance lock would gate nothing. What is being protected is
+    /// QuestPDF's process-wide typeface cache.</para>
+    ///
+    /// <para>It wraps ONLY the render call — not the logging, not the country-logic enrichment — so
+    /// nothing else in the method is serialised.</para>
+    /// </summary>
+    private static readonly object RenderGate = new();
+
     private readonly LayoutBuilderFactory _layoutFactory;
     private readonly ILogger<QuestPdfService> _logger;
 
@@ -30,7 +57,11 @@ public class QuestPdfService : IPdfService
         try
         {
             var builder = _layoutFactory.GetReceiptBuilder(countryCode);
-            var pdfBytes = Document.Create(c => builder.Build(c, data)).GeneratePdf();
+            byte[] pdfBytes;
+            lock (RenderGate)
+            {
+                pdfBytes = Document.Create(c => builder.Build(c, data)).GeneratePdf();
+            }
 
             _logger.LogInformation("Receipt PDF generated successfully ({Size} bytes)", pdfBytes.Length);
             return pdfBytes;
@@ -52,7 +83,11 @@ public class QuestPdfService : IPdfService
         {
             var enrichedData = ApplyCountryLogic(data, context);
             var builder = _layoutFactory.GetInvoiceBuilder(countryCode);
-            var pdfBytes = Document.Create(c => builder.Build(c, enrichedData, context)).GeneratePdf();
+            byte[] pdfBytes;
+            lock (RenderGate)
+            {
+                pdfBytes = Document.Create(c => builder.Build(c, enrichedData, context)).GeneratePdf();
+            }
 
             _logger.LogInformation("Invoice PDF generated successfully ({Size} bytes)", pdfBytes.Length);
             return pdfBytes;

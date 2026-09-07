@@ -45,8 +45,13 @@ final class OrderPrimaryActionTests: XCTestCase {
         XCTAssertEqual(action(._3, mine: true), .start)
     }
 
-    func testOnTheWayNotMineIsNone() {
-        XCTAssertEqual(action(._3, mine: false), .none)
+    /// A NON-assignee can now TAKE a started job while a seat remains. OrderStatus is on the ORDER,
+    /// not on a person, so one crew mate tapping "on my way" used to remove the whole booking from
+    /// every board with its other seats empty — on a three-person job, two seats locked out by one
+    /// person's tap. Owner ruling 2026-09-06 made offerability mean "the work is not OVER" rather
+    /// than "has not STARTED". → OrderAvailability.OfferableStatuses
+    func testOnTheWayNotMineIsTake() {
+        XCTAssertEqual(action(._3, mine: false), .take)
     }
 
     // MARK: InProgress (4) — after-photos gate
@@ -66,9 +71,11 @@ final class OrderPrimaryActionTests: XCTestCase {
         )
     }
 
-    func testInProgressNotMineIsNoneRegardlessOfPhotos() {
-        XCTAssertEqual(action(._4, mine: false, photos: true), .none)
-        XCTAssertEqual(action(._4, mine: false, photos: false), .none)
+    /// The after-photos gate belongs to the ASSIGNEE completing the job; it has nothing to say to a
+    /// cleaner who is joining one. A late joiner is worth more to the customer than an empty seat.
+    func testInProgressNotMineIsTakeRegardlessOfPhotos() {
+        XCTAssertEqual(action(._4, mine: false, photos: true), .take)
+        XCTAssertEqual(action(._4, mine: false, photos: false), .take)
     }
 
     // MARK: InProgress (4) — cash-collection gate (after the after-photos gate)
@@ -100,8 +107,9 @@ final class OrderPrimaryActionTests: XCTestCase {
         XCTAssertEqual(action(._4, mine: true, photos: true, cash: false, settled: false), .complete)
     }
 
-    func testInProgressNotMineUnsettledCashIsStillNone() {
-        XCTAssertEqual(action(._4, mine: false, photos: true, cash: true, settled: false), .none)
+    /// Cash collection is likewise the assignee's gate, not a bar on joining.
+    func testInProgressNotMineUnsettledCashIsStillTake() {
+        XCTAssertEqual(action(._4, mine: false, photos: true, cash: true, settled: false), .take)
     }
 
     // MARK: Pending (1) / Completed (5) / Cancelled (6) / nil — terminal/no-op

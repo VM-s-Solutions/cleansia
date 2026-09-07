@@ -181,10 +181,17 @@ class OrderRepository @Inject constructor(
         rating: Int,
         comment: String?,
         tags: List<ReviewTag> = emptyList(),
+        lines: List<ReviewLineScoreRequest> = emptyList(),
     ): ApiResult<OrderReviewDto> = wireResult {
         val resp = networkCall {
             api.submitReview(
-                SubmitReviewRequest(orderId = orderId, rating = rating, comment = comment, tags = tags),
+                SubmitReviewRequest(
+                    orderId = orderId,
+                    rating = rating,
+                    comment = comment,
+                    tags = tags,
+                    lines = lines.takeIf { it.isNotEmpty() },
+                ),
             )
         } ?: return networkError()
         if (!resp.isSuccessful) {

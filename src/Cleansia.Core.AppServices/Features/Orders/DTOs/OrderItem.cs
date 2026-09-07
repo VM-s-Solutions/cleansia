@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Currencies.DTOs;
+﻿using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
@@ -34,6 +34,17 @@ public record OrderItem(
     decimal? TierDiscountAmount,
     decimal? MembershipDiscountAmount,
     decimal? PromoDiscountAmount,
+    /// <summary>
+    /// How much of this order the customer's credit balance settled, and what the card was therefore
+    /// asked for. NOT a discount: <see cref="TotalPrice"/> is the size of the sale and does not move.
+    ///
+    /// <para>Every client that shows "what you pay" has to read <see cref="AmountDueOnCard"/>, and
+    /// none of them could before these two existed — the partner app quoted TotalPrice on the job
+    /// sheet and the customer app quoted it at checkout, both of which are the wrong number the moment
+    /// any credit is applied. -&gt; Order.CreditAppliedAmount</para>
+    /// </summary>
+    decimal CreditAppliedAmount,
+    decimal AmountDueOnCard,
     int EstimatedTime,
     int? ActualCompletionTime,
     DateTime? CompletedAt,
@@ -43,6 +54,14 @@ public record OrderItem(
     string? Notes,
     string? SpecialInstructions,
     string? AccessInstructions,
+    /// <summary>
+    /// Which floor and which door. Redacted with the address for a cleaner the
+    /// order does not belong to — on their own they are a smaller key than the
+    /// access instructions, but together with a street they are the same key.
+    /// </summary>
+    string? CustomerFloor,
+    string? CustomerApartment,
+    string? AccessMode,
     /// <summary>
     /// FK back to the recurring booking template that spawned this order.
     /// Null for one-off orders. Mobile uses this + <c>PaymentStatus.Pending</c>

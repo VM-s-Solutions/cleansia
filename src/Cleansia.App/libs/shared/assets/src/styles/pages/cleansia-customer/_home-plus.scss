@@ -1,0 +1,184 @@
+@use './home-variables' as *;
+
+.cl-section--plus {
+  padding: var(--cl-gutter) var(--cl-gutter) 0;
+}
+
+
+// =============================
+// Cleansia Plus
+// =============================
+// The gradient here is the app's own BrandGradients.blue() pair (sky-600 ->
+// sky-400), used as the identity of one card rather than as page decoration.
+// -> agents/knowledge/design-language.md#22-gradients
+
+.cl-plus {
+  position: relative;
+  overflow: hidden;
+  border-radius: 52px;
+  background: radial-gradient(120% 140% at 88% 12%, var(--cl-plus-1) 0%, var(--cl-plus-2) 58%);
+  color: var(--cl-plus-ink);
+  padding: 44px 50px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 30px;
+  align-items: center;
+
+  // one soft disc, echoing the suds motif the mobile pull-to-refresh uses
+  &::before {
+    content: '';
+    position: absolute;
+    left: -40px;
+    bottom: -60px;
+    width: 220px;
+    height: 220px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &__body {
+    position: relative;
+  }
+
+  &__badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.24);
+    padding: 8px 16px;
+    border-radius: 999px;
+  }
+
+  &__title {
+    margin: 16px 0 0;
+    font-family: $font-heading;
+    font-size: clamp(26px, 2.6vw, 34px);
+    font-weight: 700;
+    line-height: 1.16;
+    letter-spacing: -0.8px;
+    color: $white;
+    margin: 16px 0 0;
+  }
+
+  &__perks {
+    margin-top: 18px;
+    display: grid;
+    // Two fixed columns. `auto-fit` reflowed to three-plus-one once the card
+    // widened to the artboard's 1312, which reads as a ragged list rather than
+    // as two pairs.
+    grid-template-columns: 1fr 1fr;
+    gap: 9px 26px;
+    margin: 18px 0 0;
+    max-width: 780px;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 17px;
+      line-height: 1.55;
+      // Without this the row is sized by its longest word and pushes out of the
+      // card rather than wrapping inside it.
+      min-width: 0;
+    }
+
+    i {
+      flex-shrink: 0;
+      margin-top: 4px;
+      font-size: 14px;
+    }
+  }
+
+  &__actions {
+    gap: 22px;
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 22px;
+    margin-top: 24px;
+  }
+
+  // Inverted CTA: white on the gradient, so it stays the one primary action.
+  // A GROUND adaptation only — shape, radius and weight come from
+  // `cleansia-button--brand`; this changes the fill and nothing else.
+  &__cta {
+    background: $white;
+    border-color: $white;
+    color: $primary;
+    padding-inline: 32px;
+    box-shadow: none;
+
+    &:hover,
+    &:not(:disabled):hover {
+      background: $primary-light;
+      border-color: $primary-light;
+      color: $primary-darker;
+      box-shadow: none;
+    }
+  }
+
+  &__yearly {
+    font-size: 16px;
+    font-weight: 700;
+    color: $primary-light;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__mascot {
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+
+    img {
+      width: 196px;
+      height: auto;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .cl-plus {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 32px 28px;
+    border-radius: 32px;
+
+    &__mascot {
+      justify-content: center;
+    }
+  }
+}
+
+// The artboard marks each perk with a mid-dot, not a check. Four ticks in a row
+// read as a feature comparison; the dots read as a list, which is what it is.
+.cl-plus__perks li {
+  &::before {
+    content: '·';
+    margin-right: 6px;
+    font-weight: 800;
+  }
+}
+
+// Artboard rhythm.
+ul.cl-plus__perks {
+  margin: 18px 0 0;
+}
+
+@media (max-width: 900px) {
+  // Two columns leave roughly 154px per cell on a phone, which no perk fits.
+  .cl-plus__perks {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  // The mascot is sized for the card's right-hand column; once the card is one
+  // column it has to fit the card's width instead.
+  .cl-plus__mascot img {
+    max-width: 100%;
+    height: auto;
+  }
+}

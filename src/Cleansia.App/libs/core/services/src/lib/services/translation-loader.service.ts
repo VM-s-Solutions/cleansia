@@ -1,19 +1,54 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { inject, REQUEST } from '@angular/core';
+import { inject, makeStateKey, REQUEST, TransferState } from '@angular/core';
 import { TranslateLoader, TranslateService } from '@ngx-translate/core';
 import { Observable, firstValueFrom, of } from 'rxjs';
 
 const SUPPORTED_LANGUAGES = ['cs', 'en', 'sk', 'uk', 'ru'];
 const PREFERRED_LANGUAGE_KEY = 'preferred_language';
 
+/**
+ * Where the SSR render parks the language it already read off disk, so the
+ * browser does not fetch it a second time.
+ *
+ * Keyed by language because the two renderers do not always agree: the server
+ * picks from the cookie and `Accept-Language`, the browser from localStorage
+ * and `navigator.language`. When they differ the key misses and the HTTP path
+ * runs exactly as before — that is the intended fallback, not an error.
+ */
+export const i18nStateKey = (lang: string) =>
+  makeStateKey<Record<string, unknown>>(`i18n.${lang}`);
+
 export class JsonTranslationLoader implements TranslateLoader {
+  /**
+   * Optional so the two SPAs, which have no server render and construct this
+   * loader the same way, keep working untouched. Resolved with `inject()`
+   * rather than a constructor parameter for the same reason: every existing
+   * call site passes exactly two arguments.
+   */
+  private readonly transferState = inject(TransferState, { optional: true });
+
   constructor(
     private http: HttpClient,
     private isBrowser: boolean
   ) {}
 
   getTranslation(lang: string): Observable<Record<string, unknown>> {
+    // The dictionary the server already parsed, handed over in the HTML.
+    //
+    // This is on the critical path, not a micro-optimisation: the
+    // APP_INITIALIZER awaits `translate.use(lang)`, so bootstrap — and with it
+    // hydration — blocks on this call. Measured on the landing page, the fetch
+    // it replaces was 106,382 bytes and could not even begin until main.js had
+    // parsed, starting at 909 ms.
+    const fromServer = this.transferState?.get(i18nStateKey(lang), null as Record<string, unknown> | null);
+    if (fromServer) {
+      // Read once. Leaving it in place would keep a second copy alive for the
+      // lifetime of the page, having already been paid for in the document.
+      this.transferState?.remove(i18nStateKey(lang));
+      return of(fromServer);
+    }
+
     // On the server (SSR), return empty translations to avoid HTTP requests
     // that would hit EasyAuth and fail with 401. The customer SSR app
     // overrides this loader with a disk-reading one in app.config.server.ts.

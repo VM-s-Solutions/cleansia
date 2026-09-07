@@ -65,6 +65,7 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreateService(
         [FromBody] CreateService.Command command,
         CancellationToken cancellationToken)
@@ -80,6 +81,7 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdateService(
         string serviceId,
         [FromBody] UpdateService.Command command,
@@ -132,6 +134,7 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeleteService(
         string serviceId,
         CancellationToken cancellationToken)

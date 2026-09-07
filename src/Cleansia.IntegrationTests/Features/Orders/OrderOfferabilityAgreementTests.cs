@@ -45,9 +45,14 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
     private const string RecurringTemplateId = "tpl-offer-weekly";
 
     /// <summary>
-    /// The six rows ADR-0037 D1 rules on, plus the two Fact-3 rows the old status-blind seat
-    /// arithmetic let through. Every one of them has a FREE SEAT and no assignee, so the seat term
-    /// admits all eight and the verdict is decided purely by the rule under test.
+    /// The six rows ADR-0037 D1 rules on, the two Fact-3 rows the old status-blind seat arithmetic
+    /// let through, and the four started-but-not-over rows the 2026-09-06 widening turns on. Every one
+    /// of them has a FREE SEAT and no assignee, so the seat term admits them all and the verdict is
+    /// decided purely by the rule under test.
+    ///
+    /// <para>The four new rows matter more than they look: this suite would have stayed GREEN without
+    /// them, because none of its original eight is <c>OnTheWay</c> or <c>InProgress</c> — a silent
+    /// pass over exactly the change being made, which is the failure this file exists to prevent.</para>
     /// </summary>
     private static readonly OfferabilityCase[] Cases =
     [
@@ -59,6 +64,12 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
         new("order-conf-card-pend", OrderStatus.Confirmed, PaymentType.Card, PaymentStatus.Pending, null, false),
         new("order-cancelled-seat", OrderStatus.Cancelled, PaymentType.Cash, PaymentStatus.Pending, null, false),
         new("order-completed-seat", OrderStatus.Completed, PaymentType.Card, PaymentStatus.Paid, null, false),
+        // Started, but not over: the crew is short, the seat is open, the job has not happened yet.
+        new("order-otw-card-paid", OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Paid, null, true),
+        new("order-inprog-card-paid", OrderStatus.InProgress, PaymentType.Card, PaymentStatus.Paid, null, true),
+        // The money axis must not be swallowed by the widened status axis.
+        new("order-otw-card-pend", OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Pending, null, false),
+        new("order-inprog-cash-recur", OrderStatus.InProgress, PaymentType.Cash, PaymentStatus.Pending, RecurringTemplateId, false),
     ];
 
     [Fact]

@@ -1,69 +1,164 @@
-<div class="checkout-page">
-  <cleansia-dynamic-background [iconCount]="15" />
-  <div class="checkout-card">
-    <!-- Welcoming mascot — plays once on screen entry, freezes on last frame.
-         WebM with VP9 alpha keeps full transparency on any background. The
-         <img> fallback handles browsers that can't decode VP9-with-alpha
-         (older Safari) or the moment before the video buffers. -->
-    <video
-      class="checkout-card__mascot"
-      autoplay
-      muted
-      playsinline
-      disablePictureInPicture
-      preload="auto"
+<!--
+  The board draws the two checkout returns and the 404 as ONE shape: a mascot, a
+  status chip, a headline, a sentence, a card of three facts, two actions. That
+  shape is `.cl-out`, in the shared components layer — see
+  `libs/shared/assets/src/styles/components/cleansia-outcome.component.scss`.
+-->
+<div class="cl-out">
+  <div class="cl-out__inner">
+    <img
+      class="cl-out__art"
+      src="assets/images/mascot/mascot-thumbs-up-tile.webp"
+      alt=""
+      width="200"
+      height="200"
       aria-hidden="true"
-    >
-      <source src="assets/videos/mascot-welcoming.webm" type="video/webm" />
-      <img src="assets/images/mascot/mascot-cleaning.png" alt="" loading="lazy" />
-    </video>
+    />
 
-    @if (isCash()) {
-      <h1 class="checkout-card__title">{{ 'pages.checkout.success.cash.title' | translate }}</h1>
-      <p class="checkout-card__subtitle">{{ 'pages.checkout.success.cash.subtitle' | translate }}</p>
-      <p class="checkout-card__desc">{{ 'pages.checkout.success.cash.description' | translate }}</p>
+    <!--
+      Green when the money is in, amber when it is not yet — never red on
+      either. Cash is a booking that is waiting to be paid, not a failure.
+    -->
+    <span
+      class="cl-out__chip"
+      [class.cl-out__chip--ok]="!isCash()"
+      [class.cl-out__chip--pending]="isCash()"
+    >
+      @if (isCash()) {
+        <i class="pi pi-wallet" aria-hidden="true"></i>
+      } @else {
+        <i class="pi pi-check-circle" aria-hidden="true"></i>
+      }
+      {{
+        (isCash() ? 'pages.checkout.success.cash.chip' : 'pages.checkout.success.card.chip')
+          | translate
+      }}
+    </span>
+
+    <h1 class="cl-out__title">
+      {{
+        (isCash() ? 'pages.checkout.success.cash.title' : 'pages.checkout.success.card.title')
+          | translate
+      }}
+    </h1>
+
+    <!--
+      The lead names the order, the date and the amount when the lookup found
+      them, and falls back to the generic line when it did not. A confirmation
+      that says "confirmed for" with nothing after it is worse than one that
+      does not say it.
+    -->
+    @if (order(); as found) {
+      <p class="cl-out__lead">
+        {{
+          (isCash()
+            ? 'pages.checkout.success.cash.lead_dated'
+            : 'pages.checkout.success.card.lead_dated'
+          )
+            | translate
+              : {
+                  number: found.displayOrderNumber,
+                  when: formatDateTime(found.cleaningDateTime),
+                  amount: formatPrice(found),
+                }
+        }}
+      </p>
     } @else {
-      <h1 class="checkout-card__title">{{ 'pages.checkout.success.card.title' | translate }}</h1>
-      <p class="checkout-card__subtitle">{{ 'pages.checkout.success.card.subtitle' | translate }}</p>
-      <p class="checkout-card__desc">{{ 'pages.checkout.success.card.description' | translate }}</p>
+      <p class="cl-out__lead">
+        {{
+          (isCash()
+            ? 'pages.checkout.success.cash.description'
+            : 'pages.checkout.success.card.description'
+          ) | translate
+        }}
+      </p>
     }
 
-    <div class="checkout-card__divider"></div>
-
-    <div class="checkout-card__steps">
-      <h3 class="checkout-card__steps-title">{{ 'pages.checkout.success.what_next' | translate }}</h3>
-      <div class="checkout-card__step">
-        <span class="checkout-card__step-num step-num--success">1</span>
-        <span>{{ 'pages.checkout.success.step_confirmation' | translate }}</span>
-      </div>
-      <div class="checkout-card__step">
-        <span class="checkout-card__step-num step-num--success">2</span>
-        <span>{{ 'pages.checkout.success.step_reminder' | translate }}</span>
-      </div>
-      <div class="checkout-card__step">
-        <span class="checkout-card__step-num step-num--success">3</span>
-        @if (isCash()) {
-          <span>{{ 'pages.checkout.success.cash.step_payment' | translate }}</span>
-        } @else {
-          <span>{{ 'pages.checkout.success.step_cleaner' | translate }}</span>
+    <!--
+      What was booked. The old summary strip carried a services COUNT; naming
+      them is both shorter to read and more than it said, and the date, the
+      total and the order number it also carried are in the lead above.
+    -->
+    @if (bookedItems().length > 0) {
+      <div class="cl-out__items">
+        @for (item of bookedItems(); track item.key) {
+          <span class="cl-out__item">
+            <i
+              class="cl-out__item-icon pi"
+              [class.pi-box]="item.isPackage"
+              [class.pi-sparkles]="!item.isPackage"
+              aria-hidden="true"
+            ></i>
+            {{ item.name }}
+          </span>
         }
       </div>
+    }
+
+    <!-- Three things the platform will do next — told, not asked. -->
+    <div class="cl-out__facts">
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon"><i class="pi pi-envelope" aria-hidden="true"></i></span>
+        <div>
+          <div class="cl-out__fact-title">
+            {{ 'pages.checkout.success.fact_email' | translate }}
+          </div>
+          <p class="cl-out__fact-note">
+            {{ 'pages.checkout.success.step_confirmation' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon"><i class="pi pi-user" aria-hidden="true"></i></span>
+        <div>
+          <div class="cl-out__fact-title">
+            {{ 'pages.checkout.success.fact_cleaner' | translate }}
+          </div>
+          <p class="cl-out__fact-note">
+            {{ 'pages.checkout.success.step_cleaner' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon"><i class="pi pi-bell" aria-hidden="true"></i></span>
+        <div>
+          <div class="cl-out__fact-title">
+            {{ 'pages.checkout.success.fact_reminder' | translate }}
+          </div>
+          <p class="cl-out__fact-note">
+            {{ 'pages.checkout.success.step_reminder' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <!--
+        A fourth row only on the cash path, because only there is there
+        anything left for the customer to do.
+      -->
+      @if (isCash()) {
+        <div class="cl-out__fact">
+          <span class="cl-out__fact-icon"><i class="pi pi-wallet" aria-hidden="true"></i></span>
+          <div>
+            <div class="cl-out__fact-title">
+              {{ 'pages.checkout.success.cash.fact_payment' | translate }}
+            </div>
+            <p class="cl-out__fact-note">
+              {{ 'pages.checkout.success.cash.step_payment' | translate }}
+            </p>
+          </div>
+        </div>
+      }
     </div>
 
-    <div class="checkout-card__actions">
-      <a [routerLink]="ordersRoute" class="checkout-card__btn checkout-card__btn--primary">
-        <i class="pi pi-list"></i>
+    <div class="cl-out__actions">
+      <a class="cl-out__cta" [routerLink]="ordersRoute">
         {{ 'pages.checkout.success.view_orders' | translate }}
       </a>
-      <a [routerLink]="'/' + routes.ORDER" class="checkout-card__btn checkout-card__btn--outline">
-        <i class="pi pi-plus"></i>
+      <a class="cl-out__alt" [routerLink]="'/' + routes.ORDER">
         {{ 'pages.checkout.success.book_another' | translate }}
       </a>
     </div>
-
-    <a [routerLink]="'/'" class="checkout-card__home-link">
-      <i class="pi pi-arrow-left"></i>
-      {{ 'pages.checkout.success.back_home' | translate }}
-    </a>
   </div>
 </div>

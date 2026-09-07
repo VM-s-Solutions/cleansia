@@ -20,8 +20,17 @@ async function getAngularApp(): Promise<AngularNodeAppEngine> {
     const engineManifest = await import(manifestPath);
     // @angular/ssr >= 19.2.16 (SSRF fix) iterates manifest.allowedHosts
     // unconditionally, but @angular/build < 19.2.16 emits a manifest without
-    // it — default the field so the engine doesn't crash on startup. Hosts
-    // are authorized at runtime via the NG_ALLOWED_HOSTS env var.
+    // it — default the field so the engine doesn't crash on startup.
+    //
+    // The hosts themselves come from NG_ALLOWED_HOSTS, which the framework reads
+    // itself (node.mjs getArrayFromEnv) — do NOT add code here to do it. That
+    // env var, and NG_TRUST_PROXY_HEADERS beside it, are set on the SSR App
+    // Service in deploy/bicep/main.bicep. Until 2026-09-06 they were set nowhere
+    // and this comment was the only mention of either in the repository, so every
+    // production request fell back to client-side rendering with a 200. → T-0681
+    //
+    // An empty list still means CSR-for-everything, which is what a LOCAL run of
+    // the built server does unless you export NG_ALLOWED_HOSTS=localhost.
     ɵsetAngularAppEngineManifest({ allowedHosts: [], ...engineManifest.default });
     manifestLoaded = true;
   }
@@ -35,70 +44,6 @@ app.get('/health', (_req, res) => {
     uptime: process.uptime(),
     memory: process.memoryUsage(),
   });
-});
-
-/**
- * Same-origin Mapbox geocoding proxy.
- *
- * The Mapbox Geocoding REST API authenticates only via the `access_token` query
- * parameter (no `Authorization` header support), which would leak the token into
- * browser history / referrer / CDN+APM logs if the browser called Mapbox
- * directly. This proxy keeps the token OUT of the browser: it injects the
- * server-only token (process.env.MAPBOX_TOKEN) into the upstream call and never
- * logs the token-bearing URL. The browser sends only `q`/`country`/`types`/
- * `language`/`limit` to this same-origin path.
- */
-// Mapbox forward geocoding v5: the query is in the PATH (…/mapbox.places/{q}.json),
-// the rest are query params. The browser-facing service parses the v5 feature shape
-// (feature.center / place_name / text / address / context[]), so the proxy must call
-// v5 — v6 returns a different geometry/properties shape the parser would not read.
-const MAPBOX_PLACES_BASE =
-  'https://api.mapbox.com/geocoding/v5/mapbox.places';
-const MAPBOX_PROXY_ALLOWED_PARAMS = [
-  'country',
-  'types',
-  'language',
-  'limit',
-  'autocomplete',
-] as const;
-
-app.get('/api/mapbox/geocode', (req, res) => {
-  const token = process.env['MAPBOX_TOKEN'] ?? '';
-  if (!token) {
-    // No server-side token provisioned: behave like "not configured".
-    res.status(503).json({ features: [] });
-    return;
-  }
-
-  const q = req.query['q'];
-  if (typeof q !== 'string' || q.length === 0) {
-    res.status(400).json({ features: [] });
-    return;
-  }
-
-  const upstream = new URL(`${MAPBOX_PLACES_BASE}/${encodeURIComponent(q)}.json`);
-  for (const key of MAPBOX_PROXY_ALLOWED_PARAMS) {
-    const value = req.query[key];
-    if (typeof value === 'string' && value.length > 0) {
-      upstream.searchParams.set(key, value);
-    }
-  }
-  // Token is injected here, server-side only — never logged below.
-  upstream.searchParams.set('access_token', token);
-
-  fetch(upstream, { headers: { Accept: 'application/json' } })
-    .then(async (upstreamRes) => {
-      const body = await upstreamRes.text();
-      res
-        .status(upstreamRes.ok ? 200 : upstreamRes.status)
-        .type('application/json')
-        .send(upstreamRes.ok ? body : JSON.stringify({ features: [] }));
-    })
-    .catch(() => {
-      // Log without the token-bearing upstream URL.
-      console.error('Mapbox geocoding proxy upstream request failed');
-      res.status(502).json({ features: [] });
-    });
 });
 
 // Domain-verification files (Apple's domain association today; apple-app-site-association
@@ -175,9 +120,15 @@ app.use((req, res, next) => {
         const body = Buffer.from(await response.clone().arrayBuffer());
         // A transient SSR failure still responds 200 with the bare app shell;
         // caching that would serve the broken page to every visitor of this
-        // language for the whole TTL. The landing page always contains the
-        // hero section, so its absence marks a render to skip.
-        if (body.includes('cl-hero')) {
+        // language for the whole TTL.
+        //
+        // The test is the EMPTY app-root, not the presence of the hero. It was
+        // `body.includes('cl-hero')`, and the shell passes that: its inlined
+        // critical CSS declares the custom property `--cl-hero-1`, so the
+        // substring is there in all 12,182 bytes of a render that produced
+        // nothing. The guard was inert on exactly the input it was written for.
+        // A real render always fills app-root; a fallback never does.
+        if (!body.includes('<app-root></app-root>')) {
           const headers: [string, string][] = [];
           response.headers.forEach((value, key) => {
             if (!['set-cookie', 'content-length'].includes(key.toLowerCase())) {

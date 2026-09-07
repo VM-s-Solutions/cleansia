@@ -149,6 +149,23 @@ describe('ProfileBankFacade', () => {
       ]);
     });
 
+    it('holds an empty list, not null, when the country read answers a null body', () => {
+      // The generated client emits NULL — not `[]` — for a 200 with a non-array body or a 204,
+      // and `catchError` cannot see it because null is not an error. Seeding a plausible array
+      // here is exactly how this class of defect stayed hidden.
+      countryClient.getOverview.mockReturnValue(of(null));
+      const facade = createFacade();
+
+      facade.load();
+
+      expect(facade.countries()).toEqual([]);
+      // `countries` starts at `[]`, so the line above passes either way — what proves the guard is
+      // that the subscriber ran to completion: unguarded, `.map()` throws before the form is
+      // patched and the cleaner gets an empty bank form with no error shown.
+      expect(facade.formGroup.controls.bankCountryId.value).toBe('country-cz');
+      expect(facade.loadFailed()).toBe(false);
+    });
+
     it('renders the error state when the payout read really fails', () => {
       payoutDetails.getMine.mockReturnValue(
         throwError(() => ({ errors: { x: 'employee.not_found' } }))

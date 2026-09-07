@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.orders
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,12 +10,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaChip
 import cz.cleansia.customer.core.orders.OrderReviewDto
+import cz.cleansia.customer.core.orders.ReviewLineScoreRequest
 import cz.cleansia.customer.core.orders.ReviewTag
 import cz.cleansia.customer.ui.theme.WarningStar
 
@@ -75,12 +81,23 @@ internal const val REVIEW_COMMENT_MAX_LENGTH = 1000
 @Composable
 fun SubmitReviewSheet(
     onDismiss: () -> Unit,
-    onConfirm: (rating: Int, comment: String?, tags: List<ReviewTag>) -> Unit,
+    onConfirm: (
+        rating: Int,
+        comment: String?,
+        tags: List<ReviewTag>,
+        lines: List<ReviewLineScoreRequest>,
+    ) -> Unit,
     isSubmitting: Boolean = false,
     errorMessage: String? = null,
     existingReview: OrderReviewDto? = null,
     titleRes: Int? = null,
     dismissLabelRes: Int = R.string.order_review_cancel,
+    /**
+     * The items on the order, so the customer can score them one by one. Empty by default and empty
+     * for any order whose items did not load — the section then renders nothing at all, which is the
+     * right outcome: the overall rating above is the required one and this is an extra.
+     */
+    lineOptions: List<ReviewLineOption> = emptyList(),
 ) {
     val isEdit = existingReview != null
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -96,6 +113,20 @@ fun SubmitReviewSheet(
     var selectedTags by remember(existingReview?.id) {
         mutableStateOf(existingReview?.tags.orEmpty().toSet())
     }
+    // key -> 1..5. Absent means NOT SCORED, which is a different answer from scored badly, and it is
+    // why this is a map rather than a list of zeroes. Seeded from the stored review on an edit so the
+    // customer sees what they said last time.
+    var lineScores by remember(existingReview?.id) {
+        mutableStateOf(
+            existingReview?.lines.orEmpty()
+                .mapNotNull { line ->
+                    val serviceId = line.serviceId ?: return@mapNotNull null
+                    reviewLineKey(serviceId, line.packageId) to line.rating
+                }
+                .toMap(),
+        )
+    }
+    var linesExpanded by remember(existingReview?.id) { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
@@ -209,6 +240,63 @@ fun SubmitReviewSheet(
                 ),
             )
 
+            // ── Per-item scores ──
+            //
+            // Behind a disclosure and closed by default: the overall stars above are the required
+            // answer, and a customer who wants to leave five and go should never meet this list.
+            if (lineOptions.isNotEmpty()) {
+                Spacer(Modifier.height(14.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { linesExpanded = !linesExpanded }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = if (linesExpanded) {
+                            Icons.Outlined.KeyboardArrowDown
+                        } else {
+                            Icons.AutoMirrored.Outlined.KeyboardArrowRight
+                        },
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.order_review_rate_items),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+
+                if (linesExpanded) {
+                    Text(
+                        text = stringResource(R.string.order_review_rate_items_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    lineOptions.forEach { option ->
+                        ReviewLineRow(
+                            option = option,
+                            rating = lineScores[option.key] ?: 0,
+                            onRate = { star ->
+                                // Pressing the star already chosen clears the row — the only way back
+                                // to "not scored" once it has been touched, and without it a mis-tap
+                                // is permanent.
+                                lineScores = if (lineScores[option.key] == star) {
+                                    lineScores - option.key
+                                } else {
+                                    lineScores + (option.key to star)
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+
             // Inline error row (shown below the textarea if the submit failed).
             if (!errorMessage.isNullOrBlank()) {
                 Spacer(Modifier.height(10.dp))
@@ -249,6 +337,17 @@ fun SubmitReviewSheet(
                             // Ordered by wire value so two identical selections submit identically,
                             // whatever order the chips were tapped in.
                             selectedTags.sortedBy { it.code },
+                            // Only the rows actually scored, in list order so two identical reviews
+                            // submit identically whatever order the stars were tapped in.
+                            lineOptions.mapNotNull { option ->
+                                lineScores[option.key]?.let { score ->
+                                    ReviewLineScoreRequest(
+                                        serviceId = option.serviceId,
+                                        packageId = option.packageId,
+                                        rating = score,
+                                    )
+                                }
+                            },
                         )
                     }
                 },
@@ -382,4 +481,57 @@ private fun ratingDescriptionRes(rating: Int): Int = when (rating) {
     4 -> R.string.order_review_rating_4
     5 -> R.string.order_review_rating_5
     else -> R.string.order_review_rating_hint
+}
+
+/**
+ * One item, with a compact star row. Name left, stars right, so the stars line up into a column the
+ * eye can run down — seeing them side by side is the whole value of scoring items separately.
+ */
+@Composable
+private fun ReviewLineRow(
+    option: ReviewLineOption,
+    rating: Int,
+    onRate: (Int) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = option.label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            val packageLabel = option.packageLabel
+            if (!packageLabel.isNullOrBlank()) {
+                Text(
+                    text = stringResource(R.string.order_review_item_in_package, packageLabel),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Row {
+            (1..5).forEach { star ->
+                IconButton(
+                    onClick = { onRate(star) },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        imageVector = if (star <= rating) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                        contentDescription = stringResource(
+                            R.string.order_review_rate_item_star,
+                            option.label,
+                            star,
+                        ),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+    }
 }

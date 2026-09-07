@@ -30,7 +30,12 @@ import { ICleansiaSelectOption } from './cleansia-select.models';
 export class CleansiaSelectComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
   options = input<ICleansiaSelectOption[]>([]);
-  floatVariant = input<'over' | 'in' | 'on'>('on');
+  /**
+   * `null` renders the label ABOVE the control instead of floating it into the
+   * border — the shape the approved customer design draws. The default stays
+   * 'on' so the partner and admin forms are untouched.
+   */
+  floatVariant = input<'over' | 'in' | 'on' | null>('on');
   showClear = input(true);
   filter = input(false);
   filterBy = input<string>('label');

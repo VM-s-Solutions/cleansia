@@ -588,11 +588,11 @@
     <string name="booking_cancel_tier1_when_plus">%1$d+ годин до</string>
     <string name="booking_cancel_tier1_value">Безкоштовно</string>
     <string name="booking_cancel_tier2_when_range">%1$d–%2$d годин до</string>
-    <string name="booking_cancel_tier2_value">50% комісія</string>
+    <string name="booking_cancel_tier2_value">25% комісія</string>
     <string name="booking_cancel_tier3_when_under">Менше %1$d годин</string>
-    <string name="booking_cancel_tier3_value">100% комісія</string>
+    <string name="booking_cancel_tier3_value">50% комісія</string>
     <string name="booking_cancel_plus_badge">ПЕРЕВАГА PLUS</string>
-    <string name="booking_cancel_plus_subtitle">Як учасник Plus у вас %1$d годин на безкоштовне скасування.</string>
+    <string name="booking_cancel_plus_subtitle">Як учасник Plus ви можете скасувати безкоштовно всього за %1$d години до початку.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Зберегти цю адресу</string>
@@ -1204,11 +1204,14 @@
     <string name="notification_order_cancelled_body">Замовлення #%1$s було скасовано. Натисніть для деталей.</string>
     <string name="notification_order_refunded_title">Повернення коштів</string>
     <string name="notification_order_refunded_body">Повернення коштів за замовлення #%1$s обробляється.</string>
+    <string name="notification_order_no_cleaner_refunded_title">Вільних прибиральників не знайшлося</string>
+    <string name="notification_order_no_cleaner_refunded_body">Замовлення #%1$s ніхто не взяв, тому ми повернули всю суму та додали 250 Kč бонусів на наступне прибирання. Вибачте.</string>
     <string name="notification_dispute_reply_title">Підтримка відповіла</string>
     <string name="notification_dispute_reply_body">У вас нове повідомлення щодо вашої скарги. Натисніть, щоб прочитати.</string>
     <string name="notification_recurring_scheduled_title">Підтвердіть завтрашнє прибирання</string>
     <string name="notification_recurring_scheduled_body">Ваше повторюване замовлення #%1$s заплановано на завтра. Натисніть, щоб підтвердити та сплатити.</string>
     <string name="recurring_confirm_cta">Підтвердити та сплатити</string>
+    <string name="recurring_confirm_cta_cash">Підтвердити замовлення</string>
     <string name="recurring_confirm_success">Замовлення підтверджено</string>
     <string name="notification_loyalty_tier_upgrade_title">Ви перейшли на новий рівень!</string>
     <string name="notification_loyalty_tier_upgrade_body">Вітаємо в рівні %1$s — нові переваги вже чекають.</string>
@@ -1345,4 +1348,12 @@
     <string name="tracker_step_counter">Крок %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Оплату не було завершено, тому це бронювання було скасовано.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Це повторне бронювання не було підтверджено вчасно, тому його скасовано безкоштовно.</string>
+    <string name="dispute_create_which_items">Що саме пішло не так?</string>
+    <string name="dispute_create_which_items_hint">Необов’язково. Позначте послуги, які виконані погано — це допоможе швидше все виправити. Якщо проблемою було все прибирання — залиште порожнім.</string>
+    <string name="dispute_create_item_in_package">у пакеті %1$s</string>
+    <string name="order_review_rate_items">Оцінити кожну послугу окремо</string>
+    <string name="order_review_rate_items_hint">Необов’язково. Корисно, коли одна частина вийшла добре, а інша ні — це покаже нам, куди саме дивитися.</string>
+    <string name="order_review_item_in_package">у пакеті %1$s</string>
+    <string name="order_review_rate_item_star">Поставити %1$s %2$d зірок</string>
+    <string name="error_dispute_line_not_on_order">Однієї з обраних послуг немає в цьому замовленні. Відкрийте форму знову та спробуйте ще раз.</string>
 </resources>

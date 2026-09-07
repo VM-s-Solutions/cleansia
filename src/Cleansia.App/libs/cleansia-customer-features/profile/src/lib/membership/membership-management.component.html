@@ -1,87 +1,252 @@
-<section class="membership-management">
-  @if (loading()) {
-    <p-skeleton height="180px" styleClass="rounded-2xl"></p-skeleton>
-  } @else if (membership()) {
-    @let m = membership()!;
-    @if (m.hasMembership) {
-      <article class="active-card" [class.is-ending]="m.cancelRequested">
-        <header>
-          <span class="badge">
-            @if (m.cancelRequested) {
-              {{ 'pages.membership.ending_badge' | translate }}
-            } @else {
-              {{ 'pages.membership.plus_badge' | translate }}
-            }
-          </span>
-          <h2>{{ m.planName ?? ('pages.membership.plan_default_name' | translate) }}</h2>
-        </header>
-        <p class="status">
-          @if (m.cancelRequested) {
-            {{ 'pages.membership.cancelled_until' | translate: { date: (m.currentPeriodEnd | date) } }}
-          } @else {
-            {{ 'pages.membership.renews_on' | translate: { date: (m.currentPeriodEnd | date) } }}
-          }
+<!--
+  Membership — built against the "Správa členství" board.
+
+  Two states of a member's page, and the difference between them is the whole
+  point: cancelling sets Stripe's `cancel_at_period_end`, so every benefit runs
+  to CurrentPeriodEnd. The card says "running out", never "off" — nothing is
+  withdrawn retroactively. → /product/business-rules
+-->
+@if (!embedded()) {
+<div class="cl-mbr">
+  <div class="cl-mbr__hero">
+    <h1 class="cl-mbr__title">{{ 'pages.membership.title' | translate }}</h1>
+    <p class="cl-mbr__lead">
+      {{
+        (membership()?.cancelRequested
+          ? 'pages.membership.lead_ending'
+          : 'pages.membership.lead'
+        ) | translate
+      }}
+    </p>
+  </div>
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-page)'" />
+</div>
+}
+
+<div class="cl-mbr__body" [class.cl-mbr__body--embedded]="embedded()">
+  <div class="cl-mbr__page">
+    @if (loading()) {
+    <p-skeleton width="100%" height="14rem" borderRadius="28px" />
+    <p-skeleton width="100%" height="18rem" borderRadius="28px" styleClass="mt-3" />
+    } @else if (membership(); as m) { @if (m.hasMembership) {
+
+    @if (m.cancelRequested) {
+    <!-- ===================== CANCELLED, STILL RUNNING ===================== -->
+    <section class="cl-mbr__ending">
+      <div class="cl-mbr__ending-text">
+        <span class="cl-mbr__ending-chip">
+          <i class="pi pi-calendar"></i>
+          {{ 'pages.membership.ends_on' | translate: { date: formatDate(m.currentPeriodEnd) } }}
+        </span>
+        <h2 class="cl-mbr__ending-title">{{ 'pages.membership.you_cancelled' | translate }}</h2>
+        <p class="cl-mbr__ending-lead">{{ 'pages.membership.nothing_retroactive' | translate }}</p>
+      </div>
+      <img
+        class="cl-mbr__ending-art"
+        src="assets/images/mascot/mascot-leaning-tile.webp"
+        alt=""
+        width="300"
+        height="300"
+        aria-hidden="true"
+      />
+    </section>
+    } @else {
+    <!-- ========================= ACTIVE ========================= -->
+    <section class="cl-mbr__plan">
+      <div class="cl-mbr__plan-main">
+        <span class="cl-mbr__plan-chip">
+          <i class="pi pi-star-fill"></i>
+          {{ 'pages.membership.plus_badge' | translate }}
+        </span>
+        <h2 class="cl-mbr__plan-name">
+          {{ m.planName ?? ('pages.membership.plan_default_name' | translate) }}
+          @if (cadenceKey(m); as cadence) { · {{ cadence | translate }} }
+        </h2>
+        <p class="cl-mbr__plan-next">
+          {{
+            'pages.membership.next_payment'
+              | translate
+                : { amount: formatCzk(currentPrice(m)), date: formatDate(m.currentPeriodEnd) }
+          }}
         </p>
-        <ul class="perks">
-          @if (m.discountPercentage) {
-            <li>{{ 'pages.membership.perk_discount' | translate: { percent: m.discountPercentage } }}</li>
-          }
-          @if (m.freeCancellationWindowHours) {
-            <li>{{ 'pages.membership.perk_cancel_window' | translate: { hours: m.freeCancellationWindowHours } }}</li>
-          }
-          @if (expressWaiverAvailable()) {
-            <li>{{ 'pages.membership.perk_express' | translate: { count: expressUpgradesRemaining() } }}</li>
-          } @else if (expressWaiverExhausted()) {
-            <li>{{ 'pages.membership.perk_express_used' | translate }}</li>
-          } @else if (expressWaiverPendingTrial()) {
-            <li>{{ 'pages.membership.perk_express_trial' | translate }}</li>
-          }
-        </ul>
-        @if (showSwitchCta(); as showSwitch) {
-          @let yp = yearlyPlan()!;
+
+        <div class="cl-mbr__plan-actions">
           <cleansia-button
-            [label]="'pages.membership.switch_to_annual_cta' | translate: { percent: (yp.savingsPercentVsMonthly | number: '1.0-0') }"
-            [loading]="switching()"
-            [disabled]="switching()"
-            (click)="confirmSwitchToAnnual()"
-          ></cleansia-button>
-        }
-        @if (!m.cancelRequested) {
-          <cleansia-button
-            severity="danger"
-            [outlined]="true"
-            [label]="'pages.membership.cancel_action' | translate"
+            [title]="'pages.membership.cancel_action' | translate"
+            [severity]="'secondary'"
             [loading]="cancelling()"
             [disabled]="cancelling()"
-            (click)="confirmCancel()"
-          ></cleansia-button>
-        }
-      </article>
-
-      <!-- Plus-only: recurring-bookings entry link. Sits beside the management
-           card so members can jump straight into managing their schedules. -->
-      <a class="recurring-link" [routerLink]="['recurring']">
-        <i class="pi pi-calendar-clock recurring-link-icon" aria-hidden="true"></i>
-        <div class="recurring-link-text">
-          <strong>{{ 'recurring_booking.membership_section_link_title' | translate }}</strong>
-          <span>{{ 'recurring_booking.membership_section_link_subtitle' | translate }}</span>
+            (clickFn)="confirmCancel()"
+          />
         </div>
-        <i class="pi pi-chevron-right recurring-link-chevron" aria-hidden="true"></i>
-      </a>
-    } @else {
-      <article class="inactive-card" (click)="goToSubscribe()">
-        <header>
-          <span class="badge">{{ 'pages.membership.try_plus_badge' | translate }}</span>
-          <h2>{{ 'pages.membership.inactive_title' | translate }}</h2>
-        </header>
-        <p>{{ 'pages.membership.inactive_subtitle' | translate }}</p>
-        <cleansia-button
-          [label]="'pages.membership.subscribe_action' | translate"
-          (click)="goToSubscribe()"
-        ></cleansia-button>
-      </article>
+      </div>
+      <img
+        class="cl-mbr__plan-art"
+        src="assets/images/mascot/mascot-plus.webp"
+        alt=""
+        width="300"
+        height="300"
+        aria-hidden="true"
+      />
+    </section>
     }
-  }
-</section>
 
-<p-confirmDialog></p-confirmDialog>
+    <!--
+      What the membership actually buys. The same list in both states — the
+      point of the "running out" state is that these are still true — with the
+      heading naming the date they stop.
+    -->
+    <section class="cl-mbr__card">
+      <h2 class="cl-mbr__card-title">
+        {{
+          m.cancelRequested
+            ? ('pages.membership.what_you_have_until'
+              | translate: { date: formatDate(m.currentPeriodEnd) })
+            : ('pages.membership.what_you_get' | translate)
+        }}
+      </h2>
+
+      <ul class="cl-mbr__perks">
+        @if (m.discountPercentage) {
+        <li>
+          <i class="pi pi-star"></i>
+          {{ 'pages.membership.perk_discount' | translate: { percent: m.discountPercentage } }}
+        </li>
+        }
+        @if (m.freeCancellationWindowHours) {
+        <li>
+          <i class="pi pi-calendar"></i>
+          {{
+            'pages.membership.perk_cancel_window'
+              | translate: { hours: m.freeCancellationWindowHours }
+          }}
+        </li>
+        }
+        @if (m.allowsExpressUpgrade) {
+        <li>
+          <i class="pi pi-bolt"></i>
+          {{
+            'pages.membership.perk_express_monthly'
+              | translate: { count: m.expressUpgradesPerMonth ?? 1 }
+          }}
+        </li>
+        }
+        <li>
+          <i class="pi pi-sync"></i>
+          {{ 'pages.membership.perk_recurring' | translate }}
+        </li>
+      </ul>
+
+      <!--
+        The express allowance as a COUNT, not a promise. A trialing member has
+        the discount and the shorter cancellation window but no express waiver
+        yet, and that is the one perk whose availability moves.
+        → /product/business-rules
+      -->
+      @if (expressWaiverAvailable()) {
+      <p class="cl-mbr__credit">
+        <i class="pi pi-bolt"></i>
+        <span>{{ 'pages.membership.express_this_month' | translate }}</span>
+        <strong class="cl-num">
+          {{
+            'pages.membership.express_remaining'
+              | translate
+                : { remaining: expressUpgradesRemaining(), total: m.expressUpgradesPerMonth ?? 1 }
+          }}
+        </strong>
+      </p>
+      } @else if (expressWaiverExhausted()) {
+      <p class="cl-mbr__credit cl-mbr__credit--spent">
+        <i class="pi pi-bolt"></i>
+        <span>{{ 'pages.membership.perk_express_used' | translate }}</span>
+      </p>
+      } @else if (expressWaiverPendingTrial()) {
+      <p class="cl-mbr__credit cl-mbr__credit--trial">
+        <i class="pi pi-bolt"></i>
+        <span>{{ 'pages.membership.perk_express_trial' | translate }}</span>
+      </p>
+      }
+    </section>
+
+    <!--
+      Switching plan. Only offered while the membership is running: a cancelled
+      one has nothing to switch to, and a swap would quietly undo the cancel.
+    -->
+    @if (!m.cancelRequested && plans().length > 0) {
+    <section class="cl-mbr__card">
+      <h2 class="cl-mbr__card-title">{{ 'pages.membership.switch_title' | translate }}</h2>
+      <p class="cl-mbr__card-lead">{{ 'pages.membership.switch_lead' | translate }}</p>
+
+      <div class="cl-mbr__plans">
+        @for (plan of plans(); track plan.code) {
+        <button
+          type="button"
+          class="cl-mbr__option"
+          [class.cl-mbr__option--mine]="plan.code === m.planCode"
+          [disabled]="switching() || plan.code === m.planCode"
+          (click)="plan.code && switchTo(plan.code)"
+        >
+          <span class="cl-mbr__option-head">
+            <span class="cl-mbr__option-cadence">
+              {{ 'pages.membership.cadence.' + cadenceOf(plan) | translate }}
+            </span>
+            @if (plan.code === m.planCode) {
+            <span class="cl-mbr__option-flag">{{ 'pages.membership.your_plan' | translate }}</span>
+            }
+          </span>
+          <span class="cl-mbr__option-price cl-num">{{ formatCzk(plan.price) }}</span>
+          <span class="cl-mbr__option-note">
+            {{
+              plan.savingsPercentVsMonthly > 0
+                ? ('pages.membership.you_save'
+                  | translate: { percent: (plan.savingsPercentVsMonthly | number: '1.0-0') })
+                : ('pages.membership.every_month' | translate)
+            }}
+          </span>
+        </button>
+        }
+      </div>
+
+      <p class="cl-mbr__note">{{ 'pages.membership.proration_note' | translate }}</p>
+    </section>
+    }
+
+    <!-- Plus-only: the schedules this membership unlocks. -->
+    <a class="cl-mbr__jump" [routerLink]="['recurring']">
+      <i class="pi pi-calendar-clock"></i>
+      <span class="cl-mbr__jump-text">
+        <strong>{{ 'recurring_booking.membership_section_link_title' | translate }}</strong>
+        <span>{{ 'recurring_booking.membership_section_link_subtitle' | translate }}</span>
+      </span>
+      <i class="pi pi-chevron-right"></i>
+    </a>
+
+    } @else {
+    <!-- ====================== NOT A MEMBER ====================== -->
+    <section class="cl-mbr__card cl-mbr__offer">
+      <img
+        class="cl-mbr__offer-art"
+        src="assets/images/mascot/mascot-plus.webp"
+        alt=""
+        width="300"
+        height="300"
+        aria-hidden="true"
+      />
+      <div>
+        <h2 class="cl-mbr__card-title">{{ 'pages.membership.inactive_title' | translate }}</h2>
+        <p class="cl-mbr__card-lead">{{ 'pages.membership.inactive_subtitle' | translate }}</p>
+        <div class="cl-mbr__offer-actions">
+          <cleansia-button
+            [title]="'pages.membership.subscribe_action' | translate"
+            [severity]="'primary'"
+            [style]="'raised-button'"
+            (clickFn)="goToSubscribe()"
+          />
+        </div>
+      </div>
+    </section>
+    } }
+  </div>
+</div>
+
+<p-confirmDialog />

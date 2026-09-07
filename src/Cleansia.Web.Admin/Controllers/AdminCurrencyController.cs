@@ -45,6 +45,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreateCurrency(
         [FromBody] CreateCurrency.Command command,
         CancellationToken cancellationToken)
@@ -60,6 +61,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdateCurrency(
         string currencyId,
         [FromBody] UpdateCurrency.Command command,
@@ -96,6 +98,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeleteCurrency(
         string currencyId,
         CancellationToken cancellationToken)

@@ -38,6 +38,7 @@ describe('OrderWizardFacade', () => {
   let paymentClient: { createOrder: jest.Mock };
   let promoCodeClient: { validate: jest.Mock };
   let countryClient: { getServiced: jest.Mock };
+  let gdprClient: { consentsGet: jest.Mock };
   let extraClient: { getOverview: jest.Mock };
   let userClient: { getCurrent: jest.Mock };
   let apiClient: { serviceCity: jest.Mock };
@@ -79,6 +80,7 @@ describe('OrderWizardFacade', () => {
       validate: jest.fn().mockReturnValue(of({ isValid: true, discountAmount: 100 })),
     };
     countryClient = { getServiced: jest.fn().mockReturnValue(of([])) };
+    gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
     extraClient = { getOverview: jest.fn().mockReturnValue(of([])) };
     userClient = { getCurrent: jest.fn().mockReturnValue(of({})) };
     apiClient = { serviceCity: jest.fn().mockReturnValue(of([])) };
@@ -113,6 +115,7 @@ describe('OrderWizardFacade', () => {
             paymentClient,
             promoCodeClient,
             countryClient,
+            gdprClient,
             extraClient,
             userClient,
             apiClient,
@@ -398,6 +401,65 @@ describe('OrderWizardFacade', () => {
       expect(facade.canProceed()).toBe(false);
     });
 
+    it('step 1 accepts a TYPED address without coordinates', () => {
+      // The failure message has always told the customer they could enter the
+      // address by hand. The server geocodes what they type on submit, so the
+      // only thing that ever refused it was this gate.
+      facade.goToStep(1);
+      facade.updateFormData({
+        address: createAddressDto({
+          street: 'Wenceslas Square',
+          city: 'Prague',
+          zipCode: '11000',
+          countryId: 'cz',
+          state: '',
+        }),
+        addressLatitude: null,
+        addressLongitude: null,
+        addressEnteredManually: true,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
+        customerEmail: 'anna@example.com',
+        customerPhone: '+420123456789',
+      });
+
+      expect(facade.canProceed()).toBe(true);
+    });
+
+    it('step 1 still requires the fields themselves of a typed address', () => {
+      facade.goToStep(1);
+      facade.updateFormData({
+        address: createAddressDto({ street: 'W', city: '', zipCode: '', countryId: 'cz' }),
+        addressEnteredManually: true,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
+        customerEmail: 'anna@example.com',
+        customerPhone: '+420123456789',
+      });
+
+      expect(facade.canProceed()).toBe(false);
+      // and it names the typed-address case, not "pick one from the list"
+      expect(facade.missingReasons()).toContain('pages.order.missing.address_fields');
+    });
+
+    it('names every reason the step cannot be left', () => {
+      // The advance button reads this same list, so a reason missing here is a
+      // button that refuses without saying why.
+      facade.goToStep(1);
+
+      expect(facade.missingReasons()).toEqual([
+        'pages.order.missing.address',
+        'pages.order.missing.first_name',
+        'pages.order.missing.last_name',
+        'pages.order.missing.email',
+        'pages.order.missing.phone',
+      ]);
+
+      fillValidContactAndAddress();
+      expect(facade.missingReasons()).toEqual([]);
+      expect(facade.canProceed()).toBe(true);
+    });
+
     it('step 1 rejects an invalid email', () => {
       facade.goToStep(1);
       fillValidContactAndAddress();
@@ -571,16 +633,43 @@ describe('OrderWizardFacade', () => {
   });
 
   describe('submitOrder', () => {
+    // A COMPLETE order, not the minimum that used to reach the network. Submit now refuses an
+    // incomplete one — that is the whole point of the gate — and the single-letter names and absent
+    // address this set up would be rejected by the step rules the wizard already had, which is
+    // exactly the payload that reached the server and came back 400.
     beforeEach(() => {
       facade.updateFormData({
         selectedServiceIds: ['s1'],
         cleaningDate: new Date('2026-07-01T00:00:00Z'),
         cleaningTime: '10:00',
-        customerFirstName: 'A',
-        customerLastName: 'B',
+        address: createAddressDto({
+          street: 'Wenceslas Square',
+          city: 'Prague',
+          zipCode: '11000',
+          countryId: 'cz',
+          state: '',
+        }),
+        addressLatitude: 50.08,
+        addressLongitude: 14.42,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
         customerEmail: 'a@b.com',
         customerPhone: '+420123456789',
       });
+    });
+
+    it('refuses an order that is still missing a required field, and says which', async () => {
+      // The defect, exactly: an account with no phone number reached submit and the server
+      // answered `{ NotEmptyValidator: "common.required" }`, which named nothing the customer
+      // could act on.
+      facade.updateFormData({ customerPhone: '' });
+
+      await facade.submitOrder();
+
+      expect(paymentClient.createOrder).not.toHaveBeenCalled();
+      expect(orderClient.createOrder).not.toHaveBeenCalled();
+      // …and it puts them on the step that holds the field.
+      expect(facade.activeStep()).toBe(1);
     });
 
     it('does nothing without a cleaning date', async () => {
@@ -763,6 +852,33 @@ describe('OrderWizardFacade', () => {
       expect(extraClient.getOverview).toHaveBeenCalledTimes(1);
       expect(facade.isAuthenticated()).toBe(false);
     });
+
+    // The generated clients emit NULL from an array-returning method for a 200 whose body is not
+    // a JSON array, and for a 204. The declared type says otherwise, so nothing — not
+    // `catchError`, not the compiler — stands between that null and these signals. Seeding the
+    // mocks with a plausible array is exactly how that stayed invisible.
+    it('holds an empty country list when the served-countries read emits null', () => {
+      countryClient.getServiced.mockReturnValue(of(null));
+
+      facade.initialize();
+
+      expect(facade.countries()).toEqual([]);
+      expect(facade.formData().address.countryId).toBe('');
+    });
+
+    // `[...null]` throws "not iterable" — but it throws INSIDE a subscribe next handler, which
+    // RxJS does not propagate to the caller and does not route to the `error` handler: it reports
+    // it on a timer. So `initialize()` returns cleanly and `extras()` keeps its initial `[]`, and
+    // asserting either of those ALONE passes with the coalesce removed. `tick()` is the assertion
+    // — it is where the unhandled error lands.
+    it('holds an empty extras catalog when the overview read emits null', fakeAsync(() => {
+      extraClient.getOverview.mockReturnValue(of(null));
+
+      facade.initialize();
+      tick();
+
+      expect(facade.extras()).toEqual([]);
+    }));
   });
 
   describe('pricing display', () => {
@@ -846,5 +962,130 @@ describe('OrderWizardFacade', () => {
       expect(facade.quote()).toBeNull();
       expect(facade.quoting()).toBe(false);
     }));
+  });
+
+  // Owner ruling, 2026-09-03: a signed-in customer who accepted at sign-up is
+  // asked to accept the same two documents on every order. The tick stays for
+  // GUESTS, who have no account and so no consent on record.
+  describe('the review step consent tick', () => {
+    const consent = (type: number, granted = true, withdrawnAt: Date | null = null) => ({
+      id: 'c' + type,
+      consentType: type,
+      isGranted: granted,
+      grantedAt: new Date(),
+      withdrawnAt,
+      createdOn: new Date(),
+    });
+    const TERMS = 0;
+    const PRIVACY = 1;
+
+    it('is not asked of an account holding both consents', () => {
+      gdprClient.consentsGet.mockReturnValue(of([consent(TERMS), consent(PRIVACY)]));
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(true);
+    });
+
+    it('is asked when only one of the two is on record', () => {
+      gdprClient.consentsGet.mockReturnValue(of([consent(TERMS)]));
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    it('is asked again when a consent was WITHDRAWN', () => {
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(TERMS), consent(PRIVACY, true, new Date())]),
+      );
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    it('is asked of a guest — no account, no consent on record', () => {
+      authService.isLoggedIn.mockReturnValue(false);
+
+      facade.initialize();
+
+      expect(gdprClient.consentsGet).not.toHaveBeenCalled();
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    // The safe direction for this switch is always "ask".
+    it('is asked when the consents could not be read', () => {
+      gdprClient.consentsGet.mockReturnValue(throwError(() => new Error('offline')));
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    // A null body is a SUCCESS as far as the stream is concerned, so the `catchError` above never
+    // fires — the coalesce is the only thing standing between it and `.some`. `tick()` carries
+    // the assertion: a throw in a subscribe next handler is reported by RxJS on a timer rather
+    // than raised at the caller, so `alreadyConsented()` reads false either way.
+    it('is asked when the consent read emits null rather than a list', fakeAsync(() => {
+      gdprClient.consentsGet.mockReturnValue(of(null));
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+      tick();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    }));
+  });
+  /**
+   * What the account fetch is allowed to do to the form.
+   *
+   * It wrote all four contact fields unconditionally, empty account values included — and an
+   * account with no phone number is the ordinary case, because nothing in registration asks for
+   * one. A signed-in customer who typed their phone into the wizard had it replaced with "" when
+   * this response landed, and every later gate read the blank as the customer's own answer. That is
+   * how `customerPhone: ""` reached the server.
+   */
+  describe('the account prefill', () => {
+    const account = (phoneNumber: string) => ({
+      firstName: 'Anna',
+      lastName: 'Brownova',
+      email: 'anna@example.com',
+      phoneNumber,
+    });
+
+    it('fills a field the customer has not answered', () => {
+      authService.isLoggedIn.mockReturnValue(true);
+      userClient.getCurrent.mockReturnValue(of(account('+420777123456')));
+
+      facade.initialize();
+
+      expect(facade.formData().customerPhone).toBe('+420777123456');
+      expect(facade.formData().customerFirstName).toBe('Anna');
+    });
+
+    it('does not blank what the customer typed with an account that has no phone on file', () => {
+      facade.updateFormData({ customerPhone: '+420777123456' });
+      authService.isLoggedIn.mockReturnValue(true);
+      userClient.getCurrent.mockReturnValue(of(account('')));
+
+      facade.initialize();
+
+      expect(facade.formData().customerPhone).toBe('+420777123456');
+    });
+
+    it('does not overwrite an answer that differs from the account', () => {
+      facade.updateFormData({ customerEmail: 'booking@example.com' });
+      authService.isLoggedIn.mockReturnValue(true);
+      userClient.getCurrent.mockReturnValue(of(account('+420777123456')));
+
+      facade.initialize();
+
+      expect(facade.formData().customerEmail).toBe('booking@example.com');
+    });
   });
 });

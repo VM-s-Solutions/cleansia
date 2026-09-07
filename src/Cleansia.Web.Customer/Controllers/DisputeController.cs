@@ -17,7 +17,7 @@ public class DisputeController(IMediator mediator) : CustomerDisputeControllerBa
     [HttpPost("Create")]
     [Permission(Policy.CanCreateDispute)]
     [EnableRateLimiting("auth")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(CreateDispute.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

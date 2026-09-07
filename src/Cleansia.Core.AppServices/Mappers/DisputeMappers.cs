@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Disputes.Filters;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Specifications;
 
 namespace Cleansia.Core.AppServices.Mappers;
@@ -38,12 +39,43 @@ public static class DisputeMappers
             Status: dispute.Status.MapToCode(),
             ResolutionNotes: dispute.ResolutionNotes,
             RefundAmount: dispute.RefundAmount,
+            Currency: dispute.Order?.Currency?.MapToDetailDto(),
             ResolvedOn: dispute.ResolvedOn,
             Messages: dispute.Messages.Select(m => m.MapToDto()).ToList(),
             Evidence: dispute.Evidence.Select(e => e.MapToDto(evidenceBlobClient)).ToList(),
             CreatedOn: dispute.CreatedOn,
-            UpdatedOn: dispute.UpdatedOn
+            UpdatedOn: dispute.UpdatedOn,
+            // Measured from when the clean ended, or from when it was due to start if it never did —
+            // a no-show has no completion time, and that is exactly the case the window covers.
+            FiledWithinWindow: dispute.Order is null
+                ? null
+                : DisputeLimits.IsWithinFilingWindow(
+                    dispute.Order.CompletedAt, dispute.Order.CleaningDateTime, dispute.CreatedOn),
+            Lines: dispute.Lines.Select(line => line.MapToDto(dispute.Order)).ToList()
         );
+    }
+
+    /// <summary>
+    /// Names come from the ORDER's own graph, not a second query: the dispute's order already carries
+    /// its services and packages, so a line resolves without touching the catalogue again — and
+    /// resolves to what the order holds rather than to whatever the catalogue says today.
+    /// </summary>
+    private static DisputeLineDto MapToDto(this DisputeLine line, Order? order)
+    {
+        var package = order?.SelectedPackages
+            .FirstOrDefault(p => p.PackageId == line.PackageId)?.Package;
+
+        var serviceName = package is null
+            ? order?.SelectedServices
+                .FirstOrDefault(s => s.ServiceId == line.ServiceId)?.Service?.Name
+            : package.IncludedServices
+                .FirstOrDefault(s => s.ServiceId == line.ServiceId)?.Service?.Name;
+
+        return new DisputeLineDto(
+            ServiceId: line.ServiceId,
+            ServiceName: serviceName ?? string.Empty,
+            PackageId: line.PackageId,
+            PackageName: package?.Name);
     }
 
     public static DisputeMessageDto MapToDto(this DisputeMessage message)

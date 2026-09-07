@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -41,6 +41,14 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.Notes),
         nameof(OrderItem.SpecialInstructions),
         nameof(OrderItem.AccessInstructions),
+        // Blanked with the address, not kept: a floor and a door number are a
+        // small key on their own, but a browsing cleaner already sees the city,
+        // and street + floor + door is the whole key.
+        nameof(OrderItem.CustomerFloor),
+        nameof(OrderItem.CustomerApartment),
+        // Blanked with the access instructions it describes: knowing there IS a
+        // door code is most of knowing the code is worth asking for.
+        nameof(OrderItem.AccessMode),
         nameof(OrderItem.HasAccessInstructions),
         nameof(OrderItem.CompletionNotes),
         nameof(OrderItem.RecurringTemplateId),
@@ -87,6 +95,8 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.TierDiscountAmount),
         nameof(OrderItem.MembershipDiscountAmount),
         nameof(OrderItem.PromoDiscountAmount),
+        nameof(OrderItem.CreditAppliedAmount),
+        nameof(OrderItem.AmountDueOnCard),
         nameof(OrderItem.EstimatedTime),
         nameof(OrderItem.ActualCompletionTime),
         nameof(OrderItem.CompletedAt),
@@ -135,6 +145,8 @@ public class OrderRedactionSurfaceTests
         nameof(OrderListItem.TierDiscountAmount),
         nameof(OrderListItem.MembershipDiscountAmount),
         nameof(OrderListItem.PromoDiscountAmount),
+        nameof(OrderListItem.CreditAppliedAmount),
+        nameof(OrderListItem.AmountDueOnCard),
         nameof(OrderListItem.EstimatedTime),
         nameof(OrderListItem.OrderStatus),
         nameof(OrderListItem.SelectedPackages),
@@ -327,6 +339,8 @@ public class OrderRedactionSurfaceTests
             TierDiscountAmount: 200m,
             MembershipDiscountAmount: 50m,
             PromoDiscountAmount: 30m,
+            CreditAppliedAmount: 0m,
+            AmountDueOnCard: 100m,
             EstimatedTime: 180,
             ActualCompletionTime: 175,
             CompletedAt: new DateTime(2026, 8, 20, 12, 0, 0, DateTimeKind.Utc),
@@ -336,6 +350,9 @@ public class OrderRedactionSurfaceTests
             Notes: "Cat is friendly.",
             SpecialInstructions: "Use the eco products under the sink.",
             AccessInstructions: "Code 1234 at the gate.",
+            CustomerFloor: "3",
+            CustomerApartment: "12",
+            AccessMode: "door_code",
             HasAccessInstructions: true,
             RecurringTemplateId: "tmpl-weekly",
             SelectedPackages: [],
@@ -354,7 +371,8 @@ public class OrderRedactionSurfaceTests
             OrderNotes: [new OrderNoteDto("note-1", "employee-1", "Second bathroom needed a re-do.", DateTimeOffset.UtcNow)],
             OrderIssues: [new OrderIssueDto("issue-1", "employee-1", "Broken tile.", false, null, DateTimeOffset.UtcNow)],
             Review: new OrderReviewDto(
-                "review-1", "order-1", 5, "Spotless.", [ReviewTag.Thorough], DateTimeOffset.UtcNow, null),
+                "review-1", "order-1", 5, "Spotless.", [ReviewTag.Thorough], DateTimeOffset.UtcNow, null,
+                [new OrderReviewLineDto("svc-1", null, 5)]),
             EstimatedCleanerPay: 620m,
             IsAssignedToCurrentUser: false,
             HasAfterPhotos: true,
@@ -383,6 +401,8 @@ public class OrderRedactionSurfaceTests
             TierDiscountAmount: 200m,
             MembershipDiscountAmount: 50m,
             PromoDiscountAmount: 30m,
+            CreditAppliedAmount: 0m,
+            AmountDueOnCard: 100m,
             EstimatedTime: 180,
             OrderStatus: new Code("OrderStatus", "Confirmed", 2),
             ConfirmationCode: "CONF-1234",

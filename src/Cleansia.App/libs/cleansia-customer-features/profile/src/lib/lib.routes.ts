@@ -1,7 +1,6 @@
 import { Route } from '@angular/router';
+import { CleansiaCustomerRoute } from '@cleansia/services';
 import { ProfileComponent } from './profile/profile.component';
-import { MembershipManagementComponent } from './membership/membership-management.component';
-import { MembershipSubscribeComponent } from './membership/membership-subscribe.component';
 import { MembershipWelcomeComponent } from './membership/membership-welcome.component';
 import { SavedAddressesComponent } from './saved-addresses/saved-addresses.component';
 
@@ -33,14 +32,22 @@ export const savedAddressesRoutes: Route[] = [
  */
 export const membershipRoutes: Route[] = [
   {
+    // `/plus` is the product's ONE page now: the benefits for everyone, and
+    // the management panel on top for a member. This URL kept working for
+    // every bookmark, link and redirect that already pointed at it — including
+    // Stripe's own cancel URL — so it redirects rather than 404s.
+    //
+    // `/membership/subscribe` went with it. It was a THIRD sales surface for
+    // the same product, with its own plan picker and its own stylesheet, and
+    // the plan cards on /plus already did the same job.
     path: '',
-    component: MembershipManagementComponent,
-    data: { title: 'page_titles.customer.membership' },
+    pathMatch: 'full',
+    redirectTo: '/' + CleansiaCustomerRoute.PLUS,
   },
   {
     path: 'subscribe',
-    component: MembershipSubscribeComponent,
-    data: { title: 'page_titles.customer.membership_subscribe' },
+    pathMatch: 'full',
+    redirectTo: '/' + CleansiaCustomerRoute.PLUS,
   },
   {
     // Post-purchase celebration. Stripe's Checkout success URL points here

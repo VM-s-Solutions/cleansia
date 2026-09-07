@@ -64,6 +64,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.annotation.StringRes
 import cz.cleansia.core.snackbar.SnackbarInsetScope
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.SnapAnchor
@@ -376,12 +377,21 @@ fun OrderDetailScreen(
                     viewModel.dismissReviewError()
                 }
             },
-            onConfirm = { rating, comment, tags ->
-                viewModel.submitReview(rating, comment, tags, isEdit = currentReview != null)
+            onConfirm = { rating, comment, tags, lines ->
+                viewModel.submitReview(
+                    rating,
+                    comment,
+                    tags,
+                    isEdit = currentReview != null,
+                    lines = lines,
+                )
             },
             isSubmitting = submittingReview,
             errorMessage = reviewError,
             existingReview = currentReview,
+            // Built from the order already on screen — the detail carries its services and its
+            // packages' included items, so scoring them costs no extra request.
+            lineOptions = buildReviewLineOptions(loaded.order),
             // A prompt the customer did not ask for offers "Not now" and leads with the question; the
             // card they tapped themselves keeps "Cancel" and the editorial title. Same sheet, honest
             // about which one it is — and the same split iOS makes.
@@ -636,6 +646,15 @@ private fun OrderDetailSheetContent(
             if (showConfirmRecurringCta) {
                 ConfirmRecurringButton(
                     submitting = confirmingRecurring,
+                    // "Confirm and pay" is false on a cash booking: ConfirmRecurringOrder's cash
+                    // arm mints no PaymentIntent and returns ClientSecret null — it just flips the
+                    // occurrence to Confirmed. Branch on Card so anything unexpected falls to the
+                    // label that is true of BOTH flavours rather than the one that over-promises.
+                    labelRes = if (order.paymentType?.value == 2) {
+                        R.string.recurring_confirm_cta
+                    } else {
+                        R.string.recurring_confirm_cta_cash
+                    },
                     onClick = onConfirmRecurring,
                 )
             }
@@ -728,7 +747,11 @@ private fun SheetGrabber() {
 }
 
 @Composable
-private fun ConfirmRecurringButton(submitting: Boolean, onClick: () -> Unit) {
+private fun ConfirmRecurringButton(
+    submitting: Boolean,
+    @StringRes labelRes: Int,
+    onClick: () -> Unit,
+) {
     Button(
         onClick = onClick,
         enabled = !submitting,
@@ -749,7 +772,7 @@ private fun ConfirmRecurringButton(submitting: Boolean, onClick: () -> Unit) {
             )
         } else {
             Text(
-                text = stringResource(R.string.recurring_confirm_cta),
+                text = stringResource(labelRes),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )

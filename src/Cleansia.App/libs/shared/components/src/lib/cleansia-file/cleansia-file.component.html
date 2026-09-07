@@ -20,6 +20,7 @@
   <!-- File upload area -->
   <div
     class="file-upload-area"
+    [class.file-upload-area--compact]="compact()"
     [class.disabled]="disabled()"
     [class.has-error]="
       formControl.invalid && (formControl.dirty || formControl.touched)
@@ -33,6 +34,20 @@
     (keydown.enter)="triggerFileSelect()"
     (keydown.space)="triggerFileSelect()"
   >
+    @if (compact()) {
+    <i class="pi pi-cloud-upload upload-icon"></i>
+    <div class="upload-text">
+      <span class="primary-text">{{ 'components.file.click_to_select' | translate }}</span>
+      @if (hint()) {
+      <span class="secondary-text">{{ hint() }}</span>
+      } @else {
+      <span class="secondary-text">
+        {{ 'components.file.max_size' | translate }}: {{ formatFileSize(maxFileSize()) }}
+      </span>
+      }
+    </div>
+    <span class="upload-trigger">{{ 'components.file.choose' | translate }}</span>
+    } @else {
     <div class="upload-content">
       <i class="pi pi-cloud-upload upload-icon"></i>
       <div class="upload-text">
@@ -44,6 +59,7 @@
         {{ 'components.file.max_size' | translate }}: {{ formatFileSize(maxFileSize()) }}
       </div>
     </div>
+    }
   </div>
 
   <!-- Selected files list -->

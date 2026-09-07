@@ -50,6 +50,7 @@ public class CancellationAcceptanceSignalTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IRefundService> _refundService = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<INotificationProducer> _producer = new();
@@ -99,6 +100,7 @@ public class CancellationAcceptanceSignalTests
             _orderRepository.Object,
             _session.Object,
             _refundService.Object,
+            _creditAccountRepository.Object,
             _loyaltyService.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
             _producer.Object,
@@ -109,6 +111,7 @@ public class CancellationAcceptanceSignalTests
         new(
             _stripeConfig.Object,
             _orderRepository.Object,
+            _creditAccountRepository.Object,
             _disputeRepository.Object,
             _processedEvents.Object,
             _subscriptionHandler.Object,
@@ -121,6 +124,7 @@ public class CancellationAcceptanceSignalTests
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>
         new(
             _orderRepository.Object,
+            _creditAccountRepository.Object,
             _userRepository.Object,
             _session.Object,
             _stripeClient.Object,

@@ -1,4 +1,4 @@
-using Cleansia.Core.Domain.Enums;
+﻿using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
@@ -85,4 +85,12 @@ public record CreateOrderInput(
     /// different questions, not because it is access-controlled — it is not.
     /// Null for the recurring pipeline: a template carries no per-occurrence note.
     /// </summary>
-    string? AccessInstructions = null);
+    string? AccessInstructions = null,
+    /// <summary>
+    /// Floor and door for a flat; both null for a house. Carried on the order
+    /// rather than the address because addresses are deduped across users at
+    /// the same street — see <c>Order.CustomerFloor</c>.
+    /// </summary>
+    string? CustomerFloor = null,
+    string? CustomerApartment = null,
+    string? AccessMode = null);

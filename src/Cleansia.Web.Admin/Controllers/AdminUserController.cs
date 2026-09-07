@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -48,6 +49,7 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreateAdminUser(
         [FromBody] CreateAdminUser.Command command,
         CancellationToken cancellationToken)
@@ -63,6 +65,7 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdateAdminUser(
         string userId,
         [FromBody] UpdateAdminUser.Command command,
@@ -83,6 +86,7 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeactivateAdminUser(
         string userId,
         CancellationToken cancellationToken)
@@ -98,6 +102,7 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ActivateAdminUser(
         string userId,
         CancellationToken cancellationToken)

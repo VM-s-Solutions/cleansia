@@ -18,5 +18,11 @@ public interface IEmailService
 
     Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string periodLabel, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
+    /// <summary>
+    /// Sends a first-order promo code. Rendered from <c>email-templates/promo-code.html</c>
+    /// in this repository rather than from a hosted SendGrid template.
+    /// </summary>
+    Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = Constants.Language.English, CancellationToken ct = default);
+
     Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default);
 }

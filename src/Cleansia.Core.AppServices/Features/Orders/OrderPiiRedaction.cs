@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
@@ -49,6 +49,11 @@ public static class OrderPiiRedaction
             Notes = null,
             SpecialInstructions = null,
             AccessInstructions = null,
+            CustomerFloor = null,
+            CustomerApartment = null,
+            // Knowing there IS a door code is most of knowing the code is worth
+            // asking for, so the shape of the answer is redacted with the answer.
+            AccessMode = null,
             HasAccessInstructions = null,
             CompletionNotes = null,
             RecurringTemplateId = null,

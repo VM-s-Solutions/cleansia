@@ -58,20 +58,18 @@ body {
   // stranding the viewport mid-page. In-page scrolls opt into smooth via
   // scrollTo/scrollIntoView({ behavior: 'smooth' }) instead.
   background-color: var(--surface-ground, #f3f4f6);
-  font-family: var(
-    --font-family,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol'
-  );
+  // Nunito, spelled out. This read `var(--font-family, <system stack>)` —
+  // and `--font-family` is PrimeNG's PRE-v20 token name, defined nowhere in
+  // this repo, so the fallback won and the entire application rendered its body
+  // text in the system font. Only the rules that name `$font-body` explicitly
+  // got Nunito, which is why the site mixed a real 800 with a SYNTHESISED one
+  // and the weights looked inconsistent against the design.
+  //
+  // The system stack stays behind Nunito as a genuine fallback rather than as
+  // the value that was actually being used.
+  font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol';
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

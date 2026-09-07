@@ -8,9 +8,11 @@ import {
   OnInit,
   output,
   PLATFORM_ID,
+  effect,
   signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { CookieConsentService } from './cookie-consent.service';
 import { FormsModule } from '@angular/forms';
 import { isLocalStorageAvailable } from '@cleansia/utils';
 import { TranslateModule } from '@ngx-translate/core';
@@ -47,6 +49,8 @@ export type ConsentSyncFn = (preferences: CookiePreferences, status: CookieConse
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaCookieConsentComponent implements OnInit {
+  private readonly consentService = inject(CookieConsentService);
+
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   storageKey = input<string>('cleansia-cookie-consent');
@@ -63,6 +67,18 @@ export class CleansiaCookieConsentComponent implements OnInit {
   consentChange = output<CookieConsentStatus>();
 
   private consentStatus = signal<CookieConsentStatus>('pending');
+
+  constructor() {
+    // Reopen on request, whatever was stored before. The first emission is the
+    // service's initial 0, which must not pop the banner open on load.
+    effect(() => {
+      if (this.consentService.openRequests() > 0) {
+        this.showSettings.set(true);
+        this.isVisible.set(true);
+      }
+    });
+  }
+
   isVisible = signal<boolean>(false);
   showSettings = signal<boolean>(false);
 

@@ -57,7 +57,7 @@ public class GetPagedOrders
             DateTime? cleaningDateFrom = request.Filter?.CleaningDateFrom;
             if (request.Filter?.HasAvailableSpots == true && cleaningDateFrom is null)
             {
-                cleaningDateFrom = DateTime.UtcNow.AddHours(-2);
+                cleaningDateFrom = DateTime.UtcNow.AddHours(-BookingPolicy.BoardBacklogHours);
             }
 
             // A non-admin cannot filter by a FOREIGN employee. When the client

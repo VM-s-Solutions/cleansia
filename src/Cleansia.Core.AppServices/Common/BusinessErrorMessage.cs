@@ -1,4 +1,4 @@
-﻿namespace Cleansia.Core.AppServices.Common;
+namespace Cleansia.Core.AppServices.Common;
 
 public static class BusinessErrorMessage
 {
@@ -330,6 +330,30 @@ public static class BusinessErrorMessage
     // Dispute
     public const string DisputeNotFound = "dispute.not_found";
     public const string DisputeAlreadyExists = "dispute.already_exists";
+
+    /// <summary>The clean has not happened yet — there is nothing to report about it.</summary>
+    public const string DisputeCleaningNotStarted = "dispute.cleaning_not_started";
+
+    /// <summary>A selected item is not on the order being disputed.</summary>
+    public const string DisputeLineNotOnOrder = "dispute.line_not_on_order";
+
+    /// <summary>A per-item review score names an item that is not on the order.</summary>
+    public const string ReviewLineNotOnOrder = "review.line_not_on_order";
+
+    /// <summary>One manual credit grant is above the typo ceiling.</summary>
+    public const string CreditAmountExceedsSanityCap = "credit.amount_exceeds_sanity_cap";
+
+    /// <summary>A credit amount carrying more precision than the currency has minor units.</summary>
+    public const string CreditAmountNotWholeMinorUnits = "credit.amount_not_whole_minor_units";
+
+    /// <summary>A spend-side reason was used to ISSUE credit.</summary>
+    public const string CreditReasonNotIssuable = "credit.reason_not_issuable";
+
+    /// <summary>Cash cannot settle an order part of which the customer already paid in credit.</summary>
+    public const string CashNotCollectableOnCreditOrder = "credit.cash_not_collectable_on_credit_order";
+
+    /// <summary>Erasure refused: the platform still owes this customer a credit balance.</summary>
+    public const string GdprDeletionBlockedByCreditBalance = "gdpr.deletion_blocked_by_credit_balance";
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";

@@ -22,6 +22,16 @@ public record ReceiptPdfData
     public int? EstimatedTime { get; init; }
     public CompanyInfoData? Company { get; init; }
 
+    // Tender split. Total stays the SALE and is what the fiscal authority registers - credit is a
+    // tender, not a discount, so the taxable base does not move. These two say how the sale was
+    // SETTLED, which is a different question and the one a customer holding the receipt is asking:
+    // "why is my card statement 500 lighter than this number?".
+    //
+    // Both zero on every receipt that used no credit, and the layout omits the rows entirely then, so
+    // no shipped receipt changes.
+    public decimal CreditApplied { get; init; }
+    public decimal AmountDueOnCard { get; init; }
+
     // VAT breakdown — populated from Order at receipt generation time.
     // When IsVatPayer is false, NonVatPayerNotice is shown instead of VAT rows.
     public bool IsVatPayer { get; init; }

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -135,6 +136,26 @@ public class CreatePromoCode
                     description: command.Description);
 
             promoCodeRepository.Add(entity);
+
+            // The existence check above and this insert cross a snapshot boundary with no lock, so
+            // (TenantId, Code) UNIQUE is what actually arbitrates two simultaneous creations. That
+            // index only began enforcing when it was declared NULLS NOT DISTINCT — before that it
+            // admitted duplicates silently, and a duplicate promo code multiplies BOTH caps, because
+            // the global counter is per row and the per-user slot index keys on PromoCodeId.
+            //
+            // FLUSH here and own the loser's 23505: the pipeline commit runs after this handler
+            // returns, where the same violation can only surface as a 500. Same shape as
+            // CreateAdminUser.
+            try
+            {
+                await promoCodeRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.Code), BusinessErrorMessage.PromoCodeAlreadyExists));
+            }
 
             return BusinessResult.Success(new Response(entity.Id));
         }

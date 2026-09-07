@@ -4,7 +4,16 @@ namespace Cleansia.Core.Clients.Abstractions.Stripe;
 
 public interface IStripeClient
 {
-    Task<string> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken);
+    /// <summary>
+    /// Mint (or, inside Stripe's idempotency window, replay) the Checkout Session for an order.
+    ///
+    /// <para>Returns BOTH halves deliberately. The caller redirects the browser to
+    /// <see cref="CheckoutSessionResult.Url"/>, but the refund path needs
+    /// <see cref="CheckoutSessionResult.Id"/> — <see cref="RefundCheckoutSessionAsync"/> looks the
+    /// session up by id, and this method used to discard it, so no web card order carried a charge
+    /// surface at all and a refund fell through to a null PaymentIntent.</para>
+    /// </summary>
+    Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken);
 
     /// <summary>
     /// Refund a previously-paid checkout session. Amount is in the session's currency.
@@ -141,10 +150,16 @@ public interface IStripeClient
     /// <summary>
     /// Create a Stripe Checkout Session in subscription mode for the web
     /// customer flow. The customer is redirected to Stripe-hosted Checkout,
-    /// completes payment, and returns to <c>SuccessUrl</c>. The
+    /// completes payment, and returns to the membership welcome page. The
     /// <c>customer.subscription.created</c> webhook is what creates the local
     /// <see cref="Cleansia.Core.Domain.Memberships.UserMembership"/> row —
     /// success-url polling is not required.
+    /// <para>
+    /// The return URLs are NOT parameters. They used to be, taken from the client and passed
+    /// through unchecked, which let any authenticated caller choose where Stripe sent a browser
+    /// after payment. They are now derived from <c>Stripe:SuccessUrlBase</c> — the same authority
+    /// the order flow has always used, one method up in this same interface.
+    /// </para>
     /// </summary>
     Task<string> CreateMembershipCheckoutSessionAsync(
         string stripeCustomerId,
@@ -152,8 +167,6 @@ public interface IStripeClient
         string userId,
         string membershipPlanCode,
         int trialPeriodDays,
-        string successUrl,
-        string cancelUrl,
         string idempotencyAttemptId,
         CancellationToken cancellationToken);
 }
@@ -213,4 +226,10 @@ public record SubscriptionResult(
 /// ClientSecret is what the mobile SDK confirms against; the Id is the
 /// canonical Stripe reference we persist on the Order for webhook reconciliation.
 /// </summary>
+/// <summary>
+/// A Checkout Session's two halves: the <paramref name="Id"/> that identifies it to Stripe (and so
+/// to the refund path) and the <paramref name="Url"/> the browser is sent to.
+/// </summary>
+public record CheckoutSessionResult(string Id, string Url);
+
 public record PaymentIntentResult(string Id, string ClientSecret);

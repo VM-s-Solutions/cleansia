@@ -372,6 +372,9 @@ public sealed class ReceiptService(
                 .Select(e => e.Key)
                 .ToList(),
             Total = order.TotalPrice,
+            // The sale above, how it was settled below. -> ReceiptPdfData.CreditApplied
+            CreditApplied = order.CreditAppliedAmount,
+            AmountDueOnCard = order.AmountDueOnCard,
             Currency = order.Currency?.Symbol ?? "Kč",
             PaymentStatus = order.PaymentStatus.ToString(),
             PaymentType = order.ActualPaymentType.ToString(),

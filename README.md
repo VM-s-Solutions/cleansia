@@ -94,7 +94,27 @@ the Prague service area (including the district spellings in both Czech and Engl
 has its own `README.md`, plus `reset-database.sql` for starting over and `set-admin-role.sql` for
 promoting a registered user to admin.
 
-Register your admin through the app, then promote it — that way the password is one you chose.
+**It also seeds an administrator, so a fresh database is usable immediately:**
+
+| | |
+|---|---|
+| Email | `admin@cleansia.local` |
+| Password | `Admin123!` |
+
+That replaces the three steps a new database used to cost — register through the customer app,
+confirm the email, then run `set-admin-role.sql` — which had to be repeated every time the database
+was dropped.
+
+**It is created only into a database with no users at all.** Seed a database that already has one
+and you get the catalogue but no admin; that is the point, not a bug — it is what stops a
+known-password administrator appearing anywhere real. Three things have to fail before that could
+happen: `CleansiaStartupBase` reads this file only inside `if (environment.IsDevelopment())` and
+only when `Languages` is empty; `execute-sql.yml` refuses this filename against `PRO`; and the
+insert itself requires an empty `Users` table. `.local` is a reserved suffix, so the address cannot
+resolve to a real mailbox either.
+
+Use `set-admin-role.sql` when you want a *different* account promoted — registering your own and
+promoting it still works, and gives you a password nobody else knows.
 
 ### Frontend
 

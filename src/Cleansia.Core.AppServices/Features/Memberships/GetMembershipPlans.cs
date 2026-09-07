@@ -26,6 +26,14 @@ public class GetMembershipPlans
         decimal DiscountPercentage,
         int FreeCancellationWindowHours,
         bool AllowsExpressUpgrade,
+        /// <summary>
+        /// How many express surcharges the plan waives per calendar month. On the
+        /// DTO because a pre-subscribe surface has to be able to SAY the number —
+        /// "a free express clean each month" is a promise with a quantity in it,
+        /// and the alternative was hardcoding one in five locales on three
+        /// platforms. 0 when <see cref="AllowsExpressUpgrade"/> is false.
+        /// </summary>
+        int ExpressUpgradesPerMonth,
         int TrialPeriodDays,
         /// <summary>
         /// Percentage saved per month when this plan is compared to the
@@ -66,6 +74,7 @@ public class GetMembershipPlans
                     DiscountPercentage: p.DiscountPercentage,
                     FreeCancellationWindowHours: p.FreeCancellationWindowHours,
                     AllowsExpressUpgrade: p.AllowsExpressUpgrade,
+                    ExpressUpgradesPerMonth: p.AllowsExpressUpgrade ? p.ExpressUpgradesPerMonth : 0,
                     TrialPeriodDays: p.TrialPeriodDays,
                     SavingsPercentVsMonthly: savings);
             }).ToList();

@@ -39,11 +39,14 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
   readonly canSubmitOverrideStatus = computed(
     () => this.targetStatus() !== null && !this.submitting()
   );
+  /**
+   * Only the DESTINATION is required. `fromEmployeeId` stays optional because the server's command
+   * documents null as "a pure add into an open spot (no cleaner removed)" — and that is the case an
+   * admin is called into: a job whose crew walked, or which nobody ever took, with nothing to
+   * replace. Requiring a source here made the platform's own escalation path unreachable from the UI.
+   */
   readonly canSubmitReassign = computed(
-    () =>
-      this.fromEmployeeId() !== null &&
-      this.toEmployeeId().trim().length > 0 &&
-      !this.submitting()
+    () => this.toEmployeeId().trim().length > 0 && !this.submitting()
   );
 
   openPanel(panel: AdminOrderOpsPanel): void {
@@ -108,12 +111,13 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
   reassignOrder(orderId: string, onSuccess: () => void): void {
     const fromEmployeeId = this.fromEmployeeId();
     const toEmployeeId = this.toEmployeeId().trim();
-    if (!orderId || fromEmployeeId === null || !toEmployeeId) {
+    if (!orderId || !toEmployeeId) {
       return;
     }
     const command = new AdminReassignOrderCommand();
     command.orderId = orderId;
-    command.fromEmployeeId = fromEmployeeId;
+    // Undefined, not null, when nobody is being replaced: this is an ADD.
+    command.fromEmployeeId = fromEmployeeId ?? undefined;
     command.toEmployeeId = toEmployeeId;
     this.run(
       this.adminClient.adminOrderClient.reassign(command),

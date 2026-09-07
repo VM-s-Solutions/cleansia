@@ -145,3 +145,33 @@ export function buildUpdateCurrentUserCommand(
 
   return command;
 }
+
+/** What the profile rail's credit row renders. */
+export interface CreditRow {
+  amount: number;
+  currency: string;
+  expiresOn: Date | null;
+}
+
+/**
+ * The credit row for the profile rail, or null when there is nothing trustworthy to show.
+ *
+ * Null means ONLY that the read failed — `ProfileFacade.loadCredit` maps an error to null. A balance
+ * of ZERO is not that case and DOES get a row: `GetMyCredit` answers `Balance: 0` in the platform's
+ * default currency for a customer who never had an account, deliberately, "so the client renders one
+ * shape either way". This used to return null at `balance <= 0`, which left a customer unable to tell
+ * "you have no credit" from "this screen does not mention credit" — the question the row exists to
+ * answer. Owner remark 2026-09-06.
+ */
+export function buildCreditRow(
+  credit: { balance: number; currencyCode?: string | null; expiresOn?: Date | null } | null
+): CreditRow | null {
+  if (!credit) return null;
+  return {
+    amount: credit.balance,
+    currency: credit.currencyCode ?? '',
+    // Null at a zero balance — there is nothing to expire — and null on an account the sweep has not
+    // dated yet. Both render as no line rather than as an empty date.
+    expiresOn: credit.expiresOn ?? null,
+  };
+}

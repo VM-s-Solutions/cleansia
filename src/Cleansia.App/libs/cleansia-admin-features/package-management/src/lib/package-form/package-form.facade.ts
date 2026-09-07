@@ -5,7 +5,7 @@ import {
   AdminPackageDetailDto,
   CreatePackageCommand,
   CreatePackageResponse,
-  CreateServiceTranslationInput,
+  PackageTranslationInput,
   LanguageListItem,
   ServiceListItem,
   UpdatePackageCommand,
@@ -35,9 +35,13 @@ export interface LanguageOption {
 export interface PackageFormData {
   name: string;
   description: string;
+  tagline: string;
+  isPopular: boolean;
   price: number;
   serviceIds: string[];
-  translations: { [key: string]: { name: string; description: string } };
+  translations: {
+    [key: string]: { name: string; description: string; tagline: string };
+  };
 }
 
 const DEFAULT_WEIGHT = 1;
@@ -139,8 +143,12 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
         catchError(() => of([] as LanguageListItem[]))
       )
       .subscribe((languages: LanguageListItem[]) => {
+        // `?? []` because the generated client returns NULL, not an empty list, for a 200 whose body
+        // is not a JSON array and for a 204, while its declared type promises an array — neither
+        // `catchError` nor the compiler can see it. Reasoned out in full in
+        // service-management/service-form.facade.ts; the `.filter` below is this file's crash site.
         this.languages.set(
-          languages
+          (languages ?? [])
             .filter(
               (
                 lang: LanguageListItem
@@ -176,6 +184,8 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
     const command = new CreatePackageCommand();
     command.name = data.name;
     command.description = data.description;
+    command.tagline = data.tagline || undefined;
+    command.isPopular = data.isPopular;
     command.price = data.price;
     command.serviceIds = data.serviceIds;
     command.translations = this.buildTranslations(data.translations);
@@ -212,6 +222,8 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
     command.packageId = packageId;
     command.name = data.name;
     command.description = data.description;
+    command.tagline = data.tagline || undefined;
+    command.isPopular = data.isPopular;
     command.price = data.price;
     command.serviceIds = data.serviceIds;
     command.serviceWeights = this.buildServiceWeights();
@@ -246,14 +258,15 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
   }
 
   private buildTranslations(source: {
-    [key: string]: { name: string; description: string };
-  }): { [key: string]: CreateServiceTranslationInput } {
-    const translations: { [key: string]: CreateServiceTranslationInput } = {};
+    [key: string]: { name: string; description: string; tagline: string };
+  }): { [key: string]: PackageTranslationInput } {
+    const translations: { [key: string]: PackageTranslationInput } = {};
     for (const [lang, trans] of Object.entries(source)) {
-      if (trans.name || trans.description) {
-        const translation = new CreateServiceTranslationInput();
+      if (trans.name || trans.description || trans.tagline) {
+        const translation = new PackageTranslationInput();
         translation.name = trans.name;
         translation.description = trans.description;
+        translation.tagline = trans.tagline || undefined;
         translations[lang] = translation;
       }
     }

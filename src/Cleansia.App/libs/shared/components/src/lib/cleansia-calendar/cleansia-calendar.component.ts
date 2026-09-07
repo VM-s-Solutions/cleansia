@@ -28,7 +28,12 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 })
 export class CleansiaCalendarComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
-  floatVariant = input<'over' | 'in' | 'on'>('on');
+  /**
+   * `null` renders the label ABOVE the control instead of floating it into the
+   * border — the shape the approved customer design draws. The default stays
+   * 'on' so the partner and admin forms are untouched.
+   */
+  floatVariant = input<'over' | 'in' | 'on' | null>('on');
   showIcon = input<boolean>(true);
   iconDisplay = input<'input' | 'button'>('input');
   dateFormat = input<string>('dd.mm.yy');

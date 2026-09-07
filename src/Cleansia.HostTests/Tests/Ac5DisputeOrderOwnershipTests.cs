@@ -34,7 +34,10 @@ public sealed class Ac5DisputeOrderOwnershipTests(HostTestPostgresFixture db) : 
             var owner = DomainSeed.Customer(ownerEmail);
             ctx.Users.AddRange(attacker, owner);
 
-            var order = DomainSeed.NewOrder(owner.Id, ownerEmail);
+            // Yesterday: a dispute is about a clean that has happened. CreateDispute refuses one
+            // scheduled in the future, which the default three-days-out seed would be.
+            var order = DomainSeed.NewOrder(
+                owner.Id, ownerEmail, cleaningDateTime: DateTime.UtcNow.AddDays(-1));
             ctx.Orders.Add(order);
 
             attackerId = attacker.Id;

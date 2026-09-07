@@ -40,6 +40,9 @@ public class UploadIntakeRosterTests
     [
         "Cleansia.Web.Customer.DisputeController.UploadEvidence — SniffedContentType(DisputeEvidence)",
         "Cleansia.Web.Customer.UserController.UpdateCurrentUser — ImageFileValidator",
+        // Split out of UpdateCurrentUser so a picture upload stops being validated as a profile save.
+        // Customer web only — the mobile customer host has no separate avatar route.
+        "Cleansia.Web.Customer.UserController.UpdateCurrentUserPhoto — ImageFileValidator",
         "Cleansia.Web.Mobile.Customer.DisputeController.UploadEvidence — SniffedContentType(DisputeEvidence)",
         "Cleansia.Web.Mobile.Customer.UserController.UpdateCurrentUser — ImageFileValidator",
         "Cleansia.Web.Mobile.Partner.EmployeeController.ReplaceMyDocument — DocumentFileValidator",

@@ -100,6 +100,104 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
         Assert.Equal("\"IsActive\" = TRUE", index.GetFilter());
     }
 
+
+    /// <summary>
+    /// Unique indexes whose nullable column is removed from the index by a FILTER, so declaring
+    /// NULLS NOT DISTINCT would change nothing — plus the one deliberate backstop.
+    /// </summary>
+    private static readonly HashSet<string> NullsDistinctIsFine = new(StringComparer.Ordinal)
+    {
+        // Filtered "VariableSymbol" IS NOT NULL, so no indexed row can hold a null in it.
+        "EmployeeInvoice (VariableSymbol)",
+        // Filtered "RecurringTemplateId" IS NOT NULL — the nullable column cannot be null in an indexed row.
+        "Order (RecurringTemplateId, CleaningDateTime)",
+        // The documented backstop behind GetActiveForUserAsync, deliberately left nulls-distinct.
+        "UserMembership (TenantId, UserId)",
+    };
+
+    /// <summary>
+    /// Unique indexes knowingly left unenforced.
+    ///
+    /// <para><b>Empty, and that is the point.</b> It held seven — every unique index carrying an
+    /// unfiltered nullable column, which in single-tenant mode (TenantId null, i.e. production)
+    /// enforced nothing at all. All seven now declare NULLS NOT DISTINCT, so the set emptied rather
+    /// than being maintained.</para>
+    /// </summary>
+    private static readonly HashSet<string> KnownUnenforced = new(StringComparer.Ordinal)
+    {
+        };
+
+    private static string Describe(IEntityType entity, IIndex index) =>
+        $"{entity.ClrType.Name} ({string.Join(", ", index.Properties.Select(pr => pr.Name))})";
+
+    /// <summary>
+    /// Every unique index in the model, not the five somebody remembered to list.
+    ///
+    /// <para>The theory above is a hand-written roster, and that shape fails OPEN — a new unique
+    /// index over a nullable column is not weakly covered by it, it is invisible to it. Two indexes
+    /// added in this very commit would have been, and <c>LoyaltyTransaction</c> already was. This
+    /// walks the model instead: any unique index carrying a nullable column must either declare
+    /// NULLS NOT DISTINCT, be filtered so the null cannot appear, or be named above.</para>
+    /// </summary>
+    [Fact]
+    public void No_Unique_Index_Over_A_Nullable_Column_Silently_Fails_To_Enforce()
+    {
+        using var ctx = NewContext();
+
+        var offenders = new List<string>();
+
+        foreach (var entity in ctx.Model.GetEntityTypes())
+        foreach (var index in entity.GetIndexes().Where(ix => ix.IsUnique))
+        {
+            if (!index.Properties.Any(pr => pr.IsNullable))
+            {
+                continue;
+            }
+
+            if (index.GetAreNullsDistinct() == false)
+            {
+                continue;
+            }
+
+            var description = Describe(entity, index);
+            if (NullsDistinctIsFine.Contains(description) || KnownUnenforced.Contains(description))
+            {
+                continue;
+            }
+
+            offenders.Add(description);
+        }
+
+        Assert.True(offenders.Count == 0,
+            "PostgreSQL treats NULLs in a UNIQUE index as distinct, so these unique indexes enforce "
+            + "nothing whenever their nullable column is null. Declare .AreNullsDistinct(false), "
+            + "filter the null out, or record them with a reason:\n  "
+            + string.Join("\n  ", offenders.OrderBy(x => x, StringComparer.Ordinal)));
+    }
+
+    /// <summary>
+    /// Both recorded lists may only shrink. An entry that outlives its index turns the list into
+    /// fiction, and fiction is what a roster degrades into when nothing checks it.
+    /// </summary>
+    [Fact]
+    public void The_Recorded_Lists_Contain_Nothing_Stale()
+    {
+        using var ctx = NewContext();
+
+        var live = ctx.Model.GetEntityTypes()
+            .SelectMany(e => e.GetIndexes().Where(ix => ix.IsUnique).Select(ix => Describe(e, ix)))
+            .ToHashSet(StringComparer.Ordinal);
+
+        var stale = NullsDistinctIsFine.Concat(KnownUnenforced)
+            .Where(d => !live.Contains(d))
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.True(stale.Count == 0,
+            "These recorded entries name indexes that no longer exist. Remove them:\n  "
+            + string.Join("\n  ", stale));
+    }
+
     private static IIndex FindIndex(CleansiaDbContext ctx, Type entityClrType, string[] columns)
     {
         var entityType = ctx.Model.FindEntityType(entityClrType)!;

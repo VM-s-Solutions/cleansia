@@ -8,17 +8,10 @@ import {
   PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
-import {
-  OrderStatusIconPipe,
-  OrderStatusLabelPipe,
-  OrderStatusSeverityPipe,
-  PaymentStatusLabelPipe,
-  PaymentStatusSeverityPipe,
-} from '@cleansia/pipes';
-import { OrderStatus } from '@cleansia/customer-services';
+import { OrderStatusLabelPipe } from '@cleansia/pipes';
+import { OrderStatus, PaymentStatus } from '@cleansia/customer-services';
 import {
   RECURRING_PREFILL_STORAGE_KEY,
   RecurringPrefillParams,
@@ -26,28 +19,57 @@ import {
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TagModule } from 'primeng/tag';
-import { TimelineModule } from 'primeng/timeline';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
+import {
+  buildReviewLineOptions,
+  ReviewLineOption,
+} from './order-review-lines.models';
 import { OrderPreferredOfferFacade } from './order-preferred-offer.facade';
+
+/** One row on either status axis. -> the Detail artboard's "Kde to je" card. */
+interface TimelineStep {
+  key: string;
+  done: boolean;
+  current: boolean;
+  meta?: string;
+  danger?: boolean;
+}
+
+/**
+ * One row of the price card. A discount is negative and reads in the accent.
+ *
+ * A row is labelled by EITHER a name the server sent (a package, the services)
+ * or a translation key the template pipes. Resolving the key here instead would
+ * freeze the label at the language the order loaded in: a computed re-runs when
+ * a signal it read changes, and `translate.instant` is not one.
+ */
+interface PriceLine {
+  label?: string;
+  labelKey?: string;
+  amount: number;
+  discount?: boolean;
+}
+
+/**
+ * How the cleaner gets in. Two halves that are read together: the slug is the
+ * SHAPE of the answer ("keys_handover") and the instructions are the DETAIL
+ * ("with the neighbour in apt. 11"). -> Order.AccessMode
+ */
+interface EntryDetail {
+  modeKey?: string;
+  detail?: string;
+}
 
 @Component({
   selector: 'cleansia-customer-order-detail',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     TranslatePipe,
-    TagModule,
     SkeletonModule,
-    TimelineModule,
     CleansiaButtonComponent,
-    OrderStatusSeverityPipe,
     OrderStatusLabelPipe,
-    PaymentStatusSeverityPipe,
-    PaymentStatusLabelPipe,
-    OrderStatusIconPipe,
     OrderPreferredOfferComponent,
   ],
   providers: [OrderDetailFacade, OrderPreferredOfferFacade],
@@ -72,6 +94,26 @@ export class OrderDetailComponent implements OnInit {
 
   // Rating
   reviewRating = signal(0);
+
+  /**
+   * PER-ITEM SCORES — the second half of the original ask, and the half one overall number cannot
+   * carry: "the oven was spotless, the bathroom was skipped" is two facts, and a single 3 stars says
+   * neither of them.
+   *
+   * <p>Entirely optional and closed by default. The overall rating stays the required headline: a
+   * customer who wants to leave five stars and go should never meet this list.</p>
+   */
+  readonly reviewLinesOpen = signal(false);
+
+  readonly reviewLineOptions = computed(() =>
+    buildReviewLineOptions(this.order(), (name, translations) => {
+      const lang = this.translate.currentLang || this.translate.getDefaultLang();
+      return translations?.[lang]?.name || name || '';
+    }),
+  );
+
+  /** key -> 1..5. Absent means "not scored", which is different from scored badly. */
+  readonly reviewLineScores = signal<ReadonlyMap<string, number>>(new Map());
   reviewComment = signal('');
   reviewHover = signal(0);
   isCompleted = computed(
@@ -80,7 +122,219 @@ export class OrderDetailComponent implements OnInit {
   isInProgress = computed(
     () => this.order()?.orderStatus?.value === OrderStatus.InProgress
   );
+  isCancelled = computed(
+    () => this.order()?.orderStatus?.value === OrderStatus.Cancelled
+  );
   hasReview = computed(() => !!this.order()?.review);
+
+  // ---------------------------------------------------------------------------
+  // The two axes. -> "Objednavky zakaznika" board, Detail artboard, note "axes"
+  //
+  // The board's whole argument: an order's state is TWO independent things, and
+  // one timeline cannot say them. Order.CurrentStatus tracks the cleaning;
+  // PaymentStatus x PaymentType tracks the money. Confirmed means EITHER "the
+  // money arrived" OR "a cleaner took it" — a cash order is Confirmed without a
+  // koruna moving. And "cleaner assigned" is driven by AssignedEmployees, never
+  // by Confirmed: a card order is Confirmed the moment Stripe says so and may
+  // have nobody on it. -> /domain/order-lifecycle
+  // ---------------------------------------------------------------------------
+
+  /** When each status was reached, from the order's own history. */
+  private statusReachedAt(status: OrderStatus): Date | undefined {
+    return this.order()?.statusHistory?.find((t) => t.status?.value === status)?.createdOn;
+  }
+
+  readonly cleaningSteps = computed<TimelineStep[]>(() => {
+    const order = this.order();
+    if (!order) return [];
+
+    const current = order.orderStatus?.value;
+    const cancelled = current === OrderStatus.Cancelled;
+    const assignee = this.assignedCleaner();
+
+    // A cancelled order stops where it stopped; the steps it never reached are
+    // not "upcoming", they are not going to happen.
+    const step = (
+      status: OrderStatus,
+      key: string,
+      meta?: string,
+    ): TimelineStep => {
+      const at = this.statusReachedAt(status);
+      const done = !!at || (current !== undefined && current > status && !cancelled);
+      return {
+        key,
+        done,
+        current: current === status,
+        meta: meta ?? (at ? this.formatDate(at) : undefined),
+      };
+    };
+
+    // Assignment is its own row, and it reads off the crew, not off Confirmed.
+    // Both rows sit on OrderStatus.Confirmed, so exactly one of them is the
+    // current one: with a crew on the order the furthest thing that happened is
+    // the assignment, and Confirmed behind it is simply done.
+    const assignedIsCurrent = !!assignee && current === OrderStatus.Confirmed;
+
+    const confirmed = step(OrderStatus.Confirmed, 'confirmed');
+    if (assignedIsCurrent) {
+      confirmed.current = false;
+      confirmed.done = true;
+    }
+
+    const steps: TimelineStep[] = [step(OrderStatus.New, 'received'), confirmed];
+
+    steps.push({
+      key: 'assigned',
+      done: !!assignee,
+      current: assignedIsCurrent,
+      meta: assignee?.fullName,
+    });
+
+    steps.push(
+      step(OrderStatus.OnTheWay, 'on_the_way'),
+      step(OrderStatus.InProgress, 'in_progress'),
+      step(OrderStatus.Completed, 'completed'),
+    );
+
+    if (cancelled) {
+      steps.push({ key: 'cancelled', done: true, current: true, danger: true,
+        meta: this.formatDate(this.statusReachedAt(OrderStatus.Cancelled)) });
+    }
+
+    return steps;
+  });
+
+  /**
+   * The money's own axis. It has no timestamps of its own on the DTO, so the
+   * rows carry state and no time rather than a time borrowed from the cleaning
+   * axis, which would be a different event wearing the wrong label.
+   */
+  readonly paymentSteps = computed<TimelineStep[]>(() => {
+    const order = this.order();
+    if (!order) return [];
+
+    const status = order.paymentStatus?.value;
+    const paid = status === PaymentStatus.Paid;
+    const refunded = status === PaymentStatus.Refunded;
+    const failed = status === PaymentStatus.Failed;
+
+    const steps: TimelineStep[] = [
+      { key: 'awaiting', done: true, current: !paid && !refunded && !failed,
+        meta: order.paymentType?.name },
+    ];
+
+    if (failed) {
+      steps.push({ key: 'failed', done: true, current: true, danger: true });
+    } else {
+      steps.push({ key: 'paid', done: paid || refunded, current: paid });
+    }
+
+    if (refunded) {
+      steps.push({ key: 'refunded', done: true, current: true });
+    }
+
+    return steps;
+  });
+
+  /** The board names one cleaner; the crew can be larger, so the rest are counted. */
+  readonly assignedCleaner = computed(() => this.order()?.assignedEmployees?.[0]);
+
+  readonly otherCrewCount = computed(() =>
+    Math.max(0, (this.order()?.assignedEmployees?.length ?? 0) - 1),
+  );
+
+  /**
+   * The price card. Packages carry their own price; SERVICES DO NOT — the DTO
+   * has no per-service amount — so the services share one line for the balance
+   * of the subtotal. Every figure here is one the server sent or the difference
+   * between two of them; none is an allocation invented per service.
+   */
+  readonly priceLines = computed<PriceLine[]>(() => {
+    const order = this.order();
+    if (!order) return [];
+
+    const lines: PriceLine[] = [];
+    let packagesTotal = 0;
+
+    for (const pkg of order.selectedPackages ?? []) {
+      packagesTotal += pkg.price ?? 0;
+      lines.push({ label: pkg.name ?? '', amount: pkg.price ?? 0 });
+    }
+
+    const serviceNames = (order.selectedServices ?? []).map((s) => s.name).filter(Boolean);
+    const servicesTotal = (order.originalSubtotal ?? 0) - packagesTotal;
+    if (serviceNames.length > 0) {
+      lines.push({ label: serviceNames.join(', '), amount: servicesTotal });
+    }
+
+    const discount = (amount: number | undefined, labelKey: string) => {
+      if (amount && amount > 0) {
+        lines.push({ labelKey, amount: -amount, discount: true });
+      }
+    };
+    discount(order.membershipDiscountAmount, 'pages.order_detail.discount_membership');
+    discount(order.tierDiscountAmount, 'pages.order_detail.discount_tier');
+    discount(order.promoDiscountAmount, 'pages.order_detail.discount_promo');
+
+    return lines;
+  });
+
+  /**
+   * Where the cleaner gets in.
+   *
+   * This used to be `accessInstructions || accessMode`, which was wrong in both
+   * directions: with instructions present the mode vanished, and without them
+   * the RAW SLUG reached the page — the customer read "keys_handover". The two
+   * are halves of one answer and the domain says so; the slug's four values
+   * have had copy under `pages.order.access_mode.*` all along, which is where
+   * the wizard reads them from. -> Order.AccessMode
+   */
+  readonly entry = computed<EntryDetail | undefined>(() => {
+    const order = this.order();
+    if (!order) return undefined;
+
+    const mode = order.accessMode?.trim();
+    const detail = order.accessInstructions?.trim();
+    if (!mode && !detail) return undefined;
+
+    // No guard on the slug: CreateOrder's validator accepts exactly the four
+    // that have copy, so an unknown one cannot be in the database. Checking
+    // here with `instant` would also read a key before the locale file has
+    // loaded and drop a mode that is perfectly fine.
+    return {
+      modeKey: mode ? `pages.order.access_mode.${mode}` : undefined,
+      detail: detail || undefined,
+    };
+  });
+
+  /**
+   * How long free cancellation lasted. The window is a MEMBERSHIP benefit, so
+   * it is read off the membership the customer actually has rather than
+   * hardcoded — Plus shortens it. -> /product/business-rules
+   */
+  /** "Petra S." -> "PS". Same shape the profile rail uses for an avatar. */
+  initialsOf(fullName: string | undefined): string {
+    return (fullName ?? '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('');
+  }
+
+  /** Street, city and the floor/apartment the crew needs to find the door. */
+  readonly addressLine = computed(() => {
+    const order = this.order();
+    if (!order) return '';
+    const address = order.address;
+    const base = [address?.street, address?.city, address?.zipCode].filter(Boolean).join(', ');
+    const inside = [order.customerFloor, order.customerApartment].filter(Boolean).join(', ');
+    return inside ? `${base} · ${inside}` : base;
+  });
+
+  readonly freeCancellationHours = computed(
+    () => this.membership()?.freeCancellationWindowHours ?? 24,
+  );
   stars = [1, 2, 3, 4, 5];
 
   ngOnInit(): void {
@@ -111,7 +365,7 @@ export class OrderDetailComponent implements OnInit {
     const isPlus = this.membership()?.hasMembership === true;
     if (!isPlus) {
       this.facade.showRecurringPlusRequired();
-      this.router.navigate([CleansiaCustomerRoute.MEMBERSHIP, 'subscribe']);
+      this.router.navigate([CleansiaCustomerRoute.PLUS]);
       return;
     }
 
@@ -174,8 +428,39 @@ export class OrderDetailComponent implements OnInit {
     this.reviewRating.set(star);
   }
 
+  setReviewLineScore(option: ReviewLineOption, rating: number): void {
+    const next = new Map(this.reviewLineScores());
+    // Pressing the star you already chose clears it — the only way back to "not scored" once a row
+    // has been touched, and without it a mis-click is permanent.
+    if (next.get(option.key) === rating) {
+      next.delete(option.key);
+    } else {
+      next.set(option.key, rating);
+    }
+    this.reviewLineScores.set(next);
+  }
+
+  reviewLineScoreOf(option: ReviewLineOption): number {
+    return this.reviewLineScores().get(option.key) ?? 0;
+  }
+
+  toggleReviewLines(): void {
+    this.reviewLinesOpen.update((open) => !open);
+  }
+
   submitReview(): void {
-    this.facade.submitReview(this.reviewRating(), this.reviewComment());
+    // Only rows the customer actually scored. An unscored row is not a zero — the server would reject
+    // a rating outside 1..5, and "not scored" is a real answer that simply carries no line.
+    const scores = this.reviewLineScores();
+    const lines = this.reviewLineOptions()
+      .filter((option) => scores.has(option.key))
+      .map((option) => ({
+        serviceId: option.serviceId,
+        packageId: option.packageId,
+        rating: scores.get(option.key)!,
+      }));
+
+    this.facade.submitReview(this.reviewRating(), this.reviewComment(), lines);
   }
 
   protected getLocale(): string {

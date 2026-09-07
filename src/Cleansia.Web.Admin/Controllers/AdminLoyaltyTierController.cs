@@ -4,6 +4,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -30,6 +31,7 @@ public class AdminLoyaltyTierController(IMediator mediator) : ApiController(medi
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdateTierConfig(
         string tierConfigId,
         [FromBody] UpdateTierConfig.Command command,
@@ -49,6 +51,7 @@ public class AdminLoyaltyTierController(IMediator mediator) : ApiController(medi
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("interactive")]
     public async Task<IActionResult> PreviewThresholdImpact(
         [FromBody] PreviewTierThresholdImpact.Query query,
         CancellationToken cancellationToken)

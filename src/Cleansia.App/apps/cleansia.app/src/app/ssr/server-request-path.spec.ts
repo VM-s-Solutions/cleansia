@@ -1,6 +1,16 @@
 /**
  * @jest-environment node
+ * @jest-environment-options {"__Zone_disable_EventTarget": true}
  */
+// The option above is not decoration. `setupFilesAfterEnv` loads jest-preset-angular's zone setup
+// into EVERY suite in this project, this one included, and zone.js patches `EventTarget`
+// unconditionally. Under a NODE environment that EventTarget is Node's real one, so zone also
+// patches `worker_threads` MessagePort — and then reads `.type` off esbuild's raw
+// `{type:'upAndRunning'}` bootstrap message, which carries no zone task:
+//   TypeError: Cannot read properties of undefined (reading 'false')
+// It only bites on a cold cache, when the transformer actually spawns that worker, which is why it
+// failed once in CI and passed on every warm rerun. The flag skips zone's EventTarget patch only.
+
 import * as express from 'express';
 import { existsSync, readFileSync } from 'fs';
 import { createServer, type Server } from 'http';

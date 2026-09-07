@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AccordionModule } from 'primeng/accordion';
-import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'cleansia-faq',
@@ -14,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
   // sub-components directly broke HMR replaceMetadata in PrimeNG 19 (saw
   // "Cannot read properties of undefined (reading 'ButtonDirective')" on
   // hot-reload because of an evaluation-order issue with sibling modules).
-  imports: [RouterModule, TranslatePipe, AccordionModule, ButtonModule],
+  imports: [TranslatePipe, AccordionModule],
 })
 export class FaqComponent {
   faqs = [

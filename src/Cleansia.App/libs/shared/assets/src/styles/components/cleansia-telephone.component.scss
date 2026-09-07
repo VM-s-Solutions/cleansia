@@ -3,3 +3,24 @@
     width: 100%;
   }
 }
+
+// These three were <i>, <div> and <li> with click handlers, which meant a
+// reveal, a collapse and a whole country list that no keyboard could reach.
+// They are <button> now; each needs the UA's own button chrome removed so it
+// renders exactly as it did before, and a visible focus ring so the keyboard
+// route it just gained can actually be seen.
+
+button.cleansia-telephone__item {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent, #0284c7);
+    outline-offset: -2px;
+  }
+}

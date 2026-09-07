@@ -87,10 +87,14 @@ public class EveryRouteCarriesAnAuthorizationDecisionTests
         //     non-owner INSIDE the request. A role policy would not help — the question is not "what
         //     kind of caller" but "is this your order", which only the handler can answer.
         //     CreatePaymentIntent.cs:39-42 (BeOwnedByCallerAsync, deliberately answering
-        //     OrderNotFound to a non-owner so ids cannot be enumerated) and
+        //     OrderNotFound to a non-owner so ids cannot be enumerated),
+        //     ResumeOrderCheckout.cs:60-61 (the same BeOwnedByCallerAsync, answering the same
+        //     OrderNotFound first in a stopping cascade so the later rules cannot report an
+        //     order's payment state to someone who does not own it) and
         //     ConfirmRecurringOrder.cs:81 (order.UserId != sessionUserId).
         "Customer/OrderController.ConfirmRecurring",
         "Customer/PaymentController.CreatePaymentIntent",
+        "Customer/PaymentController.ResumeCheckout",
         "Mobile.Customer/OrderController.ConfirmRecurring",
         "Mobile.Customer/PaymentController.CreatePaymentIntent",
     };

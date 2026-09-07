@@ -48,6 +48,7 @@ public static class FunctionsProcessingRegistration
         services.AddScoped<PruneOutboxTimerHandler>();
         services.AddScoped<AutoCancelStaleRecurringOrdersHandler>();
         services.AddScoped<CleanupStalePendingOrdersHandler>();
+        services.AddScoped<ExpireStaleCreditHandler>();
         services.AddScoped<MaterializeRecurringBookingsHandler>();
         services.AddScoped<RefreshTokenCleanupTimerHandler>();
         services.AddScoped<SendMembershipLifecycleNotificationsHandler>();

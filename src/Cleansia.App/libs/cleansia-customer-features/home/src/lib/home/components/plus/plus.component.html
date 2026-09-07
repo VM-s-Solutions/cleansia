@@ -1,0 +1,73 @@
+<section class="cl-section cl-section--plus" id="plus">
+  <div class="cl-section__inner">
+    <div class="cl-plus">
+      <div class="cl-plus__body">
+        <span class="cl-plus__badge">{{ 'pages.home.plus.badge' | translate }}</span>
+
+        <!--
+          Every figure below comes off the plan. With no plan loaded the band
+          says nothing numeric rather than falling back to constants that would
+          be right until the day a price changed — which is the drift this
+          replaced.
+        -->
+        @if (canStateFigures()) {
+          <h2 class="cl-plus__title">
+            {{
+              'pages.home.plus.title'
+                | translate
+                  : {
+                      price: formatCzk(facts.monthlyPlan()!.price),
+                      days: facts.trialDays()
+                    }
+            }}
+          </h2>
+
+          <ul class="cl-plus__perks">
+            <li>
+              {{ 'pages.home.plus.perk1' | translate: { percent: facts.discountPercent() } }}
+            </li>
+            <li>
+              {{ 'pages.home.plus.perk2' | translate: { hours: facts.cancellationHours() } }}
+            </li>
+            @if (facts.hasExpressPerk()) {
+              <li>
+                {{ 'pages.home.plus.perk3' | translate: { count: facts.expressPerMonth() } }}
+              </li>
+            }
+            <li>{{ 'pages.home.plus.perk4' | translate }}</li>
+          </ul>
+        } @else {
+          <h2 class="cl-plus__title">{{ 'pages.home.plus.lead_plain' | translate }}</h2>
+        }
+
+        <div class="cl-plus__actions">
+          <a class="cl-btn cl-btn--inverse cl-plus__cta" [routerLink]="ctaLink()">
+            {{ 'pages.home.plus.cta' | translate }}
+          </a>
+          @if (facts.yearlyPlan(); as yearly) {
+            <span class="cl-plus__yearly">
+              {{
+                'pages.home.plus.yearly'
+                  | translate
+                    : {
+                        price: formatCzk(yearly.price),
+                        percent: facts.yearlySavingsPercent()
+                      }
+              }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="cl-plus__mascot">
+        <img
+          src="assets/images/mascot/mascot-plus.webp"
+          alt=""
+          width="600"
+          height="600"
+          loading="lazy"
+        />
+      </div>
+    </div>
+  </div>
+</section>

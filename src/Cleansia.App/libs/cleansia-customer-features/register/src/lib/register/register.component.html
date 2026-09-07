@@ -1,225 +1,252 @@
-<cleansia-dynamic-background>
-  <div class="cleansia-register">
-    <div class="cleansia-register__mascot">
-      <img src="assets/images/mascot/mascot-waving.png" alt="Cleansia mascot" loading="lazy" />
-    </div>
-    <form
-      class="cleansia-register__register-card"
-      [formGroup]="facade.formGroup"
-    >
-      <div class="cleansia-register__brand-name-container">
-        <cleansia-brand-name />
-      </div>
-      <div class="cleansia-register__header">
-        <cleansia-title
-          [level]="1"
-          [title]="'global.actions.register' | translate"
-        />
-      </div>
-      <div class="cleansia-register__first-last-name">
+<section class="cl-auth">
+  <div class="cl-auth__suds" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <div class="cl-auth__plate">
+    <h1 class="cl-d2">{{ 'auth.register.title' | translate }}</h1>
+    <p class="cl-body cl-auth__lead">{{ 'auth.register.lead' | translate }}</p>
+  </div>
+
+  <div class="cl-auth__row">
+    <img
+      class="cl-auth__mascot cl-auth__mascot--left"
+      src="assets/images/mascot/mascot-idea-tile.webp"
+      alt=""
+      width="340"
+      height="280"
+      aria-hidden="true"
+    />
+
+    <!--
+      The only wide card: the name pair goes side by side and the password rules
+      want a horizontal row.
+    -->
+    <form class="cl-auth__card cl-auth__card--wide cl-lift" [formGroup]="facade.formGroup">
+      <div class="cl-auth__pair">
         <cleansia-text-input
+          [floatVariant]="null"
           [label]="'auth.register.first_name' | translate"
-          [floatVariant]="'on'"
           formControlName="firstName"
           [required]="true"
           [showErrors]="true"
           [autocomplete]="'given-name'"
         />
         <cleansia-text-input
+          [floatVariant]="null"
           [label]="'auth.register.last_name' | translate"
-          [floatVariant]="'on'"
           formControlName="lastName"
+          [required]="true"
           [showErrors]="false"
           [autocomplete]="'family-name'"
         />
       </div>
-      <div class="cleansia-register__email">
-        <cleansia-text-input
-          [label]="'auth.register.email' | translate"
-          [floatVariant]="'on'"
-          formControlName="email"
-          dataType="email"
-          [showErrors]="false"
-        />
-      </div>
-      <div class="cleansia-register__password">
-        <cleansia-text-input
-          [label]="'auth.register.password' | translate"
-          [floatVariant]="'on'"
-          formControlName="password"
-          [dataType]="'password'"
-          [autocomplete]="'new-password'"
-          [showErrors]="false"
-        />
-        @if (isPasswordValid; as passwordValidation) {
-        <div class="cleansia-register__password-validation">
-          <ul>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasMinLength"
-                [class.cleansia-register__password-validation--invalid]="hasPasswordInput && !passwordValidation?.hasMinLength">
-              {{ 'auth.register.validation.password_min_length' | translate }}
-            </li>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasLetter"
-                [class.cleansia-register__password-validation--invalid]="hasPasswordInput && !passwordValidation?.hasLetter">
-              {{ 'auth.register.validation.password_letter' | translate }}
-            </li>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasNumber"
-                [class.cleansia-register__password-validation--invalid]="hasPasswordInput && !passwordValidation?.hasNumber">
-              {{ 'auth.register.validation.password_number' | translate }}
-            </li>
-          </ul>
-        </div>
-        }
-      </div>
-      <div class="cleansia-register__password">
-        <cleansia-text-input
-          [dataType]="'password'"
-          [inputSize]="'full-width'"
-          [label]="'auth.register.confirm_password' | translate"
-          [showErrors]="false"
-          [floatVariant]="'on'"
-          [autocomplete]="'new-password'"
-          formControlName="confirmPassword"
-        />
-        @if (isConfirmPasswordValid; as passwordValidation) {
-        <div class="cleansia-register__password-validation">
-          <ul>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.arePasswordsEqual"
-                [class.cleansia-register__password-validation--invalid]="hasConfirmPasswordInput && !passwordValidation?.arePasswordsEqual">
-              {{ 'auth.register.validation.passwords_match' | translate }}
-            </li>
-          </ul>
-        </div>
-        }
-      </div>
-      <div class="cleansia-register__referral">
-        <div
-          class="cleansia-register__code-row"
-          tabindex="0"
-          role="button"
-          (click)="openReferralDialog()"
-          (keydown.enter)="openReferralDialog()"
-        >
-          <div class="cleansia-register__code-row-icon">
-            <i class="pi pi-users"></i>
-          </div>
-          <div class="cleansia-register__code-row-content">
-            <div class="cleansia-register__code-row-label">
-              {{ 'auth.register.referral.row_title' | translate }}
-            </div>
-            @if (facade.referralState().kind === 'valid') {
-              <div class="cleansia-register__code-row-applied">
-                {{ 'auth.register.referral.row_applied' | translate: { code: facade.referralCode() } }}
-              </div>
-            } @else {
-              @if (referralInlineError(); as inlineError) {
-                <div class="cleansia-register__code-row-error">
-                  {{ inlineError }}
-                </div>
-              }
+
+      <cleansia-text-input
+        [floatVariant]="null"
+        [label]="'auth.register.email' | translate"
+        formControlName="email"
+        dataType="email"
+        [required]="true"
+        [showErrors]="false"
+      />
+
+      <cleansia-text-input
+        [floatVariant]="null"
+        [label]="'auth.register.password' | translate"
+        formControlName="password"
+        [dataType]="'password'"
+        [required]="true"
+        [showErrors]="false"
+        [autocomplete]="'new-password'"
+      />
+      <!--
+        All three rules, always, at a fixed height. Satisfying one must not
+        reflow the card underneath it, and the state is carried by the glyph
+        rather than by colour alone.
+      -->
+      @if (isPasswordValid; as check) {
+        <ul class="cl-auth__rules">
+          <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasMinLength">
+            <i [class]="check.hasMinLength ? 'pi pi-check' : 'pi pi-circle'"></i>
+            {{ 'auth.register.validation.password_min_length' | translate }}
+          </li>
+          <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasLetter">
+            <i [class]="check.hasLetter ? 'pi pi-check' : 'pi pi-circle'"></i>
+            {{ 'auth.register.validation.password_letter' | translate }}
+          </li>
+          <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.hasNumber">
+            <i [class]="check.hasNumber ? 'pi pi-check' : 'pi pi-circle'"></i>
+            {{ 'auth.register.validation.password_number' | translate }}
+          </li>
+        </ul>
+      }
+
+      <cleansia-text-input
+        [floatVariant]="null"
+        [label]="'auth.register.confirm_password' | translate"
+        formControlName="confirmPassword"
+        [dataType]="'password'"
+        [required]="true"
+        [showErrors]="false"
+        [autocomplete]="'new-password'"
+      />
+      @if (isConfirmPasswordValid; as check) {
+        <ul class="cl-auth__rules">
+          <li class="cl-auth__rule" [class.cl-auth__rule--met]="check.arePasswordsEqual">
+            <i [class]="check.arePasswordsEqual ? 'pi pi-check' : 'pi pi-circle'"></i>
+            {{ 'auth.register.validation.passwords_match' | translate }}
+          </li>
+        </ul>
+      }
+
+      <!--
+        Optional, and collapsed. It is what keeps this card from being two
+        screens tall.
+      -->
+      <button type="button" class="cl-auth__code-row" (click)="openReferralDialog()">
+        <i class="pi pi-users"></i>
+        <span class="cl-auth__code-label">
+          @if (facade.referralState().kind === 'valid') {
+            {{ 'auth.register.referral.row_applied' | translate: { code: facade.referralCode() } }}
+          } @else {
+            {{ 'auth.register.referral.row_title' | translate }}
+            @if (referralInlineError(); as error) {
+              <span class="cl-auth__code-error">{{ error }}</span>
             }
-          </div>
-          <div class="cleansia-register__code-row-action">
-            @if (facade.referralState().kind === 'valid') {
-              <button
-                type="button"
-                class="cleansia-register__code-row-clear"
-                [attr.aria-label]="'auth.register.referral.dialog_cancel' | translate"
-                (click)="clearReferral($event)"
-              >
-                <i class="pi pi-times"></i>
-              </button>
-            } @else {
-              <i class="pi pi-chevron-right"></i>
-            }
-          </div>
-        </div>
-      </div>
-      <div class="cleansia-register__terms">
-        <cleansia-checkbox
-          [title]="'auth.register.terms_agreement' | translate"
-          formControlName="terms"
-          [required]="true"
-          [showErrors]="false"
-        />
-        <span [innerHtml]="'auth.register.terms_and_conditions' | translate"></span>
-      </div>
-      <div class="cleansia-register__user-actions">
-        <cleansia-button
-          [buttonType]="'submit'"
-          [style]="'raised-button'"
-          [title]="'global.actions.register' | translate"
-          (clickFn)="facade.register()"
-          [loading]="loading() ?? false"
-          [disabled]="facade.formGroup.invalid"
-        />
-        @if (isGoogleSignInConfigured || isAppleSignInConfigured) {
-          <div class="cleansia-register__divider">
-            <span>{{ 'auth.login.or' | translate }}</span>
-          </div>
-          <div class="cleansia-register__social">
-            <div
-              class="cleansia-register__social-providers"
-              [class.cleansia-register__social-providers--locked]="!facade.termsAccepted()"
-              [attr.inert]="facade.termsAccepted() ? null : ''"
-            >
-              @if (isGoogleSignInConfigured) {
-                <div class="cleansia-register__google-btn" #googleBtn></div>
-              }
-              @if (isAppleSignInConfigured) {
-                <cleansia-button
-                  [style]="'basic-button'"
-                  [outlined]="true"
-                  [severity]="'secondary'"
-                  [icon]="'pi pi-apple'"
-                  [title]="'auth.login.apple' | translate"
-                  [disabled]="!facade.termsAccepted()"
-                  (clickFn)="signUpWithApple()"
-                />
-              }
-            </div>
-            @if (!facade.termsAccepted()) {
-              <div
-                class="cleansia-register__social-lock"
-                role="button"
-                tabindex="0"
-                [attr.aria-label]="'auth.register.social_terms_required' | translate"
-                (click)="facade.socialSignUpBlocked()"
-                (keydown.enter)="facade.socialSignUpBlocked()"
-              ></div>
-              <div class="cleansia-register__social-note">
-                {{ 'auth.register.social_terms_required' | translate }}
-              </div>
-            }
-          </div>
-        }
-        <div>
-          <span tabindex="-1">
-            {{ 'auth.register.have_account' | translate }}
-            <a [routerLink]="'/' + routes.LOGIN">
-              {{ 'global.actions.login' | translate }}
-            </a>
+          }
+        </span>
+        @if (facade.referralState().kind === 'valid') {
+          <span
+            class="cl-auth__code-clear"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="'auth.register.referral.dialog_cancel' | translate"
+            (click)="clearReferral($event)"
+            (keydown.enter)="clearReferral($event)"
+          >
+            <i class="pi pi-times"></i>
           </span>
+        } @else {
+          <i class="pi pi-chevron-right"></i>
+        }
+      </button>
+
+      <label class="cl-auth__terms">
+        <cleansia-checkbox formControlName="terms" [required]="true" [showErrors]="false" />
+        <span [innerHtml]="'auth.register.terms_and_conditions' | translate"></span>
+      </label>
+
+      <cleansia-button
+        [buttonType]="'submit'"
+        [title]="'global.actions.register' | translate"
+        [severity]="'primary'"
+        [size]="'full-width'"
+        [loading]="loading() ?? false"
+        [disabled]="facade.formGroup.invalid"
+        (clickFn)="facade.register()"
+      />
+
+      @if (isGoogleSignInConfigured || isAppleSignInConfigured) {
+        <div class="cl-auth__or"><span>{{ 'auth.login.or' | translate }}</span></div>
+
+        <!--
+          The providers render their own markup and cannot be trusted to honour
+          a `disabled`, so the lock is a real overlay over both of them.
+        -->
+        <div class="cl-auth__social">
+          <div
+            class="cl-auth__social-providers"
+            [class.cl-auth__social--locked]="!facade.termsAccepted()"
+            [attr.inert]="!facade.termsAccepted() ? '' : null"
+          >
+            @if (isGoogleSignInConfigured) {
+              <div class="cl-auth__google" #googleBtn></div>
+            }
+            @if (isAppleSignInConfigured) {
+              <cleansia-button
+                [style]="'basic-button'"
+                [outlined]="true"
+                [severity]="'secondary'"
+                [icon]="'pi pi-apple'"
+                [title]="'auth.login.apple' | translate"
+                [size]="'full-width'"
+                [disabled]="!facade.termsAccepted()"
+                (clickFn)="signUpWithApple()"
+              />
+            }
+          </div>
+
+          @if (!facade.termsAccepted()) {
+            <button
+              type="button"
+              class="cl-auth__social-lock"
+              [attr.aria-label]="'auth.register.social_terms_required' | translate"
+              (click)="facade.socialSignUpBlocked()"
+            ></button>
+            <p class="cl-auth__social-note">
+              {{ 'auth.register.social_terms_required' | translate }}
+            </p>
+          }
         </div>
-      </div>
+      }
+
+      <p class="cl-muted cl-auth__foot">
+        {{ 'auth.register.have_account' | translate }}
+        <a [routerLink]="'/' + routes.LOGIN">{{ 'global.actions.login' | translate }}</a>
+      </p>
     </form>
+
+    <img
+      class="cl-auth__mascot cl-auth__mascot--right"
+      src="assets/images/mascot/mascot-ready-tile.webp"
+      alt=""
+      width="340"
+      height="280"
+      aria-hidden="true"
+    />
   </div>
 
-  <!-- Referral code dialog — Wolt-style. Apply hits backend once; bad codes
-       never block submit. -->
-  <cleansia-code-input-dialog
-    [visible]="referralDialogVisible()"
-    (visibleChange)="onReferralDialogVisible($event)"
-    [initialCode]="facade.referralCode()"
-    [state]="referralDialogState()"
-    titleKey="auth.register.referral.dialog_title"
-    inputLabelKey="auth.register.referral.row_title"
-    helperKey="auth.register.referral.dialog_helper"
-    cancelKey="auth.register.referral.dialog_cancel"
-    applyKey="auth.register.referral.dialog_apply"
-    doneKey="auth.register.referral.dialog_done"
-    validatingKey="auth.register.referral.dialog_validating"
-    (applyClicked)="applyReferral($event)"
-    (done)="closeReferralDialog()"
-    (cancelled)="closeReferralDialog()"
-  />
-</cleansia-dynamic-background>
+  <cleansia-foam-edge variant="cap-short" />
+</section>
+
+<section class="cl-auth-below">
+  <div class="cl-auth-below__inner">
+    <h2 class="cl-d2 cl-auth-below__title">{{ 'auth.below.title' | translate }}</h2>
+    <div class="cl-auth-below__grid">
+      <div>
+        <div class="cl-h4">{{ 'auth.below.addresses_title' | translate }}</div>
+        <p class="cl-muted cl-auth-below__lead">{{ 'auth.below.addresses_text' | translate }}</p>
+      </div>
+      <div>
+        <div class="cl-h4">{{ 'auth.below.points_title' | translate }}</div>
+        <p class="cl-muted cl-auth-below__lead">{{ 'auth.below.points_text' | translate }}</p>
+      </div>
+      <div>
+        <div class="cl-h4">{{ 'auth.below.cancel_title' | translate }}</div>
+        <p class="cl-muted cl-auth-below__lead">{{ 'auth.below.cancel_text' | translate }}</p>
+      </div>
+    </div>
+
+    <div class="cl-auth-below__rule"></div>
+    <p class="cl-muted cl-auth-below__escape">
+      {{ 'auth.below.track_text' | translate }}
+      <a [routerLink]="'/' + routes.TRACK_ORDER">{{ 'auth.below.track_link' | translate }}</a>
+    </p>
+  </div>
+</section>
+
+<cleansia-code-input-dialog
+  [visible]="referralDialogVisible()"
+  (visibleChange)="onReferralDialogVisible($event)"
+  [initialCode]="facade.referralCode()"
+  [state]="referralDialogState()"
+  titleKey="auth.register.referral.dialog_title"
+  inputLabelKey="auth.register.referral.row_title"
+  helperKey="auth.register.referral.dialog_helper"
+  cancelKey="auth.register.referral.dialog_cancel"
+  applyKey="auth.register.referral.dialog_apply"
+  doneKey="auth.register.referral.dialog_done"
+  validatingKey="auth.register.referral.dialog_validating"
+  (applyClicked)="applyReferral($event)"
+  (done)="closeReferralDialog()"
+  (cancelled)="closeReferralDialog()"
+/>

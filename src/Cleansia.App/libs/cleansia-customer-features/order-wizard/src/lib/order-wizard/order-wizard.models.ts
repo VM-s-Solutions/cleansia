@@ -7,6 +7,25 @@ import { TranslateService } from '@ngx-translate/core';
  * based on `kind`. Backend re-validates server-side at order-create time so
  * this is purely a UX optimization (instant green-check / red-X feedback).
  */
+/**
+ * The backend's PromoCodeError enum, as i18n keys. Lives here rather than in a
+ * component because two steps read it: the payment step, where the code is
+ * entered, and the review step, which restates the result.
+ */
+export const PROMO_ERROR_KEYS: Record<string, string> = {
+  NotFound: 'pages.order.promo.error_not_found',
+  Inactive: 'pages.order.promo.error_inactive',
+  Expired: 'pages.order.promo.error_expired',
+  NotYetValid: 'pages.order.promo.error_not_yet_valid',
+  GlobalLimitReached: 'pages.order.promo.error_global_limit',
+  PerUserLimitReached: 'pages.order.promo.error_used',
+  BelowMinimumOrderAmount: 'pages.order.promo.error_min_order',
+  CurrencyMismatch: 'pages.order.promo.error_currency',
+};
+
+/** Falls back to a generic message for an error code this client does not know. */
+export const PROMO_ERROR_FALLBACK = 'pages.order.promo.error_generic';
+
 export type PromoCodeUiState =
   | { kind: 'idle' }
   | { kind: 'validating' }
@@ -40,6 +59,37 @@ export interface OrderWizardFormData {
    */
   addressLatitude: number | null;
   addressLongitude: number | null;
+  /**
+   * The customer typed the address instead of picking one from the lookup.
+   *
+   * An explicit flag rather than "there are no coordinates": a picked address
+   * that is still loading also has none, and the difference decides whether the
+   * step may be left. It is the opt-in the failure message already promised —
+   * "you can enter the address manually" was true of nothing until now.
+   *
+   * The server geocodes it on submit (OrderAddressResolver populates
+   * coordinates when they are null), so a typed address routes like a picked one.
+   */
+  addressEnteredManually: boolean;
+  /**
+   * A house has no floor and no flat number, and asking for them reads as a form
+   * that was not written for you. This drives which fields the address step
+   * shows; it is not sent anywhere — the two values it gates are.
+   */
+  propertyType: 'flat' | 'house';
+  /**
+   * On the ORDER, not on Address: addresses dedupe across users, so a flat
+   * number stored there would leak between neighbours at the same street
+   * address. → src/Cleansia.Core.Domain/Orders/Order.cs
+   */
+  customerFloor: string;
+  customerApartment: string;
+  /**
+   * How the cleaner gets in: the shape of the answer, where
+   * `entryInstructions` is the detail. Redacted together for a cleaner the
+   * order does not belong to. → src/Cleansia.Core.Domain/Orders/Order.cs
+   */
+  accessMode: string;
   cleaningDate: Date | null;
   cleaningTime: string;
   paymentType: PaymentType;
@@ -103,6 +153,11 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   extras: {},
   specialInstructions: '',
   entryInstructions: '',
+  propertyType: 'flat',
+  addressEnteredManually: false,
+  customerFloor: '',
+  customerApartment: '',
+  accessMode: '',
   promoCode: '',
   preferredEmployeeId: null,
 };
@@ -168,45 +223,23 @@ export function getFieldError(
 export const WINDOW_DURATION_MINUTES = 60;
 
 /** Earliest and latest starting hours for bookable windows (inclusive start, exclusive end). */
-export const FIRST_WINDOW_HOUR = 8;
-export const LAST_WINDOW_HOUR = 20;
+import {
+  EXPRESS_LEAD_TIME_HOURS as SHARED_EXPRESS_LEAD_TIME_HOURS,
+  FIRST_WINDOW_HOUR as SHARED_FIRST_WINDOW_HOUR,
+  LAST_WINDOW_HOUR as SHARED_LAST_WINDOW_HOUR,
+  STANDARD_LEAD_TIME_HOURS as SHARED_STANDARD_LEAD_TIME_HOURS,
+} from '@cleansia/models';
+import type { SlotAvailability, TimeOption } from '@cleansia/models';
 
-/** Minimum hours between now and cleaning start for any booking to be accepted. */
-export const EXPRESS_LEAD_TIME_HOURS = 2;
-
-/** Minimum hours for a standard (non-surcharge) booking. Slots between 2–4h lead are "express". */
-export const STANDARD_LEAD_TIME_HOURS = 4;
-
-export type SlotAvailability = 'available' | 'express' | 'unavailable';
-
-export interface TimeOption {
-  /** Display label — start time only, e.g. "10:00". Matches mobile; hides the window. */
-  label: string;
-  /** Canonical value — start time as "HH:mm" (used for backend submission) */
-  value: string;
-  /** Whether the slot is bookable, requires express surcharge, or out of range. */
-  availability?: SlotAvailability;
-}
-
-/**
- * Produce one option per 1-hour window from FIRST_WINDOW_HOUR to LAST_WINDOW_HOUR.
- * Availability is computed elsewhere based on the selected date + current time.
- */
-export function generateTimeOptions(): TimeOption[] {
-  const options: TimeOption[] = [];
-  for (let h = FIRST_WINDOW_HOUR; h < LAST_WINDOW_HOUR; h++) {
-    const start = `${h.toString().padStart(2, '0')}:00`;
-    // Show only the arrival time (mobile parity). Orders can run longer than
-    // one hour — displaying "10:00 – 11:00" misleads users into thinking the
-    // cleaning ends at 11:00.
-    options.push({
-      label: start,
-      value: start,
-      availability: 'available',
-    });
-  }
-  return options;
-}
+// The window, its option type and the generator moved to @cleansia/models: the
+// home-page calculator offers the same choice and cannot import from this lib,
+// which is lazy-loaded. Re-exported so every existing import here still resolves.
+export { generateTimeOptions } from '@cleansia/models';
+export type { SlotAvailability, TimeOption } from '@cleansia/models';
+export const FIRST_WINDOW_HOUR = SHARED_FIRST_WINDOW_HOUR;
+export const LAST_WINDOW_HOUR = SHARED_LAST_WINDOW_HOUR;
+export const EXPRESS_LEAD_TIME_HOURS = SHARED_EXPRESS_LEAD_TIME_HOURS;
+export const STANDARD_LEAD_TIME_HOURS = SHARED_STANDARD_LEAD_TIME_HOURS;
 
 /**
  * Annotate time options with availability based on the selected date and lead-time rules.
@@ -240,22 +273,72 @@ export function filterTimeOptionsForToday(
     const hoursAhead = (slotDate.getTime() - nowMs) / (1000 * 60 * 60);
 
     let availability: SlotAvailability = 'available';
-    if (hoursAhead < EXPRESS_LEAD_TIME_HOURS) availability = 'unavailable';
-    else if (hoursAhead < STANDARD_LEAD_TIME_HOURS) availability = 'express';
+    if (hoursAhead < SHARED_EXPRESS_LEAD_TIME_HOURS) availability = 'unavailable';
+    else if (hoursAhead < SHARED_STANDARD_LEAD_TIME_HOURS) availability = 'express';
     return { ...opt, availability };
   });
 }
 
+/**
+ * The actual slot moment, from the date and the time the customer chose.
+ *
+ * One definition, because everything that prices this booking has to agree on
+ * it: the quote, the Plus-savings preview and the submit. A caller that sends
+ * the date alone sends midnight, and midnight sits in a different express band
+ * from the slot — the quote then sees no surcharge where the create sees one,
+ * and PriceMatchesAsync rejects with order.total_price.not_match.
+ *
+ * Null when either half is missing, which is the "no slot chosen yet" state the
+ * backend treats as "do not apply a surcharge at all".
+ */
+export function composeSlotMoment(
+  cleaningDate: Date | null,
+  cleaningTime: string
+): Date | null {
+  if (!cleaningDate || !cleaningTime) return null;
+  const [hours, minutes] = cleaningTime.split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return new Date(
+    cleaningDate.getFullYear(),
+    cleaningDate.getMonth(),
+    cleaningDate.getDate(),
+    hours,
+    minutes,
+    0,
+    0
+  );
+}
+
 // ── Price formatting ────────────────────────────────────────
 
-const CZK_FORMATTER = new Intl.NumberFormat('cs-CZ', {
+const CZK_WHOLE = new Intl.NumberFormat('cs-CZ', {
   style: 'currency',
   currency: 'CZK',
   minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
 });
 
+const CZK_WITH_HALERE = new Intl.NumberFormat('cs-CZ', {
+  style: 'currency',
+  currency: 'CZK',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/**
+ * A price, in whole crowns where it is whole and to the haler where it is not.
+ *
+ * Catalogue prices are whole, so every figure in the wizard was whole until a
+ * percentage discount produced one that is not — and a single `minimumFractionDigits: 0`
+ * rendered 57.6 as "57,6 Kč", which is a currency amount with one decimal and
+ * reads as unfinished. Rounding the display to whole crowns instead would be
+ * worse: charges settle in haleře, so it would print a number the customer is
+ * not billed.
+ */
 export function formatPrice(price: number): string {
-  return CZK_FORMATTER.format(price);
+  const value = Number(price) || 0;
+  const isWhole = Math.abs(value - Math.round(value)) < 0.005;
+  return isWhole ? CZK_WHOLE.format(Math.round(value)) : CZK_WITH_HALERE.format(value);
 }
 
 /**
@@ -278,6 +361,30 @@ export function composeFinalPriceForUnquotedDiscount(
   if (rawSubtotal <= 0) return 0;
   const discountedSubtotal = Math.max(0, rawSubtotal - discount);
   return Math.round((discountedSubtotal * grossSubtotal * 100) / rawSubtotal) / 100;
+}
+
+/**
+ * How much of a credit balance settles a booking of `chargedPrice`.
+ *
+ * Mirrors `BookingPolicy.CapCreditForOrder`, and exists on the client for the same reason
+ * `composeFinalPriceForUnquotedDiscount` does: the cap is a function of the CHARGED price, and a promo
+ * code is entered at checkout, so the server's quote cannot know the final price to cap against. The
+ * quote hands over the two inputs — balance and share — and the rule is applied here, once, against
+ * whatever price the wizard is actually displaying.
+ *
+ * A PREVIEW. Nothing is debited until the order is created, and the order's own `creditAppliedAmount`
+ * is the record of what happened; a booking started in another tab can still take the balance first.
+ *
+ * Floors to whole cents the way the server does, so the figure shown and the figure charged agree.
+ */
+export function capCreditForOrder(
+  balance: number,
+  chargedPrice: number,
+  maxShareOfOrder: number,
+): number {
+  if (balance <= 0 || chargedPrice <= 0 || maxShareOfOrder <= 0) return 0;
+  const ceiling = Math.floor(chargedPrice * maxShareOfOrder * 100) / 100;
+  return Math.min(balance, ceiling);
 }
 
 // ── Translation helpers ─────────────────────────────────────

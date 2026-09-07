@@ -82,16 +82,27 @@
   />
   <ul class="cleansia-telephone__list">
     @for (country of filteredCountries; track country.flag) {
-    <li
-      class="cleansia-telephone__item"
-      [class.cleansia-telephone__item--selected]="
-        selectedCountry.flag === country.flag
-      "
-      (click)="selectCountry(country); $event.stopPropagation()"
-    >
-      <span class="fi fi-{{ country.flag }} cleansia-telephone__flag"></span>
-      <span class="cleansia-telephone__item-name">{{ country.name }}</span>
-      <span class="cleansia-telephone__item-code">{{ country.code }}</span>
+    <li>
+      <!--
+        The row is a control, not decoration: it was an <li> with a click
+        handler, so the whole country list was unreachable by keyboard and
+        invisible to a screen reader as a set of choices. A real button inside
+        the item keeps the list semantics and makes each row focusable, which
+        is also what gives it Enter and Space for free.
+      -->
+      <button
+        type="button"
+        class="cleansia-telephone__item"
+        [class.cleansia-telephone__item--selected]="
+          selectedCountry.flag === country.flag
+        "
+        [attr.aria-pressed]="selectedCountry.flag === country.flag"
+        (click)="selectCountry(country); $event.stopPropagation()"
+      >
+        <span class="fi fi-{{ country.flag }} cleansia-telephone__flag"></span>
+        <span class="cleansia-telephone__item-name">{{ country.name }}</span>
+        <span class="cleansia-telephone__item-code">{{ country.code }}</span>
+      </button>
     </li>
     } @empty {
     <li class="cleansia-telephone__item cleansia-telephone__item--empty">

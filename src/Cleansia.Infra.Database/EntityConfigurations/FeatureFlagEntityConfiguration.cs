@@ -24,7 +24,13 @@ public class FeatureFlagEntityConfiguration : AuditableEntityConfiguration<Featu
         builder.Property(e => e.ScopeValue)
             .HasMaxLength(26);
 
+        // ScopeValue is null for every GLOBAL flag, which is every flag that exists — so with nulls
+        // distinct this index enforced nothing on the only scope in use. Two rows for one name
+        // cannot both be honoured: IsFeatureEnabledAsync takes FirstOrDefault with no ORDER BY, so
+        // the flag would flip between requests. Unfiltered, because here the null is a key VALUE
+        // ("global, no qualifier"), not an absence.
         builder.HasIndex(e => new { e.Name, e.Scope, e.ScopeValue })
-            .IsUnique();
+            .IsUnique()
+            .AreNullsDistinct(false);
     }
 }

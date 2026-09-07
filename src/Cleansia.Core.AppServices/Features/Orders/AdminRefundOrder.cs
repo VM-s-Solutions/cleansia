@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -103,7 +104,11 @@ public class AdminRefundOrder
             var result = refund.Value!;
             var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
-            var paymentStatus = consumed >= order.TotalPrice
+            // Against what the CARD was charged, not the sale — RefundService.CardChargedAmount.
+            // `consumed` sums the Refunds table, which is card-only, so an order settled partly in
+            // credit could never reach the sale total and would report PartiallyRefunded for a refund
+            // that had in fact returned every tender in full.
+            var paymentStatus = consumed >= RefundService.CardChargedAmount(order)
                 ? PaymentStatus.Refunded
                 : PaymentStatus.PartiallyRefunded;
 

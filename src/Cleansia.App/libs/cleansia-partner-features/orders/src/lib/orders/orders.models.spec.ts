@@ -33,14 +33,22 @@ describe('getAvailableOrdersTableDefinition — take action visibility', () => {
     expect(isVisible(row(OrderStatus.Pending))).toBe(false);
   });
 
-  it.each([
-    OrderStatus.OnTheWay,
-    OrderStatus.InProgress,
-    OrderStatus.Completed,
-    OrderStatus.Cancelled,
-  ])('does not offer status %s', (status) => {
-    expect(isVisible(row(status))).toBe(false);
-  });
+  // Started is NOT over. NotifyOnTheWay writes the status on the ORDER, so one cleaner setting off
+  // used to take a half-crewed job off every board with its other seats empty. Owner ruling
+  // 2026-09-06 made a started job stay fillable. → OrderAvailability.OfferableStatuses
+  it.each([OrderStatus.OnTheWay, OrderStatus.InProgress])(
+    'still offers a started order with a free seat, status %s',
+    (status) => {
+      expect(isVisible(row(status))).toBe(true);
+    }
+  );
+
+  it.each([OrderStatus.Completed, OrderStatus.Cancelled])(
+    'does not offer the terminal status %s',
+    (status) => {
+      expect(isVisible(row(status))).toBe(false);
+    }
+  );
 
   it('does not offer an order whose seats are all taken', () => {
     expect(isVisible(row(OrderStatus.New, 0))).toBe(false);

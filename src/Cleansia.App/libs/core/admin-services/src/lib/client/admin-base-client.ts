@@ -1,60 +1,62 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
+  AccessInstructionsClient,
+  IAccessInstructionsClient,
   ADMINAPIBASEURL,
   AdminAuthClient,
-  AdminCodeClient,
-  AdminCompanyClient,
-  AdminCountryClient,
-  AdminCurrencyClient,
-  AdminEmailTemplateClient,
-  AdminEmployeeClient,
-  AdminEmployeeDocumentClient,
-  AdminInvoiceClient,
-  AdminLanguageClient,
-  AdminLoyaltyClient,
-  AdminLoyaltyTierClient,
-  AdminMarketingClient,
-  AdminOrderClient,
-  AccessInstructionsClient,
-  AdminPackageClient,
-  AdminPayConfigClient,
-  AdminPayPeriodClient,
-  AdminPayrollClient,
-  AdminPromoCodeClient,
-  AdminReferralClient,
-  AdminReportClient,
-  AdminServiceClient,
-  AdminUserClient,
-  ApiClient,
   IAdminAuthClient,
+  AdminCodeClient,
   IAdminCodeClient,
+  AdminCompanyClient,
   IAdminCompanyClient,
+  AdminCountryClient,
   IAdminCountryClient,
+  AdminCreditClient,
+  IAdminCreditClient,
+  AdminCurrencyClient,
   IAdminCurrencyClient,
+  AdminEmailTemplateClient,
   IAdminEmailTemplateClient,
+  AdminEmployeeClient,
   IAdminEmployeeClient,
+  AdminEmployeeDocumentClient,
   IAdminEmployeeDocumentClient,
+  AdminInvoiceClient,
   IAdminInvoiceClient,
+  AdminLanguageClient,
   IAdminLanguageClient,
+  AdminLoyaltyClient,
   IAdminLoyaltyClient,
+  AdminLoyaltyTierClient,
   IAdminLoyaltyTierClient,
+  AdminMarketingClient,
   IAdminMarketingClient,
+  AdminOrderClient,
   IAdminOrderClient,
-  IAccessInstructionsClient,
+  AdminPackageClient,
   IAdminPackageClient,
+  AdminPayConfigClient,
   IAdminPayConfigClient,
+  AdminPayPeriodClient,
   IAdminPayPeriodClient,
+  AdminPayrollClient,
   IAdminPayrollClient,
+  AdminPromoCodeClient,
   IAdminPromoCodeClient,
+  AdminReferralClient,
   IAdminReferralClient,
+  AdminReportClient,
   IAdminReportClient,
+  AdminServiceClient,
   IAdminServiceClient,
+  AdminUserClient,
   IAdminUserClient,
+  ApiClient,
   IApiClient,
   IPayoutDetailsClient,
-  ITypesClient,
   PayoutDetailsClient,
+  ITypesClient,
   TypesClient,
 } from './admin-client';
 
@@ -82,6 +84,7 @@ interface IAdminClient {
   adminPromoCodeClient: IAdminPromoCodeClient;
   adminLoyaltyTierClient: IAdminLoyaltyTierClient;
   adminLoyaltyClient: IAdminLoyaltyClient;
+  adminCreditClient: IAdminCreditClient;
   adminMarketingClient: IAdminMarketingClient;
   adminReferralClient: IAdminReferralClient;
   payoutDetailsClient: IPayoutDetailsClient;
@@ -183,6 +186,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminLoyaltyClient: IAdminLoyaltyClient = new AdminLoyaltyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminCreditClient: IAdminCreditClient = new AdminCreditClient(
     this.httpClient,
     this.apiBaseUrl
   );

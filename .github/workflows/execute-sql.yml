@@ -37,6 +37,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # insert_seed_data.sql is a DEVELOPMENT FIXTURE, not an operational script. It creates the
+      # catalogue a fresh dev database needs — and, since 2026-09-05, a development administrator
+      # with a password that is written down in README.md. Running it against production would both
+      # collide with real catalogue rows and mint a known-credential admin account.
+      #
+      # The app itself cannot do this: CleansiaStartupBase reads the file only inside
+      # `if (environment.IsDevelopment())`, and deployed hosts apply the EF migration bundle from CI
+      # without ever calling the seeder. This workflow was the one remaining path to production, and
+      # a human typing "execute" was the only thing in the way.
+      - name: Refuse development fixtures against production
+        if: inputs.environment == 'PRO'
+        run: |
+          case "${{ inputs.script_path }}" in
+            insert_seed_data.sql|seed/*)
+              echo "::error::${{ inputs.script_path }} is a development fixture and must never run against PRO."
+              echo "::error::It seeds the dev catalogue and a known-password administrator (see README.md)."
+              exit 1
+              ;;
+          esac
+          echo "Not a development fixture — continuing."
+
       - name: Verify script exists
         run: |
           SCRIPT="sql-scripts/${{ inputs.script_path }}"

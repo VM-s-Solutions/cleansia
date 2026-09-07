@@ -12,17 +12,24 @@ import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { ServicesCatalogComponent } from './services-catalog.component';
 
-function pkg(id: string, name: string, price: number, czName?: string): PackageListItem {
+function pkg(
+  id: string,
+  name: string,
+  price: number,
+  extra: { czName?: string; isPopular?: boolean; includes?: string[] } = {}
+): PackageListItem {
   return PackageListItem.fromJS({
     id,
     name,
     price,
-    translations: czName ? { cs: { name: czName } } : undefined,
+    isPopular: extra.isPopular ?? false,
+    translations: extra.czName ? { cs: { name: extra.czName } } : undefined,
+    includedServices: extra.includes?.map((n, i) => ({ id: `${id}-s${i}`, name: n })),
   });
 }
 
-function svc(id: string, name: string, basePrice: number): ServiceListItem {
-  return ServiceListItem.fromJS({ id, name, basePrice, perRoomPrice: 0 });
+function svc(id: string, name: string, basePrice: number, perRoomPrice = 0): ServiceListItem {
+  return ServiceListItem.fromJS({ id, name, basePrice, perRoomPrice });
 }
 
 describe('ServicesCatalogComponent', () => {
@@ -71,7 +78,7 @@ describe('ServicesCatalogComponent', () => {
     component = TestBed.inject(ServicesCatalogComponent);
   }
 
-  const names = (items: { name?: string }[]): (string | undefined)[] => items.map((i) => i.name);
+  const names = (items: { name?: string }[]): (string | undefined)[] => items.map(i => i.name);
 
   afterEach(() => TestBed.resetTestingModule());
 
@@ -84,131 +91,173 @@ describe('ServicesCatalogComponent', () => {
     expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages());
   });
 
-  describe('sorting', () => {
-    it('orders packages cheapest first by default', () => {
-      build(FIVE_PACKAGES);
+  describe('sorting the services', () => {
+    it('orders them cheapest first by default', () => {
+      build([], [svc('s1', 'Windows', 400), svc('s2', 'Ironing', 200)]);
 
-      expect(names(component.sortedPackages())).toEqual([
-        'Deluxe',
-        'Standard',
-        'Basic',
-        'Ultimate',
-        'Premium',
-      ]);
+      expect(names(component.sortedServices())).toEqual(['Ironing', 'Windows']);
     });
 
     it('reverses to dearest first', () => {
-      build(FIVE_PACKAGES);
-
-      component.onPackageSortChange('price_desc');
-
-      expect(names(component.sortedPackages())).toEqual([
-        'Premium',
-        'Ultimate',
-        'Basic',
-        'Standard',
-        'Deluxe',
-      ]);
-    });
-
-    it('orders by the translated name, not the raw one', () => {
-      build([pkg('p1', 'Alpha', 100, 'Zebra'), pkg('p2', 'Zulu', 200, 'Andulka')]);
-      currentLang = 'cs';
-
-      component.onPackageSortChange('name_asc');
-
-      expect(names(component.sortedPackages())).toEqual(['Zulu', 'Alpha']);
-    });
-
-    it('sorts services on their own base price, independently of the package sort', () => {
-      build(FIVE_PACKAGES, [svc('s1', 'Windows', 400), svc('s2', 'Ironing', 200)]);
+      build([], [svc('s1', 'Windows', 400), svc('s2', 'Ironing', 200)]);
 
       component.onServiceSortChange('price_desc');
 
       expect(names(component.sortedServices())).toEqual(['Windows', 'Ironing']);
-      expect(names(component.sortedPackages())[0]).toBe('Deluxe');
+    });
+
+    it('orders by the translated name, not the raw one', () => {
+      build(
+        [],
+        [
+          ServiceListItem.fromJS({ id: 's1', name: 'Alpha', basePrice: 1, perRoomPrice: 0, translations: { cs: { name: 'Zebra' } } }),
+          ServiceListItem.fromJS({ id: 's2', name: 'Zulu', basePrice: 2, perRoomPrice: 0, translations: { cs: { name: 'Andulka' } } }),
+        ]
+      );
+      currentLang = 'cs';
+
+      component.onServiceSortChange('name_asc');
+
+      expect(names(component.sortedServices())).toEqual(['Zulu', 'Alpha']);
     });
 
     it('never reorders the store collection itself', () => {
-      build(FIVE_PACKAGES);
+      build([], [svc('s1', 'Windows', 400), svc('s2', 'Ironing', 200)]);
 
-      component.onPackageSortChange('price_desc');
-      component.sortedPackages();
+      component.onServiceSortChange('price_desc');
+      component.sortedServices();
 
-      expect(names(component.packages())).toEqual([
-        'Basic',
-        'Standard',
-        'Premium',
-        'Deluxe',
-        'Ultimate',
-      ]);
+      expect(names(component.services())).toEqual(['Windows', 'Ironing']);
     });
   });
 
-  describe('progressive disclosure', () => {
-    it('shows the first three and teases the next three', () => {
+  describe('the package preview', () => {
+    it('leads with the three cheapest', () => {
       build(FIVE_PACKAGES);
 
-      expect(names(component.visiblePackages())).toEqual(['Deluxe', 'Standard', 'Basic']);
-      expect(names(component.teaserPackages())).toEqual(['Ultimate', 'Premium']);
+      expect(names(component.visiblePackages()).sort()).toEqual(['Basic', 'Deluxe', 'Standard']);
       expect(component.hasMorePackages()).toBe(true);
     });
 
-    it('drops the teaser and the button once everything is shown', () => {
+    it('puts the recommended package in the middle, where the inverted card belongs', () => {
+      // Cheapest-first alone would leave it third, where an inverted card reads
+      // as the dearest option rather than the suggested one.
+      build([
+        pkg('p1', 'Deluxe', 100),
+        pkg('p2', 'Standard', 300),
+        pkg('p3', 'Basic', 500, { isPopular: true }),
+        pkg('p4', 'Premium', 900),
+      ]);
+
+      expect(names(component.visiblePackages())).toEqual(['Deluxe', 'Basic', 'Standard']);
+    });
+
+    it('leaves the order alone when the recommended one is already in the middle', () => {
+      build([
+        pkg('p1', 'Deluxe', 100),
+        pkg('p2', 'Standard', 300, { isPopular: true }),
+        pkg('p3', 'Basic', 500),
+        pkg('p4', 'Premium', 900),
+      ]);
+
+      expect(names(component.visiblePackages())).toEqual(['Deluxe', 'Standard', 'Basic']);
+    });
+
+    it('leaves the order alone when the recommended one is not in the preview at all', () => {
+      build([
+        pkg('p1', 'Deluxe', 100),
+        pkg('p2', 'Standard', 300),
+        pkg('p3', 'Basic', 500),
+        pkg('p4', 'Premium', 900, { isPopular: true }),
+      ]);
+
+      expect(names(component.visiblePackages())).toEqual(['Deluxe', 'Standard', 'Basic']);
+    });
+
+    it('shows the whole catalog once the link is used, and drops the link', () => {
       build(FIVE_PACKAGES);
 
-      component.toggleShowAllPackages();
+      component.revealAllPackages();
 
       expect(component.visiblePackages()).toHaveLength(5);
-      expect(component.teaserPackages()).toEqual([]);
       expect(component.hasMorePackages()).toBe(false);
     });
 
-    it('offers no expansion when the catalog already fits', () => {
+    it('offers no link when the catalog already fits', () => {
       build(FIVE_PACKAGES.slice(0, 3));
 
       expect(component.visiblePackages()).toHaveLength(3);
-      expect(component.teaserPackages()).toEqual([]);
       expect(component.hasMorePackages()).toBe(false);
     });
   });
 
-  describe('tier features', () => {
-    it('keys the tier off the catalog order, not the sorted position', () => {
-      build(FIVE_PACKAGES);
-      component.onPackageSortChange('price_desc');
+  describe('what a service card says its price buys', () => {
+    it('marks a service that charges by the room', () => {
+      build();
 
-      const dearest = component.sortedPackages()[0];
-
-      expect(dearest.name).toBe('Premium');
-      expect(component.getPackageTierIndex(dearest)).toBe(2);
-      expect(component.getPackageTierIndex(component.packages()[0])).toBe(0);
+      expect(component.isPricedPerRoom(svc('s1', 'General', 500, 150))).toBe(true);
     });
 
-    it('clamps every package past the third onto the top tier', () => {
-      build(FIVE_PACKAGES);
+    it('treats a flat service as a single price', () => {
+      build();
 
-      expect(component.getPackageTierIndex(FIVE_PACKAGES[4])).toBe(2);
+      expect(component.isPricedPerRoom(svc('s1', 'Bathroom', 300))).toBe(false);
+    });
+  });
+
+  describe('what a package card lists', () => {
+    it('names the services the package actually includes', () => {
+      build([pkg('p1', 'Basic', 500, { includes: ['Windows', 'Bathroom'] })]);
+
+      expect(component.getIncludedServiceNames(component.packages()[0])).toEqual([
+        'Windows',
+        'Bathroom',
+      ]);
     });
 
-    it('falls back to the entry tier for a package the store does not hold', () => {
-      build(FIVE_PACKAGES);
+    it('lists nothing rather than inventing a feature list', () => {
+      build([pkg('p1', 'Basic', 500)]);
 
-      expect(component.getPackageTierIndex(pkg('ghost', 'Ghost', 1))).toBe(0);
-      expect(component.getPackageFeatures(99)).toEqual(component.getPackageFeatures(0));
+      expect(component.getIncludedServiceNames(component.packages()[0])).toEqual([]);
+    });
+  });
+
+  describe('mascots', () => {
+    it('cycles the service poses so a long catalog never renders a blank card', () => {
+      build();
+
+      expect(component.serviceMascot(8)).toBe(component.serviceMascot(0));
+      expect(component.serviceMascot(9)).toBe(component.serviceMascot(1));
+    });
+
+    it('cycles the package poses too', () => {
+      build();
+
+      expect(component.packageMascot(3)).toBe(component.packageMascot(0));
+    });
+
+    it('only ever uses the normalised tiles, so every character renders the same size', () => {
+      build();
+
+      const used = [0, 1, 2, 3, 4, 5, 6, 7]
+        .map(i => component.serviceMascot(i))
+        .concat([0, 1, 2].map(i => component.packageMascot(i)));
+
+      expect(used.every(src => src.endsWith('-tile.webp'))).toBe(true);
+      expect(new Set(used).size).toBe(used.length);
     });
   });
 
   describe('translation fallback', () => {
     it('prefers the current language', () => {
-      build([pkg('p1', 'Basic', 100, 'Základní')]);
+      build([pkg('p1', 'Basic', 100, { czName: 'Základní' })]);
       currentLang = 'cs';
 
       expect(component.getTranslation(component.packages()[0], 'name')).toBe('Základní');
     });
 
     it('falls back to the base field when the language has no entry', () => {
-      build([pkg('p1', 'Basic', 100, 'Základní')]);
+      build([pkg('p1', 'Basic', 100, { czName: 'Základní' })]);
       currentLang = 'uk';
 
       expect(component.getTranslation(component.packages()[0], 'name')).toBe('Basic');
@@ -221,32 +270,13 @@ describe('ServicesCatalogComponent', () => {
     });
   });
 
-  describe('icons', () => {
-    it('gives each of the three tiers its own icon and clamps beyond them', () => {
-      build();
-
-      expect(component.getPackageIcon(0)).toBe('pi pi-home');
-      expect(component.getPackageIcon(2)).toBe('pi pi-crown');
-      expect(component.getPackageIcon(7)).toBe('pi pi-home');
-    });
-
-    it('cycles service icons so a long catalog never renders a blank one', () => {
-      build();
-
-      expect(component.getServiceIcon(6)).toBe(component.getServiceIcon(0));
-      expect(component.getServiceIcon(13)).toBe(component.getServiceIcon(1));
-    });
-  });
-
   describe('booking', () => {
     it('carries the chosen package into the wizard', () => {
       build(FIVE_PACKAGES);
 
       component.bookPackage(FIVE_PACKAGES[0]);
 
-      expect(router.navigate).toHaveBeenCalledWith(['order'], {
-        queryParams: { packageId: 'p1' },
-      });
+      expect(router.navigate).toHaveBeenCalledWith(['order'], { queryParams: { packageId: 'p1' } });
     });
 
     it('carries the chosen service into the wizard', () => {
@@ -254,9 +284,7 @@ describe('ServicesCatalogComponent', () => {
 
       component.bookService(svc('s1', 'Windows', 400));
 
-      expect(router.navigate).toHaveBeenCalledWith(['order'], {
-        queryParams: { serviceId: 's1' },
-      });
+      expect(router.navigate).toHaveBeenCalledWith(['order'], { queryParams: { serviceId: 's1' } });
     });
 
     it('opens the wizard empty when nothing is preselected', () => {
@@ -265,6 +293,14 @@ describe('ServicesCatalogComponent', () => {
       component.bookNow();
 
       expect(router.navigate).toHaveBeenCalledWith(['order']);
+    });
+
+    it('sends the calculator link to the hero that holds it', () => {
+      build();
+
+      component.openCalculator();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/'], { fragment: 'hero' });
     });
   });
 

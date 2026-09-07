@@ -83,7 +83,42 @@ first-time window buys trust from someone who has not used the platform before.
 
 ### When the cleaner cancels or no-shows
 
-The customer is refunded **and** credited **500 CZK**. The credit is the apology; the refund is not.
+The customer is refunded **and** credited **250 CZK**. The credit is the apology; the refund is not.
+
+> **Not implemented.** No production code writes `CancelledBy.Cleaner`, so neither half of this
+> happens today — a customer has to notice and complain. The credit half additionally waits on the
+> customer-credit balance, which does not exist yet. `BookingPolicy.NoShowCreditCzk` holds the number
+> so the copy and the eventual implementation cannot disagree about it.
+
+## Disputes {#disputes}
+
+### The reporting window — 24 h, and it gates the guarantee rather than the door
+
+A customer has **24 hours** from the clean to report a problem. Inside it, the platform undertakes to
+put the job right — normally by refunding the part that was not done. `DisputeLimits.FilingWindowHours`
+is the number, and `IsWithinFilingWindow` is the rule.
+
+**A later dispute is still accepted.** The window decides what is *promised*, not what is *heard*. A
+serious claim — something broken, something missing — has to be judged on its merits whenever it
+arrives, and a hard cut-off with no override is a support team telling an honest customer that the
+system will not let them. `DisputeDetails.FiledWithinWindow` carries the verdict so an admin can tell
+"we promised to fix this" from "we are choosing to".
+
+The clock runs from when the clean **ended**, or from when it was **due to start** if it never did. A
+cleaner who never arrives leaves no completion time behind, and that is exactly the case the window
+most needs to cover.
+
+### What cannot be disputed
+
+A clean that has **not happened yet**. The gate is the scheduled time, deliberately not the order
+status: a no-show leaves the order sitting at `Confirmed` or `OnTheWay` with no completion to point
+at, so a status gate would refuse the one case the guarantee exists for.
+
+### One dispute at a time, not one per order
+
+A new dispute is refused while an earlier one on that order is still open. Once it reaches a terminal
+state — `Resolved` or `Closed` — the customer may raise another. Owner ruling 2026-09-05: a customer
+who has a complaint settled and then finds something else is not out of options.
 
 ### Cleansia Plus
 

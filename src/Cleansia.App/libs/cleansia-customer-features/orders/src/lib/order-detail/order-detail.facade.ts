@@ -7,7 +7,9 @@ import {
   GetMyMembershipResponse,
   OrderItem,
   SubmitOrderReviewCommand,
+  SubmitOrderReviewReviewLineScore,
 } from '@cleansia/customer-services';
+import { ReviewLineScore } from './order-review-lines.models';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
@@ -94,7 +96,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
-  submitReview(rating: number, comment: string): void {
+  submitReview(rating: number, comment: string, lines: ReviewLineScore[] = []): void {
     const order = this.order();
     if (!order?.id || rating === 0) return;
 
@@ -103,6 +105,18 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     command.orderId = order.id;
     command.rating = rating;
     command.comment = comment || undefined;
+    // Per-item scores. The order-level rating above stays the headline and stays required — these add
+    // what one number cannot say, which is that the oven was excellent and the bathroom was skipped.
+    // Optional: a customer who just leaves five stars sends none, and that is the common case.
+    command.lines = lines.length
+      ? lines.map((line) => {
+          const score = new SubmitOrderReviewReviewLineScore();
+          score.serviceId = line.serviceId;
+          score.packageId = line.packageId ?? undefined;
+          score.rating = line.rating;
+          return score;
+        })
+      : undefined;
 
     this.customerClient.orderClient
       .submitReview(command)

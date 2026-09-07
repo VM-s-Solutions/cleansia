@@ -1,0 +1,632 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Rewards — built against the "Odměny a body" board
+// =============================================================================
+// Two pages: the account (`/rewards`) and its ledger (`/rewards/activity`).
+//
+// The board's shape is one dark card carrying the number the customer came to
+// read, then the rules, then every tier side by side, then the referral code
+// beside the last few movements. What it replaces was a badge, a bare progress
+// bar, a perks list and a LADDER of tier rows — which asked the reader to build
+// the comparison the board simply draws.
+//
+// Measurements off the artboards:
+//   page 1240 wide; balance card radius 32, padding 34-38; number 58px
+//   cards radius 28, padding 26-28-24; tier cards 4-up, gap 16, radius 20
+//   ledger rows: pill 60 wide, title 15px, order muted 13px, date right
+//
+// Every figure on this page is the platform's — a point per 10 Kč floored,
+// credited on completion, clawed back on cancellation; 0/500/2000/5000 for
+// 0/5/10/12 %. → /product/business-rules
+
+.cl-rwd {
+  position: relative;
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding-top: var(--cl-nav-h);
+  background: radial-gradient(
+    120% 92% at 76% 6%,
+    var(--cl-hero-1) 0%,
+    var(--cl-hero-2) 100%
+  );
+}
+
+.cl-rwd__hero {
+  max-width: calc(77.5 * var(--cl-u));
+  margin: 0 auto;
+  padding: calc(2.75 * var(--cl-u)) var(--cl-gutter) calc(1.25 * var(--cl-u));
+}
+
+.cl-rwd__title {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  line-height: 1.16;
+  letter-spacing: -0.9px;
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+.cl-rwd__lead {
+  max-width: 46em;
+  margin: calc(0.625 * var(--cl-u)) 0 0;
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.72;
+  color: var(--cl-body);
+}
+
+.cl-rwd__body {
+  background: var(--cl-page);
+  padding-bottom: calc(3.75 * var(--cl-u));
+  min-height: 50vh;
+}
+
+.cl-rwd__page {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.5 * var(--cl-u));
+  max-width: calc(77.5 * var(--cl-u));
+  margin: 0 auto;
+  padding: calc(1.25 * var(--cl-u)) var(--cl-gutter) 0;
+}
+
+// ---- The number you came for --------------------------------------------------
+// The one dark surface on the page. Everything else is a card on the wash, so
+// this reads as the subject rather than as another section.
+.cl-rwd__balance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: calc(1.5 * var(--cl-u));
+  padding: calc(2.125 * var(--cl-u)) calc(2.375 * var(--cl-u));
+  border-radius: calc(2 * var(--cl-u));
+  background: var(--cl-invert);
+  color: var(--cl-invert-ink);
+  overflow: hidden;
+}
+
+.cl-rwd__balance-main {
+  min-width: 0;
+}
+
+.cl-rwd__balance-label {
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--cl-invert-ink) 72%, transparent);
+}
+
+.cl-rwd__balance-value {
+  margin-top: calc(0.25 * var(--cl-u));
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(3.625 * var(--cl-u));
+  line-height: 1.05;
+  letter-spacing: -1.6px;
+}
+
+.cl-rwd__tier-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  margin-top: var(--cl-u);
+  padding: calc(0.4375 * var(--cl-u)) calc(1.125 * var(--cl-u));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cl-invert-ink) 14%, transparent);
+  font-size: calc(0.875 * var(--cl-u));
+  font-weight: 800;
+}
+
+.cl-rwd__progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cl-u);
+  margin-top: calc(1.375 * var(--cl-u));
+  font-size: calc(0.875 * var(--cl-u));
+  color: color-mix(in srgb, var(--cl-invert-ink) 82%, transparent);
+}
+
+.cl-rwd__progress {
+  overflow: hidden;
+  height: 8px;
+  margin-top: calc(0.5 * var(--cl-u));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cl-invert-ink) 20%, transparent);
+}
+
+.cl-rwd__progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cl-accent-soft);
+  transition: width 0.3s ease;
+}
+
+.cl-rwd__balance-note {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  margin: calc(0.75 * var(--cl-u)) 0 0;
+  font-size: calc(0.8125 * var(--cl-u));
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--cl-invert-ink) 72%, transparent);
+
+  &--top {
+    margin-top: calc(1.25 * var(--cl-u));
+    font-size: calc(0.9375 * var(--cl-u));
+    color: color-mix(in srgb, var(--cl-invert-ink) 88%, transparent);
+  }
+}
+
+.cl-rwd__balance-art {
+  width: auto;
+  height: calc(9.5 * var(--cl-u));
+  display: block;
+}
+
+// ---- Cards --------------------------------------------------------------------
+.cl-rwd__card {
+  padding: calc(1.625 * var(--cl-u)) calc(1.75 * var(--cl-u)) calc(1.5 * var(--cl-u));
+  border-radius: calc(1.75 * var(--cl-u));
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+  min-width: 0;
+}
+
+.cl-rwd__card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cl-u);
+}
+
+.cl-rwd__card-title {
+  font-family: $font-heading;
+  font-weight: 600;
+  font-size: calc(1.25 * var(--cl-u));
+  letter-spacing: -0.2px;
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+.cl-rwd__card-lead {
+  margin: calc(0.375 * var(--cl-u)) 0 0;
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-muted);
+}
+
+.cl-rwd__link {
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid var(--cl-accent-soft);
+  background: none;
+  font-family: $font-body;
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 800;
+  color: var(--cl-heading);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+// ---- How the points work --------------------------------------------------------
+.cl-rwd__how {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(1.5 * var(--cl-u));
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-rwd__how-item {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.75 * var(--cl-u));
+  min-width: 0;
+}
+
+.cl-rwd__how-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(2.25 * var(--cl-u));
+  height: calc(2.25 * var(--cl-u));
+  border-radius: calc(0.75 * var(--cl-u));
+  background: var(--cl-tint);
+  color: var(--cl-heading);
+  font-size: calc(1.0625 * var(--cl-u));
+}
+
+.cl-rwd__how-name {
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-ink);
+}
+
+.cl-rwd__how-note {
+  margin: 2px 0 0;
+  font-size: calc(0.8125 * var(--cl-u));
+  line-height: 1.55;
+  color: var(--cl-muted);
+}
+
+// A rule the customer would otherwise meet as a surprise.
+.cl-rwd__note {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.6875 * var(--cl-u));
+  margin: calc(1.25 * var(--cl-u)) 0 0;
+  padding: var(--cl-u) calc(1.125 * var(--cl-u));
+  border-radius: calc(1.25 * var(--cl-u));
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border-tint);
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-body);
+
+  i {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--cl-heading);
+  }
+
+  // Amber for the discount cap: it is the one note that costs money to not
+  // know, and it is the one the board colours.
+  &--warn {
+    background: var(--cl-warn-soft);
+    border-color: var(--cl-warn-line);
+    color: var(--cl-warn-ink);
+
+    i {
+      color: var(--cl-warn-ink);
+    }
+  }
+}
+
+// ---- Every tier, side by side ----------------------------------------------------
+// Four cards, not a ladder of rows. The question is "what do I get at each
+// level" and a row per tier makes the reader hold three answers in their head
+// to compare them.
+.cl-rwd__tiers {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--cl-u);
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-rwd__tier {
+  position: relative;
+  padding: calc(1.25 * var(--cl-u)) calc(1.125 * var(--cl-u));
+  border-radius: calc(1.25 * var(--cl-u));
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  min-width: 0;
+
+  // The one you are on takes the dark ground the balance card uses, so the two
+  // read as the same fact stated twice.
+  &--mine {
+    background: var(--cl-invert);
+    border-color: var(--cl-invert);
+    color: var(--cl-invert-ink);
+  }
+}
+
+.cl-rwd__tier-flag {
+  position: absolute;
+  top: calc(-0.6875 * var(--cl-u));
+  left: calc(1.125 * var(--cl-u));
+  padding: 3px calc(0.625 * var(--cl-u));
+  border-radius: 999px;
+  background: var(--cl-invert);
+  font-size: calc(0.6875 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cl-invert-ink);
+}
+
+.cl-rwd__tier-threshold {
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.cl-rwd__tier--mine .cl-rwd__tier-threshold {
+  color: color-mix(in srgb, var(--cl-invert-ink) 72%, transparent);
+}
+
+.cl-rwd__tier-name {
+  margin-top: calc(0.375 * var(--cl-u));
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.25 * var(--cl-u));
+  color: var(--cl-heading);
+}
+
+.cl-rwd__tier--mine .cl-rwd__tier-name {
+  color: var(--cl-invert-ink);
+}
+
+.cl-rwd__tier-discount {
+  margin-top: calc(0.375 * var(--cl-u));
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.625 * var(--cl-u));
+  letter-spacing: -0.5px;
+  color: var(--cl-accent);
+}
+
+.cl-rwd__tier--mine .cl-rwd__tier-discount {
+  color: var(--cl-invert-ink);
+}
+
+.cl-rwd__tier-perks {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.4375 * var(--cl-u));
+  margin: var(--cl-u) 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(0.4375 * var(--cl-u));
+    font-size: calc(0.8125 * var(--cl-u));
+    line-height: 1.45;
+    color: var(--cl-body);
+  }
+
+  i {
+    flex-shrink: 0;
+    margin-top: 3px;
+    font-size: calc(0.75 * var(--cl-u));
+    color: var(--cl-heading);
+  }
+}
+
+.cl-rwd__tier--mine .cl-rwd__tier-perks {
+  li,
+  i {
+    color: color-mix(in srgb, var(--cl-invert-ink) 88%, transparent);
+  }
+}
+
+// ---- Referral beside the ledger ---------------------------------------------------
+.cl-rwd__split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: calc(1.5 * var(--cl-u));
+  align-items: start;
+}
+
+.cl-rwd__code-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(0.75 * var(--cl-u));
+  margin: calc(1.125 * var(--cl-u)) 0;
+}
+
+// Tracked and tabular: this is dictated to somebody, one character at a time.
+.cl-rwd__code {
+  flex: 1 1 12em;
+  min-width: 0;
+  padding: calc(0.75 * var(--cl-u)) var(--cl-u);
+  border-radius: calc(0.875 * var(--cl-u));
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border-tint);
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.25 * var(--cl-u));
+  letter-spacing: 0.14em;
+  text-align: center;
+  color: var(--cl-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+// ---- One movement per row -----------------------------------------------------------
+.cl-rwd__moves {
+  margin: calc(0.625 * var(--cl-u)) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cl-rwd__move {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cl-u);
+  padding: calc(0.75 * var(--cl-u)) 0;
+  border-bottom: 1px solid var(--cl-border);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+// The sign is the whole story, so it is the first thing on the row and it is
+// the only thing that carries colour.
+.cl-rwd__move-points {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(3.75 * var(--cl-u));
+  padding: calc(0.3125 * var(--cl-u)) calc(0.625 * var(--cl-u));
+  border-radius: 999px;
+  background: var(--cl-tint-strong);
+  font-size: calc(0.875 * var(--cl-u));
+  font-weight: 800;
+  color: var(--cl-heading);
+
+  &--minus {
+    background: var(--cl-danger-soft);
+    color: var(--cl-danger);
+  }
+}
+
+.cl-rwd__move-text {
+  min-width: 0;
+}
+
+.cl-rwd__move-name {
+  display: block;
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-ink);
+  overflow-wrap: anywhere;
+}
+
+.cl-rwd__move-order {
+  display: block;
+  margin-top: 1px;
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.cl-rwd__move-date {
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+  white-space: nowrap;
+}
+
+.cl-rwd__empty {
+  margin: var(--cl-u) 0 0;
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-muted);
+  text-align: center;
+
+  i {
+    display: block;
+    margin-bottom: calc(0.5 * var(--cl-u));
+    font-size: calc(2 * var(--cl-u));
+    color: var(--cl-faint);
+  }
+}
+
+.cl-rwd__error {
+  text-align: center;
+  color: var(--cl-body);
+
+  i {
+    display: block;
+    margin-bottom: var(--cl-u);
+    font-size: calc(3 * var(--cl-u));
+    color: var(--cl-faint);
+  }
+}
+
+// ---- The ledger page ------------------------------------------------------------------
+.cl-rwd__bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--cl-u);
+}
+
+.cl-rwd__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.75 * var(--cl-u));
+}
+
+.cl-rwd__chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(2.75 * var(--cl-u));
+  padding: 0 calc(1.125 * var(--cl-u));
+  border-radius: 999px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  font-family: $font-body;
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-body);
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  &--on {
+    background: var(--cl-heading);
+    border-color: var(--cl-heading);
+    color: #fff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+}
+
+.cl-rwd__balance-inline {
+  margin-left: auto;
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 800;
+  color: var(--cl-heading);
+}
+
+.cl-rwd__year {
+  margin: 0 0 calc(0.25 * var(--cl-u));
+  font-family: $font-heading;
+  font-weight: 600;
+  font-size: calc(1.25 * var(--cl-u));
+  color: var(--cl-heading);
+
+  // A second year opens with room above it, the first one does not.
+  .cl-rwd__moves + & {
+    margin-top: calc(1.5 * var(--cl-u));
+  }
+}
+
+.cl-rwd__more {
+  display: flex;
+  justify-content: center;
+  margin-top: calc(1.25 * var(--cl-u));
+}
+
+// ---- Narrow ---------------------------------------------------------------------------
+@media (max-width: 1000px) {
+  .cl-rwd__tiers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cl-rwd__split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-rwd__how {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--cl-u);
+  }
+}
+
+@media (max-width: 700px) {
+  .cl-rwd__balance {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-rwd__balance-art {
+    display: none;
+  }
+
+  .cl-rwd__tiers {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-rwd__move {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: calc(0.25 * var(--cl-u));
+  }
+
+  .cl-rwd__move-date {
+    grid-column: 2;
+  }
+}

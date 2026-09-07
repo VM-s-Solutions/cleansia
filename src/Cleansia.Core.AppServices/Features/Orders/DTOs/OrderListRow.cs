@@ -27,6 +27,8 @@ public sealed record OrderListRow(
     decimal? TierDiscountAmount,
     decimal? MembershipDiscountAmount,
     decimal? PromoDiscountAmount,
+    /// <summary>What credit settled, so the paged list can report the card figure. -&gt; OrderItem</summary>
+    decimal CreditAppliedAmount,
     int EstimatedTime,
     OrderStatus OrderStatus,
     string ConfirmationCode,

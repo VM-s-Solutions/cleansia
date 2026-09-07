@@ -2,6 +2,16 @@
 
 Paste this at the top of a new session. It is the map; the detail is in the tickets it names.
 
+## Where the repo is, before anything else
+
+- Branch **`fix/customer-design-pass`**, **PR #252 open**, **167 commits ahead of `master`**, working
+  tree clean, CI green at the time of writing.
+- **Decide first whether that PR merges before this work starts.** Branching new work off it inherits
+  167 unmerged commits; branching off `master` means the fixes land without the design pass. Neither
+  is wrong, but picking by accident is.
+- Everything below was established by reading the code on 2026-09-07. Nothing in this list has been
+  fixed.
+
 ## How to run these
 
 **One item per session.** Not because sessions get long, but because a session that carries two
@@ -35,6 +45,14 @@ and **[T-0689](backlog/tickets/T-0689-feature-flags-that-gate-nothing.md)** (six
 control nothing — an admin can turn Stripe "off" and payments keep working). Do T-0689 together with
 T-0685; they ask the same question about what a production flag table should contain.
 
+> **The owner's actual feature-flag question was "can any of these features ship in V1?" — and the
+> answer is that nothing is being held back by a flag.** The review *removes* work from the release
+> list rather than adding it. Only two gates are real: `Fiscal:CzechEet2` is a genuine stub that
+> returns `NOT_IMPLEMENTED` and cannot ship (it waits on a Czech tax API spec published for a 2027
+> launch), and `APNS:Enabled` is **code-complete but credential-blocked** — the iOS Live Activity
+> side exists, so it is a V1 option gated only on seeding three Key Vault secrets, not on
+> engineering. Everything else named like a feature flag gates nothing at all.
+
 ## Then, in this order
 
 **1 — Order status: card vs cash.** *Investigate is already done, and the finding is not what it
@@ -58,8 +76,16 @@ They cannot prove what T-0686 covers. Size L, and it needs the legal basis first
 incident defence has to survive an erasure request.
 
 **4 — Automatic admin notifications** (disputes created/updated, orders cancelled by us or by a
-cleaner, and similar edge cases). **Do this AFTER the status decision** — every notification names a
-status, and encoding today's ambiguity into templates across five locales means paying twice.
+cleaner, and similar edge cases — the owner's words: "we have to know about those in advance").
+**Do this AFTER the status decision** — every notification names a status, and encoding today's
+ambiguity into templates across five locales means paying twice.
+
+Decisions this one is blocked on, none of them technical: **email, in-app, or both** (the owner named
+both and did not choose); **which events actually warrant interrupting someone**, since a channel
+that cries wolf gets muted and then the real one is missed; and **who receives them** — one address,
+a role, or per-tenant. Start from the event list, not from the transport. Note the platform already
+has an outbox with a `MessageKeys.Push` uniqueness contract, so there is machinery to build on rather
+than start from.
 
 **5 — Responsiveness of the customer site.** Known starting point: the order page wants its summary
 moved to the bottom as an expandable panel. Iterative and visual; give it its own session and a real
@@ -108,3 +134,64 @@ the trial** (a single paid month still buys a forever schedule), and the written
   Every question and every summary states the situation in plain language first — what a customer or
   an admin actually sees, what it costs — and puts the mechanism second. Expand an identifier the
   first time it appears rather than assuming the name carries its meaning.
+
+---
+
+## The prompt to open the next session with
+
+Copy the block below. Replace the one bracketed line with the item you want, and delete the rest of
+that list.
+
+```text
+Read agents/HANDOVER.md first — it is the map for this work and I will not be
+repeating its contents in chat.
+
+This session does ONE item, and only this one:
+
+  [ T-0685 — the GDPR retention job that never runs in production ]
+
+Work it in this order, and stop at each boundary:
+
+1. INVESTIGATE FIRST. The ticket is a claim about the code as it was on
+   2026-09-07. Verify it still holds before you plan anything, and tell me
+   plainly if it does not — I would rather hear "this is already fixed" than
+   get a fix for a problem that moved.
+
+2. THEN AGREE SCOPE WITH ME, with a NOT list, before you write any code. Tell
+   me what you are changing, what you are deliberately leaving alone even
+   though you can see it is imperfect, and what "done" looks like.
+
+3. ANSWER THE OPEN DECISIONS in the ticket before building. Most of these
+   items are blocked on a decision, not on typing. When you ask me, assume I
+   have not read anything else in this session: state what exists today, what
+   is wrong with it, the options with what each one costs, and your
+   recommendation with its reason. Explain it in plain language — what a
+   customer or an admin actually sees — before any file or symbol names.
+
+4. THEN BUILD, and measure whatever the ticket says to measure. A change that
+   does not move the number gets reverted, not kept.
+
+Some things about how I work that are not obvious:
+
+- Nothing is owner-only any more. Run the NSwag client regeneration, the EF
+  migration regeneration and the DEV database drop yourself. Do not write
+  manual_step: on a ticket and do not wait for me. The one exception is Xcode
+  signing and provisioning. In exchange, name every one of those steps you ran
+  in your report — that is now the only way I find out.
+- Anything you find outside the agreed scope goes on a list and is reported at
+  the end. Do not fix it while you are in there.
+- Do not commit or push until I ask.
+- Do not credit Claude anywhere: no commit trailer, no PR line, no comment.
+
+Pick the item above, investigate it, and come back to me with what you found
+and the scope you propose. Do not start changing files yet.
+```
+
+### Which item to put in that bracket
+
+**If you want the most urgent:** `T-0685` — it is live in production now.
+**If you want the cheapest visible win:** `T-0687` — the blank status pill in the admin list.
+**If you want the biggest money question:** `T-0690` — the free trial, or the recurring-schedule
+giveaway underneath it.
+**If you want the thing that unblocks two others:** the legal-document review (item 2), because the
+customer audit log waits on it — but only start it when you have the documents to hand.

@@ -25,6 +25,10 @@ public static class ConfigurationExtensions
         // Outbox retention-prune tunables (toggle + retention windows + batch size),
         // bound from the "OutboxRetention" section.
         services.AddSingleton<IOutboxRetentionConfig, OutboxRetentionConfig>();
+        // The GDPR retention sweep's master switch, bound from the "DataRetention" section. Defaults ON
+        // when the section is absent — it replaces a FeatureFlags row that no deployed database ever had,
+        // which resolved to "off" and silenced the sweep everywhere but a developer's machine.
+        services.AddSingleton<IDataRetentionConfig, DataRetentionConfig>();
 
         return services;
     }

@@ -1108,15 +1108,13 @@ VALUES
    'AutoInvoiceGeneration', 'Automatically generate invoices when pay period closes', true, 'global', NULL),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'DisputeSystem', 'Enable customer dispute/complaint system', true, 'global', NULL),
+  -- The GDPR retention sweep is deliberately NOT here. Its switch moved to the "DataRetention"
+  -- configuration section (DataRetentionConfig.Enabled, default true) precisely because a seeded row
+  -- could not reach production: no migration inserts it, deployed hosts apply the EF bundle without
+  -- ever calling the seeder, and execute-sql.yml refuses this fixture against PRO. A compliance clock
+  -- cannot depend on a row that production never gets.
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'PushNotifications', 'Enable push notifications for mobile app', false, 'global', NULL),
-  -- Without this row the retention sweep is a NO-OP on every fresh database: an absent flag resolves
-  -- to false (AppConfigurationProvider: `globalFlag?.IsEnabled ?? false`), and the flag was never
-  -- seeded, so DataRetentionBackgroundService returned at its first line and none of its seven tasks
-  -- had ever run. That includes anonymising customer PII on old orders and clearing withdrawn
-  -- consents, which is a compliance obligation rather than a housekeeping preference.
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'DataRetentionJobEnabled', 'Run the GDPR data-retention sweep (expired codes, stale devices, old GDPR requests, order customer PII, withdrawn consents, superseded documents, notifications)', true, 'global', NULL);
+   'PushNotifications', 'Enable push notifications for mobile app', false, 'global', NULL);
 
 -- ============================================================
 -- COMPANY INFO

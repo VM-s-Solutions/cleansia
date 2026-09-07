@@ -8,11 +8,13 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -42,10 +44,10 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
         pragma.CommandText = "PRAGMA foreign_keys = OFF;";
         pragma.ExecuteNonQuery();
 
-        _configProvider
-            .Setup(c => c.IsFeatureEnabledAsync(
-                RetentionDefaults.FeatureFlagName, It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        // Only the per-task tuning keys are stubbed, and to ABSENT, so each task uses its RetentionDefaults
+        // window. The master switch is NOT stubbed: it comes from the real DataRetentionConfig over an
+        // empty configuration, i.e. the shipped default. A hard-coded `IsFeatureEnabledAsync => true` used
+        // to stand here, which stubbed the one value production got wrong — see DataRetentionEnablementTests.
         _configProvider
             .Setup(c => c.GetTenantSettingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string?)null);
@@ -84,6 +86,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             new EmployeeDocumentRepository(ctx),
             new UserNotificationRepository(ctx),
             _configProvider.Object,
+            new DataRetentionConfig(new ConfigurationBuilder().Build()),
             _blobClientFactory.Object,
             NullLogger<DataRetentionBackgroundService>.Instance);
     }

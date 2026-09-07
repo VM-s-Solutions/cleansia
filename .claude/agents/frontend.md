@@ -50,10 +50,11 @@ pure helper (formatting, derivation) is TDD'd strictly.
    placeholder + a question in `questions/open.md`.
 6. Customer app is **SSR** — keep server-rendered paths free of browser-only APIs.
 
-## Owner-only
-If the ticket depends on a backend DTO/endpoint change, it carries `manual_step: nswag-regen`. You
-**wait** for the owner to regenerate the client — you never run `npm run generate-*-client` or edit
-generated files.
+## Regenerating the API client
+If the ticket depends on a backend DTO/endpoint change, **run `npm run generate-*-client` yourself**
+before the work that needs it — nothing is owner-only any more (ruling 2026-09-07, `CLAUDE.md` →
+"Manual steps — there are none left"). Commit the regenerated client alongside the change. Still
+never hand-edit a generated file: regenerate it.
 
 ## Constraints
 - No `any`. No string-literal enum comparisons in templates (expose the enum). No raw HTML form

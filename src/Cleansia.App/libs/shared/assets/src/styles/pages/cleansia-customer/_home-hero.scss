@@ -35,7 +35,10 @@ cleansia-hero {
   );
   // One shorthand, written AFTER the padding-top above used to be, which is
   // what silently reset it to 20px and left the reclaimed navbar height unpaid.
-  padding: calc(var(--cl-nav-h) + 20px) 0 0;
+  // The navbar payback ONLY. The +20px that used to sit on top of it is gone: the hero is
+  // taller than a 706px-high laptop viewport, so every pixel above the headline is one the
+  // calculator card loses off the bottom. -> the two trims below
+  padding: var(--cl-nav-h) 0 0;
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -68,7 +71,7 @@ cleansia-hero {
     // read as a gap rather than as breathing room and pushed the calculator
     // card's fixed price below the fold on a laptop. The navbar payback on
     // `.cl-hero` above is untouched — that one is structural.
-    padding: calc(1.5 * var(--cl-u)) var(--cl-gutter) 0;
+    padding: calc(0.75 * var(--cl-u)) var(--cl-gutter) 0;
     max-width: $home-width;
     margin: 0 auto;
 
@@ -328,7 +331,10 @@ cleansia-hero {
   }
 
   &__title {
-    margin-top: 30px;
+    // 12, not 30. The three spacings above the headline — the hero's +20, the inner block's
+    // padding and this — added to 50px that pushed the whole hero down, and because the two
+    // columns are bottom-aligned that came straight off the calculator card at the fold.
+    margin-top: 12px;
     text-align: left;
   }
 
@@ -366,6 +372,13 @@ cleansia-hero {
   .cl-hero__inner {
     grid-template-columns: 1fr;
     padding: 40px 32px 0;
+  }
+
+  // The desktop trim above does not apply here. Below 1100 the hero stacks into one column, so it
+  // is not fighting the fold for room — and with the trim the headline came to within 8px of the
+  // navbar, which reads as a collision rather than as a tight layout.
+  .cl-hero__title {
+    margin-top: 30px;
   }
 
   .cl-hero__image img {

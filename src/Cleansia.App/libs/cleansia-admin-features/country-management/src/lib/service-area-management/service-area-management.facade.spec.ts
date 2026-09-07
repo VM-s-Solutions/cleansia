@@ -131,6 +131,28 @@ describe('ServiceAreaManagementFacade', () => {
     expect(snackbar.showSuccess).not.toHaveBeenCalled();
   });
 
+  // Seeded with `of(null)`, not a plausible array: the generated client answers a non-array 200
+  // and a 204 with NULL. → service-form.facade.spec.ts
+  describe('a null list from the generated client', () => {
+    it('leaves the country catalog an empty array and settles both loading flags', () => {
+      getOverviewMock.mockReturnValue(of(null));
+
+      facade.loadCountries();
+
+      expect(facade.countries()).toEqual([]);
+      expect(detailsMock).not.toHaveBeenCalled();
+      expect(facade.initialLoading()).toBe(false);
+    });
+
+    it('leaves the city list an empty array', () => {
+      cityGetMock.mockReturnValue(of(null));
+
+      facade.loadCities('c-1');
+
+      expect(facade.cities()).toEqual([]);
+    });
+  });
+
   describe('command bodies on the wire', () => {
     it('serializes the serviced toggle with the flag', () => {
       facade.setCountryServiced('c-1', false);

@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -42,8 +43,12 @@ public class CleanupStalePendingOrders
 
     public record Response(int CancelledCount);
 
+    /// <summary>No JWT on a sweep. Matches ExpireStaleReferrals and LoyaltyService.</summary>
+    private const string SystemActor = "system";
+
     public class Handler(
         IOrderRepository orderRepository,
+        ICreditAccountRepository creditAccountRepository,
         INotificationProducer notificationProducer,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
@@ -104,6 +109,13 @@ public class CleanupStalePendingOrders
                         feeRate: 0m,
                         refundAmount: 0m,
                         reason: OrderCancellationReasons.PaymentNotCompleted);
+
+                    // Nothing was captured, but credit may have been SPENT - CreateOrder debits it
+                    // before the customer ever reaches Stripe. Inside the loop, so the ledger row is
+                    // stamped by the commit below with THIS group's tenant. Deferring it would stamp
+                    // every group with whichever tenant was processed last.
+                    await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                        order, SystemActor, cancellationToken);
 
                     if (!string.IsNullOrEmpty(order.UserId))
                     {

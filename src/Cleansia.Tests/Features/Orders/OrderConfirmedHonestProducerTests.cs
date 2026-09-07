@@ -79,6 +79,7 @@ public class OrderConfirmedHonestProducerTests
 
         var result = await new ConfirmRecurringOrder.Handler(
             _orderRepository.Object,
+            new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
             new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>().Object,
@@ -134,6 +135,7 @@ public class OrderConfirmedHonestProducerTests
         return new HandlePaymentNotification.Handler(
             stripeConfig.Object,
             _orderRepository.Object,
+            new Mock<ICreditAccountRepository>().Object,
             disputes.Object,
             processedEvents.Object,
             new Mock<IStripeSubscriptionWebhookHandler>().Object,

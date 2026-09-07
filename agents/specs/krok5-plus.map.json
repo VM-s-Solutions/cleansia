@@ -1,0 +1,91 @@
+{
+  "_comment": "Same two sections as the other step maps. `_ignore` is text the artboard shows as SAMPLE — a price, a plan name, a service, a summary line — which the running page renders from the plan catalogue or from what the visitor chose. Everything NOT listed there is structural copy and has to appear. The remaining keys are the BOX map, { appSelector: artboardSelector }; only the pairing is declared, every expected value is read off the artboard.",
+
+  "_numbers_note": "Every figure on this step is the server's. 199, 2 030, the 15 % yearly saving, 5 %, 4 hours, 1 express clean and the 14-day trial all come back from GET /api/Membership/GetPlans against the seeded PLUS_MONTHLY and PLUS_YEARLY rows, and the \"you would save\" figure from POST /api/Order/QuotePlusSavings. The artboard's numbers were right; none of them is typed into the app. They are in _ignore because the app renders them from data, so a check pinned to the artboard's basket would fail on any other one.",
+
+  "_cancel_perk_note": "The artboard's second perk reads \"Zrušení zdarma o 4 hodiny déle\" — free cancellation four hours LONGER. The plan's FreeCancellationWindowHours IS 4: a member cancels free up to 4 hours before the clean, where everyone else has to be 24 hours ahead (BookingPolicy.FreeCancellationHours). That is twenty hours later, not four hours longer, and the artboard's phrasing understates the perk while misdescribing the mechanism. The shipped copy states the window.",
+
+  "_express_perk_note": "\"Jeden expresní úklid měsíčně\" needed a number the plans DTO did not carry. ExpressUpgradesPerMonth was added to GetMembershipPlans.Response rather than hardcoding a 1 into five locales — the column is per-plan and an admin can change it.",
+
+  "_ignore": [
+    "^[0-9][0-9\\s]*Kč$",
+    "^Cleansia$",
+    "^Služby$",
+    "^Jak to chodí$",
+    "^Cleansia Plus$",
+    "^Sledovat objednávku$",
+    "^CZ$",
+    "^Přihlásit$",
+    "^Objednat úklid$",
+    "^Adresa$",
+    "^Termín$",
+    "^Platba$",
+    "^Souhrn$",
+    "^Zpět k platbě$",
+    "^Měsíčně$",
+    "^měsíčně$",
+    "^Ročně$",
+    "^ročně$",
+    "^Prvních 14 dní zdarma$",
+    "^Ušetříte 15 % oproti měsíčnímu$",
+    "^Na dnešní objednávce byste ušetřili",
+    "^85 Kč$",
+    "^5 % sleva na každou objednávku$",
+    "^Zrušení zdarma o 4 hodiny déle$",
+    "^Jeden expresní úklid měsíčně bez příplatku$",
+    "^Objednávku dokončíte za plnou cenu",
+    "^Čištění koberců$",
+    "^Čištění čalounění$",
+    "^Úklid koupelny$",
+    "^Extrakční stroj",
+    "^Test na malé ploše",
+    "^Vodní kámen",
+    "^Přidat$",
+    "^Úklid domácnosti$",
+    "^Hloubkový úklid kuchyně$",
+    "^Mytí oken",
+    "^3 pokoje",
+    "^Praha 7$",
+    "^út 2\\. 9\\.",
+    "^bez příplatku$",
+    "^S Plus byste platili$",
+    "^Pevná cena$",
+    "^Odhadem 3,5 h",
+    "^Pokračovat$",
+    "^Zrušení zdarma do 24 h$"
+  ],
+
+  ".cl-wiz__plans": "[style*='grid-template-columns:1fr 1fr; gap:16px; margin-top:26px']",
+  ".cl-wiz__plan:not(.cl-wiz__plan--best)": {
+    "sel": ".soft[style*='border-radius:26px; padding:24px 26px']",
+    "why": "The artboard's monthly card against the app's — matching the unfeatured one on both sides, since the featured treatment is what differs."
+  },
+  ".cl-wiz__plan--best": {
+    "sel": ".lift[style*='background:#0284C7; border:2px solid #0284C7']",
+    "skip": ["backgroundColor", "borderTopColor", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
+    "why": "Two departures, both already made elsewhere in this shell. The fill is Sky800 rather than the artboard's Sky600, because the card's dimmed period label is a 12px token and pure white only reaches 4.08 on Sky600 against a 4.5 floor — the same move as .cl-chip--on and the featured package card. And the 2px border comes off the padding so the two plan cards' contents sit on the same lines, where the artboard lets the featured one shift 1px."
+  },
+  ".cl-wiz__plan-badge": { "sel": "[style*='top:-12px; left:24px']", "typography": true },
+  ".cl-wiz__plan-price": { "sel": "[style*='font-size:32px']", "typography": true },
+
+  ".cl-wiz__perks": "[style*='repeat(2, minmax(0,1fr)); gap:12px; margin-top:20px']",
+  ".cl-wiz__perk": "[style*='gap:11px; padding:14px 18px']",
+  ".cl-wiz__perk span": {
+    "sel": "[style*='gap:11px; padding:14px 18px'] > span",
+    "typography": true,
+    "why": "Typography is asserted on the span that HOLDS the words, not on the box around it: the box inherits, and a layout container's inherited size reports the document base — 14px in the app, 16px in a bare artboard — which says nothing about the design."
+  },
+
+  ".cl-wiz__plus-account": "[style*='gap:14px; margin-top:16px; padding:16px 18px']",
+  ".cl-wiz__decline": "[style*='border:1px dashed #CBD5E1']",
+  ".cl-wiz__decline-cta": "[style*='padding:0 22px; white-space:nowrap']",
+
+  ".cl-wiz__cross-head": "[style*='align-items:baseline; justify-content:space-between; gap:16px']",
+  ".cl-wiz__cross": "[style*='flex-direction:column; gap:10px; margin-top:14px']",
+  ".cl-wiz__cross-row": {
+    "sel": "[style*='grid-template-columns:1fr auto auto'][style*='border-radius:18px']",
+    "skip": ["gridTemplateColumns"],
+    "why": "Two of these three tracks are `auto`, so their pixel widths are the measured width of the text inside them — the artboard renders offline against a fallback face, the app against Nunito. Same font-metric artifact, and same exemption, as step 1's service row."
+  },
+  ".cl-wiz__cross-add": "[style*='min-height:38px']"
+}

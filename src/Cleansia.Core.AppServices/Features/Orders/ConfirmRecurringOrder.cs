@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
@@ -52,6 +53,7 @@ public class ConfirmRecurringOrder
 
     public class Handler(
         IOrderRepository orderRepository,
+        ICreditAccountRepository creditAccountRepository,
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
@@ -143,6 +145,58 @@ public class ConfirmRecurringOrder
                 EphemeralKey: null));
         }
 
+        /// <summary>
+        /// Take whatever credit this occurrence may use, and answer with the amount actually taken.
+        /// The same shape as <c>CreateOrder.TakeCreditForOrderAsync</c>, for the same reasons — card
+        /// only, matching currency, capped so the card always pays a share, and debited BEFORE the
+        /// amount is used so the database arbitrates two confirmations racing each other.
+        ///
+        /// <para>No compensating return here, unlike CreateOrder: this handler mints a PaymentIntent
+        /// rather than a redirect, and if Stripe throws the order still exists in a confirmable state
+        /// with its credit recorded. A retry re-enters on the same order id, sees a non-zero
+        /// <c>CreditAppliedAmount</c> and takes nothing more.</para>
+        /// </summary>
+        private async Task<decimal> TakeCreditForOrderAsync(
+            Order order, string userId, CancellationToken cancellationToken)
+        {
+            if (order.PaymentType != PaymentType.Card || string.IsNullOrEmpty(userId))
+            {
+                return 0m;
+            }
+
+            var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
+            if (spendable == null || spendable.CurrencyId != order.CurrencyId)
+            {
+                return 0m;
+            }
+
+            var eligible = BookingPolicy.CapCreditForOrder(spendable.Balance, order.TotalPrice);
+            if (eligible <= 0m)
+            {
+                return 0m;
+            }
+
+            var taken = await creditAccountRepository.TryDebitAsync(
+                creditAccountId: spendable.AccountId,
+                amount: eligible,
+                reason: CreditTransactionReason.OrderPayment,
+                idempotencyKey: $"order-payment-{order.Id}",
+                actorId: userId,
+                cancellationToken: cancellationToken,
+                orderId: order.Id);
+
+            if (!taken)
+            {
+                logger.LogInformation(
+                    "Credit debit of {Amount} was refused for recurring order {OrderId}; the balance "
+                    + "moved, so the occurrence is confirmed at full price.",
+                    eligible, order.Id);
+                return 0m;
+            }
+
+            return eligible;
+        }
+
         private async Task<BusinessResult<Response>> HandleCardAsync(
             Order order, string sessionUserId, CancellationToken cancellationToken)
         {
@@ -156,6 +210,25 @@ public class ConfirmRecurringOrder
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(order.UserId), BusinessErrorMessage.UserNotFound));
+            }
+
+            // A recurring occurrence IS "the next order". GetMyCredit tells every customer their
+            // balance applies automatically to it, and until this line that was only true of one-off
+            // bookings — a customer on a weekly plan would have watched a balance sit there forever.
+            //
+            // Same two steps and same order as CreateOrder: take it first so the conditional UPDATE
+            // arbitrates, then price the order from what was actually taken. The intent mints its
+            // amount from order.AmountDueOnCard below, so applying it here is what makes the charge
+            // smaller. Guarded on CreditAppliedAmount so a re-POSTed confirmation — the customer
+            // backgrounded the app and came back — cannot take a second bite; the debit's own
+            // order-id key is the backstop underneath that.
+            if (order.CreditAppliedAmount <= 0m)
+            {
+                var credit = await TakeCreditForOrderAsync(order, sessionUserId, cancellationToken);
+                if (credit > 0m)
+                {
+                    order.ApplyCredit(credit, sessionUserId);
+                }
             }
 
             var stripeCustomerId = user.StripeCustomerId;
@@ -173,8 +246,12 @@ public class ConfirmRecurringOrder
                     stripeCustomerId, user.Id);
             }
 
+            // AmountDueOnCard on every charge surface without exception. Recurring orders never
+            // carry credit today (CreateOrder is the only path that applies it), so this is identical
+            // to TotalPrice right now - and it is written this way so that when they do, the third
+            // charge surface is not the one that quietly charges the card twice.
             var intent = await stripeClient.CreatePaymentIntentAsync(
-                amount: order.TotalPrice,
+                amount: order.AmountDueOnCard,
                 currency: order.Currency.Code,
                 stripeCustomerId: stripeCustomerId,
                 orderId: order.Id,

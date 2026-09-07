@@ -1,10 +1,12 @@
 import { Component, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
-import {
-  CleansiaCookieConsentComponent,
-  CleansiaDevBannerComponent,
-} from '@cleansia/components';
+// Entry-point imports, not the `@cleansia/components` barrel. The barrel is a
+// 32-component re-export reaching 17 PrimeNG modules, and importing one name
+// from it puts all of them on the landing page's critical path — measured at
+// 221 KB of JS the page never runs. → T-0682
+import { CleansiaCookieConsentComponent } from '@cleansia/components/cleansia-cookie-consent';
+import { CleansiaDevBannerComponent } from '@cleansia/components/cleansia-dev-banner';
 import { CleansiaCustomerFooterComponent } from './components/footer/customer-footer.component';
 import { CleansiaCustomerNavbarComponent } from './components/navbar/customer-navbar.component';
 import { ConsentSyncService } from '@cleansia/customer-services';

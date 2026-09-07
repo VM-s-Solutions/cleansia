@@ -23,8 +23,6 @@ public class CreateMembershipCheckoutSessionContractLockTests
     private const string PlanCode = "PLUS_MONTHLY";
     private const string StripeCustomerId = "cus_test_1";
     private const string StripePriceId = "price_test_1";
-    private const string SuccessUrl = "https://app/success";
-    private const string CancelUrl = "https://app/cancel";
     private const string CheckoutUrl = "https://checkout.stripe.test/session_1";
 
     private readonly Mock<IUserRepository> _userRepository = new();
@@ -84,7 +82,7 @@ public class CreateMembershipCheckoutSessionContractLockTests
             .ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(
-            new CreateMembershipCheckoutSession.Command(PlanCode, SuccessUrl, CancelUrl),
+            new CreateMembershipCheckoutSession.Command(PlanCode),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -113,7 +111,7 @@ public class CreateMembershipCheckoutSessionContractLockTests
             .ReturnsAsync(active);
 
         var result = await CreateHandler().Handle(
-            new CreateMembershipCheckoutSession.Command(PlanCode, SuccessUrl, CancelUrl),
+            new CreateMembershipCheckoutSession.Command(PlanCode),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
@@ -129,11 +127,11 @@ public class CreateMembershipCheckoutSessionContractLockTests
         _stripe
             .Setup(c => c.CreateMembershipCheckoutSessionAsync(
                 StripeCustomerId, StripePriceId, UserId, PlanCode, It.IsAny<int>(),
-                SuccessUrl, CancelUrl, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CheckoutUrl);
 
         var result = await CreateHandler().Handle(
-            new CreateMembershipCheckoutSession.Command(PlanCode, SuccessUrl, CancelUrl),
+            new CreateMembershipCheckoutSession.Command(PlanCode),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);

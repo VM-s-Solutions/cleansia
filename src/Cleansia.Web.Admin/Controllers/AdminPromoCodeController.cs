@@ -7,6 +7,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -59,6 +60,7 @@ public class AdminPromoCodeController(IMediator mediator) : ApiController(mediat
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreatePromoCode(
         [FromBody] CreatePromoCode.Command command,
         CancellationToken cancellationToken)
@@ -74,6 +76,7 @@ public class AdminPromoCodeController(IMediator mediator) : ApiController(mediat
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdatePromoCode(
         string promoCodeId,
         [FromBody] UpdatePromoCode.Command command,
@@ -94,6 +97,7 @@ public class AdminPromoCodeController(IMediator mediator) : ApiController(mediat
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeactivatePromoCode(
         string promoCodeId,
         CancellationToken cancellationToken)

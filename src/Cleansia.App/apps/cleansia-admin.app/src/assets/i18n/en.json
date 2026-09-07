@@ -83,7 +83,6 @@
       "promo_code_edit": "Edit promo code",
       "promo_code_detail": "Promo code details",
       "loyalty_tiers": "Loyalty tiers",
-      "loyalty_user_detail": "User loyalty",
       "loyalty_referrals": "Referrals",
       "sitewide_push": "Sitewide Push",
       "not_found": "Page Not Found",
@@ -93,17 +92,16 @@
       "membership_plan_create": "Create Membership Plan",
       "membership_plan_edit": "Edit Membership Plan",
       "data_protection": "Data Protection",
-      "profile": "My Profile"
+      "profile": "My Profile",
+      "customer_detail": "Customer"
     }
   },
   "components": {
     "not_found": {
-      "title": "Page Not Found",
-      "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
-      "suggestion_home": "Return to the home page",
-      "suggestion_url": "Check the URL for typos",
-      "suggestion_contact": "Contact us if the problem persists",
-      "go_home": "Go to Home"
+      "title": "We don't have this page",
+      "description": "The link is probably old, or the address is missing a letter. Try again from the start.",
+      "go_home": "Go to the home page",
+      "error_code": "Error {{code}}"
     },
     "availability": {
       "days": {
@@ -209,7 +207,9 @@
       "de": "German",
       "sk": "Slovak",
       "pl": "Polish"
-    }
+    },
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "sidebar": {
     "employees": "Employees",
@@ -621,6 +621,7 @@
           "action": "Reassign cleaner",
           "confirm": "Move the assignment from the current cleaner to another cleaner.",
           "none_assigned": "This order has no assigned cleaner to reassign.",
+          "add_only_hint": "Nobody is on this job. Enter a cleaner to put one on it.",
           "from": "From cleaner",
           "to": "To cleaner (employee ID)",
           "to_hint": "Enter the target employee ID.",
@@ -980,7 +981,9 @@
         "create_error": "Failed to create package",
         "update_success": "Package updated successfully",
         "update_error": "Failed to update package"
-      }
+      },
+      "tagline": "Card tagline",
+      "is_popular": "Most popular package"
     },
     "admin_user_management": {
       "title": "Admin User Management",
@@ -1532,7 +1535,9 @@
       "messages": {
         "revenue_load_error": "Failed to load revenue report",
         "payroll_load_error": "Failed to load payroll report"
-      }
+      },
+      "settled_from_credit": "From customer credit",
+      "settled_on_tender": "Taken by this tender"
     },
     "invoice_detail": {
       "title": "Invoice Details",
@@ -1795,11 +1800,11 @@
       }
     },
     "loyalty_user_detail": {
-      "title": "User loyalty",
+      "title": "Customer",
       "title_for_user": "Loyalty for {{email}}",
       "loading": "Loading account...",
       "back": "Back to user",
-      "view_link": "View loyalty",
+      "view_link": "View customer",
       "tier_label": "Current tier",
       "lifetime_points": "Lifetime points",
       "completed_bookings_label": "Completed bookings",
@@ -1870,6 +1875,64 @@
         "as_referred": "As referred",
         "empty_as_referrer": "No referrals sent",
         "empty_as_referred": "Not referred by anyone"
+      },
+      "credit": {
+        "title": "Customer credit",
+        "balance": "Balance",
+        "never_credited": "This customer has never been credited.",
+        "empty": "No credit movements yet.",
+        "success": "Credit issued.",
+        "actions": {
+          "issue": "Issue credit",
+          "expire": "Discharge balance"
+        },
+        "error": {
+          "generic": "We couldn't issue the credit. Please try again."
+        },
+        "reason": {
+          "dispute_settlement": "Dispute settlement",
+          "cleaner_no_show": "Cleaner no-show",
+          "goodwill": "Goodwill",
+          "order_payment": "Spent on a booking",
+          "order_payment_returned": "Returned from a cancelled booking",
+          "unknown": "Other",
+          "expired": "Expired"
+        },
+        "dialog": {
+          "title": "Issue credit",
+          "lede": "This is money the company owes from the moment you confirm it. It cannot be taken back here — the customer spends it on a booking, or asks to be paid out.",
+          "cancel": "Cancel",
+          "submit": "Issue credit",
+          "field": {
+            "amount": "Amount ({{currency}})",
+            "reason": "Reason",
+            "note": "What happened",
+            "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."
+          },
+          "validation": {
+            "amount_min": "Enter an amount above zero.",
+            "amount_max": "That is above the limit for a single credit. Issue it in smaller amounts.",
+            "note_required": "Say what happened.",
+            "note_max": "Keep this under 500 characters."
+          }
+        },
+        "column": {
+          "date": "When",
+          "amount": "Amount",
+          "reason": "Reason",
+          "note": "What happened"
+        },
+        "expire_success": "Discharged {{amount}}.",
+        "expire_error": "The balance could not be discharged.",
+        "expire_dialog": {
+          "title": "Discharge credit balance",
+          "lede": "This writes off the whole balance of {{amount}} {{currency}} and cannot be undone. Use it when the customer is leaving: erasure is refused while credit is outstanding.",
+          "field": {
+            "note": "Why",
+            "note_help": "The only record of why money the company owed stopped being owed. Name the request."
+          },
+          "submit": "Discharge"
+        }
       }
     },
     "loyalty_referrals": {
@@ -2367,6 +2430,11 @@
       "not_serviced": "This country is not serviced.",
       "required": "A country is required."
     },
+    "credit": {
+      "amount_exceeds_sanity_cap": "That amount is above the limit for a single credit. Issue it in smaller amounts if it is correct.",
+      "amount_not_whole_minor_units": "A credit amount cannot be smaller than one hundredth of the currency unit.",
+      "reason_not_issuable": "That reason describes credit being spent, not issued. Choose a dispute settlement, cleaner no-show or goodwill."
+    },
     "currency": {
       "cannot_delete_default": "Cannot delete the default currency",
       "code_already_exists": "A currency with this code already exists",
@@ -2386,7 +2454,9 @@
       "invalid_status_transition": "This status change is not allowed for the current dispute state.",
       "max_length_exceeded": "Maximum length exceeded",
       "not_found": "Dispute not found",
-      "not_owned_by_user": "This dispute belongs to a different user."
+      "not_owned_by_user": "This dispute belongs to a different user.",
+      "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it.",
+      "line_not_on_order": "That item isn't on this order."
     },
     "email": {
       "invalid_email": "Invalid email address",
@@ -2423,6 +2493,18 @@
       "size_exceeded": "File size exceeded maximum allowed size",
       "size_exceeded_10mb": "File size must not exceed 10 MB",
       "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
+    },
+    "gdpr": {
+      "export_failed": "We couldn't export this user's data. Please try again.",
+      "deletion_failed": "We couldn't delete this account. Please try again.",
+      "deletion_already_pending": "A deletion request for this account is already in progress.",
+      "deletion_blocked_by_order": "This account has active orders and cannot be deleted yet.",
+      "deletion_blocked_by_credit_balance": "This customer still has a credit balance. It has to be spent or paid out before the account can be deleted.",
+      "deletion_blocked_by_invoice": "This account has outstanding invoices and cannot be deleted yet.",
+      "deletion_blocked_by_assigned_order": "This cleaner is still assigned to a job and cannot be deleted yet.",
+      "deletion_blocked_by_unsettled_pay": "This cleaner is still owed pay. Settle it before deleting the account.",
+      "consent_not_found": "We couldn't find that consent setting.",
+      "consent_already_granted": "That consent has already been granted."
     },
     "general": {
       "not_found": "Resource not found"
@@ -2653,6 +2735,9 @@
         "scheme_not_supported": "Payouts to this kind of account are not supported yet",
         "swift_required": "The bank is in a different country than the employee's work country, so the bank's SWIFT/BIC code is also required."
       }
+    },
+    "review": {
+      "line_not_on_order": "You can't rate an item that isn't on this order."
     }
   },
   "cookies": {
@@ -2722,6 +2807,10 @@
     "messages": {
       "retry_scheduled": "Retry scheduled",
       "acknowledged": "Fiscal failure acknowledged"
+    },
+    "errors": {
+      "retry_scheduled": "That could not be done. Please try again.",
+      "acknowledged": "That could not be done. Please try again."
     }
   },
   "gdpr": {

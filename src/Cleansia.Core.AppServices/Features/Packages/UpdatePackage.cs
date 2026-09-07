@@ -1,7 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
-using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -15,10 +15,12 @@ public class UpdatePackage
         string PackageId,
         string Name,
         string Description,
+        string? Tagline,
+        bool IsPopular,
         decimal Price,
         List<string>? ServiceIds,
         Dictionary<string, decimal>? ServiceWeights,
-        Dictionary<string, CreateService.TranslationInput>? Translations) : ICommand<Response>;
+        Dictionary<string, PackageTranslationInput>? Translations) : ICommand<Response>;
 
     public record Response(string PackageId);
 
@@ -45,6 +47,10 @@ public class UpdatePackage
 
             RuleFor(x => x.Description)
                 .MaximumLength(500)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.Tagline)
+                .MaximumLength(60)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(x => x.Price)
@@ -79,6 +85,10 @@ public class UpdatePackage
                     translation.RuleFor(t => t.Value.Description)
                         .MaximumLength(500)
                         .WithMessage(BusinessErrorMessage.MaxLength);
+
+                    translation.RuleFor(t => t.Value.Tagline)
+                        .MaximumLength(60)
+                        .WithMessage(BusinessErrorMessage.MaxLength);
                 });
         }
     }
@@ -100,14 +110,16 @@ public class UpdatePackage
             package.Update(
                 command.Name,
                 command.Description,
-                command.Price);
+                command.Price,
+                command.Tagline,
+                command.IsPopular);
 
             package.ClearTranslations();
             if (command.Translations != null)
             {
                 foreach (var (languageCode, translation) in command.Translations)
                 {
-                    package.SetTranslation(languageCode, translation.Name, translation.Description);
+                    package.SetTranslation(languageCode, translation.Name, translation.Description, translation.Tagline);
                 }
             }
 

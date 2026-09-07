@@ -23,7 +23,19 @@ $white: #ffffff;
 $shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
 $shadow-md: 0 2px 8px rgba(15, 23, 42, 0.06);
 $shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08);
+// Action elevation is neutral, never a coloured halo — mobile uses Material
+// elevation and a tinted glow under a tinted button reads as a template.
+// -> agents/knowledge/design-language.md#24-shape-and-elevation
+$shadow-action: 0 2px 6px rgba(15, 23, 42, 0.12);
+$shadow-action-hover: 0 4px 10px rgba(15, 23, 42, 0.14);
 $radius: 0.75rem;
 $radius-lg: 1rem;
 $radius-xl: 1rem;
 $max-width: 1200px;
+
+// The home page is drawn on a 1440 canvas with 64px gutters, so its content is
+// 1312 wide — not 1200. Every section was 112px narrower than the artboard,
+// which is what read as "misaligned": the grids were right, the frame was not.
+// Kept separate from $max-width so the order wizard, catalogue, legal pages and
+// tracking page stay at the width they were designed against.
+$home-width: 1312px;

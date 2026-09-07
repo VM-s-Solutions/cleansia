@@ -1,48 +1,92 @@
-<div class="checkout-page">
-  <cleansia-dynamic-background [iconCount]="15" />
-  <div class="checkout-card">
-    <img src="assets/images/mascot/mascot-idea.png" alt="" class="checkout-card__mascot" loading="lazy" />
+<!-- The same `.cl-out` shape as the success return and the 404. -->
+<div class="cl-out">
+  <div class="cl-out__inner">
+    <img
+      class="cl-out__art"
+      src="assets/images/mascot/mascot-leaning-tile.webp"
+      alt=""
+      width="200"
+      height="200"
+      aria-hidden="true"
+    />
 
-    <h1 class="checkout-card__title">{{ 'pages.checkout.cancel.title' | translate }}</h1>
-    <p class="checkout-card__subtitle">{{ 'pages.checkout.cancel.subtitle' | translate }}</p>
-    <p class="checkout-card__desc">{{ 'pages.checkout.cancel.description' | translate }}</p>
+    <!--
+      Amber, never red: nothing failed and nothing was charged. Red would read
+      as "your booking is gone", which is the opposite of what happened.
+    -->
+    <span class="cl-out__chip cl-out__chip--pending">
+      <i class="pi pi-clock" aria-hidden="true"></i>
+      {{ 'pages.checkout.cancel.chip' | translate }}
+    </span>
 
-    <div class="checkout-card__divider"></div>
+    <h1 class="cl-out__title">{{ 'pages.checkout.cancel.title' | translate }}</h1>
 
-    <div class="checkout-card__reasons">
-      <h3 class="checkout-card__reasons-title">{{ 'pages.checkout.cancel.reasons_title' | translate }}</h3>
-      <div class="checkout-card__reason">
-        <i class="pi pi-refresh"></i>
-        <span>{{ 'pages.checkout.cancel.reason_changed_mind' | translate }}</span>
+    <!--
+      The one thing a customer here needs and would otherwise guess wrong:
+      `CreateOrder` runs BEFORE the redirect to Stripe, so backing out of
+      payment leaves a real, unpaid booking rather than nothing. Without this
+      sentence they book a second time.
+    -->
+    <p class="cl-out__lead">{{ 'pages.checkout.cancel.description' | translate }}</p>
+
+    <div class="cl-out__facts">
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon"><i class="pi pi-credit-card" aria-hidden="true"></i></span>
+        <div>
+          <div class="cl-out__fact-title">{{ 'pages.checkout.cancel.fact_card' | translate }}</div>
+          <p class="cl-out__fact-note">{{ 'pages.checkout.cancel.fact_card_note' | translate }}</p>
+        </div>
       </div>
-      <div class="checkout-card__reason">
-        <i class="pi pi-pencil"></i>
-        <span>{{ 'pages.checkout.cancel.reason_wrong_details' | translate }}</span>
+
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon"><i class="pi pi-calendar" aria-hidden="true"></i></span>
+        <div>
+          <div class="cl-out__fact-title">{{ 'pages.checkout.cancel.fact_slot' | translate }}</div>
+          <p class="cl-out__fact-note">{{ 'pages.checkout.cancel.fact_slot_note' | translate }}</p>
+        </div>
       </div>
-      <div class="checkout-card__reason">
-        <i class="pi pi-credit-card"></i>
-        <span>{{ 'pages.checkout.cancel.reason_payment_issue' | translate }}</span>
+
+      <div class="cl-out__fact">
+        <span class="cl-out__fact-icon">
+          <i class="pi pi-question-circle" aria-hidden="true"></i>
+        </span>
+        <div>
+          <div class="cl-out__fact-title">{{ 'pages.checkout.cancel.fact_help' | translate }}</div>
+          <p class="cl-out__fact-note">{{ 'pages.checkout.cancel.fact_help_note' | translate }}</p>
+        </div>
       </div>
     </div>
 
-    <div class="checkout-card__actions">
-      <a [routerLink]="'/' + routes.ORDER" class="checkout-card__btn checkout-card__btn--primary">
-        <i class="pi pi-replay"></i>
-        {{ 'pages.checkout.cancel.try_again' | translate }}
-      </a>
-      <a [routerLink]="'/' + routes.ORDERS" class="checkout-card__btn checkout-card__btn--outline">
-        <i class="pi pi-list"></i>
-        {{ 'pages.checkout.cancel.view_orders' | translate }}
-      </a>
+    <!--
+      "Pay now" replays the checkout the customer abandoned rather than sending
+      them back through the booking wizard from a blank slate. Only offered to a
+      signed-in customer whose order Stripe named in the return URL — the
+      endpoint is [Authorize], so a guest gets the wizard instead.
+    -->
+    <div class="cl-out__actions">
+      @if (canResume()) {
+        <button
+          type="button"
+          class="cl-out__cta"
+          [disabled]="resuming()"
+          (click)="resumeCheckout()"
+        >
+          @if (resuming()) {
+            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+          }
+          {{ 'pages.checkout.cancel.pay_now' | translate }}
+        </button>
+        <a class="cl-out__alt" [routerLink]="'/' + routes.ORDER">
+          {{ 'pages.checkout.cancel.try_again' | translate }}
+        </a>
+      } @else {
+        <a class="cl-out__cta" [routerLink]="'/' + routes.ORDER">
+          {{ 'pages.checkout.cancel.try_again' | translate }}
+        </a>
+        <a class="cl-out__alt" [routerLink]="ordersRoute">
+          {{ 'pages.checkout.cancel.view_orders' | translate }}
+        </a>
+      }
     </div>
-
-    <a [routerLink]="'/'" class="checkout-card__home-link">
-      <i class="pi pi-arrow-left"></i>
-      {{ 'pages.checkout.cancel.back_home' | translate }}
-    </a>
-
-    <p class="checkout-card__support">
-      {{ 'pages.checkout.cancel.contact_support' | translate }}
-    </p>
   </div>
 </div>

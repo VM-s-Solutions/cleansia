@@ -49,6 +49,7 @@ public class AdminPackageController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreatePackage(
         [FromBody] CreatePackage.Command command,
         CancellationToken cancellationToken)
@@ -64,6 +65,7 @@ public class AdminPackageController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdatePackage(
         string packageId,
         [FromBody] UpdatePackage.Command command,
@@ -116,6 +118,7 @@ public class AdminPackageController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeletePackage(
         string packageId,
         CancellationToken cancellationToken)

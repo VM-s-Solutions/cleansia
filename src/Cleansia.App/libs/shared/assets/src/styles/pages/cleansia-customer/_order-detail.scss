@@ -1,0 +1,775 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// One order — built against the "Objednávky zákazníka" board, Detail artboard
+// =============================================================================
+// The page this replaces was a single column of nine little sections stacked in
+// one card: Status, Service Details, Address, Packages, Services, Total,
+// Timeline, Notes, Confirmation. It said everything and showed nothing.
+//
+// The board's shape is two columns — 1.55fr / 1fr — and its argument is the
+// first card in the left one: an order's state is TWO INDEPENDENT AXES and one
+// timeline cannot say them. Order.CurrentStatus tracks the cleaning,
+// PaymentStatus x PaymentType tracks the money. Confirmed means EITHER "money
+// arrived" OR "a cleaner took it": a cash order is Confirmed with nothing paid,
+// and a card order is Confirmed the moment Stripe says so, possibly with nobody
+// assigned. "Cleaner assigned" therefore reads off AssignedEmployees and never
+// off Confirmed — the board's own note calls that the most common mistake made
+// against this domain. → /domain/order-lifecycle
+//
+// Measurements off the artboard:
+//   grid 1.55fr/1fr gap 24; cards radius 28, padding 26/28
+//   axes 1fr 1fr with 40px between; step gap 14, dot 32, connector 2px at x=15
+//   price row 7px vertical, total 22px in the accent
+
+.order-detail {
+  position: relative;
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding-top: var(--cl-nav-h);
+  padding-bottom: calc(3.75 * var(--cl-u));
+  background: var(--cl-page);
+  min-height: 100vh;
+}
+
+// ---- The band the page opens on ---------------------------------------------
+.order-detail__hero {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: 0 auto;
+  padding: calc(2 * var(--cl-u)) var(--cl-gutter) 0;
+}
+
+.order-detail__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+
+  i {
+    font-size: calc(0.75 * var(--cl-u));
+  }
+}
+
+.order-detail__breadcrumb-link {
+  color: var(--cl-heading);
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.order-detail__hero-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cl-u);
+  margin-top: calc(0.75 * var(--cl-u));
+}
+
+.order-detail__title {
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  line-height: 1.16;
+  letter-spacing: -0.9px;
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+.order-detail__lead {
+  margin: calc(0.5 * var(--cl-u)) 0 0;
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-body);
+}
+
+// ---- Two columns ------------------------------------------------------------
+.order-detail__grid,
+.order-detail__skeleton,
+.order-detail__error {
+  max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
+  margin: calc(2.125 * var(--cl-u)) auto 0;
+  padding: 0 var(--cl-gutter);
+}
+
+.order-detail__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: calc(1.5 * var(--cl-u));
+  align-items: start;
+}
+
+.order-detail__col {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.25 * var(--cl-u));
+  min-width: 0;
+}
+
+.order-detail__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.25 * var(--cl-u));
+}
+
+.order-detail__error {
+  text-align: center;
+  padding-top: calc(3 * var(--cl-u));
+  color: var(--cl-body);
+
+  i {
+    display: block;
+    margin-bottom: var(--cl-u);
+    font-size: calc(3 * var(--cl-u));
+    color: var(--cl-faint);
+  }
+
+  h3 {
+    font-family: $font-heading;
+    font-weight: 600;
+    font-size: calc(1.5 * var(--cl-u));
+    color: var(--cl-heading);
+    margin: 0 0 calc(1.25 * var(--cl-u));
+  }
+}
+
+// ---- Cards ------------------------------------------------------------------
+.order-detail__card {
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: calc(1.75 * var(--cl-u));
+  padding: calc(1.625 * var(--cl-u)) calc(1.75 * var(--cl-u));
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.order-detail__card-title {
+  font-family: $font-heading;
+  font-weight: 600;
+  font-size: calc(1.25 * var(--cl-u));
+  letter-spacing: -0.2px;
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+.order-detail__card-lead {
+  margin: calc(0.375 * var(--cl-u)) 0 0;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+// ---- The two axes -----------------------------------------------------------
+.order-detail__axes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 calc(2.5 * var(--cl-u));
+  margin-top: calc(0.875 * var(--cl-u));
+}
+
+.order-detail__axis {
+  min-width: 0;
+}
+
+.order-detail__axis-name {
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.order-detail__axis-lead {
+  margin: calc(0.375 * var(--cl-u)) 0 var(--cl-u);
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+// A step is a dot, a connector down to the next one, and two lines of text.
+// The connector is drawn from the step rather than between steps so the last
+// one simply has none.
+.order-detail__step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.875 * var(--cl-u));
+  padding-bottom: calc(1.25 * var(--cl-u));
+
+  &:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: calc(2 * var(--cl-u));
+    bottom: -6px;
+    width: 2px;
+    background: var(--cl-border);
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.order-detail__step-dot {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(2 * var(--cl-u));
+  height: calc(2 * var(--cl-u));
+  border-radius: 999px;
+  // Not reached yet: hollow. It is a step that has not happened, not a step
+  // that failed, so it carries no colour at all.
+  background: var(--cl-surface);
+  border: 2px solid var(--cl-border);
+  // The tick reads as a hole punched in the dot, so it takes the ground colour
+  // rather than white: in dark mode the filled dot is a LIGHT blue and a white
+  // tick on it is barely there.
+  color: var(--cl-surface);
+
+  i {
+    font-size: calc(0.75 * var(--cl-u));
+  }
+}
+
+.order-detail__step--done .order-detail__step-dot {
+  background: var(--cl-heading);
+  border-color: var(--cl-heading);
+}
+
+// Where the order is RIGHT NOW: a ring with a filled centre, so it reads as a
+// position rather than as another completed step.
+.order-detail__step--current .order-detail__step-dot {
+  background: var(--cl-surface);
+  border-color: var(--cl-heading);
+  box-shadow: inset 0 0 0 4px var(--cl-heading);
+}
+
+.order-detail__step--danger .order-detail__step-dot {
+  background: var(--cl-danger);
+  border-color: var(--cl-danger);
+}
+
+.order-detail__step-text {
+  padding-top: 4px;
+  min-width: 0;
+}
+
+.order-detail__step-title {
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-ink);
+}
+
+.order-detail__step--current .order-detail__step-title {
+  color: var(--cl-heading);
+}
+
+// A step that has not happened says so by being quiet, not by being greyed out
+// to the point of being unreadable.
+.order-detail__step:not(.order-detail__step--done) .order-detail__step-title {
+  color: var(--cl-muted);
+}
+
+.order-detail__step--current .order-detail__step-title {
+  color: var(--cl-heading);
+}
+
+.order-detail__step-meta {
+  margin-top: 1px;
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+  overflow-wrap: anywhere;
+}
+
+.order-detail__cancellation-reason {
+  margin-top: var(--cl-u);
+  padding: var(--cl-u);
+  border-radius: var(--cl-u);
+  background: var(--cl-danger-soft);
+  border: 1px solid var(--cl-danger-line);
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+// ---- Who is coming ----------------------------------------------------------
+.order-detail__cleaner {
+  display: flex;
+  align-items: center;
+  gap: var(--cl-u);
+  padding: calc(1.125 * var(--cl-u)) calc(1.75 * var(--cl-u));
+  border-radius: calc(1.75 * var(--cl-u));
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.order-detail__cleaner-avatar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(3 * var(--cl-u));
+  height: calc(3 * var(--cl-u));
+  border-radius: 999px;
+  background: var(--cl-heading);
+  color: #fff;
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.0625 * var(--cl-u));
+}
+
+.order-detail__cleaner-text {
+  min-width: 0;
+}
+
+.order-detail__cleaner-name {
+  font-family: $font-heading;
+  font-weight: 600;
+  font-size: calc(1.125 * var(--cl-u));
+  color: var(--cl-heading);
+}
+
+.order-detail__cleaner-meta {
+  margin-top: 2px;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.order-detail__mascot-row {
+  display: flex;
+  justify-content: center;
+}
+
+.order-detail__mascot {
+  width: 100%;
+  max-width: calc(11 * var(--cl-u));
+  height: auto;
+  display: block;
+}
+
+// ---- The facts of the booking -----------------------------------------------
+.order-detail__fact {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.75 * var(--cl-u));
+  padding: calc(0.875 * var(--cl-u)) 0;
+  border-bottom: 1px solid var(--cl-border);
+
+  &:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  > i {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: var(--cl-u);
+    color: var(--cl-muted);
+  }
+}
+
+.order-detail__fact-label {
+  display: block;
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.order-detail__fact-value {
+  margin-top: 3px;
+  font-size: calc(0.9375 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-body);
+  overflow-wrap: anywhere;
+}
+
+// The instructions run under the mode they belong to, quieter, because the mode
+// is the answer and this is the footnote on it.
+.order-detail__fact-detail {
+  margin-top: 1px;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+// The code read on the doorstep — the one thing here a customer needs to find
+// while standing up, on a phone, in a hallway.
+//
+// It used to be a green band floating BELOW the card, which put the page's
+// loudest colour on the page's least urgent surface and read as a notification
+// about something else. It closes the booking card instead: it is the last fact
+// of the same booking, and the figure carries the emphasis rather than the
+// ground. Green is gone with it — the code is a credential, not a success.
+.order-detail__code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cl-u);
+  margin-top: calc(1.125 * var(--cl-u));
+  padding: calc(1.125 * var(--cl-u)) calc(1.25 * var(--cl-u));
+  border-radius: calc(1.125 * var(--cl-u));
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border-tint);
+}
+
+.order-detail__code-text {
+  min-width: 0;
+}
+
+.order-detail__code-hint {
+  margin: 3px 0 0;
+  max-width: 34em;
+  font-size: calc(0.8125 * var(--cl-u));
+  line-height: 1.55;
+  color: var(--cl-muted);
+}
+
+// Tracked and tabular: this figure is read OUT LOUD, one character at a time,
+// so the characters need to come apart and 0/O and 1/I need to look different.
+.order-detail__code-value {
+  flex-shrink: 0;
+  padding: calc(0.375 * var(--cl-u)) calc(0.875 * var(--cl-u));
+  border-radius: calc(0.75 * var(--cl-u));
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border-tint);
+  font-family: $font-heading;
+  font-weight: 700;
+  font-size: calc(1.5 * var(--cl-u));
+  line-height: 1.25;
+  letter-spacing: 0.16em;
+  // The tracking is on the RIGHT of every glyph including the last, which
+  // throws the chip's padding out by that much. Take it back.
+  text-indent: 0.16em;
+  color: var(--cl-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+// ---- What it cost -----------------------------------------------------------
+.order-detail__price-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cl-u);
+  padding: calc(0.4375 * var(--cl-u)) 0;
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+
+  &:first-of-type {
+    margin-top: calc(0.375 * var(--cl-u));
+  }
+
+  // A discount is money coming BACK, so it reads in the accent rather than in
+  // the ink the charges use — the sign alone is easy to miss in a column.
+  &--discount {
+    color: var(--cl-heading);
+  }
+}
+
+.order-detail__price-amount {
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--cl-ink);
+}
+
+.order-detail__price-line--discount .order-detail__price-amount {
+  color: var(--cl-heading);
+}
+
+.order-detail__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cl-u);
+  margin-top: calc(0.875 * var(--cl-u));
+  padding-top: calc(0.875 * var(--cl-u));
+  border-top: 1px solid var(--cl-border);
+  font-size: calc(1.0625 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-heading);
+}
+
+.order-detail__total-amount {
+  font-family: $font-heading;
+  font-size: calc(1.5 * var(--cl-u));
+  letter-spacing: -0.4px;
+  color: var(--cl-accent);
+  white-space: nowrap;
+}
+
+// ---- What you can do --------------------------------------------------------
+.order-detail__actions {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.625 * var(--cl-u));
+  margin-top: var(--cl-u);
+}
+
+// Full-width outlined rows, as the board draws them: three choices of equal
+// weight, none of which is the page's primary action.
+.order-detail__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(0.5 * var(--cl-u));
+  width: 100%;
+  min-height: calc(2.875 * var(--cl-u));
+  padding: 0 var(--cl-u);
+  border-radius: 999px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border-tint);
+  font-family: $font-body;
+  font-weight: 800;
+  font-size: var(--cl-u);
+  color: var(--cl-heading);
+  cursor: pointer;
+  transition: background 0.16s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--cl-tint);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.order-detail__policy {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.5 * var(--cl-u));
+  margin: calc(1.125 * var(--cl-u)) 0 0;
+  font-size: calc(0.8125 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-muted);
+
+  i {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+}
+
+// ---- Rating -----------------------------------------------------------------
+.order-detail__review-display {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.5 * var(--cl-u));
+  margin-top: var(--cl-u);
+}
+
+// Per-item scores. A disclosure, closed by default: the overall rating is the required one and this
+// list must not compete with it. Rows are name-left / stars-right so the stars line up into a column
+// the eye can run down — the whole value of scoring items separately is seeing them side by side.
+.order-detail__review-lines {
+  margin-top: calc(0.75 * var(--cl-u));
+  padding-top: calc(0.75 * var(--cl-u));
+  border-top: 1px solid var(--cl-border);
+}
+
+.order-detail__review-lines-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(0.4375 * var(--cl-u));
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  font-size: calc(0.875 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-heading);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 3px;
+  }
+}
+
+.order-detail__review-lines-hint {
+  margin: calc(0.375 * var(--cl-u)) 0 calc(0.625 * var(--cl-u));
+  font-size: calc(0.8125 * var(--cl-u));
+  line-height: 1.5;
+  color: var(--cl-muted);
+}
+
+.order-detail__review-line-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.25 * var(--cl-u));
+}
+
+.order-detail__review-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(0.75 * var(--cl-u));
+  padding: calc(0.375 * var(--cl-u)) 0;
+}
+
+.order-detail__review-line-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.order-detail__review-line-name {
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+// The bundle it came in. Quiet: two rows can share a name and only this tells them apart.
+.order-detail__review-line-pkg {
+  font-size: calc(0.75 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.order-detail__review-line-stars {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 1px;
+}
+
+.order-detail__review-line-star {
+  padding: 2px;
+  background: none;
+  border: 0;
+  color: var(--cl-accent);
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+}
+
+.order-detail__review-stars {
+  display: flex;
+  gap: calc(0.25 * var(--cl-u));
+
+  i {
+    font-size: calc(1.5 * var(--cl-u));
+    color: var(--cl-warn-ink);
+  }
+
+  &--interactive i {
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    &:hover {
+      transform: scale(1.2);
+    }
+  }
+}
+
+.order-detail__review-comment {
+  margin: 0;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--cl-body);
+}
+
+.order-detail__review-date {
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.order-detail__review-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cl-u);
+  margin-top: var(--cl-u);
+}
+
+.order-detail__review-prompt {
+  margin: 0;
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.order-detail__review-textarea {
+  width: 100%;
+  min-height: calc(5 * var(--cl-u));
+  padding: calc(0.75 * var(--cl-u)) var(--cl-u);
+  border: 1px solid var(--cl-field-border);
+  border-radius: calc(0.875 * var(--cl-u));
+  background: var(--cl-surface);
+  color: var(--cl-body);
+  font-family: $font-body;
+  font-size: var(--cl-u);
+  resize: vertical;
+
+  &:hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  &:focus {
+    outline: 0;
+    border-color: var(--cl-accent);
+    box-shadow: 0 0 0 3px var(--cl-tint-strong);
+  }
+
+  &::placeholder {
+    color: var(--cl-faint);
+  }
+}
+
+// ---- The preferred-cleaner offer --------------------------------------------
+// Rendered by order-preferred-offer.component, which shares this namespace.
+// → /domain/offerability
+//
+// The component's whole template is behind an `@if`, so on an order with no
+// offer the host element is still a flex item of the column and contributes a
+// gap where nothing is drawn. `display: contents` takes the host out of the
+// layout entirely and lets the card inside be the flex item when there is one.
+cleansia-customer-order-preferred-offer {
+  display: contents;
+}
+
+.order-detail__preferred {
+  padding: calc(1.125 * var(--cl-u)) calc(1.75 * var(--cl-u));
+  border-radius: calc(1.75 * var(--cl-u));
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border);
+}
+
+.order-detail__preferred-headline {
+  margin: 0 0 4px;
+  font-weight: 800;
+  color: var(--cl-heading);
+}
+
+.order-detail__preferred-body {
+  margin: 0;
+  font-size: calc(0.9375 * var(--cl-u));
+  color: var(--cl-body);
+}
+
+.order-detail__preferred-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.75 * var(--cl-u));
+  margin-top: calc(0.75 * var(--cl-u));
+}
+
+// ---- Narrow -----------------------------------------------------------------
+@media (max-width: 1000px) {
+  .order-detail__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .order-detail__axes {
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(1.5 * var(--cl-u)) 0;
+  }
+}

@@ -84,9 +84,15 @@
 
     @if (facade.activePanel() === 'reassign') {
     <div class="order-ops__panel">
+      <!--
+        No crew is the case an admin is CALLED INTO, not a reason to hide the form. The server's
+        reassign command takes a null source as "a pure add into an open spot", and requiring one here
+        made the platform's own escalation path unreachable: a job whose cleaners walked, or which
+        nobody ever took, could not be staffed by anybody.
+      -->
       @if (!hasAssignedEmployees()) {
-      <p class="order-ops__empty">
-        {{ 'pages.order_management.ops.reassign.none_assigned' | translate }}
+      <p class="order-ops__hint">
+        {{ 'pages.order_management.ops.reassign.add_only_hint' | translate }}
       </p>
       } @else {
       <p class="order-ops__hint">
@@ -97,8 +103,9 @@
         [options]="fromEmployeeOptions()"
         [ngModel]="facade.fromEmployeeId()"
         (valueChanges)="onFromEmployeeChange($event)"
-        [showClear]="false"
+        [showClear]="true"
       />
+      }
       <cleansia-text-input
         [label]="'pages.order_management.ops.reassign.to' | translate"
         [placeholder]="
@@ -117,7 +124,6 @@
         [disabled]="!facade.canSubmitReassign()"
         (onClick)="submitReassign()"
       />
-      }
     </div>
     }
 

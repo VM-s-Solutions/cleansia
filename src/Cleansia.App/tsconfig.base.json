@@ -147,6 +147,9 @@
       "@cleansia-customer/login": [
         "libs/cleansia-customer-features/login/src/index.ts"
       ],
+      "@cleansia-customer/plus": [
+        "libs/cleansia-customer-features/plus/src/index.ts"
+      ],
       "@cleansia-customer/order-wizard": [
         "libs/cleansia-customer-features/order-wizard/src/index.ts"
       ],
@@ -181,6 +184,7 @@
         "libs/data-access/customer-stores/src/index.ts"
       ],
       "@cleansia/components": ["libs/shared/components/src/index.ts"],
+      "@cleansia/components/*": ["libs/shared/components/src/lib/*"],
       "@cleansia/directives": ["libs/shared/directives/src/index.ts"],
       "@cleansia/models": ["libs/shared/models/src/index.ts"],
       "@cleansia/partner-services": ["libs/core/partner-services/src/index.ts"],

@@ -48,9 +48,16 @@ public class AppConfigurationProvider(CleansiaDbContext dbContext, ITenantProvid
                 return countryFlag.IsEnabled;
         }
 
+        // ScopeValue == null is part of what "global" MEANS, and leaving it out of the predicate made
+        // this read match a row it should never have considered: CreateFeatureFlag validates Scope and
+        // ScopeValue independently, so ('X', 'global', 'CZ') is accepted, and this query would then
+        // race it against the real global row with no ORDER BY to decide between them. The unique
+        // index cannot close this one — the two rows differ.
         var globalFlag = await dbContext.FeatureFlags
             .AsNoTracking()
-            .FirstOrDefaultAsync(f => f.Name == featureName && f.Scope == "global", cancellationToken);
+            .FirstOrDefaultAsync(
+                f => f.Name == featureName && f.Scope == "global" && f.ScopeValue == null,
+                cancellationToken);
 
         return globalFlag?.IsEnabled ?? false;
     }

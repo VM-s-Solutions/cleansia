@@ -7,7 +7,10 @@ import {
   ChangePasswordCommand,
   CustomerClient,
   GetCurrentUserQuery,
+  GetMyCreditResponse,
+  LoyaltyTier,
   MyProfileDto,
+  UpdateCurrentUserPhotoCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
 import { SavedAddressStore } from '@cleansia/customer-stores';
@@ -37,6 +40,26 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   readonly avatarUrl = signal<string | null>(null);
   readonly avatarSaving = signal(false);
 
+  /**
+   * The account's loyalty tier, for the one line the board puts under the
+   * avatar in the left rail. Read through `customerClient.loyaltyClient` rather
+   * than through the rewards feature's own facade: the rail needs one enum, and
+   * importing a sibling feature to get it would cross a module boundary for a
+   * label. A failure leaves it null and the rail simply omits the row.
+   */
+  readonly loyaltyTier = signal<LoyaltyTier | null>(null);
+
+  /**
+   * The customer's credit balance, for the rail row that tells them the platform owes them money.
+   *
+   * <p>Owner ruling 2026-09-05: credit applies automatically to the next booking, so there is nothing
+   * to manage here and no control to offer — but a balance the customer cannot see anywhere is a
+   * balance they do not know they have, and the booking summary only shows it once they are already
+   * mid-booking. Read the same way the tier row is, and just as non-blocking: a failure leaves it null
+   * and the rail omits the row.</p>
+   */
+  readonly credit = signal<GetMyCreditResponse | null>(null);
+
   private avatarFileName: string | null = null;
   private avatarRetryAvailable = true;
   private adoptNextAvatarUrl = false;
@@ -57,12 +80,36 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           this.user.set(user);
           this.applyAvatar(user.profilePhoto);
           this.loading.set(false);
+          this.loadLoyaltyTier();
+          this.loadCredit();
           onSuccess?.(user);
         },
         error: () => {
           this.loading.set(false);
         },
       });
+  }
+
+  /** Never blocks the page: a customer with no credit is the common case, and renders as nothing. */
+  private loadCredit(): void {
+    this.customerClient.creditClient
+      .getMy()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+      )
+      .subscribe((credit) => this.credit.set(credit));
+  }
+
+  /** Never blocks the page: the rail's tier row is decoration on an account screen. */
+  private loadLoyaltyTier(): void {
+    this.customerClient.loyaltyClient
+      .getMy()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null)),
+      )
+      .subscribe((account) => this.loyaltyTier.set(account?.currentTier ?? null));
   }
 
   saveProfile(
@@ -142,15 +189,25 @@ export class ProfileFacade extends UnsubscribeControlDirective {
     this.loadProfile();
   }
 
+  /**
+   * The avatar goes out ON ITS OWN. It used to travel as a full profile save,
+   * because that was the only endpoint that could move one — so an upload was
+   * validated as if the customer had edited their name and number, and an
+   * account with no phone number was rejected on the phone rule. There is a
+   * command for exactly this edit now. -> UpdateCurrentUserPhoto
+   */
   private submitAvatarChange(intent: AvatarIntent, successKey: string): void {
-    const user = this.user();
-    if (!user) return;
+    if (!this.user()) return;
+
+    const command = new UpdateCurrentUserPhotoCommand();
+    command.removePhoto = intent.kind === 'remove';
+    if (intent.kind === 'upload') {
+      command.photo = intent.photo;
+    }
 
     this.avatarSaving.set(true);
     this.customerClient.userClient
-      .updateCurrentUser(
-        buildUpdateCurrentUserCommand(this.detailsOf(user), intent),
-      )
+      .updateCurrentUserPhoto(command)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null)),

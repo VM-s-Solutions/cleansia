@@ -51,7 +51,8 @@ protocol OrderClient: Sendable {
         orderId: String,
         rating: Int,
         comment: String?,
-        tags: [CustomerReviewTag]
+        tags: [CustomerReviewTag],
+        lines: [OrderItemLineScore]
     ) async -> ApiResult<OrderReviewDto>
     func downloadReceipt(orderId: String) async -> ApiResult<URL>
     func getPhotos(orderId: String) async -> ApiResult<OrderPhotos>
@@ -93,7 +94,8 @@ struct LiveOrderClient: OrderClient {
         orderId: String,
         rating: Int,
         comment: String?,
-        tags: [CustomerReviewTag]
+        tags: [CustomerReviewTag],
+        lines: [OrderItemLineScore]
     ) async -> ApiResult<OrderReviewDto> {
         // The app-side raw values ARE the wire values, so this is the identity — no lookup table to
         // drift from the server's enum.
@@ -101,7 +103,15 @@ struct LiveOrderClient: OrderClient {
             orderId: orderId,
             rating: rating,
             comment: comment,
-            tags: tags.compactMap { ReviewTag(rawValue: $0.rawValue) }
+            tags: tags.compactMap { ReviewTag(rawValue: $0.rawValue) },
+            // nil, not [], when nothing was scored — the wire shape every other client sends.
+            lines: lines.isEmpty ? nil : lines.map {
+                SubmitOrderReviewReviewLineScore(
+                    serviceId: $0.serviceId,
+                    packageId: $0.packageId,
+                    rating: $0.rating
+                )
+            }
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerOrderAPI.orderSubmitReview(submitOrderReviewCommand: command)

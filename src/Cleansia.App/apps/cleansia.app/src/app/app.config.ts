@@ -4,7 +4,6 @@ import {
   provideHttpClient,
   withFetch,
   withInterceptors,
-  withJsonpSupport,
 } from '@angular/common/http';
 import localeCs from '@angular/common/locales/cs';
 import localeEn from '@angular/common/locales/en';
@@ -21,7 +20,6 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
@@ -33,15 +31,16 @@ import {
   GOOGLE_CLIENT_ID,
   initializeTranslations,
   JsonTranslationLoader,
+  ADDRESS_SEARCH_PORT,
   MAPBOX_AUTOCOMPLETE_ENABLED,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
-import { provideStore, StoreModule } from '@ngrx/store';
-import { StoreDevtoolsModule } from '@ngrx/store-devtools';
+import { StoreModule } from '@ngrx/store';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import * as Sentry from '@sentry/angular';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
+import { customerAddressSearchPort } from './address-search.port';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
 import { APP_INTERCEPTORS_FN } from './http-interceptors';
@@ -67,7 +66,13 @@ export const appConfig: ApplicationConfig = {
     // authenticated GET was eligible. Both are fixed in 20.3.25/20.3.27, so the
     // cache is back on and the first-load re-fetch it cost is gone with it.
     provideClientHydration(withEventReplay()),
-    provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
+    provideRouter(
+      appRoutes,
+      // `anchorScrolling` was off, so every in-page link — the navbar's Ceník and
+      // "Jak to chodí", the footer's FAQ — navigated to `/` and scrolled to the
+      // top instead of to the section. The fragment was parsed and then ignored.
+      withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
+    ),
     provideAnimationsAsync(),
     providePrimeNG({
       theme: { preset: CleansiaPreset, options: { darkModeSelector: '.dark-mode' } },
@@ -92,7 +97,6 @@ export const appConfig: ApplicationConfig = {
     ConfirmationService,
     provideHttpClient(
       withFetch(),
-      withJsonpSupport(),
       withInterceptors(APP_INTERCEPTORS_FN)
     ),
     {
@@ -102,13 +106,14 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: CUSTOMER_API_BASE_URL, useValue: environment.apiBaseUrl },
-    // The Mapbox token is NOT shipped to the browser. We only
-    // advertise (token-free) whether geocoding is configured; the same-origin
-    // proxy (server.ts) injects the credential server-side.
+    // The Mapbox token is NOT shipped to the browser. We only advertise
+    // (token-free) whether geocoding is configured; the credential lives on the
+    // API, which is also what performs the lookup.
     {
       provide: MAPBOX_AUTOCOMPLETE_ENABLED,
       useValue: !!(environment.mapboxToken ?? '').trim(),
     },
+    { provide: ADDRESS_SEARCH_PORT, useFactory: customerAddressSearchPort },
     // The GSI client id is public by design (Google gates access on the page
     // origin, not on secrecy), but it is per-deployment: hard-coding one id in
     // the login/register components made every build advertise the local-dev
@@ -135,9 +140,7 @@ export const appConfig: ApplicationConfig = {
         csrfToken: 'customer_csrf',
       },
     },
-    provideStore(),
     importProvidersFrom(
-      BrowserAnimationsModule,
       StoreModule.forRoot(customerReducers, {
         runtimeChecks: {
           strictStateImmutability: true,
@@ -145,9 +148,6 @@ export const appConfig: ApplicationConfig = {
         },
       }),
       EffectsModule.forRoot(customerEffects),
-      ...(!environment.isDevelopment
-        ? []
-        : [StoreDevtoolsModule.instrument({ maxAge: 25 })])
     ),
   ],
 };

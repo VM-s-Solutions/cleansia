@@ -72,7 +72,16 @@ class SavedAddressApi(
             ),
         )
 
-    suspend fun delete(id: String): Response<Unit> = savedAddressApi.savedAddressDelete(id = id)
+    /**
+     * The response body is discarded on purpose: it echoes the id that was just deleted, and no caller
+     * has anything to do with it.
+     *
+     * The refreshed spec TYPED this response (it previously had no schema, so the generator produced
+     * `Response<Unit>` and the body was dropped by the type system rather than by choice). Mapping to
+     * Unit here keeps every caller unchanged and makes the discard deliberate.
+     */
+    suspend fun delete(id: String): Response<Unit> =
+        savedAddressApi.savedAddressDelete(id = id).mapWire { }
 }
 
 // ─── Generated → app DTO mappers ───

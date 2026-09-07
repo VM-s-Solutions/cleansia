@@ -22,10 +22,13 @@ const I18N_DIR = join(
   'Cleansia.App/apps/cleansia.app/src/assets/i18n'
 );
 
+// The sales copy moved when /plus became the product's one page and
+// /membership/subscribe was retired. The CLAIM is the same, so the guard
+// follows it rather than lapsing.
 const SUBSCRIBE_TEMPLATE = join(
   SOLUTION_DIR,
-  'Cleansia.App/libs/cleansia-customer-features/profile/src/lib/membership',
-  'membership-subscribe.component.html'
+  'Cleansia.App/libs/cleansia-customer-features/plus/src/lib/plus',
+  'plus-page.component.html'
 );
 
 /**

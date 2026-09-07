@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Bookings;
+﻿using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
@@ -179,7 +179,8 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             selectedPackageIds: template.SelectedPackageIds.ToList(),
             paymentType: template.PaymentType,
             startsOn: template.StartsOn,
-            endsOn: template.EndsOn);
+            endsOn: template.EndsOn,
+            preferredEmployeeId: template.PreferredEmployeeId);
 
         await ctx.CommitAsync(CancellationToken.None);
     }

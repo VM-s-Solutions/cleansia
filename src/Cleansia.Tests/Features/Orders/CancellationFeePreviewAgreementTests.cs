@@ -38,6 +38,7 @@ public class CancellationFeePreviewAgreementTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IRefundService> _refundService = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<INotificationProducer> _producer = new();
@@ -66,6 +67,7 @@ public class CancellationFeePreviewAgreementTests
             _orderRepository.Object,
             _session.Object,
             _refundService.Object,
+            _creditAccountRepository.Object,
             _loyaltyService.Object,
             Resolver,
             _producer.Object,

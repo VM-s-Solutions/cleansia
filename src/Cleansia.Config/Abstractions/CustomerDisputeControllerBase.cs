@@ -19,11 +19,15 @@ public abstract class CustomerDisputeControllerBase(IMediator mediator) : Cleans
     protected async Task<IActionResult> CreateDisputeCore(CreateDispute.Command command, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(command, cancellationToken);
-        // HandleSuccess matches BusinessResult<T> by T; passing string (not CreateDispute.Response)
-        // intentionally falls through to an empty 200 body — the historical wire shape this surface
-        // exposes. Changing it to return the DisputeId is a generated-client change handled in its
-        // own ticket, not here.
-        return HandleResult<string>(result);
+        // The T here MUST be the command's own response type. `HandleSuccess<T>` matches
+        // `BusinessResult<T>` by T, so passing `string` against a `BusinessResult<Response>`
+        // matched nothing and fell through to `Ok()` — an empty 200 body, whatever the
+        // ProducesResponseType said.
+        //
+        // Owner, 2026-09-03: a photo attached while FILING a dispute never arrived. That is why.
+        // The dispute is created and the evidence belongs to it, but the caller was handed no id
+        // to upload the evidence against, so the file had nowhere to go.
+        return HandleResult<CreateDispute.Response>(result);
     }
 
     protected async Task<IActionResult> GetDisputeByIdCore(string disputeId, CancellationToken cancellationToken)

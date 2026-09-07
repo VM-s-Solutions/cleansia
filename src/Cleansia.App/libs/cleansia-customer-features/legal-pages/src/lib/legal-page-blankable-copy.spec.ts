@@ -50,8 +50,12 @@ describe.each(PAGES)('$name legal page', ({ component, namespace }) => {
   }
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
-  const notice = (): HTMLElement | null => host().querySelector('.legal-page__notice-text');
-  const meta = (): HTMLElement | null => host().querySelector('.legal-page__meta');
+  // Both pages render through LegalDocumentComponent now — one shape, two
+  // namespaces — so these are its class names. What is guarded is unchanged:
+  // copy the owner has not written yet must not leave an empty box on a page
+  // a customer is reading for legal terms.
+  const notice = (): HTMLElement | null => host().querySelector('.cl-lgl__notice');
+  const meta = (): HTMLElement | null => host().querySelector('.cl-lgl__updated');
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -86,7 +90,7 @@ describe.each(PAGES)('$name legal page', ({ component, namespace }) => {
     render({});
 
     const titles = Array.from(
-      host().querySelectorAll<HTMLElement>('.legal-page__section-title')
+      host().querySelectorAll<HTMLElement>('.cl-lgl__section-title')
     ).map((el) => el.textContent?.trim());
 
     expect(titles).toEqual([

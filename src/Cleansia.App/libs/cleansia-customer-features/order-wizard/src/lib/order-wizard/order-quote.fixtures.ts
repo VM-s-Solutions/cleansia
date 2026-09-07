@@ -1,4 +1,8 @@
-import { IQuoteOrderResponse, QuoteOrderResponse } from '@cleansia/customer-services';
+import {
+  IQuoteOrderResponse,
+  QuoteOrderQuoteLine,
+  QuoteOrderResponse,
+} from '@cleansia/customer-services';
 
 /**
  * `appliedDiscountSource` is the one field these fixtures leave off: the customer barrel
@@ -32,6 +36,27 @@ const QUOTE_1000_NO_DISCOUNT: QuoteFields = {
   exchangeRate: 1,
   expressSurchargeWaivedByMembership: false,
   expressUpgradesRemaining: undefined,
+  creditBalance: 0,
+  creditMaxShareOfOrder: 0.8,
+  // The 1000 basket is one standard clean: OrderDuration estimates 240 minutes,
+  // and crew is ceil(240 / 120) = 2. Same arithmetic the handler runs, so the
+  // fixture still describes what the server actually returns.
+  estimatedDurationMinutes: 240,
+  requiredEmployees: 2,
+  // The rows the 1000 is made of, as the calculator emits them: one service at
+  // a 300 base plus 100 per unit over the fixture's 7 units. They sum to
+  // servicesSubtotal exactly, because a row that disagrees with its own
+  // subtotal is the bug the summary breakdown exists to make visible.
+  lines: [
+    QuoteOrderQuoteLine.fromJS({
+      kind: 'service',
+      itemId: 'service-1',
+      baseAmount: 300,
+      unitAmount: 100,
+      units: 7,
+      amount: 1000,
+    }),
+  ],
 };
 
 export function quoteFixture(overrides: Partial<QuoteFields> = {}): QuoteOrderResponse {
@@ -73,4 +98,6 @@ export const EXPRESS_DISCOUNTED_QUOTE = quoteFixture({
 export const WAIVED_EXPRESS_QUOTE = quoteFixture({
   expressSurchargeWaivedByMembership: true,
   expressUpgradesRemaining: 2,
+  creditBalance: 0,
+  creditMaxShareOfOrder: 0.8,
 });

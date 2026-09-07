@@ -20,7 +20,10 @@
       <cleansia-section
         [title]="'pages.template_management.sections.translations' | translate"
       >
-        <p-tabs [value]="languages()[0].code">
+        <p-tabs
+          [value]="activeLanguage()"
+          (valueChange)="onLanguageTabChange($event)"
+        >
           <p-tablist>
             @for (lang of languages(); track lang.code) {
             <p-tab [value]="lang.code">{{ lang.name }}</p-tab>

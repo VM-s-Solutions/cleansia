@@ -8,7 +8,6 @@ public class StripeConfig(IConfiguration configuration) : AutoBindConfig(configu
     public string SecretKey { get; set; } = null!;
     public string PublishableKey { get; set; } = null!;
     public string WebhookSecret { get; set; } = null!;
-    public string WebhookUrl { get; set; } = null!;
     public string SuccessUrlBase { get; set; } = null!;
     public string CancelUrlBase { get; set; } = null!;
 }

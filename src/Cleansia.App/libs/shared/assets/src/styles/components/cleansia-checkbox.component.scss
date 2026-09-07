@@ -11,7 +11,11 @@
 
   label {
     font-size: 0.9375rem;
-    color: #374151;
+    // Was #374151 flat, which is unreadable on a dark card — 1.68 against the
+    // customer app's dark surface. The fallback is that exact value, so the
+    // partner and admin apps, which do not define the token, render byte for
+    // byte what they did before.
+    color: var(--cl-body, #374151);
     font-weight: 500;
     line-height: 1.4;
     cursor: pointer;

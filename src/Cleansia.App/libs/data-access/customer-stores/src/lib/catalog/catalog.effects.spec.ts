@@ -65,6 +65,20 @@ describe('CustomerCatalogEffects', () => {
       expect(packageClient.getOverview).not.toHaveBeenCalled();
     });
 
+    // The generated client emits NULL — not `[]` — for a 200 with a non-array body or a 204, and
+    // `catchError` cannot see it because null is not an error. The reducer spreads the payload
+    // straight into state, so an unguarded null becomes the stored catalog.
+    it('turns a null body into an empty list rather than putting null in the store', () => {
+      serviceClient.getOverview.mockReturnValue(of(null));
+
+      const emitted = collect(createEffects().loadServices$);
+      actions$.next(CatalogActions.loadCustomerServices());
+
+      expect(emitted).toEqual([
+        CatalogActions.loadCustomerServicesSuccess({ services: [] }),
+      ]);
+    });
+
     it('maps a failure to loadCustomerServicesFailure carrying the error', () => {
       const failure = { message: 'offline' };
       serviceClient.getOverview.mockReturnValue(throwError(() => failure));
@@ -141,6 +155,18 @@ describe('CustomerCatalogEffects', () => {
       expect(emitted.map((a) => a.type)).toEqual([
         CatalogActions.loadCustomerPackagesFailure.type,
         CatalogActions.loadCustomerPackagesSuccess.type,
+      ]);
+    });
+
+    // Same null, same reason — see loadServices$ above.
+    it('turns a null body into an empty list rather than putting null in the store', () => {
+      packageClient.getOverview.mockReturnValue(of(null));
+
+      const emitted = collect(createEffects().loadPackages$);
+      actions$.next(CatalogActions.loadCustomerPackages());
+
+      expect(emitted).toEqual([
+        CatalogActions.loadCustomerPackagesSuccess({ packages: [] }),
       ]);
     });
 

@@ -1,64 +1,67 @@
-<cleansia-dynamic-background>
-  <div class="cleansia-login">
-    <div class="cleansia-login__mascot">
-      <img src="assets/images/mascot/mascot-waving.png" alt="Cleansia mascot" loading="lazy" />
-    </div>
-    <form class="cleansia-login__login-card" [formGroup]="facade.formGroup">
-      <div class="cleansia-login__brand-name-container">
-        <cleansia-brand-name />
-      </div>
-      <div class="cleansia-login__header">
-        <cleansia-title
-          [level]="1"
-          [title]="'global.actions.login' | translate"
+<section class="cl-auth">
+  <div class="cl-auth__suds" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <div class="cl-auth__plate">
+    <h1 class="cl-d2">{{ 'auth.login.title' | translate }}</h1>
+    <p class="cl-body cl-auth__lead">{{ 'auth.login.lead' | translate }}</p>
+  </div>
+
+  <div class="cl-auth__row">
+    <img
+      class="cl-auth__mascot cl-auth__mascot--left"
+      src="assets/images/mascot/mascot-spray-and-cloth-tile.webp"
+      alt=""
+      width="340"
+      height="280"
+      aria-hidden="true"
+    />
+
+    <!--
+      Nothing stands between the headline and the e-mail field, in the DOM or in
+      the tab order. That is this screen's whole requirement: the returning
+      customer wants to be past it in eight seconds.
+    -->
+    <form class="cl-auth__card cl-lift" [formGroup]="facade.formGroup">
+      <cleansia-text-input
+        [floatVariant]="null"
+        [label]="'auth.login.email' | translate"
+        formControlName="email"
+        dataType="email"
+        [showErrors]="true"
+      />
+      <cleansia-text-input
+        [floatVariant]="null"
+        [label]="'auth.login.password' | translate"
+        formControlName="password"
+        dataType="password"
+        [required]="true"
+        [showErrors]="true"
+      />
+
+      <div class="cl-auth__row-between">
+        <cleansia-checkbox
+          [label]="'auth.login.remember_me' | translate"
+          formControlName="rememberMe"
         />
-      </div>
-      <div class="cleansia-login__email">
-        <cleansia-text-input
-          [label]="'auth.login.email' | translate"
-          [floatVariant]="'on'"
-          formControlName="email"
-          dataType="email"
-          [showErrors]="true"
-        />
-      </div>
-      <div class="cleansia-login__password">
-        <cleansia-text-input
-          [label]="'auth.login.password' | translate"
-          [floatVariant]="'on'"
-          formControlName="password"
-          dataType="password"
-          [required]="true"
-          [showErrors]="true"
-        />
-      </div>
-      <div class="cleansia-login__password-actions">
-        <div class="cleansia-login__remember-me">
-          <cleansia-checkbox
-            [title]="'global.user.remember_me' | translate"
-            formControlName="rememberMe"
-          />
-          <span>{{ 'auth.login.remember_me' | translate }}</span>
-        </div>
-        <a [routerLink]="'/' + routes.FORGOT_PASSWORD">
-          <small>{{ 'auth.login.forgot_password' | translate }}</small>
+        <a class="cl-link" [routerLink]="'/' + routes.FORGOT_PASSWORD">
+          {{ 'auth.login.forgot_password' | translate }}
         </a>
       </div>
-      <div class="cleansia-login__user-actions">
-        <cleansia-button
-          [buttonType]="'submit'"
-          [style]="'raised-button'"
-          [title]="'global.actions.login' | translate"
-          (clickFn)="facade.login()"
-          [loading]="facade.loading() ?? false"
-        />
-        @if (isGoogleSignInConfigured || isAppleSignInConfigured) {
-          <div class="cleansia-login__divider">
-            <span>{{ 'auth.login.or' | translate }}</span>
-          </div>
-        }
+
+      <cleansia-button
+        [buttonType]="'submit'"
+        [title]="'global.actions.login' | translate"
+        [severity]="'primary'"
+        [size]="'full-width'"
+        [loading]="facade.loading() ?? false"
+        (clickFn)="facade.login()"
+      />
+
+      @if (isGoogleSignInConfigured || isAppleSignInConfigured) {
+        <div class="cl-auth__or"><span>{{ 'auth.login.or' | translate }}</span></div>
+
         @if (isGoogleSignInConfigured) {
-          <div class="cleansia-login__google-btn" #googleBtn></div>
+          <div class="cl-auth__google" #googleBtn></div>
         }
         @if (isAppleSignInConfigured) {
           <cleansia-button
@@ -67,18 +70,57 @@
             [severity]="'secondary'"
             [icon]="'pi pi-apple'"
             [title]="'auth.login.apple' | translate"
+            [size]="'full-width'"
             (clickFn)="signInWithApple()"
           />
         }
-        <div>
-          <span tabindex="-1">
-            {{ 'auth.login.dont_have_account' | translate }}
-            <a [routerLink]="'/' + routes.REGISTER">
-              {{ 'global.actions.register' | translate }}
-            </a>
-          </span>
-        </div>
-      </div>
+      }
+
+      <p class="cl-muted cl-auth__foot">
+        {{ 'auth.login.dont_have_account' | translate }}
+        <a [routerLink]="'/' + routes.REGISTER">{{ 'global.actions.register' | translate }}</a>
+      </p>
     </form>
+
+    <img
+      class="cl-auth__mascot cl-auth__mascot--right"
+      src="assets/images/mascot/mascot-dusting-tile.webp"
+      alt=""
+      width="340"
+      height="280"
+      aria-hidden="true"
+    />
   </div>
-</cleansia-dynamic-background>
+
+  <cleansia-foam-edge variant="cap-short" />
+</section>
+
+<!--
+  Why an account is worth having lives BELOW the fold, not beside the fields.
+  Someone who came here to sign in never has to read past it.
+-->
+<section class="cl-auth-below">
+  <div class="cl-auth-below__inner">
+    <h2 class="cl-d2 cl-auth-below__title">{{ 'auth.below.title' | translate }}</h2>
+    <div class="cl-auth-below__grid">
+      <div>
+        <div class="cl-h4">{{ 'auth.below.addresses_title' | translate }}</div>
+        <p class="cl-muted cl-auth-below__lead">{{ 'auth.below.addresses_text' | translate }}</p>
+      </div>
+      <div>
+        <div class="cl-h4">{{ 'auth.below.points_title' | translate }}</div>
+        <p class="cl-muted cl-auth-below__lead">{{ 'auth.below.points_text' | translate }}</p>
+      </div>
+      <div>
+        <div class="cl-h4">{{ 'auth.below.cancel_title' | translate }}</div>
+        <p class="cl-muted cl-auth-below__lead">{{ 'auth.below.cancel_text' | translate }}</p>
+      </div>
+    </div>
+
+    <div class="cl-auth-below__rule"></div>
+    <p class="cl-muted cl-auth-below__escape">
+      {{ 'auth.below.track_text' | translate }}
+      <a [routerLink]="'/' + routes.TRACK_ORDER">{{ 'auth.below.track_link' | translate }}</a>
+    </p>
+  </div>
+</section>

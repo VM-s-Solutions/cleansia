@@ -44,7 +44,9 @@ section (and raise a ticket per serious finding):
 7. **S7** side-effecting commands are idempotent (ledger/transaction-id check).
 8. **S8** tenant-scoped entity implements `ITenantEntity`; unique indexes are `(TenantId, X)`; no
    filter-escaping via raw SQL / leaked `IQueryable` / one-sided joins.
-9. **S9** migration & DTO-contract changes are safe and flagged as owner `manual_steps`.
+9. **S9** migration & DTO-contract changes are safe — and since the regen is now run rather than
+   flagged (ruling 2026-09-07), check the REGENERATED artefacts too: the migration and the NSwag
+   client in the diff, not just the model change that prompted them.
 10. **S10** `IsActive` soft-delete filter applied where deactivated rows must be hidden.
 11. **S11** (mobile) every new per-user `@Singleton`/injected cache is in the `SessionScopedCache`
     wipe set or on the §E9 allowlist — all three wipe triggers, one set.

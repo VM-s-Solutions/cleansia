@@ -82,6 +82,14 @@ public class RedactionUnmaskedFreeTextGuardTests
         "UploadedBy",
         "CapturedByEmployeeId",
         "CapturedByEmployeeName", // a cleaner's own first name, not customer narrative
+        // A disputed line names a catalogue row, not the customer. ServiceId/PackageId are ULIDs, and
+        // the two names are admin-authored catalogue entries out of a closed list ("Oven cleaning")
+        // — the same category as CapturedByEmployeeName above, and emphatically not the narrative the
+        // customer typed. That narrative is Description, which is a redaction token in its own right.
+        "ServiceId",
+        "ServiceName",
+        "PackageId",
+        "PackageName",
         "DisplayOrderNumber",
         "SavingsCurrencyCode",
         "PreferredLanguageCode",

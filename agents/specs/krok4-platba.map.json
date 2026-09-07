@@ -1,0 +1,65 @@
+{
+  "_comment": "Same two sections as the other step maps. `_ignore` is text the artboard shows as SAMPLE — a code, a price, a summary line — which the running page renders from real data or from what the visitor entered. Everything NOT listed there is structural copy and has to appear. The remaining keys are the BOX map, { appSelector: artboardSelector }; only the pairing is declared, every expected value is read off the artboard. A value may be {sel, skip, why, typography}.",
+  "_card_copy_note": "The artboard's card description reads \"Zaplatíte teď. Peníze strhneme až po dokončení úklidu.\" — the money is only taken once the cleaning is done. That is NOT what happens: StripeClient.CreatePaymentIntentAsync sets no CaptureMethod, so Stripe captures immediately on confirmation. The shipped copy says the card is charged when you book, which is true. Its cash counterpart also drops \"Potvrzení dostanete e-mailem\" — no receipt email exists in the notification features. Both artboard sentences are in _ignore for that reason. A false statement about when a customer's money leaves their account is not a copy nit.",
+  "_ignore": [
+    "^[0-9][0-9\\s]*Kč$",
+    "^−[0-9][0-9\\s]*Kč$",
+    "^Cleansia$",
+    "^Služby$",
+    "^Jak to chodí$",
+    "^Cleansia Plus$",
+    "^Sledovat objednávku$",
+    "^CZ$",
+    "^Přihlásit$",
+    "^Objednat úklid$",
+    "^Adresa$",
+    "^Termín$",
+    "^Platba$",
+    "^Souhrn$",
+    "^Zpět na termín$",
+    "^PRVNI10$",
+    "^Kód platí — sleva",
+    "^Zaplatíte teď\\. Peníze strhneme",
+    "^Zaplatíte uklízeči v den úklidu",
+    "^Úklid domácnosti$",
+    "^Hloubkový úklid kuchyně$",
+    "^Mytí oken",
+    "^3 pokoje",
+    "^Praha 7$",
+    "^út 2\\. 9\\.",
+    "^bez příplatku$",
+    "^Sleva PRVNI10$",
+    "^Pevná cena$",
+    "^Odhadem 3,5 h",
+    "^Pokračovat$",
+    "^Zrušení zdarma do 24 h$",
+    "^Použít$"
+  ],
+  ".cl-wiz__pay": "[style*='grid-template-columns:1fr 1fr; gap:18px']",
+  ".cl-wiz__pay-card:not(.cl-wiz__pay-card--on)": {
+    "sel": ".soft[style*='border-radius:28px; padding:26px 28px']",
+    "why": "The artboard's UNselected card, matched against the app's — the app's first card is the selected one, so this pairs the second of each. Card and cash are the same box apart from the selected treatment."
+  },
+  ".cl-wiz__pay-card--on": {
+    "sel": ".lift[style*='border:2px solid #0284C7']",
+    "skip": [
+      "paddingTop",
+      "paddingRight",
+      "paddingBottom",
+      "paddingLeft"
+    ],
+    "why": "The artboard keeps 26px 28px under a 2px border, so its selected card's contents sit 1px in from its neighbour's. The app takes the extra border pixel off the padding instead, which keeps the two cards' text on the same lines — the thing a customer actually sees when they switch between them."
+  },
+  ".cl-wiz__pay-check": {
+    "sel": "[style*='width:26px; height:26px']",
+    "skip": [
+      "borderTopColor"
+    ],
+    "why": "Neither element has a border, so borderTopColor is each one's currentColor under another name — white on the app's tick, inherited black on the artboard's wrapper."
+  },
+  ".cl-wiz__pay-title": {
+    "sel": ".lift[style*='border:2px solid #0284C7'] .h3",
+    "typography": true
+  },
+  "_promo_note": "The promo input, its Apply button and the code itself are only rendered for a signed-in visitor. Validating a code needs an account — the endpoint is [Permission(CanRedeemPromoCode)] and answers 401 without one, because the limit it enforces is per user. Booking does NOT need an account, so an anonymous visitor is told that instead of being handed a field that can only fail. The artboard draws a signed-in session; the checker runs anonymous."
+}

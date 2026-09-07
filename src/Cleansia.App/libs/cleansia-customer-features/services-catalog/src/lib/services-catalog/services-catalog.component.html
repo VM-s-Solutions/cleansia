@@ -1,334 +1,225 @@
-<!-- Hero Band — full-bleed, matches the track-order page -->
-<section class="services-catalog__hero">
-    <div
-      class="services-catalog__hero-bubble services-catalog__hero-bubble--1"
+<section class="cl-cat-hero">
+  <div class="cl-cat-hero__row">
+    <img
+      class="cl-cat-hero__mascot"
+      [src]="heroMascotLeft"
+      alt=""
+      width="340"
+      height="280"
       aria-hidden="true"
-    ></div>
-    <div
-      class="services-catalog__hero-bubble services-catalog__hero-bubble--2"
-      aria-hidden="true"
-    ></div>
-    <div
-      class="services-catalog__hero-bubble services-catalog__hero-bubble--3"
-      aria-hidden="true"
-    ></div>
-    <div class="services-catalog__hero-inner">
-      <h1 class="services-catalog__hero-title">
-        {{ 'pages.services.title' | translate }}
-      </h1>
-      <p class="services-catalog__hero-subtitle">
-        {{ 'pages.services.subtitle' | translate }}
-      </p>
-      <div class="services-catalog__hero-trust">
-        <div class="services-catalog__hero-trust-item">
-          <i class="pi pi-verified"></i>
-          <span>{{ 'pages.services.trust_certified' | translate }}</span>
-        </div>
-        <div class="services-catalog__hero-trust-item">
-          <i class="pi pi-sparkles"></i>
-          <span>{{ 'pages.services.trust_eco' | translate }}</span>
-        </div>
-        <div class="services-catalog__hero-trust-item">
-          <i class="pi pi-shield"></i>
-          <span>{{ 'pages.services.trust_guarantee' | translate }}</span>
-        </div>
+    />
+    <div class="cl-cat-hero__copy">
+      <h1 class="cl-d1">{{ 'pages.services.title' | translate }}</h1>
+      <p class="cl-body cl-cat-hero__lead">{{ 'pages.services.subtitle' | translate }}</p>
+      <div class="cl-cat-hero__trust">
+        <span class="cl-chip cl-chip--static">{{ 'pages.services.trust_certified' | translate }}</span>
+        <span class="cl-chip cl-chip--static">{{ 'pages.services.trust_eco' | translate }}</span>
+        <span class="cl-chip cl-chip--static">{{ 'pages.services.trust_guarantee' | translate }}</span>
       </div>
     </div>
-    <div class="services-catalog__hero-wave" aria-hidden="true">
-      <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
-        <path d="M0,40 C280,100 720,0 1440,60 L1440,100 L0,100 Z" />
-      </svg>
-    </div>
+    <img
+      class="cl-cat-hero__mascot"
+      [src]="heroMascotRight"
+      alt=""
+      width="340"
+      height="280"
+      aria-hidden="true"
+    />
+  </div>
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-band)'" />
 </section>
 
-<div class="services-catalog">
-  @if (loading()) {
-  <!-- Skeleton Loading -->
-  <div class="services-catalog__content">
-    <div class="services-catalog__skeleton-grid">
-      @for (i of [1, 2, 3]; track i) {
-      <div class="services-catalog__skeleton-card">
-        <div class="flex justify-content-center mb-4">
-          <p-skeleton shape="circle" size="56px" />
-        </div>
-        <p-skeleton width="60%" height="1.5rem" styleClass="mx-auto mb-3" />
-        <p-skeleton width="40%" height="2.5rem" styleClass="mx-auto mb-2" />
-        <p-skeleton width="50%" height="0.875rem" styleClass="mx-auto mb-4" />
-        <p-skeleton width="100%" height="1px" styleClass="mb-4" />
-        <p-skeleton width="100%" height="1rem" styleClass="mb-2" />
-        <p-skeleton width="90%" height="1rem" styleClass="mb-2" />
-        <p-skeleton width="80%" height="1rem" styleClass="mb-4" />
-        <p-skeleton width="100%" height="2.75rem" styleClass="border-round-lg" />
-      </div>
-      }
-    </div>
-  </div>
-  } @else {
-  <div class="services-catalog__content">
-    <!-- Packages Section -->
-    @if (packages().length > 0) {
-    <section class="services-catalog__packages">
-      <div class="services-catalog__section-header">
-        <h2 class="services-catalog__section-title">
-          {{ 'pages.services.packages' | translate }}
-        </h2>
-        <div class="services-catalog__sort-controls">
-          @for (opt of sortOptions; track opt.value) {
-          <button
-            class="services-catalog__sort-chip"
-            [class.services-catalog__sort-chip--active]="
-              packageSort() === opt.value
-            "
-            (click)="onPackageSortChange(opt.value)"
-          >
-            {{ opt.labelKey | translate }}
-          </button>
-          }
-        </div>
-      </div>
-
-      <div class="services-catalog__packages-grid">
-        @for (pkg of visiblePackages(); track pkg.id; let idx = $index) {
-        <div
-          class="services-catalog__package-card"
-          [class.services-catalog__package-card--highlighted]="
-            getPackageTierIndex(pkg) === 1
-          "
-        >
-          @if (getPackageTierIndex(pkg) === 1) {
-          <div class="services-catalog__package-badge">
-            {{ 'pages.services.most_popular' | translate }}
+<div class="cl-cat">
+  <div class="cl-cat__inner">
+    @if (loading()) {
+      <div class="cl-cat__skeletons">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="cl-cat__skeleton">
+            <p-skeleton width="55%" height="0.75rem" class="mb-3" />
+            <p-skeleton width="70%" height="1.75rem" class="mb-3" />
+            <p-skeleton width="45%" height="2.5rem" class="mb-2" />
+            <p-skeleton width="35%" height="0.875rem" class="mb-4" />
+            <p-skeleton width="100%" height="1rem" class="mb-2" />
+            <p-skeleton width="85%" height="1rem" class="mb-4" />
+            <p-skeleton width="100%" height="2.5rem" class="border-round-3xl" />
           </div>
-          }
-
-          <div class="services-catalog__package-icon">
-            <i [class]="getPackageIcon(getPackageTierIndex(pkg))"></i>
-          </div>
-
-          <h3 class="services-catalog__package-name">
-            {{ getTranslation(pkg, 'name') }}
-          </h3>
-
-          <div class="services-catalog__package-price">
-            <div class="price">{{ formatPrice(pkg.price) }}</div>
-            <div class="label">
-              {{ 'pages.services.per_cleaning' | translate }}
-            </div>
-          </div>
-
-          <div class="services-catalog__package-divider"></div>
-
-          <p class="services-catalog__package-description">
-            {{ getTranslation(pkg, 'description') }}
-          </p>
-
-          <ul class="services-catalog__package-features">
-            @if (getIncludedServiceNames(pkg).length > 0) {
-              @for (serviceName of getIncludedServiceNames(pkg); track serviceName) {
-              <li>
-                <i class="pi pi-check-circle"></i>
-                {{ serviceName }}
-              </li>
-              }
-            } @else {
-              @for (featureKey of getPackageFeatures(getPackageTierIndex(pkg)); track featureKey) {
-              <li>
-                <i class="pi pi-check-circle"></i>
-                {{ featureKey | translate }}
-              </li>
-              }
-            }
-          </ul>
-
-          <div class="services-catalog__package-cta">
-            <cleansia-button
-              [title]="'pages.services.book_now' | translate"
-              [severity]="
-                getPackageTierIndex(pkg) === 1 ? 'primary' : 'secondary'
-              "
-              [outlined]="getPackageTierIndex(pkg) !== 1"
-              [size]="'full-width'"
-              (clickFn)="bookPackage(pkg)"
-            />
-          </div>
-        </div>
         }
       </div>
-
-      <!-- Package teasers (fade effect) -->
-      @if (teaserPackages().length > 0) {
-      <div class="services-catalog__teasers">
-        @for (pkg of teaserPackages(); track pkg.id) {
-        <div class="services-catalog__teaser-card">
-          <div class="services-catalog__teaser-inner">
-            <div class="services-catalog__package-icon">
-              <i class="pi pi-sparkles"></i>
-            </div>
-            <h3 class="services-catalog__package-name">
-              {{ getTranslation(pkg, 'name') }}
-            </h3>
-            <div class="services-catalog__package-price">
-              <div class="price">{{ formatPrice(pkg.price) }}</div>
-            </div>
-          </div>
-        </div>
-        }
-      </div>
-      } @if (hasMorePackages()) {
-      <div class="services-catalog__view-all-actions">
-        <cleansia-button
-          className="services-catalog__view-all-btn"
-          [label]="'pages.services.view_all_packages' | translate"
-          icon="pi pi-arrow-down"
-          iconPosition="right"
-          [severity]="'secondary'"
-          [outlined]="true"
-          (onClick)="toggleShowAllPackages()"
-        />
-      </div>
-      }
-    </section>
-    }
-
-    <!-- Individual Services Section -->
-    @if (services().length > 0) {
-    <section class="services-catalog__services">
-      <div class="services-catalog__section-header">
-        <h2 class="services-catalog__section-title">
-          {{ 'pages.services.cleaning_services' | translate }}
-        </h2>
-        <div class="services-catalog__sort-controls">
-          @for (opt of sortOptions; track opt.value) {
-          <button
-            class="services-catalog__sort-chip"
-            [class.services-catalog__sort-chip--active]="
-              serviceSort() === opt.value
-            "
-            (click)="onServiceSortChange(opt.value)"
-          >
-            {{ opt.labelKey | translate }}
-          </button>
-          }
-        </div>
-      </div>
-
-      <div class="services-catalog__services-grid">
-        @for (service of visibleServices(); track service.id; let idx = $index) {
-        <div class="services-catalog__service-card">
-          <div class="services-catalog__service-icon">
-            <i [class]="getServiceIcon(idx)"></i>
-          </div>
-          <div class="services-catalog__service-content">
-            <h3 class="services-catalog__service-name">
-              {{ getTranslation(service, 'name') }}
-            </h3>
-            <p class="services-catalog__service-description">
-              {{ getTranslation(service, 'description') }}
-            </p>
-            <div class="services-catalog__service-footer">
-              <div class="services-catalog__service-price">
-                <div class="from-label">
-                  {{ 'pages.services.from' | translate }}
-                </div>
-                <div class="price">
-                  {{ formatPrice(service.basePrice) }}
-                </div>
-                @if (service.perRoomPrice > 0) {
-                <div class="per-room">
-                  + {{ formatPrice(service.perRoomPrice) }}
-                  {{ 'pages.services.per_room' | translate }}
-                </div>
-                }
-              </div>
-              <cleansia-button
-                className="services-catalog__service-cta"
-                [label]="'pages.services.book_now' | translate"
-                [severity]="'primary'"
-                (onClick)="bookService(service)"
-              />
-
-            </div>
-          </div>
-        </div>
-        }
-      </div>
-
-      <!-- Service teasers (fade effect) -->
-      @if (teaserServices().length > 0) {
-      <div class="services-catalog__teasers services-catalog__teasers--services">
-        @for (service of teaserServices(); track service.id; let idx = $index) {
-        <div class="services-catalog__teaser-card">
-          <div
-            class="services-catalog__teaser-inner services-catalog__teaser-inner--service"
-          >
-            <div class="services-catalog__service-icon">
-              <i [class]="getServiceIcon(idx + 3)"></i>
-            </div>
+    } @else {
+      @if (packages().length > 0) {
+        <section class="cl-cat-section">
+          <div class="cl-cat__head">
             <div>
-              <h3 class="services-catalog__service-name">
-                {{ getTranslation(service, 'name') }}
-              </h3>
-              <div class="services-catalog__service-price">
-                <div class="price">{{ formatPrice(service.basePrice) }}</div>
-              </div>
+              <h2 class="cl-d2">{{ 'pages.services.packages' | translate }}</h2>
+              <p class="cl-body cl-cat__lead">{{ 'pages.services.packages_lead' | translate }}</p>
+            </div>
+            @if (hasMorePackages()) {
+              <button type="button" class="cl-link" (click)="revealAllPackages()">
+                {{ 'pages.services.view_all_packages' | translate }}
+              </button>
+            }
+          </div>
+
+          <div class="cl-cat-packages">
+            @for (pkg of visiblePackages(); track pkg.id; let idx = $index) {
+              <article class="cl-cat-pkg" [class.cl-cat-pkg--best]="pkg.isPopular" [class.cl-soft]="!pkg.isPopular">
+                @if (pkg.isPopular) {
+                  <span class="cl-cat-pkg__badge">{{ 'pages.services.most_popular' | translate }}</span>
+                }
+
+                <div class="cl-cat-pkg__head">
+                  <div>
+                    @if (getTranslation(pkg, 'tagline')) {
+                      <div class="cl-lbl cl-cat-pkg__tag">{{ getTranslation(pkg, 'tagline') }}</div>
+                    }
+                    <h3 class="cl-cat-pkg__name">{{ getTranslation(pkg, 'name') }}</h3>
+                  </div>
+                  <img
+                    class="cl-cat-pkg__mascot"
+                    [src]="packageMascot(idx)"
+                    alt=""
+                    width="340"
+                    height="280"
+                    loading="lazy"
+                    aria-hidden="true"
+                  />
+                </div>
+
+                <div class="cl-num cl-cat-pkg__price">{{ formatPrice(pkg.price) }}</div>
+                <div class="cl-muted cl-cat-pkg__per">{{ 'pages.services.per_cleaning' | translate }}</div>
+
+                @if (getIncludedServiceNames(pkg).length > 0) {
+                  <ul class="cl-cat-pkg__includes">
+                    @for (serviceName of getIncludedServiceNames(pkg); track serviceName) {
+                      <li class="cl-cat-pkg__include">· {{ serviceName }}</li>
+                    }
+                  </ul>
+                }
+
+                <div class="cl-cat__grow"></div>
+
+                <cleansia-button
+                  className="cl-cat-pkg__cta"
+                  [title]="'pages.services.book_package' | translate"
+                  [severity]="pkg.isPopular ? 'secondary' : 'primary'"
+                  [size]="'full-width'"
+                  (clickFn)="bookPackage(pkg)"
+                />
+              </article>
+            }
+          </div>
+        </section>
+      }
+
+      @if (services().length > 0) {
+        <section class="cl-cat-section">
+          <div class="cl-cat__head cl-cat__head--spaced">
+            <h2 class="cl-d2">{{ 'pages.services.cleaning_services' | translate }}</h2>
+            <div class="cl-cat__sorts" role="group" [attr.aria-label]="'pages.services.sort_label' | translate">
+              @for (opt of sortOptions; track opt.value) {
+                <button
+                  type="button"
+                  class="cl-chip"
+                  [class.cl-chip--on]="serviceSort() === opt.value"
+                  [attr.aria-pressed]="serviceSort() === opt.value"
+                  (click)="onServiceSortChange(opt.value)"
+                >
+                  {{ opt.labelKey | translate }}
+                </button>
+              }
             </div>
           </div>
-        </div>
-        }
-      </div>
-      } @if (hasMoreServices()) {
-      <div class="services-catalog__view-all-actions">
-        <cleansia-button
-          className="services-catalog__view-all-btn"
-          [label]="'pages.services.view_all_services' | translate"
-          icon="pi pi-arrow-down"
-          iconPosition="right"
-          [severity]="'secondary'"
-          [outlined]="true"
-          (onClick)="toggleShowAllServices()"
-        />
-      </div>
-      }
-    </section>
-    }
 
-    <!-- Empty State -->
-    @if (services().length === 0 && packages().length === 0) {
-    <div class="services-catalog__empty">
-      <div class="services-catalog__empty-icon">
-        <i class="pi pi-sparkles"></i>
-      </div>
-      <h3 class="services-catalog__empty-title">
-        {{ 'pages.services.no_services' | translate }}
-      </h3>
-      <p class="services-catalog__empty-text">
-        {{ 'pages.services.check_back_later' | translate }}
-      </p>
-    </div>
+          <div class="cl-cat-services">
+            @for (service of sortedServices(); track service.id; let idx = $index) {
+              <article class="cl-cat-svc cl-soft">
+                <div class="cl-mascot-disc cl-cat-svc__plate">
+                  <img
+                    class="cl-mascot-icon"
+                    [src]="serviceMascot(idx)"
+                    alt=""
+                    width="340"
+                    height="280"
+                    loading="lazy"
+                    aria-hidden="true"
+                  />
+                </div>
+
+                <h3 class="cl-h4 cl-cat-svc__name">{{ getTranslation(service, 'name') }}</h3>
+                <p class="cl-muted cl-cat-svc__desc">{{ getTranslation(service, 'description') }}</p>
+
+                <div class="cl-cat__grow"></div>
+
+                <div class="cl-cat-svc__foot">
+                  <span class="cl-num cl-cat-svc__price">
+                    @if (isPricedPerRoom(service)) {
+                      <span class="cl-muted cl-cat-svc__from">{{ 'pages.services.from' | translate }}</span>
+                    }
+                    {{ formatPrice(service.basePrice) }}
+                  </span>
+                  <span class="cl-muted cl-cat-svc__unit">
+                    @if (isPricedPerRoom(service)) {
+                      + {{ formatPrice(service.perRoomPrice) }} {{ 'pages.services.per_room' | translate }}
+                    } @else {
+                      {{ 'pages.services.per_cleaning' | translate }}
+                    }
+                  </span>
+                </div>
+
+                <cleansia-button
+                  className="cl-cat-svc__cta"
+                  [title]="'pages.services.book_now' | translate"
+                  [severity]="'primary'"
+                  [size]="'full-width'"
+                  (clickFn)="bookService(service)"
+                />
+              </article>
+            }
+          </div>
+        </section>
+      }
+
+      @if (services().length === 0 && packages().length === 0) {
+        <div class="cl-cat__empty">
+          <img class="cl-cat__empty-mascot" [src]="closingMascot" alt="" width="400" height="400" />
+          <h2 class="cl-h3">{{ 'pages.services.no_services' | translate }}</h2>
+          <p class="cl-body cl-cat__empty-text">{{ 'pages.services.check_back_later' | translate }}</p>
+        </div>
+      }
     }
   </div>
 
-  <!-- CTA Band -->
-  @if (services().length > 0 || packages().length > 0) {
-  <section class="services-catalog__cta-banner">
-    <div class="services-catalog__cta-inner">
-      <h2 class="services-catalog__cta-title">
-        {{ 'pages.services.cta_title' | translate }}
-      </h2>
-      <p class="services-catalog__cta-subtitle">
-        {{ 'pages.services.cta_subtitle' | translate }}
-      </p>
-      <cleansia-button
-        className="services-catalog__cta-button"
-        [label]="'pages.services.cta_button' | translate"
-        icon="pi pi-arrow-right"
-        iconPosition="right"
-        [severity]="'primary'"
-        (onClick)="bookNow()"
-      />
-
-    </div>
-  </section>
-  } }
+  @if (!loading() && (services().length > 0 || packages().length > 0)) {
+    <section class="cl-cat-closing">
+      <cleansia-foam-edge variant="hood-short" [fill]="'var(--cl-band)'" />
+      <div class="cl-cat-closing__inner">
+        <div class="cl-cat-closing__card cl-lift">
+          <img
+            class="cl-cat-closing__mascot"
+            [src]="closingMascot"
+            alt=""
+            width="400"
+            height="400"
+            loading="lazy"
+            aria-hidden="true"
+          />
+          <div>
+            <h2 class="cl-d2 cl-cat-closing__title">{{ 'pages.services.cta_title' | translate }}</h2>
+            <p class="cl-body cl-cat-closing__lead">{{ 'pages.services.cta_subtitle' | translate }}</p>
+          </div>
+          <div class="cl-cat-closing__actions">
+            <cleansia-button
+              [title]="'pages.services.cta_button' | translate"
+              [severity]="'primary'"
+              (clickFn)="bookNow()"
+            />
+            <button type="button" class="cl-link" (click)="openCalculator()">
+              {{ 'pages.services.cta_calculate' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
 </div>
 <cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />

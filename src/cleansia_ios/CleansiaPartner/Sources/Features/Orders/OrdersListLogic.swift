@@ -75,7 +75,10 @@ enum OrdersQueryBuilder {
         switch tab {
         case .available:
             return OrderPageQuery(
-                statuses: [._0, ._2],
+                // Mirrors OrderAvailability.OfferableStatuses. Started is not over: a half-crewed job
+                // stays fillable after its first cleaner sets off (owner ruling 2026-09-06), and
+                // isUnassigned is what keeps a fully crewed job off this tab.
+                statuses: [._0, ._2, ._3, ._4],
                 isUnassigned: true,
                 employeeId: nil,
                 cleaningDateFrom: nil,

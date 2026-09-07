@@ -56,6 +56,17 @@ describe('CurrencyManagementFacade', () => {
     expect(facade.loading()).toBe(false);
   });
 
+  // Seeded with `of(null)`, not a plausible array: the generated client answers a non-array 200
+  // and a 204 with NULL. → service-form.facade.spec.ts
+  it('leaves the currency list an empty array when the client answers null', () => {
+    getOverviewMock.mockReturnValue(of(null));
+
+    facade.loadCurrencies();
+
+    expect(facade.currencies()).toEqual([]);
+    expect(facade.initialLoading()).toBe(false);
+  });
+
   it('sets a currency as default, shows success and reloads', () => {
     setDefaultMock.mockReturnValue(of({ id: 'cur-2' }));
     getOverviewMock.mockReturnValue(of(currencies));

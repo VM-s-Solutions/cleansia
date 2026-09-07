@@ -1,16 +1,15 @@
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
+  computed,
+  effect,
   inject,
   OnInit,
   signal,
-  TemplateRef,
-  ViewChild,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   FormBuilder,
   FormControl,
@@ -21,32 +20,29 @@ import {
   CleansiaButtonComponent,
   CleansiaFileComponent,
   CleansiaSelectComponent,
-  CleansiaTableComponent,
   CleansiaTextareaComponent,
   ICleansiaSelectOption,
-  PaginationState,
-  TableAction,
-  TableColumn,
 } from '@cleansia/components';
 import {
   Code,
   DisputeListItem,
   DisputeReason,
 } from '@cleansia/customer-services';
+import { FoamEdgeComponent } from '@cleansia-customer/home';
+import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TagSeverity } from '@cleansia/types';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { TagModule } from 'primeng/tag';
-import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { DisputesFacade } from './disputes.facade';
 import {
   CustomerDisputeStatus,
+  DisputeLineOption,
+  disputeLineKey,
   DISPUTE_EVIDENCE_ALLOWED_CONTENT_TYPES,
   DISPUTE_EVIDENCE_MAX_FILE_SIZE_BYTES,
   DISPUTE_STATUS_LABEL_KEYS,
   getDisputeReasonLabelKey,
   getDisputeStatusSeverity,
-  getDisputesTableDefinition,
   isDisputeOpen,
 } from './disputes.models';
 import {
@@ -60,13 +56,12 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterLink,
     TranslatePipe,
-    TagModule,
-    DialogModule,
     SkeletonModule,
     CleansiaButtonComponent,
     CleansiaFileComponent,
-    CleansiaTableComponent,
+    FoamEdgeComponent,
     CleansiaSelectComponent,
     CleansiaTextareaComponent,
   ],
@@ -74,12 +69,12 @@ import {
   providers: [DisputesFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DisputesComponent implements OnInit, AfterViewInit {
+export class DisputesComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly fb = inject(FormBuilder);
-  private readonly cdr = inject(ChangeDetectorRef);
   protected readonly facade = inject(DisputesFacade);
+  protected readonly routes = CleansiaCustomerRoute;
 
   readonly disputes = this.facade.disputes;
   readonly totalRecords = this.facade.totalRecords;
@@ -87,6 +82,7 @@ export class DisputesComponent implements OnInit, AfterViewInit {
   readonly disputeDetail = this.facade.disputeDetail;
   readonly detailLoading = this.facade.detailLoading;
   readonly orderOptions = this.facade.orderOptions;
+
   readonly sendingMessage = this.facade.sendingMessage;
 
   protected readonly descriptionMaxLength = DISPUTE_DESCRIPTION_MAX_LENGTH;
@@ -94,12 +90,29 @@ export class DisputesComponent implements OnInit, AfterViewInit {
     DISPUTE_EVIDENCE_ALLOWED_CONTENT_TYPES.join(',');
   protected readonly evidenceMaxFileSize = DISPUTE_EVIDENCE_MAX_FILE_SIZE_BYTES;
 
-  showCreateDialog = signal(false);
-  showDetailDialog = signal(false);
+  /**
+   * Two states of one page, as the board draws them: the list beside the thread,
+   * or the "new dispute" form. Not two modal dialogs over a table — a support
+   * conversation is the page's content, and a dialog is a thing you dismiss.
+   */
+  readonly mode = signal<'list' | 'new'>('list');
+
+  /** Which thread the right-hand panel is showing. */
+  readonly selectedId = signal<string | null>(null);
+
+  /**
+   * Whether the composer is showing its dropzone. The shared file component is
+   * a drag-and-drop PANEL, not a button, so leaving it open would make it the
+   * largest thing in the thread. The board draws an "attach photo" action, so
+   * that is what the row holds until it is pressed.
+   */
+  readonly attaching = signal(false);
+
+  /** Which reason chip is on. Mirrors the form control, which submits. */
+  readonly pickedReason = signal<DisputeReason>(DisputeReason.QualityIssue);
 
   messageControl = new FormControl('', { nonNullable: true });
   evidenceControl = new FormControl<File[]>([], { nonNullable: true });
-  statusFilterControl = new FormControl<CustomerDisputeStatus | null>(null);
 
   readonly createForm = this.fb.nonNullable.group({
     orderId: ['', Validators.required],
@@ -114,13 +127,68 @@ export class DisputesComponent implements OnInit, AfterViewInit {
     ],
   });
 
-  columns: TableColumn<DisputeListItem>[] = [];
-  actions: TableAction<DisputeListItem>[] = [];
+  /**
+   * The order the form is about, as a signal, so the item list below can react to the select.
+   * `valueChanges` rather than reading the control in a computed: a FormControl is not a signal and a
+   * computed over one never re-evaluates.
+   */
+  private readonly selectedOrderId = toSignal(
+    this.createForm.controls.orderId.valueChanges,
+    { initialValue: '' },
+  );
 
-  @ViewChild('orderCell') orderCell?: TemplateRef<DisputeListItem>;
-  @ViewChild('reasonCell') reasonCell?: TemplateRef<DisputeListItem>;
-  @ViewChild('statusCell') statusCell?: TemplateRef<DisputeListItem>;
-  @ViewChild('createdCell') createdCell?: TemplateRef<DisputeListItem>;
+  /**
+   * WHAT WAS ON THIS ORDER — the services bought on their own, and the services inside each package.
+   *
+   * <p>The identity of every row is the server's own `(serviceId, packageId?)` pair, so a package's
+   * oven clean and a standalone oven clean on the same order are two different rows. That is not
+   * pedantry: an admin refunding one of them must not refund the other.</p>
+   *
+   * <p>Empty for an order with nothing on it, and empty before an order is picked — the section
+   * hides itself rather than showing an empty box.</p>
+   */
+  readonly disputeLineOptions = computed<DisputeLineOption[]>(() => {
+    const orderId = this.selectedOrderId();
+    if (!orderId) return [];
+
+    const order = this.facade.orders().find((o) => o.id === orderId);
+    if (!order) return [];
+
+    const options: DisputeLineOption[] = [];
+
+    for (const service of order.selectedServices ?? []) {
+      if (!service.id) continue;
+      options.push({
+        serviceId: service.id,
+        packageId: null,
+        key: disputeLineKey({ serviceId: service.id, packageId: null }),
+        label: this.itemName(service.name, service.translations),
+        packageLabel: null,
+      });
+    }
+
+    for (const pkg of order.selectedPackages ?? []) {
+      if (!pkg.id) continue;
+      const packageLabel = this.itemName(pkg.name, pkg.translations);
+      for (const included of pkg.includedServices ?? []) {
+        if (!included.serviceId) continue;
+        options.push({
+          serviceId: included.serviceId,
+          packageId: pkg.id,
+          key: disputeLineKey({ serviceId: included.serviceId, packageId: pkg.id }),
+          label: this.itemName(included.name, included.translations),
+          packageLabel,
+        });
+      }
+    }
+
+    return options;
+  });
+
+  /** Which rows are ticked. Keys, not objects, so the template can ask in constant time. */
+  readonly pickedLineKeys = signal<ReadonlySet<string>>(new Set());
+
+  readonly hasPickedLines = computed(() => this.pickedLineKeys().size > 0);
 
   readonly reasonOptions: ICleansiaSelectOption[] = [
     { label: this.translate.instant('pages.disputes.reasons.quality_issue'), value: DisputeReason.QualityIssue },
@@ -132,64 +200,119 @@ export class DisputesComponent implements OnInit, AfterViewInit {
     { label: this.translate.instant('pages.disputes.reasons.other'), value: DisputeReason.Other },
   ];
 
-  readonly statusFilterOptions: ICleansiaSelectOption[] = Object.entries(
-    DISPUTE_STATUS_LABEL_KEYS
-  ).map(([value, labelKey]) => ({
-    label: this.translate.instant(labelKey),
-    value: Number(value) as CustomerDisputeStatus,
-  }));
-
-  rows = 10;
+  /**
+   * One page, no paginator. The board draws a short list of one customer's own
+   * disputes beside the thread, and a customer with fifty of them is not a
+   * case this platform has — nor one a paginator would improve.
+   */
+  rows = 50;
   first = 0;
+
+  /**
+   * The first dispute opens itself. The right-hand panel is the page's content,
+   * not a detail you go and fetch, so arriving on an empty one would be a
+   * half-drawn page — and the customer's newest dispute is the one they came
+   * for. It only ever fires when nothing is selected, so it does not fight a
+   * click.
+   */
+  private readonly openFirstByDefault = effect(() => {
+    const list = this.disputes();
+    if (this.selectedId() || list.length === 0) return;
+    const first = list[0];
+    if (first?.id) this.openThread(first);
+  });
 
   ngOnInit(): void {
     this.loadDisputes();
     this.facade.loadOrdersForSelect();
+    // Arriving from an order's "something was wrong": straight into the form,
+    // with the order it is about already chosen.
     const orderId = this.route.snapshot.queryParamMap.get('orderId');
     if (orderId) {
       this.createForm.patchValue({ orderId });
-      this.showCreateDialog.set(true);
+      this.mode.set('new');
     }
-  }
-
-  ngAfterViewInit(): void {
-    const definition = getDisputesTableDefinition(
-      { onOpen: (row) => this.openDetail(row) },
-      this.translate,
-      {
-        order: this.orderCell,
-        reason: this.reasonCell,
-        status: this.statusCell,
-        created: this.createdCell,
-      }
-    );
-    this.columns = definition.columns;
-    this.actions = definition.actions;
-    this.cdr.detectChanges();
   }
 
   loadDisputes(): void {
     this.facade.loadDisputes(this.first, this.rows);
   }
 
-  onStatusFilterChange(status: CustomerDisputeStatus | null): void {
-    this.facade.setStatusFilter(status ?? null);
-    this.first = 0;
-    this.loadDisputes();
-  }
-
-  onPageChange(event: PaginationState): void {
-    this.first = event.first;
-    this.rows = event.rows;
-    this.loadDisputes();
-  }
-
-  openDetail(dispute: DisputeListItem): void {
-    if (!dispute.id) return;
+  openThread(dispute: DisputeListItem): void {
+    if (!dispute.id || this.selectedId() === dispute.id) return;
+    this.selectedId.set(dispute.id);
     this.facade.markViewed(dispute.id);
     this.facade.loadDisputeDetail(dispute.id);
     this.evidenceControl.setValue([]);
-    this.showDetailDialog.set(true);
+    this.messageControl.reset('');
+    this.attaching.set(false);
+  }
+
+  /** Evidence with somewhere to point. A row with no URL renders nothing. */
+  readonly evidence = computed(() =>
+    (this.disputeDetail()?.evidence ?? []).filter((e) => !!e.blobUrl),
+  );
+
+  /** Whether to draw the file back as a picture or as a document. */
+  isImage(fileName: string | undefined): boolean {
+    return /\.(jpe?g|png|webp|gif|avif)$/i.test(fileName ?? '');
+  }
+
+  toggleAttaching(): void {
+    this.attaching.update((on) => !on);
+  }
+
+  startNew(): void {
+    this.mode.set('new');
+  }
+
+  cancelNew(): void {
+    this.mode.set('list');
+    this.createForm.reset({
+      orderId: '',
+      reason: DisputeReason.QualityIssue,
+      description: '',
+    });
+    this.pickedReason.set(DisputeReason.QualityIssue);
+    this.pickedLineKeys.set(new Set());
+    this.evidenceControl.setValue([]);
+  }
+
+  /**
+   * The board draws the reasons as chips rather than a select, so the form
+   * picks one by pressing. The control stays the source of truth for the
+   * submit; the signal is what the chips read to know which one is on.
+   */
+  pickReason(reason: DisputeReason): void {
+    this.createForm.patchValue({ reason });
+    this.pickedReason.set(reason);
+  }
+
+  /**
+   * The item's name in the reader's language, falling back to the stored name. Same shape the wizard
+   * uses; duplicated as four lines rather than imported, because reaching into the order-wizard
+   * library for a string lookup would cross a feature boundary for nothing.
+   */
+  private itemName(
+    name: string | undefined,
+    translations: { [key: string]: { name?: string } } | undefined,
+  ): string {
+    const lang = this.translate.currentLang || this.translate.getDefaultLang();
+    return translations?.[lang]?.name || name || '';
+  }
+
+  toggleLine(option: DisputeLineOption): void {
+    const next = new Set(this.pickedLineKeys());
+    if (next.has(option.key)) {
+      next.delete(option.key);
+    } else {
+      next.add(option.key);
+    }
+    this.pickedLineKeys.set(next);
+  }
+
+  isLinePicked(option: DisputeLineOption): boolean {
+    return this.pickedLineKeys().has(option.key);
   }
 
   isUnread(dispute: DisputeListItem): boolean {
@@ -203,14 +326,32 @@ export class DisputesComponent implements OnInit, AfterViewInit {
     }
 
     const { orderId, reason, description } = this.createForm.getRawValue();
-    this.facade.createDispute(orderId, reason, description, () => {
-      this.showCreateDialog.set(false);
-      this.createForm.reset({
-        orderId: '',
-        reason: DisputeReason.QualityIssue,
-        description: '',
-      });
+    // Only the rows still on the CURRENT order. Switching order after ticking something would
+    // otherwise send an item the server would reject as not-on-this-order, and the customer would see
+    // a validation error about a box they cannot see any more.
+    const picked = this.pickedLineKeys();
+    const lines = this.disputeLineOptions()
+      .filter((option) => picked.has(option.key))
+      .map(({ serviceId, packageId }) => ({ serviceId, packageId }));
+    // The photos go with the dispute they are about, so they can only be sent
+    // once it exists and has an id. Reading them BEFORE cancelNew clears the
+    // form is the whole point — the reset empties the control.
+    const evidence = [...this.evidenceControl.value];
+
+    this.facade.createDispute(orderId, reason, description, lines, (disputeId) => {
+      this.cancelNew();
+      // A brand-new dispute is the one to be looking at.
+      this.selectedId.set(null);
       this.loadDisputes();
+      if (evidence.length === 0) return;
+      if (disputeId) {
+        this.facade.uploadEvidence(disputeId, evidence);
+      } else {
+        // Never silently. The dispute was filed but the photo has nowhere to
+        // go, and a customer who attached one has to be told — this failed
+        // quietly once already.
+        this.facade.reportEvidenceOrphaned();
+      }
     });
   }
 
@@ -226,11 +367,12 @@ export class DisputesComponent implements OnInit, AfterViewInit {
 
   uploadEvidence(): void {
     const detail = this.disputeDetail();
-    const file = this.evidenceControl.value[0];
-    if (!detail?.id || !file) return;
+    const files = this.evidenceControl.value;
+    if (!detail?.id || files.length === 0) return;
 
-    this.facade.uploadEvidence(detail.id, file, () => {
+    this.facade.uploadEvidence(detail.id, [...files], () => {
       this.evidenceControl.setValue([]);
+      this.attaching.set(false);
     });
   }
 
@@ -252,9 +394,53 @@ export class DisputesComponent implements OnInit, AfterViewInit {
     return this.translate.instant(getDisputeReasonLabelKey(reason?.value));
   }
 
+  /**
+   * All five the app ships, not three. This listed cs, en and `pl` — a locale
+   * this app does not have — so a Slovak, Russian or Ukrainian customer read
+   * their dispute dates in US format.
+   */
   private getLocale(): string {
-    const localeMap: Record<string, string> = { cs: 'cs-CZ', en: 'en-US', pl: 'pl-PL' };
+    const localeMap: Record<string, string> = {
+      cs: 'cs-CZ',
+      sk: 'sk-SK',
+      en: 'en-US',
+      ru: 'ru-RU',
+      uk: 'uk-UA',
+    };
     return localeMap[this.translate.currentLang] || 'en-US';
+  }
+
+  /**
+   * How long the customer has been waiting. Recent is a COUNT — "2 days" is the
+   * thing you feel — and older than a month is a date, because "47 days" stops
+   * meaning anything. `Intl.RelativeTimeFormat` carries every locale's plural
+   * rules, which ngx-translate does not.
+   */
+  ageLabel(createdOn: Date | undefined): string {
+    if (!createdOn) return '';
+    const days = Math.floor((Date.now() - new Date(createdOn).getTime()) / 86400000);
+    if (days > 30) {
+      return new Date(createdOn).toLocaleDateString(this.getLocale(), {
+        day: 'numeric',
+        month: 'numeric',
+      });
+    }
+    return new Intl.RelativeTimeFormat(this.getLocale(), { numeric: 'auto' }).format(
+      -days,
+      'day',
+    );
+  }
+
+  /** The moment a message was written, to the minute — a thread is a sequence. */
+  formatMoment(date: Date | undefined): string {
+    if (!date) return '';
+    return new Date(date).toLocaleString(this.getLocale(), {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   formatDate(date: Date | undefined): string {
@@ -264,10 +450,17 @@ export class DisputesComponent implements OnInit, AfterViewInit {
     });
   }
 
-  formatPrice(price: number): string {
+  /**
+   * An agreed refund is money off a specific order, so it is shown in THAT
+   * order's currency. The DTO carries it now — it did not, and this screen was
+   * formatting every refund as CZK, which is right while CZ is the only market
+   * and wrong on the first day it is not. The fallback remains for a dispute
+   * whose order could not be loaded.
+   */
+  formatPrice(price: number, currency?: { code?: string }): string {
     return new Intl.NumberFormat(this.getLocale(), {
       style: 'currency',
-      currency: 'CZK',
+      currency: currency?.code || 'CZK',
       minimumFractionDigits: 0,
     }).format(price);
   }

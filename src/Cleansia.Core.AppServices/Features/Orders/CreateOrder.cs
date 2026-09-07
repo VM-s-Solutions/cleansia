@@ -1,14 +1,18 @@
-using Cleansia.Core.AppServices.Abstractions;
+﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -169,6 +173,23 @@ public class CreateOrder
             RuleFor(x => x.AccessInstructions)
                 .MaximumLength(2000)
                 .WithMessage(BusinessErrorMessage.MaxLength);
+
+            // 20 matches the column. A floor is short in every market we ship —
+            // "3", "přízemí", "2A" — and a longer value is a note, not a floor.
+            RuleFor(x => x.CustomerFloor)
+                .MaximumLength(20)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.CustomerApartment)
+                .MaximumLength(20)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            // The four the wizard offers. Order.AccessMode is a plain string so
+            // nothing on this side has to know an enum it never compares — which
+            // makes this the one place a wrong value would otherwise get in.
+            RuleFor(x => x.AccessMode)
+                .Must(mode => mode is null or "at_home" or "keys_handover" or "door_code" or "reception")
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
             // ONE ordered chain, never a second RuleFor: the class-level default is Continue, so a
             // parallel chain would report both refusals and the client renders whichever it reads first.
@@ -343,7 +364,16 @@ public class CreateOrder
         /// note fields. Optional on purpose: clients built before this field
         /// existed simply omit it and behave exactly as before.
         /// </summary>
-        string? AccessInstructions = null) : ICommand<Response>;
+        string? AccessInstructions = null,
+        /// <summary>
+        /// Which floor, and which door on it. Both optional and both null for a
+        /// house, which has neither. They are carried on the order rather than
+        /// on the address because addresses are deduped across users at the same
+        /// street — see <c>Order.CustomerFloor</c>.
+        /// </summary>
+        string? CustomerFloor = null,
+        string? CustomerApartment = null,
+        string? AccessMode = null) : ICommand<Response>;
 
     public record Response(
         string Id,
@@ -359,7 +389,9 @@ public class CreateOrder
         IOrderPromoApplier orderPromoApplier,
         IOrderLateReferralAcceptor orderLateReferralAcceptor,
         IOrderPaymentDispatcher orderPaymentDispatcher,
-        IExpressWaiverConsumer expressWaiverConsumer) : ICommandHandler<Command, Response>
+        IExpressWaiverConsumer expressWaiverConsumer,
+        ICreditAccountRepository creditAccountRepository,
+        ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -463,7 +495,10 @@ public class CreateOrder
                 PreferredEmployeeId: command.PreferredEmployeeId,
                 RecurringTemplateId: null,
                 SpecialInstructions: command.SpecialInstructions,
-                AccessInstructions: command.AccessInstructions), cancellationToken);
+                AccessInstructions: command.AccessInstructions,
+                CustomerFloor: command.CustomerFloor,
+                CustomerApartment: command.CustomerApartment,
+                AccessMode: command.AccessMode), cancellationToken);
 
             if (reservation != null)
             {
@@ -474,10 +509,35 @@ public class CreateOrder
                 await expressWaiverConsumer.AttachOrderAsync(reservation, order.Id, cancellationToken);
             }
 
+            // TAKE THE CREDIT FIRST, then price the order from what was actually taken. Owner ruling
+            // 2026-09-05: credit applies automatically, to the next eligible order - there is no
+            // customer-facing "spend it now" control to consult.
+            //
+            // The order matters, and an earlier draft had it the other way round. Applying first and
+            // debiting after left the conditional UPDATE with nothing to arbitrate: two checkouts by
+            // the same customer in two tabs both read the same balance, both discounted their order by
+            // it, and only the first debit landed - the second order kept its discount for free. Two
+            // browser tabs is not an exotic race, and the loss is the whole balance, repeatable.
+            //
+            // Debiting first inverts the exposure: the balance is arbitrated by the database, and what
+            // is left is a failed dispatch, which the compensating return below covers.
+            var intendedCredit = await TakeCreditForOrderAsync(order, userId, cancellationToken);
+            if (intendedCredit > 0m)
+            {
+                order.ApplyCredit(intendedCredit, userId);
+            }
+
             var dispatch = await orderPaymentDispatcher.DispatchAsync(
                 order, command.Language, cancellationToken);
             if (dispatch.Failure is { } dispatchFailure)
             {
+                // Stripe is unreachable and this order will not exist - the pipeline commits nothing on
+                // a failure. Put the credit back before returning: TryReturnAsync is its own statement
+                // precisely so it survives a request that is about to roll back, and it is keyed on the
+                // order id so a retry cannot double-return.
+                await creditAccountRepository.ReturnCreditAsync(
+                    order, intendedCredit, $"dispatch-failed:{order.Id}", userId, cancellationToken);
+
                 return BusinessResult.Failure<Response>(dispatchFailure);
             }
 
@@ -490,7 +550,71 @@ public class CreateOrder
             return BusinessResult.Success(new Response(
                 Id: order.Id,
                 ConfirmationCode: order.ConfirmationCode,
-                StripeSessionId: dispatch.StripeSessionId));
+                // The wire contract's name, kept: it has always carried the Checkout URL the
+                // browser is redirected to, and the web client reads it as one.
+                StripeSessionId: dispatch.CheckoutUrl));
+        }
+
+        /// <summary>
+        /// Take whatever credit this order may use, and answer with the amount actually taken.
+        ///
+        /// <para>Resolve and debit are ONE step because splitting them is what created the race: the
+        /// read takes no lock, so the only figure that can be trusted is the one the conditional UPDATE
+        /// actually removed. A false answer - the balance moved between the read and the write - is not
+        /// an error, it is zero: this order simply pays full price.</para>
+        ///
+        /// <para>Three gates decide whether any credit is eligible at all, each for its own reason.
+        /// <b>Card only</b> - a cash order is settled to the cleaner's hand on the doorstep, and there
+        /// is no mechanism for them to collect a different figure than the one on the job sheet.
+        /// <b>Same currency</b> - a balance is held in one currency and the platform will not convert
+        /// it silently at spend time. <b>Capped</b> - owner ruling 2026-09-05, the card always pays a
+        /// share. -&gt; BookingPolicy.CapCreditForOrder</para>
+        /// </summary>
+        private async Task<decimal> TakeCreditForOrderAsync(
+            Order order, string userId, CancellationToken cancellationToken)
+        {
+            if (order.PaymentType != PaymentType.Card || string.IsNullOrEmpty(userId))
+            {
+                return 0m;
+            }
+
+            var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
+            if (spendable == null || spendable.CurrencyId != order.CurrencyId)
+            {
+                return 0m;
+            }
+
+            var eligible = BookingPolicy.CapCreditForOrder(spendable.Balance, order.TotalPrice);
+            if (eligible <= 0m)
+            {
+                return 0m;
+            }
+
+            // The order id IS the idempotency key, so this order can never be debited twice however
+            // many times any future caller re-runs this step. A retried REQUEST mints a new order with
+            // a new id and is a new debit - which is correct: it is a different booking.
+            var taken = await creditAccountRepository.TryDebitAsync(
+                creditAccountId: spendable.AccountId,
+                amount: eligible,
+                reason: CreditTransactionReason.OrderPayment,
+                idempotencyKey: $"order-payment-{order.Id}",
+                actorId: userId,
+                cancellationToken: cancellationToken,
+                orderId: order.Id);
+
+            if (!taken)
+            {
+                // A concurrent checkout drained the balance between the read and the write. Nothing is
+                // wrong and nothing is lost - this order is priced at full price, which is what the
+                // customer would have seen had they started it a second later.
+                logger.LogInformation(
+                    "Credit debit of {Amount} was refused for order {OrderId}; the balance moved between "
+                    + "the read and the write, so the order is priced at full price.",
+                    eligible, order.Id);
+                return 0m;
+            }
+
+            return eligible;
         }
     }
 }

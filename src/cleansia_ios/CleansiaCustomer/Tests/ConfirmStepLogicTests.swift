@@ -42,23 +42,48 @@ final class CancellationPolicyTests: XCTestCase {
 
     func testNonPlusMembershipUsesStandardWindow() {
         let policy = CancellationPolicyBuilder.make(
-            membership: MembershipSnapshot(hasMembership: false, freeCancellationWindowHours: 48)
+            membership: MembershipSnapshot(hasMembership: false, freeCancellationWindowHours: 4)
         )
         XCTAssertEqual(policy.freeHours, 24)
         XCTAssertNil(policy.plusFreeHours)
     }
 
-    func testPlusWiderWindowBecomesPerk() {
+    /// The perk is the deadline moving CLOSER to the cleaning, so the number is SMALLER — the
+    /// seeded plans carry 4 against a standard 24. These tests asserted the opposite, which is how
+    /// an inverted comparison shipped on both mobile apps and read as green the whole time.
+    func testPlusWindowCloserToTheCleaningIsThePerk() {
         let policy = CancellationPolicyBuilder.make(
-            membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
+            membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 4)
         )
-        XCTAssertEqual(policy.freeHours, 48)
-        XCTAssertEqual(policy.plusFreeHours, 48)
+        XCTAssertEqual(policy.freeHours, 4)
+        XCTAssertEqual(policy.plusFreeHours, 4)
+        XCTAssertTrue(policy.hasPlusPerk)
+        // Free until 4 h, then the last-minute rate under 4 h: there is no 4-to-4 band left for a
+        // mid tier to describe.
+        XCTAssertFalse(policy.showMidTier)
+    }
+
+    func testPlusWindowThatStillLeavesAMidTierKeepsIt() {
+        let policy = CancellationPolicyBuilder.make(
+            membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 12)
+        )
+        XCTAssertEqual(policy.freeHours, 12)
         XCTAssertTrue(policy.hasPlusPerk)
         XCTAssertTrue(policy.showMidTier)
     }
 
-    func testPlusWindowNotWiderThanStandardIsNotAPerk() {
+    /// A window FURTHER from the cleaning than the standard one is not a benefit — it would make a
+    /// member cancel earlier than a non-member to pay nothing. Ignored rather than shown as a perk.
+    func testPlusWindowFurtherOutThanStandardIsNotAPerk() {
+        let policy = CancellationPolicyBuilder.make(
+            membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
+        )
+        XCTAssertEqual(policy.freeHours, 24)
+        XCTAssertNil(policy.plusFreeHours)
+        XCTAssertFalse(policy.hasPlusPerk)
+    }
+
+    func testPlusWindowEqualToStandardIsNotAPerk() {
         let policy = CancellationPolicyBuilder.make(
             membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 24)
         )
@@ -112,19 +137,35 @@ final class PreferredCleanerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.cleaners.count, 2)
     }
 
+    /// 4, not 48. `CancellationPolicyTests` above was corrected when the inverted comparison was
+    /// found — the perk is the deadline moving CLOSER to the cleaning, and the seeded plans carry 4
+    /// against a standard 24 — but this one was missed and kept asserting the old meaning, so it
+    /// demanded that a 48-hour window be advertised as a benefit. It only surfaced now because the
+    /// customer target had not compiled since, and a suite that cannot build cannot fail.
     func testCancellationPolicyReflectsPlusWindow() async {
+        let vm = PreferredCleanerViewModel(cleanersClient: FakeServingCleanersClient(result: .success([])))
+
+        await vm.load(membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 4))
+
+        XCTAssertEqual(vm.cancellationPolicy.freeHours, 4)
+        XCTAssertTrue(vm.cancellationPolicy.hasPlusPerk)
+    }
+
+    /// The other half of the same rule, through the view model rather than the builder: a window
+    /// further from the cleaning than the standard one is ignored, not surfaced as a perk.
+    func testAWindowFurtherOutThanStandardIsNotShownAsAPerk() async {
         let vm = PreferredCleanerViewModel(cleanersClient: FakeServingCleanersClient(result: .success([])))
 
         await vm.load(membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48))
 
-        XCTAssertEqual(vm.cancellationPolicy.freeHours, 48)
-        XCTAssertTrue(vm.cancellationPolicy.hasPlusPerk)
+        XCTAssertEqual(vm.cancellationPolicy.freeHours, 24)
+        XCTAssertFalse(vm.cancellationPolicy.hasPlusPerk)
     }
 
     func testLoadIsIdempotent() async {
         let cleaners = FakeServingCleanersClient(result: .success([ServingCleaner(id: "e-1", fullName: "Eva")]))
         let vm = PreferredCleanerViewModel(cleanersClient: cleaners)
-        let membership = MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 48)
+        let membership = MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 4)
 
         await vm.load(membership: membership)
         await vm.load(membership: membership)

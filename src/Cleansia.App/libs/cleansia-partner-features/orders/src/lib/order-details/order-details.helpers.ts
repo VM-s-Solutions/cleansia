@@ -110,8 +110,12 @@ export function canTakeOrder(
   assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
+  // Mirrors OrderAvailability.OfferableStatuses. Started is not over (owner ruling 2026-09-06).
   const isOfferable =
-    orderStatusValue === OrderStatus.New || orderStatusValue === OrderStatus.Confirmed;
+    orderStatusValue === OrderStatus.New ||
+    orderStatusValue === OrderStatus.Confirmed ||
+    orderStatusValue === OrderStatus.OnTheWay ||
+    orderStatusValue === OrderStatus.InProgress;
   return isOfferable && !isEmployeeAssigned(assignedEmployees, employeeId);
 }
 

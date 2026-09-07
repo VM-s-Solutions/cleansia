@@ -62,6 +62,36 @@ data class QuoteOrderResponse(
      */
     val expressSurchargeWaivedByMembership: Boolean,
     val exchangeRate: Double,
+    /**
+     * How long the selection is expected to take and how many cleaners that implies. Server-computed
+     * from the SAME definitions the order uses, so a quote cannot promise a crew the booking will not
+     * send.
+     */
+    val estimatedDurationMinutes: Int = 0,
+    val requiredEmployees: Int = 1,
+    /** Free express upgrades left this calendar month BEFORE this booking. Null with no membership. */
+    val expressUpgradesRemaining: Int? = null,
+    /**
+     * The customer's spendable credit and the share of an order it may settle — the two INPUTS to the
+     * cap, not the answer. The cap is a function of the CHARGED price and a promo code is only known
+     * client-side, so the server hands over the inputs and the client applies the rule against the
+     * price it is actually displaying. -> BookingPolicy.CapCreditForOrder
+     */
+    val creditBalance: Double = 0.0,
+    val creditMaxShareOfOrder: Double = 0.0,
+    /** The rows the subtotals are made of, so a breakdown can say WHERE a number came from. */
+    val lines: List<QuoteLineDto>? = null,
+)
+
+/** Mirrors backend `QuoteOrder.QuoteLine` — one row of the price breakdown. */
+@Serializable
+data class QuoteLineDto(
+    val kind: String? = null,
+    val itemId: String? = null,
+    val baseAmount: Double = 0.0,
+    val unitAmount: Double = 0.0,
+    val units: Int = 0,
+    val amount: Double = 0.0,
 )
 
 @Serializable

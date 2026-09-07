@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.PayConfig;
+﻿using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
@@ -137,7 +137,10 @@ public sealed class OrderFactory(
             preferredEmployeeId: input.PreferredEmployeeId,
             recurringTemplateId: input.RecurringTemplateId,
             specialInstructions: input.SpecialInstructions,
-            accessInstructions: input.AccessInstructions);
+            accessInstructions: input.AccessInstructions,
+            customerFloor: input.CustomerFloor,
+            customerApartment: input.CustomerApartment,
+            accessMode: input.AccessMode);
 
         order.SetCurrency(input.Currency);
 

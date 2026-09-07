@@ -1,17 +1,17 @@
 import {
+  CreateDisputeResponse,
   DisputeListItem,
   DisputeMessageDto,
   DisputeReason,
 } from '@cleansia/customer-services';
-import { TranslateService } from '@ngx-translate/core';
 import {
   CustomerDisputeStatus,
   DISPUTE_EVIDENCE_ALLOWED_CONTENT_TYPES,
   DISPUTE_EVIDENCE_MAX_FILE_SIZE_BYTES,
   getDisputeReasonLabelKey,
-  getDisputesTableDefinition,
   getDisputeStatusSeverity,
   hasUnreadStaffReply,
+  readCreatedDisputeId,
   isDisputeOpen,
   latestStaffMessageTimestamp,
   validateEvidenceFile,
@@ -115,45 +115,25 @@ describe('disputes.models', () => {
     });
   });
 
-  describe('getDisputesTableDefinition', () => {
-    const translate = {
-      instant: (key: string) => key,
-    } as unknown as TranslateService;
-
-    it('builds the four list columns in order against the list DTO fields', () => {
-      const { columns } = getDisputesTableDefinition(
-        { onOpen: jest.fn() },
-        translate,
-        {}
-      );
-
-      expect(columns.map((c) => c.field)).toEqual([
-        'displayOrderNumber',
-        'reason',
-        'status',
-        'createdOn',
-      ]);
-      expect(columns.map((c) => c.header)).toEqual([
-        'pages.disputes.table.order',
-        'pages.disputes.table.reason',
-        'pages.disputes.table.status',
-        'pages.disputes.table.created',
-      ]);
+  // Owner, 2026-09-03: a photo attached while filing a dispute never arrived.
+  // `Dispute/Create` answered with an EMPTY 200 body, so there was no id to
+  // upload the evidence against and the file was dropped in silence. The
+  // endpoint returns `{ disputeId }` now and the client has been regenerated.
+  describe('readCreatedDisputeId', () => {
+    it('reads the id off the body', () => {
+      expect(
+        readCreatedDisputeId(CreateDisputeResponse.fromJS({ disputeId: 'dispute-1' })),
+      ).toBe('dispute-1');
     });
 
-    it('exposes a single open action that routes the row to onOpen', () => {
-      const onOpen = jest.fn();
-      const { actions } = getDisputesTableDefinition(
-        { onOpen },
-        translate,
-        {}
-      );
-      const row = DisputeListItem.fromJS({ id: 'dispute-1' });
+    it('answers null for the EMPTY body that hid this bug', () => {
+      expect(readCreatedDisputeId(null)).toBeNull();
+      expect(readCreatedDisputeId(undefined)).toBeNull();
+    });
 
-      expect(actions).toHaveLength(1);
-      actions[0].onClick(row);
-
-      expect(onOpen).toHaveBeenCalledWith(row);
+    it('answers null for an empty id, which would upload a photo against nothing', () => {
+      expect(readCreatedDisputeId(CreateDisputeResponse.fromJS({ disputeId: '' }))).toBeNull();
+      expect(readCreatedDisputeId(CreateDisputeResponse.fromJS({}))).toBeNull();
     });
   });
 

@@ -28,6 +28,12 @@ public class CleanupStalePendingOrdersHandlerSmokeTests
             .Setup(m => m.Send(
                 It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(new ReleaseOrphanedBenefitReservations.Response(0)));
+        // And a THIRD: orders that reached their cleaning time with nobody assigned. The only one of
+        // the three that moves money.
+        _mediator
+            .Setup(m => m.Send(
+                It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new CancelUnfilledOrders.Response(0, 0, 0)));
 
         var handler = CreateHandler();
 
@@ -39,6 +45,9 @@ public class CleanupStalePendingOrdersHandlerSmokeTests
         _mediator.Verify(
             m => m.Send(
                 It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

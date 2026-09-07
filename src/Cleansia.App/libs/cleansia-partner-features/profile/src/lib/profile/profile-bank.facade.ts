@@ -84,7 +84,16 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
 
         const [employee, payoutDetails, countries] = response;
         this.employeeId.set(employee.id ?? '');
-        this.countries.set(countries.map((country) => this.toOption(country)));
+        // `?? []` because the generated client answers a 200 whose body is not a JSON array — an
+        // empty body, a `{}`, a bare `null` — with NULL rather than an empty list, and a 204 falls
+        // past every branch to the same. See `processGetOverview` on CountryClient: it ends
+        // `result200 = null as any` while its declared `CountryListItem[]` return type says that
+        // cannot happen. The `catchError` above does not cover it — null is not an error, so it
+        // reaches here untouched and `.map()` throws inside the subscriber, past `finalize`, so the
+        // page is left with the form unpatched, no error state and a spinner already cleared.
+        this.countries.set(
+          (countries ?? []).map((country) => this.toOption(country))
+        );
         this.formGroup.setValue(
           mapPayoutDetailsToBankForm(payoutDetails, employee.countryId)
         );

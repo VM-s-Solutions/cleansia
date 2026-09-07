@@ -3,17 +3,20 @@ import baseConfig from '../../eslint.base.config.mjs';
 
 export default [
   ...baseConfig,
-  ...baseConfig,
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
   {
     files: ['**/*.ts'],
     rules: {
+      // `cleansia`, not the generator's `app`: every component in this
+      // application is <cleansia-*>, which is the convention the project guide
+      // states and the prefix project.json declares. The rule was asserting a
+      // naming scheme nothing in the repo has ever used.
       '@angular-eslint/directive-selector': [
         'error',
         {
           type: 'attribute',
-          prefix: 'app',
+          prefix: 'cleansia',
           style: 'camelCase',
         },
       ],
@@ -21,7 +24,10 @@ export default [
         'error',
         {
           type: 'element',
-          prefix: 'app',
+          // Both: every component in the app is <cleansia-*>, and the ROOT
+          // stays <app-root> because index.html and the SSR entry bootstrap
+          // that element by name.
+          prefix: ['cleansia', 'app'],
           style: 'kebab-case',
         },
       ],

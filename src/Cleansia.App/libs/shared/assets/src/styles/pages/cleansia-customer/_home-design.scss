@@ -1,0 +1,954 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// The approved home-page design language
+// =============================================================================
+// Ported verbatim from the artboard the owner approved ("Cleansia Home
+// Concepts"). Every value here is the design's, not a re-derivation of it —
+// the previous build drifted because sections were written from a description
+// rather than from the artboard, so this file exists to make the tokens
+// copyable rather than remembered.
+//
+// Type is Poppins for display and Nunito for prose, which is what the mobile
+// apps ship as byte-identical TTFs. Headings are Sky700 #0369A1 throughout.
+//
+// EVERY SIZE HERE IS IN PX, DELIBERATELY. `html { font-size: 14px }` in
+// common/font.scss, so a rem here renders at 87.5 % of the artboard's value —
+// a 58px display heading came out at 51px, and every size on the page was
+// quietly one eighth too small. The artboard is specified in px; matching it
+// means using px.
+
+
+// ---- The palette, as tokens that flip ---------------------------------------
+// Dark mode was broken because every colour below used to be a SCSS variable
+// baked at build time: Sky700 headings scored 2.5:1 on a dark ground, and text
+// whose colour matched its card scored 1.0 — invisible. A SCSS variable cannot
+// respond to a theme; a custom property can, so the palette is declared once
+// here and only the values are restated for dark.
+:root {
+  --cl-heading: #{$primary-dark};
+  --cl-body: #{$text-body};
+  --cl-muted: #{$text-muted};
+  --cl-faint: #{$text-light};
+
+  --cl-surface: #{$white};
+  --cl-tint: #{$primary-lighter};
+  --cl-tint-strong: #{$primary-light};
+
+  --cl-border: #{$border};
+  --cl-border-tint: #{$primary-light};
+  --cl-rule: rgba(3, 105, 161, 0.16);
+
+  --cl-accent: #{$primary};
+  --cl-accent-soft: #{$primary-accent};
+
+  // The hero's radial ground, and the fill the foam edge cuts INTO the section
+  // below it. The foam is a shape, so its fill must equal whatever the next
+  // section is painted with or a hard band appears between them.
+  --cl-hero-1: #bae6fd;
+  --cl-hero-2: #{$primary-light};
+  --cl-hero-3: #{$primary-lighter};
+  --cl-foam: #{$white};
+
+  // The three bands that paint their own ground. They were build-time SCSS
+  // values inlined at their use sites, which is why they stayed light when the
+  // rest of the page went dark.
+  --cl-cta-1: #{$primary-light};
+  --cl-cta-2: #{$primary-lighter};
+  --cl-cta-3: #{$white};
+  --cl-plus-1: #{$primary-accent};
+  --cl-plus-2: #{$primary};
+  --cl-plus-ink: #{$white};
+  --cl-footer-bg: #{$text-heading};
+
+  // The one colour that means "this destroys something". Declared here rather
+  // than in whichever page happened to need it first — the booking wizard's
+  // cancel notice and the account pages' field errors are both consumers now.
+  --cl-danger: #b91c1c;
+
+  // The tinted band a foam divider separates from the page ground. A divider is
+  // exactly as visible as the difference between the two sections it separates,
+  // so this token IS the divider's visibility — the shape has no say. One token
+  // rather than a per-page value because every such band on the site has to
+  // read as the same step, and they had drifted to four different ones.
+  //
+  // The two themes are not the same number on purpose. White on #e0f2fe is
+  // 1.15; the dark pair needs 1.28 to look like the same step, because a step
+  // of equal ratio reads as smaller against a dark ground.
+  --cl-band: #{$primary-light};
+
+  // The edge of an input. --cl-border is the divider colour and is too faint
+  // to read as the boundary of a control.
+  --cl-field-border: #cbd5e1;
+
+  // The "we could not find it" panel — an answer, not an error. Amber rather
+  // than --cl-danger: nothing failed, the two things typed simply did not match
+  // an order, and red would tell the reader they had broken something.
+  --cl-warn-soft: #fffbeb;
+  --cl-warn-line: #fde68a;
+  --cl-warn-ink: #b45309;
+  --cl-danger-soft: #fef2f2;
+  --cl-danger-line: #fecaca;
+
+  // A finished order is not the accent. The order lifecycle has four states a
+  // customer can be shown — waiting, in flight, done, cancelled — and three of
+  // them already had a token. Without this the spine on a completed order and
+  // the spine on a confirmed one were the same blue, so the list said nothing.
+  // → /domain/order-lifecycle
+  // The wash the account boards put behind their cards — paler than --cl-band,
+  // which is the marketing surface's tinted band. A profile is a workspace, and
+  // the boards keep it almost white so the cards on it read as the content.
+  // How much of the navbar a page must lay out around, RIGHT NOW. The bar is
+  // fixed and hides on scroll-down, so its height and its presence are two
+  // different facts: --cl-nav-h is how tall it is, this is how much of the
+  // screen it is currently taking. CustomerNavbarComponent puts .cl-nav-hidden
+  // on <html> when it slides away.
+  --cl-nav-offset: var(--cl-nav-h);
+
+  // The darkest ink on the surface. --cl-heading is the brand blue every title
+  // takes; this is for the few figures the board sets in near-black, where an
+  // accent would make a column of ten prices shout.
+  --cl-ink: #0f172a;
+
+  --cl-page: #f8fbfe;
+
+  --cl-ok: #15803d;
+  --cl-ok-soft: #f0fdf4;
+  --cl-ok-line: #bbf7d0;
+
+  // A neutral ground, deliberately NOT --cl-tint. The dispute thread's bubbles
+  // carry both speakers, so a brand tint would make every message read as ours.
+  --cl-wash: #f1f5f9;
+
+  // An INVERTED panel — a dark slab carrying light text, for the one card on a
+  // page that is the subject rather than another section. It stays dark in both
+  // themes, which --cl-heading does not: that flips to a light blue after dark,
+  // and a card painted with it turned into a pale slab with white text on it.
+  --cl-invert: #{$primary-dark};
+  --cl-invert-ink: #{$white};
+
+  // Suds. Flipping the OPACITY leaves a grey blob on a dark ground, so the
+  // colour flips instead. Lives here rather than beside one page's suds since
+  // the home hero and the auth pages both draw them.
+  --cl-sud: rgba(255, 255, 255, 0.5);
+  --cl-sud-soft: rgba(255, 255, 255, 0.42);
+  --cl-sud-faint: rgba(255, 255, 255, 0.28);
+}
+
+:root.dark-mode {
+  // Sky300 rather than Sky700: the same hue family, moved to where it can be
+  // read on a dark ground.
+  --cl-heading: #7dd3fc;
+  --cl-body: #cbd5e1;
+  --cl-muted: #94a3b8;
+  --cl-faint: #7c8899;
+
+  --cl-surface: #0f1b2d;
+  --cl-tint: rgba(56, 189, 248, 0.06);
+  --cl-tint-strong: rgba(56, 189, 248, 0.12);
+
+  --cl-border: rgba(148, 163, 184, 0.22);
+  --cl-border-tint: rgba(56, 189, 248, 0.24);
+  --cl-rule: rgba(125, 211, 252, 0.22);
+
+  --cl-accent: #38bdf8;
+  --cl-accent-soft: #7dd3fc;
+
+  --cl-hero-1: #12304d;
+  --cl-hero-2: #0e2439;
+  --cl-hero-3: #0b1626;
+  // The foam is a SHAPE cut out of the section it leads into, so its fill has
+  // to be that section's ground exactly. #0b1220 was a shade of its own, which
+  // put a faintly different dark band across every divider in dark mode.
+  --cl-foam: #0f1b2d;
+
+  // The closing band lands on the page's own dark, not on a light gradient.
+  --cl-cta-1: #14304c;
+  --cl-cta-2: #101f33;
+  --cl-cta-3: #0f1b2d;
+  // Plus stays the one blue card on the page — it is the product's identity —
+  // but at dark-mode luminance rather than the light theme's full sky-400/600,
+  // which read as a floodlight in a dark room.
+  --cl-plus-1: #17587e;
+  --cl-plus-2: #0a3a5c;
+  --cl-plus-ink: #eaf6fd;
+  // Navy on near-black is a light slab; the footer drops to a deep ink that
+  // still reads as its own band.
+  --cl-footer-bg: #0a2438;
+
+  // Red-300, not red-700: the light theme's red measures 2.1 on a dark ground.
+  --cl-danger: #fca5a5;
+  --cl-band: #12304d;
+  --cl-field-border: rgba(148, 163, 184, 0.38);
+  --cl-warn-soft: rgba(251, 191, 36, 0.10);
+  --cl-warn-line: rgba(251, 191, 36, 0.30);
+  --cl-warn-ink: #fbbf24;
+  --cl-danger-soft: rgba(248, 113, 113, 0.10);
+  --cl-danger-line: rgba(248, 113, 113, 0.28);
+  --cl-ink: #f1f5f9;
+  --cl-page: #0f2740;
+  --cl-ok: #6ee7b7;
+  --cl-ok-soft: rgba(110, 231, 183, 0.10);
+  --cl-ok-line: rgba(110, 231, 183, 0.28);
+  --cl-wash: rgba(148, 163, 184, 0.12);
+  --cl-invert: #0a2438;
+  --cl-invert-ink: #eaf6fd;
+  --cl-sud: rgba(125, 211, 252, 0.06);
+  --cl-sud-soft: rgba(125, 211, 252, 0.05);
+  --cl-sud-faint: rgba(125, 211, 252, 0.04);
+}
+
+// ---- Type scale -------------------------------------------------------------
+%cl-display {
+  font-family: $font-heading;
+  color: var(--cl-heading);
+  margin: 0;
+}
+
+// ---- Viewport scale ---------------------------------------------------------
+// The artboard is a fixed 1440 canvas, so every px below is exact AT 1440 and
+// `--cl-u` is the artboard's 16px base there. The display sizes were already fluid, but the copy,
+// the labels and the controls were not: on a 1280 window the column shrank
+// around 17px body text, 44px chips and 64px gutters that did not, and the page
+// read as oversized. One factor moves them together instead.
+//
+// The scale bottoms out at 85 % and is CONTINUOUS: 16px at the artboard's 1440
+// canvas, easing to 13.6px at 900 and holding there. It used to clamp at 1024
+// and then be overridden back to 16px below 900, which put a 22 % step in the
+// middle of the tablet range — every size on the page jumped as the window
+// crossed that one pixel.
+//
+// `--cl-u` carries a UNIT and every size is written as a ratio of it, rather
+// than the obvious `calc(40px * var(--unitless-factor))`. CSS cannot add a
+// number to a length, so a `clamp(0.85, calc(0.85 + (100vw - 900px) * …), 1)`
+// factor is invalid — and an invalid custom property does not fall back, it
+// makes every calc() using it invalid at computed-value time and DROPS the
+// declaration. That silently removed min-height and padding from every button
+// on the page while the stylesheet still looked right.
+//
+// Controls do NOT ride the scale all the way down: `.cl-btn` and `.cl-chip`
+// floor at 40px and 44px with `max()`, because a control is a target before it
+// is a proportion.
+//
+// On :root, not on .cleansia-landing: the navbar pill and the footer are the
+// same design system but sit outside <main>.
+:root {
+  // The linear term overshoots by a hair on purpose: at 1440 it computes to
+  // 16.0008px and the clamp ceiling pins it to exactly 16, so every derived size
+  // lands on the artboard integer instead of 63.9974px.
+  --cl-u: clamp(13.6px, calc(9.6px + 0.4445vw), 16px);
+
+  // The page gutter, as a token. Every section used to write
+  // `calc(4 * var(--cl-u))` itself, which meant the one mobile override
+  // (`.cl-section { padding: 4rem 1.5rem }`) was outranked by every
+  // `.cl-section--x` modifier and did nothing — phones kept a 54px gutter each
+  // side of a 390px screen.
+  --cl-gutter: calc(4 * var(--cl-u));
+}
+
+@media (max-width: 768px) {
+  :root {
+    --cl-gutter: 20px;
+  }
+}
+
+
+
+// `balance` only on the display sizes: the artboard hand-breaks those, and it
+// reproduces the break without a <br> inside a translated string. On the card
+// headings it makes a two-line heading into three, because it evens lines that
+// were already the right length.
+.cl-d1 {
+  @extend %cl-display;
+  text-wrap: balance;
+  font-weight: 700;
+  font-size: clamp(34px, 4.03vw, 58px); // 58px at 1440
+  line-height: 1.08;
+  letter-spacing: -1.6px;
+}
+
+.cl-d2 {
+  @extend %cl-display;
+  text-wrap: balance;
+  font-weight: 700;
+  font-size: clamp(28px, 2.64vw, 38px); // 38px at 1440
+  line-height: 1.16;
+  letter-spacing: -0.9px;
+}
+
+.cl-h3 {
+  @extend %cl-display;
+  font-weight: 600;
+  font-size: calc(1.5 * var(--cl-u));
+  line-height: 1.24;
+  letter-spacing: -0.35px;
+}
+
+.cl-h4 {
+  @extend %cl-display;
+  font-weight: 600;
+  font-size: calc(1.125 * var(--cl-u));
+  line-height: 1.3;
+  letter-spacing: -0.1px;
+}
+
+.cl-body {
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.72;
+  color: var(--cl-body);
+}
+
+.cl-muted {
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.6;
+  color: var(--cl-muted);
+}
+
+.cl-lbl {
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.cl-num {
+  font-variant-numeric: tabular-nums;
+}
+
+// ---- Actions ----------------------------------------------------------------
+// The design has THREE button treatments and uses each for a different job.
+// Collapsing them onto one was the mistake in the previous build.
+.cl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  // Owner ruling 2026-08-31: 40px, not the artboard's 56. Applies to every
+  // action on the page — the earlier reading, that only the in-card ones should
+  // shrink, was wrong.
+  min-height: max(40px, calc(2.5 * var(--cl-u)));
+  // 34px at 1440, which is what the board draws. It was 26 — narrow enough
+  // that a two-word label sat tight against the pill's ends.
+  padding: 0 calc(2.125 * var(--cl-u));
+  border-radius: 999px;
+  background: $primary;
+  color: $white;
+  font-family: $font-body;
+  font-weight: 800;
+  font-size: calc(1.0625 * var(--cl-u));
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    background: $primary-dark;
+    color: $white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14);
+  }
+
+  &:active {
+    transform: translateY(0);
+    background: $primary-darker;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+
+  // The board's `.btn-s`: 16px and 24px of side padding. It was 15/22, which
+  // is what made the navbar's "Objednat úklid" read a size below the design.
+  &--small {
+    min-height: 40px;
+    padding: 0 24px;
+    font-size: 16px;
+  }
+
+  // Owner ruling 2026-08-31: 56px is too tall where the action sits beside a
+  // field or inside a column rather than under a headline.
+  // Kept as an alias so the call sites that ask for it still resolve; it is the
+  // same height as the base now.
+  &--compact {
+    min-height: 40px;
+    padding: 0 22px;
+    font-size: 15px;
+  }
+
+  // A `.cl-btn` is a plain <button>, so unlike <cleansia-button> it has no
+  // spinner of its own. Submitting an order takes a round trip to Stripe; with
+  // only `disabled` the button went quiet and looked broken rather than busy.
+  &--loading {
+    pointer-events: none;
+    // Not `opacity` on the whole control: the label has to stay readable, and
+    // a dimmed button beside a spinner reads as disabled-and-broken.
+    cursor: progress;
+
+    .cl-btn__spinner {
+      margin-right: calc(0.5 * var(--cl-u));
+      font-size: calc(1.0625 * var(--cl-u));
+    }
+  }
+
+  // On the two gradient bands the fill inverts, or it vanishes into the band.
+  &--inverse {
+    background: $white;
+    color: $primary;
+
+    &:hover {
+      background: $primary-light;
+      color: $primary-darker;
+    }
+  }
+}
+
+// The secondary action is a weighted underline, not an outlined pill.
+.cl-link {
+  display: inline-block;
+  cursor: pointer;
+  font-size: calc(1.0625 * var(--cl-u));
+  font-weight: 800;
+  color: var(--cl-heading);
+  text-decoration: none;
+  border-bottom: 2px solid var(--cl-accent-soft);
+  padding-bottom: 2px;
+  transition: border-color 0.16s ease, color 0.16s ease;
+
+  &:hover {
+    border-color: var(--cl-accent);
+    color: var(--cl-heading);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 3px;
+  }
+}
+
+// The class was drawn for a <span>, but half its call sites are real buttons —
+// a resend, a reveal, a "show all". As a <button> it picks up the UA's own
+// border, background and centring, which drew a box around every one of them.
+// This is the same rule three pages had started keeping locally.
+button.cl-link {
+  border: 0;
+  border-bottom: 2px solid var(--cl-accent-soft);
+  background: none;
+  padding: 0 0 2px;
+  text-align: left;
+  font-family: inherit;
+
+  &:hover {
+    border-color: var(--cl-accent);
+  }
+}
+
+// ---- Chips ------------------------------------------------------------------
+.cl-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: max(44px, calc(2.75 * var(--cl-u)));
+  padding: 0 calc(1.125 * var(--cl-u));
+  border-radius: 999px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  font-family: $font-body;
+  font-size: calc(0.9375 * var(--cl-u));
+  font-weight: 700;
+  color: var(--cl-body);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+
+  &:hover {
+    border-color: var(--cl-accent-soft);
+    background: var(--cl-tint);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+
+  // Sky700 rather than Sky600 behind white: at 15px the lighter blue scored
+  // 4.1 against white, under the 4.5 a label of this size needs.
+  &--on,
+  &--on:hover {
+    background: $primary-dark;
+    border-color: $primary-dark;
+    color: $white;
+  }
+
+  &--on:hover {
+    background: $primary-dark;
+    border-color: $primary-dark;
+  }
+
+  // A read-only chip (a price row, a fact) is not a control.
+  &--static {
+    cursor: default;
+
+    &:hover {
+      border-color: var(--cl-border);
+      background: var(--cl-surface);
+    }
+  }
+}
+
+// ---- Surfaces ---------------------------------------------------------------
+.cl-soft {
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.cl-lift {
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+}
+
+// ---- The shared button, corrected ------------------------------------------
+// `<cleansia-button severity="primary">` paints PrimeNG's sky-500, and white on
+// sky-500 is 2.77 against a 4.5 floor. PrimeNG's dark theme separately repaints
+// the label navy, which put dark blue on blue at 2.31. Both are colour, both
+// are the same fix everywhere, and three page stylesheets had each grown a
+// private copy of it. Scoped to the customer app by this file's only importer.
+.p-button.p-button-primary {
+  background: #{$primary};
+  border-color: #{$primary};
+
+  .p-button-label {
+    color: #{$white};
+    font-weight: 800;
+  }
+
+  &:enabled:hover {
+    background: #{$primary-dark};
+    border-color: #{$primary-dark};
+  }
+}
+
+// ---- Fields -------------------------------------------------------------
+// The approved board draws a 48px field with a 14px radius and 16px text.
+// PrimeNG's own sizing is 35px / 6px / 14px, which is a different component
+// on a different scale — beside a 40px action and a 17px label the fields
+// read as a dense admin form dropped into a marketing page, which is exactly
+// what the owner saw. Owner, 2026-09-02: make them match the design.
+//
+// Scoped by this file's only importer — apps/cleansia.app. The same PrimeNG
+// input is used across the partner and admin apps, whose forms ARE dense
+// admin forms and were drawn against the 35px default; they never load this.
+// `.p-inputtext.p-component`, not `.p-inputtext` alone. PrimeNG's own rule has
+// the same weight and loads after this file, so a single class lost the tie for
+// every property PrimeNG also sets — the radius stayed 6px and the text 14px
+// while only `min-height`, which PrimeNG does not set, got through. Same tie the
+// button floor lost.
+.p-inputtext.p-component {
+  min-height: calc(3 * var(--cl-u));
+  padding: 0 var(--cl-u);
+  border-radius: calc(0.875 * var(--cl-u));
+  border: 1px solid var(--cl-field-border);
+  background: var(--cl-surface);
+  font-family: $font-body;
+  // 16, not the 17 the actions use. The board sets its fields a step below
+  // its buttons on purpose — what you type should not compete with what you
+  // press.
+  font-size: var(--cl-u);
+  color: var(--cl-body);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &::placeholder {
+    color: var(--cl-faint);
+  }
+
+  &:enabled:hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  // One ring, not PrimeNG's ring plus its own border colour change — two
+  // focus treatments on one control read as a rendering fault.
+  &:enabled:focus {
+    border-color: var(--cl-accent);
+    box-shadow: 0 0 0 3px var(--cl-tint-strong);
+    outline: 0;
+  }
+}
+
+// A password field carries a reveal button inside its right edge, so its text
+// has to stop before it rather than run under it.
+.p-inputtext[type='password'],
+.p-password .p-inputtext {
+  padding-right: calc(2.75 * var(--cl-u));
+}
+
+// The floating label sits ON the field's top border, so it needs the field's
+// own background behind it or the border strikes through the words.
+.p-floatlabel label {
+  left: var(--cl-u);
+  padding: 0 calc(0.25 * var(--cl-u));
+  background: var(--cl-surface);
+  color: var(--cl-muted);
+  font-family: $font-body;
+}
+
+.p-floatlabel-on label {
+  font-size: calc(0.8125 * var(--cl-u));
+  font-weight: 700;
+}
+
+// The invalid state is a border, not a background wash: a tinted field on a
+// tinted card is a colour, not a signal, and it fails the same contrast the
+// rest of the page is held to.
+.p-inputtext.ng-invalid.ng-touched {
+  border-color: var(--cl-danger);
+
+  &:enabled:focus {
+    border-color: var(--cl-danger);
+    box-shadow: none;
+  }
+}
+
+// Every action on a customer page clears 40px, whatever type size the page
+// sets on it. The floor is the owner's 2026-08-31 ruling and was being restated
+// per page, so a page that forgot it — the tracking form — shipped a 39px
+// button.
+// `.p-button.p-component`, not `.p-button` alone: PrimeNG's own rule has the
+// same weight and is loaded after this file, so a single class lost the tie and
+// the floor silently did nothing.
+.p-button.p-component {
+  min-height: max(40px, calc(2.5 * var(--cl-u)));
+  border-radius: 999px;
+  // The approved action is 17px/800 — the same size `.cl-btn` uses, because a
+  // <cleansia-button> and a plain `.cl-btn` sit side by side on these pages and
+  // must not be two different sizes. It was set per page, so a page that
+  // forgot it shipped PrimeNG's 13.1px: white on sky-600 is 4.10, which the
+  // large-text floor forgives at 17px and nothing forgives at 13.
+  font-family: $font-body;
+  font-size: calc(1.0625 * var(--cl-u));
+  font-weight: 800;
+  // PrimeNG tracks its label out by 0.025em. The board's action has none, and
+  // at weight 800 the extra spacing reads as extra weight.
+  letter-spacing: normal;
+
+  .p-button-label {
+    font-size: calc(1.0625 * var(--cl-u));
+    font-weight: 800;
+    letter-spacing: normal;
+  }
+}
+
+// ---- A labelled field ------------------------------------------------------
+// The approved board stacks the label ABOVE the control:
+//
+//   <label style="display:flex; flex-direction:column; gap:7px">
+//     <span class="lbl">E-mail</span>      <- 12px / 800 / uppercase / .07em
+//     <span class="fld">…</span>           <- 48px / 14px radius / 16px
+//   </label>
+//
+// The pages were built with PrimeNG's FLOATING label instead, which parks the
+// text on the field's top border in mixed case at ~13px — a different control
+// from the one that was approved. `<cleansia-text-input>` already renders the
+// stacked shape whenever `floatVariant` is omitted, so the templates dropped
+// the attribute and this styles what they now produce.
+//
+// Owner, 2026-09-02: make them EXACTLY the same.
+cleansia-text-input,
+cleansia-textarea,
+cleansia-select,
+cleansia-calendar,
+cleansia-telephone,
+cleansia-multiselect {
+  display: block;
+
+  // The calendar keeps its own wrapper, so its label is a grandchild rather
+  // than a direct one.
+  .cleansia-calendar-wrapper {
+    display: block;
+  }
+
+  > label,
+  .cleansia-calendar-wrapper > label,
+  .cleansia-telephone-wrapper > label {
+    display: block;
+    margin-bottom: 7px;
+    font-family: $font-body;
+    font-size: calc(0.75 * var(--cl-u));
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--cl-muted);
+    // No `.required::after { content: ' *' }`. The component sets a `required`
+    // class here, but nothing in this repo has ever drawn an asterisk from it
+    // and the board does not show one — adding it now would be inventing a
+    // marker, not matching a design.
+  }
+}
+
+// ---- The two fields that are not a p-inputtext ------------------------------
+// Owner, 2026-09-02: "the phone and date inputs look kinda corrupted".
+//
+// Both sit in the same two-column row as a pair of text inputs, and neither was
+// reached by the field floor above. The phone control is a <div> wrapping a bare
+// <input> — no `p-inputtext` class on either — so it fell back to the hardcoded
+// `var(--p-inputtext-border-radius, 6px)` in its own component sheet and stood
+// 35px tall next to a 48px neighbour. The date field's `p-datepicker` stretches
+// to the column but PrimeNG sizes the input inside it independently, so the box
+// ended half-width with its calendar glyph stranded against the wrapper's right
+// edge, detached from the field it opens.
+//
+// Scoped to the customer surface on purpose: the same two components render on
+// partner and admin, which have not had this design pass.
+// The class is DOUBLED on purpose. `cleansia-telephone.component.scss` is
+// component-scoped, so Angular emits its `.cleansia-telephone` rule with an
+// attribute selector — (0,2,0) — which beat this block at (0,1,1) for every
+// property it also sets. `min-height` got through because the component sets
+// none; `border-radius` did not, so the field stayed at the component's
+// hardcoded 6px fallback beside 14px neighbours. Repeating the class takes
+// this to (0,2,1) and the field floor wins.
+cleansia-telephone .cleansia-telephone.cleansia-telephone {
+  min-height: calc(3 * var(--cl-u));
+  border-radius: calc(0.875 * var(--cl-u));
+  border-color: var(--cl-field-border);
+  background: var(--cl-surface);
+
+  &:hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  &.cleansia-telephone--focused {
+    border-color: var(--cl-accent);
+    box-shadow: 0 0 0 3px var(--cl-tint-strong);
+  }
+}
+
+// Owner, 2026-09-03: make the phone read like the other fields. It did not,
+// because the country trigger's border-right ran the FULL height of the box and
+// cut it into two — next to the e-mail field beside it, one control looked like
+// two. The rule is inset so it reads as a separator inside one field, which is
+// what the board draws.
+cleansia-telephone .cleansia-telephone__trigger {
+  position: relative;
+  align-self: stretch;
+  padding: 0 calc(0.75 * var(--cl-u));
+  border-right: 0;
+  font-family: $font-body;
+  color: var(--cl-body);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: calc(0.75 * var(--cl-u));
+    bottom: calc(0.75 * var(--cl-u));
+    right: 0;
+    width: 1px;
+    background: var(--cl-border);
+  }
+}
+
+cleansia-telephone .cleansia-telephone__code {
+  font-size: var(--cl-u);
+  font-weight: 700;
+}
+
+cleansia-telephone .cleansia-telephone__input {
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-width: 0;
+  padding: 0 var(--cl-u);
+  border: 0;
+  background: none;
+  font-family: $font-body;
+  font-size: var(--cl-u);
+  color: var(--cl-body);
+
+  &:focus {
+    outline: 0;
+  }
+
+  &::placeholder {
+    color: var(--cl-faint);
+  }
+}
+
+// ---- The fourth control that is not a p-inputtext ---------------------------
+// Owner, 2026-09-03: "the textarea isn't as rounded as in the design, doesn't
+// correspond to other input design roundness".
+//
+// Same shape as the phone and the select before it. PrimeNG's textarea emits
+// `p-textarea p-component` and NO `p-inputtext`, so the field floor above never
+// matched it and the control kept PrimeNG's own 6px corner beside 14px
+// neighbours. It cannot simply join that selector list either: the floor sets
+// `min-height` and zero vertical padding, which are right for a one-line field
+// and wrong for a box you type paragraphs into.
+.p-textarea.p-component {
+  padding: calc(0.75 * var(--cl-u)) var(--cl-u);
+  border-radius: calc(0.875 * var(--cl-u));
+  border: 1px solid var(--cl-field-border);
+  background: var(--cl-surface);
+  font-family: $font-body;
+  font-size: var(--cl-u);
+  line-height: 1.6;
+  color: var(--cl-body);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &::placeholder {
+    color: var(--cl-faint);
+  }
+
+  &:enabled:hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  &:enabled:focus {
+    outline: 0;
+    border-color: var(--cl-accent);
+    box-shadow: 0 0 0 3px var(--cl-tint-strong);
+  }
+}
+
+// ---- The compact file strip -------------------------------------------------
+// The shared component paints itself from PrimeNG's surface variables, which on
+// this surface reads as a grey dashed box on white. The board draws it in the
+// brand: a dashed blue edge on the pale tint, with the icon and the trigger in
+// the heading colour — the one optional thing on the form, saying so.
+//
+// Customer-scoped on purpose: partner and admin render the same component and
+// have not had this design pass.
+cleansia-file .file-upload-area--compact {
+  border: 1px dashed var(--cl-accent-soft);
+  border-radius: calc(1.25 * var(--cl-u));
+  background: var(--cl-tint);
+
+  &:hover:not(.disabled) {
+    border-color: var(--cl-accent);
+    background: var(--cl-tint-strong);
+  }
+
+  .upload-icon {
+    color: var(--cl-heading);
+  }
+
+  .primary-text {
+    color: var(--cl-ink);
+  }
+
+  .secondary-text {
+    color: var(--cl-muted);
+  }
+
+  .upload-trigger {
+    border-color: var(--cl-border-tint);
+    color: var(--cl-heading);
+  }
+}
+
+// The select is the third control that is not a p-inputtext, so the field floor
+// above never reached it either: it rendered 35px tall with a 6px radius beside
+// 48px/14px neighbours in the same row. -> "Profil zakaznika" board, .fld
+cleansia-select .p-select.p-component {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: calc(3 * var(--cl-u));
+  border-radius: calc(0.875 * var(--cl-u));
+  border: 1px solid var(--cl-field-border);
+  background: var(--cl-surface);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &:not(.p-disabled):hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  // One ring, matching the text inputs — not PrimeNG's ring plus its own
+  // border change, which reads as two focus treatments on one control.
+  &:not(.p-disabled).p-focus {
+    border-color: var(--cl-accent);
+    box-shadow: 0 0 0 3px var(--cl-tint-strong);
+    outline: 0;
+  }
+
+  .p-select-label {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--cl-u);
+    font-family: $font-body;
+    font-size: var(--cl-u);
+    color: var(--cl-body);
+  }
+
+  .p-select-label.p-placeholder {
+    color: var(--cl-faint);
+  }
+
+  // The chevron is a glyph at the end of the field, not a tinted button glued
+  // to its right edge — PrimeNG gives it its own 35px box and corner radii.
+  .p-select-dropdown {
+    width: auto;
+    padding-right: calc(0.875 * var(--cl-u));
+    background: none;
+    border: 0;
+    border-radius: 0;
+    color: var(--cl-muted);
+  }
+}
+
+cleansia-calendar .p-datepicker {
+  display: flex;
+  width: 100%;
+
+  .p-datepicker-input {
+    width: 100%;
+  }
+}
+
+// The bar has slid off the top, so nothing needs reserving for it. Pages that
+// use --cl-nav-offset transition on it and follow the bar out.
+:root.cl-nav-hidden {
+  --cl-nav-offset: 0px;
+}
+
+// ---- The fact line that closes a card --------------------------------------
+.cl-fact {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--cl-rule);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--cl-heading);
+}
+
+// ---- Mascot plate -----------------------------------------------------------
+// The disc sits BEHIND the character rather than clipping it: a round container
+// with overflow:hidden cut the feet and the vacuum off. The three artworks were
+// re-cut to one 340x280 canvas at an identical character height on a shared
+// baseline, so a single height renders them at the same size.
+// Owner, 2026-08-31: the characters read too large in the service cards. Down
+// from the artboard's 176/158 to 148/132 — the disc and the figure move together
+// so the character still stands on the same baseline in all three.
+.cl-mascot-disc {
+  position: relative;
+  height: 148px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 126px;
+    height: 126px;
+    border-radius: 999px;
+    background: var(--cl-tint-strong);
+  }
+}
+
+.cl-mascot-icon {
+  position: relative;
+  z-index: 1;
+  height: 132px;
+  width: auto;
+  display: block;
+}

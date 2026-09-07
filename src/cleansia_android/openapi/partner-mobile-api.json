@@ -8978,6 +8978,14 @@
             "format": "double",
             "nullable": true
           },
+          "creditAppliedAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "amountDueOnCard": {
+            "type": "number",
+            "format": "double"
+          },
           "estimatedTime": {
             "type": "integer",
             "format": "int32"
@@ -9012,6 +9020,18 @@
             "nullable": true
           },
           "accessInstructions": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerFloor": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerApartment": {
+            "type": "string",
+            "nullable": true
+          },
+          "accessMode": {
             "type": "string",
             "nullable": true
           },
@@ -9210,6 +9230,14 @@
             "format": "double",
             "nullable": true
           },
+          "creditAppliedAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "amountDueOnCard": {
+            "type": "number",
+            "format": "double"
+          },
           "estimatedTime": {
             "type": "integer",
             "format": "int32"
@@ -9345,6 +9373,31 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderReviewLineDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrderReviewLineDto": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "packageId": {
+            "type": "string",
+            "nullable": true
+          },
+          "rating": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -9399,6 +9452,13 @@
             "type": "string",
             "nullable": true
           },
+          "tagline": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPopular": {
+            "type": "boolean"
+          },
           "price": {
             "type": "number",
             "format": "double"
@@ -9450,6 +9510,13 @@
             "type": "string",
             "nullable": true
           },
+          "tagline": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPopular": {
+            "type": "boolean"
+          },
           "price": {
             "type": "number",
             "format": "double"
@@ -9488,6 +9555,10 @@
       "PackageServiceSummary": {
         "type": "object",
         "properties": {
+          "serviceId": {
+            "type": "string",
+            "nullable": true
+          },
           "name": {
             "type": "string",
             "nullable": true
@@ -9853,7 +9924,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": { }
+        "additionalProperties": {}
       },
       "ProductivityMetricsDto": {
         "type": "object",
@@ -10586,6 +10657,10 @@
             "nullable": true
           },
           "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagline": {
             "type": "string",
             "nullable": true
           }

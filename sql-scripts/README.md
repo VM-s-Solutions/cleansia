@@ -17,7 +17,7 @@ Operational SQL scripts for the Cleansia database. These are executed via the **
 
 ## `seed/` — dev fixture data
 
-18 scripts that populate an empty database with plausible data to develop against: catalog rows
+20 scripts that populate an empty database with plausible data to develop against: catalog rows
 (countries, currencies, languages, services, packages), then users, employees, orders, payroll and
 disputes on top. They are **not** run by any workflow and are **not** part of a migration — the
 migrator owns the schema and never touches these.

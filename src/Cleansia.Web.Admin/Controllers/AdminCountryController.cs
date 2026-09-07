@@ -5,6 +5,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -44,6 +45,7 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreateCountry(
         [FromBody] CreateCountry.Command command,
         CancellationToken cancellationToken)
@@ -59,6 +61,7 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdateCountry(
         string countryId,
         [FromBody] UpdateCountry.Command command,
@@ -79,6 +82,7 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeleteCountry(
         string countryId,
         CancellationToken cancellationToken)
@@ -98,6 +102,7 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> SetServiced(
         string countryId,
         [FromBody] SetCountryServicedRequest request,

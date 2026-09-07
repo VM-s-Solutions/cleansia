@@ -227,18 +227,33 @@ This allows flexible pricing where a "Basic Clean" might cost 500 CZK base + 100
 | `PayPeriod` | Employee payment tracking periods |
 | `EmployeeDocument` | Uploaded employee documents (contracts, IDs) |
 | `EmployeePayoutDetails` | ADR-0034 — the cleaner's bank destination. **Its own table**, one row per cleaner, `(TenantId, EmployeeId)` unique with `NULLS NOT DISTINCT`. Never `Include`d on a list query |
-| `EmployeePayConfig` | Pay rates per service/package; nullable `EmployeeId` = per-employee override, with a filtered unique index on `(EmployeeId, ServiceId, PackageId) WHERE "EmployeeId" IS NOT NULL` |
+| `EmployeePayConfig` | Pay rates per service/package; nullable `EmployeeId` = per-employee override, `null` = the platform-wide default. Unique on `(EmployeeId, ServiceId, PackageId)` with `NULLS NOT DISTINCT` and **no filter** — every row carries a null by construction (one config per service *or* per package, never both), so a filtered nulls-distinct index rejected nothing while excluding the platform-wide rows `CalculateOrderPay` reads with no `ORDER BY` |
 | `MembershipPlan` / `UserMembership` | Cleansia Plus plans and enrolments |
 | `MembershipBenefitUsage` | ADR-0035 — the metered-benefit ledger. Two indexes, and confusing them is the trap: `IX_MembershipBenefitUsages_Slot` on `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)` is unique, `NULLS NOT DISTINCT`, filtered to live rows, and **is the sole arbiter of the reservation race** — the `SlotOrdinal` column is what lets a quota be N rather than 1. `IX_MembershipBenefitUsages_Quota`, the same key **without** `SlotOrdinal`, is **not unique**; it only serves the remaining-count read |
 | `OrderReceipt` | Generated receipt per order, including fiscal-registration state |
 | `FiscalCounter` | Per-issuer gapless fiscal sequence counter (see below) |
 
-::: danger `TenantId` is nullable — a unique index containing it enforces nothing today
-Postgres treats NULLs as DISTINCT, so `(TenantId, …)` unique indexes admit unlimited duplicates while
-`TenantId` is null, which is production. Nine indexes are in that position. Any design that needs a
-concurrent arbiter must declare `.AreNullsDistinct(false)` (as `FiscalCounter`, `LiveActivityToken`,
-`MembershipBenefitUsage`, `PromoCodeRedemption` and `EmployeePayoutDetails` do) or carry a second
-guard. Adding it to an existing index is an owner-only migration and fails on pre-existing duplicates.
+::: danger A unique index over a nullable column enforces nothing unless it says so
+Postgres treats NULLs as DISTINCT, so a unique index containing a nullable column admits unlimited
+duplicates while that column is null — and single-tenant mode **is** `TenantId = null`, which is
+production. `.AreNullsDistinct(false)` is what makes such an index an arbiter, and **15 indexes now
+carry it**.
+
+Seven were added on 2026-09-05, after a guard was rewritten from a hand-listed roster into a sweep of
+the whole model and found them: `EmployeePayConfig`, `FeatureFlag`, `LoyaltyTierConfig`,
+`LoyaltyTransaction`, `PromoCode`, `ReferralCode` and `TenantConfiguration`. Each had read as
+enforcing while enforcing nothing.
+
+**You do not need to remember to add it.** `NullsNotDistinctIndexModelTests` walks every unique index
+in the model, and one carrying a nullable column must either declare `NULLS NOT DISTINCT`, be filtered
+so the null cannot appear (`EmployeeInvoice`, `Order`'s recurring-template index), or be named as a
+deliberate exception (`UserMembership`, a backstop behind an authoritative read).
+
+Two shapes are worth knowing. `LoyaltyTransaction` keeps **both** a tenant term and a filter: the key
+is a caller-supplied token, so a bare global index would read a cross-tenant collision as a replay,
+while dropping the filter would collapse every null-key row onto one key. And on an index that has
+already shipped, adding this fails on pre-existing duplicates — pre-prod that is free, because
+`Initial` is regenerated and the database rebuilt.
 :::
 
 ## Fiscal Sequence Allocation

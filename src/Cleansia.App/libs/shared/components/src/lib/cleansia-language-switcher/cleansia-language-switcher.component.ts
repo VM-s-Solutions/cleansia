@@ -1,5 +1,15 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  OnInit,
+  PLATFORM_ID,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 // Inlined from @cleansia/services to avoid module boundary issues
 const PREFERRED_LANGUAGE_KEY = 'preferred_language';
@@ -21,7 +31,22 @@ interface LanguageOption {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaLanguageSwitcherComponent implements OnInit {
+  /**
+   * `flag` shows a country flag beside the code; `globe` shows a single globe
+   * glyph instead.
+   *
+   * The customer artboard draws one globe, not five flags: a flag names a
+   * country, and the choice here is a language. Partner and admin keep the flag
+   * they were built with, so this is an input rather than a change of default.
+   */
+  readonly variant = input<'flag' | 'globe'>('flag');
+
+  // The last constructor-injected dependency in this lib; every sibling field
+  // here already uses inject(), and the constructor now only seeds state.
+  private readonly translate = inject(TranslateService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
   languages: LanguageOption[] = [];
   selectedLanguage: string;
 
@@ -40,12 +65,23 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
     ru: 'RU',
   };
 
-  constructor(private translate: TranslateService) {
+  constructor() {
     this.selectedLanguage =
       this.translate.currentLang || this.translate.getDefaultLang();
   }
 
   ngOnInit(): void {
+    // Every switcher on the page follows the service, not just the one that was
+    // clicked. `selectedLanguage` is local state, so the navbar and the footer
+    // each kept whichever value they were constructed with and drifted apart the
+    // moment either was used.
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ lang }) => {
+        this.selectedLanguage = lang;
+        this.cdr.markForCheck();
+      });
+
     this.languages = this.translate.getLangs().map((lang) => ({
       value: lang,
       label: this.getNativeLanguageName(lang),

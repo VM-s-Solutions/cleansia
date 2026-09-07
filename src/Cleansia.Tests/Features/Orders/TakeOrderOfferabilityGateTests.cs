@@ -72,6 +72,29 @@ public class TakeOrderOfferabilityGateTests
         AssertSingleError(result, BusinessErrorMessage.TakeOrderAlreadyCompleted);
     }
 
+    /// <summary>
+    /// THE 2026-09-06 WIDENING. <c>NotifyOnTheWay</c> writes an ORDER-level status the moment ONE
+    /// cleaner sets off, so while "started" meant "not offerable" a single tap took a half-crewed job
+    /// off every board and refused every remaining seat. The owner ruled a started job stays fillable.
+    ///
+    /// <para>These two are the regression: they were both refused before, and the refusal is the
+    /// defect, not the rule.</para>
+    /// </summary>
+    [Theory]
+    [InlineData(OrderStatus.OnTheWay)]
+    [InlineData(OrderStatus.InProgress)]
+    public async Task A_Started_Order_With_A_Free_Seat_Is_Still_Takeable(OrderStatus status)
+    {
+        Arrange(ValidatorTestHelpers.BuildEmptyOrder(OrderId, status, maxEmployees: 2));
+
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));
+
+        Assert.True(
+            result.IsValid,
+            $"a {status} order with a free seat must stay takeable: "
+                + string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
     [Theory]
     // Checkout is open or abandoned; the 15-minute sweep cancels it within ~1h15m.
     [InlineData(OrderStatus.New, PaymentType.Card, PaymentStatus.Pending, null)]
@@ -80,8 +103,11 @@ public class TakeOrderOfferabilityGateTests
     [InlineData(OrderStatus.Confirmed, PaymentType.Card, PaymentStatus.Pending, null)]
     // The customer has not confirmed this occurrence; the hourly sweep retracts it at T-1h.
     [InlineData(OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, RecurringTemplateId)]
-    [InlineData(OrderStatus.OnTheWay, PaymentType.Cash, PaymentStatus.Paid, null)]
-    [InlineData(OrderStatus.InProgress, PaymentType.Cash, PaymentStatus.Paid, null)]
+    // The started statuses are refused on the MONEY axis only, now that the fulfilment axis admits
+    // them (owner ruling 2026-09-06 — a half-crewed job stays fillable after the first cleaner sets
+    // off). Paid + started is TAKEABLE and is asserted below.
+    [InlineData(OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Pending, null)]
+    [InlineData(OrderStatus.InProgress, PaymentType.Cash, PaymentStatus.Pending, RecurringTemplateId)]
     [InlineData(OrderStatus.Pending, PaymentType.Cash, PaymentStatus.Paid, null)]
     public async Task A_Non_Offerable_Order_Is_Refused_With_The_Opaque_Residue_Key(
         OrderStatus status,

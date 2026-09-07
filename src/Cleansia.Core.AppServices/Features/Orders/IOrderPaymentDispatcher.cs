@@ -1,4 +1,4 @@
-using Cleansia.Core.Domain.Orders;
+﻿using Cleansia.Core.Domain.Orders;
 using Cleansia.Infra.Common.Validations;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
@@ -23,10 +23,14 @@ public interface IOrderPaymentDispatcher
 
 /// <summary>
 /// Outcome of <see cref="IOrderPaymentDispatcher.DispatchAsync"/>: either the Card flow's Stripe
-/// session id (null for Cash) or the <see cref="Error"/> the handler returns as a failure.
+/// Checkout URL (null for Cash) or the <see cref="Error"/> the handler returns as a failure.
+///
+/// <para>Named for what it carries. It was <c>StripeSessionId</c> and has always held the browser
+/// redirect URL, which was survivable while the id was thrown away and is not now that the order
+/// records the id as its charge surface.</para>
 /// </summary>
-public record OrderPaymentDispatchResult(string? StripeSessionId, Error? Failure)
+public record OrderPaymentDispatchResult(string? CheckoutUrl, Error? Failure)
 {
-    public static OrderPaymentDispatchResult Ok(string? stripeSessionId) => new(stripeSessionId, null);
+    public static OrderPaymentDispatchResult Ok(string? checkoutUrl) => new(checkoutUrl, null);
     public static OrderPaymentDispatchResult Fail(Error error) => new(null, error);
 }

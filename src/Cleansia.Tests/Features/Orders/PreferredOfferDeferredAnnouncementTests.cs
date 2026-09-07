@@ -237,6 +237,7 @@ public class PreferredOfferDeferredAnnouncementTests
 
         return new ConfirmRecurringOrder.Handler(
             _orderRepository.Object,
+            new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
             stripeClient.Object,
@@ -264,6 +265,7 @@ public class PreferredOfferDeferredAnnouncementTests
         return new HandlePaymentNotification.Handler(
             stripeConfig.Object,
             _orderRepository.Object,
+            new Mock<ICreditAccountRepository>().Object,
             disputes.Object,
             processedEvents.Object,
             new Mock<IStripeSubscriptionWebhookHandler>().Object,

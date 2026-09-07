@@ -6,8 +6,12 @@ struct SubmitReviewSheet: View {
     let existingReview: CustomerOrderReview?
     let isSubmitting: Bool
     let errorMessage: String?
-    let onConfirm: (Int, String?, [CustomerReviewTag]) -> Void
+    let onConfirm: (Int, String?, [CustomerReviewTag], [OrderItemLineScore]) -> Void
     let onDismiss: () -> Void
+    /// The items on the order, so the customer can score them one by one. Empty for any order
+    /// whose items did not load — the section then renders nothing, which is right: the overall
+    /// rating above is the required answer and this is an extra.
+    var lineOptions: [OrderItemLine] = []
     /// The prompt says "Not now"; the detail screen's own entry point says "Cancel".
     var dismissLabel: String = L10n.OrderReview.cancel
     /// Non-nil on a prompt the customer did not ask for, which leads with the question rather than the
@@ -31,10 +35,11 @@ struct SubmitReviewSheet: View {
         existingReview: CustomerOrderReview?,
         isSubmitting: Bool,
         errorMessage: String?,
-        onConfirm: @escaping (Int, String?, [CustomerReviewTag]) -> Void,
+        onConfirm: @escaping (Int, String?, [CustomerReviewTag], [OrderItemLineScore]) -> Void,
         onDismiss: @escaping () -> Void,
         dismissLabel: String = L10n.OrderReview.cancel,
-        titleOverride: String? = nil
+        titleOverride: String? = nil,
+        lineOptions: [OrderItemLine] = []
     ) {
         self.existingReview = existingReview
         self.isSubmitting = isSubmitting
@@ -43,11 +48,21 @@ struct SubmitReviewSheet: View {
         self.onDismiss = onDismiss
         self.dismissLabel = dismissLabel
         self.titleOverride = titleOverride
+        self.lineOptions = lineOptions
         _rating = State(initialValue: existingReview?.rating ?? 0)
         _comment = State(initialValue: existingReview?.comment ?? "")
         _selectedTags = State(initialValue: Set(existingReview?.tags ?? []))
         _previousRating = State(initialValue: existingReview?.rating ?? 0)
+        // Seeded from the stored review on an edit, so reopening shows what they said last time.
+        // Absent means NOT SCORED, which is a different answer from scored badly — hence a dictionary
+        // rather than an array of zeroes.
+        _lineScores = State(initialValue: (existingReview?.lines ?? []).reduce(into: [:]) { acc, line in
+            acc["\(line.packageId ?? "")|\(line.serviceId)"] = line.rating
+        })
     }
+
+    @State private var lineScores: [String: Int]
+    @State private var linesExpanded = false
 
     private var isEdit: Bool {
         existingReview != nil
@@ -95,6 +110,70 @@ struct SubmitReviewSheet: View {
                             let capped = value.cappedToUtf16(maxCommentUtf16Length)
                             if capped != value { comment = capped }
                         }
+                }
+
+                // Per-item scores, behind a disclosure and closed by default: the stars above are
+                // the required answer and a customer leaving five and going should never meet this.
+                if !lineOptions.isEmpty {
+                    Button {
+                        linesExpanded.toggle()
+                    } label: {
+                        HStack(spacing: Spacing.xxs) {
+                            Image(systemName: linesExpanded ? "chevron.down" : "chevron.right")
+                            Text(L10n.OrderReview.rateItems)
+                                .font(CleansiaTypography.labelLarge)
+                            Spacer(minLength: 0)
+                        }
+                        .foregroundColor(CleansiaColors.onSurface)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isSubmitting)
+
+                    if linesExpanded {
+                        Text(L10n.OrderReview.rateItemsHint)
+                            .font(CleansiaTypography.labelMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        ForEach(lineOptions) { option in
+                            HStack(alignment: .center, spacing: Spacing.xs) {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(option.label)
+                                        .font(CleansiaTypography.bodyMedium)
+                                        .foregroundColor(CleansiaColors.onSurface)
+                                    if let packageLabel = option.packageLabel, !packageLabel.isEmpty {
+                                        Text(L10n.OrderReview.itemInPackage(packageLabel))
+                                            .font(CleansiaTypography.labelSmall)
+                                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                                    }
+                                }
+                                Spacer(minLength: 0)
+                                HStack(spacing: 0) {
+                                    ForEach(1 ... 5, id: \.self) { star in
+                                        Button {
+                                            // Pressing the star already chosen clears the row — the
+                                            // only way back to "not scored", and without it a mis-tap
+                                            // is permanent.
+                                            if lineScores[option.id] == star {
+                                                lineScores[option.id] = nil
+                                            } else {
+                                                lineScores[option.id] = star
+                                            }
+                                        } label: {
+                                            Image(systemName: star <= (lineScores[option.id] ?? 0)
+                                                ? "star.fill"
+                                                : "star")
+                                                .foregroundColor(CleansiaColors.primary)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(isSubmitting)
+                                        .accessibilityLabel(
+                                            L10n.OrderReview.rateItemStar(option.label, star)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if let errorMessage, !errorMessage.isBlank {
@@ -182,7 +261,17 @@ struct SubmitReviewSheet: View {
         // Ordered by wire value so two identical selections submit identically, whatever order the
         // chips happened to be tapped in.
         let tags = selectedTags.sorted { $0.rawValue < $1.rawValue }
-        onConfirm(rating, trimmed.isEmpty ? nil : trimmed, tags)
+        // In list order, so two identical reviews submit identically whatever order the stars were
+        // tapped in — the same reasoning as the tag sort above.
+        let scores = lineOptions.compactMap { option -> OrderItemLineScore? in
+            guard let rating = lineScores[option.id] else { return nil }
+            return OrderItemLineScore(
+                serviceId: option.serviceId,
+                packageId: option.packageId,
+                rating: rating
+            )
+        }
+        onConfirm(rating, trimmed.isEmpty ? nil : trimmed, tags, scores)
     }
 }
 

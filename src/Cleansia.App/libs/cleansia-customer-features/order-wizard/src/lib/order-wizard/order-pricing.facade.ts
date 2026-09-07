@@ -20,7 +20,9 @@ import {
   tap,
 } from 'rxjs';
 import {
+  capCreditForOrder,
   composeFinalPriceForUnquotedDiscount,
+  composeSlotMoment,
   OrderWizardFormData,
 } from './order-wizard.models';
 
@@ -147,6 +149,31 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   });
 
   /**
+   * The customer's spendable credit, and how much of it this booking would take.
+   *
+   * Owner ruling 2026-09-05: credit applies AUTOMATICALLY — there is no "use my credit" toggle, and
+   * the wizard's job is to say so plainly before the customer is sent to Stripe rather than let them
+   * discover a smaller charge afterwards. `creditBalance` is the whole balance so the summary can say
+   * "500 of your 800 applies here"; the card always pays the rest, which is the second half of the
+   * same ruling.
+   *
+   * Capped against `displayedTotalPrice` — the price actually being charged, promo included — through
+   * the one shared function that mirrors the server rule. → capCreditForOrder
+   */
+  readonly creditBalance = computed(() => this.quote()?.creditBalance ?? 0);
+
+  readonly creditApplied = computed(() =>
+    capCreditForOrder(
+      this.creditBalance(),
+      this.displayedTotalPrice(),
+      this.quote()?.creditMaxShareOfOrder ?? 0,
+    ),
+  );
+
+  /** What the card is asked for once credit has settled its share. */
+  readonly amountDueOnCard = computed(() => this.displayedTotalPrice() - this.creditApplied());
+
+  /**
    * Express surcharge line item — the surcharge actually billed, which the server takes on the
    * DISCOUNTED subtotal. Derived as the gap the charged price leaves above that subtotal so the
    * breakdown rows sum to the total; `quote.expressSurchargeAmount` answers a different question
@@ -164,27 +191,10 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
       .filter(([, on]) => on)
       .map(([slug]) => slug)
       .sort();
-    // Compose the actual slot moment for the quote, the same way submit() does,
-    // so the backend's express-surcharge check stays consistent between /Quote
-    // and /Create — otherwise the quote sees midnight (no surcharge) but Create
-    // sees the real slot (surcharge applies) and PriceMatchesAsync rejects with
-    // order.total_price.not_match.
-    let cleaningDateIso: string | null = null;
-    if (data.cleaningDate && data.cleaningTime) {
-      const [h, m] = data.cleaningTime.split(':').map(Number);
-      if (!Number.isNaN(h) && !Number.isNaN(m)) {
-        const slot = new Date(
-          data.cleaningDate.getFullYear(),
-          data.cleaningDate.getMonth(),
-          data.cleaningDate.getDate(),
-          h,
-          m,
-          0,
-          0,
-        );
-        cleaningDateIso = slot.toISOString();
-      }
-    }
+    // → composeSlotMoment: the date alone is midnight, which sits in a
+    // different express band from the slot.
+    const cleaningDateIso = composeSlotMoment(data.cleaningDate, data.cleaningTime)?.toISOString() ?? null;
+
     return {
       selectedServiceIds: [...data.selectedServiceIds].sort(),
       selectedPackageIds: [...data.selectedPackageIds].sort(),

@@ -588,11 +588,11 @@
     <string name="booking_cancel_tier1_when_plus">%1$d+ hodín vopred</string>
     <string name="booking_cancel_tier1_value">Zdarma</string>
     <string name="booking_cancel_tier2_when_range">%1$d–%2$d hodín vopred</string>
-    <string name="booking_cancel_tier2_value">50% poplatok</string>
+    <string name="booking_cancel_tier2_value">25% poplatok</string>
     <string name="booking_cancel_tier3_when_under">Menej ako %1$d hodín</string>
-    <string name="booking_cancel_tier3_value">100% poplatok</string>
+    <string name="booking_cancel_tier3_value">50% poplatok</string>
     <string name="booking_cancel_plus_badge">VÝHODA PLUS</string>
-    <string name="booking_cancel_plus_subtitle">Ako člen Plus máte %1$d hodín na bezplatné zrušenie.</string>
+    <string name="booking_cancel_plus_subtitle">Ako člen Plus môžete zrušiť zadarmo až %1$d hodiny vopred.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložiť túto adresu</string>
@@ -791,7 +791,7 @@
     <string name="delete_account_item_devices">• Odhlásenie zo všetkých zariadení</string>
     <string name="delete_account_item_consents">• Všetky marketingové súhlasy</string>
     <string name="delete_account_confirm_label">Pre potvrdenie zadajte svoj e-mail</string>
-    <string name="delete_account_confirm_hint">vas@email.sk</string>
+    <string name="delete_account_confirm_hint">vas@email.com</string>
     <string name="delete_account_confirm_mismatch">E-mail nezodpovedá vášmu účtu</string>
     <string name="delete_account_confirm_button">Trvale zmazať účet</string>
     <string name="delete_account_success">Váš účet bol zmazaný.</string>
@@ -1204,11 +1204,14 @@
     <string name="notification_order_cancelled_body">Rezervácia #%1$s bola zrušená. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_order_refunded_title">Vrátenie peňazí</string>
     <string name="notification_order_refunded_body">Vaše vrátenie peňazí za rezerváciu #%1$s sa spracováva.</string>
+    <string name="notification_order_no_cleaner_refunded_title">Žiadny upratovač nebol k dispozícii</string>
+    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit 250 Kč na ďalšie upratovanie. Ospravedlňujeme sa.</string>
     <string name="notification_dispute_reply_title">Podpora odpovedala</string>
     <string name="notification_dispute_reply_body">Máte novú správu k vašej reklamácii. Ťuknutím si ju prečítate.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zajtrajšie upratovanie</string>
     <string name="notification_recurring_scheduled_body">Vaša opakovaná rezervácia #%1$s je zajtra. Ťuknite pre potvrdenie a platbu.</string>
     <string name="recurring_confirm_cta">Potvrdiť a zaplatiť</string>
+    <string name="recurring_confirm_cta_cash">Potvrdiť rezerváciu</string>
     <string name="recurring_confirm_success">Rezervácia potvrdená</string>
     <string name="notification_loyalty_tier_upgrade_title">Postup na novú úroveň!</string>
     <string name="notification_loyalty_tier_upgrade_body">Vitajte v úrovni %1$s — nové výhody čakajú.</string>
@@ -1345,4 +1348,12 @@
     <string name="tracker_step_counter">Krok %1$d / %2$d</string>
     <string name="order_cancelled_reason_payment_not_completed">Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.</string>
     <string name="order_cancelled_reason_recurring_not_confirmed">Táto opakovaná rezervácia nebola včas potvrdená, a preto bola zadarmo zrušená.</string>
+    <string name="dispute_create_which_items">Čo konkrétne nedopadlo?</string>
+    <string name="dispute_create_which_items_hint">Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celé upratovanie, nechajte prázdne.</string>
+    <string name="dispute_create_item_in_package">v balíku %1$s</string>
+    <string name="order_review_rate_items">Ohodnotiť každú službu zvlášť</string>
+    <string name="order_review_rate_items_hint">Nepovinné. Hodí sa, keď jedna časť dopadla dobre a iná nie — povie nám presne, kam sa pozrieť.</string>
+    <string name="order_review_item_in_package">v balíku %1$s</string>
+    <string name="order_review_rate_item_star">Dať službe %1$s %2$d hviezdičiek</string>
+    <string name="error_dispute_line_not_on_order">Jedna z vybraných služieb na tej objednávke nie je. Otvorte formulár znova a skúste to ešte raz.</string>
 </resources>

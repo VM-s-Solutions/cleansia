@@ -2,21 +2,20 @@
 // All customer app page styles imported here
 
 @use './home.component.scss';
-@use './login.component.scss';
-@use './register.component.scss';
-@use './confirm-email.component.scss';
-@use './forgot-password.component.scss';
-@use './services-catalog.component.scss';
+@use './auth';
+@use './catalog';
+@use './plus';
+@use './track';
+@use './checkout-result';
 @use './order-wizard.component.scss';
-@use './orders.component.scss';
-@use './checkout.component.scss';
-@use './order-detail.component.scss';
-@use './profile.component.scss';
-@use './saved-addresses.component.scss';
-@use './gdpr.component.scss';
-@use './legal-pages.component.scss';
-@use './disputes.component.scss';
-@use './rewards.component.scss';
-@use './track-order.component.scss';
-@use './membership.component.scss';
-@use './recurring-bookings.component.scss';
+@use './wizard-shell';
+@use './orders';
+@use './order-detail';
+@use './profile';
+@use './saved-addresses';
+@use './gdpr';
+@use './legal-pages';
+@use './disputes';
+@use './rewards';
+@use './membership';
+@use './recurring-bookings';

@@ -44,6 +44,15 @@ data class DisputeListItemDto(
     val createdOn: String? = null,
     val resolvedOn: String? = null,
     val refundAmount: Double? = null,
+    /** The order's currency code, so a refund figure can be printed with its unit. */
+    val currency: String? = null,
+    /**
+     * Whether the customer filed inside the 24-hour deadline. False does not mean rejected — a late
+     * dispute is still accepted and investigated if it is serious, per the owner's 2026-09-05 ruling.
+     */
+    val filedWithinWindow: Boolean? = null,
+    /** The items the customer named as not done properly. Empty on a whole-job dispute. */
+    val lines: List<DisputeLineDto>? = null,
 )
 
 /** Mirrors backend `DisputeDetails`. */
@@ -122,6 +131,41 @@ data class CreateDisputeRequest(
     val orderId: String,
     val reason: Int,
     val description: String,
+    /**
+     * Which items of the order were not done properly. Optional and usually absent — a dispute about
+     * the whole job, or about a charge, names none. Sent as null rather than an empty list so the
+     * wire shape matches what the web client sends; the backend treats the two the same.
+     */
+    val lines: List<DisputeLineRequest>? = null,
+)
+
+/**
+ * Mirrors backend `DisputeLineDto` — an item the customer named, as the server reports it back.
+ *
+ * Carries the NAMES as well as the ids, deliberately: the detail screen renders these long after the
+ * order that produced them may have been reshaped, and resolving a name from an id at read time would
+ * make the dispute's own record depend on the catalogue not having changed.
+ */
+@Serializable
+data class DisputeLineDto(
+    val serviceId: String? = null,
+    val serviceName: String? = null,
+    val packageId: String? = null,
+    val packageName: String? = null,
+)
+
+/**
+ * Mirrors backend `CreateDispute.DisputeLineSelection`.
+ *
+ * The identity of an order item is the PAIR. A service bought on its own leaves [packageId] null; a
+ * service that came inside a package carries both, because the same service can appear twice on one
+ * order and an admin refunding one must not refund the other. The backend validates every line is
+ * actually on the order and answers `dispute.line_not_on_order` if it is not.
+ */
+@Serializable
+data class DisputeLineRequest(
+    val serviceId: String,
+    val packageId: String? = null,
 )
 
 /**

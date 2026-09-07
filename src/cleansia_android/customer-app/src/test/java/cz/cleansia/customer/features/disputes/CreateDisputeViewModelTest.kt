@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeRepository
+import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.network.ApiError
@@ -31,12 +32,15 @@ class CreateDisputeViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private lateinit var repository: DisputeRepository
+
+    private lateinit var orderRepository: OrderRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
 
     @Before
     fun setUp() {
         repository = mockk(relaxed = true)
+        orderRepository = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         every { appContext.getString(R.string.dispute_create_missing_order) } returns "missing order"
@@ -46,6 +50,9 @@ class CreateDisputeViewModelTest {
     private fun viewModel(orderId: String? = "order-1") =
         CreateDisputeViewModel(
             disputeRepository = repository,
+            // relaxed, so the order fetch answers a mock detail and the item list stays empty. These
+            // cases are about the submit path; the item list has its own test.
+            orderRepository = orderRepository,
             snackbar = snackbar,
             savedStateHandle = SavedStateHandle(mapOf("orderId" to orderId)),
             appContext = appContext,

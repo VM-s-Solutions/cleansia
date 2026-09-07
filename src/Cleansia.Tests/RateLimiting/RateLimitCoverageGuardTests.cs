@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -107,6 +108,94 @@ public class RateLimitCoverageGuardTests
     private static string? EffectivePolicyOf(MethodInfo action) =>
         action.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName
         ?? action.DeclaringType!.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName;
+
+    /// <summary>
+    /// Every controller in the five host assemblies, found by reflection rather than by memory.
+    ///
+    /// <para>The list above is the contract; THIS is the thing that notices a controller that never
+    /// made it onto the list. A hand-enumerated roster fails OPEN: a new money endpoint on a new
+    /// controller is not weakly covered by it, it is invisible to it, and the suite stays green.</para>
+    /// </summary>
+    private static IEnumerable<Type> AllHostControllers() =>
+        new[]
+        {
+            typeof(Cleansia.Web.Customer.Controllers.PaymentController).Assembly,
+            typeof(Cleansia.Web.Mobile.Customer.Controllers.PaymentController).Assembly,
+            typeof(Cleansia.Web.Partner.Controllers.PaymentController).Assembly,
+            typeof(Cleansia.Web.Mobile.Partner.Controllers.OrderController).Assembly,
+            typeof(Cleansia.Web.Admin.Controllers.AdminAuthController).Assembly,
+        }
+        .SelectMany(a => a.GetTypes())
+        .Where(t => t is { IsAbstract: false, IsClass: true }
+            && typeof(ControllerBase).IsAssignableFrom(t)
+            && MutatingActionsOf(t).Any());
+
+    /// <summary>
+    /// Mutating actions deliberately left without a rate-limit window.
+    ///
+    /// <para><b>Empty, and that is the point.</b> It held fifty entries — every mutating action the
+    /// old hand-written roster had drifted past, including CreateAdminUser, CreatePromoCode and both
+    /// SavedAddressController pairs. All fifty now carry a window, so the set emptied rather than
+    /// being maintained. Anything added here in future is a decision with a name attached.</para>
+    /// </summary>
+    private static readonly HashSet<string> KnownUncovered = new(StringComparer.Ordinal)
+    {
+        };
+
+    /// <summary>
+    /// Every mutating action in every host, not just the ones somebody remembered to list.
+    ///
+    /// <para>The roster above is a hand-written array. That shape fails OPEN: a money endpoint on a
+    /// controller nobody added is not weakly covered by it, it is invisible to it, and the suite
+    /// stays green. Nineteen controllers had already drifted off it. This finds them by reflection
+    /// instead, so the only way a new uncovered action can pass is if someone writes it into
+    /// <see cref="KnownUncovered"/> — a deliberate act with a name attached, not an omission.</para>
+    /// </summary>
+    [Fact]
+    public void No_Mutating_Action_In_Any_Host_Is_Silently_Unlimited()
+    {
+        var newlyUncovered = new List<string>();
+
+        foreach (var controller in AllHostControllers())
+        foreach (var action in MutatingActionsOf(controller))
+        {
+            var disabled = action.GetCustomAttribute<DisableRateLimitingAttribute>() is not null;
+            if (!disabled && EffectivePolicyOf(action) is not null)
+            {
+                continue;
+            }
+
+            var id = $"{controller.FullName}.{action.Name}";
+            if (!KnownUncovered.Contains(id))
+            {
+                newlyUncovered.Add(id);
+            }
+        }
+
+        Assert.True(newlyUncovered.Count == 0,
+            "S5 — these mutating actions carry no rate-limit window and are not in the recorded "
+            + "baseline. Add [EnableRateLimiting], or add them to KnownUncovered with a reason:\n  "
+            + string.Join("\n  ", newlyUncovered.OrderBy(x => x, StringComparer.Ordinal)));
+    }
+
+    /// <summary>
+    /// The baseline may only shrink. Without this an entry could outlive the action it names, and the
+    /// list would quietly become fiction.
+    /// </summary>
+    [Fact]
+    public void The_Uncovered_Baseline_Contains_Nothing_Stale()
+    {
+        var live = AllHostControllers()
+            .SelectMany(c => MutatingActionsOf(c).Select(a => $"{c.FullName}.{a.Name}"))
+            .ToHashSet(StringComparer.Ordinal);
+
+        var stale = KnownUncovered.Where(id => !live.Contains(id))
+            .OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+        Assert.True(stale.Count == 0,
+            "These KnownUncovered entries name actions that no longer exist. Remove them:\n  "
+            + string.Join("\n  ", stale));
+    }
 
     [Fact]
     public void Every_Mutating_Action_On_Money_Controllers_Carries_A_RateLimit_Window()

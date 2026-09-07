@@ -379,6 +379,10 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'employee_document.deletion_already_resolved',
   'employee_document.not_found',
   'payout.not_found',
+  // Customer credit — AdminCreditController is the only writer of a balance.
+  'credit.amount_exceeds_sanity_cap',
+  'credit.amount_not_whole_minor_units',
+  'credit.reason_not_issuable',
   // Orders, disputes, refunds, receipts
   'dispute.already_resolved',
   'dispute.invalid_refund_amount',

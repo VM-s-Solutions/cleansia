@@ -133,7 +133,8 @@ public class TakeOrder
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
-            return order?.HasAvailableSpots ?? false;
+            // TakeableSeat: a seat whose holder asked for cover is takeable by displacement.
+            return order?.HasTakeableSeat ?? false;
         }
 
         private async Task<bool> CallerIsEmployeeAsync(Command command, CancellationToken cancellationToken)
@@ -262,10 +263,38 @@ public class TakeOrder
             // AddAssignedEmployee THROWS on that, which reaches the cleaner as a 500 instead of "this
             // job has been taken" — the refusal has to be a result. Seats have no spare since
             // BookingPolicy.SpareSeatsPerOrder went to 0, so the window is hit routinely.
-            if (!order!.HasAvailableSpots)
+            if (!order!.HasTakeableSeat)
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.OrderId), BusinessErrorMessage.NoAvailableSpots));
+            }
+
+            // THE COVER SWAP. When no seat is genuinely free, the takeable one belongs to a cleaner who
+            // asked to be relieved: they come off, the new cleaner goes on.
+            //
+            // REMOVE FIRST, then add — not the other way round, and the ordering is load-bearing twice
+            // over. It keeps AddAssignedEmployee's capacity guard at full strength, so the aggregate is
+            // never transiently over-seated. And because seat ordinals are derived as the smallest FREE
+            // ordinal, the replacement reuses the one just vacated — which means two cleaners racing for
+            // the same cover seat derive the SAME ordinal and the unique index genuinely arbitrates.
+            // Add-first would give them different ordinals and the index would admit both.
+            //
+            // Oldest request wins, stated rather than left to collection order, with the seat ordinal as
+            // a deterministic tiebreak when two stamps land in the same tick.
+            string? coveredEmployeeId = null;
+            string? coveredAssignmentId = null;
+            if (!order.HasAvailableSpots)
+            {
+                var covered = order.AssignedEmployees
+                    .Where(oe => oe.CoverRequestedAt is not null)
+                    .OrderBy(oe => oe.CoverRequestedAt)
+                    .ThenBy(oe => oe.SeatOrdinal)
+                    .First();
+
+                // Captured BEFORE the hard delete: the row is gone by the time anyone is notified.
+                coveredAssignmentId = covered.Id;
+                coveredEmployeeId = covered.EmployeeId;
+                order.UnassignEmployee(covered.EmployeeId);
             }
 
             var orderEmployee = OrderEmployee.Create(order, employee!);
@@ -290,6 +319,19 @@ public class TakeOrder
             {
                 await orderRepository.CommitAsync(cancellationToken);
             }
+            catch (DbUpdateConcurrencyException)
+            {
+                // The COVER-race loser. Two cleaners answering the same cover request both staged the
+                // DELETE of the same assignment row; the second one affects zero rows, which EF raises
+                // as a concurrency exception and NOT as 23505 — so IsUniqueViolation below never sees
+                // it and it would otherwise reach the cleaner as a 500. Same refusal as every other
+                // lost race, so the two paths cannot disagree.
+                logger.LogInformation(
+                    "Take lost the cover race for order {OrderId}; refusing as no-available-spots",
+                    order.Id);
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.OrderId), BusinessErrorMessage.NoAvailableSpots));
+            }
             catch (DbUpdateException ex)
                 when (DbConstraintViolation.IsUniqueViolation(ex))
             {
@@ -304,6 +346,20 @@ public class TakeOrder
                     "Take lost the seat race for order {OrderId}; refusing as no-available-spots", order.Id);
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.OrderId), BusinessErrorMessage.NoAvailableSpots));
+            }
+
+            // The cover request was answered: tell the cleaner who asked, using the shipped key for
+            // "a job you held is no longer yours". Read by id rather than off the deleted row's
+            // navigation — the assignment is gone by now.
+            if (!string.IsNullOrEmpty(coveredEmployeeId))
+            {
+                await CoverHandoverNotifier.NotifyCoverAnsweredAsync(
+                    order,
+                    coveredEmployeeId,
+                    coveredAssignmentId!,
+                    employeeRepository,
+                    notificationProducer,
+                    cancellationToken);
             }
 
             await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(

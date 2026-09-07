@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
@@ -111,7 +111,9 @@ public class Order : Auditable, ITenantEntity
 
     public int MaxEmployees { get; private set; } = 1;
 
-    private const int StandardWorkUnitMinutes = 120;
+    // One number, named on OrderDuration. It was 120 here and 120 in the quote,
+    // which is two copies of a rule that must not drift.
+    private const int StandardWorkUnitMinutes = OrderDuration.MinutesPerEmployee;
 
     /// <summary>
     /// Query floor for the overlap scan. <b>It may only ever be too GENEROUS</b> — too generous costs a
@@ -125,6 +127,25 @@ public class Order : Auditable, ITenantEntity
 
     public int AvailableSpots => MaxEmployees - _assignedEmployees.Count;
     public bool HasAvailableSpots => AvailableSpots > 0;
+
+    /// <summary>
+    /// Seats held by a cleaner who has asked to be taken off the job. They are still ASSIGNED — that
+    /// is the whole point of a cover request rather than a drop — so they do not count as available.
+    /// → <see cref="OrderEmployee.CoverRequestedAt"/>
+    /// </summary>
+    public int CoverSeatsOpen => _assignedEmployees.Count(oe => oe.CoverRequestedAt is not null);
+
+    /// <summary>
+    /// May another cleaner take a seat here? A DIFFERENT question from
+    /// <see cref="HasAvailableSpots"/>, which asks how many seats are unfilled, and the two were being
+    /// conflated because until cover requests existed they had the same answer.
+    ///
+    /// <para><see cref="HasAvailableSpots"/> keeps its meaning exactly, because four things depend on
+    /// it meaning capacity: the customer-facing DTO, <c>AddAssignedEmployee</c>'s capacity guard,
+    /// <c>AdminReassignOrder</c>'s ceiling, and the preferred-offer disclosure. A taker asks this one
+    /// instead; a cover-requested seat is taken by DISPLACING its holder, not by adding beside them.</para>
+    /// </summary>
+    public bool HasTakeableSeat => HasAvailableSpots || CoverSeatsOpen > 0;
 
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
@@ -146,6 +167,44 @@ public class Order : Auditable, ITenantEntity
 
     public string? AccessInstructions { get; private set; }
 
+    /// <summary>
+    /// Which floor, and which door on it. Deliberately NOT on <see cref="Address"/>:
+    /// addresses are deduped across users on (Street, City, ZipCode, CountryId)
+    /// — <c>AddressRepository.GetAddressAsync</c> — so one row is shared by
+    /// everyone in the building, and a flat number stored there would be read by
+    /// the neighbours. These belong to the booking, like AccessInstructions, and
+    /// are redacted with it for a cleaner the order does not belong to.
+    ///
+    /// <para>Strings, not integers: a floor is "3", but it is also "přízemí",
+    /// "mezanin" or "2A" depending on the building and the market.</para>
+    /// </summary>
+    [MaxLength(20)]
+    public string? CustomerFloor { get; private set; }
+
+    /// <inheritdoc cref="CustomerFloor"/>
+    [MaxLength(20)]
+    public string? CustomerApartment { get; private set; }
+
+    /// <summary>
+    /// How the cleaner gets in: "at_home", "keys_handover", "door_code" or
+    /// "reception". It is the shape of the answer; <see cref="AccessInstructions"/>
+    /// is the detail, and the two are read together.
+    ///
+    /// <para>A string, not an enum, deliberately. Nothing on this side branches on
+    /// it — it is displayed to the assigned cleaner and that is all — so an enum
+    /// would buy type safety at the cost of a domain type, a converter and a
+    /// generated client enum, for a value no server code compares. The four
+    /// accepted slugs are enforced by CreateOrder's validator, which is where a
+    /// bad one would actually arrive. An enum is the right answer on the day
+    /// something branches on it.</para>
+    ///
+    /// <para>Redacted with the access instructions for a cleaner the order does
+    /// not belong to: knowing there is a door code is most of knowing the code
+    /// is worth asking for.</para>
+    /// </summary>
+    [MaxLength(20)]
+    public string? AccessMode { get; private set; }
+
     public string CurrencyId { get; private set; }
     public Currency Currency { get; private set; }
 
@@ -159,6 +218,53 @@ public class Order : Auditable, ITenantEntity
     /// When the customer cancelled this order. Null while active.
     /// </summary>
     public DateTime? CancelledAt { get; private set; }
+
+    /// <summary>
+    /// How much of this order was settled from the customer's credit balance rather than their card.
+    ///
+    /// <para><b>Credit is a TENDER, not a discount</b> — owner ruling 2026-09-05. A 2000 clean paid
+    /// with 500 of credit is still a 2000 clean: <see cref="TotalPrice"/>, <see cref="NetAmount"/>
+    /// and <see cref="VatAmount"/> do not move, the fiscal receipt registers the full sale, and
+    /// loyalty earns on the full amount. What changes is the figure sent to Stripe.</para>
+    ///
+    /// <para>The alternative — treating credit as a fourth discount — would shrink the taxable base
+    /// of THIS sale to apologise for a PREVIOUS one whose VAT was already declared, and register a
+    /// 2000 clean with the authority as 1500. Credit settles a debt the company already owes; it is
+    /// not a price concession on a new job.</para>
+    ///
+    /// <para>Zero on every order that used none, which is every order written before this existed.
+    /// The refund ceiling subtracts it: the card cannot give back money the card never took.</para>
+    /// </summary>
+    public decimal CreditAppliedAmount { get; private set; }
+
+    /// <summary>
+    /// Record how much of this order the customer's credit balance settled.
+    ///
+    /// <para>Called AFTER the balance has actually been debited — the repository's conditional UPDATE
+    /// is what decides whether the funds were there, and this only records the outcome. It never
+    /// touches <see cref="TotalPrice"/>: credit is a tender, so the sale keeps its size and only the
+    /// figure sent to the card changes.</para>
+    /// </summary>
+    /// <summary>
+    /// What the card is asked for: the sale, less whatever the customer's credit balance settled.
+    ///
+    /// <para><b>Every charge surface reads this, never <see cref="TotalPrice"/>.</b> The Checkout
+    /// Session and the mobile PaymentIntent are the two places money is captured, and a credit
+    /// recorded on the order but not subtracted from the charge would take the credit AND the full
+    /// card amount. <see cref="TotalPrice"/> stays the size of the sale - it is what the fiscal
+    /// receipt registers and what loyalty earns on.</para>
+    /// </summary>
+    public decimal AmountDueOnCard => TotalPrice - CreditAppliedAmount;
+
+    public Order ApplyCredit(decimal amount, string appliedBy)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(amount, TotalPrice);
+
+        CreditAppliedAmount = amount;
+        Updated(appliedBy, DateTimeOffset.UtcNow);
+        return this;
+    }
 
     /// <summary>
     /// Amount actually refunded to the customer on cancellation.
@@ -378,12 +484,19 @@ public class Order : Auditable, ITenantEntity
         // the order does not belong to, so a browsing cleaner reads the job's
         // scope and not the customer's door code. An ENTITLED reader (the
         // customer, an assigned cleaner, an admin) still gets it at any status.
-        string? accessInstructions = null) => new()
+        string? accessInstructions = null,
+        // Floor and door, for a flat. Null for a house, which has neither. See
+        // CustomerFloor for why these are on the order and not on the address.
+        string? customerFloor = null,
+        string? customerApartment = null,
+        string? accessMode = null) => new()
         {
             CustomerName = customerName,
             CustomerEmail = customerEmail,
             CustomerPhone = customerPhone,
             CustomerAddress = customerAddress,
+            CustomerFloor = string.IsNullOrWhiteSpace(customerFloor) ? null : customerFloor.Trim(),
+            CustomerApartment = string.IsNullOrWhiteSpace(customerApartment) ? null : customerApartment.Trim(),
             Rooms = rooms,
             Bathrooms = bathrooms,
             _extras = extras,
@@ -403,6 +516,7 @@ public class Order : Auditable, ITenantEntity
             RecurringTemplateId = string.IsNullOrEmpty(recurringTemplateId) ? null : recurringTemplateId,
             SpecialInstructions = string.IsNullOrWhiteSpace(specialInstructions) ? null : specialInstructions.Trim(),
             AccessInstructions = string.IsNullOrWhiteSpace(accessInstructions) ? null : accessInstructions.Trim(),
+            AccessMode = string.IsNullOrWhiteSpace(accessMode) ? null : accessMode.Trim(),
         };
 
     public Order AddSelectedServices(IEnumerable<OrderService> selectedServices)

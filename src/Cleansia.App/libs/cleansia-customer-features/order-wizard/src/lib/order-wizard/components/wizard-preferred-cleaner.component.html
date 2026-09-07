@@ -15,6 +15,7 @@
       {{ 'preferred_cleaner.explainer' | translate }}
     </p>
     <cleansia-select
+      [floatVariant]="null"
       [options]="facade.preferredCleanerOptions()"
       [ngModel]="facade.selectedPreferredCleanerId()"
       (ngModelChange)="onSelect($event)"

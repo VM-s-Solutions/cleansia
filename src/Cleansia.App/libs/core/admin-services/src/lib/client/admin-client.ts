@@ -1802,6 +1802,266 @@ export class AdminCountryClient implements IAdminCountryClient {
     }
 }
 
+export interface IAdminCreditClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    issue(body?: IssueCustomerCreditCommand | undefined): Observable<IssueCustomerCreditResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    expire(body?: ExpireCustomerCreditCommand | undefined): Observable<ExpireCustomerCreditResponse>;
+    /**
+     * @return OK
+     */
+    user(userId: string): Observable<GetUserCreditResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminCreditClient implements IAdminCreditClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    issue(body?: IssueCustomerCreditCommand | undefined): Observable<IssueCustomerCreditResponse> {
+        let url = this.baseUrl + "/api/AdminCredit/issue";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processIssue(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processIssue(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<IssueCustomerCreditResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<IssueCustomerCreditResponse>;
+        }));
+    }
+
+    protected processIssue(response: HttpResponseBase): Observable<IssueCustomerCreditResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = IssueCustomerCreditResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    expire(body?: ExpireCustomerCreditCommand | undefined): Observable<ExpireCustomerCreditResponse> {
+        let url = this.baseUrl + "/api/AdminCredit/expire";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processExpire(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processExpire(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ExpireCustomerCreditResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ExpireCustomerCreditResponse>;
+        }));
+    }
+
+    protected processExpire(response: HttpResponseBase): Observable<ExpireCustomerCreditResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ExpireCustomerCreditResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    user(userId: string): Observable<GetUserCreditResponse> {
+        let url = this.baseUrl + "/api/AdminCredit/user/{userId}";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url = url.replace("{userId}", encodeURIComponent("" + userId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUser(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUser(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetUserCreditResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetUserCreditResponse>;
+        }));
+    }
+
+    protected processUser(response: HttpResponseBase): Observable<GetUserCreditResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetUserCreditResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminCurrencyClient {
     /**
      * @return OK
@@ -15455,6 +15715,8 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceDto[] | undefined;
@@ -15475,6 +15737,8 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -15505,6 +15769,8 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (this.translations) {
             data["translations"] = {};
@@ -15528,6 +15794,8 @@ export interface IAdminPackageDetailDto {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceDto[] | undefined;
@@ -18238,9 +18506,11 @@ export interface ICreateMembershipPlanResponse {
 export class CreatePackageCommand implements ICreatePackageCommand {
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     serviceIds!: string[] | undefined;
-    translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    translations!: { [key: string]: PackageTranslationInput; } | undefined;
 
     constructor(data?: ICreatePackageCommand) {
         if (data) {
@@ -18255,6 +18525,8 @@ export class CreatePackageCommand implements ICreatePackageCommand {
         if (Data) {
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Array.isArray(Data["serviceIds"])) {
                 this.serviceIds = [] as any;
@@ -18265,7 +18537,7 @@ export class CreatePackageCommand implements ICreatePackageCommand {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
                     if (Data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = Data["translations"][key] ? CreateServiceTranslationInput.fromJS(Data["translations"][key]) : new CreateServiceTranslationInput();
+                        (this.translations as any)![key] = Data["translations"][key] ? PackageTranslationInput.fromJS(Data["translations"][key]) : new PackageTranslationInput();
                 }
             }
         }
@@ -18282,6 +18554,8 @@ export class CreatePackageCommand implements ICreatePackageCommand {
         data = typeof data === 'object' ? data : {};
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (Array.isArray(this.serviceIds)) {
             data["serviceIds"] = [];
@@ -18302,9 +18576,11 @@ export class CreatePackageCommand implements ICreatePackageCommand {
 export interface ICreatePackageCommand {
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     serviceIds: string[] | undefined;
-    translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    translations: { [key: string]: PackageTranslationInput; } | undefined;
 }
 
 export class CreatePackageResponse implements ICreatePackageResponse {
@@ -18873,6 +19149,15 @@ export class CreateServiceTranslationInput implements ICreateServiceTranslationI
 export interface ICreateServiceTranslationInput {
     name: string | undefined;
     description: string | undefined;
+}
+
+export enum CreditTransactionReason {
+    DisputeSettlement = 1,
+    CleanerNoShow = 2,
+    Goodwill = 3,
+    OrderPayment = 10,
+    OrderPaymentReturned = 11,
+    Expired = 12,
 }
 
 export class CurrencyDetailDto implements ICurrencyDetailDto {
@@ -19618,11 +19903,14 @@ export class DisputeDetails implements IDisputeDetails {
     status!: Code;
     resolutionNotes!: string | undefined;
     refundAmount!: number | undefined;
+    currency!: CurrencyDetailDto;
     resolvedOn!: Date | undefined;
     messages!: DisputeMessageDto[] | undefined;
     evidence!: DisputeEvidenceDto[] | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
+    filedWithinWindow!: boolean | undefined;
+    lines!: DisputeLineDto[] | undefined;
 
     constructor(data?: IDisputeDetails) {
         if (data) {
@@ -19645,6 +19933,7 @@ export class DisputeDetails implements IDisputeDetails {
             this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
             this.resolutionNotes = Data["resolutionNotes"];
             this.refundAmount = Data["refundAmount"];
+            this.currency = Data["currency"] ? CurrencyDetailDto.fromJS(Data["currency"]) : undefined as any;
             this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
             if (Array.isArray(Data["messages"])) {
                 this.messages = [] as any;
@@ -19658,6 +19947,12 @@ export class DisputeDetails implements IDisputeDetails {
             }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            this.filedWithinWindow = Data["filedWithinWindow"];
+            if (Array.isArray(Data["lines"])) {
+                this.lines = [] as any;
+                for (let item of Data["lines"])
+                    this.lines!.push(DisputeLineDto.fromJS(item));
+            }
         }
     }
 
@@ -19680,6 +19975,7 @@ export class DisputeDetails implements IDisputeDetails {
         data["status"] = this.status ? this.status.toJSON() : undefined as any;
         data["resolutionNotes"] = this.resolutionNotes;
         data["refundAmount"] = this.refundAmount;
+        data["currency"] = this.currency ? this.currency.toJSON() : undefined as any;
         data["resolvedOn"] = this.resolvedOn ? this.resolvedOn.toISOString() : undefined as any;
         if (Array.isArray(this.messages)) {
             data["messages"] = [];
@@ -19693,6 +19989,12 @@ export class DisputeDetails implements IDisputeDetails {
         }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        data["filedWithinWindow"] = this.filedWithinWindow;
+        if (Array.isArray(this.lines)) {
+            data["lines"] = [];
+            for (let item of this.lines)
+                data["lines"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -19708,11 +20010,14 @@ export interface IDisputeDetails {
     status: Code;
     resolutionNotes: string | undefined;
     refundAmount: number | undefined;
+    currency: CurrencyDetailDto;
     resolvedOn: Date | undefined;
     messages: DisputeMessageDto[] | undefined;
     evidence: DisputeEvidenceDto[] | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+    filedWithinWindow: boolean | undefined;
+    lines: DisputeLineDto[] | undefined;
 }
 
 export class DisputeEvidenceDto implements IDisputeEvidenceDto {
@@ -19845,6 +20150,54 @@ export class DisputeInvoiceResponse implements IDisputeInvoiceResponse {
 
 export interface IDisputeInvoiceResponse {
     invoiceId: string | undefined;
+}
+
+export class DisputeLineDto implements IDisputeLineDto {
+    serviceId!: string | undefined;
+    serviceName!: string | undefined;
+    packageId!: string | undefined;
+    packageName!: string | undefined;
+
+    constructor(data?: IDisputeLineDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceId = Data["serviceId"];
+            this.serviceName = Data["serviceName"];
+            this.packageId = Data["packageId"];
+            this.packageName = Data["packageName"];
+        }
+    }
+
+    static fromJS(data: any): DisputeLineDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DisputeLineDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
+        data["serviceName"] = this.serviceName;
+        data["packageId"] = this.packageId;
+        data["packageName"] = this.packageName;
+        return data;
+    }
+}
+
+export interface IDisputeLineDto {
+    serviceId: string | undefined;
+    serviceName: string | undefined;
+    packageId: string | undefined;
+    packageName: string | undefined;
 }
 
 export class DisputeListItem implements IDisputeListItem {
@@ -20396,6 +20749,7 @@ export enum EmailType {
     PeriodClosed = 4,
     PeriodEndReminder = 5,
     OrderStatusUpdate = 6,
+    PromoCode = 7,
 }
 
 export class EmailTypeDetailDto implements IEmailTypeDetailDto {
@@ -21278,6 +21632,90 @@ export interface IEmployeePayrollSummary {
     bonusAmount: number;
     deductionAmount: number;
     totalAmount: number;
+}
+
+export class ExpireCustomerCreditCommand implements IExpireCustomerCreditCommand {
+    userId!: string | undefined;
+    note!: string | undefined;
+    requestId!: string | undefined;
+
+    constructor(data?: IExpireCustomerCreditCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.note = Data["note"];
+            this.requestId = Data["requestId"];
+        }
+    }
+
+    static fromJS(data: any): ExpireCustomerCreditCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExpireCustomerCreditCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["note"] = this.note;
+        data["requestId"] = this.requestId;
+        return data;
+    }
+}
+
+export interface IExpireCustomerCreditCommand {
+    userId: string | undefined;
+    note: string | undefined;
+    requestId: string | undefined;
+}
+
+export class ExpireCustomerCreditResponse implements IExpireCustomerCreditResponse {
+    userId!: string | undefined;
+    amountExpired!: number;
+
+    constructor(data?: IExpireCustomerCreditResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.amountExpired = Data["amountExpired"];
+        }
+    }
+
+    static fromJS(data: any): ExpireCustomerCreditResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExpireCustomerCreditResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["amountExpired"] = this.amountExpired;
+        return data;
+    }
+}
+
+export interface IExpireCustomerCreditResponse {
+    userId: string | undefined;
+    amountExpired: number;
 }
 
 export class FeatureFlagDto implements IFeatureFlagDto {
@@ -22715,6 +23153,126 @@ export interface IGetReferralsByUserResponse {
     asReferred: AdminReferralListItem[] | undefined;
 }
 
+export class GetUserCreditLedgerEntry implements IGetUserCreditLedgerEntry {
+    id!: string | undefined;
+    amount!: number;
+    reason!: CreditTransactionReason;
+    orderId!: string | undefined;
+    disputeId!: string | undefined;
+    note!: string | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IGetUserCreditLedgerEntry) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.amount = Data["amount"];
+            this.reason = Data["reason"];
+            this.orderId = Data["orderId"];
+            this.disputeId = Data["disputeId"];
+            this.note = Data["note"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GetUserCreditLedgerEntry {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetUserCreditLedgerEntry();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["amount"] = this.amount;
+        data["reason"] = this.reason;
+        data["orderId"] = this.orderId;
+        data["disputeId"] = this.disputeId;
+        data["note"] = this.note;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGetUserCreditLedgerEntry {
+    id: string | undefined;
+    amount: number;
+    reason: CreditTransactionReason;
+    orderId: string | undefined;
+    disputeId: string | undefined;
+    note: string | undefined;
+    createdOn: Date;
+}
+
+export class GetUserCreditResponse implements IGetUserCreditResponse {
+    userId!: string | undefined;
+    hasAccount!: boolean;
+    balance!: number;
+    currencyCode!: string | undefined;
+    ledger!: GetUserCreditLedgerEntry[] | undefined;
+
+    constructor(data?: IGetUserCreditResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.hasAccount = Data["hasAccount"];
+            this.balance = Data["balance"];
+            this.currencyCode = Data["currencyCode"];
+            if (Array.isArray(Data["ledger"])) {
+                this.ledger = [] as any;
+                for (let item of Data["ledger"])
+                    this.ledger!.push(GetUserCreditLedgerEntry.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): GetUserCreditResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetUserCreditResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["hasAccount"] = this.hasAccount;
+        data["balance"] = this.balance;
+        data["currencyCode"] = this.currencyCode;
+        if (Array.isArray(this.ledger)) {
+            data["ledger"] = [];
+            for (let item of this.ledger)
+                data["ledger"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IGetUserCreditResponse {
+    userId: string | undefined;
+    hasAccount: boolean;
+    balance: number;
+    currencyCode: string | undefined;
+    ledger: GetUserCreditLedgerEntry[] | undefined;
+}
+
 export class GetUserLoyaltyAccountResponse implements IGetUserLoyaltyAccountResponse {
     userId!: string | undefined;
     currentTier!: LoyaltyTier;
@@ -22985,6 +23543,110 @@ export class GrantPointsManuallyResponse implements IGrantPointsManuallyResponse
 export interface IGrantPointsManuallyResponse {
     userId: string | undefined;
     points: number;
+}
+
+export class IssueCustomerCreditCommand implements IIssueCustomerCreditCommand {
+    userId!: string | undefined;
+    amount!: number;
+    reason!: CreditTransactionReason;
+    note!: string | undefined;
+    requestId!: string | undefined;
+    orderId!: string | undefined;
+    disputeId!: string | undefined;
+
+    constructor(data?: IIssueCustomerCreditCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.amount = Data["amount"];
+            this.reason = Data["reason"];
+            this.note = Data["note"];
+            this.requestId = Data["requestId"];
+            this.orderId = Data["orderId"];
+            this.disputeId = Data["disputeId"];
+        }
+    }
+
+    static fromJS(data: any): IssueCustomerCreditCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new IssueCustomerCreditCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["amount"] = this.amount;
+        data["reason"] = this.reason;
+        data["note"] = this.note;
+        data["requestId"] = this.requestId;
+        data["orderId"] = this.orderId;
+        data["disputeId"] = this.disputeId;
+        return data;
+    }
+}
+
+export interface IIssueCustomerCreditCommand {
+    userId: string | undefined;
+    amount: number;
+    reason: CreditTransactionReason;
+    note: string | undefined;
+    requestId: string | undefined;
+    orderId: string | undefined;
+    disputeId: string | undefined;
+}
+
+export class IssueCustomerCreditResponse implements IIssueCustomerCreditResponse {
+    userId!: string | undefined;
+    amount!: number;
+    newBalance!: number;
+
+    constructor(data?: IIssueCustomerCreditResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.userId = Data["userId"];
+            this.amount = Data["amount"];
+            this.newBalance = Data["newBalance"];
+        }
+    }
+
+    static fromJS(data: any): IssueCustomerCreditResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new IssueCustomerCreditResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["userId"] = this.userId;
+        data["amount"] = this.amount;
+        data["newBalance"] = this.newBalance;
+        return data;
+    }
+}
+
+export interface IIssueCustomerCreditResponse {
+    userId: string | undefined;
+    amount: number;
+    newBalance: number;
 }
 
 export class IssuePartialRefundCommand implements IIssuePartialRefundCommand {
@@ -24104,6 +24766,8 @@ export class OrderItem implements IOrderItem {
     tierDiscountAmount!: number | undefined;
     membershipDiscountAmount!: number | undefined;
     promoDiscountAmount!: number | undefined;
+    creditAppliedAmount!: number;
+    amountDueOnCard!: number;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
     completedAt!: Date | undefined;
@@ -24113,6 +24777,9 @@ export class OrderItem implements IOrderItem {
     notes!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
+    customerFloor!: string | undefined;
+    customerApartment!: string | undefined;
+    accessMode!: string | undefined;
     recurringTemplateId!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
     currency!: CurrencyDetailDto;
@@ -24174,6 +24841,8 @@ export class OrderItem implements IOrderItem {
             this.tierDiscountAmount = Data["tierDiscountAmount"];
             this.membershipDiscountAmount = Data["membershipDiscountAmount"];
             this.promoDiscountAmount = Data["promoDiscountAmount"];
+            this.creditAppliedAmount = Data["creditAppliedAmount"];
+            this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
             this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
@@ -24183,6 +24852,9 @@ export class OrderItem implements IOrderItem {
             this.notes = Data["notes"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
+            this.customerFloor = Data["customerFloor"];
+            this.customerApartment = Data["customerApartment"];
+            this.accessMode = Data["accessMode"];
             this.recurringTemplateId = Data["recurringTemplateId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
@@ -24268,6 +24940,8 @@ export class OrderItem implements IOrderItem {
         data["tierDiscountAmount"] = this.tierDiscountAmount;
         data["membershipDiscountAmount"] = this.membershipDiscountAmount;
         data["promoDiscountAmount"] = this.promoDiscountAmount;
+        data["creditAppliedAmount"] = this.creditAppliedAmount;
+        data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
         data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
@@ -24277,6 +24951,9 @@ export class OrderItem implements IOrderItem {
         data["notes"] = this.notes;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
+        data["customerFloor"] = this.customerFloor;
+        data["customerApartment"] = this.customerApartment;
+        data["accessMode"] = this.accessMode;
         data["recurringTemplateId"] = this.recurringTemplateId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
@@ -24349,6 +25026,8 @@ export interface IOrderItem {
     tierDiscountAmount: number | undefined;
     membershipDiscountAmount: number | undefined;
     promoDiscountAmount: number | undefined;
+    creditAppliedAmount: number;
+    amountDueOnCard: number;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
     completedAt: Date | undefined;
@@ -24358,6 +25037,9 @@ export interface IOrderItem {
     notes: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
+    customerFloor: string | undefined;
+    customerApartment: string | undefined;
+    accessMode: string | undefined;
     recurringTemplateId: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
     currency: CurrencyDetailDto;
@@ -24404,6 +25086,8 @@ export class OrderListItem implements IOrderListItem {
     tierDiscountAmount!: number | undefined;
     membershipDiscountAmount!: number | undefined;
     promoDiscountAmount!: number | undefined;
+    creditAppliedAmount!: number;
+    amountDueOnCard!: number;
     estimatedTime!: number;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
@@ -24458,6 +25142,8 @@ export class OrderListItem implements IOrderListItem {
             this.tierDiscountAmount = Data["tierDiscountAmount"];
             this.membershipDiscountAmount = Data["membershipDiscountAmount"];
             this.promoDiscountAmount = Data["promoDiscountAmount"];
+            this.creditAppliedAmount = Data["creditAppliedAmount"];
+            this.amountDueOnCard = Data["amountDueOnCard"];
             this.estimatedTime = Data["estimatedTime"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
@@ -24524,6 +25210,8 @@ export class OrderListItem implements IOrderListItem {
         data["tierDiscountAmount"] = this.tierDiscountAmount;
         data["membershipDiscountAmount"] = this.membershipDiscountAmount;
         data["promoDiscountAmount"] = this.promoDiscountAmount;
+        data["creditAppliedAmount"] = this.creditAppliedAmount;
+        data["amountDueOnCard"] = this.amountDueOnCard;
         data["estimatedTime"] = this.estimatedTime;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
@@ -24577,6 +25265,8 @@ export interface IOrderListItem {
     tierDiscountAmount: number | undefined;
     membershipDiscountAmount: number | undefined;
     promoDiscountAmount: number | undefined;
+    creditAppliedAmount: number;
+    amountDueOnCard: number;
     estimatedTime: number;
     orderStatus: Code;
     confirmationCode: string | undefined;
@@ -24652,6 +25342,7 @@ export class OrderReviewDto implements IOrderReviewDto {
     tags!: ReviewTag[] | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
+    lines!: OrderReviewLineDto[] | undefined;
 
     constructor(data?: IOrderReviewDto) {
         if (data) {
@@ -24675,6 +25366,11 @@ export class OrderReviewDto implements IOrderReviewDto {
             }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            if (Array.isArray(Data["lines"])) {
+                this.lines = [] as any;
+                for (let item of Data["lines"])
+                    this.lines!.push(OrderReviewLineDto.fromJS(item));
+            }
         }
     }
 
@@ -24698,6 +25394,11 @@ export class OrderReviewDto implements IOrderReviewDto {
         }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        if (Array.isArray(this.lines)) {
+            data["lines"] = [];
+            for (let item of this.lines)
+                data["lines"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -24710,6 +25411,51 @@ export interface IOrderReviewDto {
     tags: ReviewTag[] | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+    lines: OrderReviewLineDto[] | undefined;
+}
+
+export class OrderReviewLineDto implements IOrderReviewLineDto {
+    serviceId!: string | undefined;
+    packageId!: string | undefined;
+    rating!: number;
+
+    constructor(data?: IOrderReviewLineDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceId = Data["serviceId"];
+            this.packageId = Data["packageId"];
+            this.rating = Data["rating"];
+        }
+    }
+
+    static fromJS(data: any): OrderReviewLineDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderReviewLineDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
+        data["packageId"] = this.packageId;
+        data["rating"] = this.rating;
+        return data;
+    }
+}
+
+export interface IOrderReviewLineDto {
+    serviceId: string | undefined;
+    packageId: string | undefined;
+    rating: number;
 }
 
 export enum OrderStatus {
@@ -24766,6 +25512,8 @@ export class PackageDetails implements IPackageDetails {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     estimatedTime!: number;
     currencyCode!: string | undefined;
@@ -24787,6 +25535,8 @@ export class PackageDetails implements IPackageDetails {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             this.estimatedTime = Data["estimatedTime"];
             this.currencyCode = Data["currencyCode"];
@@ -24822,6 +25572,8 @@ export class PackageDetails implements IPackageDetails {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         data["estimatedTime"] = this.estimatedTime;
         data["currencyCode"] = this.currencyCode;
@@ -24850,6 +25602,8 @@ export interface IPackageDetails {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     estimatedTime: number;
     currencyCode: string | undefined;
@@ -24862,6 +25616,8 @@ export class PackageListItem implements IPackageListItem {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceSummary[] | undefined;
@@ -24880,6 +25636,8 @@ export class PackageListItem implements IPackageListItem {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -24908,6 +25666,8 @@ export class PackageListItem implements IPackageListItem {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (this.translations) {
             data["translations"] = {};
@@ -24929,6 +25689,8 @@ export interface IPackageListItem {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceSummary[] | undefined;
@@ -25023,6 +25785,7 @@ export interface IPackageServiceRef {
 }
 
 export class PackageServiceSummary implements IPackageServiceSummary {
+    serviceId!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
 
@@ -25037,6 +25800,7 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 
     init(Data?: any) {
         if (Data) {
+            this.serviceId = Data["serviceId"];
             this.name = Data["name"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -25057,6 +25821,7 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
         data["name"] = this.name;
         if (this.translations) {
             data["translations"] = {};
@@ -25070,8 +25835,53 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 }
 
 export interface IPackageServiceSummary {
+    serviceId: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
+}
+
+export class PackageTranslationInput implements IPackageTranslationInput {
+    name!: string | undefined;
+    description!: string | undefined;
+    tagline!: string | undefined;
+
+    constructor(data?: IPackageTranslationInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.tagline = Data["tagline"];
+        }
+    }
+
+    static fromJS(data: any): PackageTranslationInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new PackageTranslationInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        return data;
+    }
+}
+
+export interface IPackageTranslationInput {
+    name: string | undefined;
+    description: string | undefined;
+    tagline: string | undefined;
 }
 
 export class PagedDataOfAdminActionAuditDto implements IPagedDataOfAdminActionAuditDto {
@@ -27685,6 +28495,8 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
     paymentTypeName!: string | undefined;
     totalRevenue!: number;
     orderCount!: number;
+    settledFromCredit!: number;
+    readonly settledOnTender!: number;
 
     constructor(data?: IRevenueByPaymentType) {
         if (data) {
@@ -27701,6 +28513,8 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
             this.paymentTypeName = Data["paymentTypeName"];
             this.totalRevenue = Data["totalRevenue"];
             this.orderCount = Data["orderCount"];
+            this.settledFromCredit = Data["settledFromCredit"];
+            (this as any).settledOnTender = Data["settledOnTender"];
         }
     }
 
@@ -27717,6 +28531,8 @@ export class RevenueByPaymentType implements IRevenueByPaymentType {
         data["paymentTypeName"] = this.paymentTypeName;
         data["totalRevenue"] = this.totalRevenue;
         data["orderCount"] = this.orderCount;
+        data["settledFromCredit"] = this.settledFromCredit;
+        data["settledOnTender"] = this.settledOnTender;
         return data;
     }
 }
@@ -27726,6 +28542,8 @@ export interface IRevenueByPaymentType {
     paymentTypeName: string | undefined;
     totalRevenue: number;
     orderCount: number;
+    settledFromCredit: number;
+    settledOnTender: number;
 }
 
 export class RevenueByService implements IRevenueByService {
@@ -27788,6 +28606,7 @@ export class RevenueReportDto implements IRevenueReportDto {
     revenueByPackage!: RevenueByPackage[] | undefined;
     revenueByPaymentType!: RevenueByPaymentType[] | undefined;
     revenueByPaymentStatus!: RevenueByPaymentStatus[] | undefined;
+    totalSettledFromCredit!: number;
 
     constructor(data?: IRevenueReportDto) {
         if (data) {
@@ -27831,6 +28650,7 @@ export class RevenueReportDto implements IRevenueReportDto {
                 for (let item of Data["revenueByPaymentStatus"])
                     this.revenueByPaymentStatus!.push(RevenueByPaymentStatus.fromJS(item));
             }
+            this.totalSettledFromCredit = Data["totalSettledFromCredit"];
         }
     }
 
@@ -27874,6 +28694,7 @@ export class RevenueReportDto implements IRevenueReportDto {
             for (let item of this.revenueByPaymentStatus)
                 data["revenueByPaymentStatus"].push(item ? item.toJSON() : undefined as any);
         }
+        data["totalSettledFromCredit"] = this.totalSettledFromCredit;
         return data;
     }
 }
@@ -27890,6 +28711,7 @@ export interface IRevenueReportDto {
     revenueByPackage: RevenueByPackage[] | undefined;
     revenueByPaymentType: RevenueByPaymentType[] | undefined;
     revenueByPaymentStatus: RevenueByPaymentStatus[] | undefined;
+    totalSettledFromCredit: number;
 }
 
 export class ReverseReferralCommand implements IReverseReferralCommand {
@@ -28910,6 +29732,7 @@ export interface IToggleFeatureFlagResponse {
 export class Translation implements ITranslation {
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
 
     constructor(data?: ITranslation) {
         if (data) {
@@ -28924,6 +29747,7 @@ export class Translation implements ITranslation {
         if (Data) {
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
         }
     }
 
@@ -28938,6 +29762,7 @@ export class Translation implements ITranslation {
         data = typeof data === 'object' ? data : {};
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
         return data;
     }
 }
@@ -28945,6 +29770,7 @@ export class Translation implements ITranslation {
 export interface ITranslation {
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
 }
 
 export class UpdateAdminUserCommand implements IUpdateAdminUserCommand {
@@ -29763,10 +30589,12 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
     packageId!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    tagline!: string | undefined;
+    isPopular!: boolean;
     price!: number;
     serviceIds!: string[] | undefined;
     serviceWeights!: { [key: string]: number; } | undefined;
-    translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    translations!: { [key: string]: PackageTranslationInput; } | undefined;
 
     constructor(data?: IUpdatePackageCommand) {
         if (data) {
@@ -29782,6 +30610,8 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
             this.packageId = Data["packageId"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.tagline = Data["tagline"];
+            this.isPopular = Data["isPopular"];
             this.price = Data["price"];
             if (Array.isArray(Data["serviceIds"])) {
                 this.serviceIds = [] as any;
@@ -29799,7 +30629,7 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
                     if (Data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = Data["translations"][key] ? CreateServiceTranslationInput.fromJS(Data["translations"][key]) : new CreateServiceTranslationInput();
+                        (this.translations as any)![key] = Data["translations"][key] ? PackageTranslationInput.fromJS(Data["translations"][key]) : new PackageTranslationInput();
                 }
             }
         }
@@ -29817,6 +30647,8 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
         data["packageId"] = this.packageId;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["tagline"] = this.tagline;
+        data["isPopular"] = this.isPopular;
         data["price"] = this.price;
         if (Array.isArray(this.serviceIds)) {
             data["serviceIds"] = [];
@@ -29845,10 +30677,12 @@ export interface IUpdatePackageCommand {
     packageId: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    tagline: string | undefined;
+    isPopular: boolean;
     price: number;
     serviceIds: string[] | undefined;
     serviceWeights: { [key: string]: number; } | undefined;
-    translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    translations: { [key: string]: PackageTranslationInput; } | undefined;
 }
 
 export class UpdatePackageResponse implements IUpdatePackageResponse {

@@ -145,6 +145,28 @@ public static class NotificationEventCatalog
     public const string OrderAssignmentRevoked = "order.assignment_revoked";
 
     /// <summary>
+    /// Partner-targeted: a seat came free on a job this cleaner could take, right now. Args:
+    /// <c>orderNumber</c> (loc) + <c>orderId</c> (deep link).
+    ///
+    /// <para><b>Why not reuse <see cref="NewJobsAvailable"/>.</b> It was the obvious answer — the
+    /// copy fits and <c>count</c> is already inside the lock-screen allowlist — and it is wrong,
+    /// because that key is in <see cref="CollapsingDigestKeys"/>: its feed row OVERWRITES rather than
+    /// appends. A targeted send carrying <c>count = 1</c> would rewrite a cleaner's unread "12 new
+    /// jobs" as "1 new job". That set exists precisely because a stale count LIES, and this would have
+    /// made it lie in the other direction.</para>
+    ///
+    /// <para><b>Why it exists at all.</b> Until <c>RequestCover</c> and <c>DropOrder</c> nothing had
+    /// ever released a seat, and the only way a released seat reached anybody was the hourly digest —
+    /// so a job dropped ninety minutes before its slot reached nobody in time. Owner ruling
+    /// 2026-09-06: cover has to be found urgently.</para>
+    ///
+    /// <para>Mutable under <see cref="NotificationCategory.NewJobsAvailable"/>, the same category the
+    /// digest uses: a cleaner who silenced new-job notifications must not receive a push-shaped bypass
+    /// of that mute just because this one is targeted.</para>
+    /// </summary>
+    public const string OrderSeatOpen = "order.seat_open";
+
+    /// <summary>
     /// Partner-targeted: the cleaner's invoice for a pay period has been marked PAID. The
     /// "you've been paid" moment — the highest-value, most-actionable payroll signal. Args:
     /// <c>invoiceId</c> (deep link only; title/body are argless). Non-mutable (GetCategoryFor
@@ -174,6 +196,29 @@ public static class NotificationEventCatalog
     /// </summary>
     public const string EmployeeWeeklyLimitSet = "employee.weekly_limit_set";
 
+    /// <summary>
+    /// Customer-targeted: the booking's time arrived with no cleaner on it, so the platform cancelled
+    /// it, refunded in full and added the apology credit. Args: <c>orderNumber</c> (loc) +
+    /// <c>orderId</c> (deep link).
+    ///
+    /// <para><b>Why not the plain <see cref="OrderCancelled"/>.</b> Owner ruling 2026-09-06: the 250 is
+    /// to be announced explicitly. "Your booking was cancelled" and "we failed you, here is all your
+    /// money back plus credit towards the next one" are different news, and the second read as the
+    /// first is the platform quietly under-selling the one apology it makes.</para>
+    ///
+    /// <para><b>The amount is in the COPY, not in an arg.</b> The lock-screen allowlist is a closed
+    /// <c>{orderNumber, count}</c> set (ADR-0025 D3) and <c>count</c> does not honestly mean an amount
+    /// of money. So the number is written into the five locales — which is a drift risk, and is why
+    /// <c>BookingPolicy.NoShowCreditCzk</c> joined <c>check-booking-policy-parity.mjs</c> in the same
+    /// change. Move the constant and the checker fails until the copy follows.</para>
+    ///
+    /// <para>Sent only when the credit was actually issued. A guest has no account to hold it and a
+    /// non-default-currency order is refused the grant, and both of those get the plain
+    /// <see cref="OrderCancelled"/> instead — promising credit nobody received would be worse than
+    /// saying less.</para>
+    /// </summary>
+    public const string OrderNoCleanerRefunded = "order.no_cleaner_refunded";
+
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
         OrderConfirmed => NotificationCategory.OrderUpdates,
@@ -181,6 +226,10 @@ public static class NotificationEventCatalog
         OrderInProgress => NotificationCategory.OrderUpdates,
         OrderCompleted => NotificationCategory.OrderCompleted,
         OrderCancelled => NotificationCategory.OrderCancelled,
+        // Same category as the plain cancellation it replaces: a customer who silenced cancellation
+        // notices has already answered this question, and a second toggle for the same event in a
+        // worse flavour would be a preference nobody asked for.
+        OrderNoCleanerRefunded => NotificationCategory.OrderCancelled,
         OrderRefunded => NotificationCategory.RefundIssued,
         MembershipExpiringSoon => NotificationCategory.MembershipExpiring,
         MembershipCancellationEffective => NotificationCategory.MembershipCancelled,
@@ -192,6 +241,7 @@ public static class NotificationEventCatalog
         OrderStartingSoon => NotificationCategory.OrderUpdates,
         PreferredOfferClosed => NotificationCategory.OrderUpdates,
         NewJobsAvailable => NotificationCategory.NewJobsAvailable,
+        OrderSeatOpen => NotificationCategory.NewJobsAvailable,
         PreferredOffer => NotificationCategory.NewJobsAvailable,
         _ => null,
     };

@@ -53,8 +53,14 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
         catchError(() => of([] as CountryListItem[]))
       )
       .subscribe((countries) => {
-        this.countries.set(countries);
-        const ids = countries.map((c) => c.id).filter((id): id is string => !!id);
+        // `?? []` because the generated client returns NULL, not an empty list, for a 200 whose body
+        // is not a JSON array and for a 204, while its declared type promises an array — neither
+        // `catchError` nor the compiler can see it. Reasoned out in full in
+        // service-management/service-form.facade.ts. Coalesced ONCE into a local so the signal and
+        // the `.map` below read the same list; the `.map` is what would throw.
+        const list = countries ?? [];
+        this.countries.set(list);
+        const ids = list.map((c) => c.id).filter((id): id is string => !!id);
         if (ids.length === 0) {
           this.servicedCountryIds.set(new Set());
           this.loading.set(false);
@@ -112,7 +118,9 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
         takeUntil(this.destroyed$),
         catchError(() => of([] as ServiceCityDto[]))
       )
-      .subscribe((cities) => this.cities.set(cities));
+      // Same generated-client null as `loadCountries` above. Nothing dereferences it here, so the
+      // null would sit in the signal until the city table iterates it.
+      .subscribe((cities) => this.cities.set(cities ?? []));
   }
 
   createCity(countryId: string, name: string, zipPrefix: string | null): void {

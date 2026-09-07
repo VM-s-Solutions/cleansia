@@ -1,0 +1,48 @@
+<section class="cl-section cl-section--rules" id="rules">
+  <div class="cl-section__inner">
+    <div class="cl-section__header">
+      <cleansia-title
+        [title]="'pages.home.rules.title'"
+        size="big"
+        [level]="2"
+        className="cl-heading cl-heading--center"
+      />
+      <p class="cl-section__desc">{{ 'pages.home.rules.subtitle' | translate }}</p>
+    </div>
+
+    <div class="cl-rules">
+      <div class="cl-rules__card">
+        <span class="cl-rules__label">{{ 'pages.home.rules.cancel_label' | translate }}</span>
+        <p class="cl-rules__value">{{ 'pages.home.rules.cancel_value' | translate }}</p>
+        <p class="cl-rules__desc">{{ 'pages.home.rules.cancel_desc' | translate }}</p>
+      </div>
+
+      <div class="cl-rules__card cl-rules__card--tinted">
+        <span class="cl-rules__label">{{ 'pages.home.rules.rethink_label' | translate }}</span>
+        <p class="cl-rules__value">{{ 'pages.home.rules.rethink_value' | translate }}</p>
+        <p class="cl-rules__desc">{{ 'pages.home.rules.rethink_desc' | translate }}</p>
+      </div>
+
+      <div class="cl-rules__card cl-rules__card--solid">
+        <span class="cl-rules__label">{{ 'pages.home.rules.we_cancel_label' | translate }}</span>
+        <p class="cl-rules__value">{{ 'pages.home.rules.we_cancel_value' | translate }}</p>
+        <p class="cl-rules__desc">{{ 'pages.home.rules.we_cancel_desc' | translate }}</p>
+      </div>
+    </div>
+
+    <ul class="cl-rules__facts">
+      <li class="cl-chip">
+        <span>{{ 'pages.home.rules.lead_label' | translate }} &middot;</span>
+        <strong>{{ 'pages.home.rules.lead_value' | translate }}</strong>
+      </li>
+      <li class="cl-chip">
+        <span>{{ 'pages.home.rules.express_label' | translate }} &middot;</span>
+        <strong>{{ 'pages.home.rules.express_value' | translate }}</strong>
+      </li>
+      <li class="cl-chip">
+        <span>{{ 'pages.home.rules.window_label' | translate }} &middot;</span>
+        <strong>{{ 'pages.home.rules.window_value' | translate }}</strong>
+      </li>
+    </ul>
+  </div>
+</section>

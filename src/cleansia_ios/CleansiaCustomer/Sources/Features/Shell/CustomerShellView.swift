@@ -304,6 +304,7 @@ extension CustomerShellView {
             CreateDisputeView(
                 orderId: orderId,
                 repository: container.disputeRepository,
+                orderClient: container.orderClient,
                 snackbar: snackbar,
                 onCreated: { id in
                     model.path = NavigationPath([ShellRoute.disputes, ShellRoute.disputeDetail(id)])

@@ -1,45 +1,49 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, InjectionToken } from '@angular/core';
 import {
+  AddressSearchClient,
+  IAddressSearchClient,
   ApiClient,
-  AuthClient as CustomerAuthClient,
-  ConsentsClient,
-  CountryClient,
-  DisputeClient,
-  ExtraClient,
-  GdprClient,
   IApiClient,
+  AuthClient as CustomerAuthClient,
   IAuthClient as ICustomerAuthClient,
+  ConsentsClient,
   IConsentsClient,
+  CountryClient,
   ICountryClient,
+  CreditClient,
+  ICreditClient,
+  DisputeClient,
   IDisputeClient,
+  ExtraClient,
   IExtraClient,
+  GdprClient,
   IGdprClient,
   ILanguageClient,
-  ILoyaltyClient,
-  IMembershipClient,
-  INotificationPreferencesClient,
-  IOrderClient as ICustomerOrderClient,
-  IPackageClient,
-  IPaymentClient,
-  IPromoCodeClient,
-  IRecurringBookingClient,
-  IReferralClient,
-  ISavedAddressClient,
-  IServiceClient,
-  IUserClient,
   LanguageClient,
+  ILoyaltyClient,
   LoyaltyClient,
+  IMembershipClient,
   MembershipClient,
+  INotificationPreferencesClient,
   NotificationPreferencesClient,
   OrderClient as CustomerOrderClient,
+  IOrderClient as ICustomerOrderClient,
+  IPackageClient,
   PackageClient,
+  IPaymentClient,
   PaymentClient,
+  IPromoCodeClient,
   PromoCodeClient,
+  IRecurringBookingClient,
   RecurringBookingClient,
+  IReferralClient,
   ReferralClient,
+  ISavedAddressClient,
   SavedAddressClient,
+  IServiceClient,
   ServiceClient,
+  IUserClient,
   UserClient,
 } from './customer-client';
 
@@ -48,6 +52,7 @@ export const CUSTOMER_API_BASE_URL = new InjectionToken<string>(
 );
 
 interface ICustomerClient {
+  addressSearchClient: IAddressSearchClient;
   authClient: ICustomerAuthClient;
   userClient: IUserClient;
   orderClient: ICustomerOrderClient;
@@ -64,6 +69,7 @@ interface ICustomerClient {
   disputeClient: IDisputeClient;
   savedAddressClient: ISavedAddressClient;
   loyaltyClient: ILoyaltyClient;
+  creditClient: ICreditClient;
   promoCodeClient: IPromoCodeClient;
   referralClient: IReferralClient;
   membershipClient: IMembershipClient;
@@ -91,6 +97,10 @@ export class CustomerClient implements ICustomerClient {
   );
   userClient: IUserClient = new UserClient(this.httpClient, this.apiBaseUrl);
   orderClient: ICustomerOrderClient = new CustomerOrderClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  addressSearchClient: IAddressSearchClient = new AddressSearchClient(
     this.httpClient,
     this.apiBaseUrl
   );
@@ -128,6 +138,10 @@ export class CustomerClient implements ICustomerClient {
     this.apiBaseUrl
   );
   loyaltyClient: ILoyaltyClient = new LoyaltyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  creditClient: ICreditClient = new CreditClient(
     this.httpClient,
     this.apiBaseUrl
   );

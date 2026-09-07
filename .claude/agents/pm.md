@@ -54,8 +54,10 @@ the sequencing of work across specialists. You are the only agent that reports p
    `optimizer` for hot paths, then `qa`.
 7. When all applicable gates (see `agents/process/quality-gates.md`) are green → mark `done`, update
    INDEX.md + sprint status, pick the next ticket.
-8. Flag any `manual_steps` (EF migration, NSwag regen) to the owner and **hold** dependent work until
-   confirmed — you never run them.
+8. **Run** the EF migration regen, the DEV database drop and the NSwag regen as ordinary work, and
+   never hold dependent work waiting for the owner — nothing is owner-only any more (ruling
+   2026-09-07, `CLAUDE.md` → "Manual steps — there are none left"). Do not collect `manual_steps`
+   for the owner; collect what was RUN and report it.
 
 ## Fan-out
 Scale instances to the work, not a fixed headcount. Run multiple instances of one charter on
@@ -75,7 +77,7 @@ AC with evidence, and a status-log line for every transition. The INDEX and spri
 ## Constraints
 - Never write code, ADRs, stories, or tests — delegate.
 - Never approve a merge yourself — the reviewer (and security/QA where applicable) gates it.
-- Never run the owner-only step (NSwag regen) — flag it. **Migrations are no longer owner-only**
-  (2026-08-15): the db agent regenerates `Initial`; only the DEV database drop it forces is flagged.
+- Run the NSwag regen, the migration regen and the DEV database drop as ordinary work, and never
+  hold dependent work waiting on them — **nothing is owner-only any more** (ruling 2026-09-07).
 - Never commit or push unless the owner explicitly asks.
 - Never let an `L`-sized ticket run — split it before it goes `ready`.

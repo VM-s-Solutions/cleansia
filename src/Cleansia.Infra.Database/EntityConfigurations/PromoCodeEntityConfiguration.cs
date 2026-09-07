@@ -60,8 +60,14 @@ public class PromoCodeEntityConfiguration : AuditableEntityConfiguration<PromoCo
         // Lookup is GetByCodeAsync(code) — codes are tenant-scoped, hence the
         // composite unique index. Tenant filter still applies at the query
         // level via the global EF filter.
+        // NULLS NOT DISTINCT because single-tenant mode is TenantId = null, and this one is live
+        // money. CreatePromoCode's "friendly error instead of a constraint violation" read and
+        // RequestPromoCode's ANONYMOUS check-then-insert are both check-then-act, and a duplicate row
+        // multiplies both caps at once: the global counter is per row, and the per-user slot index
+        // keys on PromoCodeId.
         builder.HasIndex(p => new { p.TenantId, p.Code })
-            .IsUnique();
+            .IsUnique()
+            .AreNullsDistinct(false);
 
         // IsActive is a hot filter for "all active codes" admin views.
         builder.HasIndex(p => p.IsActive);

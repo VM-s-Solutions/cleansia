@@ -28,7 +28,10 @@ export class LanguageManagementFacade extends UnsubscribeControlDirective {
         finalize(() => this.loading.set(false))
       )
       .subscribe((languages) => {
-        this.languages.set(languages);
+        // `?? []` — the generated client can put a NULL in a signal typed as an array; reasoned out
+        // in service-management/service-form.facade.ts. Nothing dereferences it here, so the null
+        // would travel as far as the language table before it threw.
+        this.languages.set(languages ?? []);
         if (this.initialLoading()) {
           this.initialLoading.set(false);
         }

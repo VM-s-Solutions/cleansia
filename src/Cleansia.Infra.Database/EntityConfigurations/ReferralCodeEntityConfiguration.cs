@@ -35,7 +35,13 @@ public class ReferralCodeEntityConfiguration : AuditableEntityConfiguration<Refe
 
         // Lookup is GetByCodeAsync(code) — codes are tenant-scoped (the
         // global EF filter still applies at query time).
+        // NULLS NOT DISTINCT because single-tenant mode is TenantId = null. The odds are long — a
+        // generated code collides about once in 481 million attempts — but EnsureCodeForUserAsync's
+        // retry-on-collision loop can only see COMMITTED rows, so without this two users can end up
+        // holding one code and ProcessOrderCompletedAsync then pays the referral points to whichever
+        // of them the unordered lookup returns. Silent, and it credits the wrong person.
         builder.HasIndex(c => new { c.TenantId, c.Code })
-            .IsUnique();
+            .IsUnique()
+            .AreNullsDistinct(false);
     }
 }

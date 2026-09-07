@@ -39,3 +39,18 @@
     }
   }
 }
+
+// Visually hidden, not removed: the caller printing its own heading over this
+// control still needs the label element to name the input for a screen reader.
+.cleansia-address-autocomplete__label--hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

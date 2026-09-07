@@ -5,6 +5,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -29,6 +30,7 @@ public class AdminFiscalFailureController(IMediator mediator) : ApiController(me
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> RetryFiscalRegistration(string receiptId, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new RetryFiscalRegistration.Command(receiptId), cancellationToken);
@@ -41,6 +43,7 @@ public class AdminFiscalFailureController(IMediator mediator) : ApiController(me
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> AcknowledgeFiscalFailure(string receiptId, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new AcknowledgeFiscalFailure.Command(receiptId), cancellationToken);

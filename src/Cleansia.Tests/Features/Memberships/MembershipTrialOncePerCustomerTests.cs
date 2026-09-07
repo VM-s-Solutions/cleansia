@@ -295,18 +295,17 @@ public class MembershipTrialOncePerCustomerTests
         _stripe
             .Setup(c => c.CreateMembershipCheckoutSessionAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("https://checkout.stripe.test/s/1");
 
         var result = await CheckoutHandler().Handle(
-            new CreateMembershipCheckoutSession.Command(PlanCode, "https://ok", "https://no"),
+            new CreateMembershipCheckoutSession.Command(PlanCode),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         _stripe.Verify(c => c.CreateMembershipCheckoutSessionAsync(
             StripeCustomerId, StripePriceId, UserId, PlanCode, PlanTrialDays,
-            "https://ok", "https://no", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -316,17 +315,16 @@ public class MembershipTrialOncePerCustomerTests
         _stripe
             .Setup(c => c.CreateMembershipCheckoutSessionAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("https://checkout.stripe.test/s/2");
 
         var result = await CheckoutHandler().Handle(
-            new CreateMembershipCheckoutSession.Command(PlanCode, "https://ok", "https://no"),
+            new CreateMembershipCheckoutSession.Command(PlanCode),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         _stripe.Verify(c => c.CreateMembershipCheckoutSessionAsync(
             StripeCustomerId, StripePriceId, UserId, PlanCode, 0,
-            "https://ok", "https://no", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

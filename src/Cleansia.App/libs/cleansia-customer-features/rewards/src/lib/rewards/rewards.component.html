@@ -1,210 +1,233 @@
-<div class="customer-rewards">
-  <!-- Hero -->
-  <div class="customer-rewards__hero">
-    <h1 class="customer-rewards__hero-title">
-      {{ 'pages.rewards.title' | translate }}
-    </h1>
+<!--
+  Rewards — built against the "Odměny a body" board.
+
+  Every number here is the platform's, not a design's: a point per 10 Kč of the
+  order total, floored; credited only when the clean COMPLETES and taken back on
+  a cancellation or a partial refund; tiers at 0 / 500 / 2 000 / 5 000 points for
+  0 / 5 / 10 / 12 %. → /product/business-rules
+-->
+<div class="cl-rwd">
+  <div class="cl-rwd__hero">
+    <h1 class="cl-rwd__title">{{ 'pages.rewards.title' | translate }}</h1>
+    <p class="cl-rwd__lead">{{ 'pages.rewards.lead' | translate }}</p>
   </div>
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-page)'" />
+</div>
 
+<div class="cl-rwd__body">
   @if (facade.loading() && !facade.account()) {
-    <div class="customer-rewards__skeleton flex flex-column gap-3">
-      <p-skeleton width="100%" height="14rem" borderRadius="20px" />
-      <p-skeleton width="100%" height="6rem" borderRadius="16px" />
-      <p-skeleton width="100%" height="10rem" borderRadius="16px" />
-    </div>
+  <div class="cl-rwd__page">
+    <p-skeleton width="100%" height="17rem" borderRadius="28px" />
+    <p-skeleton width="100%" height="11rem" borderRadius="28px" styleClass="mt-3" />
+  </div>
   } @else if (facade.error() && !facade.account()) {
-    <div class="customer-rewards__error">
-      <i class="pi pi-exclamation-triangle"></i>
-      <p>{{ 'pages.rewards.error_load' | translate }}</p>
-      <cleansia-button
-        [title]="'pages.rewards.retry' | translate"
-        [severity]="'primary'"
-        (clickFn)="retry()"
-      />
-    </div>
-  } @else if (facade.account()) {
-    @let acc = facade.account()!;
-    <!-- Hero card with tier badge + points + completed bookings -->
-    <section
-      class="customer-rewards__hero-card"
-      [class]="'customer-rewards__hero-card--' + facade.tierAccent(acc.currentTier)"
-    >
-      <div class="customer-rewards__hero-badge">
-        <i class="pi pi-star-fill"></i>
-      </div>
-      <div class="customer-rewards__hero-info">
-        <div class="customer-rewards__tier-name">
-          {{ ('pages.rewards.tier.' + facade.tierKey(acc.currentTier)) | translate }}
-        </div>
-        <div class="customer-rewards__hero-points">
-          <strong>{{ acc.lifetimePoints }}</strong>
-          <span>{{ 'pages.rewards.points_unit' | translate }}</span>
-        </div>
-        <div class="customer-rewards__hero-meta">
-          {{ 'pages.rewards.bookings_completed' | translate: { count: acc.completedBookingsCount } }}
-        </div>
-      </div>
-    </section>
+  <div class="cl-rwd__page cl-rwd__error">
+    <i class="pi pi-exclamation-triangle"></i>
+    <p>{{ 'pages.rewards.error_load' | translate }}</p>
+    <cleansia-button
+      [title]="'pages.rewards.retry' | translate"
+      [severity]="'primary'"
+      [style]="'raised-button'"
+      (clickFn)="retry()"
+    />
+  </div>
+  } @else if (facade.account(); as acc) {
 
-    <!-- Progress to next tier -->
-    <section class="customer-rewards__progress-card">
-      @if (acc.pointsToNextTier == null) {
-        <div class="customer-rewards__progress-max">
+  <div class="cl-rwd__page">
+    <!--
+      What you have, and how far the next tier is. The one dark surface on the
+      page: this is the number the customer came to read.
+    -->
+    <section class="cl-rwd__balance">
+      <div class="cl-rwd__balance-main">
+        <span class="cl-rwd__balance-label">{{ 'pages.rewards.your_points' | translate }}</span>
+        <div class="cl-rwd__balance-value cl-num">{{ acc.lifetimePoints | number }}</div>
+
+        <span class="cl-rwd__tier-chip">
+          <i class="pi pi-star-fill"></i>
+          {{ 'pages.rewards.tier.' + facade.tierKey(acc.currentTier) | translate }}
+          @if (acc.currentDiscountPercent > 0) {
+          · {{ 'pages.rewards.discount_of' | translate: { percent: percentOf(acc.currentDiscountPercent) } }}
+          }
+        </span>
+
+        @if (acc.pointsToNextTier != null && acc.pointsToNextTier > 0) {
+        <div class="cl-rwd__progress-head">
+          <span>
+            {{
+              'pages.rewards.to_next_tier'
+                | translate: { tier: 'pages.rewards.tier.' + facade.tierKey(acc.nextTier) | translate }
+            }}
+          </span>
+          <strong class="cl-num">
+            {{ 'pages.rewards.points_remaining' | translate: { count: acc.pointsToNextTier } }}
+          </strong>
+        </div>
+        <div class="cl-rwd__progress" role="progressbar" [attr.aria-valuenow]="progressPercent()">
+          <span class="cl-rwd__progress-fill" [style.width.%]="progressPercent()"></span>
+        </div>
+        <!--
+          What the points are WORTH as a fact about the past, since a point is a
+          fixed tenth of a koruna spent. → /product/business-rules
+        -->
+        <p class="cl-rwd__balance-note">
+          {{ 'pages.rewards.spent_note' | translate: { amount: cleanedForLabel(acc.lifetimePoints) } }}
+        </p>
+        } @else {
+        <p class="cl-rwd__balance-note cl-rwd__balance-note--top">
           <i class="pi pi-trophy"></i>
-          <span>{{ 'pages.rewards.max_tier_reached' | translate }}</span>
-        </div>
-      } @else {
-        <div class="customer-rewards__progress-label">
-          {{ progressLabel() }}
-        </div>
-        <p-progressBar
-          [value]="progressPercent()"
-          [showValue]="false"
-          styleClass="customer-rewards__progress-bar"
-        />
-      }
+          {{ 'pages.rewards.max_tier_reached' | translate }}
+        </p>
+        }
+      </div>
+
+      <img
+        class="cl-rwd__balance-art"
+        src="assets/images/mascot/mascot-thumbs-up-tile.webp"
+        alt=""
+        width="300"
+        height="300"
+        aria-hidden="true"
+      />
     </section>
 
-    <!-- Current perks -->
-    @if (acc.currentPerks && acc.currentPerks.length > 0) {
-      <section class="customer-rewards__section">
-        <h2 class="customer-rewards__section-title">
-          {{ 'pages.rewards.current_perks_title' | translate }}
-        </h2>
-        <ul class="customer-rewards__perk-list">
-          @for (perk of acc.currentPerks; track perk.labelKey) {
-            <li class="customer-rewards__perk">
-              <span class="customer-rewards__perk-icon">
-                <i [class]="'pi pi-' + (perk.icon || 'check')"></i>
-              </span>
-              <span class="customer-rewards__perk-label">
-                {{ (perk.labelKey || 'pages.rewards.perks.welcome_badge') | translate }}
-              </span>
-            </li>
-          }
-        </ul>
-      </section>
-    }
+    <!--
+      The rules, said once and plainly. A customer who does not know that points
+      land on COMPLETION reads a finished booking with no points as a bug.
+    -->
+    <section class="cl-rwd__card">
+      <h2 class="cl-rwd__card-title">{{ 'pages.rewards.how_title' | translate }}</h2>
+      <div class="cl-rwd__how">
+        @for (rule of howItWorks; track rule.key) {
+        <div class="cl-rwd__how-item">
+          <span class="cl-rwd__how-icon"><i [class]="rule.icon"></i></span>
+          <div>
+            <div class="cl-rwd__how-name">
+              {{ 'pages.rewards.how.' + rule.key + '_title' | translate }}
+            </div>
+            <p class="cl-rwd__how-note">
+              {{ 'pages.rewards.how.' + rule.key + '_note' | translate }}
+            </p>
+          </div>
+        </div>
+        }
+      </div>
+      <p class="cl-rwd__note">
+        <i class="pi pi-question-circle"></i>
+        {{ 'pages.rewards.how.clawback' | translate }}
+      </p>
+    </section>
 
-    <!-- Tier ladder -->
-    <section class="customer-rewards__section">
-      <h2 class="customer-rewards__section-title">
-        {{ 'pages.rewards.tier_ladder_title' | translate }}
-      </h2>
-      <div class="customer-rewards__tier-ladder">
+    <!-- Every tier, with the one you are on marked. -->
+    <section class="cl-rwd__card">
+      <h2 class="cl-rwd__card-title">{{ 'pages.rewards.tier_ladder_title' | translate }}</h2>
+      <p class="cl-rwd__card-lead">{{ 'pages.rewards.tier_ladder_lead' | translate }}</p>
+
+      <div class="cl-rwd__tiers">
         @for (tier of facade.tiers(); track tier.tier) {
-          <div
-            class="customer-rewards__tier-row"
-            [class]="'customer-rewards__tier-row--' + facade.tierAccent(tier.tier)"
-            [class.customer-rewards__tier-row--current]="tier.tier === acc.currentTier"
-            [class.customer-rewards__tier-row--locked]="tierStatus(tier.tier) === 'locked'"
-          >
-            <div class="customer-rewards__tier-row-left">
-              <div class="customer-rewards__tier-row-badge">
-                <i class="pi pi-star-fill"></i>
-              </div>
-              <div>
-                <div class="customer-rewards__tier-row-name">
-                  {{ ('pages.rewards.tier.' + facade.tierKey(tier.tier)) | translate }}
-                </div>
-                <div class="customer-rewards__tier-row-threshold">
-                  {{ 'pages.rewards.threshold_points' | translate: { count: tier.lifetimePointsThreshold } }}
-                </div>
-                @if (discountLabel(tier); as dl) {
-                  <div class="customer-rewards__tier-row-discount">
-                    {{ dl.key | translate: dl.params }}
-                  </div>
-                }
-              </div>
-            </div>
-            <p-tag
-              [value]="tierStatusKey(tier.tier) | translate"
-              [severity]="tierStatusSeverity(tier.tier)"
-              styleClass="text-xs"
-            />
+        <div class="cl-rwd__tier" [class.cl-rwd__tier--mine]="tier.tier === acc.currentTier">
+          @if (tier.tier === acc.currentTier) {
+          <span class="cl-rwd__tier-flag">{{ 'pages.rewards.your_tier' | translate }}</span>
+          }
+          <span class="cl-rwd__tier-threshold cl-num">
+            {{ 'pages.rewards.points_threshold' | translate: { count: tier.lifetimePointsThreshold } }}
+          </span>
+          <div class="cl-rwd__tier-name">
+            {{ 'pages.rewards.tier.' + facade.tierKey(tier.tier) | translate }}
           </div>
+          <div class="cl-rwd__tier-discount">
+            {{
+              tier.discountPercent > 0
+                ? ('pages.rewards.percent_off' | translate: { percent: percentOf(tier.discountPercent) })
+                : ('pages.rewards.no_discount' | translate)
+            }}
+          </div>
+          <ul class="cl-rwd__tier-perks">
+            <!--
+              The server sends `loyalty.perks.*`, which is where the copy lives.
+              The fallback used to name `pages.rewards.perks.welcome_badge` — a
+              key that exists in no locale file, so a perk without a labelKey
+              printed the key itself. Android reads the same block through its
+              own underscore names. -> LoyaltyTierConfig.PerksJson
+            -->
+            @for (perk of tier.perks ?? []; track perk.labelKey) {
+            <li>
+              <i class="pi pi-check"></i>
+              {{ perk.labelKey || 'loyalty.perks.welcome_badge' | translate }}
+            </li>
+            }
+          </ul>
+        </div>
         }
       </div>
+
+      <!--
+        The one thing a customer would otherwise meet at the checkout: the tier
+        discount and the Plus discount add up, but only to 12 % together.
+        → /product/business-rules
+      -->
+      <p class="cl-rwd__note cl-rwd__note--warn">
+        <i class="pi pi-question-circle"></i>
+        {{ 'pages.rewards.discount_cap' | translate: { cap: discountCapPercent } }}
+      </p>
     </section>
 
-    <!-- Invite friends — share code, watch the tier-points stack up -->
-    @if (facade.referralAccount(); as referral) {
-      @if (referral.code) {
-        <section class="customer-rewards__section customer-rewards__referral">
-          <h2 class="customer-rewards__section-title">
-            {{ 'pages.rewards.referral.section_title' | translate }}
-          </h2>
-          <p class="customer-rewards__referral-subtitle">
-            {{ 'pages.rewards.referral.subtitle' | translate }}
-          </p>
+    <div class="cl-rwd__split">
+      @if (facade.referralAccount()?.code; as code) {
+      <section class="cl-rwd__card">
+        <h2 class="cl-rwd__card-title">{{ 'pages.rewards.referral.section_title' | translate }}</h2>
+        <p class="cl-rwd__card-lead">{{ 'pages.rewards.referral.subtitle' | translate }}</p>
 
-          <div class="customer-rewards__referral-card">
-            <div class="customer-rewards__referral-code">
-              {{ referral.code }}
-            </div>
-
-            <div class="customer-rewards__referral-actions">
-              <p-button
-                icon="pi pi-copy"
-                [label]="'pages.rewards.referral.copy_button' | translate"
-                severity="secondary"
-                (onClick)="copyReferralCode(referral.code)"
-              />
-              <p-button
-                icon="pi pi-share-alt"
-                [label]="'pages.rewards.referral.share_button' | translate"
-                (onClick)="shareReferralCode(referral.code)"
-              />
-            </div>
-
-            <div class="customer-rewards__referral-stats">
-              {{ referralStatsLabel() | translate: referralStatsParams() }}
-            </div>
-          </div>
-        </section>
-      }
-    }
-
-    <!-- Recent activity -->
-    <section class="customer-rewards__section">
-      <div class="customer-rewards__section-head">
-        <h2 class="customer-rewards__section-title">
-          {{ 'pages.rewards.activity_title' | translate }}
-        </h2>
-        @if (facade.recentActivity().length > 0) {
-          <a class="customer-rewards__link" routerLink="/rewards/activity">
-            {{ 'pages.rewards.activity_view_all' | translate }}
-            <i class="pi pi-arrow-right"></i>
-          </a>
-        }
-      </div>
-
-      @if (facade.recentActivity().length === 0) {
-        <div class="customer-rewards__empty">
-          <i class="pi pi-inbox"></i>
-          <p>{{ 'pages.rewards.empty_activity' | translate }}</p>
+        <div class="cl-rwd__code-row">
+          <span class="cl-rwd__code cl-num">{{ code }}</span>
+          <cleansia-button
+            [title]="'pages.rewards.referral.copy' | translate"
+            [severity]="'primary'"
+            [style]="'raised-button'"
+            (clickFn)="copyReferralCode(code)"
+          />
         </div>
-      } @else {
-        <ul class="customer-rewards__activity-list">
+        <p class="cl-rwd__card-lead">{{ 'pages.rewards.referral.when_credited' | translate }}</p>
+      </section>
+      }
+
+      <section class="cl-rwd__card">
+        <div class="cl-rwd__card-head">
+          <h2 class="cl-rwd__card-title">{{ 'pages.rewards.recent_title' | translate }}</h2>
+          @if (facade.recentActivity().length > 0) {
+          <button type="button" class="cl-rwd__link" (click)="goToActivity()">
+            {{ 'pages.rewards.activity_view_all' | translate }}
+          </button>
+          }
+        </div>
+
+        @if (facade.recentActivity().length === 0) {
+        <p class="cl-rwd__empty">{{ 'pages.rewards.empty_activity' | translate }}</p>
+        } @else {
+        <ul class="cl-rwd__moves">
           @for (item of facade.recentActivity(); track $index) {
-            <li class="customer-rewards__activity-row">
-              <span
-                class="customer-rewards__activity-points"
-                [class.customer-rewards__activity-points--positive]="item.points > 0"
-                [class.customer-rewards__activity-points--negative]="item.points < 0"
-              >
-                {{ signedPoints(item.points) }}
-              </span>
+          <li class="cl-rwd__move">
+            <span
+              class="cl-rwd__move-points cl-num"
+              [class.cl-rwd__move-points--minus]="item.points < 0"
+            >
+              {{ signedPoints(item.points) }}
+            </span>
+            <span class="cl-rwd__move-text">
               @if (txLabel(item); as tx) {
-                <span class="customer-rewards__activity-text">
-                  {{ tx.key | translate: tx.params }}
-                </span>
+              <span class="cl-rwd__move-name">{{ tx.key | translate: tx.params }}</span>
               }
-              <span class="customer-rewards__activity-date">{{ formatDate(item.occurredOn) }}</span>
-            </li>
+              @if (item.orderDisplayNumber) {
+              <span class="cl-rwd__move-order">{{ item.orderDisplayNumber }}</span>
+              }
+            </span>
+            <span class="cl-rwd__move-date">{{ formatDate(item.occurredOn) }}</span>
+          </li>
           }
         </ul>
-      }
-    </section>
+        }
+      </section>
+    </div>
+  </div>
   }
 </div>

@@ -1,13 +1,49 @@
+@if (isLink()) {
+<!--
+  One element that is both a link and a button. The alternative the pages used
+  was a <button> nested inside an <a>, which is invalid HTML and announces two
+  controls where there is one.
+-->
+@if (routerLink(); as link) {
+<a
+  pButton
+  [class]="cssClasses()"
+  [routerLink]="link"
+  [queryParams]="queryParams()"
+  [label]="label() || title()"
+  [icon]="icon() ?? ''"
+  [iconPos]="iconPosition()"
+  [severity]="severity()"
+  [raised]="style() === 'raised-button'"
+  [outlined]="outlined()"
+  [rounded]="rounded() || isIconOnly()"
+  [text]="text()"
+  [pTooltip]="tooltip()"
+  [tooltipPosition]="tooltipPosition()"
+  [attr.aria-label]="resolvedAriaLabel()"
+  (click)="handleClick($event)"
+></a>
+} @else {
+<a
+  pButton
+  [class]="cssClasses()"
+  [href]="href()"
+  [label]="label() || title()"
+  [icon]="icon() ?? ''"
+  [iconPos]="iconPosition()"
+  [severity]="severity()"
+  [raised]="style() === 'raised-button'"
+  [outlined]="outlined()"
+  [rounded]="rounded() || isIconOnly()"
+  [text]="text()"
+  [pTooltip]="tooltip()"
+  [tooltipPosition]="tooltipPosition()"
+  [attr.aria-label]="resolvedAriaLabel()"
+  (click)="handleClick($event)"
+></a>
+} } @else {
 <p-button
-  [class]="
-    size() +
-    ' cleansia-button ' +
-    'cleansia-button--' +
-    buttonSize() +
-    (isIconOnly() ? ' cleansia-button--icon-only' : '') +
-    ' ' +
-    className()
-  "
+  [class]="cssClasses()"
   [label]="label() || title()"
   [icon]="icon()"
   [iconPos]="iconPosition()"
@@ -24,3 +60,4 @@
   [ariaLabel]="resolvedAriaLabel()"
   (onClick)="handleClick($event)"
 />
+}

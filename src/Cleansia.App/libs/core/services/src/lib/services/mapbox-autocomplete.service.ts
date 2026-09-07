@@ -1,6 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable, InjectionToken } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
 import {
   catchError,
   debounceTime,
@@ -9,7 +7,6 @@ import {
   of,
   Subject,
   switchMap,
-  throwError,
 } from 'rxjs';
 
 /**
@@ -30,16 +27,38 @@ export const MAPBOX_ACCESS_TOKEN = new InjectionToken<string>(
 );
 
 /**
- * Same-origin proxy path that fronts the Mapbox geocoding endpoint. The proxy
- * injects the access token server-side and is excluded from URL logging, so the
- * credential never appears in any browser-visible or third-party URL.
+ * How this library reaches address search. It is a port, not a URL, because the
+ * lookup is a backend endpoint like every other one — and the typed client that
+ * calls it is generated PER APP. A shared library cannot inject the customer
+ * app's client without dragging it into the partner app, so each app provides
+ * the implementation and this library stays app-agnostic.
  *
- * Defaults to `/api/mapbox/geocode`. The service issues a GET to
- * `<MAPBOX_PROXY_PATH>?q=…&country=…&types=…&language=…` carrying NO token.
+ * The default returns nothing: an app that has not provided one has no address
+ * search, which is exactly what it had before.
+ */
+export interface AddressSearchPort {
+  search(
+    query: string,
+    countries: string,
+    limit: number
+  ): Observable<MapboxAddressSuggestion[]>;
+}
+
+export const ADDRESS_SEARCH_PORT = new InjectionToken<AddressSearchPort>(
+  'ADDRESS_SEARCH_PORT',
+  { factory: (): AddressSearchPort => ({ search: () => of([]) }) }
+);
+
+/**
+ * @deprecated The lookup moved off a same-origin SSR route and onto the
+ * platform API, behind {@link ADDRESS_SEARCH_PORT}. The SSR route only ever
+ * existed on the customer app, was never proxied by its own dev server, and had
+ * no equivalent on the partner API at all. Retained so an app still providing it
+ * compiles; it is read by nothing.
  */
 export const MAPBOX_PROXY_PATH = new InjectionToken<string>(
   'MAPBOX_PROXY_PATH',
-  { factory: () => '/api/mapbox/geocode' }
+  { factory: () => '' }
 );
 
 /**
@@ -80,56 +99,29 @@ export interface MapboxAddressSuggestion {
   longitude: number;
 }
 
-/** Raw subset of the Mapbox feature shape we care about. */
-interface MapboxContextItem {
-  id?: string;
-  text?: string;
-}
-
-interface MapboxFeature {
-  place_name?: string;
-  text?: string;
-  address?: string;
-  center?: [number, number];
-  context?: MapboxContextItem[];
-}
-
-interface MapboxResponse {
-  features?: MapboxFeature[];
-}
-
 /**
- * Forward geocoding via a same-origin Mapbox proxy (text-only, no map widget).
+ * Address autocomplete for the booking and profile address fields.
  *
- * The Mapbox access token is NEVER placed in the request URL
- * or sent by the browser. The Mapbox Geocoding REST endpoints (v5
- * `mapbox.places` and v6 `search/geocode`) authenticate only via the
- * `access_token` query parameter and do not honor an `Authorization` header, so
- * the conforming fix is a thin same-origin proxy ({@link MAPBOX_PROXY_PATH})
- * that injects the token server-side and is excluded from URL logging. The
- * browser issues a token-free GET to that proxy.
+ * This class no longer speaks to Mapbox. It debounces, enforces the minimum
+ * query length and picks the request language; the lookup itself goes through
+ * {@link ADDRESS_SEARCH_PORT} to the platform API, which owns the credential,
+ * the provider's response shape and the rate limit.
  *
- * Parity with the mobile `ReverseGeocodingService.forwardGeocode`:
- *   - country=<MAPBOX_COUNTRY_WHITELIST> (defaults to `cz,sk`)
- *   - types=address,postcode
- *   - autocomplete=true
- *   - limit=5
- * Mobile additionally allows `place,locality,neighborhood`; the web picker is
- * focused on real address-with-house-number selection so we drop those.
- *
- * Docs: https://docs.mapbox.com/api/search/geocoding-v5/
+ * The provider's parameters — country whitelist, `types=address,postcode`,
+ * `autocomplete=true`, `limit=5` — moved to the server with the call. Mobile
+ * additionally allows `place,locality,neighborhood`; the web picker is focused
+ * on real address-with-house-number selection, so it does not.
  */
 @Injectable({ providedIn: 'root' })
 export class MapboxAutocompleteService {
-  private readonly http = inject(HttpClient);
-  private readonly translate = inject(TranslateService);
-  private readonly proxyPath = inject(MAPBOX_PROXY_PATH);
+  private readonly port = inject(ADDRESS_SEARCH_PORT);
   private readonly enabled = inject(MAPBOX_AUTOCOMPLETE_ENABLED);
   private readonly countryWhitelist = inject(MAPBOX_COUNTRY_WHITELIST);
 
   private static readonly DEBOUNCE_MS = 300;
   private static readonly MIN_QUERY_LENGTH = 3;
   private static readonly MAX_QUERY_LENGTH = 120;
+  private static readonly RESULT_LIMIT = 5;
 
   /**
    * True when geocoding is available; consumers can hide the suggestions UI.
@@ -152,20 +144,14 @@ export class MapboxAutocompleteService {
 
     const q = trimmed.slice(0, MapboxAutocompleteService.MAX_QUERY_LENGTH);
 
-    // NOTE: no `access_token` is ever set here. The same-origin proxy at
-    // `proxyPath` injects the credential server-side. HttpClient encodes the
-    // params, so the query is carried safely without leaking a token.
-    const params = new HttpParams()
-      .set('q', q)
-      .set('autocomplete', 'true')
-      .set('country', this.countryWhitelist.join(','))
-      .set('types', 'address,postcode')
-      .set('limit', '5')
-      .set('language', this.languageForRequest());
-
-    return this.http.get<MapboxResponse>(this.proxyPath, { params }).pipe(
-      switchMap((res) => of(this.parse(res))),
-      catchError((err) => throwError(() => err))
+    // NOT localised. Asking the provider for the visitor's language translates
+    // the place names, so a Prague address comes back with its city as "Прага"
+    // — which the serviced-city list, holding "Praha", then rejects. An address
+    // is written the way the local post office reads it.
+    return this.port.search(
+      q,
+      this.countryWhitelist.join(','),
+      MapboxAutocompleteService.RESULT_LIMIT
     );
   }
 
@@ -181,61 +167,6 @@ export class MapboxAutocompleteService {
     );
   }
 
-  private parse(res: MapboxResponse): MapboxAddressSuggestion[] {
-    const features = res?.features ?? [];
-    const out: MapboxAddressSuggestion[] = [];
-    for (const f of features) {
-      const mapped = this.featureToSuggestion(f);
-      if (mapped) out.push(mapped);
-    }
-    return out;
-  }
 
-  private featureToSuggestion(f: MapboxFeature): MapboxAddressSuggestion | null {
-    const center = f.center;
-    if (!center || center.length < 2) return null;
-    const [lng, lat] = center;
-    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
 
-    const baseStreet = f.text ?? '';
-    const houseNumber = f.address ?? '';
-    const placeName = f.place_name ?? '';
-
-    let street = '';
-    if (baseStreet && houseNumber) street = `${baseStreet} ${houseNumber}`;
-    else if (baseStreet) street = baseStreet;
-    else street = placeName.split(',')[0]?.trim() ?? '';
-
-    // Mapbox returns context items in most-specific-first order, so for
-    // Prague the array is [locality.holešovice, place.praha, district.*, …].
-    // The serviced-city list stores the city name (`Praha`), not the
-    // district (`Holešovice`). Always prefer `place` over `locality` —
-    // `locality` is a fallback for results without a place row at all.
-    let cityFromPlace = '';
-    let cityFromLocality = '';
-    let zip = '';
-    for (const ctx of f.context ?? []) {
-      const id = ctx.id ?? '';
-      const text = ctx.text ?? '';
-      if (id.startsWith('postcode')) zip = text;
-      else if (id.startsWith('place') && !cityFromPlace) cityFromPlace = text;
-      else if (id.startsWith('locality') && !cityFromLocality) cityFromLocality = text;
-    }
-    const city = cityFromPlace || cityFromLocality;
-
-    return {
-      placeName,
-      street,
-      city,
-      zipCode: zip,
-      latitude: lat,
-      longitude: lng,
-    };
-  }
-
-  /** Mapbox supports cs/sk/uk/ru/en — pass through the active app language. */
-  private languageForRequest(): string {
-    const lang = (this.translate.currentLang || this.translate.getDefaultLang() || 'cs').toLowerCase();
-    return ['cs', 'sk', 'uk', 'ru', 'en'].includes(lang) ? lang : 'cs';
-  }
 }

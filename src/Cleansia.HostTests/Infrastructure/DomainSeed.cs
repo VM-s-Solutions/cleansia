@@ -171,7 +171,13 @@ public static class DomainSeed
 
     /// <summary>A simple Order owned by <paramref name="ownerUserId"/> with one open assignment spot and
     /// status New (so a cleaner can Take it).</summary>
-    public static Order NewOrder(string ownerUserId, string customerEmail, string? tenantId = null)
+    /// <param name="cleaningDateTime">
+    /// Defaults to three days out. Pass a PAST time to seed an order that can be disputed —
+    /// CreateDispute refuses a clean that has not happened yet.
+    /// </param>
+    public static Order NewOrder(
+        string ownerUserId, string customerEmail, string? tenantId = null,
+        DateTime? cleaningDateTime = null)
     {
         var address = Address.Create("Order St 9", "Brno", "60200", CountryId);
         var order = Order.Create(
@@ -182,7 +188,7 @@ public static class DomainSeed
             rooms: 2,
             bathrooms: 1,
             extras: new Dictionary<string, bool>(),
-            cleaningDateTime: DateTime.UtcNow.AddDays(3),
+            cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,
             currencyId: CurrencyId,

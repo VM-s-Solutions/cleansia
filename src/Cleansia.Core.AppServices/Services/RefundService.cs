@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
@@ -15,6 +16,7 @@ namespace Cleansia.Core.AppServices.Services;
 public sealed class RefundService(
     IRefundRepository refundRepository,
     IOrderRepository orderRepository,
+    ICreditAccountRepository creditAccountRepository,
     IStripeClientFactory stripeClientFactory,
     ILogger<RefundService> logger) : IRefundService
 {
@@ -29,6 +31,19 @@ public sealed class RefundService(
         }
 
         var refundKey = BuildRefundKey(request);
+
+        // Split the requested slice of the SALE across the two tenders it was settled with, before
+        // anything else looks at an amount. On an order that took no credit this is the identity - the
+        // card share IS the request - so every shipped refund is byte-unchanged.
+        //
+        // The credit leg nets off what has ALREADY gone back, exactly as the card leg nets off
+        // `consumed` below. Without it the two legs use different denominators: a second refund
+        // request would have its card share clamped by the ceiling while its credit share was
+        // recomputed from the full CreditAppliedAmount, and a customer could be handed their credit
+        // twice by asking for a full refund twice under two different purposes.
+        var creditAlreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(
+            order.Id, cancellationToken);
+        var split = SplitAcrossTenders(order, request.Amount, creditAlreadyReturned);
 
         // Resolve-to-existing ONLY for a terminally-Succeeded refund. A Pending/Failed row from a prior
         // attempt whose Stripe call never confirmed must NOT short-circuit as success — it has to be
@@ -57,7 +72,7 @@ public sealed class RefundService(
             // stale amount would over-refund; clamp it to the live ceiling (or fail if nothing remains).
             var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
-            var refundable = order.TotalPrice - consumed;
+            var refundable = CardRefundCeiling(order, consumed);
             if (refundable <= 0m)
             {
                 return BusinessResult.Failure<RefundResult>(new Error(
@@ -71,8 +86,8 @@ public sealed class RefundService(
         {
             var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
-            var refundable = order.TotalPrice - consumed;
-            var amount = Math.Min(request.Amount, refundable);
+            var refundable = CardRefundCeiling(order, consumed);
+            var amount = Math.Min(split.Card, refundable);
             if (amount <= 0m)
             {
                 return BusinessResult.Failure<RefundResult>(new Error(
@@ -151,7 +166,19 @@ public sealed class RefundService(
         var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
             order.Id, cancellationToken);
         refund.MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
-        order.UpdatePaymentStatus(succeededConsumed + refund.Amount >= order.TotalPrice
+
+        // The card leg is settled; give back the credit leg too, in the SAME commit. Keyed off the
+        // deterministic refund key, so a re-driven refund returns the credit exactly once.
+        await ReturnCreditShareAsync(order, split.Credit, refundKey, request.ActorId, cancellationToken);
+
+        // FULLY REFUNDED IS A TEST ON THE CARD LEG AGAINST THE CARD TOTAL, not against TotalPrice.
+        // GetSucceededRefundTotalForOrderAsync sums the Refunds table, which holds card refunds only —
+        // so on an order settled with 500 credit and 1500 card, comparing against 2000 could never be
+        // reached and the order would sit PartiallyRefunded forever. The split above is proportional,
+        // so the credit leg is exhausted at exactly the moment the card leg is, and this one comparison
+        // is true for both. On an order that took no credit it reduces to the original expression.
+        var cardTotal = order.TotalPrice - order.CreditAppliedAmount;
+        order.UpdatePaymentStatus(succeededConsumed + refund.Amount >= cardTotal
             ? PaymentStatus.Refunded
             : PaymentStatus.PartiallyRefunded);
         await refundRepository.CommitAsync(cancellationToken);
@@ -176,18 +203,142 @@ public sealed class RefundService(
             Status: existing.Status,
             ResolvedToExisting: true));
 
-    // RefundKey = refund:{OrderId}:{purpose}, purpose ∈ { cancel, dispute:{DisputeId}, admin:{RefundRequestId} }
-    // (ADR-0006 D3). Deterministic on the domain inputs, never a Guid/timestamp, so a retry/redelivery
-    // and a concurrent double-issue collapse onto the one key.
-    private static string BuildRefundKey(RefundRequest request)
+    /// <summary>
+    /// The most that can still go back to the CARD.
+    ///
+    /// <para>It is not the order total. Credit is a tender: an order settled with 500 of credit and
+    /// 1500 of card is a 2000 sale, but only 1500 ever reached Stripe — and the card cannot give back
+    /// money the card never took. Without subtracting it, a customer who paid partly in credit could
+    /// be refunded the whole 2000 in cash, converting credit into money at will.</para>
+    ///
+    /// <para>The credit half goes back on its own leg — see <see cref="SplitAcrossTenders"/>. It used
+    /// to be an admin's job to re-issue it by hand, which read as human-in-the-loop but was not: the
+    /// ruling is about DECIDING to compensate a customer, and unwinding a tender the platform already
+    /// took is not a decision. Left manual it was simply money the customer lost.</para>
+    ///
+    /// <para>Both call sites above compute this, which is why it is one function: they drifted apart
+    /// once already in this file's history and the result was a stale amount being re-driven.</para>
+    /// </summary>
+    public static decimal CardRefundCeiling(Order order, decimal consumed) =>
+        CardChargedAmount(order) - consumed;
+
+    /// <summary>
+    /// What the card was ever asked for. The sale, less whatever credit settled.
+    ///
+    /// <para><b>This is the denominator for "fully refunded", not <c>TotalPrice</c>.</b>
+    /// <c>GetSucceededRefundTotalForOrderAsync</c> sums the Refunds table, which holds CARD refunds
+    /// only — so on a 2000 order settled with 500 credit, giving back every cent the card ever took
+    /// reaches 1500 and stops. Compared against 2000 that reads as PartiallyRefunded, and no further
+    /// refund can ever close the gap because this ceiling is by then zero. The order would be stuck
+    /// mid-refund forever, on money that had entirely gone back.</para>
+    ///
+    /// <para>It is public and shared for the reason the docstring above already gives about this
+    /// file's history: the ceiling and the terminal test drifted apart once, and the fix was to make
+    /// them one expression rather than two that agree today.</para>
+    /// </summary>
+    public static decimal CardChargedAmount(Order order) =>
+        order.TotalPrice - order.CreditAppliedAmount;
+
+    /// <summary>
+    /// How a slice of the sale divides across the two tenders that settled it.
+    ///
+    /// <para>PROPORTIONAL, deliberately. A 2000 order settled with 500 credit and 1500 card, cancelled
+    /// at a 50% fee, gives back 750 to the card and 250 to the balance — the customer has paid 1000 in
+    /// total, in the same mix they paid it. The alternatives both pick a winner: card-first hands back
+    /// real money and lets the credit expire against the fee, credit-first does the reverse. Neither is
+    /// more correct, and proportional needs nobody to choose.</para>
+    ///
+    /// <para>Rounded to whole minor units with the CARD taking the remainder, so the two legs always
+    /// sum to exactly the requested amount and Stripe is never handed a fraction of a cent.</para>
+    ///
+    /// <para>An order that took no credit splits to (request, 0) — the identity. That is why this can
+    /// sit in front of every refund the platform issues without changing any of them.</para>
+    /// </summary>
+    public static (decimal Card, decimal Credit) SplitAcrossTenders(
+        Order order, decimal requested, decimal creditAlreadyReturned = 0m)
     {
-        var purpose = request.Reason switch
+        if (requested <= 0m || order.CreditAppliedAmount <= 0m || order.TotalPrice <= 0m)
         {
-            RefundReason.CustomerCancellation => "cancel",
-            RefundReason.DisputeResolution => $"dispute:{request.DisputeId}",
-            _ => $"admin:{request.RefundRequestId}",
+            return (Math.Max(0m, requested), 0m);
+        }
+
+        var slice = Math.Min(requested, order.TotalPrice);
+        var credit = Math.Round(
+            slice * order.CreditAppliedAmount / order.TotalPrice, 2, MidpointRounding.AwayFromZero);
+
+        // Never give back more credit than is still out — not merely more than was applied. The card
+        // leg is clamped by the caller against a ceiling that already subtracts prior refunds; this is
+        // the credit leg's half of the same subtraction, and without it the two legs disagree about
+        // how much of the order has already been unwound.
+        var creditRemaining = Math.Max(0m, order.CreditAppliedAmount - creditAlreadyReturned);
+        credit = Math.Min(credit, creditRemaining);
+
+        return (slice - credit, credit);
+    }
+
+    /// <summary>
+    /// Put the credit leg back on the customer's balance, through the one place that builds a return
+    /// key. A false answer is the ordinary retry — the key was already used — not a failure, because
+    /// the money is already back.
+    /// </summary>
+    private async Task ReturnCreditShareAsync(
+        Order order, decimal creditShare, string refundKey, string actorId, CancellationToken cancellationToken)
+    {
+        var returned = await creditAccountRepository.ReturnCreditAsync(
+            order, creditShare, refundKey, actorId, cancellationToken);
+
+        if (!returned && creditShare > 0m)
+        {
+            logger.LogInformation(
+                "Credit return of {Amount} for order {OrderId} was a no-op on refund key {RefundKey} — already returned.",
+                creditShare, order.Id, refundKey);
+        }
+    }
+
+
+    // RefundKey = refund:{OrderId}:{purpose}[:{DisputeId}][:{RefundRequestId}] (ADR-0006 D3).
+    // Deterministic on the domain inputs, never a Guid/timestamp, so a retry/redelivery and a
+    // concurrent double-issue collapse onto the one key.
+    //
+    // THE DISTINGUISHING ID IS NOW HONOURED ON EVERY REASON. It used to appear only in the `admin`
+    // branch, so a caller that passed one under CustomerCancellation or DisputeResolution had it
+    // silently dropped — and IssuePartialRefund passes exactly that, its line selection. Two
+    // different partial refunds on one order therefore built the SAME key, the second resolved to
+    // the first's succeeded row, and the handler reported success while no money moved.
+    //
+    // Every shipped key is byte-identical under this shape, which is why it is safe: CancelOrder and
+    // AdminCancelOrder pass neither optional id (refund:{id}:cancel), ResolveDispute passes only a
+    // DisputeId (refund:{id}:dispute:{did}), and AdminRefundOrder passes only RefundRequestId "full"
+    // (refund:{id}:admin:full). Only the partial-refund path gains a segment — the one that needed it.
+    // Public for the same reason StripeClient.ToMinorUnits is: it is a pure function whose exact
+    // output is the contract, and the only honest way to test it is to call it. The fake in
+    // IssuePartialRefundHandlerTests used to RESTATE this algorithm instead — which is precisely why
+    // two of its three branches went unexercised while the suite stayed green.
+    public static string BuildRefundKey(RefundRequest request)
+    {
+        var segments = new List<string>
+        {
+            "refund",
+            request.OrderId,
+            request.Reason switch
+            {
+                RefundReason.CustomerCancellation => "cancel",
+                RefundReason.DisputeResolution => "dispute",
+                _ => "admin",
+            },
         };
-        return $"refund:{request.OrderId}:{purpose}";
+
+        if (!string.IsNullOrEmpty(request.DisputeId))
+        {
+            segments.Add(request.DisputeId);
+        }
+
+        if (!string.IsNullOrEmpty(request.RefundRequestId))
+        {
+            segments.Add(request.RefundRequestId);
+        }
+
+        return string.Join(':', segments);
     }
 
     private static bool IsUniqueViolation(DbUpdateException exception)

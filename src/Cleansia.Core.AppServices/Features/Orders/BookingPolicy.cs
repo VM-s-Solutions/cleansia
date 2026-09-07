@@ -81,8 +81,63 @@ public static class BookingPolicy
     /// <summary>"Oops window" for first-time customers. More lenient to build trust.</summary>
     public const int OopsWindowMinutesFirstTime = 60;
 
-    /// <summary>Refund + credit issued when cleaner cancels or no-shows.</summary>
-    public const decimal NoShowCreditCzk = 500m;
+    /// <summary>
+    /// Refund + credit issued when a cleaner cancels or no-shows. Owner ruling 2026-09-05: 250, down
+    /// from 500.
+    ///
+    /// <para><b>Still read by nothing.</b> No production code writes <c>CancelledBy.Cleaner</c>, so
+    /// neither the refund nor the credit half of the home page's "Everything back + 250 CZK" happens
+    /// today — the path is scheduled behind customer credit, which does not exist yet either. The
+    /// number lives here so the copy and the eventual implementation cannot disagree about it.</para>
+    /// </summary>
+    public const decimal NoShowCreditCzk = 250m;
+
+    /// <summary>
+    /// The most of one order a customer's credit balance may settle. The rest goes on the card.
+    ///
+    /// <para>Owner ruling 2026-09-05: a customer must never be able to pay for a clean with credit
+    /// alone - "some amount/percentage is paid from their credit card". Owner set the share at 70%
+    /// (2026-09-05): generous enough that a goodwill credit for a bad clean is usually spent in one
+    /// go, while every order still produces a real card charge - a capture surface to refund against
+    /// if the next clean also goes wrong, and a live payment method on file.</para>
+    ///
+    /// <para>It is a share of <c>TotalPrice</c>, not of the discounted subtotal, because credit is a
+    /// TENDER - the sale keeps its size and only the figure sent to Stripe moves.
+    /// -> Order.CreditAppliedAmount</para>
+    /// </summary>
+    public const decimal MaxCreditShareOfOrder = 0.70m;
+
+    /// <summary>
+    /// How much of <paramref name="balance"/> may be spent on an order of
+    /// <paramref name="totalPrice"/>. Rounded DOWN to whole minor units, so the figure recorded on the
+    /// order and the figure the card is asked for are always cent-identical - Stripe takes integers,
+    /// and a half-cent of credit would be silently absorbed by one side or the other.
+    /// </summary>
+    public static decimal CapCreditForOrder(decimal balance, decimal totalPrice)
+    {
+        if (balance <= 0m || totalPrice <= 0m)
+        {
+            return 0m;
+        }
+
+        var ceiling = Math.Floor(totalPrice * MaxCreditShareOfOrder * 100m) / 100m;
+        return Math.Min(balance, ceiling);
+    }
+
+    /// <summary>
+    /// How far PAST its cleaning time an order stays on the take-a-job board.
+    ///
+    /// <para>The board admits started jobs (owner ruling 2026-09-06: a half-crewed order must stay
+    /// fillable after the first cleaner sets off), and nothing ever moves an order out of
+    /// <c>InProgress</c> except a cleaner tapping complete. Without a floor, one job somebody started
+    /// and never finished would sit in every cleaner's available-jobs count forever.</para>
+    ///
+    /// <para>Named here because two panes answer the same question and must not drift:
+    /// <c>GetPagedOrders</c> applied this floor as a bare <c>AddHours(-2)</c> literal on the Available
+    /// pane, and <c>DashboardSpecifications</c> applied none at all — so the count and the list it
+    /// belongs to already disagreed before this rule widened.</para>
+    /// </summary>
+    public const int BoardBacklogHours = 2;
 
     /// <summary>
     /// Seats beyond the crew the work needs. Zero by owner ruling — a filled spare seat is a second

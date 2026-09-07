@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -46,6 +47,7 @@ public class AdminCompanyController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreateCompanyInfo(
         [FromBody] CreateCompanyInfo.Command command,
         CancellationToken cancellationToken)
@@ -61,6 +63,7 @@ public class AdminCompanyController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdateCompanyInfo(
         string companyInfoId,
         [FromBody] UpdateCompanyInfo.Command command,
@@ -80,6 +83,7 @@ public class AdminCompanyController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeleteCompanyInfo(
         string companyInfoId,
         CancellationToken cancellationToken)

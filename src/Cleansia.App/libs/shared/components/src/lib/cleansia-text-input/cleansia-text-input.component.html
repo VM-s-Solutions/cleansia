@@ -24,12 +24,17 @@
     "
   />
   @if (dataType() === 'password') {
-  <i
-    class="cleansia-text-input__eye pi"
-    [class.pi-eye]="!passwordVisible()"
-    [class.pi-eye-slash]="passwordVisible()"
+  <button
+    type="button"
+    class="cleansia-text-input__eye"
+    [attr.aria-label]="
+      (passwordVisible() ? 'global.hide_password' : 'global.show_password') | translate
+    "
+    [attr.aria-pressed]="passwordVisible()"
     (click)="togglePasswordVisibility()"
-  ></i>
+  >
+    <i class="pi" [class.pi-eye]="!passwordVisible()" [class.pi-eye-slash]="passwordVisible()"></i>
+  </button>
   }
 </p-floatlabel>
 } @else { @if (label()) {
@@ -57,12 +62,17 @@
     "
   />
   @if (dataType() === 'password') {
-  <i
-    class="cleansia-text-input__eye pi"
-    [class.pi-eye]="!passwordVisible()"
-    [class.pi-eye-slash]="passwordVisible()"
+  <button
+    type="button"
+    class="cleansia-text-input__eye"
+    [attr.aria-label]="
+      (passwordVisible() ? 'global.hide_password' : 'global.show_password') | translate
+    "
+    [attr.aria-pressed]="passwordVisible()"
     (click)="togglePasswordVisibility()"
-  ></i>
+  >
+    <i class="pi" [class.pi-eye]="!passwordVisible()" [class.pi-eye-slash]="passwordVisible()"></i>
+  </button>
   }
 </div>
 } @if (showErrors() && formControl.invalid && (formControl.dirty ||

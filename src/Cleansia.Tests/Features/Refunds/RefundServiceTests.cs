@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Common;
+﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -35,12 +35,14 @@ public class RefundServiceTests
 
     private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly RecordingStripeClient _stripe = new();
 
     private RefundService CreateService() =>
         new(
             _refundRepository.Object,
             _orderRepository.Object,
+            _creditAccountRepository.Object,
             new StubStripeClientFactory(_stripe),
             NullLogger<RefundService>.Instance);
 
@@ -580,7 +582,7 @@ public class RefundServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<string> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
+        public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public Task<string> CreateCustomerAsync(string userId, string email, string fullName, string? phone, CancellationToken cancellationToken)
@@ -610,7 +612,7 @@ public class RefundServiceTests
         public Task CancelSubscriptionAtPeriodEndAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
-        public Task<string> CreateMembershipCheckoutSessionAsync(string stripeCustomerId, string stripePriceId, string userId, string membershipPlanCode, int trialPeriodDays, string successUrl, string cancelUrl, string idempotencyAttemptId, CancellationToken cancellationToken)
+        public Task<string> CreateMembershipCheckoutSessionAsync(string stripeCustomerId, string stripePriceId, string userId, string membershipPlanCode, int trialPeriodDays, string idempotencyAttemptId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
     }
 

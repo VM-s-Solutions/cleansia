@@ -1,0 +1,777 @@
+@use './home-variables' as *;
+
+// =============================================================================
+// Recurring schedules — built against the "Opakované termíny" board
+// =============================================================================
+// Three artboards, three states of one feature:
+//
+//   Moje rozvrhy   — the list, one row per schedule
+//   Nový rozvrh    — the form, which the board draws as ONE page of three
+//                    sections, not the three-step wizard that was here
+//   Bez členství   — the paywall, because `CreateRecurringBooking` refuses a
+//                    caller without Plus (`RecurringTemplateMembershipRequired`),
+//                    so an empty list with a "new schedule" button would be a
+//                    button that 400s
+//
+// Measurements off the artboards:
+//   page 1312 wide (list) / 1040 (form and paywall); cards radius 26, padding
+//   22-26; sections radius 28, padding 26-28-24; chips 44 tall, radius 999;
+//   price Poppins 700 20px on a card, 30px in the form's summary bar
+
+// ---- The page ---------------------------------------------------------------------
+.cl-rec {
+  position: relative;
+  background: var(--cl-page);
+}
+
+.cl-rec__hero {
+  // Same pull-up the subscribe page uses: the navbar is a transparent strip
+  // with a floating pill, so THIS element's gradient has to run up behind it
+  // or the pill sits on a stripe that does not match the band under it.
+  margin-top: calc(-1 * var(--cl-nav-h));
+  padding: calc(var(--cl-nav-h) + 2.75 * var(--cl-u)) 0 0;
+  background: radial-gradient(
+    120% 92% at 76% 6%,
+    var(--cl-hero-1) 0%,
+    var(--cl-hero-2) 44%,
+    var(--cl-hero-3) 100%
+  );
+}
+
+.cl-rec__hero-inner {
+  max-width: $home-width;
+  margin: 0 auto;
+  padding: 0 var(--cl-gutter);
+}
+
+.cl-rec__title {
+  margin: 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: calc(2.375 * var(--cl-u));
+  line-height: 1.16;
+  letter-spacing: -0.9px;
+  color: var(--cl-heading);
+}
+
+.cl-rec__lead {
+  margin: calc(0.625 * var(--cl-u)) 0 0;
+  max-width: 46em;
+  font-size: calc(1.0625 * var(--cl-u));
+  line-height: 1.72;
+  color: var(--cl-body);
+}
+
+.cl-rec__body {
+  padding: 0 0 calc(3.75 * var(--cl-u));
+  background: var(--cl-page);
+  min-height: 50vh;
+}
+
+.cl-rec__inner {
+  max-width: $home-width;
+  margin: 0 auto;
+  padding: calc(1.25 * var(--cl-u)) var(--cl-gutter) 0;
+}
+
+.cl-rec__inner--narrow {
+  max-width: 65rem;
+}
+
+// ---- The bar over the list ----------------------------------------------------------
+.cl-rec__bar {
+  display: flex;
+  align-items: center;
+  gap: calc(0.875 * var(--cl-u));
+  flex-wrap: wrap;
+}
+
+.cl-rec__plus-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border-tint);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cl-heading);
+}
+
+.cl-rec__bar-action {
+  margin-left: auto;
+}
+
+// ---- One schedule -------------------------------------------------------------------
+.cl-rec__list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.875 * var(--cl-u));
+  margin: calc(1.25 * var(--cl-u)) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cl-rec__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: calc(1.5 * var(--cl-u));
+  align-items: center;
+  padding: calc(1.375 * var(--cl-u)) calc(1.625 * var(--cl-u));
+  border-radius: 1.625rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+
+  // A paused schedule is still a schedule: it dims, it does not grey out, and
+  // it keeps every figure legible — the customer paused it on purpose and will
+  // come back to it.
+  &--paused {
+    opacity: 0.72;
+  }
+}
+
+.cl-rec__card-main {
+  min-width: 0;
+}
+
+.cl-rec__card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cl-rec__card-title {
+  margin: 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  color: var(--cl-heading);
+}
+
+.cl-rec__pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+
+  &--on {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  &--off {
+    background: #fef3c7;
+    color: #92400e;
+  }
+}
+
+.cl-rec__facts {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+
+.cl-rec__fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9375rem;
+  color: var(--cl-body);
+
+  i {
+    font-size: 0.875rem;
+    color: var(--cl-muted);
+  }
+}
+
+.cl-rec__card-price {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cl-rec__price-amount {
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cl-heading);
+}
+
+.cl-rec__price-label {
+  font-size: 0.8125rem;
+  color: var(--cl-muted);
+}
+
+.cl-rec__card-action {
+  white-space: nowrap;
+}
+
+// The board's `.btn-ghost`. `.cl-btn` ships no ghost modifier and adding one to
+// the shared design system is a wider change than this page: it lives here.
+.cl-rec__ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: max(40px, calc(2.5 * var(--cl-u)));
+  padding: 0 1.5rem;
+  border-radius: 999px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border-tint);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--cl-heading);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+
+  &:hover {
+    background: var(--cl-tint);
+    border-color: var(--cl-accent);
+    color: var(--cl-heading);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+
+  &--danger {
+    border-color: rgba(220, 38, 38, 0.32);
+    color: #b91c1c;
+
+    &:hover {
+      background: rgba(220, 38, 38, 0.06);
+      border-color: rgba(220, 38, 38, 0.5);
+      color: #b91c1c;
+    }
+  }
+}
+
+// ---- The note under the list -----------------------------------------------------------
+.cl-rec__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-top: calc(1.25 * var(--cl-u));
+  padding: 1rem 1.125rem;
+  border-radius: 1.25rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--cl-muted);
+
+  i {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--cl-heading);
+  }
+}
+
+// ---- Nothing here yet -------------------------------------------------------------------
+.cl-rec__empty {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: calc(2.5 * var(--cl-u));
+  align-items: center;
+  margin-top: calc(1.25 * var(--cl-u));
+  padding: calc(2.75 * var(--cl-u));
+  border-radius: 2rem;
+  background: var(--cl-surface);
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+}
+
+.cl-rec__empty-art {
+  height: 12.5rem;
+  width: auto;
+  display: block;
+}
+
+.cl-rec__empty-title {
+  margin: 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.625rem;
+  color: var(--cl-heading);
+}
+
+.cl-rec__empty-lead {
+  margin: 0.625rem 0 0;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--cl-body);
+}
+
+.cl-rec__empty-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1.625rem;
+  flex-wrap: wrap;
+}
+
+.cl-rec__empty-fine {
+  margin: 0.875rem 0 0;
+  font-size: 0.875rem;
+  color: var(--cl-muted);
+}
+
+// The paywall is the empty card with the product's own badge on it.
+.cl-rec__gate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 2.25rem;
+  padding: 0 0.875rem;
+  border-radius: 999px;
+  background: var(--cl-heading);
+  border: 1px solid var(--cl-heading);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+// ---- The form ---------------------------------------------------------------------------
+// One page, three sections. The board collapses what used to be a three-step
+// wizard: every field fits on one screen, and a schedule is four decisions, not
+// a journey.
+.cl-rec__form {
+  display: flex;
+  flex-direction: column;
+  gap: calc(1.25 * var(--cl-u));
+  margin-top: calc(1.25 * var(--cl-u));
+}
+
+.cl-rec__section {
+  padding: calc(1.625 * var(--cl-u)) calc(1.75 * var(--cl-u)) calc(1.5 * var(--cl-u));
+  border-radius: 1.75rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.cl-rec__section-title {
+  margin: 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--cl-heading);
+}
+
+.cl-rec__section-hint {
+  margin: 6px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--cl-muted);
+}
+
+// ---- Picking what gets cleaned ------------------------------------------------------------
+.cl-rec__pick-group {
+  margin-top: calc(1.125 * var(--cl-u));
+
+  .cl-rec__picks {
+    margin-top: 8px;
+  }
+}
+
+// A quiet line for a field that is loading, empty, or has something to say
+// that is not an error.
+.cl-rec__hint {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--cl-muted);
+}
+
+.cl-rec__picks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-rec__pick {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 1rem 1.125rem;
+  border-radius: 1.25rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+
+  &:hover {
+    border-color: var(--cl-border-tint);
+  }
+
+  &--on {
+    background: var(--cl-heading);
+    border: 2px solid var(--cl-heading);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+}
+
+.cl-rec__pick-tick {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid var(--cl-border);
+
+  .cl-rec__pick--on & {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: var(--cl-heading);
+  }
+
+  i {
+    font-size: 0.6875rem;
+    font-weight: 900;
+  }
+}
+
+.cl-rec__pick-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.cl-rec__pick-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cl-ink, #0f172a);
+
+  .cl-rec__pick--on & {
+    color: #ffffff;
+  }
+}
+
+.cl-rec__pick-note {
+  margin-top: 1px;
+  font-size: 0.8125rem;
+  color: var(--cl-muted);
+
+  .cl-rec__pick--on & {
+    color: var(--cl-accent-soft);
+  }
+}
+
+// ---- Fields -----------------------------------------------------------------------------
+.cl-rec__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-rec__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cl-rec__label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+// ---- Counting rooms ---------------------------------------------------------------------
+// Chips, not a number spinner: the booking wizard asks the same question this
+// way, and a schedule's form should not be the one screen with a stepper.
+.cl-rec__counts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: calc(1.125 * var(--cl-u));
+}
+
+.cl-rec__count-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+// ---- Saying what is missing -------------------------------------------------------------
+.cl-rec__error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #b91c1c;
+
+  i {
+    font-size: 0.875rem;
+  }
+
+  &--summary {
+    margin-top: 4px;
+  }
+}
+
+// ---- A new address, without leaving the form --------------------------------------------
+.cl-rec__add-address {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: calc(1.125 * var(--cl-u));
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cl-heading);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--cl-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 3px;
+  }
+}
+
+.cl-rec__new-address {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-top: calc(1.125 * var(--cl-u));
+  padding: calc(1.25 * var(--cl-u));
+  border-radius: 1.25rem;
+  background: var(--cl-tint);
+  border: 1px solid var(--cl-border-tint);
+}
+
+.cl-rec__picked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--cl-body);
+
+  i {
+    color: var(--cl-heading);
+  }
+}
+
+.cl-rec__new-address-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+}
+
+// The date picker is the one control with no `cleansia-*` wrapper. Give it the
+// same field metrics as the wrapped ones so it does not read as a foreign
+// widget dropped into the form.
+.cl-rec__datepicker {
+  width: 100%;
+
+  input {
+    width: 100%;
+    min-height: 3rem;
+    border-radius: 0.875rem;
+  }
+}
+
+// ---- Cadence, days --------------------------------------------------------------------
+.cl-rec__cadence {
+  display: flex;
+  gap: 10px;
+  margin-top: calc(1.125 * var(--cl-u));
+  flex-wrap: wrap;
+}
+
+.cl-rec__days {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.cl-rec__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--cl-body);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+
+  &:hover:not(.cl-rec__chip--on) {
+    border-color: var(--cl-border-tint);
+    background: var(--cl-tint);
+  }
+
+  &--on {
+    background: var(--cl-heading);
+    border-color: var(--cl-heading);
+    color: #ffffff;
+  }
+
+  &--grow {
+    flex: 1;
+  }
+
+  &--day {
+    min-width: 52px;
+    padding: 0 0.875rem;
+  }
+
+  // Seven of these share half the form's width, so they are sized to fit one
+  // row rather than wrap a lone "6" onto a second.
+  &--count {
+    flex: 1;
+    min-width: 2.375rem;
+    min-height: 2.5rem;
+    padding: 0 0.375rem;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: 2px;
+  }
+}
+
+.cl-rec__subhead {
+  margin-top: calc(1.375 * var(--cl-u));
+}
+
+// ---- What it costs, and the two ways out ---------------------------------------------
+.cl-rec__summary {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: calc(1.625 * var(--cl-u)) calc(1.875 * var(--cl-u));
+  border-radius: 1.75rem;
+  background: var(--cl-surface);
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+}
+
+.cl-rec__summary-main {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.cl-rec__summary-price {
+  margin-top: 4px;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cl-accent);
+}
+
+.cl-rec__summary-note {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--cl-muted);
+}
+
+.cl-rec__summary-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+// Destructive actions live on the EDIT screen, not on the list: the board gives
+// each row one button, and pausing or deleting a schedule is a decision you
+// make with the schedule open in front of you.
+.cl-rec__danger {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: calc(1.25 * var(--cl-u));
+  padding-top: calc(1.25 * var(--cl-u));
+  border-top: 1px solid var(--cl-border);
+}
+
+// ---- Loading ----------------------------------------------------------------------------
+.cl-rec__skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.875 * var(--cl-u));
+  margin-top: calc(1.25 * var(--cl-u));
+}
+
+// ---- Narrow -----------------------------------------------------------------------------
+@media (max-width: 900px) {
+  .cl-rec__card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: calc(0.875 * var(--cl-u));
+  }
+
+  .cl-rec__card-price {
+    text-align: left;
+  }
+
+  .cl-rec__empty {
+    grid-template-columns: minmax(0, 1fr);
+    text-align: center;
+    justify-items: center;
+  }
+
+  .cl-rec__empty-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 700px) {
+  .cl-rec__title {
+    font-size: calc(1.875 * var(--cl-u));
+  }
+
+  .cl-rec__picks,
+  .cl-rec__fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-rec__summary {
+    align-items: flex-start;
+  }
+
+  .cl-rec__summary-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

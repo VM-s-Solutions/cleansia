@@ -12,6 +12,7 @@ import {
   CustomerClient,
   AddDisputeMessageCommand,
   CreateDisputeCommand,
+  CreateDisputeDisputeLineSelection,
   DisputeListItem,
   DisputeReason,
   FileParameter,
@@ -29,13 +30,15 @@ import {
 } from '@cleansia/customer-stores';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
 import { Store } from '@ngrx/store';
-import { catchError, finalize, map, of, takeUntil } from 'rxjs';
+import { catchError, concatMap, finalize, from, map, of, takeUntil, tap } from 'rxjs';
 import {
   CustomerDisputeStatus,
   DISPUTE_UPLOAD_ERROR_KEY_MAP,
   DISPUTE_UPLOAD_FALLBACK_ERROR_KEY,
+  DisputeLineSelection,
   hasUnreadStaffReply,
   latestStaffMessageTimestamp,
+  readCreatedDisputeId,
   validateEvidenceFile,
 } from './disputes.models';
 
@@ -63,7 +66,13 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     initialValue: false,
   });
 
-  private readonly orders = toSignal(this.store.select(selectCustomerOrders), {
+  /**
+   * The customer's orders, whole. Public because the dispute form needs more than a label per order:
+   * once a customer picks one, the form lists the services and packages that were ON it so they can
+   * point at the parts that went wrong. Every item is already here — the list endpoint returns them —
+   * so naming them costs no extra request.
+   */
+  readonly orders = toSignal(this.store.select(selectCustomerOrders), {
     initialValue: [] as OrderListItem[],
   });
   readonly orderOptions = computed(() =>
@@ -136,45 +145,76 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     this.writeStorageMap(LAST_VIEWED_STORAGE_KEY, this.lastViewedMap());
   }
 
-  uploadEvidence(disputeId: string, file: File, onSuccess?: () => void): void {
-    if (this.uploadingEvidence()) return;
+  /**
+   * Every file the customer picked, not just the first.
+   *
+   * Owner, 2026-09-03: "I'm able to attach only 1 photo of evidence. There can
+   * be multiple." A dispute about a whole clean is rarely one photograph.
+   *
+   * The endpoint takes ONE file per call, so these go one after another rather
+   * than at once — `concatMap`, not `mergeMap`. The guard below is a
+   * single-flight latch on the whole batch, and firing them in parallel would
+   * make it drop every file after the first.
+   */
+  uploadEvidence(disputeId: string, files: File[], onSuccess?: () => void): void {
+    if (this.uploadingEvidence() || files.length === 0) return;
 
-    const validationError = validateEvidenceFile(file);
-    if (validationError) {
-      this.snackbar.showErrorTranslated(
-        `pages.disputes.evidence.${validationError}`
-      );
-      return;
+    for (const file of files) {
+      const validationError = validateEvidenceFile(file);
+      if (validationError) {
+        this.snackbar.showErrorTranslated(
+          `pages.disputes.evidence.${validationError}`
+        );
+        return;
+      }
     }
 
     this.uploadingEvidence.set(true);
-    const fileParameter: FileParameter = { data: file, fileName: file.name };
-    this.customerClient.disputeClient
-      .uploadEvidence(disputeId, fileParameter)
+    let uploaded = 0;
+
+    from(files)
       .pipe(
-        takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showErrorTranslated(this.resolveUploadErrorKey(error));
-          return of(null);
+        concatMap((file) => {
+          const fileParameter: FileParameter = { data: file, fileName: file.name };
+          return this.customerClient.disputeClient
+            .uploadEvidence(disputeId, fileParameter)
+            .pipe(
+              tap(() => uploaded++),
+              // One bad file does not lose the rest of the batch.
+              catchError((error: unknown) => {
+                this.snackbar.showErrorTranslated(this.resolveUploadErrorKey(error));
+                return of(null);
+              })
+            );
         }),
-        finalize(() => this.uploadingEvidence.set(false))
-      )
-      .subscribe((response) => {
-        if (response) {
+        takeUntil(this.destroyed$),
+        finalize(() => {
+          this.uploadingEvidence.set(false);
+          if (uploaded === 0) return;
           this.snackbar.showSuccessTranslated(
             'pages.disputes.evidence.upload_success'
           );
           onSuccess?.();
           this.loadDisputeDetail(disputeId);
-        }
-      });
+        })
+      )
+      .subscribe();
   }
 
+  /**
+   * Owner, 2026-09-03: a photo attached while FILING a dispute never arrived.
+   *
+   * `Dispute/Create` answers with the new dispute's id and this threw it away
+   * — `map(() => true)` — so the caller had nothing to upload the evidence
+   * against and the file was dropped without a word. The id reaches `onSuccess`
+   * now, and the page uploads what it collected.
+   */
   createDispute(
     orderId: string,
     reason: DisputeReason,
     description: string,
-    onSuccess: () => void
+    lines: DisputeLineSelection[],
+    onSuccess: (disputeId: string | null) => void
   ): void {
     if (this.creatingDispute()) return;
     this.creatingDispute.set(true);
@@ -183,23 +223,50 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     command.orderId = orderId;
     command.reason = reason;
     command.description = description;
+    // Which items went wrong. Optional and usually empty — a dispute about the whole job, or about a
+    // charge, names none — so an empty selection is sent as undefined rather than an empty array, and
+    // the server treats the two the same. One description per dispute, per the owner's ruling: these
+    // say WHICH, the description says WHAT.
+    command.lines = lines.length
+      ? lines.map((line) => {
+          const selection = new CreateDisputeDisputeLineSelection();
+          selection.serviceId = line.serviceId;
+          selection.packageId = line.packageId ?? undefined;
+          return selection;
+        })
+      : undefined;
 
     this.customerClient.disputeClient
       .create(command)
       .pipe(
         takeUntil(this.destroyed$),
-        map(() => true),
+        // The outcome is a WRAPPER, not the body. An empty 200 parses to `null`
+        // and so did the failure path, so a successful create was
+        // indistinguishable from a failed one: the loader stopped and nothing
+        // else happened — no snackbar, no return to the list. Owner, 2026-09-03.
+        map((response) => ({ created: true, response })),
         catchError((error: unknown) => {
           this.snackbar.showApiError(error, 'pages.disputes.create_error');
-          return of(false);
+          return of({ created: false, response: null });
         }),
         finalize(() => this.creatingDispute.set(false))
       )
-      .subscribe((succeeded) => {
-        if (!succeeded) return;
+      .subscribe(({ created, response }) => {
+        if (!created) return;
+        // 200 means the dispute EXISTS, whatever the body held. It is filed, so
+        // it is reported as filed; only the id — and therefore the photo — can
+        // still be missing, and the caller is told which.
         this.snackbar.showSuccessTranslated('pages.disputes.create_success');
-        onSuccess();
+        onSuccess(readCreatedDisputeId(response));
       });
+  }
+
+  /**
+   * The dispute was filed but the server returned no id, so the photo attached
+   * to it could not be sent. Says so out loud rather than dropping it.
+   */
+  reportEvidenceOrphaned(): void {
+    this.snackbar.showErrorTranslated('pages.disputes.evidence.orphaned');
   }
 
   sendMessage(disputeId: string, message: string, onSuccess: () => void): void {

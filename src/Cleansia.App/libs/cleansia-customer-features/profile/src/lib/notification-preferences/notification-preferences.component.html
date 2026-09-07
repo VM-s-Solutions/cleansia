@@ -1,9 +1,4 @@
 <div class="customer-notification-prefs">
-  <div class="customer-notification-prefs__header">
-    <strong>{{ 'pages.profile.notifications.title' | translate }}</strong>
-    <p>{{ 'pages.profile.notifications.desc' | translate }}</p>
-  </div>
-
   @if (facade.loading()) {
   <div class="customer-notification-prefs__skeleton">
     @for (i of [1, 2, 3, 4]; track i) {

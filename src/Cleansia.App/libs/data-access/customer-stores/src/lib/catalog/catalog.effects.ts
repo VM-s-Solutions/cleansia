@@ -14,7 +14,18 @@ export class CustomerCatalogEffects {
       ofType(CatalogActions.loadCustomerServices),
       switchMap(() =>
         this.customerClient.serviceClient.getOverview().pipe(
-          map((services) => CatalogActions.loadCustomerServicesSuccess({ services })),
+          // `?? []` at the payload boundary, because the reducer stores what the action carries —
+          // it spreads `services` straight into state with no default of its own. The generated
+          // client answers a 200 whose body is not a JSON array (and a 204) with NULL rather than
+          // an empty list, from the `result200 = null as any` branch its declared
+          // `ServiceListItem[]` return type denies. The `catchError` never fires on it — null is
+          // not an error — so the null would settle into the store and every selector reading it
+          // would throw on the next render.
+          map((services) =>
+            CatalogActions.loadCustomerServicesSuccess({
+              services: services ?? [],
+            })
+          ),
           catchError((error) => of(CatalogActions.loadCustomerServicesFailure({ error })))
         )
       )
@@ -26,7 +37,12 @@ export class CustomerCatalogEffects {
       ofType(CatalogActions.loadCustomerPackages),
       switchMap(() =>
         this.customerClient.packageClient.getOverview().pipe(
-          map((packages) => CatalogActions.loadCustomerPackagesSuccess({ packages })),
+          // Same null, same reason — see loadServices$ above.
+          map((packages) =>
+            CatalogActions.loadCustomerPackagesSuccess({
+              packages: packages ?? [],
+            })
+          ),
           catchError((error) => of(CatalogActions.loadCustomerPackagesFailure({ error })))
         )
       )

@@ -21,6 +21,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     private(set) var reviewCallCount = 0
     private(set) var lastReview: (rating: Int, comment: String?)?
     private(set) var lastReviewTags: [CustomerReviewTag] = []
+    private(set) var lastReviewLines: [OrderItemLineScore] = []
 
     var receiptResult: ApiResult<URL> = .success(URL(fileURLWithPath: "/tmp/receipt.pdf"))
     private(set) var receiptCallCount = 0
@@ -60,11 +61,13 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         orderId _: String,
         rating: Int,
         comment: String?,
-        tags: [CustomerReviewTag]
+        tags: [CustomerReviewTag],
+        lines: [OrderItemLineScore]
     ) async -> ApiResult<OrderReviewDto> {
         reviewCallCount += 1
         lastReview = (rating, comment)
         lastReviewTags = tags
+        lastReviewLines = lines
         return reviewResult
     }
 
@@ -228,6 +231,7 @@ enum OrderFixtures {
         estimatedMinutes: Int = 0,
         currencyCode: String? = nil,
         includedServices: [String] = [],
+        includedServiceItems: [CustomerOrderPackageService] = [],
         translations: [String: Translation]? = nil
     ) -> CustomerOrderPackage {
         CustomerOrderPackage(
@@ -238,6 +242,7 @@ enum OrderFixtures {
             estimatedMinutes: estimatedMinutes,
             currencyCode: currencyCode,
             includedServices: includedServices,
+            includedServiceItems: includedServiceItems,
             translations: translations
         )
     }

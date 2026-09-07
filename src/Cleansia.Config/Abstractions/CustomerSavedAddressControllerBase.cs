@@ -41,9 +41,15 @@ public abstract class CustomerSavedAddressControllerBase(IMediator mediator) : C
     protected async Task<IActionResult> DeleteCore(string id, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new DeleteSavedAddress.Command(id), cancellationToken);
-        // HandleSuccess matches BusinessResult<T> by T; passing bool (not DeleteSavedAddress.Response)
-        // intentionally falls through to an empty 200 body — the historical wire shape this surface
-        // exposes. Returning the SavedAddressId is a generated-client change for its own ticket.
-        return HandleResult<bool>(result);
+        // The T MUST be the command's own response type. `HandleSuccess<T>` matches
+        // `BusinessResult<T>` BY T, so asking for `bool` against a
+        // `BusinessResult<Response>` matched nothing and fell through to `Ok()` — an
+        // empty body, whatever ProducesResponseType said.
+        //
+        // The same mismatch on Dispute/Create cost a customer their attached photo:
+        // the caller was handed no id, so the evidence had nowhere to go. Nothing
+        // reads this body yet, which is exactly why it was worth closing before
+        // something did.
+        return HandleResult<DeleteSavedAddress.Response>(result);
     }
 }

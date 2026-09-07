@@ -4,9 +4,16 @@ html {
   font-size: $base-font-size;
 }
 
+// A reset, not a verdict. It carried `!important` on both properties, which
+// meant no <ul> in any of the three apps could be given a margin or centred by
+// ordinary cascade — the bang beat even a two-class selector. Four page
+// stylesheets had already grown a counter-`!important` to speak over it, and
+// each one is a rule nobody can override in turn.
+//
+// The reset still wins over the UA sheet, which is all it was ever for.
 ul {
-  padding: 0 !important;
-  margin: 0 !important;
+  padding: 0;
+  margin: 0;
 }
 
 .text-center {

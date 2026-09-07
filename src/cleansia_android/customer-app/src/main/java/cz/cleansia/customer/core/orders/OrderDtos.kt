@@ -53,6 +53,13 @@ data class OrderListItemDto(
     val tierDiscountAmount: Double? = null,
     val membershipDiscountAmount: Double? = null,
     val promoDiscountAmount: Double? = null,
+    /**
+     * How much of this order the customer's credit balance settled, and what the card was therefore
+     * asked for. NOT a discount: [totalPrice] is the size of the sale and does not move. Any screen
+     * showing "what you pay" must read [amountDueOnCard].
+     */
+    val creditAppliedAmount: Double = 0.0,
+    val amountDueOnCard: Double = 0.0,
     val estimatedTime: Int = 0,
     val orderStatus: CodeDto? = null,
     val confirmationCode: String? = null,
@@ -231,6 +238,14 @@ enum class ReviewTag(val code: Int, val isPositive: Boolean) {
     }
 }
 
+/** Mirrors backend `OrderReviewLineDto` — one item's score, as the server reports it back. */
+@Serializable
+data class OrderReviewLineDto(
+    val serviceId: String? = null,
+    val packageId: String? = null,
+    val rating: Int = 0,
+)
+
 /** Mirrors backend `OrderReviewDto`. */
 @Serializable
 data class OrderReviewDto(
@@ -244,6 +259,12 @@ data class OrderReviewDto(
     val tagCodes: List<Int> = emptyList(),
     val createdOn: String? = null,
     val updatedOn: String? = null,
+    /**
+     * The per-item scores this review carries. Empty on every review written before per-item scoring
+     * existed, and on every review where the customer just left an overall rating — which is most of
+     * them. Read on the EDIT path so reopening the sheet shows what they said last time.
+     */
+    val lines: List<OrderReviewLineDto> = emptyList(),
 ) {
     val tags: List<ReviewTag> get() = tagCodes.mapNotNull(ReviewTag::fromCode)
 }
@@ -318,8 +339,24 @@ data class OrderPackageDetailsDto(
     val estimatedTime: Int = 0,
     val currencyCode: String? = null,
     val includedServices: List<String>? = null,
+    /**
+     * The same services as [includedServices], but with their IDs.
+     *
+     * [includedServices] is a list of NAMES and cannot be sent back to the server, so a customer
+     * could read what a package contained but never point at one part of it. Both are kept: the name
+     * list is what the existing detail screen renders, and this is what a dispute line or a review
+     * line-score is built from. Mirrors backend `PackageDetails.IncludedServiceItems`.
+     */
+    val includedServiceItems: List<OrderPackageServiceRefDto>? = null,
     /** Per-language name/description overrides keyed by 2-letter code (T-0395). */
     val translations: Map<String, TranslationDto>? = null,
+)
+
+/** Mirrors backend `PackageServiceRef` — one service inside a package, addressable by id. */
+@Serializable
+data class OrderPackageServiceRefDto(
+    val id: String? = null,
+    val name: String? = null,
 )
 
 /** Mirrors backend `CurrencyListItem`. */
@@ -423,6 +460,24 @@ data class SubmitReviewRequest(
     val rating: Int,
     val comment: String? = null,
     val tags: List<ReviewTag> = emptyList(),
+    /**
+     * Optional per-item scores. [rating] above stays the headline and stays required — these add what
+     * one number cannot say, which is that the oven was spotless and the bathroom was skipped. Null
+     * rather than an empty list, matching the web client's wire shape.
+     */
+    val lines: List<ReviewLineScoreRequest>? = null,
+)
+
+/**
+ * Mirrors backend `SubmitOrderReview.ReviewLineScore`. Same `(serviceId, packageId?)` identity a
+ * dispute line uses, so both name an order's items the same way. [rating] is 1..5; an item the
+ * customer did not score simply carries no line.
+ */
+@Serializable
+data class ReviewLineScoreRequest(
+    val serviceId: String,
+    val packageId: String? = null,
+    val rating: Int,
 )
 
 /** Mirrors backend `GetOrderPhotos.Response`. */

@@ -210,6 +210,8 @@ public static class ServiceExtensions
         services.AddScoped<IGoogleTokenVerifier, GoogleTokenVerifier>();
         services.AddScoped<IAppleTokenVerifier, AppleTokenVerifier>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        // Stateless and its template cache is static, so one instance is enough.
+        services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IReceiptService, ReceiptService>();
         services.AddScoped<IFiscalRetryService, FiscalRetryService>();

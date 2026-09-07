@@ -9,12 +9,15 @@ import {
   CreateOrderCommand,
   CustomerAddress,
   CustomerAuthService,
+  ConsentType,
   CustomerClient,
+  UserConsentDto,
   ExtraListItem,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
   ServiceListItem,
+  QuotePlusSavingsQuery,
 } from '@cleansia/customer-services';
 import {
   loadCustomerPackages,
@@ -61,6 +64,24 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   isAuthenticated = signal(false);
+
+  /**
+   * Whether this account has ALREADY granted the two consents the review step's
+   * tick asks for — Terms of Service and Privacy Policy — at sign-up or on an
+   * earlier booking.
+   *
+   * Owner ruling, 2026-09-03: a signed-in customer who accepted at registration
+   * is asked again on every order, and re-consenting to the same two documents
+   * is noise, not protection. The tick stays for GUESTS, who have no account
+   * and therefore no consent on record — a booking does not require one.
+   *
+   * Cookie consent is deliberately NOT part of this: cookies are about storage
+   * and tracking, and neither consent substitutes for the other.
+   *
+   * Defaults to false, so the tick is shown whenever this could not be
+   * established — a consent that might not exist is asked for.
+   */
+  readonly alreadyConsented = signal(false);
 
   services = toSignal(this.store.select(selectCustomerServices), {
     initialValue: [] as ServiceListItem[],
@@ -128,6 +149,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     'pages.order.steps.address',
     'pages.order.steps.datetime',
     'pages.order.steps.payment',
+    'pages.order.steps.plus',
     'pages.order.steps.summary',
   ];
 
@@ -136,6 +158,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     'pi pi-map-marker',
     'pi pi-calendar',
     'pi pi-credit-card',
+    'pi pi-star',
     'pi pi-check-circle',
   ];
 
@@ -155,6 +178,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly tierDiscount = this.pricing.tierDiscount;
   readonly membershipDiscount = this.pricing.membershipDiscount;
   readonly effectiveDiscount = this.pricing.effectiveDiscount;
+  // Credit: the balance, the slice this booking takes, and what the card is left to pay.
+  // Owner ruling 2026-09-05 — applied automatically, and never the whole booking.
+  readonly creditBalance = this.pricing.creditBalance;
+  readonly creditApplied = this.pricing.creditApplied;
+  readonly amountDueOnCard = this.pricing.amountDueOnCard;
 
   // ─── Membership (free-cancellation window + express waiver) ─────
   //
@@ -162,6 +190,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   // re-exposed here so the slot grid and the summary step both read the wizard facade.
   readonly plusFreeCancellationHours = this.membership.freeCancellationWindowHours;
   readonly expressUpgradesRemaining = this.membership.expressUpgradesRemaining;
+  readonly activeMembership = this.membership.membership;
+  readonly plans = this.membership.plans;
+  readonly plusSavings = this.membership.plusSavings;
   readonly expressWaiverAvailable = this.membership.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.membership.expressWaiverExhausted;
   readonly expressWaiverPendingTrial = this.membership.expressWaiverPendingTrial;
@@ -180,6 +211,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   // provided alongside this facade on the component. We re-expose its signal
   // so the template keeps reading the wizard facade.
   readonly cityServiced = this.serviceArea.cityServiced;
+
+  loadPlans(): void {
+    this.membership.loadPlans();
+  }
+
+  loadPlusSavings(query: QuotePlusSavingsQuery): void {
+    this.membership.loadPlusSavings(query);
+  }
 
   constructor() {
     super();
@@ -283,21 +322,35 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     // planning/active/service-areas.md.
     this.customerClient.countryClient.getServiced().pipe(takeUntil(this.destroyed$)).subscribe({
       next: (countries) => {
-        this.countries.set(countries);
+        // `?? []` because the generated client answers a 200 whose body is not a JSON array — an
+        // empty body, a `{}`, a `null` — and a 204 with NULL, while its declared type promises an
+        // array (see `processGetServiced` in customer-client.ts, which falls to
+        // `result200 = null as any`). Nothing above catches it: null is not an error, so a
+        // `catchError` would not fire even if this read had one, and TypeScript never complains
+        // because the declared type is non-nullable. Coalesced ONCE into a local because the
+        // auto-select below measures and indexes the same list the signal holds.
+        const served = countries ?? [];
+        this.countries.set(served);
         // Auto-select country ONLY when there's exactly one served — otherwise
         // require the user to pick. With multiple served countries we'd hit
         // the same silent-default bug if we auto-picked here, just with a
         // different country.
-        if (countries.length === 1 && !this.formData().address.countryId) {
+        if (served.length === 1 && !this.formData().address.countryId) {
           const address = new AddressDto(this.formData().address);
-          address.countryId = countries[0].id ?? '';
+          address.countryId = served[0].id ?? '';
           this.updateFormData({ address });
         }
       },
     });
     // Best-effort load — empty catalog just hides the extras section.
+    // `?? []` for the same generated-client null as the countries read above; spreading null
+    // throws "not iterable", so this one takes the whole wizard init down rather than storing
+    // a lie — and it does so past the `error` handler, which sees a failed request, not a bad body.
     this.customerClient.extraClient.getOverview().pipe(takeUntil(this.destroyed$)).subscribe({
-      next: (extras) => this.extras.set([...extras].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))),
+      next: (extras) =>
+        this.extras.set(
+          [...(extras ?? [])].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)),
+        ),
       error: () => this.extras.set([]),
     });
 
@@ -306,16 +359,27 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     this.membership.load(loggedIn);
 
     if (loggedIn) {
+      this.loadConsentState();
       if (!this.savedAddressStore.loaded()) {
         this.savedAddressStore.refresh();
       }
       this.customerClient.userClient.getCurrent().pipe(takeUntil(this.destroyed$)).subscribe({
         next: (user) => {
+          // PREFILL, not overwrite. This wrote all four fields unconditionally, empty account
+          // values included — and an account with no phone number on file is the ordinary case,
+          // because nothing in registration asks for one. So a customer who typed their phone into
+          // the wizard had it replaced with "" the moment this response landed, and the wizard let
+          // them carry on to a submit the server rejected as `customerPhone: ""`.
+          //
+          // Filling only what is blank is what a prefill means, and it is right in every direction:
+          // an account value appears in an empty field, and nothing the customer typed is taken
+          // away by a slower request.
+          const current = this.formData();
           this.updateFormData({
-            customerFirstName: user.firstName ?? '',
-            customerLastName: user.lastName ?? '',
-            customerEmail: user.email ?? '',
-            customerPhone: user.phoneNumber ?? '',
+            customerFirstName: current.customerFirstName || user.firstName || '',
+            customerLastName: current.customerLastName || user.lastName || '',
+            customerEmail: current.customerEmail || user.email || '',
+            customerPhone: current.customerPhone || user.phoneNumber || '',
           });
 
           const currentAddr = this.formData().address;
@@ -328,6 +392,36 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         },
       });
     }
+  }
+
+  /**
+   * Reads the account's consents once. Both of the two must be granted and
+   * neither withdrawn — a withdrawn Privacy Policy consent is not a consent,
+   * and asking again is the correct response to one.
+   *
+   * A failure leaves the flag false, which shows the tick. The safe direction
+   * for this switch is always "ask".
+   */
+  private loadConsentState(): void {
+    this.customerClient.gdprClient
+      .consentsGet()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as UserConsentDto[])),
+      )
+      .subscribe((consents) => {
+        // `?? []` for the same generated-client null as in `initialize` — the `catchError` above
+        // covers a failed request, not a 200 whose body is not an array. Coalesced once, because
+        // `granted` runs over it twice.
+        const onRecord = consents ?? [];
+        const granted = (type: ConsentType) =>
+          onRecord.some(
+            (c) => c.consentType === type && c.isGranted && !c.withdrawnAt,
+          );
+        this.alreadyConsented.set(
+          granted(ConsentType.TermsOfService) && granted(ConsentType.PrivacyPolicy),
+        );
+      });
   }
 
   selectSavedAddress(addressId: string): void {
@@ -436,6 +530,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     }
   }
 
+  /**
+   * Deliberately ungated, in both directions. Looking ahead at a step you have not filled in is not
+   * a mistake to prevent — the existing specs pin that freedom — and SUBMIT is where an incomplete
+   * order has to be caught, because that is the only moment it can do harm. See `submitOrder`.
+   */
   goToStep(step: number): void {
     if (step >= 0 && step < this.steps.length) {
       this.activeStep.set(step);
@@ -463,61 +562,119 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     return this.savedAddress.isSavedAddressSelected();
   }
 
-  canProceed(): boolean {
+  /**
+   * Why this step cannot be left yet, as translation keys, most important first.
+   * Empty means it can.
+   *
+   * `canProceed()` is derived from this rather than checking the same conditions
+   * a second time: a button whose disabled state and whose explanation are
+   * computed separately drift apart, and the drift is invisible until someone
+   * is staring at an inert button with nothing to fix.
+   */
+  missingReasons(step: number = this.activeStep()): string[] {
     const data = this.formData();
-    switch (this.activeStep()) {
-      case 0:
-        return (
-          data.selectedServiceIds.length > 0 ||
-          data.selectedPackageIds.length > 0
-        );
-      case 1: {
-        const phoneValid = !!(data.customerPhone && this.phoneRegex.test(data.customerPhone.replace(/\s/g, '')));
+    const reasons: string[] = [];
 
-        // Saved address: server already validated the record; just ensure fields are non-empty.
-        // Saved addresses always carry lat/lng post backend hardening, so no extra geo check needed.
-        // Custom address: must come from a Mapbox pick — i.e. lat/lng are non-null. Editable
-        // street/city/zip inputs were removed; the only path to populate them is `applyAddressSuggestion`.
+    switch (step) {
+      case 0:
+        if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
+          reasons.push('pages.order.missing.services');
+        }
+        break;
+
+      case 1: {
+        // Saved address: the server already validated the record, so only
+        // non-emptiness is checked. Custom address: it must have come from a
+        // suggestion pick, which is the only thing that sets lat/lng — typing
+        // into the field alone never produces a bookable address.
         const usingSaved = this.isAuthenticated() && this.isSavedAddressSelected();
+        const fieldsValid = !!(
+          data.address.street &&
+          data.address.street.length >= 5 &&
+          data.address.street.length <= 255 &&
+          data.address.city &&
+          data.address.city.length >= 2 &&
+          data.address.city.length <= 100 &&
+          data.address.zipCode &&
+          this.zipRegex.test(data.address.zipCode)
+        );
+        // Coordinates are required of a LOOKUP address, because a half-finished
+        // pick has the words without the place. A typed address is a different
+        // promise: the customer said the lookup could not find it, and the
+        // server geocodes it on submit.
         const addressValid = usingSaved
           ? !!(data.address.street && data.address.city && data.address.zipCode)
-          : !!(
-              data.address.street &&
-              data.address.street.length >= 5 &&
-              data.address.street.length <= 255 &&
-              data.address.city &&
-              data.address.city.length >= 2 &&
-              data.address.city.length <= 100 &&
-              data.address.zipCode &&
-              this.zipRegex.test(data.address.zipCode) &&
-              data.addressLatitude != null &&
-              data.addressLongitude != null
-            );
-        const contactValid = !!(
-          data.customerFirstName &&
-          data.customerFirstName.length >= 2 &&
-          data.customerFirstName.length <= 50 &&
-          data.customerLastName &&
-          data.customerLastName.length >= 2 &&
-          data.customerLastName.length <= 50 &&
-          data.customerEmail &&
-          this.emailRegex.test(data.customerEmail) &&
-          data.customerEmail.length <= 50
-        );
-        // Block Next when the city-serviced check explicitly rejected.
-        // 'pending' / 'error' / 'idle' all pass through — backend
-        // re-validates on submit; we just don't want to block on a
-        // network failure or a check that hasn't fired yet.
-        const cityOk = this.cityServiced() !== 'rejected';
-        return addressValid && contactValid && phoneValid && cityOk;
+          : fieldsValid &&
+            (data.addressEnteredManually ||
+              (data.addressLatitude != null && data.addressLongitude != null));
+        if (!addressValid) {
+          reasons.push(
+            data.addressEnteredManually
+              ? 'pages.order.missing.address_fields'
+              : 'pages.order.missing.address'
+          );
+        }
+
+        // Only an explicit rejection blocks. 'pending' / 'error' / 'idle' pass
+        // through — the backend re-validates on submit, and a network failure or
+        // a check that has not fired yet is not the customer's problem.
+        if (this.cityServiced() === 'rejected') {
+          reasons.push('api.service_area.city_not_serviced');
+        }
+
+        if (!(data.customerFirstName && data.customerFirstName.length >= 2 && data.customerFirstName.length <= 50)) {
+          reasons.push('pages.order.missing.first_name');
+        }
+        if (!(data.customerLastName && data.customerLastName.length >= 2 && data.customerLastName.length <= 50)) {
+          reasons.push('pages.order.missing.last_name');
+        }
+        if (!(data.customerEmail && this.emailRegex.test(data.customerEmail) && data.customerEmail.length <= 50)) {
+          reasons.push('pages.order.missing.email');
+        }
+        if (!(data.customerPhone && this.phoneRegex.test(data.customerPhone.replace(/\s/g, '')))) {
+          reasons.push('pages.order.missing.phone');
+        }
+        break;
       }
+
       case 2:
-        return !!data.cleaningDate;
-      case 3:
-        return true;
+        if (!data.cleaningDate) {
+          reasons.push('pages.order.missing.date');
+        }
+        break;
+
       default:
-        return true;
+        break;
     }
+
+    return reasons;
+  }
+
+  canProceed(): boolean {
+    return this.missingReasons().length === 0;
+  }
+
+  /**
+   * True once the order has been created. The wizard parks its basket on the way out; a basket that
+   * has just been paid for must not be offered back on the next visit.
+   */
+  readonly orderPlaced = signal(false);
+
+  /**
+   * Everything still missing anywhere in the wizard, and the first step that is missing it.
+   *
+   * `missingReasons` answers for ONE step, which is all a Continue button needs — and it was all
+   * anything ever asked. `goToStep` sets the step with no gate, so the review screen was reachable
+   * over an unsatisfied step, and `submitOrder` checked only the cleaning date. An account with no
+   * phone number therefore reached Stripe's door and came back with
+   * `{ NotEmptyValidator: "common.required" }`, which named neither the field nor a way forward.
+   */
+  firstIncompleteStep(): { step: number; reasons: string[] } | null {
+    for (let step = 0; step < this.steps.length; step++) {
+      const reasons = this.missingReasons(step);
+      if (reasons.length > 0) return { step, reasons };
+    }
+    return null;
   }
 
   saveCurrentAddressAsSaved(label: string): Promise<boolean> {
@@ -527,6 +684,18 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   async submitOrder(saveAddress?: { label: string } | null): Promise<void> {
     const data = this.formData();
     if (!data.cleaningDate) return;
+
+    // The LAST gate, and until now the only one that was not here: submit checked the date alone,
+    // so anything the per-step gates never got to ask about went to the server and came back as a
+    // 400 the customer could do nothing with. Sends them to the step that is short, rather than
+    // failing where they cannot see the field.
+    const blocked = this.firstIncompleteStep();
+    if (blocked) {
+      this.activeStep.set(blocked.step);
+      if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.snackbarService.showError(this.translate.instant(blocked.reasons[0]));
+      return;
+    }
 
     if (saveAddress && !this.selectedSavedAddressId()) {
       const saved = await this.saveCurrentAddressAsSaved(saveAddress.label);
@@ -610,6 +779,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     // because a whitespace-only note is not a note.
     command.specialInstructions = data.specialInstructions.trim() || undefined;
     command.accessInstructions = data.entryInstructions.trim() || undefined;
+    // A house has neither, and the step hides both — but a customer who filled
+    // them in and then switched to "house" would otherwise still send them.
+    const isFlat = data.propertyType === 'flat';
+    command.customerFloor = (isFlat && data.customerFloor.trim()) || undefined;
+    command.customerApartment = (isFlat && data.customerApartment.trim()) || undefined;
+    command.accessMode = data.accessMode || undefined;
     // The picker only ever offers cleaners the roster returned, but the entitlement, the eligibility
     // and the seat are all re-decided server-side; an id here asks, it does not reserve.
     command.preferredEmployeeId = data.preferredEmployeeId ?? undefined;
@@ -634,6 +809,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
+          this.orderPlaced.set(true);
           if (response.stripeSessionId) {
             if (this.isBrowser) window.location.href = response.stripeSessionId;
           } else {
@@ -660,6 +836,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
+          this.orderPlaced.set(true);
           this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS], {
             queryParams: { type: 'cash' },
           });

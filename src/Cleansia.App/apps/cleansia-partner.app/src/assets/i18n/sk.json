@@ -752,19 +752,18 @@
   },
   "components": {
     "not_found": {
-      "title": "Stránka nenájdená",
-      "description": "Stránka, ktorú hľadáte, bola pravdepodobne odstránená, premenovaná alebo je dočasne nedostupná.",
-      "suggestion_home": "Vráťte sa na úvodnú stránku",
-      "suggestion_url": "Skontrolujte správnosť adresy URL",
-      "suggestion_contact": "Ak problém pretrváva, kontaktujte nás",
-      "go_home": "Na úvodnú stránku"
+      "title": "Túto stránku nemáme",
+      "description": "Odkaz je zrejme starý, alebo v adrese chýba písmenko. Skúste to od začiatku.",
+      "go_home": "Na úvodnú stránku",
+      "error_code": "Chyba {{code}}"
     },
     "file": {
       "click_to_select": "Kliknite pre výber súborov",
       "or_drag_drop": "alebo pretiahnite",
       "accepted": "Povolené",
       "max_size": "Max. veľkosť",
-      "selected_files": "Vybrané súbory"
+      "selected_files": "Vybrané súbory",
+      "choose": "Vybrať súbory"
     },
     "availability": {
       "days": {
@@ -966,7 +965,9 @@
       "1": "Čaká na kontrolu",
       "2": "Schválené",
       "3": "Zamietnuté"
-    }
+    },
+    "show_password": "Zobraziť heslo",
+    "hide_password": "Skryť heslo"
   },
   "registration_lock": {
     "title": "Vyžaduje sa dokončenie profilu",
@@ -1055,6 +1056,9 @@
       "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",
       "error_occurred": "Došlo k chybe. Skúste to prosím znova.",
       "user_not_authenticated": "Používateľ nie je prihlásený"
+    },
+    "credit": {
+      "cash_not_collectable_on_credit_order": "Časť tejto objednávky už bola uhradená z kreditu zákazníka. Požiadajte o vybavenie kanceláriu — sumu uvedenú v aplikácii nevyberajte."
     },
     "validation": {
       "invalid_password": "Neplatné heslo",
@@ -1269,7 +1273,15 @@
     },
     "gdpr": {
       "consent_not_found": "Toto nastavenie súhlasu sme nenašli",
-      "consent_already_granted": "Tento súhlas ste už udelili"
+      "consent_already_granted": "Tento súhlas ste už udelili",
+      "export_failed": "Vaše údaje sa nepodarilo exportovať. Skúste to znova.",
+      "deletion_failed": "Váš účet sa nepodarilo zmazať. Skúste to znova.",
+      "deletion_already_pending": "Žiadosť o zmazanie účtu už prebieha.",
+      "deletion_blocked_by_order": "Váš účet sa nedá zmazať, kým máte aktívne objednávky.",
+      "deletion_blocked_by_invoice": "Váš účet sa nedá zmazať, kým sú nevybavené faktúry.",
+      "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
+      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou.",
+      "deletion_blocked_by_credit_balance": "Váš účet sa nedá zmazať, kým u nás máte kredit. Využite ho pri objednávke, alebo kontaktujte kanceláriu kvôli vyplateniu."
     },
     "company": {
       "not_found": "Informácie o spoločnosti nenájdené",

@@ -278,7 +278,6 @@ public class S6LoggingHygieneCharacterizationTests
         var config = new Mock<ISendGridConfig>();
         config.SetupGet(c => c.ApiKey).Returns("SG.test");
         config.SetupGet(c => c.AddressFrom).Returns("noreply@example.test");
-        config.SetupGet(c => c.EmailConfirmationTemplateId).Returns("d-template-1");
         config.SetupGet(c => c.ClientDomainUrl).Returns("https://app.test");
 
         var translations = new Mock<IEmailTemplateTranslationRepository>();
@@ -292,7 +291,7 @@ public class S6LoggingHygieneCharacterizationTests
             .Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(() => new HttpClient(new StubHandler(status, responseBody), disposeHandler: false));
 
-        return new EmailService(config.Object, logger, httpClientFactory.Object, translations.Object);
+        return new EmailService(config.Object, logger, httpClientFactory.Object, translations.Object, new EmailTemplateRenderer());
     }
 
     private sealed class StubHandler(HttpStatusCode status, string body) : HttpMessageHandler

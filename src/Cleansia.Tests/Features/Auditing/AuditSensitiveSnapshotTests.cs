@@ -150,9 +150,11 @@ public sealed class AuditSensitiveSnapshotTests
 
         var loyaltyService = new Mock<ILoyaltyService>();
         var countryRepository = new Mock<ICountryConfigurationRepository>();
+        var extraRepository = new Mock<IExtraRepository>();
+        extraRepository.Setup(r => r.GetAll()).Returns(Array.Empty<Extra>().AsQueryable().BuildMock());
 
         var handler = new IssuePartialRefund.Handler(
-            orderRepository.Object, refundRepository.Object, countryRepository.Object,
+            orderRepository.Object, refundRepository.Object, extraRepository.Object, countryRepository.Object,
             refundService.Object, loyaltyService.Object, AdminSession(), auditContext,
             NullLogger<IssuePartialRefund.Handler>.Instance);
 

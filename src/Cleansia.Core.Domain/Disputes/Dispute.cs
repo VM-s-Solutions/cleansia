@@ -43,6 +43,34 @@ public class Dispute : Auditable, ITenantEntity
     private readonly List<DisputeEvidence> _evidence = new();
     public IReadOnlyCollection<DisputeEvidence> Evidence => _evidence.AsReadOnly();
 
+    /// <summary>
+    /// The order items the customer named as unsatisfactory. Empty is ordinary — a dispute about the
+    /// whole job, or about a charge, names no lines at all.
+    /// </summary>
+    private readonly List<DisputeLine> _lines = new();
+    public IReadOnlyCollection<DisputeLine> Lines => _lines.AsReadOnly();
+
+    /// <summary>
+    /// Record which of the order's items this dispute is about.
+    ///
+    /// <para>The caller has already checked that every line belongs to the order — and it must be the
+    /// HANDLER that checks, after the ownership gate. A membership rule in the validator would answer
+    /// "does service X belong to order Y" for an order the caller does not own, which is exactly the
+    /// enumeration difference the not-found-not-forbidden shape above exists to deny.</para>
+    /// </summary>
+    public void AddLines(IEnumerable<(string ServiceId, string? PackageId)> lines, string addedBy)
+    {
+        foreach (var (serviceId, packageId) in lines)
+        {
+            if (_lines.Any(l => l.ServiceId == serviceId && l.PackageId == packageId))
+            {
+                continue;
+            }
+
+            _lines.Add(DisputeLine.Create(Id, serviceId, packageId, addedBy));
+        }
+    }
+
     // Private constructor for EF Core
     private Dispute() { }
 

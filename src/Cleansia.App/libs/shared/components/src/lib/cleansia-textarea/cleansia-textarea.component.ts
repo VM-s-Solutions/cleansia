@@ -25,7 +25,12 @@ export class CleansiaTextareaComponent extends CleansiaBaseFormInputComponent {
   rows = input<number>(3);
   cols = input<number | undefined>(undefined);
   autoResize = input<boolean>(false);
-  floatVariant = input<'over' | 'in' | 'on'>('on');
+  /**
+   * `null` renders the label ABOVE the control instead of floating it into the
+   * border — the shape the approved customer design draws. The default stays
+   * 'on' so the partner and admin forms are untouched.
+   */
+  floatVariant = input<'over' | 'in' | 'on' | null>('on');
 
   valueChanges = output<string>();
 

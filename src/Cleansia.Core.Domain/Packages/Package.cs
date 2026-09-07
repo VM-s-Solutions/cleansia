@@ -14,6 +14,22 @@ public class Package : Auditable
     [MaxLength(500)]
     public string Description { get; private set; }
 
+    /// <summary>
+    /// The short line the package card leads with — "For a well-kept flat", not a sentence.
+    /// Separate from <see cref="Description"/>, which is prose and too long for that slot.
+    /// </summary>
+    [MaxLength(60)]
+    public string? Tagline { get; private set; }
+
+    /// <summary>
+    /// Draws the card as the featured one. No invariant caps this at a single package: the flag
+    /// is the admin's editorial choice and the catalogue features every package carrying it, so
+    /// flagging three highlights three. A cross-row "only one" rule would mean writing other
+    /// packages' rows on every save, which is a concurrency problem in exchange for a policy
+    /// nobody has asked for.
+    /// </summary>
+    public bool IsPopular { get; private set; }
+
     [Required]
     public decimal Price { get; private set; }
 
@@ -23,24 +39,43 @@ public class Package : Auditable
     private ICollection<PackageService> _includedServices = [];
     public IReadOnlyCollection<PackageService> IncludedServices => _includedServices.ToList().AsReadOnly();
 
-    public static Package Create(string name, string description, decimal price) => new()
+    public static Package Create(
+        string name,
+        string description,
+        decimal price,
+        string? tagline = null,
+        bool isPopular = false) => new()
     {
         Name = name,
         Description = description,
-        Price = price
+        Price = price,
+        Tagline = tagline,
+        IsPopular = isPopular
     };
 
-    public Package Update(string name, string description, decimal price)
+    public Package Update(
+        string name,
+        string description,
+        decimal price,
+        string? tagline = null,
+        bool isPopular = false)
     {
         Name = name;
         Description = description;
         Price = price;
+        Tagline = tagline;
+        IsPopular = isPopular;
         return this;
     }
 
-    public Package SetTranslation(string languageCode, string name, string description)
+    public Package SetTranslation(string languageCode, string name, string description, string? tagline = null)
     {
-        _translations[languageCode] = new Translation { Name = name, Description = description };
+        _translations[languageCode] = new Translation
+        {
+            Name = name,
+            Description = description,
+            Tagline = tagline
+        };
         return this;
     }
 

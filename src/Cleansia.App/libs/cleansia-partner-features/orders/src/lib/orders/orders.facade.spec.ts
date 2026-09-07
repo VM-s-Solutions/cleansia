@@ -168,9 +168,13 @@ describe('OrdersFacade — take order', () => {
 
       facade.loadAvailableOrders();
 
+      // Mirrors OrderAvailability.OfferableStatuses: started is not over, and the
+      // hasAvailableSpots term is what keeps a fully crewed job off the list.
       expect(availableStatuses()).toEqual([
         OrderStatus.New,
         OrderStatus.Confirmed,
+        OrderStatus.OnTheWay,
+        OrderStatus.InProgress,
       ]);
     });
 

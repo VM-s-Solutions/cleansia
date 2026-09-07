@@ -752,19 +752,18 @@
   },
   "components": {
     "not_found": {
-      "title": "Page Not Found",
-      "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
-      "suggestion_home": "Return to the home page",
-      "suggestion_url": "Check the URL for typos",
-      "suggestion_contact": "Contact us if the problem persists",
-      "go_home": "Go to Home"
+      "title": "We don't have this page",
+      "description": "The link is probably old, or the address is missing a letter. Try again from the start.",
+      "go_home": "Go to the home page",
+      "error_code": "Error {{code}}"
     },
     "file": {
       "click_to_select": "Click to select files",
       "or_drag_drop": "or drag and drop",
       "accepted": "Accepted",
       "max_size": "Max size",
-      "selected_files": "Selected Files"
+      "selected_files": "Selected Files",
+      "choose": "Choose files"
     },
     "availability": {
       "days": {
@@ -966,7 +965,9 @@
       "1": "Pending Review",
       "2": "Approved",
       "3": "Rejected"
-    }
+    },
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "registration_lock": {
     "title": "Profile Completion Required",
@@ -1055,6 +1056,9 @@
       "unauthorized": "You are not authorized to perform this action",
       "error_occurred": "An error occurred. Please try again.",
       "user_not_authenticated": "User not authenticated"
+    },
+    "credit": {
+      "cash_not_collectable_on_credit_order": "Part of this booking was already paid from the customer’s credit. Ask an office admin to settle it — do not collect the amount shown."
     },
     "validation": {
       "invalid_password": "Invalid password",
@@ -1269,7 +1273,15 @@
     },
     "gdpr": {
       "consent_not_found": "We could not find that consent setting",
-      "consent_already_granted": "You have already granted this consent"
+      "consent_already_granted": "You have already granted this consent",
+      "export_failed": "We couldn't export your data. Please try again.",
+      "deletion_failed": "We couldn't delete your account. Please try again.",
+      "deletion_already_pending": "An account deletion request is already in progress.",
+      "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
+      "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
+      "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
+      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
+      "deletion_blocked_by_credit_balance": "Your account can’t be deleted while you still have credit with us. Use it on a booking, or contact the office to be paid out."
     },
     "company": {
       "not_found": "Company information not found",

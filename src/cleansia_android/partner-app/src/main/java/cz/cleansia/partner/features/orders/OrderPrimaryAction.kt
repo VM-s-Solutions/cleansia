@@ -91,15 +91,25 @@ fun OrderPrimaryAction(
         }
         OrderStatus._3 -> {
             // OnTheWay → confirm arrival with a deliberate gesture.
-            // Foreign OnTheWay orders shouldn't be returned by the
-            // browse-detail endpoint, but render nothing as a safety
-            // net so we never offer a stranger's order to Start.
             if (isAssignedToCurrentUser) {
                 SlideToCommit(
                     idleLabel = stringResource(R.string.slide_to_start),
                     busyLabel = stringResource(R.string.starting_order),
                     onCommit = onStart,
                     isBusy = inFlight == OrderAction.Start,
+                    modifier = modifier,
+                )
+            } else {
+                // A crew mate is already travelling and a seat is still empty. The status is on the
+                // ORDER, not on a person, so one cleaner setting off used to take the whole job off
+                // every board — owner ruling 2026-09-06 made a started job stay fillable, and this is
+                // the half of it the cleaner can see. The server's own gate is the authority; the
+                // browse-detail endpoint only returns this order at all while a seat remains.
+                SlideToCommit(
+                    idleLabel = stringResource(R.string.slide_to_take),
+                    busyLabel = stringResource(R.string.taking_order),
+                    onCommit = onTake,
+                    isBusy = inFlight == OrderAction.Take,
                     modifier = modifier,
                 )
             }
@@ -149,6 +159,16 @@ fun OrderPrimaryAction(
                     // error_key_order_after_photos_required.
                     CompleteBlockedHint(modifier = modifier)
                 }
+            } else {
+                // Same as OnTheWay above: the work has begun with a short crew and a seat is open.
+                // A late joiner is worth more to the customer than an empty seat.
+                SlideToCommit(
+                    idleLabel = stringResource(R.string.slide_to_take),
+                    busyLabel = stringResource(R.string.taking_order),
+                    onCommit = onTake,
+                    isBusy = inFlight == OrderAction.Take,
+                    modifier = modifier,
+                )
             }
         }
         else -> { /* Completed / Cancelled / null — no actions */ }

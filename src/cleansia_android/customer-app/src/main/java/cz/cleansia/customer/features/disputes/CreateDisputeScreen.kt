@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -49,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -81,6 +85,12 @@ fun CreateDisputeScreen(
 
     var reasonValue by remember { mutableStateOf<Int?>(null) }
     var description by remember { mutableStateOf("") }
+
+    // What was on the order, and which parts the customer has ticked. Both empty until the order
+    // loads — and on the FAB flow, which arrives with no order, empty forever. The section below
+    // renders nothing in either case rather than an empty box.
+    val lineOptions by viewModel.lineOptions.collectAsStateWithLifecycle()
+    val pickedLineKeys by viewModel.pickedLineKeys.collectAsStateWithLifecycle()
 
     // Navigate out on success. SharedFlow one-shot — won't replay on
     // recomposition.
@@ -197,6 +207,35 @@ fun CreateDisputeScreen(
                 textAlign = TextAlign.End,
             )
 
+            // ── Which parts went wrong ──
+            //
+            // Optional throughout. A dispute about the whole job, or about a charge, ticks nothing —
+            // the common case, and it stays the path of least resistance. Checkboxes rather than the
+            // reason chips above: that row is pick-one and looks it, and repeating the shape here
+            // would teach the wrong gesture for a multi-select.
+            if (lineOptions.isNotEmpty()) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = stringResource(R.string.dispute_create_which_items),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.dispute_create_which_items_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                lineOptions.forEach { option ->
+                    DisputeLineRow(
+                        option = option,
+                        checked = option.key in pickedLineKeys,
+                        onToggle = { viewModel.toggleLine(option.key) },
+                    )
+                }
+            }
+
             // ── Inline error ──
             val errorText = error
             if (!errorText.isNullOrBlank()) {
@@ -209,6 +248,52 @@ fun CreateDisputeScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/* ── One selectable order item ── */
+
+/**
+ * The whole row is the hit target, not just the box — a 20dp checkbox is a poor thing to aim at on a
+ * phone, and the label is what the customer is actually reading when they decide.
+ */
+@Composable
+private fun DisputeLineRow(
+    option: DisputeLineOption,
+    checked: Boolean,
+    onToggle: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .toggleable(
+                value = checked,
+                onValueChange = { onToggle() },
+                role = Role.Checkbox,
+            )
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = option.label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            // The bundle it came in. Quiet, because two rows can share a name and only this tells
+            // them apart — a disambiguator, not a heading.
+            val packageLabel = option.packageLabel
+            if (!packageLabel.isNullOrBlank()) {
+                Text(
+                    text = stringResource(R.string.dispute_create_item_in_package, packageLabel),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

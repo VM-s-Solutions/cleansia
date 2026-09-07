@@ -175,6 +175,10 @@ export const Policy = {
   CanUpdateLoyaltyTierConfig: 'CanUpdateLoyaltyTierConfig',
   CanGrantLoyaltyPoints: 'CanGrantLoyaltyPoints',
   CanViewUserLoyalty: 'CanViewUserLoyalty',
+  // Credit — its own feature, not a mode of loyalty (owner ruling 2026-09-05).
+  CanIssueCustomerCredit: 'CanIssueCustomerCredit',
+  CanViewUserCredit: 'CanViewUserCredit',
+  CanExpireCustomerCredit: 'CanExpireCustomerCredit',
   CanViewReferrals: 'CanViewReferrals',
   CanInterveneReferral: 'CanInterveneReferral',
 
@@ -342,6 +346,9 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanUpdateLoyaltyTierConfig: PhysicalPolicy.AdminOnly,
   CanGrantLoyaltyPoints: PhysicalPolicy.AdminOnly,
   CanViewUserLoyalty: PhysicalPolicy.AdminOnly,
+  CanIssueCustomerCredit: PhysicalPolicy.AdminOnly,
+  CanViewUserCredit: PhysicalPolicy.AdminOnly,
+  CanExpireCustomerCredit: PhysicalPolicy.AdminOnly,
   CanViewReferrals: PhysicalPolicy.AdminOnly,
   CanInterveneReferral: PhysicalPolicy.AdminOnly,
 

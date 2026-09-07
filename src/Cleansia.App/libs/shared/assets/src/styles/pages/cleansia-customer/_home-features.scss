@@ -1,128 +1,119 @@
 @use './home-variables' as *;
 
-cleansia-features {
-  display: block;
-  background-color: var(--surface-card);
+// =============================
+// Tři věci, které vám slibujeme
+// =============================
+// Three promise cards. The lead one is wider and carries the mascot; the other
+// two are equal and push their fact line to the bottom so all three rules sit
+// on one horizontal line however long the copy runs.
+//
+// Values are the approved artboard's: 1.16fr .92fr .92fr, gap 20, radius 40,
+// padding 30/32. -> _home-design.scss
+
+.cl-section--promises {
+  padding: calc(1.25 * var(--cl-u)) var(--cl-gutter) 0;
 }
 
-// =============================
-// Feature Cards
-// =============================
-.cl-features {
+.cl-promises {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: 1.16fr 0.92fr 0.92fr;
+  gap: 20px;
+  align-items: stretch;
+  margin-top: 30px;
+
+  &__title {
+    text-align: center;
+  }
 
   &__card {
-    background: var(--surface-card);
-    border-radius: $radius-lg;
-    padding: 2.25rem 1.75rem 2rem;
-    text-align: center;
-    border: 1px solid var(--surface-border);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-
-    &:hover {
-      border-color: rgba($primary, 0.35);
-      box-shadow: $shadow-lg;
-      transform: translateY(-2px);
-    }
-  }
-
-  &__icon-wrap {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
+    background: var(--cl-tint);
+    border-radius: 40px;
+    padding: 30px 32px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1.5rem;
-    background: $primary-lighter;
-    i {
-      font-size: 1.4rem;
-      color: $primary;
-    }
+    flex-direction: column;
 
-    &--blue {
-      background: $primary-light;
-      i {
-        color: $primary-dark;
-      }
-    }
-
-    &--green {
-      background: $green-light;
-      i {
-        color: $green;
-      }
-    }
-
-    &--amber {
-      background: #fef3c7;
-      i {
-        color: #d97706;
-      }
+    // The lead card is a two-column grid so the mascot stands beside the copy
+    // rather than under it, both anchored to the same baseline.
+    &--lead {
+      background: var(--cl-tint-strong);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: end;
     }
   }
 
-  &__card-title {
-    font-family: $font-heading;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin: 0 0 0.75rem;
+  &__body {
+    display: flex;
+    flex-direction: column;
   }
 
-  &__card-desc {
-    font-size: 0.95rem;
-    color: var(--cl-text-secondary);
-    line-height: 1.7;
-    margin: 0;
-  }
-}
-
-// =============================
-// Dark Mode — Features
-// =============================
-:root.dark-mode {
-  .cl-features__card:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  &__label {
+    color: var(--cl-heading);
   }
 
-  .cl-features__icon-wrap {
-    background: rgba(56, 189, 248, 0.1);
-    i {
-      color: #38bdf8;
-    }
+  &__heading {
+    margin-top: 10px;
+    font-size: 23px; // 23px
 
-    &--blue {
-      background: rgba(56, 189, 248, 0.12);
-      i {
-        color: #7dd3fc;
-      }
+    // The lead card carries the larger of the two heading sizes.
+    &--lead {
+      font-size: 27px; // 27px
     }
+  }
 
-    &--green {
-      background: rgba(22, 163, 74, 0.15);
-      i {
-        color: #4ade80;
-      }
-    }
+  &__desc {
+    font-size: 16px;
+    margin: 10px 0 0;
+  }
 
-    &--amber {
-      background: rgba(245, 158, 11, 0.15);
-      i {
-        color: #fbbf24;
-      }
-    }
+  // Pushes the fact line down so the three hairlines align across the row.
+  &__spacer {
+    flex-grow: 1;
+  }
+
+  &__mascot {
+    height: 156px;
+    width: auto;
+    display: block;
+    margin: 0 -4px 0 0;
+    align-self: end;
   }
 }
 
 // =============================
-// Responsive — Features
+// Responsive
 // =============================
+@media (max-width: 1100px) {
+  .cl-promises {
+    grid-template-columns: 1fr 1fr;
+
+    &__card--lead {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
 @media (max-width: 768px) {
-  .cl-features {
+  .cl-promises {
     grid-template-columns: 1fr;
-    gap: 1.25rem;
+
+    &__card {
+      border-radius: 32px;
+      padding: 24px 24px;
+    }
+
+    // Below this width the mascot would squeeze the copy to a column of two
+    // words, so it steps out of the grid and sits under it.
+    &__card--lead {
+      display: flex;
+    }
+
+    &__mascot {
+      height: 132px;
+      align-self: center;
+      margin-top: 16px;
+    }
   }
 }
+

@@ -20,9 +20,14 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     [HttpGet("Lookup")]
     [ProducesResponseType(typeof(LookupOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> LookupOrder([FromQuery] string orderNumber, [FromQuery] string email, CancellationToken cancellationToken)
+    public async Task<IActionResult> LookupOrder(
+        [FromQuery] string orderNumber,
+        [FromQuery] string email,
+        [FromQuery] string confirmationCode,
+        CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new LookupOrder.Query(orderNumber, email), cancellationToken);
+        var result = await Mediator.Send(
+            new LookupOrder.Query(orderNumber, email, confirmationCode), cancellationToken);
         return HandleResult<LookupOrder.Response>(result);
     }
 
@@ -56,6 +61,25 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<QuoteOrder.Response>(result);
+    }
+
+    /// <summary>
+    /// What this basket would cost with a Cleansia Plus plan the caller does not have —
+    /// the "you would save X" line on the wizard's Plus step.
+    ///
+    /// Anonymous like the quote it sits beside: the whole point is to answer for someone
+    /// who has neither a membership nor, necessarily, an account.
+    /// </summary>
+    [AllowAnonymous]
+    [EnableRateLimiting("interactive")]
+    [HttpPost("QuotePlusSavings")]
+    [ProducesResponseType(typeof(QuotePlusSavings.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> PlusSavings(
+        [FromBody] QuotePlusSavings.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<QuotePlusSavings.Response>(result);
     }
 
     /// <summary>

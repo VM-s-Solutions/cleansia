@@ -102,8 +102,12 @@ public class CreatePaymentIntent
                 logger.LogInformation("Created Stripe customer for user {UserId}", user.Id);
             }
 
+            // AmountDueOnCard, not TotalPrice - see StripeClient.CreateCheckoutSessionAsync. The
+            // intent's Stripe idempotency key includes the cents amount, so an order whose credit was
+            // applied after a first PaymentSheet open correctly mints a new intent and cancels the old
+            // one through the branch below.
             var intent = await stripeClient.CreatePaymentIntentAsync(
-                amount: order.TotalPrice,
+                amount: order.AmountDueOnCard,
                 currency: order.Currency.Code,
                 stripeCustomerId: stripeCustomerId,
                 orderId: order.Id,

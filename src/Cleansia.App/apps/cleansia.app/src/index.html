@@ -21,15 +21,32 @@
     <link rel="icon" type="image/x-icon" href="assets/logos/Logo.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- display=optional: text renders immediately with the metric-compatible
-         fallback and never reflows when the web font arrives (zero CLS). -->
+    <!--
+      Nunito as a VARIABLE face (`400..800`), which is also how the partner and
+      admin apps load it. The enumerated list this replaces asked for 400, 600
+      and 700 only — while 50 rules in the customer design system set
+      `font-weight: 800` and 13 set 500. Neither weight existed, so the browser
+      faked them from 700 and 600 — and a synthetic bold is heavier and blurrier
+      than the real face, which is exactly why "Forgot password?", the buttons
+      and the labels all read heavier than the design. A variable axis also
+      means the next weight someone reaches for is already there rather than
+      silently synthesised.
+
+      display=swap, NOT optional. `optional` gives each unicode subset about
+      100ms and then abandons it for the rest of the page load — and `latin` and
+      `latin-ext` are separate files racing separately. Win one and lose the
+      other and the page renders ASCII in Nunito while every Czech diacritic
+      falls back to the system sans: kaZdy in one face and the z-caron in
+      another, which is the "some letters are bolder than others" report. swap
+      always ends on the real face.
+    -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@600;700&display=optional"
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400..800&family=Poppins:wght@500;600;700&display=swap"
       rel="stylesheet"
       media="print"
       onload="this.media='all'"
     />
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@600;700&display=optional" rel="stylesheet" /></noscript>
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400..800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" /></noscript>
     <!-- Font Awesome removed — using PrimeIcons instead -->
     <!-- CDN stylesheets load async via the media="print" swap. No rel=preload
          here on purpose: preload forces HIGH priority, which starves the

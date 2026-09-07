@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { TranslatePipe } from '@ngx-translate/core';
+import { LegalDocumentComponent } from '../legal-document/legal-document.component';
 
 @Component({
   selector: 'cleansia-customer-privacy',
   standalone: true,
-  imports: [TranslatePipe],
+  imports: [LegalDocumentComponent],
   templateUrl: './privacy.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

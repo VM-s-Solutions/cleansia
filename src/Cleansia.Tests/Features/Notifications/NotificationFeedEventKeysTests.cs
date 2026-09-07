@@ -72,6 +72,7 @@ public class NotificationFeedEventKeysTests
                 NotificationEventCatalog.OrderCompleted,
                 NotificationEventCatalog.OrderCancelled,
                 NotificationEventCatalog.OrderRefunded,
+                NotificationEventCatalog.OrderNoCleanerRefunded,
                 NotificationEventCatalog.DisputeReply,
                 NotificationEventCatalog.RecurringScheduled,
                 NotificationEventCatalog.MembershipExpiringSoon,
@@ -88,6 +89,7 @@ public class NotificationFeedEventKeysTests
         Assert.Equal(
             [
                 NotificationEventCatalog.NewJobsAvailable,
+                NotificationEventCatalog.OrderSeatOpen,
                 NotificationEventCatalog.ReminderTomorrow,
                 NotificationEventCatalog.PreferredOffer,
                 NotificationEventCatalog.OrderAssignmentCancelled,

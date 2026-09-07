@@ -254,6 +254,14 @@ public class SubjectDataErasureRosterTests
                 + "subject — unless the erased subject is themselves an admin, in which case their actor "
                 + "rows are retained on the same ADR-0012 ground."),
 
+        [typeof(Core.Domain.Auditing.EmployeeActionAudit)] = new(
+            Verdict.RetainedByPolicy,
+            "The employee-side twin of AdminActionAudit, on the same ADR-0012 append-only ground and "
+                + "kept in its own table on owner ruling 2026-09-06. It records what a CLEANER did to a "
+                + "job whose assignment row the act itself deletes, so it is the only surviving evidence "
+                + "that they held the seat — and it carries two ids and an enum, no name, contact or "
+                + "free text."),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeeInvoice)] = new(
             Verdict.RetainedByPolicy,
             "ADR-0007 D4 financial record. The erasure refuses to run at all while one is Pending, Approved "
@@ -277,6 +285,18 @@ public class SubjectDataErasureRosterTests
         [typeof(Core.Domain.Loyalty.LoyaltyAccount)] = new(
             Verdict.RetainedPseudonymous,
             "A points balance and tier keyed to an anonymized user id."),
+
+        // NOT the same answer as LoyaltyAccount above, and the difference is the point. A points
+        // balance is a score; a credit balance is a DEBT the company owes. Pasting the pseudonymous
+        // verdict onto it would quietly write that debt off at the moment a customer asks to be
+        // forgotten, which is the version that generates a complaint nobody can answer.
+        [typeof(Core.Domain.Credit.CreditAccount)] = new(
+            Verdict.RetainedByPolicy,
+            "MONEY OWED, so erasure is REFUSED while the balance is positive (owner ruling 2026-09-05) — "
+                + "the same shape already shipped for a cleaner with unsettled pay. The customer spends it "
+                + "or is paid out, and then the erasure proceeds and this row goes with the user. A zero "
+                + "balance never blocks anything."),
+
 
         [typeof(Core.Domain.Loyalty.Referral)] = new(
             Verdict.RetainedPseudonymous,

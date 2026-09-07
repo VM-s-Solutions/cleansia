@@ -167,3 +167,103 @@ export function canSubmit(data: RecurringWizardFormData): boolean {
     (data.selectedServiceIds.length > 0 || data.selectedPackageIds.length > 0)
   );
 }
+
+/**
+ * The next instant this template will be materialized for, or `null` when the
+ * schedule has run out.
+ *
+ * This is a LINE-BY-LINE mirror of the backend's own derivation —
+ * `MaterializeRecurringBookingTemplate.ComputeOccurrences` — and it has to
+ * stay one: the card states a date the customer will plan around, and a second
+ * opinion about the cadence is worse than no date at all. Every step is in UTC
+ * for the same reason, because that is the clock the backend walks; the caller
+ * renders the result in the reader's zone.
+ *
+ * `lastMaterializedFor` only moves the START of the search forward — it is not
+ * a duplicate guard here any more than it is there.
+ */
+export function nextOccurrenceUtc(
+  template: {
+    frequency: number;
+    dayOfWeek: number;
+    timeOfDay?: string;
+    startsOn: Date | string;
+    endsOn?: Date | string;
+    lastMaterializedFor?: Date | string;
+  },
+  now: Date = new Date(),
+): Date | null {
+  const stepDays =
+    template.frequency === RecurrenceFrequency.Biweekly
+      ? 14
+      : template.frequency === RecurrenceFrequency.Monthly
+        ? 30 // the backend's own approximation — mirrored, not corrected
+        : 7;
+  const stepMs = stepDays * 24 * 60 * 60 * 1000;
+
+  const asDate = (v: Date | string | undefined): Date | null => {
+    if (!v) return null;
+    const d = v instanceof Date ? v : new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  const startsOn = asDate(template.startsOn);
+  if (!startsOn) return null;
+  const endsOn = asDate(template.endsOn);
+  const lastMaterializedFor = asDate(template.lastMaterializedFor);
+
+  let searchStart = lastMaterializedFor
+    ? new Date(lastMaterializedFor.getTime() + stepMs)
+    : startsOn;
+  if (searchStart.getTime() < now.getTime()) searchStart = now;
+
+  // Midnight UTC of the search start, then walk forward to the template's day.
+  const candidate = new Date(
+    Date.UTC(
+      searchStart.getUTCFullYear(),
+      searchStart.getUTCMonth(),
+      searchStart.getUTCDate(),
+    ),
+  );
+  while (candidate.getUTCDay() !== template.dayOfWeek) {
+    candidate.setUTCDate(candidate.getUTCDate() + 1);
+  }
+
+  const [hours, minutes] = (template.timeOfDay ?? '00:00').split(':');
+  let occurrence = new Date(
+    candidate.getTime() +
+      (Number(hours) || 0) * 3600000 +
+      (Number(minutes) || 0) * 60000,
+  );
+
+  // The backend yields only occurrences inside [startsOn, endsOn]; anything
+  // earlier steps forward. Bounded so a malformed template cannot spin.
+  for (let i = 0; i < 64; i++) {
+    if (endsOn && occurrence.getTime() > endsOn.getTime()) return null;
+    if (occurrence.getTime() >= startsOn.getTime()) return occurrence;
+    occurrence = new Date(occurrence.getTime() + stepMs);
+  }
+  return null;
+}
+
+/** A required field the form is still missing, in the order the form asks. */
+export type MissingField = 'services' | 'time' | 'address' | 'startsOn';
+
+/**
+ * What is stopping this schedule from being saved.
+ *
+ * `canSubmit` answers yes/no, which is all a disabled button needs and nothing
+ * a person does. The form presses a live button, gets this list back and says
+ * which field to look at — the previous behaviour was a dead button and a page
+ * that appeared to ignore the click.
+ */
+export function missingFields(data: RecurringWizardFormData): MissingField[] {
+  const missing: MissingField[] = [];
+  if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
+    missing.push('services');
+  }
+  if (!data.timeOfDay) missing.push('time');
+  if (!data.savedAddressId) missing.push('address');
+  if (!data.startsOn) missing.push('startsOn');
+  return missing;
+}

@@ -64,6 +64,40 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
 
   private readonly mode = signal<'create' | 'edit'>('create');
 
+  /**
+   * Which translation tab is open — a signal the USER's click owns.
+   *
+   * PrimeNG's `p-tabs` exposes `value` as a two-way `model()`. This was bound ONE-WAY to
+   * `facade.languages()[0].code`, which gave the strip no owner at all: the component could not read
+   * the selection, and Angular wrote the expression back over it whenever the expression changed —
+   * which it does when the language list arrives, and would do again on any reload. It also
+   * dereferenced `[0]` on a list the facade's own `catchError` sets to `[]` on a failed read, so a
+   * network blip was a TypeError that took the form down.
+   *
+   * Defaulted from the first language once, by the effect below, rather than derived on every read.
+   * Same shape the three other tab strips in this app already use.
+   */
+  readonly activeLanguage = signal<string>('');
+
+  onLanguageTabChange(value: string | number | undefined): void {
+    if (typeof value === 'string') {
+      this.activeLanguage.set(value);
+    }
+  }
+
+  constructor() {
+    // Open the first language once it is known, and never again: re-deriving it would drag the
+    // user's tab back every time the list re-emitted.
+    effect(() => {
+      const first = this.facade.languages()[0]?.code;
+      if (first && !this.activeLanguage()) {
+        this.activeLanguage.set(first);
+      }
+    });
+
+  }
+
+
   readonly isEditMode = computed(() => this.mode() === 'edit');
   readonly pageTitle = computed(() =>
     this.isEditMode()

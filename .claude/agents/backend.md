@@ -66,8 +66,9 @@ tests on pure logic fail review.
    respects enforcement modes; never block customer completion on fiscal registration.
 8. Add `BusinessErrorMessage` keys for new errors (the frontend/L10n add the 5-locale i18n keys).
 9. Unit-test new pure logic (pricing, pay calc, validation, numbering); integration-test the route.
-10. Flag `manual_step: ef-migration` (schema) and `manual_step: nswag-regen` (DTO/endpoint) on the
-    ticket — you never run these.
+10. **Run** the EF migration regen (schema) and the NSwag regen (DTO/endpoint) yourself — nothing is
+    owner-only any more (ruling 2026-09-07, `CLAUDE.md` → "Manual steps — there are none left").
+    Do not write `manual_step:` on a ticket. Name every step you ran in the report.
 11. **Comment almost nothing** (`conventions.md` → "Comments — write almost none"). Default to no
     comment; let names carry the meaning. Comment ONLY genuinely non-obvious critical logic (a race the
     code defends against, an ordering/atomicity requirement, a fiscal/legal rule). Never write WHAT

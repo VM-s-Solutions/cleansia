@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Packages;
+using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
@@ -57,11 +58,17 @@ public class CatalogTranslationCompletenessValidatorTests
     private UpdateService.Command UpdateServiceCommand(Dictionary<string, CreateService.TranslationInput>? translations) =>
         new("service-1", "cat-1", "Windows", "Window cleaning", 100m, 10m, 30, translations);
 
+    // A package's translation carries the card's tagline as well, so it takes its own input
+    // type; the shared service one is projected onto it here rather than duplicating the cases.
+    private static Dictionary<string, PackageTranslationInput>? AsPackageTranslations(
+        Dictionary<string, CreateService.TranslationInput>? translations) =>
+        translations?.ToDictionary(t => t.Key, t => new PackageTranslationInput(t.Value.Name, t.Value.Description, null));
+
     private CreatePackage.Command PackageCommand(Dictionary<string, CreateService.TranslationInput>? translations) =>
-        new("Deep Clean", "Full home deep clean", 500m, null, translations);
+        new("Deep Clean", "Full home deep clean", null, false, 500m, null, AsPackageTranslations(translations));
 
     private UpdatePackage.Command UpdatePackageCommand(Dictionary<string, CreateService.TranslationInput>? translations) =>
-        new("package-1", "Deep Clean", "Full home deep clean", 500m, null, null, translations);
+        new("package-1", "Deep Clean", "Full home deep clean", null, false, 500m, null, null, AsPackageTranslations(translations));
 
     [Fact]
     public async Task CreateService_CoveringAllActiveLanguages_Passes_DespiteInactiveLanguage()

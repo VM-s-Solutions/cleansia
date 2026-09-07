@@ -42,7 +42,12 @@ export class CleansiaTelephoneComponent
   private phoneService = inject(CountryPhoneCodeService);
   private elementRef = inject(ElementRef);
 
-  floatVariant = input<'on' | 'in' | 'over'>('on');
+  /**
+   * `null` renders the label ABOVE the control instead of floating it into the
+   * border — the shape the approved customer design draws. The default stays
+   * 'on' so the partner and admin forms are untouched.
+   */
+  floatVariant = input<'on' | 'in' | 'over' | null>('on');
   id = input<string>(
     'cleansia-tel-' + Math.random().toString(36).substring(2)
   );

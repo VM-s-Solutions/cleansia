@@ -2,15 +2,14 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
-  CleansiaBrandNameComponent,
   CleansiaButtonComponent,
   CleansiaCodeInputComponent,
-  CleansiaDynamicBackgroundComponent,
   CleansiaTextInputComponent,
-  CleansiaTitleComponent,
 } from '@cleansia/components';
+import { FoamEdgeComponent } from '@cleansia-customer/home';
+import { CleansiaCustomerRoute } from '@cleansia/services';
 import { selectCustomerLoading } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -22,14 +21,13 @@ import { ConfirmEmailFacade } from './confirm-email.facade';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     TranslatePipe,
     ReactiveFormsModule,
-    CleansiaTitleComponent,
     CleansiaButtonComponent,
-    CleansiaBrandNameComponent,
     CleansiaCodeInputComponent,
-    CleansiaDynamicBackgroundComponent,
     CleansiaTextInputComponent,
+    FoamEdgeComponent,
   ],
   providers: [ConfirmEmailFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,6 +36,7 @@ export class ConfirmEmailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly store = inject(Store);
   protected readonly facade = inject(ConfirmEmailFacade);
+  protected readonly routes = CleansiaCustomerRoute;
 
   protected readonly loading = toSignal(this.store.select(selectCustomerLoading));
 

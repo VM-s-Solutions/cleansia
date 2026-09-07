@@ -9,7 +9,7 @@ namespace Cleansia.Core.Domain.Orders;
 /// apart: it exposes the reason only when <c>CancelledBy</c> is <c>System</c>, so the free-text case
 /// cannot leak by accident.</para>
 ///
-/// <para><b>Why a shared constant rather than a literal at each sweep.</b> Two sweeps write these
+/// <para><b>Why a shared constant rather than a literal at each sweep.</b> Three sweeps write these
 /// today and every client translates them, so the string is a cross-assembly contract. A typo in a
 /// literal would not fail anything — it would reach the customer as an untranslated key, which is
 /// exactly the failure this is cheapest to prevent.</para>
@@ -31,4 +31,16 @@ public static class OrderCancellationReasons
     /// lead-time cut-off.
     /// </summary>
     public const string RecurringNotConfirmed = "order.cancelled.recurring_not_confirmed";
+
+    /// <summary>
+    /// The booking reached its slot with nobody assigned to it. Nobody ever took the job, or everyone
+    /// who had taken it came off before the clean.
+    ///
+    /// <para><b>The one no-show the platform can prove.</b> Every other version of "the cleaner did not
+    /// arrive" rests on a missed tap, which is indistinguishable from a cleaner who turned up and forgot
+    /// to slide to start. Here there was nobody to tap: the seat was empty at the appointed time, on the
+    /// platform's own record. That is why this reason — and only this one — refunds automatically.
+    /// → <c>CancelUnfilledOrders</c></para>
+    /// </summary>
+    public const string NoCleanerAvailable = "order.cancelled.no_cleaner_available";
 }

@@ -5,6 +5,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -44,6 +45,7 @@ public class AdminLanguageController(IMediator mediator) : ApiController(mediato
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> CreateLanguage(
         [FromBody] CreateLanguage.Command command,
         CancellationToken cancellationToken)
@@ -59,6 +61,7 @@ public class AdminLanguageController(IMediator mediator) : ApiController(mediato
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> UpdateLanguage(
         string languageId,
         [FromBody] UpdateLanguage.Command command,
@@ -79,6 +82,7 @@ public class AdminLanguageController(IMediator mediator) : ApiController(mediato
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> DeleteLanguage(
         string languageId,
         CancellationToken cancellationToken)

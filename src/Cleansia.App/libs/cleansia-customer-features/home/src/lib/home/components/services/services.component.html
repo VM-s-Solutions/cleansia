@@ -1,63 +1,71 @@
+<!--
+  "Co u nás objednáte" — three cards and a chip rail.
+
+  The header is left-aligned with the catalogue link pulled to the right edge,
+  not a centred badge-and-subtitle stack: the section is a menu, and a menu
+  announces itself once and then lists.
+
+  The first three services become cards; everything after them becomes a chip.
+  That split is the design's, and it also means the section grows with the
+  catalogue instead of hardcoding which three are important.
+-->
 <section class="cl-section cl-section--services" id="services">
   <div class="cl-section__inner">
-    <div class="cl-section__header animate-on-scroll">
-      <span class="cl-section__badge">{{ 'pages.home.services.badge' | translate }}</span>
-      <h2 class="cl-title">{{ 'pages.home.services.title' | translate }}</h2>
-      <p class="cl-section__desc">{{ 'pages.home.services.subtitle' | translate }}</p>
+    <div class="cl-services__head animate-on-scroll">
+      <div>
+        <h2 class="cl-d2">{{ 'pages.home.services.title' | translate }}</h2>
+        <!--
+          The count is interpolated from the list this section renders, not
+          written into the copy. It read "eleven services" in five locales while
+          the catalogue served ten — a heading that counts its own list goes
+          stale the first time one is retired, silently and everywhere at once.
+        -->
+        <p class="cl-body cl-services__lead">
+          {{ 'pages.home.services.subtitle' | translate: { count: services().length } }}
+        </p>
+      </div>
+      <a class="cl-link" routerLink="/services">{{ 'pages.home.services.view_all' | translate }}</a>
     </div>
 
-    @if (services().length > 0) {
     <div class="cl-services">
-      @for (service of services(); track service.id; let idx = $index) { @if (idx < 3) {
-      <a [routerLink]="'/order'" [queryParams]="{ serviceId: service.id }" class="cl-services__card-link animate-on-scroll" [class]="'delay-' + (idx + 1)">
-        <div class="cl-services__card">
-          @if (idx === 0) {
-          <div class="cl-services__ribbon">{{ 'pages.services.most_popular' | translate }}</div>
-          }
-          <div class="cl-services__nav-arrow"><i class="pi pi-arrow-up-right"></i></div>
-          <div class="cl-services__icon"><i class="pi pi-sparkles"></i></div>
-          <div class="cl-services__name">{{ getTranslation(service, 'name') }}</div>
-          <div class="cl-services__price">{{ 'pages.services.from' | translate }} {{ formatPrice(service.basePrice) }}</div>
-          <div class="cl-services__desc">{{ getTranslation(service, 'description') }}</div>
+      @for (service of cardServices(); track service.id; let i = $index) {
+      <a class="cl-services__card cl-soft" [routerLink]="'/order'" [queryParams]="{ serviceId: service.id }">
+        <div class="cl-mascot-disc">
+          <img class="cl-mascot-icon" [src]="mascotTile(i)" alt="" width="340" height="280" loading="lazy" />
+        </div>
+        <h3 class="cl-h3 cl-services__name">{{ getTranslation(service, 'name') }}</h3>
+        <p class="cl-body cl-services__desc">{{ getTranslation(service, 'description') }}</p>
+        <div class="cl-num cl-services__price">
+          {{ 'pages.home.services.from' | translate }} {{ formatPrice(service.basePrice) }}
+        </div>
+      </a>
+      } @empty {
+      <!-- Catalogue not loaded: the same three shapes, so the section never
+           collapses to an empty band while the store is in flight. -->
+      @for (fallback of fallbackServices; track fallback.name; let i = $index) {
+      <a class="cl-services__card cl-soft" routerLink="/services">
+        <div class="cl-mascot-disc">
+          <img class="cl-mascot-icon" [src]="mascotTile(i)" alt="" width="340" height="280" loading="lazy" />
+        </div>
+        <h3 class="cl-h3 cl-services__name">{{ fallback.name | translate }}</h3>
+        <p class="cl-body cl-services__desc">{{ fallback.desc | translate }}</p>
+        <div class="cl-num cl-services__price">
+          {{ 'pages.home.services.from' | translate }} {{ formatPrice(fallback.price) }}
         </div>
       </a>
       } }
     </div>
-    } @else {
-    <div class="cl-services">
-      @for (fs of fallbackServices; track fs.name; let idx = $index) {
-      <a routerLink="/order" class="cl-services__card-link animate-on-scroll" [class]="'delay-' + (idx + 1)">
-        <div class="cl-services__card">
-          @if (fs.popular) {
-          <div class="cl-services__ribbon">{{ 'pages.services.most_popular' | translate }}</div>
-          }
-          <div class="cl-services__nav-arrow"><i class="pi pi-arrow-up-right"></i></div>
-          <div class="cl-services__icon"><i class="pi" [ngClass]="fs.icon"></i></div>
-          <div class="cl-services__name">{{ fs.name | translate }}</div>
-          <div class="cl-services__price">{{ 'pages.services.from' | translate }} {{ formatPrice(fs.price) }}</div>
-          <div class="cl-services__desc">{{ fs.desc | translate }}</div>
-        </div>
+
+    @if (chipServices().length > 0) {
+    <div class="cl-services__rail">
+      @for (service of chipServices(); track service.id) {
+      <a class="cl-chip" [routerLink]="'/order'" [queryParams]="{ serviceId: service.id }">
+        {{ getTranslation(service, 'name') }} ·
+        <span class="cl-num">&nbsp;{{ formatPrice(service.basePrice) }}</span>
       </a>
       }
+      <span class="cl-chip cl-chip--static cl-services__eco">{{ 'pages.home.services.eco_chip' | translate }}</span>
     </div>
     }
-
-    <div class="cl-services__teasers animate-on-scroll delay-4">
-      @for (extra of extraServices; track extra.name) {
-      <div class="cl-services__teaser">
-        <div class="cl-services__teaser-inner">
-          <div class="cl-services__icon"><i class="pi" [ngClass]="extra.icon"></i></div>
-          <div class="cl-services__name">{{ extra.name | translate }}</div>
-          <div class="cl-services__price">{{ 'pages.services.from' | translate }} {{ formatPrice(extra.price) }}</div>
-        </div>
-      </div>
-      }
-    </div>
-
-    <div class="cl-services__actions animate-on-scroll delay-5">
-      <a routerLink="/services" class="text-decoration-none">
-        <button pButton type="button" class="p-button-lg cl-btn-primary">{{ 'pages.home.services.view_all' | translate }}</button>
-      </a>
-    </div>
   </div>
 </section>

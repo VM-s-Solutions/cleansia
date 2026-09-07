@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging.Abstractions;
+using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.Refunds;
@@ -30,6 +31,10 @@ public class PartialRefundFeeRoundingTests
     private const string CountryId = "cz";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
+
+    // No extras on these fixtures' orders, so the allocation denominator is unchanged by
+    // them — but the handler reads the repository unconditionally, so it has to answer.
+    private readonly Mock<IExtraRepository> _extraRepository = new();
     private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<ICountryConfigurationRepository> _countryConfigurationRepository = new();
     private readonly RecordingRefundService _refundService = new();
@@ -47,6 +52,7 @@ public class PartialRefundFeeRoundingTests
         new(
             _orderRepository.Object,
             _refundRepository.Object,
+            _extraRepository.Object,
             _countryConfigurationRepository.Object,
             _refundService,
             _loyaltyService,

@@ -1,61 +1,102 @@
-<div class="customer-rewards customer-rewards--activity">
-  <div class="customer-rewards__hero">
-    <h1 class="customer-rewards__hero-title">
-      {{ 'pages.rewards.activity_title' | translate }}
-    </h1>
+<!--
+  Points history — the board's "Historie bodů". Every movement on the account,
+  positive for a completed clean or a referral, negative for a cancellation or a
+  partial refund. → /product/business-rules
+-->
+<div class="cl-rwd">
+  <div class="cl-rwd__hero">
+    <h1 class="cl-rwd__title">{{ 'pages.rewards.history_title' | translate }}</h1>
+    <p class="cl-rwd__lead">{{ 'pages.rewards.history_lead' | translate }}</p>
   </div>
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-page)'" />
+</div>
 
-  <div class="customer-rewards__actions-bar">
-    <cleansia-button
-      [title]="'global.actions.go_back' | translate"
-      [severity]="'secondary'"
-      [icon]="'pi pi-arrow-left'"
-      [iconPosition]="'left'"
-      (clickFn)="back()"
-    />
-  </div>
-
-  @if (facade.activityLoading()) {
-    <div class="flex flex-column gap-2">
-      @for (i of [1,2,3,4,5,6]; track i) {
-        <p-skeleton width="100%" height="3rem" borderRadius="12px" />
+<div class="cl-rwd__body">
+  <div class="cl-rwd__page">
+    <div class="cl-rwd__bar">
+      <div class="cl-rwd__filters" role="tablist">
+        @for (filter of filters; track filter) {
+        <button
+          type="button"
+          role="tab"
+          class="cl-rwd__chip"
+          [class.cl-rwd__chip--on]="activeFilter() === filter"
+          [attr.aria-selected]="activeFilter() === filter"
+          (click)="selectFilter(filter)"
+        >
+          {{ 'pages.rewards.filter_' + filter | translate }}
+        </button>
+        }
+      </div>
+      @if (facade.account(); as acc) {
+      <span class="cl-rwd__balance-inline">
+        {{ 'pages.rewards.balance_of' | translate: { count: acc.lifetimePoints } }}
+      </span>
       }
     </div>
-  } @else if (facade.activityList().length === 0) {
-    <div class="customer-rewards__empty">
-      <i class="pi pi-inbox"></i>
-      <p>{{ 'pages.rewards.empty_activity' | translate }}</p>
+
+    @if (facade.activityLoading() && facade.activityList().length === 0) {
+    <div class="cl-rwd__card">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+      <p-skeleton width="100%" height="3rem" borderRadius="12px" styleClass="mb-2" />
+      }
     </div>
-  } @else {
-    <ul class="customer-rewards__activity-list">
-      @for (item of facade.activityList(); track $index) {
-        <li class="customer-rewards__activity-row">
+    } @else if (visibleActivity().length === 0) {
+    <div class="cl-rwd__card cl-rwd__empty">
+      <i class="pi pi-inbox"></i>
+      <p>
+        {{
+          (activeFilter() === 'all'
+            ? 'pages.rewards.empty_activity'
+            : 'pages.rewards.empty_filter'
+          ) | translate
+        }}
+      </p>
+    </div>
+    } @else {
+
+    <!--
+      Grouped by year, as the board draws it. A points account outlives a
+      calendar and a bare run of dates stops telling you which December.
+    -->
+    <div class="cl-rwd__card">
+      @for (group of groupedActivity(); track group.year) {
+      <h2 class="cl-rwd__year">{{ 'pages.rewards.year' | translate: { year: group.year } }}</h2>
+      <ul class="cl-rwd__moves">
+        @for (item of group.items; track $index) {
+        <li class="cl-rwd__move">
           <span
-            class="customer-rewards__activity-points"
-            [class.customer-rewards__activity-points--positive]="item.points > 0"
-            [class.customer-rewards__activity-points--negative]="item.points < 0"
+            class="cl-rwd__move-points cl-num"
+            [class.cl-rwd__move-points--minus]="item.points < 0"
           >
             {{ signedPoints(item.points) }}
           </span>
-          @if (txLabel(item); as tx) {
-            <span class="customer-rewards__activity-text">
-              {{ tx.key | translate: tx.params }}
-            </span>
-          }
-          <span class="customer-rewards__activity-date">{{ formatDate(item.occurredOn) }}</span>
+          <span class="cl-rwd__move-text">
+            @if (txLabel(item); as tx) {
+            <span class="cl-rwd__move-name">{{ tx.key | translate: tx.params }}</span>
+            }
+            @if (item.orderDisplayNumber) {
+            <span class="cl-rwd__move-order">{{ item.orderDisplayNumber }}</span>
+            }
+          </span>
+          <span class="cl-rwd__move-date">{{ formatDate(item.occurredOn) }}</span>
         </li>
+        }
+      </ul>
       }
-    </ul>
 
-    @if (facade.totalActivity() > rows) {
-      <p-paginator
-        class="mt-4"
-        [first]="first"
-        [rows]="rows"
-        [totalRecords]="facade.totalActivity()"
-        [rowsPerPageOptions]="[10, 20, 50]"
-        (onPageChange)="onPageChange($event)"
-      />
+      @if (facade.activityList().length < facade.totalActivity()) {
+      <div class="cl-rwd__more">
+        <cleansia-button
+          [title]="'pages.rewards.load_older' | translate"
+          [severity]="'secondary'"
+          [outlined]="true"
+          [loading]="facade.loadingMore()"
+          (clickFn)="loadOlder()"
+        />
+      </div>
+      }
+    </div>
     }
-  }
+  </div>
 </div>

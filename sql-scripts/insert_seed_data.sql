@@ -677,51 +677,59 @@ VALUES
 INSERT INTO public."Packages" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "Name", "Description", "Price", "Translations"
+  "DeactivatedOn", "Name", "Description", "Tagline", "IsPopular", "Price", "Translations"
 )
 VALUES
   -- Basic Packages
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Essential Clean', 'Perfect for regular maintenance cleaning of your home',
+   'For a well-kept home', false,
    799.00,
-   '{"en":{"Name":"Essential Clean","Description":"Perfect for regular maintenance cleaning of your home"},"cs":{"Name":"Základní úklid","Description":"Ideální pro pravidelný udržovací úklid vašeho domova"},"sk":{"Name":"Základné upratovanie","Description":"Ideálne pre pravidelné udržiavacie upratovanie vášho domova"},"uk":{"Name":"Основне прибирання","Description":"Ідеально для регулярного підтримуючого прибирання вашого дому"},"ru":{"Name":"Основная уборка","Description":"Идеально для регулярной поддерживающей уборки вашего дома"}}'),
+   '{"en":{"Name":"Essential Clean","Description":"Perfect for regular maintenance cleaning of your home","Tagline":"For a well-kept home"},"cs":{"Name":"Základní úklid","Description":"Ideální pro pravidelný udržovací úklid vašeho domova","Tagline":"Pro udržovaný byt"},"sk":{"Name":"Základné upratovanie","Description":"Ideálne pre pravidelné udržiavacie upratovanie vášho domova","Tagline":"Pre udržiavaný byt"},"uk":{"Name":"Основне прибирання","Description":"Ідеально для регулярного підтримуючого прибирання вашого дому","Tagline":"Для доглянутої оселі"},"ru":{"Name":"Основная уборка","Description":"Идеально для регулярной поддерживающей уборки вашего дома","Tagline":"Для ухоженного дома"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Complete Home Clean', 'Comprehensive cleaning package for the entire home',
+   'Most common choice', true,
    1299.00,
-   '{"en":{"Name":"Complete Home Clean","Description":"Comprehensive cleaning package for the entire home"},"cs":{"Name":"Kompletní úklid domova","Description":"Komplexní úklidový balíček pro celý domov"},"sk":{"Name":"Kompletné upratovanie domova","Description":"Komplexný upratovací balík pre celý domov"},"uk":{"Name":"Повне прибирання дому","Description":"Комплексний пакет прибирання для всього дому"},"ru":{"Name":"Полная уборка дома","Description":"Комплексный пакет уборки для всего дома"}}'),
+   '{"en":{"Name":"Complete Home Clean","Description":"Comprehensive cleaning package for the entire home","Tagline":"Most common choice"},"cs":{"Name":"Kompletní úklid domova","Description":"Komplexní úklidový balíček pro celý domov","Tagline":"Nejčastější volba"},"sk":{"Name":"Kompletné upratovanie domova","Description":"Komplexný upratovací balík pre celý domov","Tagline":"Najčastejšia voľba"},"uk":{"Name":"Повне прибирання дому","Description":"Комплексний пакет прибирання для всього дому","Tagline":"Найчастіший вибір"},"ru":{"Name":"Полная уборка дома","Description":"Комплексный пакет уборки для всего дома","Tagline":"Самый частый выбор"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Deep Clean Premium', 'Intensive deep cleaning for thoroughly clean spaces',
+   'When it must be spotless', false,
    1799.00,
-   '{"en":{"Name":"Deep Clean Premium","Description":"Intensive deep cleaning for thoroughly clean spaces"},"cs":{"Name":"Prémiový hloubkový úklid","Description":"Intenzivní hloubkový úklid pro dokonale čisté prostory"},"sk":{"Name":"Prémiové hĺbkové upratovanie","Description":"Intenzívne hĺbkové upratovanie pre dokonale čisté priestory"},"uk":{"Name":"Преміум глибоке прибирання","Description":"Інтенсивне глибоке прибирання для ідеально чистих приміщень"},"ru":{"Name":"Премиум глубокая уборка","Description":"Интенсивная глубокая уборка для идеально чистых помещений"}}'),
+   '{"en":{"Name":"Deep Clean Premium","Description":"Intensive deep cleaning for thoroughly clean spaces","Tagline":"When it must be spotless"},"cs":{"Name":"Prémiový hloubkový úklid","Description":"Intenzivní hloubkový úklid pro dokonale čisté prostory","Tagline":"Když musí být dokonale"},"sk":{"Name":"Prémiové hĺbkové upratovanie","Description":"Intenzívne hĺbkové upratovanie pre dokonale čisté priestory","Tagline":"Keď musí byť dokonale"},"uk":{"Name":"Преміум глибоке прибирання","Description":"Інтенсивне глибоке прибирання для ідеально чистих приміщень","Tagline":"Коли має бути бездоганно"},"ru":{"Name":"Премиум глубокая уборка","Description":"Интенсивная глубокая уборка для идеально чистых помещений","Tagline":"Когда должно быть безупречно"}}'),
 
   -- Specialized Packages
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Kitchen & Bathroom Focus', 'Specialized package focusing on kitchen and bathroom deep cleaning',
+   'The two hardest rooms', false,
    999.00,
-   '{"en":{"Name":"Kitchen & Bathroom Focus","Description":"Specialized package focusing on kitchen and bathroom deep cleaning"},"cs":{"Name":"Zaměření na kuchyň a koupelnu","Description":"Specializovaný balíček zaměřený na hloubkový úklid kuchyně a koupelny"},"sk":{"Name":"Zameranie na kuchyňu a kúpeľňu","Description":"Špecializovaný balík zameraný na hĺbkové upratovanie kuchyne a kúpeľne"},"uk":{"Name":"Фокус на кухню та ванну","Description":"Спеціалізований пакет з акцентом на глибоке прибирання кухні та ванної"},"ru":{"Name":"Фокус на кухню и ванную","Description":"Специализированный пакет с акцентом на глубокую уборку кухни и ванной"}}'),
+   '{"en":{"Name":"Kitchen & Bathroom Focus","Description":"Specialized package focusing on kitchen and bathroom deep cleaning","Tagline":"The two hardest rooms"},"cs":{"Name":"Zaměření na kuchyň a koupelnu","Description":"Specializovaný balíček zaměřený na hloubkový úklid kuchyně a koupelny","Tagline":"Dvě nejnáročnější místnosti"},"sk":{"Name":"Zameranie na kuchyňu a kúpeľňu","Description":"Špecializovaný balík zameraný na hĺbkové upratovanie kuchyne a kúpeľne","Tagline":"Dve najnáročnejšie miestnosti"},"uk":{"Name":"Фокус на кухню та ванну","Description":"Спеціалізований пакет з акцентом на глибоке прибирання кухні та ванної","Tagline":"Дві найскладніші кімнати"},"ru":{"Name":"Фокус на кухню и ванную","Description":"Специализированный пакет с акцентом на глубокую уборку кухни и ванной","Tagline":"Две самые сложные комнаты"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Eco-Green Package', 'Complete eco-friendly cleaning using only green products',
+   'Green products only', false,
    1499.00,
-   '{"en":{"Name":"Eco-Green Package","Description":"Complete eco-friendly cleaning using only green products"},"cs":{"Name":"Eko-zelený balíček","Description":"Kompletní ekologický úklid používající pouze zelené produkty"},"sk":{"Name":"Eko-zelený balík","Description":"Kompletné ekologické upratovanie používajúce iba zelené produkty"},"uk":{"Name":"Еко-зелений пакет","Description":"Повне екологічне прибирання з використанням лише зелених продуктів"},"ru":{"Name":"Эко-зеленый пакет","Description":"Полная экологическая уборка с использованием только зеленых продуктов"}}'),
+   '{"en":{"Name":"Eco-Green Package","Description":"Complete eco-friendly cleaning using only green products","Tagline":"Green products only"},"cs":{"Name":"Eko-zelený balíček","Description":"Kompletní ekologický úklid používající pouze zelené produkty","Tagline":"Jen zelené prostředky"},"sk":{"Name":"Eko-zelený balík","Description":"Kompletné ekologické upratovanie používajúce iba zelené produkty","Tagline":"Len zelené prostriedky"},"uk":{"Name":"Еко-зелений пакет","Description":"Повне екологічне прибирання з використанням лише зелених продуктів","Tagline":"Лише зелені засоби"},"ru":{"Name":"Эко-зеленый пакет","Description":"Полная экологическая уборка с использованием только зеленых продуктов","Tagline":"Только зелёные средства"}}'),
 
   -- Premium Packages
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Moving Day Special', 'Perfect for move-in or move-out situations',
+   'Handover day', false,
    2299.00,
-   '{"en":{"Name":"Moving Day Special","Description":"Perfect for move-in or move-out situations"},"cs":{"Name":"Speciál pro den stěhování","Description":"Ideální pro situace nastěhování nebo vystěhování"},"sk":{"Name":"Špeciál pre deň sťahovania","Description":"Ideálne pre situácie nasťahovania alebo vysťahovania"},"uk":{"Name":"Спеціальний пакет для переїзду","Description":"Ідеально для ситуацій в''їзду або виїзду"},"ru":{"Name":"Специальный пакет для переезда","Description":"Идеально для ситуаций въезда или выезда"}}'),
+   '{"en":{"Name":"Moving Day Special","Description":"Perfect for move-in or move-out situations","Tagline":"Handover day"},"cs":{"Name":"Speciál pro den stěhování","Description":"Ideální pro situace nastěhování nebo vystěhování","Tagline":"Předání bytu"},"sk":{"Name":"Špeciál pre deň sťahovania","Description":"Ideálne pre situácie nasťahovania alebo vysťahovania","Tagline":"Odovzdanie bytu"},"uk":{"Name":"Спеціальний пакет для переїзду","Description":"Ідеально для ситуацій в''''їзду або виїзду","Tagline":"Передача квартири"},"ru":{"Name":"Специальный пакет для переезда","Description":"Идеально для ситуаций въезда или выезда","Tagline":"Передача квартиры"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Post-Renovation Clean', 'Specialized cleaning after construction or renovation work',
+   'After the builders', false,
    2799.00,
-   '{"en":{"Name":"Post-Renovation Clean","Description":"Specialized cleaning after construction or renovation work"},"cs":{"Name":"Úklid po rekonstrukci","Description":"Specializovaný úklid po stavebních nebo rekonstrukčních pracích"},"sk":{"Name":"Upratovanie po rekonštrukcii","Description":"Špecializované upratovanie po stavebných alebo rekonštrukčných prácach"},"uk":{"Name":"Прибирання після ремонту","Description":"Спеціалізоване прибирання після будівельних або ремонтних робіт"},"ru":{"Name":"Уборка после ремонта","Description":"Специализированная уборка после строительных или ремонтных работ"}}'),
+   '{"en":{"Name":"Post-Renovation Clean","Description":"Specialized cleaning after construction or renovation work","Tagline":"After the builders"},"cs":{"Name":"Úklid po rekonstrukci","Description":"Specializovaný úklid po stavebních nebo rekonstrukčních pracích","Tagline":"Po řemeslnících"},"sk":{"Name":"Upratovanie po rekonštrukcii","Description":"Špecializované upratovanie po stavebných alebo rekonštrukčných prácach","Tagline":"Po remeselníkoch"},"uk":{"Name":"Прибирання після ремонту","Description":"Спеціалізоване прибирання після будівельних або ремонтних робіт","Tagline":"Після будівельників"},"ru":{"Name":"Уборка после ремонта","Description":"Специализированная уборка после строительных или ремонтных работ","Tagline":"После строителей"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Luxury Full Service', 'Premium package with all services included',
+   'Everything, included', false,
    3499.00,
-   '{"en":{"Name":"Luxury Full Service","Description":"Premium package with all services included"},"cs":{"Name":"Luxusní kompletní služba","Description":"Prémiový balíček se všemi zahrnutými službami"},"sk":{"Name":"Luxusná kompletná služba","Description":"Prémiový balík so všetkými zahrnutými službami"},"uk":{"Name":"Розкішний повний сервіс","Description":"Преміум пакет з усіма включеними послугами"},"ru":{"Name":"Роскошный полный сервис","Description":"Премиум пакет со всеми включенными услугами"}}');
+   '{"en":{"Name":"Luxury Full Service","Description":"Premium package with all services included","Tagline":"Everything, included"},"cs":{"Name":"Luxusní kompletní služba","Description":"Prémiový balíček se všemi zahrnutými službami","Tagline":"Vše v jednom"},"sk":{"Name":"Luxusná kompletná služba","Description":"Prémiový balík so všetkými zahrnutými službami","Tagline":"Všetko v jednom"},"uk":{"Name":"Розкішний повний сервіс","Description":"Преміум пакет з усіма включеними послугами","Tagline":"Все в одному"},"ru":{"Name":"Роскошный полный сервис","Description":"Премиум пакет со всеми включенными услугами","Tagline":"Всё в одному"}}');
 
 -- 9. EMPLOYEE PAY CONFIGS
 -- Every catalogue entry gets the PLATFORM-WIDE row (EmployeeId NULL). This is not optional data: an
@@ -1789,6 +1797,97 @@ SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NUL
     1,
     2, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY' AND "TenantId" IS NULL);
+
+-- ============================================================================
+-- PropertySizePresets — the per-country size ladder.
+--
+-- The label is the only country-specific part: an order stores Rooms and
+-- Bathrooms as integers and OrderPricingCalculator prices on those, so nothing
+-- persists "3+kk" and a new market is a new list over the same two numbers.
+-- Because the order never references a preset, retiring one cannot make a
+-- historic order unpriceable.  -> /decisions/adr-0056
+-- ============================================================================
+
+INSERT INTO public."PropertySizePresets" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "CountryId", "Code", "SortOrder", "Rooms", "Bathrooms", "Translations"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL,
+       (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = c.iso LIMIT 1),
+       p.code, p.sort_order, p.rooms, p.bathrooms, p.translations::jsonb
+FROM (VALUES ('CZE'), ('SVK')) AS c(iso)
+CROSS JOIN (VALUES
+  ('1KK',   1, 1, 1, '{"en":{"Name":"1 room","Description":""},"cs":{"Name":"1+kk","Description":""},"sk":{"Name":"1+kk","Description":""},"uk":{"Name":"1 кімната","Description":""},"ru":{"Name":"1 комната","Description":""}}'),
+  ('2KK',   2, 2, 1, '{"en":{"Name":"2 rooms","Description":""},"cs":{"Name":"2+kk","Description":""},"sk":{"Name":"2+kk","Description":""},"uk":{"Name":"2 кімнати","Description":""},"ru":{"Name":"2 комнаты","Description":""}}'),
+  ('3KK',   3, 3, 1, '{"en":{"Name":"3 rooms","Description":""},"cs":{"Name":"3+kk","Description":""},"sk":{"Name":"3+kk","Description":""},"uk":{"Name":"3 кімнати","Description":""},"ru":{"Name":"3 комнаты","Description":""}}'),
+  ('4KK',   4, 4, 2, '{"en":{"Name":"4 rooms","Description":""},"cs":{"Name":"4+kk","Description":""},"sk":{"Name":"4+kk","Description":""},"uk":{"Name":"4 кімнати","Description":""},"ru":{"Name":"4 комнаты","Description":""}}'),
+  ('HOUSE', 5, 5, 2, '{"en":{"Name":"House","Description":""},"cs":{"Name":"Dům","Description":""},"sk":{"Name":"Dom","Description":""},"uk":{"Name":"Будинок","Description":""},"ru":{"Name":"Дом","Description":""}}')
+) AS p(code, sort_order, rooms, bathrooms, translations)
+WHERE EXISTS (SELECT 1 FROM public."Countries" WHERE "IsoCode" = c.iso)
+  AND NOT EXISTS (
+    SELECT 1 FROM public."PropertySizePresets" ps
+    WHERE ps."Code" = c.iso || '_' || p.code
+  );
+
+-- Codes carry their market so they stay unique and readable in an admin list.
+UPDATE public."PropertySizePresets" ps
+SET "Code" = co."IsoCode" || '_' || ps."Code"
+FROM public."Countries" co
+WHERE ps."CountryId" = co."Id" AND ps."Code" NOT LIKE '%\_%';
+
+
+-- ============================================================
+-- DEVELOPMENT ADMINISTRATOR
+-- ============================================================
+-- Replaces the three manual steps a fresh database used to cost: register through the customer
+-- app, confirm the email, then run set-admin-role.sql to flip Profile to 100. A dev database is
+-- dropped often enough that those three steps were being paid over and over.
+--
+--     admin@cleansia.local  /  Admin123!
+--
+-- WHY THIS IS NOT A PRODUCTION HOLE. This file is read from exactly one place —
+-- CleansiaStartupBase.SeedDevelopmentData — and only inside `if (environment.IsDevelopment())`,
+-- and only when the Languages table comes back empty. It cannot execute against a deployed
+-- environment: deployed hosts apply the EF migration bundle from CI and never call the seeder. The
+-- address is deliberately `.local`, a reserved suffix that cannot resolve to a real mailbox, so
+-- this account can never be confused for a real one or receive real mail.
+--
+-- WHY THE HASH IS A LITERAL. Password is stored as v2$ + base64(salt[16] ‖
+-- PBKDF2-SHA256(password, salt, 600000, 32)) — see PasswordExtensions.HashAndSaltPassword. Postgres
+-- cannot produce that here: pgcrypto is unavailable by design (Azure blocks it unless allow-listed,
+-- which is why generate_ulid() above uses md5(random()) for its bytes), and there is no core
+-- PBKDF2. So the hash is precomputed. SeededAdminCredentialsTests runs this exact literal through
+-- the real VerifyPassword, so a change to the hashing parameters fails a test instead of silently
+-- locking the seeded admin out.
+--
+-- Profile 100 = Administrator, AuthenticationType 1 = Internal (email + password, not Google/Apple).
+-- TenantId NULL is the single-tenant default; IX_Users_TenantId_Email is NULLS NOT DISTINCT, so the
+-- guard below really does prevent a duplicate rather than merely appearing to.
+--
+-- THE GUARD IS "NO USERS AT ALL", not "this email is free". That is deliberate. The app's seeder can
+-- only run in Development, and execute-sql.yml now refuses this file against PRO — but a fixture
+-- that mints an administrator should not depend solely on the callers being careful. An empty
+-- Users table is something only a brand-new database has; any environment with a single real
+-- account in it, for any reason, silently skips this insert instead of gaining an account whose
+-- password is published in README.md. It stays idempotent either way: run it twice and the second
+-- run is a no-op.
+INSERT INTO public."Users" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "Email", "Password", "FirstName", "LastName",
+  "Profile", "AuthenticationType", "IsEmailConfirmed",
+  "FailedLoginAttempts", "ConfirmationCodeAttempts", "ResetPasswordCodeAttempts",
+  "PreferredLanguageCode", "TenantId"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP,
+       'admin@cleansia.local',
+       'v2$qZh8Ie/E1KhtIu0D3H9/nYe8kBsd96nMjcmoUiAbE8to1ifT7R6D4ZQ2yoe6tCyW',
+       'Dev', 'Administrator',
+       100, 1, true,
+       0, 0, 0,
+       'en', NULL
+WHERE NOT EXISTS (SELECT 1 FROM public."Users");
 
 -- Constraints are checked at COMMIT when using SET CONSTRAINTS ALL DEFERRED
 

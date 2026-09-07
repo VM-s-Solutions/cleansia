@@ -1,316 +1,421 @@
-<div class="customer-disputes">
-  <div class="customer-disputes__hero">
-    <h1 class="customer-disputes__hero-title">
-      {{ 'pages.disputes.hero_title' | translate }}
+<!--
+  Disputes — three states on one page, as the "Reklamace" board draws them:
+  the list beside the thread, the new-dispute form, and the empty answer.
+
+  It was a PrimeNG table with two modal dialogs over it. A support conversation
+  is the page's content, not something you open and dismiss.
+-->
+<div class="cl-dsp">
+  <div class="cl-dsp__hero">
+    <h1 class="cl-dsp__title">
+      {{
+        (mode() === 'new' ? 'pages.disputes.create_new' : 'pages.disputes.hero_title')
+          | translate
+      }}
     </h1>
-    <p class="customer-disputes__hero-subtitle">
-      {{ 'pages.disputes.hero_subtitle' | translate }}
+    <p class="cl-dsp__lead">
+      {{
+        (mode() === 'new'
+          ? 'pages.disputes.new_lead'
+          : disputes().length === 0 && !loading()
+            ? 'pages.disputes.empty_lead'
+            : 'pages.disputes.hero_subtitle'
+        ) | translate
+      }}
     </p>
   </div>
+  <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-page)'" />
+</div>
 
-  <div class="customer-disputes__actions-bar">
-    <cleansia-select
-      class="customer-disputes__status-filter"
-      [formControl]="statusFilterControl"
-      [options]="statusFilterOptions"
-      [placeholder]="'pages.disputes.filter_status' | translate"
-      [showClear]="true"
-      [appendTo]="'body'"
-      (valueChanges)="onStatusFilterChange($event)"
-    />
-    <cleansia-button
-      [title]="'pages.disputes.create_new' | translate"
-      [severity]="'primary'"
-      [style]="'raised-button'"
-      [icon]="'pi pi-plus'"
-      [iconPosition]="'left'"
-      (clickFn)="showCreateDialog.set(true)"
-    />
-  </div>
+<div class="cl-dsp__body">
+  @if (mode() === 'new') {
+  <!-- ========================== NEW DISPUTE ========================== -->
+  <div class="cl-dsp__ask">
+    <form class="cl-dsp__panel cl-dsp__form" [formGroup]="createForm">
+      <cleansia-select
+        [floatVariant]="null"
+        [label]="'pages.disputes.order_id' | translate"
+        formControlName="orderId"
+        [options]="orderOptions()"
+        [filter]="true"
+        [required]="true"
+        [appendTo]="'body'"
+        [placeholder]="'pages.disputes.select_order' | translate"
+      />
 
-  @if (loading() && disputes().length === 0) {
-  <div class="customer-disputes__skeleton flex flex-column gap-3">
-    @for (i of [1, 2, 3]; track i) {
-    <p-skeleton width="100%" height="4rem" borderRadius="16px" />
-    }
-  </div>
-  } @else if (!loading() && disputes().length === 0) {
-  <div class="customer-disputes__empty">
-    <div class="customer-disputes__empty-icon">
-      <i class="pi pi-check-circle"></i>
-    </div>
-    <h3 class="customer-disputes__empty-title">
-      {{ 'pages.disputes.no_disputes' | translate }}
-    </h3>
-    <p class="customer-disputes__empty-text">
-      {{ 'pages.disputes.empty_description' | translate }}
-    </p>
-
-    <div class="customer-disputes__empty-faq">
-      <strong>{{ 'pages.disputes.empty_faq_title' | translate }}</strong>
-      <p>{{ 'pages.disputes.empty_faq_items' | translate }}</p>
-    </div>
-
-    <div class="customer-disputes__empty-response">
-      <i class="pi pi-clock"></i>
-      {{ 'pages.disputes.empty_response_time' | translate }}
-    </div>
-  </div>
-  } @else {
-  <cleansia-table
-    class="customer-disputes__table"
-    [data]="disputes()"
-    [columns]="columns"
-    [actions]="actions"
-    [config]="{
-      lazy: true,
-      paginator: true,
-      rows: rows,
-      totalRecords: totalRecords(),
-      emptyMessage: 'pages.disputes.no_disputes'
-    }"
-    [loading]="loading()"
-    [clickableRows]="true"
-    (rowClick)="openDetail($event)"
-    (pageChange)="onPageChange($event)"
-  />
-  }
-
-  <ng-template #orderCell let-row>
-    <span class="customer-disputes__cell-order">#{{ row.displayOrderNumber }}</span>
-    @if (isUnread(row)) {
-    <span class="customer-disputes__cell-unread">
-      <i class="pi pi-comment"></i>
-      {{ 'pages.disputes.new_reply' | translate }}
-    </span>
-    }
-  </ng-template>
-
-  <ng-template #reasonCell let-row>
-    {{ reasonLabel(row.reason) }}
-  </ng-template>
-
-  <ng-template #statusCell let-row>
-    <p-tag
-      [value]="statusLabel(row.status)"
-      [severity]="getStatusSeverity(row.status)"
-      styleClass="text-xs"
-    />
-  </ng-template>
-
-  <ng-template #createdCell let-row>
-    {{ formatDate(row.createdOn) }}
-  </ng-template>
-
-  <p-dialog
-    [header]="'pages.disputes.create_title' | translate"
-    [(visible)]="showCreateDialog"
-    [modal]="true"
-    [style]="{ width: '500px' }"
-    [breakpoints]="{ '600px': '95vw' }"
-    styleClass="cleansia-dialog"
-  >
-    <form [formGroup]="createForm" class="customer-disputes__create-form">
-      <div class="customer-disputes__field">
-        <cleansia-select
-          [label]="'pages.disputes.order_id' | translate"
-          formControlName="orderId"
-          [options]="orderOptions()"
-          [filter]="true"
-          [required]="true"
-          [appendTo]="'body'"
-          [placeholder]="'pages.disputes.select_order' | translate"
-        />
+      <!--
+        Chips, not a select. Seven reasons is a set you read at a glance, and
+        the one you want is usually the first one you see. Chargeback is
+        deliberately absent: that is a bank pulling money back, not something a
+        customer files. -> DisputeReason
+      -->
+      <div class="cl-dsp__field">
+        <span class="cl-dsp__label">{{ 'pages.disputes.what_happened' | translate }}</span>
+        <div class="cl-dsp__reasons">
+          @for (option of reasonOptions; track option.value) {
+          <button
+            type="button"
+            class="cl-dsp__reason"
+            [class.cl-dsp__reason--on]="pickedReason() === option.value"
+            [attr.aria-pressed]="pickedReason() === option.value"
+            (click)="pickReason($any(option.value))"
+          >
+            {{ option.label }}
+          </button>
+          }
+        </div>
       </div>
-      <div class="customer-disputes__field">
-        <cleansia-select
-          [label]="'pages.disputes.reason' | translate"
-          formControlName="reason"
-          [options]="reasonOptions"
-          [required]="true"
-          [showClear]="false"
-          [appendTo]="'body'"
-        />
+
+      <!--
+        WHICH PARTS WENT WRONG. Appears only once an order is picked and only if that order had items
+        to point at — an empty box under a select the customer has not touched yet is noise.
+
+        Checkboxes rather than chips: unlike the reason above, this is a MULTI-select, and a row of
+        pressed-looking chips reads as "pick one". Optional throughout — a dispute about the whole job
+        names nothing, which is the common case and must stay the path of least resistance.
+      -->
+      @if (disputeLineOptions().length > 0) {
+      <div class="cl-dsp__field cl-dsp__lines">
+        <span class="cl-dsp__label">{{ 'pages.disputes.which_items' | translate }}</span>
+        <p class="cl-dsp__hint">{{ 'pages.disputes.which_items_hint' | translate }}</p>
+        <div class="cl-dsp__line-list">
+          @for (option of disputeLineOptions(); track option.key) {
+          <label class="cl-dsp__line" [class.cl-dsp__line--on]="isLinePicked(option)">
+            <input
+              type="checkbox"
+              class="cl-dsp__line-box"
+              [checked]="isLinePicked(option)"
+              (change)="toggleLine(option)"
+            />
+            <span class="cl-dsp__line-text">
+              <span class="cl-dsp__line-name">{{ option.label }}</span>
+              @if (option.packageLabel) {
+              <span class="cl-dsp__line-pkg">{{
+                'pages.disputes.item_in_package' | translate: { package: option.packageLabel }
+              }}</span>
+              }
+            </span>
+          </label>
+          }
+        </div>
       </div>
-      <div class="customer-disputes__field">
+      }
+
+      <div class="cl-dsp__field">
         <cleansia-textarea
-          [label]="'pages.disputes.description' | translate"
+          [floatVariant]="null"
+          [label]="'pages.disputes.describe_it' | translate"
           formControlName="description"
-          [rows]="4"
+          [rows]="5"
           [required]="true"
+          [placeholder]="'pages.disputes.describe_placeholder' | translate"
         />
         @if (createForm.controls.description.value) {
-        <small class="customer-disputes__field-count">
+        <small class="cl-dsp__count">
           {{ createForm.controls.description.value.length }} / {{ descriptionMaxLength }}
         </small>
         }
       </div>
-    </form>
-    <ng-template #footer>
-      <cleansia-button
-        [title]="'global.actions.cancel' | translate"
-        [severity]="'secondary'"
-        (clickFn)="showCreateDialog.set(false)"
-      />
-      <cleansia-button
-        [title]="'pages.disputes.submit' | translate"
-        [severity]="'primary'"
-        [loading]="facade.creatingDispute()"
-        [disabled]="createForm.invalid"
-        (clickFn)="createDispute()"
-      />
-    </ng-template>
-  </p-dialog>
 
-  <p-dialog
-    [header]="disputeDetail()?.displayOrderNumber ? ('pages.disputes.title' | translate) + ' - #' + disputeDetail()?.displayOrderNumber : ('pages.disputes.title' | translate)"
-    [(visible)]="showDetailDialog"
-    [modal]="true"
-    [style]="{ width: '600px' }"
-    [breakpoints]="{ '700px': '95vw' }"
-    styleClass="cleansia-dialog"
-  >
-    @if (detailLoading()) {
-    <div class="flex flex-column gap-3 p-3">
-      <p-skeleton width="100%" height="2rem" />
-      <p-skeleton width="80%" height="1.5rem" />
-      <p-skeleton width="100%" height="8rem" />
+      <!--
+        Photos are optional and say so. A picture of what is wrong settles most
+        of these threads in one round rather than three.
+      -->
+      <div class="cl-dsp__field cl-dsp__attach">
+        <span class="cl-dsp__label">{{ 'pages.disputes.attach_title' | translate }}</span>
+        <cleansia-file
+          [formControl]="evidenceControl"
+          [compact]="true"
+          [hint]="'pages.disputes.attach_note' | translate"
+          [multiple]="true"
+          [accept]="evidenceAccept"
+          [maxFileSize]="evidenceMaxFileSize"
+        />
+      </div>
+
+      <div class="cl-dsp__form-actions">
+        <cleansia-button
+          [title]="'pages.disputes.submit' | translate"
+          [severity]="'primary'"
+          [style]="'raised-button'"
+          [loading]="facade.creatingDispute()"
+          [disabled]="createForm.invalid"
+          (clickFn)="createDispute()"
+        />
+        <button type="button" class="cl-dsp__link" (click)="cancelNew()">
+          {{ 'global.actions.back' | translate }}
+        </button>
+      </div>
+    </form>
+
+    <p class="cl-dsp__promise">
+      <i class="pi pi-shield"></i>
+      <span>{{ 'pages.disputes.human_promise' | translate }}</span>
+    </p>
+  </div>
+  } @else if (loading() && disputes().length === 0) {
+
+  <div class="cl-dsp__grid">
+    <p-skeleton width="100%" height="18rem" borderRadius="28px" />
+    <p-skeleton width="100%" height="24rem" borderRadius="28px" />
+  </div>
+  } @else if (disputes().length === 0) {
+
+  <!-- ============================ NOTHING YET ============================ -->
+  <div class="cl-dsp__none">
+    <div class="cl-dsp__none-card">
+      <img
+        class="cl-dsp__none-art"
+        src="assets/images/mascot/mascot-idea-tile.webp"
+        alt=""
+        width="380"
+        height="380"
+        aria-hidden="true"
+      />
+      <div>
+        <h2 class="cl-dsp__none-title">{{ 'pages.disputes.none_title' | translate }}</h2>
+        <p class="cl-dsp__none-lead">{{ 'pages.disputes.none_lead' | translate }}</p>
+        <ul class="cl-dsp__none-list">
+          @for (item of [1, 2, 3]; track item) {
+          <li>
+            <i class="pi pi-check"></i>
+            {{ 'pages.disputes.none_item' + item | translate }}
+          </li>
+          }
+        </ul>
+        <div class="cl-dsp__none-actions">
+          <cleansia-button
+            [title]="'pages.disputes.create_new' | translate"
+            [severity]="'primary'"
+            [style]="'raised-button'"
+            (clickFn)="startNew()"
+          />
+          <a class="cl-dsp__link" [routerLink]="'/' + routes.ORDERS">
+            {{ 'pages.disputes.my_orders' | translate }}
+          </a>
+        </div>
+      </div>
     </div>
-    } @else { @if (disputeDetail(); as detail) {
-    <div class="customer-disputes__detail">
-      <div class="customer-disputes__detail-grid">
-        <div class="customer-disputes__detail-item">
-          <span class="customer-disputes__detail-label">{{ 'pages.disputes.reason' | translate }}</span>
-          <span class="customer-disputes__detail-value">{{ reasonLabel(detail.reason) }}</span>
+  </div>
+  } @else {
+
+  <!-- ========================= LIST BESIDE THREAD ========================= -->
+  <div class="cl-dsp__grid">
+    <section class="cl-dsp__panel">
+      <h2 class="cl-dsp__panel-title">{{ 'pages.disputes.mine' | translate }}</h2>
+
+      <div class="cl-dsp__list">
+        @for (dispute of disputes(); track dispute.id) {
+        <button
+          type="button"
+          class="cl-dsp__row"
+          [class.cl-dsp__row--on]="selectedId() === dispute.id"
+          (click)="openThread(dispute)"
+        >
+          <!-- Blue for the thread being read, amber for a reply not yet read. -->
+          <span
+            class="cl-dsp__row-dot"
+            [class.cl-dsp__row-dot--open]="selectedId() === dispute.id"
+            [class.cl-dsp__row-dot--unread]="isUnread(dispute)"
+          ></span>
+          <span class="cl-dsp__row-main">
+            <span class="cl-dsp__row-head">
+              <span class="cl-dsp__row-order cl-num">{{ dispute.displayOrderNumber }}</span>
+              <span class="cl-dsp__row-when">{{ formatDate(dispute.createdOn) }}</span>
+            </span>
+            <span class="cl-dsp__row-reason">{{ reasonLabel(dispute.reason) }}</span>
+          </span>
+          <span
+            class="cl-dsp__pill"
+            [class]="'cl-dsp__pill--' + getStatusSeverity(dispute.status)"
+          >
+            {{ statusLabel(dispute.status) }}
+          </span>
+          <span class="cl-dsp__row-age">{{ ageLabel(dispute.createdOn) }}</span>
+        </button>
+        }
+      </div>
+
+      <cleansia-button
+        class="cl-dsp__new"
+        [title]="'pages.disputes.create_new' | translate"
+        [severity]="'primary'"
+        [style]="'raised-button'"
+        (clickFn)="startNew()"
+      />
+    </section>
+
+    <section class="cl-dsp__panel">
+      @if (detailLoading()) {
+      <p-skeleton width="60%" height="1.6rem" />
+      <p-skeleton width="100%" height="12rem" borderRadius="20px" styleClass="mt-3" />
+      } @else if (disputeDetail(); as detail) {
+      <div class="cl-dsp__thread-head">
+        <div>
+          <h2 class="cl-dsp__panel-title">
+            {{ detail.displayOrderNumber }} · {{ reasonLabel(detail.reason) }}
+          </h2>
+          <p class="cl-dsp__panel-lead">
+            {{ 'pages.disputes.opened_on' | translate: { date: formatDate(detail.createdOn) } }}
+          </p>
         </div>
-        <div class="customer-disputes__detail-item">
-          <span class="customer-disputes__detail-label">{{ 'pages.disputes.table.status' | translate }}</span>
-          <p-tag [value]="statusLabel(detail.status)" [severity]="getStatusSeverity(detail.status)" />
+        <span class="cl-dsp__pill" [class]="'cl-dsp__pill--' + getStatusSeverity(detail.status)">
+          {{ statusLabel(detail.status) }}
+        </span>
+      </div>
+
+      <!--
+        The customer's opening description is the thread's first message. It is
+        stored on the dispute rather than in `messages`, so the thread would
+        otherwise start with the reply to something invisible.
+      -->
+      <div class="cl-dsp__thread">
+        @if (detail.description) {
+        <div class="cl-dsp__msg">
+          <div class="cl-dsp__bubble">{{ detail.description }}</div>
+          <span class="cl-dsp__by">
+            {{ 'pages.disputes.author_you' | translate }} ·
+            {{ formatMoment(detail.createdOn) }}
+          </span>
         </div>
-        @if (detail.refundAmount != null) {
-        <div class="customer-disputes__detail-item">
-          <span class="customer-disputes__detail-label">{{ 'pages.disputes.refund_amount' | translate }}</span>
-          <span class="customer-disputes__detail-value customer-disputes__detail-value--refund">
-            {{ formatPrice(detail.refundAmount) }}
+        }
+        @for (msg of detail.messages ?? []; track msg.id) {
+        <div class="cl-dsp__msg">
+          <div
+            class="cl-dsp__bubble"
+            [class.cl-dsp__bubble--staff]="msg.isStaffMessage"
+          >
+            {{ msg.message }}
+          </div>
+          <!-- Role, not the person. A customer has no business learning which
+               support agent handled their thread, and Android has always
+               labelled it this way — rendering the raw authorName here made one
+               conversation read differently per platform. -->
+          <span class="cl-dsp__by">
+            {{
+              (msg.isStaffMessage
+                ? 'pages.disputes.author_support'
+                : 'pages.disputes.author_you'
+              ) | translate
+            }}
+            · {{ formatMoment(msg.createdOn) }}
           </span>
         </div>
         }
       </div>
 
-      @if (detail.description) {
-      <div class="customer-disputes__detail-section">
-        <span class="customer-disputes__detail-label">{{ 'pages.disputes.description' | translate }}</span>
-        <p class="customer-disputes__detail-text">{{ detail.description }}</p>
-      </div>
-      }
-
       @if (detail.resolutionNotes) {
-      <div class="customer-disputes__detail-section customer-disputes__detail-section--resolution">
-        <span class="customer-disputes__detail-label">
-          <i class="pi pi-check-circle"></i>
-          {{ 'pages.disputes.resolution' | translate }}
-        </span>
-        <p class="customer-disputes__detail-text">{{ detail.resolutionNotes }}</p>
+      <div class="cl-dsp__resolution">
+        <i class="pi pi-check-circle"></i>
+        <div>
+          <span class="cl-dsp__label">{{ 'pages.disputes.resolution' | translate }}</span>
+          <p class="cl-dsp__resolution-text">{{ detail.resolutionNotes }}</p>
+          @if (detail.refundAmount != null) {
+          <p class="cl-dsp__refund">
+            {{ 'pages.disputes.refund_amount' | translate }}:
+            <strong class="cl-num">
+              {{ formatPrice(detail.refundAmount, detail.currency) }}
+            </strong>
+          </p>
+          }
+        </div>
       </div>
       }
 
-      @if (detail.evidence && detail.evidence.length > 0) {
-      <div class="customer-disputes__evidence-section">
-        <h4 class="customer-disputes__evidence-title">
-          <i class="pi pi-paperclip"></i>
-          {{ 'pages.disputes.evidence.title' | translate }}
-        </h4>
-        <ul class="customer-disputes__evidence-list">
-          @for (item of detail.evidence; track item.id) {
-          <li class="customer-disputes__evidence-item">
-            @if (item.blobUrl) {
-            <a [href]="item.blobUrl" target="_blank" rel="noopener noreferrer">
-              <i class="pi pi-file"></i>
-              {{ item.fileName }}
+      <!--
+        Owner, 2026-09-03: "I uploaded a photo and I don't see any photos related
+        to my dispute." It was a row of file NAMES, and only when the API
+        returned any — which it did not, because a photo attached while filing
+        was never uploaded at all. Both halves are fixed; this is the half you
+        can see. A picture of what is wrong is the evidence, so it is shown as
+        one.
+      -->
+      @if (evidence().length > 0) {
+      <div class="cl-dsp__evidence">
+        <span class="cl-dsp__label">
+          {{ 'pages.disputes.evidence.title' | translate }} ({{ evidence().length }})
+        </span>
+        <ul class="cl-dsp__evidence-list">
+          @for (item of evidence(); track item.id) {
+          <li class="cl-dsp__evidence-item">
+            <a
+              [href]="item.blobUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="item.fileName"
+            >
+              @if (isImage(item.fileName)) {
+              <img [src]="item.blobUrl" [alt]="item.fileName" loading="lazy" />
+              } @else {
+              <span class="cl-dsp__evidence-doc"><i class="pi pi-file"></i></span>
+              }
+              <span class="cl-dsp__evidence-name">{{ item.fileName }}</span>
             </a>
-            } @else {
-            <span>
-              <i class="pi pi-file"></i>
-              {{ item.fileName }}
-            </span>
-            }
-            <small>{{ formatDate(item.uploadedOn) }}</small>
           </li>
           }
         </ul>
       </div>
       }
 
+      <!--
+        A closed dispute keeps its thread but loses its composer: there is
+        nothing to say into a conversation nobody is reading any more.
+      -->
       @if (canUploadEvidence()) {
-      <div class="customer-disputes__evidence-upload">
-        <span class="customer-disputes__detail-label">
-          {{ 'pages.disputes.evidence.upload' | translate }}
-        </span>
-        <cleansia-file
-          [formControl]="evidenceControl"
-          [multiple]="false"
-          [accept]="evidenceAccept"
-          [maxFileSize]="evidenceMaxFileSize"
-        />
-        <cleansia-button
-          [title]="'pages.disputes.evidence.upload' | translate"
-          [severity]="'secondary'"
-          [icon]="'pi pi-upload'"
-          [iconPosition]="'left'"
-          [loading]="facade.uploadingEvidence()"
-          [disabled]="evidenceControl.value.length === 0"
-          (clickFn)="uploadEvidence()"
-        />
-      </div>
-      }
-
-      @if (detail.messages && detail.messages.length > 0) {
-      <div class="customer-disputes__messages-section">
-        <h4 class="customer-disputes__messages-title">
-          <i class="pi pi-comments"></i>
-          {{ 'pages.disputes.messages' | translate }}
-        </h4>
-        <div class="customer-disputes__messages">
-          @for (msg of detail.messages; track msg.id) {
-          <div class="customer-disputes__message" [class.customer-disputes__message--staff]="msg.isStaffMessage">
-            <div class="customer-disputes__message-bubble">
-              <div class="customer-disputes__message-header">
-                <!-- Role, not the person. A customer has no business learning which support agent
-                     handled their thread, and Android has always labelled it this way — rendering the
-                     raw authorName here made one conversation read differently per platform. -->
-                <strong>{{
-                  (msg.isStaffMessage
-                    ? 'pages.disputes.author_support'
-                    : 'pages.disputes.author_you'
-                  ) | translate
-                }}</strong>
-                <small>{{ formatDate(msg.createdOn) }}</small>
-              </div>
-              <p>{{ msg.message }}</p>
-            </div>
-          </div>
-          }
-        </div>
-      </div>
-      }
-
-      <div class="customer-disputes__new-message">
+      <div class="cl-dsp__reply">
         <cleansia-textarea
+          [floatVariant]="null"
           [formControl]="messageControl"
-          [rows]="2"
+          [rows]="3"
           [placeholder]="'pages.disputes.type_message' | translate"
         />
-        <cleansia-button
-          [title]="'pages.disputes.send' | translate"
-          [severity]="'primary'"
-          [icon]="'pi pi-send'"
-          [iconPosition]="'left'"
-          [loading]="sendingMessage()"
-          [disabled]="!messageControl.value"
-          (clickFn)="sendMessage()"
-        />
+        @if (attaching()) {
+        <div class="cl-dsp__reply-file">
+          <cleansia-file
+            [formControl]="evidenceControl"
+            [compact]="true"
+            [hint]="'pages.disputes.attach_note' | translate"
+            [multiple]="true"
+            [accept]="evidenceAccept"
+            [maxFileSize]="evidenceMaxFileSize"
+          />
+        </div>
+        }
+
+        <div class="cl-dsp__reply-actions">
+          @if (attaching() && evidenceControl.value.length > 0) {
+          <cleansia-button
+            [title]="'pages.disputes.evidence.upload' | translate"
+            [severity]="'secondary'"
+            [outlined]="true"
+            [loading]="facade.uploadingEvidence()"
+            (clickFn)="uploadEvidence()"
+          />
+          } @else {
+          <button type="button" class="cl-dsp__attach-toggle" (click)="toggleAttaching()">
+            <i class="pi pi-paperclip"></i>
+            {{ 'pages.disputes.attach_photo' | translate }}
+          </button>
+          }
+          <cleansia-button
+            class="cl-dsp__send"
+            [title]="'pages.disputes.send' | translate"
+            [severity]="'primary'"
+            [style]="'raised-button'"
+            [loading]="sendingMessage()"
+            [disabled]="!messageControl.value"
+            (clickFn)="sendMessage()"
+          />
+        </div>
       </div>
-    </div>
-    } }
-  </p-dialog>
+      } @else {
+      <p class="cl-dsp__closed">
+        <i class="pi pi-lock"></i>
+        {{ 'pages.disputes.thread_closed' | translate }}
+      </p>
+      }
+      }
+    </section>
+  </div>
+  }
 </div>

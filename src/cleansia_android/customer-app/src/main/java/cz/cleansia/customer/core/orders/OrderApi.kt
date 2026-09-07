@@ -26,6 +26,7 @@ import cz.cleansia.customer.api.model.PagedDataOfOrderListItem as GenPagedDataOf
 import cz.cleansia.customer.api.model.ServiceDetails as GenServiceDetails
 import cz.cleansia.customer.api.model.ServiceListItem as GenServiceListItem
 import cz.cleansia.customer.api.model.SubmitOrderReviewCommand as GenSubmitOrderReviewCommand
+import cz.cleansia.customer.api.model.SubmitOrderReviewReviewLineScore as GenReviewLineScore
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
 import cz.cleansia.customer.core.user.toAppDto
@@ -78,6 +79,14 @@ class OrderApi(
                 rating = body.rating,
                 comment = body.comment,
                 tags = body.tags.map { it.toWireTag() },
+                // Null when nothing was scored — see DisputeApi.create for why not emptyList().
+                lines = body.lines?.takeIf { it.isNotEmpty() }?.map {
+                    GenReviewLineScore(
+                        serviceId = it.serviceId,
+                        packageId = it.packageId,
+                        rating = it.rating,
+                    )
+                },
             ),
         )
         return raw.mapWire { it.toAppDto() }

@@ -13,7 +13,13 @@
 <div class="cleansia-help-card" [class.collapsed]="isCollapsed()">
   <!-- Header -->
   <div class="cleansia-help-card__header">
-    <div class="cleansia-help-card__title" (click)="toggleCollapse()">
+    <button
+      type="button"
+      class="cleansia-help-card__title"
+      [attr.aria-expanded]="!isCollapsed()"
+      [disabled]="!collapsible()"
+      (click)="toggleCollapse()"
+    >
       <i class="pi pi-info-circle"></i>
       <span>{{ titleKey() | translate }}</span>
       @if (collapsible()) {
@@ -21,7 +27,7 @@
         class="cleansia-help-card__collapse-icon pi pi-chevron-down"
       ></i>
       }
-    </div>
+    </button>
     @if (showDismiss()) {
     <button
       type="button"

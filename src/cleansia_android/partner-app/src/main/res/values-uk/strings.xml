@@ -1262,6 +1262,8 @@
     <string name="notification_order_assigned_body">Вам призначено замовлення №%1$s. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_order_assignment_revoked_title">Замовлення перепризначено</string>
     <string name="notification_order_assignment_revoked_body">Замовлення №%1$s перепризначено, його більше немає у вашому графіку. Торкніться, щоб переглянути деталі.</string>
+    <string name="notification_order_seat_open_title">Замовленню потрібна заміна</string>
+    <string name="notification_order_seat_open_body">Прибиральник відмовився від замовлення #%1$s. Натисніть, щоб взяти його.</string>
     <string name="notification_employee_weekly_limit_set_title">Тижневий ліміт замовлень оновлено</string>
     <string name="notification_employee_weekly_limit_set_body">Тепер ви можете брати щонайбільше %1$d замовлень на тиждень.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>

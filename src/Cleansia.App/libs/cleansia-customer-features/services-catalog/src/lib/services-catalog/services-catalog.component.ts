@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaScrollTopComponent } from '@cleansia/components';
+import { FoamEdgeComponent } from '@cleansia-customer/home';
 import {
   loadCustomerPackages,
   loadCustomerServices,
@@ -9,7 +10,7 @@ import {
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
-import { PackageListItem, PackageServiceSummary, ServiceListItem } from '@cleansia/customer-services';
+import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -26,6 +27,7 @@ type SortOption = 'price_asc' | 'price_desc' | 'name_asc';
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
+    FoamEdgeComponent,
     Skeleton,
   ],
   templateUrl: './services-catalog.component.html',
@@ -36,102 +38,101 @@ export class ServicesCatalogComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
 
-  private readonly INITIAL_VISIBLE = 3;
+  /** The artboard shows three packages and a link to the rest. */
+  private readonly PACKAGE_PREVIEW = 3;
 
-  // Store data
   services = toSignal(this.store.select(selectCustomerServices), { initialValue: [] });
   packages = toSignal(this.store.select(selectCustomerPackages), { initialValue: [] });
   loading = toSignal(this.store.select(selectCustomerCatalogLoading), { initialValue: false });
 
-  // Sort state
-  packageSort = signal<SortOption>('price_asc');
+  /**
+   * Sorting is offered over the services and NOT over the packages, which is
+   * the artboard's split rather than an omission. The packages section shows a
+   * curated three with a reveal link; sorting three cards by price is a control
+   * that changes nothing a reader can see.
+   */
   serviceSort = signal<SortOption>('price_asc');
-
-  // Expand state
   showAllPackages = signal(false);
-  showAllServices = signal(false);
 
-  // Sort options for template
   readonly sortOptions: { value: SortOption; labelKey: string }[] = [
     { value: 'price_asc', labelKey: 'pages.services.sort_price_asc' },
     { value: 'price_desc', labelKey: 'pages.services.sort_price_desc' },
     { value: 'name_asc', labelKey: 'pages.services.sort_name_asc' },
   ];
 
-  // Sorted data
-  sortedPackages = computed(() => {
-    const pkgs = [...this.packages()];
-    return this.sortItems(pkgs, this.packageSort(), 'price');
-  });
+  sortedServices = computed(() => this.sortItems([...this.services()], this.serviceSort(), 'basePrice'));
 
-  sortedServices = computed(() => {
-    const svcs = [...this.services()];
-    return this.sortItems(svcs, this.serviceSort(), 'basePrice');
-  });
+  /** Cheapest first, so the preview opens on the least committing option. */
+  private readonly packagesByPrice = computed(() =>
+    [...this.packages()].sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
+  );
 
-  // Visible items (first N)
+  /**
+   * The three the section leads with, arranged so the recommended one is the
+   * middle card. The inverted card is the design's anchor — at the end of the
+   * row it reads as the most expensive option rather than the suggested one.
+   */
   visiblePackages = computed(() => {
-    const all = this.sortedPackages();
-    if (this.showAllPackages() || all.length <= this.INITIAL_VISIBLE) return all;
-    return all.slice(0, this.INITIAL_VISIBLE);
+    const all = this.packagesByPrice();
+    if (this.showAllPackages() || all.length <= this.PACKAGE_PREVIEW) return all;
+
+    const preview = all.slice(0, this.PACKAGE_PREVIEW);
+    const popularAt = preview.findIndex(p => p.isPopular);
+    const middle = Math.floor(this.PACKAGE_PREVIEW / 2);
+    if (popularAt < 0 || popularAt === middle) return preview;
+
+    const reordered = [...preview];
+    [reordered[popularAt], reordered[middle]] = [reordered[middle], reordered[popularAt]];
+    return reordered;
   });
 
-  visibleServices = computed(() => {
-    const all = this.sortedServices();
-    if (this.showAllServices() || all.length <= this.INITIAL_VISIBLE) return all;
-    return all.slice(0, this.INITIAL_VISIBLE);
-  });
-
-  // Teaser items (next 3 beyond visible, for fade preview)
-  teaserPackages = computed(() => {
-    const all = this.sortedPackages();
-    if (this.showAllPackages() || all.length <= this.INITIAL_VISIBLE) return [];
-    return all.slice(this.INITIAL_VISIBLE, this.INITIAL_VISIBLE + 3);
-  });
-
-  teaserServices = computed(() => {
-    const all = this.sortedServices();
-    if (this.showAllServices() || all.length <= this.INITIAL_VISIBLE) return [];
-    return all.slice(this.INITIAL_VISIBLE, this.INITIAL_VISIBLE + 3);
-  });
-
-  // Whether "View All" button should show
-  hasMorePackages = computed(() =>
-    !this.showAllPackages() && this.sortedPackages().length > this.INITIAL_VISIBLE
+  hasMorePackages = computed(
+    () => !this.showAllPackages() && this.packagesByPrice().length > this.PACKAGE_PREVIEW
   );
 
-  hasMoreServices = computed(() =>
-    !this.showAllServices() && this.sortedServices().length > this.INITIAL_VISIBLE
-  );
+  /**
+   * The mascot poses the service cards cycle through. All eleven are cut to one
+   * 340x280 canvas at an identical character height on a shared baseline, so a
+   * single CSS height renders them at the same size — the raw drawings differ
+   * enough in content bounds that `object-fit: contain` alone scales them
+   * unequally, which is why only the normalised tiles are listed here.
+   * -> home services.component.ts, which established the canvas.
+   */
+  private readonly mascotTiles = [
+    'assets/images/mascot/mascot-mopping-tile.webp',
+    'assets/images/mascot/mascot-idea-tile.webp',
+    'assets/images/mascot/mascot-vacuuming-tile.webp',
+    'assets/images/mascot/mascot-thumbs-up-tile.webp',
+    'assets/images/mascot/mascot-dusting-tile.webp',
+    'assets/images/mascot/mascot-leaning-tile.webp',
+    'assets/images/mascot/mascot-spray-and-cloth-tile.webp',
+    'assets/images/mascot/mascot-cleaning-tile.webp',
+  ];
 
-  // Per-tier feature i18n keys
-  private readonly packageFeatureKeys: Record<number, string[]> = {
-    0: [
-      'pages.services.features.basic_supplies',
-      'pages.services.features.basic_cleaner',
-      'pages.services.features.basic_cleaning',
-      'pages.services.features.basic_sessions',
-    ],
-    1: [
-      'pages.services.features.standard_supplies',
-      'pages.services.features.standard_cleaners',
-      'pages.services.features.standard_deep',
-      'pages.services.features.standard_priority',
-      'pages.services.features.standard_sessions',
-    ],
-    2: [
-      'pages.services.features.premium_supplies',
-      'pages.services.features.premium_cleaners',
-      'pages.services.features.premium_deep',
-      'pages.services.features.premium_priority',
-      'pages.services.features.premium_sameday',
-      'pages.services.features.premium_sessions',
-    ],
-  };
+  private readonly packageMascots = [
+    'assets/images/mascot/mascot-ready-tile.webp',
+    'assets/images/mascot/mascot-floor-scrubber-tile.webp',
+    'assets/images/mascot/mascot-arms-crossed-tile.webp',
+  ];
+
+  // Paired by footprint, not by pose: this tile's figure is 201x258 and the one
+  // on the right is 201x258 exactly, so the two balance. The mop-and-bucket
+  // character was 187x256 and read as the odd one out beside it.
+  readonly heroMascotLeft = 'assets/images/mascot/mascot-spray-and-cloth-tile.webp';
+  readonly heroMascotRight = 'assets/images/mascot/mascot-dusting-tile.webp';
+  readonly closingMascot = 'assets/images/mascot/mascot-waving.webp';
 
   ngOnInit(): void {
     this.store.dispatch(loadCustomerServices());
     this.store.dispatch(loadCustomerPackages());
+  }
+
+  serviceMascot(index: number): string {
+    return this.mascotTiles[index % this.mascotTiles.length];
+  }
+
+  packageMascot(index: number): string {
+    return this.packageMascots[index % this.packageMascots.length];
   }
 
   getTranslation(item: ServiceListItem | PackageListItem, field: string): string {
@@ -152,82 +153,65 @@ export class ServicesCatalogComponent implements OnInit {
     }).format(price);
   }
 
-  private readonly packageIcons = ['pi pi-home', 'pi pi-star', 'pi pi-crown'];
-  private readonly serviceIcons = [
-    'pi pi-home', 'pi pi-briefcase', 'pi pi-car',
-    'pi pi-wrench', 'pi pi-building', 'pi pi-cog',
-  ];
-
-  getPackageIcon(index: number): string {
-    return this.packageIcons[index] ?? this.packageIcons[0];
-  }
-
-  getServiceIcon(index: number): string {
-    return this.serviceIcons[index % this.serviceIcons.length];
-  }
-
-  /** Get the original tier index of a package (stable across sorting) */
-  getPackageTierIndex(pkg: PackageListItem): number {
-    const unsorted = this.packages();
-    const idx = unsorted.findIndex(p => p.id === pkg.id);
-    return idx >= 0 ? Math.min(idx, 2) : 0;
-  }
-
-  getPackageFeatures(tierIndex: number): string[] {
-    return this.packageFeatureKeys[tierIndex] ?? this.packageFeatureKeys[0];
+  /**
+   * A service priced per room has no single number to show, so the card states
+   * the base as a floor and puts the rate beside it. The artboard's per-service
+   * units ("za okno", "za kus", "na míru") are sample copy — the catalogue
+   * carries a base price and a per-room rate and nothing that could produce
+   * them, and inventing a unit column to say "per window" would be a schema
+   * change bought for one label.
+   */
+  isPricedPerRoom(service: ServiceListItem): boolean {
+    return (service.perRoomPrice ?? 0) > 0;
   }
 
   getIncludedServiceNames(pkg: PackageListItem): string[] {
     if (!pkg.includedServices?.length) return [];
     const lang = this.translate.currentLang || this.translate.getDefaultLang();
-    return pkg.includedServices.map(svc => {
-      const t = svc.translations?.[lang];
-      return (t as any)?.name || svc.name || '';
-    }).filter(n => !!n);
-  }
-
-  onPackageSortChange(sort: SortOption): void {
-    this.packageSort.set(sort);
+    return pkg.includedServices
+      .map(svc => {
+        const t = svc.translations?.[lang] as unknown as Record<string, string> | undefined;
+        return t?.['name'] || svc.name || '';
+      })
+      .filter(n => !!n);
   }
 
   onServiceSortChange(sort: SortOption): void {
     this.serviceSort.set(sort);
   }
 
-  toggleShowAllPackages(): void {
+  revealAllPackages(): void {
     this.showAllPackages.set(true);
   }
 
-  toggleShowAllServices(): void {
-    this.showAllServices.set(true);
-  }
-
   bookPackage(pkg: PackageListItem): void {
-    this.router.navigate([CleansiaCustomerRoute.ORDER], {
-      queryParams: { packageId: pkg.id },
-    });
+    this.router.navigate([CleansiaCustomerRoute.ORDER], { queryParams: { packageId: pkg.id } });
   }
 
   bookService(service: ServiceListItem): void {
-    this.router.navigate([CleansiaCustomerRoute.ORDER], {
-      queryParams: { serviceId: service.id },
-    });
+    this.router.navigate([CleansiaCustomerRoute.ORDER], { queryParams: { serviceId: service.id } });
   }
 
   bookNow(): void {
     this.router.navigate([CleansiaCustomerRoute.ORDER]);
   }
 
+  /** The price calculator lives in the home page's hero. */
+  openCalculator(): void {
+    this.router.navigate(['/'], { fragment: 'hero' });
+  }
+
   private sortItems<T>(items: T[], sort: SortOption, priceField: string): T[] {
     return items.sort((a, b) => {
       switch (sort) {
         case 'price_asc':
-          return ((a as any)[priceField] ?? 0) - ((b as any)[priceField] ?? 0);
+          return ((a as Record<string, number>)[priceField] ?? 0) - ((b as Record<string, number>)[priceField] ?? 0);
         case 'price_desc':
-          return ((b as any)[priceField] ?? 0) - ((a as any)[priceField] ?? 0);
+          return ((b as Record<string, number>)[priceField] ?? 0) - ((a as Record<string, number>)[priceField] ?? 0);
         case 'name_asc':
-          return this.getTranslation(a as any, 'name')
-            .localeCompare(this.getTranslation(b as any, 'name'));
+          return this.getTranslation(a as ServiceListItem, 'name').localeCompare(
+            this.getTranslation(b as ServiceListItem, 'name')
+          );
         default:
           return 0;
       }

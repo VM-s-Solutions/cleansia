@@ -50,6 +50,7 @@ public static class OrderMappers
             o.TierDiscountAmount,
             o.MembershipDiscountAmount,
             o.PromoDiscountAmount,
+            o.CreditAppliedAmount,
             o.EstimatedTime,
             o.CurrentStatus,
             o.ConfirmationCode,
@@ -116,6 +117,8 @@ public static class OrderMappers
             TierDiscountAmount: row.TierDiscountAmount,
             MembershipDiscountAmount: row.MembershipDiscountAmount,
             PromoDiscountAmount: row.PromoDiscountAmount,
+            CreditAppliedAmount: row.CreditAppliedAmount,
+            AmountDueOnCard: row.TotalPrice - row.CreditAppliedAmount,
             EstimatedTime: row.EstimatedTime,
             OrderStatus: row.OrderStatus.MapToCode(),
             ConfirmationCode: row.ConfirmationCode,
@@ -123,6 +126,11 @@ public static class OrderMappers
                 Id: p.Id,
                 Name: p.Name,
                 Description: p.Description,
+                // An order is a historical record. Which package the catalogue features today,
+                // and the line its card leads with, say nothing about an order already placed —
+                // the read-model row does not carry them and nothing renders them here.
+                Tagline: null,
+                IsPopular: false,
                 Price: p.Price,
                 Translations: p.Translations.ToDictionary(),
                 // The list queries never load Package.IncludedServices, so the entity path
@@ -187,6 +195,8 @@ public static class OrderMappers
             TierDiscountAmount: order.TierDiscountAmount,
             MembershipDiscountAmount: order.MembershipDiscountAmount,
             PromoDiscountAmount: order.PromoDiscountAmount,
+            CreditAppliedAmount: order.CreditAppliedAmount,
+            AmountDueOnCard: order.AmountDueOnCard,
             EstimatedTime: order.EstimatedTime,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
             ConfirmationCode: order.ConfirmationCode,
@@ -246,6 +256,8 @@ public static class OrderMappers
             TierDiscountAmount: order.TierDiscountAmount,
             MembershipDiscountAmount: order.MembershipDiscountAmount,
             PromoDiscountAmount: order.PromoDiscountAmount,
+            CreditAppliedAmount: order.CreditAppliedAmount,
+            AmountDueOnCard: order.AmountDueOnCard,
             EstimatedTime: order.EstimatedTime,
             ActualCompletionTime: order.ActualCompletionTime,
             CompletedAt: order.CompletedAt,
@@ -255,6 +267,9 @@ public static class OrderMappers
             Notes: order.Notes,
             SpecialInstructions: order.SpecialInstructions,
             AccessInstructions: order.AccessInstructions,
+            CustomerFloor: order.CustomerFloor,
+            CustomerApartment: order.CustomerApartment,
+            AccessMode: order.AccessMode,
             HasAccessInstructions: !string.IsNullOrWhiteSpace(order.AccessInstructions),
             // System cancellations only. The same column holds an admin's free-text note when a human
             // cancels, and that is written by staff for staff — gating on CancelledBy is what keeps an
@@ -331,7 +346,10 @@ public static class OrderMappers
             Comment: review.Comment,
             Tags: review.Tags,
             CreatedOn: review.CreatedOn,
-            UpdatedOn: review.UpdatedOn
+            UpdatedOn: review.UpdatedOn,
+            Lines: review.Lines
+                .Select(line => new OrderReviewLineDto(line.ServiceId, line.PackageId, line.Rating))
+                .ToList()
         );
     }
 

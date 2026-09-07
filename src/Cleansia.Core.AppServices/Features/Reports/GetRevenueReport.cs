@@ -76,7 +76,12 @@ public class GetRevenueReport
                     PaymentTypeCode: g.Key.ToString(),
                     PaymentTypeName: g.Key.MapToCode().Name,
                     TotalRevenue: g.Sum(o => o.TotalPrice),
-                    OrderCount: g.Count()))
+                    OrderCount: g.Count(),
+                    // Revenue stays the SALE - credit is a tender, not a discount - but the Card row
+                    // previously implied Stripe had taken all of it, so a month reconciled against a
+                    // Stripe statement came up short by exactly the credit total with nothing on the
+                    // screen to account for it. SettledOnTender derives from these two.
+                    SettledFromCredit: g.Sum(o => o.CreditAppliedAmount)))
                 .ToList();
 
             var revenueByPaymentStatus = orders
@@ -101,7 +106,8 @@ public class GetRevenueReport
                 RevenueByService: revenueByService,
                 RevenueByPackage: revenueByPackage,
                 RevenueByPaymentType: revenueByPaymentType,
-                RevenueByPaymentStatus: revenueByPaymentStatus);
+                RevenueByPaymentStatus: revenueByPaymentStatus,
+                TotalSettledFromCredit: orders.Sum(o => o.CreditAppliedAmount));
         }
 
         private static decimal CalculateGrowthPercentage(List<DailyRevenue> dailyRevenues)

@@ -3,27 +3,50 @@
 // =============================
 // Before/After Gallery
 // =============================
+// The artboard gives this section a tinted ground with a foam edge above and
+// below, so the photographs sit on colour rather than floating on the page.
+.cl-section--gallery {
+  // --cl-band, not --cl-tint. --cl-tint is #f0f9ff, one hair off white, so the
+  // two dividers bounding this band measured 1.07 and read as nothing; and in
+  // dark mode it is a TRANSLUCENT overlay, so the band was see-through and the
+  // cut-outs showed the page through rather than the section.
+  background: var(--cl-band);
+}
+
 .cl-gallery {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+  // Two columns, as the approved artboard draws it. Four pairs therefore run as
+  // two rows rather than being cut to two — the photographs are real and there
+  // is no reason to throw half of them away for a column count.
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+  margin-top: 28px;
 
+  // Each pair is a white card with the photograph inset, not a bare image: the
+  // 14px frame is what separates two sliders sitting side by side.
   &__item {
-    text-align: center;
+    background: var(--cl-surface);
+    border-radius: 36px;
+    padding: 14px;
+    box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
   }
 
   &__caption {
-    margin-top: 1rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 14px 8px 4px;
     font-family: $font-heading;
-    font-size: 0.92rem;
+    font-size: 15px;
     font-weight: 600;
-    color: var(--text-color);
+    color: var(--cl-heading);
   }
 }
 
 .cl-slider {
   position: relative;
-  border-radius: $radius-lg;
+  border-radius: 24px; // the photograph's own radius inside the card
   overflow: hidden;
   border: 1px solid var(--surface-border);
   cursor: ew-resize;
@@ -31,7 +54,9 @@
   -webkit-user-select: none;
   touch-action: none;
   aspect-ratio: 4 / 3;
-  background: $bg-alt;
+  // Shown only while the photograph loads. $bg-alt is a build-time #F8FAFC, so
+  // in dark mode it was a white slab inside a dark card until the image landed.
+  background: var(--cl-tint);
   container-type: inline-size;
 
   &__after,
@@ -67,7 +92,7 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: $white;
+    background: var(--cl-surface);
     z-index: 3;
     transform: translateX(-50%);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
@@ -78,41 +103,45 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
-    background: $white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    background: $primary;
+    border: 3px solid $white;
+    box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: ew-resize;
     i {
-      font-size: 1rem;
-      color: $primary;
+      font-size: 16px;
+      color: $white;
     }
   }
 
+  // Not a traffic light. "Before" and "after" are two halves of one photograph,
+  // not a failure and a success, so they take the brand's own two tones — the
+  // artboard's navy and blue — rather than red and green.
   &__label {
     position: absolute;
-    bottom: 0.6rem;
+    top: 14px;
     z-index: 4;
-    padding: 0.25rem 0.7rem;
-    border-radius: 2rem;
+    padding: 4px 11px;
+    border-radius: 32px;
     font-family: $font-heading;
-    font-size: 0.65rem;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: $white;
 
     &--before {
-      left: 0.6rem;
-      background: rgba(220, 38, 38, 0.85);
+      left: 14px;
+      background: rgba(12, 74, 110, 0.8);
     }
     &--after {
-      right: 0.6rem;
-      background: rgba($green, 0.85);
+      right: 14px;
+      background: $primary-dark;
     }
   }
 }
@@ -129,6 +158,47 @@
 @media (max-width: 768px) {
   .cl-gallery {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 32px;
+  }
+}
+
+// The section header, artboard values: centred d2 with the lead constrained so
+// the sentence breaks where the design breaks it.
+.cl-gallery {
+  &__title {
+    text-align: center;
+  }
+
+  &__lead {
+    text-align: center;
+    margin: 10px auto 0;
+    max-width: 46em;
+  }
+}
+
+// The band runs edge to edge: the foam is a full-bleed shape, so the section
+// carries NO horizontal padding and the inner column carries the gutter
+// instead. The edges used to escape a 64px gutter with a hardcoded -64px
+// margin; once the gutter became fluid (and smaller again under the mobile
+// breakpoints) that margin was too large at every width below 1440 and hung the
+// scallops 43px past the viewport, giving the whole page a horizontal
+// scrollbar. Nothing to escape now, so nothing can overshoot.
+.cl-section--gallery {
+  // The artboard sets no vertical padding on the band itself: the hood opens
+  // it, the cap closes it, and the inner column carries the spacing.
+  padding: 0;
+  margin-top: var(--cl-gutter);
+
+  > .cl-section__inner {
+    padding-top: 20px;
+    padding-bottom: 36px;
+    padding-left: var(--cl-gutter);
+    padding-right: var(--cl-gutter);
+    // The gutter moved from the section onto the inner so the foam can run
+    // full-bleed. `max-width` caps the BORDER box, so without adding the two
+    // gutters back the content column came out 128px narrower here than in
+    // every other section and the photographs no longer lined up with the
+    // headings above and below them.
+    max-width: calc(#{$home-width} + var(--cl-gutter) * 2);
   }
 }

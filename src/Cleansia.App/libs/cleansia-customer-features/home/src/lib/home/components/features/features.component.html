@@ -1,32 +1,64 @@
-<section class="cl-section cl-section--features" id="why-us">
+<!--
+  "Tři věci, které vám slibujeme" — three promises, not a benefits grid.
+
+  The lead card is wider (1.16fr) and carries the mascot; the other two are
+  equal. Each card is label → heading → body → one fact on a hairline rule.
+  There is no badge and no section subtitle here: the heading is the whole
+  introduction, which is what makes the section read as three claims rather
+  than as marketing.
+-->
+<section class="cl-section cl-section--promises" id="why-us">
   <div class="cl-section__inner">
-    <div class="cl-section__header animate-on-scroll">
-      <span class="cl-section__badge">{{ 'pages.home.why_choose_us.badge' | translate }}</span>
-      <h2 class="cl-title">{{ 'pages.home.why_choose_us.title' | translate }}</h2>
-      <p class="cl-section__desc">{{ 'pages.home.why_choose_us.subtitle' | translate }}</p>
-    </div>
-    <div class="cl-features">
-      <div class="cl-features__card animate-on-scroll delay-1">
-        <div class="cl-features__icon-wrap cl-features__icon-wrap--blue">
-          <i class="pi pi-tag"></i>
+    <h2 class="cl-d2 cl-promises__title animate-on-scroll">
+      {{ 'pages.home.promises.title' | translate }}
+    </h2>
+
+    <div class="cl-promises">
+      <article class="cl-promises__card cl-promises__card--lead cl-soft">
+        <div class="cl-promises__body">
+          <span class="cl-lbl cl-promises__label">{{ 'pages.home.promises.item1_label' | translate }}</span>
+          <h3 class="cl-h3 cl-promises__heading cl-promises__heading--lead">
+            {{ 'pages.home.promises.item1_heading' | translate }}
+          </h3>
+          <p class="cl-body cl-promises__desc">{{ 'pages.home.promises.item1_desc' | translate }}</p>
+          <p class="cl-fact">
+            <i class="pi pi-check" aria-hidden="true"></i>{{ 'pages.home.promises.item1_fact' | translate }}
+          </p>
         </div>
-        <h3 class="cl-features__card-title">{{ 'pages.home.why_choose_us.item1_title' | translate }}</h3>
-        <p class="cl-features__card-desc">{{ 'pages.home.why_choose_us.item1_desc' | translate }}</p>
-      </div>
-      <div class="cl-features__card animate-on-scroll delay-2">
-        <div class="cl-features__icon-wrap cl-features__icon-wrap--green">
-          <i class="pi pi-shield"></i>
-        </div>
-        <h3 class="cl-features__card-title">{{ 'pages.home.why_choose_us.item2_title' | translate }}</h3>
-        <p class="cl-features__card-desc">{{ 'pages.home.why_choose_us.item2_desc' | translate }}</p>
-      </div>
-      <div class="cl-features__card animate-on-scroll delay-3">
-        <div class="cl-features__icon-wrap cl-features__icon-wrap--amber">
-          <i class="pi pi-bolt"></i>
-        </div>
-        <h3 class="cl-features__card-title">{{ 'pages.home.why_choose_us.item3_title' | translate }}</h3>
-        <p class="cl-features__card-desc">{{ 'pages.home.why_choose_us.item3_desc' | translate }}</p>
-      </div>
+        <!-- 480x480 is this file's real size. It declared 340x280 — the TILE variant's size — so
+             the browser reserved a 1.21 box for a 1.00 image and the card reflowed when the lazy
+             load landed. The SCSS sets height only, width auto, so the rendered size is unchanged. -->
+        <img
+          class="cl-promises__mascot"
+          src="assets/images/mascot/mascot-idea-480.webp"
+          alt=""
+          width="480"
+          height="480"
+          loading="lazy"
+        />
+      </article>
+
+      <article class="cl-promises__card cl-soft">
+        <span class="cl-lbl cl-promises__label">{{ 'pages.home.promises.item2_label' | translate }}</span>
+        <h3 class="cl-h3 cl-promises__heading">{{ 'pages.home.promises.item2_heading' | translate }}</h3>
+        <p class="cl-body cl-promises__desc">{{ 'pages.home.promises.item2_desc' | translate }}</p>
+        <div class="cl-promises__spacer"></div>
+        <p class="cl-fact">
+          <i class="pi pi-clock" aria-hidden="true"></i>
+          <span class="cl-num">{{ 'pages.home.promises.item2_fact' | translate }}</span>
+        </p>
+      </article>
+
+      <article class="cl-promises__card cl-soft">
+        <span class="cl-lbl cl-promises__label">{{ 'pages.home.promises.item3_label' | translate }}</span>
+        <h3 class="cl-h3 cl-promises__heading">{{ 'pages.home.promises.item3_heading' | translate }}</h3>
+        <p class="cl-body cl-promises__desc">{{ 'pages.home.promises.item3_desc' | translate }}</p>
+        <div class="cl-promises__spacer"></div>
+        <p class="cl-fact">
+          <i class="pi pi-user" aria-hidden="true"></i>
+          <span class="cl-num">{{ 'pages.home.promises.item3_fact' | translate }}</span>
+        </p>
+      </article>
     </div>
   </div>
 </section>

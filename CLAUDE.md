@@ -112,11 +112,26 @@ Mobile :5004. `README.md` has the full run/test/build commands.
 > Nx project names carry a **dot** before `app` — `cleansia-partner.app`, not `cleansia-partner-app`,
 > which fails with "Cannot find project". Check `npx nx show projects` before hand-writing one.
 
-## Manual steps
+## Manual steps — there are none left
 
-- **NSwag client regeneration — owner only.** Do not run `npm run generate-*-client`. When a backend
-  DTO or endpoint changes, flag `manual_step: nswag-regen` so the owner regenerates before frontend
-  work starts.
+**Nothing in this repo is owner-only any more** (owner ruling 2026-09-07, extending the migration
+rulings of 2026-08-15 and 2026-08-25). Run it yourself:
+
+- **NSwag client regeneration.** `npm run generate-*-client` when a backend DTO or endpoint changes.
+  Regenerate BEFORE the frontend work that depends on it, and commit the regenerated client in the
+  same change as the DTO — a client that disagrees with the contract is the failure this rule exists
+  to prevent.
+- **EF Core migrations** — see the next section, unchanged.
+- **The DEV database drop** — previously the last owner-only step. Yours now.
+
+> **Never write `manual_step:` / `MANUAL_STEP:` on a ticket again**, and do not "flag it for the
+> owner". If a step is needed, take it. The older process pages (`agents/process/quality-gates.md`,
+> `ticket-lifecycle.md`, `routing.md`) and the `backend`, `db` and `frontend` charters still describe
+> the flagging protocol in places; this section overrides all of them.
+
+**The one thing that does not change: say what you ran.** These steps alter generated code and the
+DEV database, so the report names every one taken — the owner stopped approving them one at a time,
+which means the record is now the only way he learns they happened.
 
 ## Database migrations — routine, not a manual step
 
@@ -134,9 +149,10 @@ dotnet ef migrations add   Initial --project Cleansia.Infra.Database --startup-p
 > The startup project must be a **web host** — `Cleansia.MigrationService` does not reference
 > `Microsoft.EntityFrameworkCore.Design` and the tool refuses it.
 
-**What is still the owner's: the DEV database drop.** Regenerating changes the migration id, and a
-database whose `__EFMigrationsHistory` records the old one replays the whole create script against
-tables that already exist. Never fold a schema change into the migration by hand: regenerate, then
+**The DEV database drop goes with it, and it is yours to run.** Regenerating changes the migration
+id, and a database whose `__EFMigrationsHistory` records the old one replays the whole create script
+against tables that already exist — so a regen without the drop leaves a DEV database that fails on
+next start. Do both, and say you did. Never fold a schema change into the migration by hand: regenerate, then
 verify with the integration suite, which builds a real Postgres from the migration and is the only
 thing that proves the model and the schema agree.
 
@@ -200,8 +216,11 @@ coordinating multi-agent or multi-step work, start with **`agents/WAY-OF-WORKING
   ios, qa, reviewer, security, optimizer, docs). Invoke via the `Agent` tool with `subagent_type` set
   to the charter's `name`.
 - **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
-- **`agents/tools/check-*.mjs`** — 7 repo checkers, six with their own self-test. Five CI workflows
-  gate a PR: Backend, Frontend, Android, iOS, Docs.
+- **`agents/tools/check-*.mjs`** — 17 repo checkers, eight with their own self-test. Seven CI
+  workflows gate a PR: Backend, Frontend, Android, iOS, Docs, iOS symbols and booking-policy parity.
+  The last two are dependency-free Node gates with their own repo-root workflows, because the drift
+  they catch spans trees that no single existing job can see: `nx affected` selects nothing for a
+  C#-only diff, `backend-ci` excludes the mobile trees, and Gradle and Xcode cannot read C#.
 
 **Slash commands that exist** (`.claude/commands/`): `/feature` — the full-stack entry point, which
 invokes the PM end to end — plus `/backend` `/frontend` `/mobile` `/review` `/docs` `/sync` for small

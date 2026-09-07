@@ -66,7 +66,7 @@ export class CustomValidators {
         return null;
       }
 
-      const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,15}$/;
+      const phoneRegex = /^\+?[0-9\s\-()]{10,15}$/;
       return phoneRegex.test(control.value) ? null : { phoneNumber: true };
     };
   }
@@ -153,7 +153,7 @@ export class CustomValidators {
       const hasUpperCase = /[A-Z]/.test(control.value);
       const hasLowerCase = /[a-z]/.test(control.value);
       const hasNumber = /\d/.test(control.value);
-      const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+      const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(
         control.value
       );
       const minLength = control.value.length >= 8;

@@ -1,0 +1,427 @@
+@use '../common/variables' as variables;
+
+// =============================================================================
+// Outcome pages — built against the "Návratové a právní stránky" board
+// =============================================================================
+// Three artboards draw ONE shape: a mascot, a status chip, a title, a sentence,
+// then either a card of three facts or a row of links, then two actions.
+//
+//   /checkout/success  — the payment went through
+//   /checkout/cancel   — it did not, and nothing was charged
+//   404                — the page does not exist
+//
+// So it is one stylesheet with three callers rather than three that drift. It
+// lives in the SHARED components layer, not in the customer pages, because the
+// 404 is rendered by the customer, partner and admin apps alike — and for the
+// same reason it is written against `common/variables` rather than the `--cl-*`
+// custom properties, which only the customer app defines. A 404 painted with
+// those would be an unstyled page on the other two.
+//
+// Sizes are in PX, which is what the artboards are drawn in and, unusually, the
+// honest unit here: the customer app's root is 14px, so a rem scale lifted
+// straight off the board renders every measurement 12% short. → the board.
+
+$outcome-ink: #0f172a;
+$outcome-body: #334155;
+$outcome-muted: #64748b;
+$outcome-line: #e2e8f0;
+
+.cl-out {
+  position: relative;
+  // No `100vh`: this sits inside an app shell with a navbar above it and a
+  // footer below, so a full viewport leaves a band of empty gradient under the
+  // actions. The content sets the height; the padding keeps it from crowding.
+  padding: 52px 24px 60px;
+  background: radial-gradient(
+    120% 92% at 76% 6%,
+    variables.$cleansia-primary-200 0%,
+    variables.$cleansia-primary-100 44%,
+    variables.$cleansia-primary-50 100%
+  );
+}
+
+// The customer app's navbar is a TRANSPARENT strip with a floating white pill,
+// so whatever sits behind it is the page's own ground — on every other page
+// that is the layout's near-white, which cuts a white stripe across the blue.
+// Pulling the band up under it puts the pill on this page's gradient, which is
+// how all three artboards draw it. Guarded on `.customer-navbar` because the
+// partner and admin shells are sidebars with no such bar, and `--cl-nav-h`
+// already grows by the dev banner's height when one is on screen.
+body:has(.customer-navbar) .cl-out {
+  margin-top: calc(-1 * var(--cl-nav-h, 0px));
+  padding-top: calc(52px + var(--cl-nav-h, 0px));
+}
+
+// What was booked — restored from the summary strip the artboards do not draw,
+// in the chip language the 404's exits already use rather than a new one.
+.cl-out__items {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px auto 0;
+}
+
+.cl-out__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid $outcome-line;
+  font-size: 14px;
+  font-weight: 700;
+  color: $outcome-body;
+}
+
+.cl-out__item-icon {
+  font-size: 13px;
+  color: variables.$cleansia-primary-600;
+}
+
+.cl-out__inner {
+  max-width: 860px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cl-out__art {
+  width: auto;
+  height: 200px;
+  margin: 0 auto;
+  display: block;
+}
+
+// What happened, in two words, before the sentence that explains it.
+.cl-out__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 18px;
+  min-height: 44px;
+  border-radius: 999px;
+  background: variables.$cleansia-white;
+  border: 1px solid $outcome-line;
+  font-size: 15px;
+  font-weight: 700;
+  color: $outcome-body;
+
+  // Paid. The one green on the page, and it is green because the thing the
+  // customer was worried about did happen.
+  &--ok {
+    background: #dcfce7;
+    border-color: #bbf7d0;
+    color: #166534;
+  }
+
+  // Not paid. Amber, never red: nothing failed and nothing was charged — the
+  // booking exists and is waiting. Red here would read as "your booking is
+  // gone", which is the opposite of what happened.
+  &--pending {
+    background: #fef3c7;
+    border-color: #fde68a;
+    color: #92400e;
+  }
+}
+
+// The 404 has no state to badge — it says which error it is.
+.cl-out__eyebrow {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: $outcome-muted;
+}
+
+.cl-out__title {
+  margin: 16px 0 0;
+  font-family: 'Poppins', 'Nunito', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 44px;
+  line-height: 1.1;
+  letter-spacing: -1.2px;
+  text-wrap: balance;
+  color: variables.$cleansia-primary-700;
+}
+
+.cl-out__lead {
+  max-width: 32em;
+  margin: 14px auto 0;
+  font-size: 19px;
+  line-height: 1.7;
+  color: $outcome-body;
+}
+
+// ---- What happens next ----------------------------------------------------------
+// Three facts, not three instructions: on the success page they are things the
+// platform will do, and on the cancel page they are things that are already
+// true. Either way the reader is being told, not asked.
+.cl-out__facts {
+  margin-top: 30px;
+  padding: 16px 30px;
+  border-radius: 32px;
+  background: variables.$cleansia-white;
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+  text-align: left;
+}
+
+.cl-out__fact {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid $outcome-line;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.cl-out__fact-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  background: variables.$cleansia-primary-50;
+  font-size: 19px;
+  color: variables.$cleansia-primary-700;
+}
+
+.cl-out__fact-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: $outcome-ink;
+}
+
+.cl-out__fact-note {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: $outcome-muted;
+}
+
+// ---- Somewhere else to go ---------------------------------------------------------
+// The 404's row of ways on. A dead end with no exits is the only thing worse
+// than a dead end.
+.cl-out__links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.cl-out__link-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: variables.$cleansia-white;
+  border: 1px solid $outcome-line;
+  font-size: 15px;
+  font-weight: 700;
+  color: $outcome-body;
+  text-decoration: none;
+  transition: border-color 0.16s ease, background 0.16s ease;
+
+  &:hover {
+    border-color: variables.$cleansia-primary-300;
+    background: variables.$cleansia-primary-50;
+  }
+}
+
+.cl-out__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 30px;
+}
+
+// The page's one primary action, written here rather than borrowed: the button
+// component this used to reach for is styled per app.
+.cl-out__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 34px;
+  border: 0;
+  border-radius: 999px;
+  background: variables.$cleansia-primary-600;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 17px;
+  color: variables.$cleansia-white;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.16s ease, transform 0.16s ease;
+
+  &:hover {
+    background: variables.$cleansia-primary-700;
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid variables.$cleansia-primary-600;
+    outline-offset: 2px;
+  }
+}
+
+.cl-out__alt {
+  border: 0;
+  background: none;
+  padding: 0 0 1px;
+  border-bottom: 2px solid variables.$cleansia-primary-300;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  color: variables.$cleansia-primary-700;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid variables.$cleansia-primary-600;
+    outline-offset: 2px;
+  }
+}
+
+// ---- Narrow --------------------------------------------------------------------------
+@media (max-width: 600px) {
+  .cl-out {
+    padding-top: 32px;
+  }
+
+  body:has(.customer-navbar) .cl-out {
+    padding-top: calc(32px + var(--cl-nav-h, 0px));
+  }
+
+  .cl-out__art {
+    height: 144px;
+  }
+
+  .cl-out__title {
+    font-size: 32px;
+    letter-spacing: -0.6px;
+  }
+
+  .cl-out__lead {
+    font-size: 17px;
+  }
+
+  .cl-out__facts {
+    padding: 12px 18px;
+    border-radius: 24px;
+  }
+}
+
+// ---- Dark -----------------------------------------------------------------------------
+// Only the customer app has a dark mode, but the rule is written unqualified:
+// it costs nothing on the two apps that never set the class, and the 404 is
+// shared, so a customer who has dark mode on must not be flashed a white page
+// when a link goes stale. The values are the customer palette's, lifted from
+// `_home-design.scss` rather than invented, so this page sits in the same room
+// as every other one. → /architecture (the `--cl-*` scale is customer-only,
+// which is why they are written out here instead of referenced)
+:root.dark-mode {
+  .cl-out {
+    background: radial-gradient(120% 92% at 76% 6%, #12304d 0%, #0e2439 44%, #0b1626 100%);
+  }
+
+  .cl-out__title {
+    color: #7dd3fc;
+  }
+
+  .cl-out__lead {
+    color: #cbd5e1;
+  }
+
+  .cl-out__eyebrow {
+    color: #94a3b8;
+  }
+
+  .cl-out__item {
+    background: rgba(15, 27, 45, 0.72);
+    border-color: rgba(148, 163, 184, 0.22);
+    color: #cbd5e1;
+  }
+
+  .cl-out__item-icon {
+    color: #7dd3fc;
+  }
+
+  .cl-out__chip,
+  .cl-out__link-chip,
+  .cl-out__facts {
+    background: #0f1b2d;
+    border-color: rgba(148, 163, 184, 0.22);
+    color: #cbd5e1;
+  }
+
+  .cl-out__facts {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  // The two states keep their hue and give up their brightness — a pastel
+  // green pill is a lamp in a dark room.
+  .cl-out__chip--ok {
+    background: rgba(22, 101, 52, 0.28);
+    border-color: rgba(74, 222, 128, 0.32);
+    color: #86efac;
+  }
+
+  .cl-out__chip--pending {
+    background: rgba(146, 64, 14, 0.28);
+    border-color: rgba(251, 191, 36, 0.32);
+    color: #fcd34d;
+  }
+
+  .cl-out__fact {
+    border-bottom-color: rgba(148, 163, 184, 0.22);
+  }
+
+  .cl-out__fact-icon {
+    background: rgba(56, 189, 248, 0.12);
+    color: #7dd3fc;
+  }
+
+  .cl-out__fact-title {
+    color: #e2e8f0;
+  }
+
+  .cl-out__fact-note {
+    color: #94a3b8;
+  }
+
+  .cl-out__link-chip:hover {
+    border-color: rgba(56, 189, 248, 0.44);
+    background: rgba(56, 189, 248, 0.12);
+  }
+
+  .cl-out__cta {
+    background: #38bdf8;
+    color: #05202f;
+
+    &:hover {
+      background: #7dd3fc;
+    }
+  }
+
+  .cl-out__alt {
+    border-bottom-color: rgba(56, 189, 248, 0.5);
+    color: #7dd3fc;
+  }
+}

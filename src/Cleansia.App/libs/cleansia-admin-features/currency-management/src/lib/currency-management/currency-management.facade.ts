@@ -29,7 +29,10 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
         finalize(() => this.loading.set(false))
       )
       .subscribe((currencies) => {
-        this.currencies.set(currencies);
+        // `?? []` — the generated client can put a NULL in a signal typed as an array; reasoned out
+        // in service-management/service-form.facade.ts. Nothing dereferences it here, so the null
+        // would travel as far as the currency table before it threw.
+        this.currencies.set(currencies ?? []);
         if (this.initialLoading()) {
           this.initialLoading.set(false);
         }

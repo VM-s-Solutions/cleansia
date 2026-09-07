@@ -17,6 +17,7 @@ public class GdprDeletionService(
     IEmployeeDocumentRepository employeeDocumentRepository,
     IDocumentDeletionRequestRepository documentDeletionRequestRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
+    ICreditAccountRepository creditAccountRepository,
     IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserMembershipRepository userMembershipRepository,
     IOrderPhotoRepository orderPhotoRepository,
@@ -65,6 +66,19 @@ public class GdprDeletionService(
         if (blockingOrder)
             return BusinessResult.Failure(new Error(
                 nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByOrder));
+
+        // MONEY OWED BLOCKS ERASURE. Owner ruling 2026-09-05, and the same shape as the unsettled-pay
+        // guard below: a credit balance is a DEBT, not a preference, and anonymizing the person it is
+        // owed to writes it off at the exact moment they asked to be forgotten. The customer spends it
+        // or asks to be paid out, and then the erasure proceeds and the account goes with them.
+        //
+        // Applies to CUSTOMERS, which is why it sits above the employee block rather than inside it.
+        // A zero balance never blocks anything, and a customer who has never had credit has no account
+        // at all. -> /architecture/security-rules, SubjectDataErasureRosterTests
+        var creditOwed = await HasPositiveCreditBalanceAsync(user.Id, cancellationToken);
+        if (creditOwed)
+            return BusinessResult.Failure(new Error(
+                nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByCreditBalance));
 
         if (user.Employee is not null)
         {
@@ -160,6 +174,17 @@ public class GdprDeletionService(
     /// remedy — settle the period — so two error keys would name a distinction the reader cannot
     /// act on. → /flows/pay-and-payouts
     /// </summary>
+    /// <summary>
+    /// Does the platform still owe this customer money? Reads the balance only — the ledger is
+    /// irrelevant to the question, and a customer with no account has nothing owed.
+    /// </summary>
+    private async Task<bool> HasPositiveCreditBalanceAsync(
+        string userId, CancellationToken cancellationToken)
+    {
+        var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
+        return spendable is { Balance: > 0m };
+    }
+
     private Task<bool> HasUnsettledPayAsync(string employeeId, CancellationToken cancellationToken)
         => orderEmployeePayRepository.GetQueryable()
             .AnyAsync(p => p.EmployeeId == employeeId

@@ -620,6 +620,66 @@ data class SignUpUiState(
     assert.equal(linesFor(r, "E1").length, 0, `expected 0 E1, got: ${r.out}`);
 });
 
+// E1 (d) + E5 — the 2026-09-05 narrowings. Both rules were firing on code that commits none of the
+// harm they exist to prevent, and a rule wrong on the only hit it has does not get obeyed, it gets
+// skimmed past. Each narrowing is paired with a STILL-FLAGS case, because an exemption that also
+// silences the real shape is not a narrowing, it is a deletion.
+test("E1 does NOT flag a state whose phase field is ALREADY a sealed union", () => {
+    // AuthUiState's shape: a spinner plus an outcome that is itself the union E1 prescribes. The
+    // rule counted `outcome` as a flag on its NAME and demanded the thing it was looking at.
+    const r = runKt(`package x
+data class AuthUiState(
+    val loading: Boolean = false,
+    val outcome: AuthOutcome? = null,
+)
+
+sealed class AuthOutcome {
+    data object SignedIn : AuthOutcome()
+    data object NeedsEmailConfirm : AuthOutcome()
+}`);
+    assert.equal(linesFor(r, "E1").length, 0, `expected 0 E1, got: ${r.out}`);
+});
+
+test("E1 STILL flags a genuine flag-bag that merely shares a file with a sealed class", () => {
+    // The exemption subtracts the union-typed field only. Two loose flags beside it are still two
+    // loose flags, and the presence of an unrelated sealed class must not launder them.
+    const r = runKt(`package x
+data class FeedUiState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val items: List<String> = emptyList(),
+)
+
+sealed class FeedEvent {
+    data object Dismissed : FeedEvent()
+}`);
+    assert.equal(linesFor(r, "E1").length, 1, `expected 1 E1, got: ${r.out}`);
+});
+
+test("E5 does NOT flag a repository returning the typed error itself", () => {
+    // The data leaves over a StateFlow; the return carries only failure. None of ADR-0011's three
+    // harms apply, and the exclusion list simply never named ApiError.
+    const r = runKt(
+        `package x
+interface DashboardRepository {
+    suspend fun refresh(employeeId: String?, force: Boolean): ApiError?
+}`,
+        "DashboardRepository.kt",
+    );
+    assert.equal(linesFor(r, "E5").length, 0, `expected 0 E5, got: ${r.out}`);
+});
+
+test("E5 STILL flags a repository returning a nullable BODY", () => {
+    const r = runKt(
+        `package x
+interface DashboardRepository {
+    suspend fun load(id: String): DashboardDto?
+}`,
+        "DashboardRepository.kt",
+    );
+    assert.equal(linesFor(r, "E5").length, 1, `expected 1 E5, got: ${r.out}`);
+});
+
 // conv `: any` — the rule checked only the CURRENT line for a disable directive, so it reported
 // error.codes.ts, where the exception is both explained in prose and sanctioned by ESLint itself.
 test("conv flags a bare ': any'", () => {
@@ -655,7 +715,7 @@ for (const [name, fn] of cases) {
 }
 console.log(
     failed === 0
-        ? `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + conv): ${cases.length} passed`
-        : `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + conv): ${failed}/${cases.length} FAILED`,
+        ? `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + E5 + conv): ${cases.length} passed`
+        : `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + E5 + conv): ${failed}/${cases.length} FAILED`,
 );
 process.exit(failed === 0 ? 0 : 1);

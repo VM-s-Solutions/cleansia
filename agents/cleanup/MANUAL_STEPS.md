@@ -5,6 +5,70 @@ step, cleared when done.
 
 ## Open
 
+### MS-13 — Send one of each migrated e-mail before the next deploy — **owner**
+
+T-0677 moved all six live e-mails off hosted SendGrid templates onto
+`email-templates/` in this repository. Ten tests assert on the HTML the SDK actually serializes, so
+the bodies are proven; what is **not** proven is what a real mail client does with them, and that is
+the half a test cannot reach.
+
+**Action:** with a live SendGrid key, trigger one of each and open them — ideally in Gmail and
+Outlook, which are the two that rewrite CSS:
+
+1. registration → confirmation e-mail
+2. forgot password → reset e-mail
+3. an order → receipt (check the PDF is attached)
+4. an order status change → status update (check the status badge has its colour — it is driven by
+   `{{StatusClass}}` written into a class attribute)
+5. close a pay period → period-closed (check the invoice PDF)
+6. a period near its end → reminder (check the countdown reads "N days remaining")
+
+**Why it matters more than usual here.** These bodies were previously rendered by SendGrid, which
+inlines CSS on the way out. We now send the HTML as written, so anything relying on that inlining
+would look different. The templates use inline-friendly CSS in a `<style>` block, which Gmail
+tolerates, but this is exactly the class of thing worth seeing once.
+
+**If one looks wrong:** the hosted templates were not deleted from the SendGrid account, so
+reverting the T-0677 commit restores the previous behaviour exactly. Nothing about this is one-way.
+
+### MS-14 — Regenerate the customer client for the property-size catalogue — **owner**
+
+`GET /api/Country/GetPropertySizes?isoCode=&languageCode=` is live and anonymous on
+`Cleansia.Web.Customer`, returning each preset with its label already resolved. CZ and SK are
+seeded. The home-page calculator still reads the hardcoded `CZ_PROPERTY_SIZE_PRESETS` list because
+the generated client has no method for the route.
+
+**Action:** `npm run generate-customer-client` from `src/Cleansia.App/`, with the customer host
+running. Then the `PROPERTY_SIZE_PRESETS` factory in
+`libs/cleansia-customer-features/home/.../quick-quote/property-size-presets.ts` swaps to the client
+call — the file says exactly what changes, and nothing else does.
+
+**Also run** `sql-scripts/seed/insert_property_size_presets.sql` against DEV (it joins on `IsoCode`,
+so it is safe to run before or after the drop in MS-2). Until it does, the endpoint answers with an
+empty list — which the calculator renders honestly as "no sizes", not as an error.
+
+This is the last acceptance criterion of T-0675 and the only thing between it and done.
+
+### MS-15 — Regenerate the customer client for the quote's crew and duration — **owner**
+
+`QuoteOrder.Response` now carries `EstimatedDurationMinutes` and `RequiredEmployees`, computed from
+`OrderDuration.EstimateMinutes` and `ceil(minutes / OrderDuration.MinutesPerEmployee)` — the same two
+definitions the order itself uses, so a quote cannot promise a crew the booking will not send.
+
+The home-page calculator states them under the price in the approved artboard ("2 uklízeči · odhad
+4 hodiny"). It cannot until the generated client carries the fields.
+
+**Action:** `npm run generate-customer-client` from `src/Cleansia.App/`, with the customer host
+running. Then `QuickQuoteFacade` gains a `crewNote` computed from the two fields and the template
+renders it under the price — the facade already carries the comment saying so.
+
+Until then the price shows without that line, which is the honest state: the numbers exist on the
+server and not yet on the client.
+
+**Note on the backend build:** `dotnet build` on the full solution fails while the five API hosts are
+running — they hold the abstraction DLLs open. `Cleansia.Core.Domain` and `Cleansia.Core.AppServices`
+both build clean on their own; the backend test suites need the hosts stopped.
+
 ### MS-2 — Drop the DEV database before the next deploy — **owner, deferred by decision**
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
@@ -13,7 +77,8 @@ step, cleared when done.
 
 `MS-1` regenerated the single `Initial` migration, `MS-6` regenerated it again, and the partner
 document-lifecycle work regenerated it a third time for the two new tables — so its id has moved from
-`20260811192214` to `20260813085249` to `20260815094107` to **`20260825114012`**.
+`20260811192214` to `20260813085249` to `20260815094107` to `20260825114012` to **`20260830221715`**
+(owner, 2026-08-31, for the `PropertySizePresets` table). The regenerated migration was proven against a real Postgres by the integration suite: 200/200.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every
@@ -23,6 +88,13 @@ tables that already exist — failing the `migrate-database` job every other dep
 
 **Action:** drop the DEV database, then deploy. Pre-production, so there is no data to preserve; the
 seed repopulates it (`sql-scripts/insert_seed_data.sql`).
+
+**One script to run by hand alongside it:** `sql-scripts/seed/insert_email_template_translations_promo_code.sql`.
+Nothing under `seed/` is run by a workflow — the auto-seed reads only the root
+`insert_seed_data.sql` (`CleansiaStartupBase.cs:284`). Skip it and the promo e-mail still sends, but
+with every copy slot blank: the renderer strips placeholders it has no value for, so the failure is a
+near-empty e-mail rather than an error anyone sees. The six older e-mails have the same shape via
+`seed/insert_email_translations.sql`, so this is the existing convention, not a new one.
 
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
@@ -92,6 +164,18 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
+
+### MS-12 — Regenerate the customer web client for the promo-request endpoint — **DONE 2026-08-31**
+
+Owner regenerated `customer-client.ts`. The regen is **purely additive** — 144 lines in, none out —
+and adds `PromoCodeClient.request()` plus `RequestPromoCodeCommand` / `RequestPromoCodeResponse`.
+
+`PromoRequestFacade` now calls it, so the footer box sends for real and T-0676 AC6 is closed. The
+lib barrel needed the two new DTOs adding by hand: `libs/core/customer-services/src/index.ts`
+re-exports the generated client **selectively**, so a regenerated type is invisible to the apps
+until it is named there. That is not obvious from a green regen — the client compiles, the app does
+not, and the error names the barrel rather than the regen.
+
 
 ### MS-8 — Regenerate the admin client for the country field labels — **DONE 2026-08-27**
 

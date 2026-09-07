@@ -451,6 +451,7 @@ class MembershipWireTest {
             "allowsExpressUpgrade",
             "trialPeriodDays",
             "savingsPercentVsMonthly",
+            "expressUpgradesPerMonth",
         )
 
         val MINE_SPEC_PROPERTIES = setOf(

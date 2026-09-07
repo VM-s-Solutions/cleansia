@@ -1,0 +1,87 @@
+name: Booking policy parity
+
+# `BookingPolicy` decides what a cancellation costs, how late a booking is accepted and what express
+# adds. Four surfaces then STATE those numbers to a customer — the web's copy, the web's shared
+# constants, Android's string resources and iOS's string catalog — each holding its own literal.
+#
+# They drifted. Both mobile apps quoted a cancellation fee of 50% and 100% against a policy of 25%
+# and 50%, in five locales, for as long as it took someone to read them side by side; the home page
+# separately claimed a 4-hour booking floor against a 2-hour one. Every CI job was green throughout,
+# because no existing job can see all four trees at once:
+#
+#   - frontend-ci.yml runs `nx affected`. A C#/Kotlin/Swift-only diff selects ZERO Nx projects, and
+#     Nx inputs cannot reference paths above src/Cleansia.App, so BookingPolicy.cs is not a declared
+#     input — a Jest spec would replay a CACHED PASS over drifted copy.
+#   - backend-ci.yml explicitly excludes src/cleansia_android/** and src/cleansia_ios/**.
+#   - android-ci and ios-ci are Gradle and Xcode. Neither reads C#.
+#
+# WHY A SEPARATE WORKFLOW, NOT A JOB IN AN EXISTING ONE. GitHub path filters are WORKFLOW-level;
+# there is no per-job `paths`. Folding this into any one of the four would either under-trigger (it
+# would miss the other three trees) or drag that workflow's expensive runner along with every edit to
+# a dependency-free Node file. Split, this gate gets exactly the trigger set its inputs justify, on
+# ubuntu-latest, in seconds — and a red check here reads "booking policy", not "iOS CI failed".
+#
+# Same trigger shape as the other tool workflows, and for the same reason: pushes to master are
+# included because a pull_request-only trigger means a direct-to-master commit is never checked.
+on:
+  # '**' not '*'. In Actions filter syntax `*` matches any character EXCEPT `/`, so a base branch of
+  # `fix/...` or `feature/...` would match NOTHING and the workflow would simply never run — which
+  # reports as "no checks needed" rather than as a failure.
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs'
+      - 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts'
+      - 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n/**'
+      - 'src/cleansia_android/customer-app/src/main/res/**'
+      - 'src/cleansia_ios/CleansiaCustomer/Resources/Localizable.xcstrings'
+      - 'agents/tools/check-booking-policy-parity.mjs'
+      - 'agents/tools/check-booking-policy-parity.test.mjs'
+      - '.github/workflows/booking-policy-parity.yml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs'
+      - 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts'
+      - 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n/**'
+      - 'src/cleansia_android/customer-app/src/main/res/**'
+      - 'src/cleansia_ios/CleansiaCustomer/Resources/Localizable.xcstrings'
+      - 'agents/tools/check-booking-policy-parity.mjs'
+      - 'agents/tools/check-booking-policy-parity.test.mjs'
+      - '.github/workflows/booking-policy-parity.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+
+    # A ceiling, not a budget: this job runs in seconds, so 15 only ever catches a hang. Without it a
+    # wedged run bills to GitHub's 6-hour default.
+    timeout-minutes: 15
+    name: Every surface quotes the policy it actually enforces
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # No `cache: npm` — the checker is dependency-free Node by the same rule as every other tool in
+      # agents/tools, so there is no lock file to key a cache on and nothing to install.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # FIRST, and blocking, exactly as docs-ci.yml runs check-docs-refs.test.mjs first. A gate whose
+      # own body has been broken reads exactly like a clean tree, and this is the only signal that
+      # sees all four trees — so the self-test stubs the tool to `exit 0` and proves the drift
+      # scenarios go red with it and green without.
+      - name: Self-test the parity gate
+        run: node agents/tools/check-booking-policy-parity.test.mjs
+
+      - name: Every surface agrees with BookingPolicy
+        run: node agents/tools/check-booking-policy-parity.mjs

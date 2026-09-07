@@ -35,4 +35,13 @@
     <Folder Include="Features\Currencies\DTOs\" />
   </ItemGroup>
 
+  <!--
+    The templates in email-templates/ are the runtime source, not documentation.
+    Linked rather than copied so there is exactly one file per e-mail in the
+    repository and it is the one that gets sent. -> Services/EmailTemplateRenderer.cs
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\email-templates\*.html" Link="EmailTemplates\%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

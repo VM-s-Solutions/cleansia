@@ -1,7 +1,12 @@
 export { CustomerClient, CUSTOMER_API_BASE_URL } from './lib/client/customer-base-client';
-export { SubmitOrderReviewCommand, OrderReviewDto } from './lib/client/customer-client';
+export {
+  SubmitOrderReviewCommand,
+  SubmitOrderReviewReviewLineScore,
+  OrderReviewDto,
+} from './lib/client/customer-client';
 export {
   LoyaltyClient,
+  GetMyCreditResponse,
   GetMyLoyaltyResponse,
   GetMyLoyaltyTierPerk,
   GetLoyaltyTiersResponse,
@@ -15,6 +20,7 @@ export {
 } from './lib/client/customer-client';
 export type {
   ILoyaltyClient,
+  IGetMyCreditResponse,
   IGetMyLoyaltyResponse,
   IGetMyLoyaltyTierPerk,
   IGetLoyaltyTiersResponse,
@@ -42,6 +48,13 @@ export {
   AddressDto,
   CustomerAddress,
   QuoteOrderCommand,
+  QuoteOrderQuoteLine,
+  ResumeOrderCheckoutCommand,
+  ResumeOrderCheckoutResponse,
+  QuotePlusSavingsQuery,
+  QuotePlusSavingsResponse,
+  SearchAddressesAddressSuggestion,
+  SearchAddressesResponse,
   QuoteOrderResponse,
   ExtraClient,
   ExtraListItem,
@@ -56,17 +69,26 @@ export type {
   IAddressDto,
   ICustomerAddress,
   IQuoteOrderCommand,
+  IQuoteOrderQuoteLine,
+  IQuotePlusSavingsQuery,
+  IQuotePlusSavingsResponse,
+  ISearchAddressesAddressSuggestion,
+  ISearchAddressesResponse,
   IQuoteOrderResponse,
 } from './lib/client/customer-client';
 export {
   PromoCodeClient,
   ValidatePromoCodeCommand,
   ValidatePromoCodeResponse,
+  RequestPromoCodeCommand,
+  RequestPromoCodeResponse,
 } from './lib/client/customer-client';
 export type {
   IPromoCodeClient,
   IValidatePromoCodeCommand,
   IValidatePromoCodeResponse,
+  IRequestPromoCodeCommand,
+  IRequestPromoCodeResponse,
 } from './lib/client/customer-client';
 export {
   ReferralClient,
@@ -148,6 +170,8 @@ export {
   DisputeMessageDto,
   DisputeReason,
   CreateDisputeCommand,
+  CreateDisputeDisputeLineSelection,
+  CreateDisputeResponse,
   AddDisputeMessageCommand,
   UploadDisputeEvidenceResponse,
   PackageListItem,
@@ -159,6 +183,7 @@ export {
   ChangePasswordCommand,
   RequestPasswordChangeCommand,
   UpdateCurrentUserCommand,
+  UpdateCurrentUserPhotoCommand,
   ConsentType,
   UserConsentDto,
   GrantConsentCommand,
@@ -171,6 +196,7 @@ export type {
   ICategoryDto,
   ICountryListItem,
   IUpdateCurrentUserCommand,
+  IUpdateCurrentUserPhotoCommand,
   IUserConsentDto,
   IGrantConsentCommand,
   IWithdrawConsentCommand,
@@ -203,3 +229,4 @@ export type {
 export * from './lib/guards';
 export * from './lib/interceptors';
 export * from './lib/services';
+export { MembershipPlanFactsService } from './lib/services/membership-plan-facts.service';

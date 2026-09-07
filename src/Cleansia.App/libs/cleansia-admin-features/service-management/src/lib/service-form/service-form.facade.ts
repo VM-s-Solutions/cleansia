@@ -77,8 +77,14 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
         catchError(() => of([] as LanguageListItem[]))
       )
       .subscribe((languages: LanguageListItem[]) => {
+        // `?? []` because the generated client answers a 200 whose body is not a JSON array — and a
+        // 204 — with NULL, not an empty list: `processGetOverview` in admin-client.ts falls past both
+        // branches to `result200 = null as any` while its declared type promises an array. Nothing
+        // above catches it — null is not an error, so `catchError` never fires, and TypeScript never
+        // complains, because the declared type is non-nullable. The `.filter` on the next line is
+        // where that null stops being invisible.
         this.languages.set(
-          languages
+          (languages ?? [])
             .filter((lang: LanguageListItem): lang is LanguageListItem & { code: string; name: string } =>
               Boolean(lang.code) && Boolean(lang.name))
             .map((lang: LanguageListItem) => ({
@@ -102,8 +108,9 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
         catchError(() => of([] as CategoryDto[]))
       )
       .subscribe((categories: CategoryDto[]) => {
+        // The same generated-client null as `loadLanguages` above.
         this.categories.set(
-          categories
+          (categories ?? [])
             .filter((c): c is CategoryDto & { id: string; name: string } =>
               Boolean(c.id) && Boolean(c.name))
             .map((c) => ({ id: c.id!, name: c.name! }))

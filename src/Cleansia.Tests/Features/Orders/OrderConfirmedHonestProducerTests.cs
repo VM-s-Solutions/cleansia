@@ -20,10 +20,22 @@ using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// <c>order.confirmed</c>'s two remaining producers — the Stripe webhook and the customer confirming
-/// their own recurring occurrence — establish that the booking is confirmed and nothing more: on both,
-/// the order only becomes offerable at that moment, so no cleaner has yet seen it. Neither may claim
-/// one, and neither may borrow the assignment key.
+/// <c>order.confirmed</c>'s two producers — the Stripe webhook and the customer confirming their own
+/// recurring occurrence — establish that the booking is PAID and nothing more: on both, the order only
+/// becomes offerable at that moment, so no cleaner has yet seen it. Neither may claim one, and neither
+/// may borrow the assignment key.
+///
+/// <para><b>Neither writes a fulfilment status any more</b> (T-0691, owner ruling 2026-09-08).
+/// <c>OrderStatus.Confirmed</c> now means only "a cleaner took this job", so both producers move the
+/// MONEY axis and leave the order at <c>New</c>. This class is the reason that change is safe to make
+/// in one commit: it already separated "the booking is confirmed" from "a cleaner has it", and asserted
+/// the push key never claims a cleaner. Only the status assertions moved.</para>
+///
+/// <para>The push key keeps its name. <c>order.confirmed</c> now describes a money event with a
+/// fulfilment-sounding name, which is untidy — but renaming it costs ten locale files across two mobile
+/// platforms plus the feed catalogue, and the customer still needs telling that their payment landed.
+/// The copy guards that forbid it claiming a cleaner (<c>PushLocKeyCatalogTests</c>,
+/// <c>NotificationTemplatesTest</c>) are unaffected and still true.</para>
 /// </summary>
 public class OrderConfirmedHonestProducerTests
 {
@@ -64,7 +76,11 @@ public class OrderConfirmedHonestProducerTests
             SettlementCommand("evt_confirmed_1"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        // The money axis moved and the fulfilment axis did NOT. This assertion used to read
+        // Confirmed; that it now reads New is the whole of T-0691 at its writer.
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.Empty(order.AssignedEmployees);
         Assert.Equal([NotificationEventCatalog.OrderConfirmed], _sentEventKeys);
     }
 
@@ -93,8 +109,30 @@ public class OrderConfirmedHonestProducerTests
             .Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        // Same as the webhook above: money moves, fulfilment does not. The occurrence stays offerable
+        // because OrderAvailability admits New with a satisfied money term — before T-0691 the
+        // Confirmed append was load-bearing here, since a recurring CASH order at New is refused by
+        // the money term.
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.Empty(order.AssignedEmployees);
         Assert.Equal([NotificationEventCatalog.OrderConfirmed], _sentEventKeys);
+    }
+
+    /// <summary>
+    /// The offerability half, asserted here rather than trusted. Both producers leave the order at New,
+    /// and New is only offerable because the money term is satisfied — so if either the status write or
+    /// the payment write regressed, the job would silently never reach a cleaner. That is the failure
+    /// mode this split is most exposed to, and it is invisible in the two facts above.
+    /// </summary>
+    [Theory]
+    [InlineData(PaymentType.Card, null)]
+    [InlineData(PaymentType.Cash, "tmpl-1")]
+    public void A_Paid_Order_Resting_At_New_Is_Still_Offerable(
+        PaymentType paymentType, string? recurringTemplateId)
+    {
+        Assert.True(OrderAvailability.IsOfferable(
+            OrderStatus.New, paymentType, PaymentStatus.Paid, recurringTemplateId));
     }
 
     private static Order ArrangeOrder(PaymentType paymentType, string? recurringTemplateId)

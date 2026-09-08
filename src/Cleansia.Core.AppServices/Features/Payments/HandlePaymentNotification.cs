@@ -264,8 +264,19 @@ public class HandlePaymentNotification
                 return BusinessResult.Success();
             }
 
+            // The MONEY axis only. This used to append OrderStatus.Confirmed too, which is what made
+            // that word mean two unrelated things — "money settled" here, and "a cleaner took the job"
+            // in TakeOrder. Owner ruling 2026-09-08 (T-0691): Confirmed means only the second, so a
+            // paid card order rests at New + Paid, exactly as a cash order rests at New + Pending.
+            //
+            // Nothing is appended in its place. The fulfilment axis has not moved — no cleaner has
+            // done anything — and a same-value re-append would put a second New track on the history
+            // for an event that is not a fulfilment event at all.
+            //
+            // What still makes the order offerable is OrderAvailability: its status term admits New,
+            // and its money term is satisfied by the line above. That relaxation shipped first,
+            // deliberately, so the board was ready before any order could rest here.
             order.UpdatePaymentStatus(PaymentStatus.Paid);
-            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
 
             // ADR-0002 D1/D5 (the F2 webhook stamp/effect-split fix): record intent. These now fire
             // only AFTER the ProcessedStripeEvent stamp + state change commit; on a commit-throw
@@ -294,7 +305,7 @@ public class HandlePaymentNotification
                     cancellationToken);
             }
 
-            // Q-BROWSE-01 (b): the two writes above are what make a card order offerable, so this is
+            // Q-BROWSE-01 (b): the payment write above is what makes a card order offerable, so this is
             // where its preferred cleaner is told. Creation could not: until the money lands the order
             // is New + Pending, the browse gate refuses it, and CleanupStalePendingOrders cancels it an
             // hour later. Runs after the terminal-state short-circuit, so a Stripe redelivery cannot

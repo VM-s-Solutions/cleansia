@@ -102,10 +102,18 @@ public class ConfirmRecurringOrder
         private async Task<BusinessResult<Response>> HandleCashAsync(
             Order order, CancellationToken cancellationToken)
         {
-            // Cash means the customer pays the cleaner on-site — no gateway
-            // step, the order moves straight to Confirmed. Mirrors the Cash
-            // branch in CreateOrder.Handler so receipts get queued the same way.
-            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+            // Cash means the customer pays the cleaner on-site — no gateway step. The MONEY axis moves
+            // and the fulfilment axis does not: the customer confirming their own occurrence is not a
+            // cleaner taking it, and owner ruling 2026-09-08 (T-0691) is that Confirmed means only the
+            // latter. This used to append Confirmed here, which was the same overload as the Stripe
+            // webhook wearing different clothes — and leaving it would have meant the word still had
+            // two meanings after the split, buying nothing for the whole cost.
+            //
+            // The occurrence stays offerable: it rests at New + Paid, and OrderAvailability admits New
+            // with a satisfied money term. Before the ruling that was NOT true — a recurring cash
+            // occurrence at New is refused by the money term (Cash && RecurringTemplateId != null), so
+            // the Confirmed append was load-bearing for offerability. It is the PaymentStatus.Paid
+            // write below that carries it now.
             order.UpdatePaymentStatus(PaymentStatus.Paid);
 
             pending.Enqueue(

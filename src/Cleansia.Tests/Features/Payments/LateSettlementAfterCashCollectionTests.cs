@@ -150,7 +150,7 @@ public class LateSettlementAfterCashCollectionTests
     }
 
     [Fact]
-    public async Task Normal_Late_Settlement_Without_Cash_Collection_Still_Confirms_The_Order()
+    public async Task Normal_Late_Settlement_Without_Cash_Collection_Still_Settles_The_Order()
     {
         var order = ArrangeOrder(collectedInCash: false);
 
@@ -159,7 +159,10 @@ public class LateSettlementAfterCashCollectionTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        // The fulfilment axis is untouched by settlement (T-0691): Confirmed means a cleaner took the
+        // job, and none has. This asserted Confirmed before the split, which is why the method was
+        // named "...Still_Confirms_The_Order" — it is the money that settles, not the booking.
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
         _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Never);
     }
 

@@ -224,10 +224,16 @@ public class CancellationAcceptanceSignalTests
         // The exact reported case: books, pays by card, changes their mind 20 minutes later (past the
         // 15-min oops window) with the cleaning 23.7h away (inside the 24h free window). Before the fix
         // the webhook's Confirmed track made this "accepted" and the customer was billed 25%.
+        //
+        // T-0691 removed that track at the source: the webhook no longer writes a fulfilment status at
+        // all, so the order rests at New + Paid. This case is now impossible to reintroduce by reading
+        // the status — but the assertion is KEPT, because the defect it pins was never really about the
+        // word. CancellationAssessor keys on AssignedEmployees, and this proves it still does.
         var order = ArrangeNewOrder(cleaningInHours: 23.7, bookedMinutesAgo: 20);
         await ConfirmThroughStripeWebhookAsync();
 
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         Assert.Empty(order.AssignedEmployees);
 
         var response = await CancelAsync();
@@ -267,7 +273,12 @@ public class CancellationAcceptanceSignalTests
             new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
         Assert.True(confirm.IsSuccess);
-        Assert.Equal(OrderStatus.Confirmed, order.CurrentStatus);
+        // T-0691: confirming an occurrence settles the money and leaves fulfilment alone. The point of
+        // this case is unchanged and is now stated more directly — the cancellation fee keys on whether
+        // a cleaner ACCEPTED, never on the status word, so a paid-but-unassigned order is free to
+        // cancel whatever that word says.
+        Assert.Equal(OrderStatus.New, order.CurrentStatus);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
 
         var response = await CancelAsync();
 

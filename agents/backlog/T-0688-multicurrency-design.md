@@ -21,6 +21,17 @@ contradicts the earlier research pass, it says so in bold.
 **This is a plan, not a mandate.** Part 1 answers what was asked; Part 2 is the target system; Part 3
 is the order of work. Nothing here has been built.
 
+
+> **Part 3 superseded 2026-09-08 — see
+> [`T-0688-multicurrency-plan-cz-only.md`](T-0688-multicurrency-plan-cz-only.md).** The owner settled
+> decision 2 as recommended and then pulled Slovakia and Poland out of scope, so the seven-wave plan
+> below no longer applies. **Parts 1 and 2 stand** — Part 2 in particular is now the written proof that
+> adding a currency is data plus a bounded schema change, standing in for code that is deliberately not
+> being written. Two claims below were also corrected by the later pass: the Adaptive Pricing fix in
+> invariant 17 is the **wrong lever** (setting a session currency does not disable it —
+> `AdaptivePricing.Enabled = false` does), and the gross-vs-margin turnover gap in §2.2 is **1.6–2× on
+> the real seeded rate card, not 4–5×**.
+
 ---
 
 # PART 1 — THE ANSWERS

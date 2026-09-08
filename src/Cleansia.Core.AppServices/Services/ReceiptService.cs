@@ -219,19 +219,37 @@ public sealed class ReceiptService(
     // The initial register and the recovery re-register MUST build the request the same way so they
     // carry the same explicit idempotency token (the receipt number) — that is what lets an idempotent
     // authority collapse a recovery re-register onto the prior entry instead of double-registering.
+    /// <summary>
+    /// Whether VAT was applied to THIS ORDER, read from the order's own frozen breakdown.
+    ///
+    /// <para><b>Deliberately not <c>companyInfo.IsVatPayer</c>.</b> That is live company state, and a
+    /// receipt is a statement about a sale that already happened. Reading it live failed in both
+    /// directions: before registration a re-rendered order could claim VAT it never charged, and after
+    /// registration a pre-registration order re-rendered through <c>RetryFiscalRegistrationAsync</c> —
+    /// which re-resolves company info and re-uploads the stored blob — produced a document with
+    /// neither a VAT line (the layout needs <c>VatAmount &gt; 0</c>) nor the statutory non-payer notice
+    /// (the layout needs <c>!IsVatPayer</c>). A tax document asserting neither posture.</para>
+    ///
+    /// <para><c>AppliedVatRate</c> is the right discriminator because it is written exactly once, at
+    /// order creation, and is null precisely when no VAT regime applied. <c>VatCalculator</c> now
+    /// throws rather than returning a silent zero for a VAT payer with no country configuration, so
+    /// null no longer doubles as "we could not tell".</para>
+    /// </summary>
+    private static bool VatApplied(Order order) => order.AppliedVatRate is not null;
+
     private static FiscalReceiptRequest BuildFiscalRequest(Order order, OrderReceipt receipt, CompanyInfo companyInfo, string isoCode) =>
         FiscalReceiptRequest.Create(
             receiptNumber: receipt.ReceiptNumber,
             issuedAt: receipt.IssuedAt,
             totalAmount: order.TotalPrice,
-            vatAmount: companyInfo.IsVatPayer && order.VatAmount > 0 ? order.VatAmount : null,
+            vatAmount: VatApplied(order) && order.VatAmount > 0 ? order.VatAmount : null,
             currencyCode: order.Currency?.Code ?? Constants.Currency.Czk,
             companyLegalName: companyInfo.LegalName,
             companyRegistrationNumber: companyInfo.RegistrationNumber,
             companyVatNumber: companyInfo.VatNumber,
             customerName: order.CustomerName,
             customerEmail: order.CustomerEmail,
-            lineItems: BuildFiscalLineItems(order, companyInfo.IsVatPayer ? order.AppliedVatRate : null),
+            lineItems: BuildFiscalLineItems(order, order.AppliedVatRate),
             // The tender actually taken, not the booked one — a card booking the cleaner settled in cash
             // must be registered with the fiscal authority as a cash sale.
             paymentMethod: order.ActualPaymentType.ToString(),
@@ -382,11 +400,13 @@ public sealed class ReceiptService(
             Rooms = order.Rooms,
             Bathrooms = order.Bathrooms,
             EstimatedTime = order.EstimatedTime,
-            IsVatPayer = companyInfo.IsVatPayer,
-            NetAmount = companyInfo.IsVatPayer ? order.NetAmount : null,
-            VatAmount = companyInfo.IsVatPayer ? order.VatAmount : null,
-            VatRate = companyInfo.IsVatPayer ? order.AppliedVatRate : null,
-            NonVatPayerNotice = companyInfo.IsVatPayer ? null : "Nejsme plátci DPH",
+            // THE ORDER'S OWN SNAPSHOT, never the live company row. A receipt is a statement about a
+            // sale that already happened, so its VAT posture is a property of that sale.
+            IsVatPayer = VatApplied(order),
+            NetAmount = VatApplied(order) ? order.NetAmount : null,
+            VatAmount = VatApplied(order) ? order.VatAmount : null,
+            VatRate = order.AppliedVatRate,
+            NonVatPayerNotice = VatApplied(order) ? null : "Nejsme plátci DPH",
             Company = new CompanyInfoData
             {
                 LegalName = companyInfo.LegalName,

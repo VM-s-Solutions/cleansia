@@ -212,7 +212,6 @@ public class CreateOrderPayCoverageValidatorTests
     private CreateOrder.Validator CreateValidator() => new(
         _packageRepository.Object,
         _serviceRepository.Object,
-        _currencyRepository.Object,
         _pricingCalculator.Object,
         _orderRepository.Object,
         _userMembershipRepository.Object,

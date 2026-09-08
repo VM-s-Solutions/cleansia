@@ -13,12 +13,17 @@ using Moq;
 namespace Cleansia.Tests.Services;
 
 /// <summary>
-/// The express surcharge and the total must be quoted in the SAME currency. The calculator scales the
-/// total by <c>Currency.ExchangeRate</c>, so a surcharge left in base units makes
-/// <c>CreateOrder.Handler</c>'s <c>calc.TotalPrice - calc.ExpressSurchargeAmount</c> subtract an
-/// unscaled figure from a scaled one — silently inflating the discount base (and therefore the
-/// persisted price) the moment a currency with a rate other than 1 goes live. Every assertion here is
-/// invisible at rate 1, which is exactly why the bug survived: the suite only ever priced in CZK.
+/// <b>The calculator must ignore <c>Currency.ExchangeRate</c> entirely.</b>
+///
+/// <para>This class used to assert the opposite — that every money figure was SCALED by the stored
+/// rate — and its fixtures are kept because they are the only ones in the suite that price against a
+/// currency whose rate is not 1. The assertions are inverted: owner ruling 2026-09-08 (Option B) is
+/// that a price is <b>authored</b> per currency and never converted, so a rate column must not be able
+/// to move a price no matter what an admin types into it.</para>
+///
+/// <para>Every test here is invisible at rate 1, which is exactly the point. The suite only ever
+/// priced in CZK, which is how the conversion path shipped unexercised in the first place — so the
+/// guard against it coming back has to price at a rate that is not 1 and prove nothing moves.</para>
 /// </summary>
 public class OrderPricingCalculatorExchangeRateTests
 {
@@ -98,32 +103,32 @@ public class OrderPricingCalculatorExchangeRateTests
             CancellationToken.None);
 
     [Fact]
-    public async Task ExpressSurcharge_NonUnitExchangeRate_IsQuotedInTheChargeCurrency()
+    public async Task ExpressSurcharge_IsUnmovedByANonUnitExchangeRate()
     {
         var result = await PriceExpressSlotAsync(ExchangeRate);
 
         Assert.True(result.ExpressSurchargeApplied);
         Assert.Equal(
-            BaseSubtotal * BookingPolicy.ExpressSurchargeRate * ExchangeRate,
+            BaseSubtotal * BookingPolicy.ExpressSurchargeRate,
             result.ExpressSurchargeAmount);
     }
 
     [Fact]
-    public async Task ExpressSurcharge_NonUnitExchangeRate_TotalMinusSurchargeIsTheScaledBaseSubtotal()
+    public async Task TotalMinusSurcharge_IsTheAuthoredSubtotal_AtAnyStoredRate()
     {
         var result = await PriceExpressSlotAsync(ExchangeRate);
 
         // The invariant CreateOrder.Handler relies on to derive the discount base.
-        Assert.Equal(BaseSubtotal * ExchangeRate, result.TotalPrice - result.ExpressSurchargeAmount);
+        Assert.Equal(BaseSubtotal, result.TotalPrice - result.ExpressSurchargeAmount);
     }
 
     [Fact]
-    public async Task ExpressSurcharge_NonUnitExchangeRate_TotalIsUnchanged()
+    public async Task Total_IsUnmovedByANonUnitExchangeRate()
     {
         var result = await PriceExpressSlotAsync(ExchangeRate);
 
         Assert.Equal(
-            (BaseSubtotal + BaseSubtotal * BookingPolicy.ExpressSurchargeRate) * ExchangeRate,
+            BaseSubtotal + BaseSubtotal * BookingPolicy.ExpressSurchargeRate,
             result.TotalPrice);
     }
 
@@ -142,13 +147,13 @@ public class OrderPricingCalculatorExchangeRateTests
     /// total prints a Kč figure labelled €. Same method, same class of defect as the surcharge above.
     /// </summary>
     [Fact]
-    public async Task LineItemSubtotals_NonUnitExchangeRate_AreQuotedInTheChargeCurrency()
+    public async Task LineItemSubtotals_AreUnmovedByANonUnitExchangeRate()
     {
         var result = await PriceMixedBasketAsync(ExchangeRate);
 
-        Assert.Equal(BaseSubtotal * ExchangeRate, result.ServicesSubtotal);
-        Assert.Equal(PackagePrice * ExchangeRate, result.PackagesSubtotal);
-        Assert.Equal(ExtraPrice * ExchangeRate, result.ExtrasSubtotal);
+        Assert.Equal(BaseSubtotal, result.ServicesSubtotal);
+        Assert.Equal(PackagePrice, result.PackagesSubtotal);
+        Assert.Equal(ExtraPrice, result.ExtrasSubtotal);
     }
 
     /// <summary>
@@ -156,7 +161,7 @@ public class OrderPricingCalculatorExchangeRateTests
     /// exactly what every client derives as <c>totalPrice - expressSurchargeAmount</c>.
     /// </summary>
     [Fact]
-    public async Task LineItemSubtotals_NonUnitExchangeRate_SumToThePreSurchargeSubtotal()
+    public async Task LineItemSubtotals_StillSumToThePreSurchargeSubtotal()
     {
         var result = await PriceMixedBasketAsync(ExchangeRate);
 
@@ -176,7 +181,7 @@ public class OrderPricingCalculatorExchangeRateTests
     }
 
     [Fact]
-    public async Task NoExpressSlot_NonUnitExchangeRate_ChargesTheScaledSubtotalOnly()
+    public async Task NoExpressSlot_ChargesTheAuthoredSubtotal_AndReportsRateOne()
     {
         var result = await CreateCalculator(ExchangeRate).CalculateAsync(
             [ServiceId], [], [], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
@@ -187,6 +192,7 @@ public class OrderPricingCalculatorExchangeRateTests
 
         Assert.False(result.ExpressSurchargeApplied);
         Assert.Equal(0m, result.ExpressSurchargeAmount);
-        Assert.Equal(BaseSubtotal * ExchangeRate, result.TotalPrice);
+        Assert.Equal(BaseSubtotal, result.TotalPrice);
+        Assert.Equal(1m, result.ExchangeRate);
     }
 }

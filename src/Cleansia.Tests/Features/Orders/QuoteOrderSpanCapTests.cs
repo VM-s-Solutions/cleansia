@@ -166,13 +166,12 @@ public class QuoteOrderSpanCapTests
     }
 
     private QuoteOrder.Validator QuoteValidator() =>
-        new(_serviceRepository.Object, _packageRepository.Object, _currencyRepository.Object);
+        new(_serviceRepository.Object, _packageRepository.Object);
 
     private CreateOrder.Validator CreateValidator() =>
         new(
             _packageRepository.Object,
             _serviceRepository.Object,
-            _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,

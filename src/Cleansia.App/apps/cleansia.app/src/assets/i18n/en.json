@@ -1750,7 +1750,7 @@
     "section2_title": "Services Description",
     "section2_text": "Cleansia provides professional cleaning services for residential customers. Services include furniture cleaning, carpet cleaning, mattress cleaning, and other related services as listed on our website.",
     "section3_title": "Ordering & Payment",
-    "section3_text": "Orders can be placed through our website. Payment is accepted via credit/debit card (processed by Stripe) or cash on delivery. Prices are displayed in CZK and include VAT.",
+    "section3_text": "Orders can be placed through our website. Payment is accepted via credit/debit card (processed by Stripe) or cash on delivery. Prices are displayed in CZK and are the final amount payable.",
     "section4_title": "Cancellation Policy",
     "section4_text": "Cancellations are free until a cleaner accepts your booking. Once accepted: free 24+ hours before start, 25% fee 4-24 hours before, 50% fee under 4 hours before start.",
     "section5_title": "Liability",

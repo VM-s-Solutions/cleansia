@@ -85,7 +85,10 @@ public static class QuotePlusSavings
                 query.SelectedExtraSlugs ?? [],
                 query.Rooms,
                 query.Bathrooms,
-                query.CurrencyId,
+                // currencyId: null -- the server resolves it, never the caller. Accepting one let any
+                // authenticated caller name a currency and have the whole CZK catalogue multiplied by
+                // its stored rate. Wave B replaces this with resolution from the address country.
+                null,
                 query.CleaningDate,
                 userId,
                 nowUtc,

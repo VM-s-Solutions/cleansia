@@ -63,7 +63,6 @@ public class CreateOrderValidatorCharacterizationTests
         new(
             _packageRepository.Object,
             _serviceRepository.Object,
-            _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
@@ -166,11 +165,41 @@ public class CreateOrderValidatorCharacterizationTests
             It.IsAny<IEnumerable<string>>(),
             It.IsAny<int>(),
             It.IsAny<int>(),
-            command.CurrencyId,
+            // Never command.CurrencyId — see NoCallerSuppliedCurrency_EverReachesTheCalculator below.
+            null,
             command.CleaningDate,
             It.IsAny<string?>(),
             It.IsAny<DateTime>(),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The currency is a SERVER fact. The validator used to forward <c>command.CurrencyId</c> straight
+    /// into the pricing calculator, and guarded it only with "does this currency exist" — which every
+    /// seeded currency did, so the guard stopped nothing. Naming HUF (stored rate 16.2) against a Prague
+    /// address multiplied the whole CZK catalogue by it.
+    ///
+    /// <para>The field stays on the wire, so this test supplies one and proves it is ignored. Asserting
+    /// on a command whose currency is null would pass against the defect.</para>
+    /// </summary>
+    [Fact]
+    public async Task NoCallerSuppliedCurrency_EverReachesTheCalculator()
+    {
+        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = "currency-huf" };
+
+        await CreateValidator().ValidateAsync(command);
+
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            It.Is<string?>(id => id != null),
+            It.IsAny<DateTime?>(),
+            It.IsAny<string?>(),
+            It.IsAny<DateTime>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

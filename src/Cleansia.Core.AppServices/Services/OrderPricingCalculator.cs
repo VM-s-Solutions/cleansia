@@ -61,7 +61,6 @@ public sealed class OrderPricingCalculator(
             ? await currencyRepository.GetDefaultAsync(cancellationToken)
             : await currencyRepository.GetByIdAsync(currencyId, cancellationToken);
 
-        var exchangeRate = currency?.ExchangeRate ?? 1m;
         var baseSubtotal = packagesSubtotal + servicesSubtotal + extrasSubtotal;
 
         // Express surcharge belongs on the pricing side because it's slot-
@@ -69,13 +68,15 @@ public sealed class OrderPricingCalculator(
         // subtotal — applied here so the wizard summary line item matches
         // what gets persisted in Order.TotalPrice.
         //
-        // EVERY money figure this method returns is in the CHARGE currency — the catalog is priced in
-        // the base one, so the scaling happens here and exactly once. CreateOrder.Handler derives its
-        // discount base as TotalPrice - ExpressSurchargeAmount, so an unscaled surcharge would be
-        // subtracted from a scaled total and inflate every discounted price at any exchange rate but 1;
-        // the broken-out line items render under this quote's own CurrencyCode, so an unscaled one
-        // prints a base-currency number under the charge currency's symbol.
-        var chargeSubtotal = baseSubtotal * exchangeRate;
+        // NO EXCHANGE RATE. Every money figure this method returns is in the catalogue's own currency,
+        // because the catalogue is what it is priced from. This used to multiply the whole basket by
+        // `currency.ExchangeRate` — a hand-typed admin column with no feed, no history and no snapshot,
+        // so editing it silently restated every historical order that referenced it.
+        //
+        // Owner ruling 2026-09-08 (Option B): a price is AUTHORED per currency, never converted. Wave B
+        // replaces the catalogue reads above with a join on per-currency price rows; until then there is
+        // exactly one active currency and the identity is the honest scaling.
+        var chargeSubtotal = baseSubtotal;
 
         // PURE READ — the resolver never writes, which is what lets the quote path and the create
         // validator both call it without burning a credit. The reservation happens once, in
@@ -95,24 +96,22 @@ public sealed class OrderPricingCalculator(
 
         var totalPrice = chargeSubtotal + expressSurchargeAmount;
 
-        // Scaled by the same exchangeRate as every other money figure this method
-        // returns, and only after it is known.
         var lines = new List<OrderPricingLine>();
         foreach (var package in packages.Where(p => p != null))
         {
             lines.Add(new OrderPricingLine(
                 Kind: "package",
                 ItemId: package.Id,
-                BaseAmount: package.Price * exchangeRate,
+                BaseAmount: package.Price,
                 UnitAmount: 0m,
                 Units: 0,
-                Amount: package.Price * exchangeRate));
+                Amount: package.Price));
         }
 
         foreach (var service in services.Where(s => s != null))
         {
-            var perUnit = service.PerRoomPrice * exchangeRate;
-            var basePart = service.BasePrice * exchangeRate;
+            var perUnit = service.PerRoomPrice;
+            var basePart = service.BasePrice;
             lines.Add(new OrderPricingLine(
                 Kind: "service",
                 ItemId: service.Id,
@@ -129,10 +128,10 @@ public sealed class OrderPricingCalculator(
                 lines.Add(new OrderPricingLine(
                     Kind: "extra",
                     ItemId: extra.Slug,
-                    BaseAmount: extra.Price * exchangeRate,
+                    BaseAmount: extra.Price,
                     UnitAmount: 0m,
                     Units: 0,
-                    Amount: extra.Price * exchangeRate));
+                    Amount: extra.Price));
             }
         }
 
@@ -140,12 +139,15 @@ public sealed class OrderPricingCalculator(
             TotalPrice: totalPrice,
             CurrencyId: currency?.Id ?? string.Empty,
             CurrencyCode: currency?.Code ?? string.Empty,
-            ServicesSubtotal: servicesSubtotal * exchangeRate,
-            PackagesSubtotal: packagesSubtotal * exchangeRate,
-            ExtrasSubtotal: extrasSubtotal * exchangeRate,
+            ServicesSubtotal: servicesSubtotal,
+            PackagesSubtotal: packagesSubtotal,
+            ExtrasSubtotal: extrasSubtotal,
             ExpressSurchargeApplied: expressSurchargeApplied,
             ExpressSurchargeAmount: expressSurchargeAmount,
-            ExchangeRate: exchangeRate,
+            // Always 1: no conversion happens anywhere in this method any more. The field stays on the
+            // contract because both mobile clients treat it as required and refuse the page rather than
+            // assume parity — deliberately, with tests. It is display-only and never a price input.
+            ExchangeRate: 1m,
             ExpressSurchargeWaivedByMembership: waiver.Waived,
             ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null,
             Lines: lines);

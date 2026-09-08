@@ -154,19 +154,38 @@ public class VatCalculatorTests
     }
 
     /// <summary>
-    /// Pins the CURRENT behaviour, which is fail-open: no country configuration means no VAT, silently.
-    /// That is safe while Czechia is the only market and its configuration is seeded, and it is a
-    /// silent under-declaration the moment it is not. Recorded as a finding rather than changed here —
-    /// making it throw is a behaviour change that belongs with the multi-jurisdiction work.
+    /// FAIL CLOSED. A VAT payer with no country configuration is the second-country case — the country
+    /// is serviced and the order is priced, but nobody seeded its configuration. This used to return a
+    /// silent zero, which on every screen and every document is indistinguishable from a legitimate
+    /// non-payer sale.
+    ///
+    /// <para>This test previously pinned that fail-open behaviour as documentation. It now pins the
+    /// opposite, and the inversion is the point: a failed booking is recoverable, a tax document that
+    /// quietly declares nothing is not.</para>
     /// </summary>
     [Fact]
-    public void NullCountryConfiguration_CurrentlyYieldsZeroVat_Silently()
+    public void AVatPayerWithNoCountryConfiguration_Throws_RatherThanDeclaringZero()
     {
-        var result = Sut.Calculate(1210m, VatPayer(), countryConfig: null);
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => Sut.Calculate(1210m, VatPayer(), countryConfig: null));
+
+        Assert.Contains("Refusing to price VAT at zero", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The other half of the split, and the reason the two guards cannot be one OR: a non-payer needs
+    /// no country configuration to reach a correct answer, so this must NOT throw. It is also the
+    /// state the platform is actually in today.
+    /// </summary>
+    [Fact]
+    public void ANonPayerWithNoCountryConfiguration_IsFine_AndYieldsNoVat()
+    {
+        var result = Sut.Calculate(1210m, VatPayer(isVatPayer: false), countryConfig: null);
 
         Assert.False(result.IsApplicable);
         Assert.Equal(0m, result.VatAmount);
         Assert.Equal(1210m, result.NetAmount);
+        Assert.Null(result.AppliedRate);
     }
 
     [Fact]

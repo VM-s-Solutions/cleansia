@@ -68,6 +68,20 @@ public class StripeClient : IStripeClient
                 }
             ],
             Mode = "payment",
+            // Adaptive Pricing OFF, explicitly. Left to the account default, Stripe may present this
+            // session in the buyer's local currency and charge them a 2-4% conversion fee, while the
+            // order row, the receipt and every report still say CZK. It applies to exactly this shape
+            // — a Checkout Session with an inline `PriceData` — and NOT to the mobile PaymentIntent
+            // path below, so the two channels would silently disagree.
+            //
+            // Setting `Currency` here does NOT disable it: Stripe's restrictions list is a closed set
+            // that does not include the session currency, which is the FROM currency rather than an
+            // off-switch. This property is the only lever in the API.
+            //
+            // The dashboard toggle (off as of 2026-09-08) is the primary defence, because Payment
+            // Links are reachable by nobody in this file. This is defence in depth against it being
+            // flipped back.
+            AdaptivePricing = new SessionAdaptivePricingOptions { Enabled = false },
             SuccessUrl = $"{config.SuccessUrlBase}?session_id={{CHECKOUT_SESSION_ID}}&orderId={order.Id}",
             CancelUrl = $"{config.CancelUrlBase}?orderId={order.Id}",
             Metadata = new Dictionary<string, string> { { "OrderId", order.Id } }
@@ -412,6 +426,12 @@ public class StripeClient : IStripeClient
         var options = new SessionCreateOptions
         {
             Mode = "subscription",
+            // Adaptive Pricing OFF — see the note on the order session above. This path is the WORSE
+            // of the two to leave open: a subscription converted at checkout locks that currency for
+            // its lifetime (Stripe refuses to change a live subscription's currency) and re-fetches a
+            // real-time rate every billing cycle, so the price drifts. Turning the feature off later
+            // does not unwind one that already exists.
+            AdaptivePricing = new SessionAdaptivePricingOptions { Enabled = false },
             Customer = stripeCustomerId,
             LineItems =
             [

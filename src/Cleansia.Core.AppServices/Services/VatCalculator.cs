@@ -11,9 +11,23 @@ public sealed class VatCalculator : IVatCalculator
         CompanyInfo companyInfo,
         CountryConfiguration? countryConfig)
     {
-        if (!companyInfo.IsVatPayer || countryConfig == null)
+        // Not a VAT payer is a legitimate answer and needs no country configuration to reach it.
+        if (!companyInfo.IsVatPayer)
         {
             return VatBreakdown.NotApplicable(totalPrice);
+        }
+
+        // FAIL CLOSED. This used to be OR-ed into the guard above, so a VAT payer with no
+        // CountryConfiguration silently returned ZERO VAT on a real sale — an under-declaration that
+        // looks identical, on every screen and every document, to a legitimate non-payer sale. It is
+        // precisely the second-country case: the country is serviced, the order is priced, and nobody
+        // seeded its configuration. A failed booking is recoverable; a tax document that quietly
+        // declares nothing is not.
+        if (countryConfig == null)
+        {
+            throw new InvalidOperationException(
+                $"No CountryConfiguration for country '{companyInfo.CountryId}' while "
+                + $"CompanyInfo '{companyInfo.Id}' is a VAT payer. Refusing to price VAT at zero.");
         }
 
         var rate = countryConfig.StandardVatRate;

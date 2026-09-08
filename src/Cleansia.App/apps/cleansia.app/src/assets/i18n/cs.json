@@ -1750,7 +1750,7 @@
     "section2_title": "Popis služeb",
     "section2_text": "Cleansia poskytuje profesionální úklidové služby pro domácnosti. Služby zahrnují čištění nábytku, koberců, matrací a další související služby uvedené na našich webových stránkách.",
     "section3_title": "Objednávka a platba",
-    "section3_text": "Objednávky lze provádět přes naše webové stránky. Platba je přijímána kartou (zpracováno přes Stripe) nebo hotově při dodání. Ceny jsou uvedeny v CZK a zahrnují DPH.",
+    "section3_text": "Objednávky lze provádět přes naše webové stránky. Platba je přijímána kartou (zpracováno přes Stripe) nebo hotově při dodání. Ceny jsou uvedeny v CZK a jsou konečné.",
     "section4_title": "Storno podmínky",
     "section4_text": "Zrušení je zdarma, dokud uklízeč rezervaci nepřijme. Po přijetí: zdarma 24+ hodin před začátkem, 25% poplatek 4–24 hodin před a 50% poplatek méně než 4 hodiny před začátkem.",
     "section5_title": "Odpovědnost",

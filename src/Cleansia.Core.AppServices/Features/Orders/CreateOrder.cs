@@ -31,7 +31,6 @@ public class CreateOrder
         public Validator(
             IPackageRepository packageRepository,
             IServiceRepository serviceRepository,
-            ICurrencyRepository currencyRepository,
             IOrderPricingCalculator pricingCalculator,
             IOrderRepository orderRepository,
             IUserMembershipRepository userMembershipRepository,
@@ -115,12 +114,11 @@ public class CreateOrder
                 .GreaterThan(0)
                 .WithMessage(BusinessErrorMessage.TotalPriceMustBePositive);
 
-            When(x => !string.IsNullOrEmpty(x.CurrencyId), () =>
-            {
-                RuleFor(x => x.CurrencyId!)
-                    .MustAsync(currencyRepository.ExistsAsync)
-                    .WithMessage(BusinessErrorMessage.InvalidCurrency);
-            });
+            // No currency rule. The field stays on the wire (removing it costs an NSwag run on three
+            // clients and a mobile spec re-dump for no behaviour change) but the server ignores it
+            // entirely, so there is nothing left to validate. Validating that a caller-named currency
+            // EXISTS was never the safety property anyway -- every seeded currency existed, and that
+            // was exactly the hole.
 
             RuleFor(x => x)
                 .Must(cmd => (cmd.CustomerAddress != null) ^ (!string.IsNullOrEmpty(cmd.SavedAddressId)))
@@ -300,7 +298,10 @@ public class CreateOrder
                 selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
-                command.CurrencyId,
+                // currencyId: null -- the server resolves it, never the caller. Accepting one let any
+                // authenticated caller name a currency and have the whole CZK catalogue multiplied by
+                // its stored rate. Wave B replaces this with resolution from the address country.
+                null,
                 command.CleaningDate,
                 _userSessionProvider.GetUserId(),
                 DateTime.UtcNow,
@@ -417,9 +418,13 @@ public class CreateOrder
             }
             var address = addressResult.Address!;
 
-            var currency = string.IsNullOrEmpty(command.CurrencyId)
-                ? await currencyRepository.GetDefaultAsync(cancellationToken)
-                : await currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
+            // THE ORDER'S CURRENCY IS A SERVER FACT. It was resolved from `command.CurrencyId` when the
+            // caller supplied one, which is the write half of the same hole the validator above used to
+            // guard badly: name a currency, get the CZK catalogue multiplied by its stored rate and the
+            // order stamped with it. The address is resolved two statements above this one, and in Wave
+            // B that address's country becomes the source. Until then it is the platform default,
+            // unconditionally.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
 
             // The calculator now surfaces the broken-out (raw + extras +
             // surcharge) shape, so OrderFactory can take a raw-pre-surcharge
@@ -434,7 +439,10 @@ public class CreateOrder
                 selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
-                command.CurrencyId,
+                // currencyId: null -- the server resolves it, never the caller. Accepting one let any
+                // authenticated caller name a currency and have the whole CZK catalogue multiplied by
+                // its stored rate. Wave B replaces this with resolution from the address country.
+                null,
                 command.CleaningDate,
                 userId,
                 nowUtc,

@@ -123,4 +123,17 @@
 | T-0690 | Remove the free trial; every Plus benefit now requires a PAID subscription | M | `done` | — | trial removed AND made unsettable (admin validators refuse it); entitlement split from lifecycle across 10 benefit sites; web stopped advertising it; a lapsed membership now stops the recurring schedule |
 | T-0691 | Confirmed meant two things — money settled OR a cleaner took the job | L | `done` | — | ADR-0057 supersedes ADR-0037 D1s status term. Webhook + recurring confirm write money only; a paid card order rests at New. Mobile timelines needed no change — they were already right |
 
-*Next id: **T-0692**.*
+| T-0692 | A lapsed Plus member is never told their recurring schedule stopped | S | `todo` | — | T-0690 withheld the benefit as ruled; nobody tells the customer. `membership.expiring_soon` warns about the membership, not the schedule. The hard part is notifying once per lapse, not once per sweep |
+| T-0693 | Confirmed can be true with zero assignees — a drop or cover never walks it back | M | `todo` | — | pre-existing, recorded as a known consequence of ADR-0057. **Decision ticket before it is a code ticket**: `AdminOverrideOrderStatus` forbids backward moves, and ~8 test files build exactly this fixture |
+| T-0694 | The order.confirmed push key has a fulfilment name and a money meaning | M | `todo` | — | after ADR-0057 the name points at the opposite axis from the event. Notification itself is correct and stays. Cost is 10 locale files across 2 mobile platforms + the feed catalogue |
+| T-0695 | ADR-0045 and ADR-0055 still describe the Confirmed overload that ADR-0057 removed | S | `todo` | — | 4 stale claims re-verified 2026-09-08, incl. adr-0045:352 'New → Confirmed on the card webhook, as today' which is now false. Dated correction banners, not rewrites — accepted ADRs are immutable |
+| T-0696 | sql-scripts/seed/insert_orders.sql cannot run — wrong content and mismatched arity | S | `todo` | — | inserts PackageServices, not orders; names 10 columns and supplies 2, so Postgres rejects it outright. Deletion is probably the right answer |
+| T-0697 | src/Cleansia.App/CLAUDE.md still says NSwag regeneration is owner-only | S | `todo` | — | contradicts the 2026-09-07 ruling and the ban on `manual_step:`. Root CLAUDE.md overrides it, so nothing is broken — the hazard is an agent reading the nearest file first. AC3 covers the 6 other pages with the same text |
+
+> **T-0692–T-0697 filed 2026-09-08** from the out-of-scope findings of T-0690/T-0691, each re-verified
+> against the tree on the day it was filed. A seventh finding — claimed drift between the committed
+> partner mobile spec and the `Order/RequestCover` / `Order/DropOrder` routes — was **re-checked and not
+> substantiated**: both schemas in `src/cleansia_android/openapi/partner-mobile-api.json` match the
+> current commands exactly. It is not filed.
+
+*Next id: **T-0698**.*

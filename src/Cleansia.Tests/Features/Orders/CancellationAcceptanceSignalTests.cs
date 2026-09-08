@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
@@ -128,6 +130,7 @@ public class CancellationAcceptanceSignalTests
             _userRepository.Object,
             _session.Object,
             _stripeClient.Object,
+            new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,

@@ -192,13 +192,6 @@ public static class PolicyBuilder
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.AdminOnly,
 
-        // Feature Flags
-        [Policy.CanViewFeatureFlags] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateFeatureFlag] = PhysicalPolicy.AdminOnly,
-        [Policy.CanToggleFeatureFlag] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteFeatureFlag] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCheckFeatureFlag] = PhysicalPolicy.Authenticated,
-
         // Country Configuration
         [Policy.CanViewCountryConfigurations] = PhysicalPolicy.AdminOnly,
         [Policy.CanCreateCountryConfiguration] = PhysicalPolicy.AdminOnly,

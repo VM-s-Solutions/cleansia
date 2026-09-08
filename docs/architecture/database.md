@@ -236,13 +236,13 @@ This allows flexible pricing where a "Basic Clean" might cost 500 CZK base + 100
 ::: danger A unique index over a nullable column enforces nothing unless it says so
 Postgres treats NULLs as DISTINCT, so a unique index containing a nullable column admits unlimited
 duplicates while that column is null — and single-tenant mode **is** `TenantId = null`, which is
-production. `.AreNullsDistinct(false)` is what makes such an index an arbiter, and **15 indexes now
+production. `.AreNullsDistinct(false)` is what makes such an index an arbiter, and **14 indexes now
 carry it**.
 
-Seven were added on 2026-09-05, after a guard was rewritten from a hand-listed roster into a sweep of
-the whole model and found them: `EmployeePayConfig`, `FeatureFlag`, `LoyaltyTierConfig`,
-`LoyaltyTransaction`, `PromoCode`, `ReferralCode` and `TenantConfiguration`. Each had read as
-enforcing while enforcing nothing.
+Six were added on 2026-09-05, after a guard was rewritten from a hand-listed roster into a sweep of
+the whole model and found them: `EmployeePayConfig`, `LoyaltyTierConfig`, `LoyaltyTransaction`,
+`PromoCode`, `ReferralCode` and `TenantConfiguration`. Each had read as enforcing while enforcing
+nothing. A seventh, `FeatureFlag`, was on that list until T-0689 deleted the table outright.
 
 **You do not need to remember to add it.** `NullsNotDistinctIndexModelTests` walks every unique index
 in the model, and one carrying a nullable column must either declare `NULLS NOT DISTINCT`, be filtered

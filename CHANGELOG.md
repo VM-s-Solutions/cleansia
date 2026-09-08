@@ -225,12 +225,23 @@ need backfilling.
   taken in the previous fortnight, and made the new job reminders fail after a reassignment; both are
   fixed by the same change.
 
-- **⚠️ Operators — data retention had never run, on any database.** The sweep that deletes expired
-  codes and stale devices, clears old GDPR requests and withdrawn consents, prunes superseded documents
-  and notifications, and **anonymises customer personal data on old orders**, is gated on a feature flag
-  — and that flag was never seeded. An absent flag counts as off, so the job logged *"disabled by feature
-  flag"*, reported success, and did nothing. It is now seeded **on**, so retention starts working on the
-  next fresh database. Nothing in the seed data is old enough to be affected on day one.
+- **⚠️ Operators — data retention had never run, on any deployed database.** The sweep that deletes
+  expired codes and stale devices, clears old GDPR requests and withdrawn consents, prunes superseded
+  documents and notifications, and **anonymises customer personal data on old orders**, was gated on a
+  row in a feature-flag table that no migration ever inserted. An absent row counted as off, so the job
+  logged *"disabled by feature flag"*, reported success, and did nothing.
+
+  **The switch is now `DataRetention:Enabled` in configuration, defaulting to true** (T-0685), so the
+  sweep runs unless somebody deliberately sets it to false — an empty database can no longer silence it.
+  Turn it off with the `DataRetention__Enabled` app setting; do **not** put the value in
+  `Cleansia.Functions/appsettings.json`, which would override the app setting rather than defer to it.
+
+  The feature-flag table it used to live in has since been deleted outright (T-0689): once this switch
+  left, nothing in the platform read it.
+
+  **Before enabling this against real data**, run `sql-scripts/check-orders-past-retention-window.sql`.
+  The order-anonymisation task overwrites a shared `Address` row, and addresses are deduplicated across
+  customers in the same building, so an old order can blank a live customer's saved address.
 
 ### Deprecated
 

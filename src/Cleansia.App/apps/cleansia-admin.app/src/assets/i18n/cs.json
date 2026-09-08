@@ -2480,10 +2480,6 @@
       "not_owned": "Můžete přistupovat pouze ke svým vlastním dokumentům",
       "unauthorized": "Nemáte oprávnění k přístupu k tomuto dokumentu"
     },
-    "feature_flag": {
-      "already_exists": "Přepínač funkce s tímto názvem a rozsahem již existuje.",
-      "not_found": "Přepínač funkce nebyl nalezen."
-    },
     "file": {
       "content_type_doesnt_match": "Typ obsahu souboru neodpovídá",
       "count_exceeded": "Nahráno příliš mnoho souborů",

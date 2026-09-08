@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
@@ -83,6 +85,7 @@ public class OrderConfirmedHonestProducerTests
             new Mock<IUserRepository>().Object,
             session.Object,
             new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>().Object,
+            new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,

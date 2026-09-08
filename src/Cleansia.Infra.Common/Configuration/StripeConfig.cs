@@ -5,6 +5,7 @@ namespace Cleansia.Infra.Common.Configuration;
 
 public class StripeConfig(IConfiguration configuration) : AutoBindConfig(configuration, "Stripe"), IStripeConfig
 {
+    public bool Enabled { get; set; } = true;
     public string SecretKey { get; set; } = null!;
     public string PublishableKey { get; set; } = null!;
     public string WebhookSecret { get; set; } = null!;

@@ -1,6 +1,5 @@
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.Blobs.Abstractions;
-using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration;
@@ -16,37 +15,38 @@ using Moq;
 namespace Cleansia.Tests.Features.DataRetention;
 
 /// <summary>
-/// T-0685 — that the retention sweep RUNS on a production-shaped database, and skips only when somebody
-/// switched it off on purpose.
+/// T-0685 — that the retention sweep RUNS when nobody has configured anything, and skips only when
+/// somebody switched it off on purpose.
 ///
 /// <para><b>The failure this replaces was invisible by construction, and so was the test that guarded it.</b>
-/// The sweep's master switch used to be a <c>FeatureFlags</c> row read through
-/// <c>IAppConfigurationProvider.IsFeatureEnabledAsync</c>, which ends <c>globalFlag?.IsEnabled ?? false</c> —
-/// an absent flag is a DISABLED flag, indistinguishable from one somebody turned off. No migration ever
-/// inserted that row (there is no <c>InsertData</c>/<c>HasData</c> anywhere in the solution) and its only
-/// INSERT lived in <c>sql-scripts/insert_seed_data.sql</c>, which runs solely under
-/// <c>if (environment.IsDevelopment())</c> and which <c>execute-sql.yml</c> refuses against a deployed
-/// database. So the sweep returned at its first line on every deployed host, logged success, and none of its
-/// seven tasks had ever run — including anonymising customer PII on old orders and purging withdrawn
-/// consents, which are retention obligations rather than housekeeping.</para>
+/// The sweep's master switch used to be a row in a <c>FeatureFlags</c> database table, read through a
+/// provider that resolved a missing row to <c>false</c> — so an absent flag was a DISABLED flag,
+/// indistinguishable from one somebody turned off. No migration ever inserted that row and its only INSERT
+/// lived in the development-only seed, which CI refuses to run against production. The sweep therefore
+/// returned at its first line on every deployed host, logged success, and none of its seven tasks had ever
+/// run — including anonymising customer PII on old orders and purging withdrawn consents, which are
+/// retention obligations rather than housekeeping.</para>
 ///
 /// <para><b>Why the old test could not catch it:</b> <c>DataRetentionFeatureFlagSeedTests</c> asserted on the
-/// TEXT of the development seed file. It never opened a database, never constructed the provider and never
-/// ran the sweep, so it stayed green while production did nothing — pinning the fixture rather than the
-/// behaviour, which is the same mistake one layer up. This class replaces it.</para>
+/// TEXT of the development seed file. It never opened a database and never ran the sweep, so it stayed green
+/// while production did nothing — pinning the fixture rather than the behaviour. This class replaced it.</para>
 ///
-/// <para><b>Anti-vacuity conditions, so this cannot rot the same way.</b> The arrangement seeds NOTHING into
-/// <c>FeatureFlags</c> — the empty table IS the production condition under test, and seeding a row here
-/// would reintroduce the exact blindness. The assertions are on rows in the database, never on a log string
-/// and never on a mock verification. And <see cref="Enabled_Defaults_On_So_An_Empty_Database_Cannot_Silence_The_Sweep"/>
-/// is red against the pre-fix tree: the sweep would return early and the aged row would survive.</para>
+/// <para><b>The flag table itself is gone (T-0689)</b>, along with the whole feature-flag mechanism, which
+/// gated nothing once this switch left it. Two assertions that lived here — that the sweep never consulted
+/// the flag table, and that the table was empty — went with it: they can no longer be expressed, and no
+/// longer need to be, because the table a reader might worry about does not exist. What remains is the
+/// behaviour that actually matters, and it is unchanged.</para>
+///
+/// <para><b>Anti-vacuity conditions, so this cannot rot the way its predecessor did.</b> The assertions are
+/// on rows in the database, never on a log string and never on a mock verification, and
+/// <see cref="Enabled_Defaults_On_When_Nothing_Is_Configured"/> was verified RED against the pre-fix tree:
+/// the sweep returned early and the aged row survived.</para>
 /// </summary>
 public sealed class DataRetentionEnablementTests : IDisposable
 {
     private const string UserId = "user-retention-enablement";
 
     private readonly SqliteConnection _connection;
-    private readonly Mock<IAppConfigurationProvider> _configProvider = new();
     private readonly Mock<IBlobContainerClientFactory> _blobClientFactory = new();
 
     public DataRetentionEnablementTests()
@@ -57,24 +57,17 @@ public sealed class DataRetentionEnablementTests : IDisposable
         using var pragma = _connection.CreateCommand();
         pragma.CommandText = "PRAGMA foreign_keys = OFF;";
         pragma.ExecuteNonQuery();
-
-        // This mock is used by ONE test — the guard that the master switch never touches the FeatureFlags
-        // table. The two behavioural tests use the real AppConfigurationProvider over this empty database,
-        // because a stubbed provider is exactly what let the old tests pass while production did nothing.
-        _configProvider
-            .Setup(c => c.GetTenantSettingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
     }
 
     public void Dispose() => _connection.Dispose();
 
     /// <summary>
-    /// AC1 + AC3 — a production-shaped database has no <c>FeatureFlags</c> rows and no <c>DataRetention</c>
-    /// configuration section. The sweep must still run. Against the pre-fix tree this fails: the absent flag
-    /// resolved to false and the 100-day-old notification survived.
+    /// AC1 — a deployed database has no <c>DataRetention</c> configuration section, because nobody has set
+    /// one. The sweep must still run. Against the pre-fix tree this failed: the absent flag resolved to
+    /// false and the 100-day-old notification survived.
     /// </summary>
     [Fact]
-    public async Task Enabled_Defaults_On_So_An_Empty_Database_Cannot_Silence_The_Sweep()
+    public async Task Enabled_Defaults_On_When_Nothing_Is_Configured()
     {
         await EnsureSchemaAsync();
         var aged = DateTimeOffset.UtcNow.AddDays(-100);
@@ -85,7 +78,6 @@ public sealed class DataRetentionEnablementTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        Assert.Empty(await ReadFlagsAsync());
         Assert.Single(await ReadNotificationsAsync());
 
         await using (var ctx = NewContext())
@@ -119,29 +111,6 @@ public sealed class DataRetentionEnablementTests : IDisposable
         }
 
         Assert.Single(await ReadNotificationsAsync());
-    }
-
-    /// <summary>
-    /// The switch is bound from configuration, not read from the database. Proves the sweep no longer
-    /// consults <c>IAppConfigurationProvider</c> for its master switch — the call that used to decide
-    /// everything. Without this, a reintroduced flag read that happened to return true would look identical
-    /// to the two tests above.
-    /// </summary>
-    [Fact]
-    public async Task The_Master_Switch_Is_Never_Read_From_The_Feature_Flag_Table()
-    {
-        await EnsureSchemaAsync();
-
-        await using (var ctx = NewContext())
-        {
-            await NewSweep(ctx, EmptyConfiguration(), _configProvider.Object)
-                .RunAllRetentionTasksAsync(CancellationToken.None);
-        }
-
-        _configProvider.Verify(
-            c => c.IsFeatureEnabledAsync(
-                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     /// <summary>Absent section binds to the shipped default, and that default is ON.</summary>
@@ -180,15 +149,12 @@ public sealed class DataRetentionEnablementTests : IDisposable
     }
 
     /// <summary>
-    /// The sweep over the REAL <see cref="AppConfigurationProvider"/> against this empty database — no mock
-    /// stands between the test and the condition production is in. That matters: a stubbed provider is what
-    /// let the old tests pass while production did nothing.
+    /// The sweep over the REAL <see cref="AppConfigurationProvider"/> against this database — no mock stands
+    /// between the test and the condition a deployed host is in. That matters: a stubbed provider is what let
+    /// the old tests pass while production did nothing. The per-task tuning keys it serves resolve to absent
+    /// here, exactly as they do in production, so every task falls through to its RetentionDefaults window.
     /// </summary>
-    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, IConfiguration configuration) =>
-        NewSweep(ctx, configuration, new AppConfigurationProvider(ctx, new FixedTenantProvider(null)));
-
-    private DataRetentionBackgroundService NewSweep(
-        CleansiaDbContext ctx, IConfiguration configuration, IAppConfigurationProvider provider)
+    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, IConfiguration configuration)
     {
         var session = new TestUserSessionProvider("system", "system@cleansia.test");
         return new DataRetentionBackgroundService(
@@ -199,7 +165,7 @@ public sealed class DataRetentionEnablementTests : IDisposable
             new UserConsentRepository(ctx),
             new EmployeeDocumentRepository(ctx),
             new UserNotificationRepository(ctx),
-            provider,
+            new AppConfigurationProvider(ctx),
             new DataRetentionConfig(configuration),
             _blobClientFactory.Object,
             NullLogger<DataRetentionBackgroundService>.Instance);
@@ -209,12 +175,6 @@ public sealed class DataRetentionEnablementTests : IDisposable
     {
         await using var ctx = NewContext();
         return await ctx.Set<UserNotification>().IgnoreQueryFilters().ToListAsync();
-    }
-
-    private async Task<List<FeatureFlag>> ReadFlagsAsync()
-    {
-        await using var ctx = NewContext();
-        return await ctx.Set<FeatureFlag>().IgnoreQueryFilters().ToListAsync();
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

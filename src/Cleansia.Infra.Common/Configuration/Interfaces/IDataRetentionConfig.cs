@@ -6,12 +6,13 @@ namespace Cleansia.Infra.Common.Configuration.Interfaces;
 /// requests, customer PII on completed orders, withdrawn consents, superseded documents and notifications —
 /// so it is a compliance clock rather than a housekeeping preference.
 ///
-/// <para><b>Absence must mean ON.</b> This switch previously lived in the <c>FeatureFlags</c> table, read
-/// through <c>IAppConfigurationProvider.IsFeatureEnabledAsync</c>, which resolves a missing row to
-/// <c>false</c>. No migration ever inserted the row and the only INSERT lives in a development-only seed
-/// fixture, so on every deployed database the sweep decided it was switched off and reported success
-/// without deleting anything. Binding from configuration keeps the default in the code, where an empty
-/// database cannot silence it, and makes "off" something somebody had to type.</para>
+/// <para><b>Absence must mean ON.</b> This switch previously lived in a database table of feature flags,
+/// whose lookup resolved a missing row to <c>false</c>. No migration ever inserted the row and the only
+/// INSERT lived in a development-only seed fixture, so on every deployed database the sweep decided it was
+/// switched off and reported success without deleting anything (T-0685). Binding from configuration keeps
+/// the default in the code, where an empty database cannot silence it, and makes "off" something somebody
+/// had to type. That flag table has since been deleted outright (T-0689): this was the only switch in it
+/// that anything read.</para>
 /// </summary>
 public interface IDataRetentionConfig
 {

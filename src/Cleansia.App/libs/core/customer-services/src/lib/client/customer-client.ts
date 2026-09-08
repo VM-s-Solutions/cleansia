@@ -2105,90 +2105,6 @@ export class ExtraClient implements IExtraClient {
     }
 }
 
-export interface IFeatureFlagClient {
-    /**
-     * @param featureName (optional) 
-     * @param countryId (optional) 
-     * @return OK
-     */
-    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse>;
-}
-
-@Injectable({
-    providedIn: 'root'
-})
-export class FeatureFlagClient implements IFeatureFlagClient {
-    private http: HttpClient;
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
-        this.http = http;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * @param featureName (optional) 
-     * @param countryId (optional) 
-     * @return OK
-     */
-    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse> {
-        let url = this.baseUrl + "/api/FeatureFlag/check?";
-        if (featureName === null)
-            throw new globalThis.Error("The parameter 'featureName' cannot be null.");
-        else if (featureName !== undefined)
-            url += "featureName=" + encodeURIComponent("" + featureName) + "&";
-        if (countryId === null)
-            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
-        else if (countryId !== undefined)
-            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processCheck(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processCheck(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CheckFeatureFlagResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<CheckFeatureFlagResponse>;
-        }));
-    }
-
-    protected processCheck(response: HttpResponseBase): Observable<CheckFeatureFlagResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = CheckFeatureFlagResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-}
-
 export interface IGdprClient {
     /**
      * @return OK
@@ -7549,46 +7465,6 @@ export class ChangePasswordResponse implements IChangePasswordResponse {
 
 export interface IChangePasswordResponse {
     id: string | undefined;
-}
-
-export class CheckFeatureFlagResponse implements ICheckFeatureFlagResponse {
-    featureName!: string | undefined;
-    isEnabled!: boolean;
-
-    constructor(data?: ICheckFeatureFlagResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.featureName = Data["featureName"];
-            this.isEnabled = Data["isEnabled"];
-        }
-    }
-
-    static fromJS(data: any): CheckFeatureFlagResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new CheckFeatureFlagResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["featureName"] = this.featureName;
-        data["isEnabled"] = this.isEnabled;
-        return data;
-    }
-}
-
-export interface ICheckFeatureFlagResponse {
-    featureName: string | undefined;
-    isEnabled: boolean;
 }
 
 export class ChoosePreferredCleanerCommand implements IChoosePreferredCleanerCommand {

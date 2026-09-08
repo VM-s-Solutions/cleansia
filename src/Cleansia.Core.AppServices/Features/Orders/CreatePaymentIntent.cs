@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -73,12 +74,25 @@ public class CreatePaymentIntent
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
+        IStripeConfig stripeConfig,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             // Ownership + payment-type + not-paid enforced by Validator.
             var order = (await orderRepository.GetByIdAsync(command.OrderId, cancellationToken))!;
+
+            // The mobile charge surface. Gated with the other two, and BEFORE CreateCustomerAsync so a
+            // refused payment leaves no Stripe customer behind. -> IStripeConfig
+            if (!stripeConfig.Enabled)
+            {
+                logger.LogWarning(
+                    "PaymentSheet intent refused for order {OrderId}: card payments are disabled (Stripe:Enabled=false)",
+                    order.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId),
+                    BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
             var sessionUserId = userSessionProvider.GetUserId()!;
 
             var user = await userRepository.GetByIdAsync(sessionUserId, cancellationToken);

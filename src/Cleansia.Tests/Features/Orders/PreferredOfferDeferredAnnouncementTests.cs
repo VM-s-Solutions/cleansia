@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
@@ -241,6 +243,7 @@ public class PreferredOfferDeferredAnnouncementTests
             new Mock<IUserRepository>().Object,
             session.Object,
             stripeClient.Object,
+            new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,
             _notificationProducer.Object,
             resolver,

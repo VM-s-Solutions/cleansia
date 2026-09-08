@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.AppServices.Authentication;
+﻿using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -39,6 +41,7 @@ public class OrderPaymentDispatcherTests
     private OrderPaymentDispatcher CreateDispatcher(OrderChannel channel = OrderChannel.Web) =>
         new(_stripeClientFactory.Object, _pending.Object,
             new OrderChannelProvider(channel),
+            new StripeConfig(new ConfigurationBuilder().Build()),
             NullLogger<OrderPaymentDispatcher>.Instance);
 
     private static Order BuildOrder(PaymentType paymentType) =>

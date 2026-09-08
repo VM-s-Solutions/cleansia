@@ -463,9 +463,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'referral.not_found',
   'referral.not_qualified',
   'referral.reason_required',
-  // Feature flags and email templates
-  'feature_flag.already_exists',
-  'feature_flag.not_found',
+  // Email templates
   'template.email.invalid_type',
   'template.email.key_exists',
   'template.email.not_found',

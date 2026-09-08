@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -114,6 +115,7 @@ public class ResumeOrderCheckout
     public class Handler(
         IOrderRepository orderRepository,
         IStripeClientFactory stripeClientFactory,
+        IStripeConfig stripeConfig,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -121,6 +123,17 @@ public class ResumeOrderCheckout
             // Ownership, payment type, payment status, order status and the absence of a
             // PaymentIntent are all enforced by the Validator.
             var order = (await orderRepository.GetByIdAsync(command.OrderId, cancellationToken))!;
+
+            // Resuming mints a NEW charge surface, so it is gated with the other two. -> IStripeConfig
+            if (!stripeConfig.Enabled)
+            {
+                logger.LogWarning(
+                    "Checkout resume refused for order {OrderId}: card payments are disabled (Stripe:Enabled=false)",
+                    order.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId),
+                    BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
 
             try
             {

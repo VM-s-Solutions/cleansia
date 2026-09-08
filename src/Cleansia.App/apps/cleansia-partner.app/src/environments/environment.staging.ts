@@ -7,8 +7,6 @@ export const environment = {
   apiBaseUrl: 'https://partner-api.dev.cleansia.cz',
   blobStorageUrl: '',
   googleClientId: '',
-  betaGateEnabled: false,
-  betaGateUrl: '',
   isDevelopment: false,
   sentryDsn: '',
   bugReportUrl:

@@ -30,20 +30,20 @@ Each item below follows the same flow, and it is the flow that worked:
 
 ## Start here — these are defects, not improvements
 
-Three of them are live in production right now.
+**Corrected 2026-09-08: none of these is live in production, because production has never been
+deployed.** `deploy-pro.yml` has one run in its history and it was cancelled; `deploy-azure.yml` has
+zero. These are "would ship broken on day one" defects, not incidents. That changes their urgency, not
+their validity — and it is worth re-checking before anything else here is treated as on fire.
 
 | | |
 |---|---|
-| **[T-0685](backlog/tickets/T-0685-retention-job-never-runs-in-production.md)** | The job that deletes personal data the platform may no longer keep has **never run in production**. It starts, decides it is switched off, and logs success. Verified four ways. |
+| ~~**T-0685**~~ **DONE (#253)** | The GDPR retention sweep never ran: its switch was a database row no deployed database ever had, and a missing row read as "off". Moved to configuration, defaulting ON. |
 | **[T-0686](backlog/tickets/T-0686-terms-acceptance-is-never-recorded.md)** | **Nothing records that a customer accepted the terms**, or which version. The social sign-ins check the box and throw it away. This is the first thing any chargeback argument needs. |
 | **[T-0688](backlog/tickets/T-0688-multicurrency-is-a-mechanism-that-has-never-run.md)** | Multicurrency has **never run at an exchange rate other than 1**, and `CreateOrder` accepts any currency id from any caller. Decide "single-currency at launch" explicitly and the ticket shrinks to almost nothing. |
 
-Two cheap ones worth taking while nearby:
-**[T-0687](backlog/tickets/T-0687-admin-order-list-renders-a-blank-status.md)** (every `New` order
-shows a blank status pill in the admin list — `OrderStatus.New` is `0` and the guard is `if (!value)`)
-and **[T-0689](backlog/tickets/T-0689-feature-flags-that-gate-nothing.md)** (six admin switches that
-control nothing — an admin can turn Stripe "off" and payments keep working). Do T-0689 together with
-T-0685; they ask the same question about what a production flag table should contain.
+One cheap one worth taking while nearby:
+**[T-0687](backlog/tickets/T-0687-admin-order-list-renders-a-blank-status.md)** — every `New` order
+shows a blank status pill in the admin list (`OrderStatus.New` is `0` and the guard is `if (!value)`).
 
 > **The owner's actual feature-flag question was "can any of these features ship in V1?" — and the
 > answer is that nothing is being held back by a flag.** The review *removes* work from the release

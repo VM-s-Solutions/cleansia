@@ -118,13 +118,22 @@ public class BusinessErrorSlotContractTests
 
     /// <summary>
     /// Anti-vacuity for the fact above, which after a fix has nothing left to match and would therefore
-    /// pass on a scanner that reached no code at all. Pins three separate links: the WithMessage scan
-    /// finds the bulk of its call sites, it resolves a known constant-carrying argument, and it reaches a
-    /// real string LITERAL argument — the branch the classifier judges. The classifier itself is pinned
-    /// last, against the exact literal this guard was written for.
+    /// pass on a scanner that reached no code at all. Pins three links: the WithMessage scan finds the bulk
+    /// of its call sites, it resolves a known constant-carrying argument, and the classifier is pinned
+    /// against synthetic inputs covering both of its branches.
+    ///
+    /// <para><b>The literal link changed shape in T-0689.</b> This used to assert the scan REACHED a real
+    /// string literal, anchored on <c>Features/FeatureFlags/CreateFeatureFlag.cs</c> — which held the only
+    /// literal <c>.WithMessage</c> argument in the project. Deleting the feature-flag machinery took it,
+    /// and no other survives: all 1046 remaining calls pass a constant or an expression. So the assertion
+    /// is inverted rather than repointed, because there is nothing to repoint it AT, and the inverted form
+    /// is the stronger one — it states the contract directly. A literal appearing here is the defect this
+    /// class exists to catch, so <see cref="No_Bare_Dot_Key_Literal_Reaches_A_Message_Slot"/> would judge
+    /// it and this would name it. The classifier branch that judges a literal stays pinned below, on
+    /// synthetic input, which is where it never depended on the codebase in the first place.</para>
     /// </summary>
     [Fact]
-    public void BareDotKey_Scanner_Reaches_Literal_Arguments()
+    public void BareDotKey_Scanner_Reaches_Real_Arguments()
     {
         var arguments = ScanMessageArguments();
 
@@ -137,12 +146,14 @@ public class BusinessErrorSlotContractTests
             && a.Expression == "BusinessErrorMessage.OrderPaymentAlreadyPaid");
 
         var literals = arguments.Where(a => IsStringLiteral(a.Expression)).ToList();
-        Assert.Contains(literals, a =>
-            a.RelativePath == Normalize("Features/FeatureFlags/CreateFeatureFlag.cs"));
+        Assert.True(literals.Count == 0,
+            "A .WithMessage argument must be a BusinessErrorMessage constant, never a raw string — a "
+            + "literal here ships to the client and misses every locale file:\n  "
+            + string.Join("\n  ", literals.Select(a => $"{a.RelativePath}:{a.Line} -> {a.Call}({a.Expression})")));
 
         Assert.True(IsBareDotKeyLiteral("\"order.payment.already_paid\""));
         Assert.False(IsBareDotKeyLiteral("BusinessErrorMessage.OrderPaymentAlreadyPaid"));
-        Assert.False(IsBareDotKeyLiteral("\"Scope must be 'global', 'country', or 'tenant'.\""));
+        Assert.False(IsBareDotKeyLiteral("\"Invalid webhook signature\""));
     }
 
     [Fact]

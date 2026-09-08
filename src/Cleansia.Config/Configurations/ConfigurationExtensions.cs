@@ -26,9 +26,12 @@ public static class ConfigurationExtensions
         // bound from the "OutboxRetention" section.
         services.AddSingleton<IOutboxRetentionConfig, OutboxRetentionConfig>();
         // The GDPR retention sweep's master switch, bound from the "DataRetention" section. Defaults ON
-        // when the section is absent — it replaces a FeatureFlags row that no deployed database ever had,
+        // when the section is absent — it replaced a database row that no deployed database ever had,
         // which resolved to "off" and silenced the sweep everywhere but a developer's machine.
         services.AddSingleton<IDataRetentionConfig, DataRetentionConfig>();
+        // The nightly pay-period job's master switch, bound from the "PayPeriodClosing" section. That
+        // job generates and emails an invoice per employee, and had no switch at all before T-0689.
+        services.AddSingleton<IPayPeriodClosingConfig, PayPeriodClosingConfig>();
 
         return services;
     }

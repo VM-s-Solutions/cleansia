@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -57,6 +58,7 @@ public class ConfirmRecurringOrder
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
+        IStripeConfig stripeConfig,
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
@@ -200,6 +202,17 @@ public class ConfirmRecurringOrder
         private async Task<BusinessResult<Response>> HandleCardAsync(
             Order order, string sessionUserId, CancellationToken cancellationToken)
         {
+
+            // Card payments can be switched off platform-wide. Checked before the Stripe customer is
+            // created, so a refused payment leaves nothing behind. -> IStripeConfig
+            if (!stripeConfig.Enabled)
+            {
+                logger.LogWarning(
+                    "Recurring card confirm refused for order {OrderId}: card payments are disabled "
+                    + "(Stripe:Enabled=false)", order.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.Id), BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
             // Card flow mirrors CreatePaymentIntent.Handler: ensure the user
             // has a Stripe Customer, create / reuse a PaymentIntent for the
             // order, generate a fresh ephemeral key per request. Order status

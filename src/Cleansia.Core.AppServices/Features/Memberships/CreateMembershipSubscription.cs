@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -65,11 +66,22 @@ public class CreateMembershipSubscription
         IMembershipPlanRepository membershipPlanRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
+        IStripeConfig stripeConfig,
         IMembershipTrialResolver membershipTrialResolver,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+
+            // Card payments can be switched off platform-wide, and a membership is a card charge like
+            // any other — the first invoice bills immediately. Checked before any Stripe object is
+            // created. -> IStripeConfig
+            if (!stripeConfig.Enabled)
+            {
+                logger.LogWarning("Membership subscription refused: card payments are disabled (Stripe:Enabled=false)");
+                return BusinessResult.Failure<Response>(new Error(
+                    "MembershipPlanId", BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
             var userId = userSessionProvider.GetUserId()!;
             var user = await userRepository.GetByIdAsync(userId, cancellationToken);
             if (user == null)

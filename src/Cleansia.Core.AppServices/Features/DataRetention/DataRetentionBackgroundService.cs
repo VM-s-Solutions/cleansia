@@ -28,10 +28,10 @@ public class DataRetentionBackgroundService(
     {
         logger.LogInformation("Data retention job started");
 
-        // Configuration, not a FeatureFlags row. The row was never inserted by a migration and its only
-        // INSERT lives in the development-only seed, so on every deployed database this gate read "off"
-        // — IsFeatureEnabledAsync resolves an absent flag to false — and all seven tasks below had never
-        // run. The default now lives in code, where an empty database cannot silence it.
+        // The default lives in code, where an empty database cannot silence it. This gate used to read a
+        // row from a FeatureFlags table that no migration ever inserted, and a missing row resolved to
+        // "off" — so on every deployed database all seven tasks below had never run once (T-0685). That
+        // table is gone entirely (T-0689): once this switch left it, it gated nothing at all.
         if (!retentionConfig.Enabled)
         {
             logger.LogWarning("Data retention job disabled by configuration (DataRetention:Enabled). Skipping");

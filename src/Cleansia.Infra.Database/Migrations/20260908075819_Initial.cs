@@ -174,30 +174,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FeatureFlags",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false),
-                    Scope = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    ScopeValue = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FeatureFlags", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FiscalCounters",
                 columns: table => new
                 {
@@ -3153,18 +3129,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FeatureFlags_Name_Scope_ScopeValue",
-                table: "FeatureFlags",
-                columns: new[] { "Name", "Scope", "ScopeValue" },
-                unique: true)
-                .Annotation("Npgsql:NullsDistinct", false);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FeatureFlags_TenantId",
-                table: "FeatureFlags",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_FiscalCounters_Tenant_Year_IssuerScope",
                 table: "FiscalCounters",
                 columns: new[] { "TenantId", "Year", "IssuerScope" },
@@ -4085,9 +4049,6 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Extras");
-
-            migrationBuilder.DropTable(
-                name: "FeatureFlags");
 
             migrationBuilder.DropTable(
                 name: "FiscalCounters");

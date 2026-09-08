@@ -230,3 +230,53 @@ If there is a named B2B or EUR-invoicing prospect, tell me — that is the singl
 - Whether a refund reduces obrat in the period of the original supply or of the refund. I have assumed net-of-refunds for the turnover tile; confirm before anyone acts on that number.
 - The straddle cohort at registration — orders paid at a neplátce price whose supply date falls after registration day. Nothing in the platform can identify it, and I have not designed a fix.
 - Whether your blob lifecycle policy retains receipts and invoices for the statutory 5/10 years. I checked that GDPR erasure anonymises rather than deletes them; I did not check the Azure storage configuration.
+
+
+---
+
+## 6. Owner answers — the plan is unblocked
+
+All four §5 questions answered by the owner on 2026-09-08. **Nothing in this plan is now waiting on him.**
+
+| Question | Answer | Consequence |
+|---|---|---|
+| One legal entity or two? | **One**, with the caveat *"not sure, quite complicated to say when we didn't even start the first"* | `CompanyInfo`'s unique index moves from `RegistrationNumber` to `(RegistrationNumber, CountryId)` — see below |
+| Stripe Adaptive Pricing | **Turned off** | Owner action discharged. A1's code change stays as defence in depth |
+| EUR seeded active with zero price rows? | **Yes** | The fail-closed rule becomes provable by an integration test rather than a fixture |
+| The accountant | **Lawyer meeting in two days**; the drafted questions go there alongside the contract work | See the caveat below — a lawyer is the right person for part of this, and the wrong one for the rest |
+
+### The entity uncertainty does not block, and that is not a coincidence
+
+He is right that it is hard to answer before the first entity exists. **It does not have to be answered,
+because the composite index accommodates both futures and the current global unique accommodates
+neither:**
+
+- *One entity, several countries* — same registration number, different `CountryId`. Allowed under the
+  composite; **forbidden today**.
+- *Two entities, one country each* — different registration numbers. Allowed under both.
+
+So `(RegistrationNumber, CountryId)` is strictly more permissive than what is there now and forecloses
+nothing. **Build the composite and let the business answer arrive whenever it arrives.** This is the
+one place in the plan where a decision the owner could not confidently make turned out not to need
+making.
+
+### One correction on the lawyer, offered because the sequencing is otherwise good
+
+A *právník* is the right professional for item 3 of §1(b) — the contractor agreement and the written
+self-billing authorisation §28 ZDPH requires before the platform may keep issuing invoices in cleaners'
+names. And because the **contract terms are what determine the principal-vs-agent characterisation**,
+having them drafted first is the correct order: the tax answer follows the agreement, not the other way
+round.
+
+But two of the four items are not a lawyer's:
+
+- **The účetní obligation is not a legal question and is already running.** A Czech s.r.o. must keep
+  double-entry accounting from the day it came into existence, at zero revenue. A lawyer will not file
+  the *účetní závěrka*. **This still needs a bookkeeper, and it is the only overdue item in the stack.**
+- **The principal/agent VAT characterisation** is a *daňový poradce*'s written opinion, not a lawyer's —
+  though it is worth raising at the meeting, because the answer depends on clauses the lawyer is about
+  to draft. Ask them to draft **toward** the principal reading the owner has already stated: Cleansia
+  contracts with the customer in its own name, sets both prices independently, carries the commercial
+  risk, and pays the cleaner from its own rate card regardless of what the customer paid.
+
+Per §1(b) item 4, none of this needs settling until roughly 1,000,000 Kč of year-to-date bookings.

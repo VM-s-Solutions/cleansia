@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
@@ -17,20 +18,26 @@ using Moq;
 namespace Cleansia.Tests.Features.Memberships;
 
 /// <summary>
-/// Owner ruling 4 (2026-08-03): <b>a lapsed membership does not stop a recurring schedule — occurrences
-/// keep generating, at full price.</b> The ruling says this is already true by construction, so this is a
-/// CHARACTERIZATION test: it pins the construction so the express-waiver wiring cannot quietly change it.
+/// Owner ruling 2026-09-08 (T-0690): <b>a recurring schedule is a Cleansia Plus benefit, so it stops
+/// generating when the membership lapses.</b>
 ///
-/// <para>Two independent properties, and the second is the one the waiver could have broken:</para>
-/// <list type="number">
-/// <item>The sweep's template query carries no membership predicate at all, so a lapse cannot stop it.</item>
-/// <item>Each occurrence is priced with <c>userId: null</c> and built with an explicitly null reservation,
-/// so a LIVE membership cannot have this background job spend the member's monthly express waivers on
-/// occurrences nobody asked to be express — and a lapsed one changes nothing, because the express axis
-/// was never in play.</item>
-/// </list>
+/// <para><b>This class previously asserted the opposite</b>, under owner ruling 4 of 2026-08-03 — "a
+/// lapsed membership does not stop a recurring schedule; occurrences keep generating, at full price".
+/// It was named <c>RecurringMaterializationIsMembershipIndependentTests</c> and it was right at the
+/// time. The newer ruling is that no Plus benefit is granted without payment, and a schedule that
+/// outlives the subscription is the largest thing the old position gave away: one paid month bought a
+/// permanently re-specifiable scheduling engine.</para>
+///
+/// <para><b>The positive leg is the load-bearing one.</b> "Lapsed generates nothing" passes for any
+/// reason the sweep produced nothing — a broken query, a bad horizon, an exception swallowed upstream.
+/// What gives it meaning is <see cref="A_paid_member_still_gets_their_occurrences"/> proving the same
+/// arrangement DOES generate once the membership is paid.</para>
+///
+/// <para>The express-waiver property is unchanged and still pinned: each occurrence is priced with
+/// <c>userId: null</c> and an explicitly null reservation, so this background job cannot spend a
+/// member's monthly waivers on occurrences nobody asked to be express.</para>
 /// </summary>
-public class RecurringMaterializationIsMembershipIndependentTests
+public class RecurringMaterializationRequiresPaidMembershipTests
 {
     private const string TemplateId = "template-recurring-1";
     private const string UserId = "user-recurring-1";
@@ -43,10 +50,11 @@ public class RecurringMaterializationIsMembershipIndependentTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderFactory> _orderFactory = new();
+    private readonly Mock<IUserMembershipRepository> _memberships = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
-    public RecurringMaterializationIsMembershipIndependentTests()
+    public RecurringMaterializationRequiresPaidMembershipTests()
     {
         _currencyRepository
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
@@ -124,13 +132,102 @@ public class RecurringMaterializationIsMembershipIndependentTests
             _orderRepository.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
+            _memberships.Object,
             _tenantProvider.Object,
             _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);
     }
 
+    /// <summary>Arrange the owner as a paid member, which is what the entitlement read answers.</summary>
+    private void ArrangePaidMembership()
+    {
+        var plan = MembershipPlan.Create(
+            code: "PLUS_MONTHLY", name: "Plus", monthlyPriceCzk: 199m, stripePriceId: "price_plus",
+            discountPercentage: 5m, freeCancellationWindowHours: 4, allowsExpressUpgrade: true);
+        var membership = UserMembership.Create(
+            UserId, plan.Id, "sub_test", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20), null);
+
+        _memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(membership);
+    }
+
+    /// <summary>
+    /// The load-bearing positive leg. Same arrangement as the lapsed case in every respect except the
+    /// membership, so the negative leg below cannot pass for an unrelated reason.
+    /// </summary>
     [Fact]
-    public async Task OccurrencesGenerateWithNoMembershipLookupAndNoWaiver()
+    public async Task A_paid_member_still_gets_their_occurrences()
+    {
+        ArrangePaidMembership();
+        var inputs = CaptureOrderInputs();
+
+        var result = await CreateHandler().Handle(
+            new MaterializeRecurringBookingTemplate.Command(TemplateId, DateTime.UtcNow, HorizonDays: 7),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotEmpty(inputs);
+
+        // Unchanged by T-0690: priced as a guest on the EXPRESS axis so this background job cannot spend
+        // the member's monthly waivers on occurrences nobody asked to be express.
+        Assert.All(inputs, input => Assert.Null(input.ReservedExpressWaiver));
+        _pricingCalculator.Verify(
+            c => c.CalculateAsync(
+                It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<string?>(), null, null, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce);
+    }
+
+    /// <summary>
+    /// The ruling itself. A lapsed member — no entitled membership — gets nothing new generated.
+    /// </summary>
+    [Fact]
+    public async Task A_lapsed_member_generates_nothing()
+    {
+        // The entitlement read answers null, which is what a lapsed, past-due, paused or cancelled
+        // membership all produce. Deliberately not stubbed to a trialing row: there are no trialing rows
+        // any more (T-0690 removed the trial and the admin commands refuse to set one).
+        _memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null);
+
+        var inputs = CaptureOrderInputs();
+
+        var result = await CreateHandler().Handle(
+            new MaterializeRecurringBookingTemplate.Command(TemplateId, DateTime.UtcNow, HorizonDays: 7),
+            CancellationToken.None);
+
+        // A successful no-op, not a failure: a lapse is an ordinary state of the world, and a sweep that
+        // reported failure for every lapsed template would drown the real errors.
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value!.OrdersCreated);
+        Assert.Empty(inputs);
+    }
+
+    /// <summary>
+    /// A lapse is a PAUSE, not a deletion. The template is left exactly as authored so resubscribing
+    /// resumes the schedule on the next tick with no action from the customer and no support ticket.
+    /// Without this, a future "tidy up dead templates" change could quietly make the lapse permanent.
+    /// </summary>
+    [Fact]
+    public async Task A_lapse_does_not_deactivate_or_mutate_the_template()
+    {
+        _memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null);
+
+        CaptureOrderInputs();
+
+        await CreateHandler().Handle(
+            new MaterializeRecurringBookingTemplate.Command(TemplateId, DateTime.UtcNow, HorizonDays: 7),
+            CancellationToken.None);
+
+        _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private List<CreateOrderInput> CaptureOrderInputs()
     {
         var inputs = new List<CreateOrderInput>();
         _orderFactory
@@ -142,23 +239,6 @@ public class RecurringMaterializationIsMembershipIndependentTests
                 UserId = UserId,
                 PaymentType = PaymentType.Cash,
             }));
-
-        var result = await CreateHandler().Handle(
-            new MaterializeRecurringBookingTemplate.Command(TemplateId, DateTime.UtcNow, HorizonDays: 7),
-            CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        Assert.NotEmpty(inputs);
-        Assert.All(inputs, input => Assert.Null(input.ReservedExpressWaiver));
-
-        // Priced as a guest on the express axis: no user, no cleaning date, so the pure resolver is asked
-        // nothing it could answer "waived" to. The member's discount still applies downstream — the
-        // factory resolves it from input.UserId — this is only the express surcharge.
-        _pricingCalculator.Verify(
-            c => c.CalculateAsync(
-                It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
-                It.IsAny<string?>(), null, null, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce);
+        return inputs;
     }
 }

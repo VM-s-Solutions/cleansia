@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Features.Bookings;
+﻿using Cleansia.TestUtilities.MockDataFactories.Memberships;
+using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
@@ -274,6 +275,10 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());
         services.AddScoped(sp => RealOrderFactory(sp.GetRequiredService<IOrderRepository>()));
+        // The sweep requires a PAID membership (T-0690). These classes are about tenant stamping,
+        // dedupe and per-template isolation, so the owner is simply entitled — otherwise the sweep
+        // correctly generates nothing and their real subject never runs.
+        services.AddScoped(_ => EntitledMemberships());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         return services.BuildServiceProvider();
@@ -309,7 +314,9 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             new Mock<ICountryConfigurationRepository>().Object,
             new Mock<IVatCalculator>().Object,
             loyalty.Object,
-            new Mock<IUserMembershipRepository>().Object,
+            // The sweep now requires a PAID membership (T-0690). This class is not about
+            // membership, so the owner is simply entitled and the real subject runs.
+            EntitledMemberships(),
             holdResolver.Object,
             new Mock<INotificationProducer>().Object);
     }
@@ -375,5 +382,16 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;
+    }
+
+    private static IUserMembershipRepository EntitledMemberships()
+    {
+        var memberships = new Mock<IUserMembershipRepository>();
+        memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string userId, CancellationToken _) =>
+                UserMembershipMockFactory.Paid(userId));
+        return memberships.Object;
     }
 }

@@ -143,9 +143,16 @@ period and a trialing enrolment are refused identically. That predicate is delib
 the *lifecycle* one that answers "is there a live enrolment?" — the lifecycle question is what stops a
 second Stripe subscription, lets a customer cancel, and is what GDPR erasure reads.
 
-> **A lapsed member keeps their recurring schedule generating orders**, priced as a non-member. That
-> is current shipped behaviour and is deliberately NOT changed by the ruling above — stopping it can
-> silently end a customer's standing cleaning and there is no notification for that yet.
+**A lapsed membership stops the schedule.** A recurring schedule is one of the six benefits, so when the
+membership lapses the sweep stops generating new occurrences. Three deliberate limits on that:
+
+- **The template is not deleted or deactivated.** It stays exactly as authored, so resubscribing
+  resumes the schedule on the next nightly tick with no action from the customer.
+- **Occurrences already created run.** The sweep works a horizon ahead, so up to a week of orders may
+  already exist when the lapse lands. They are real orders, possibly already authorised on a card, and
+  they are left alone — retracting them is a refund path that does not exist.
+- **The customer is warned before it happens**, by the existing `membership.expiring_soon`
+  notification. There is no dedicated "your schedule has stopped" event yet.
 
 ## Crew size
 

@@ -76,6 +76,7 @@ public class MaterializeRecurringBookingTemplate
         IOrderRepository orderRepository,
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
+        IUserMembershipRepository userMembershipRepository,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
@@ -109,6 +110,37 @@ public class MaterializeRecurringBookingTemplate
             if (!string.IsNullOrEmpty(template.TenantId))
             {
                 tenantProvider.SetTenantOverride(template.TenantId);
+            }
+
+            // A recurring schedule is a Cleansia Plus benefit, and owner ruling 2026-09-08 (T-0690) is
+            // that no Plus benefit is granted without a paid subscription. This reverses the earlier
+            // position, documented below at the pricing call, that "a lapsed membership must not stop a
+            // schedule" — a lapsed member used to keep receiving orders, priced as a guest.
+            //
+            // Read AFTER the tenant override above, not before: UserMembership is an ITenantEntity, so
+            // the entitlement query is filtered, and without the override a tenanted member would read
+            // as unentitled and have their schedule stopped.
+            //
+            // Three things this deliberately does NOT do:
+            //   * It does not deactivate the template. The schedule stays exactly as authored, so
+            //     resubscribing resumes it on the next tick with no action from the customer. A lapse
+            //     is a pause, not a deletion.
+            //   * It does not touch occurrences already materialized inside the horizon. Those are real
+            //     orders, possibly already authorized on a card; retracting them is a refund path that
+            //     does not exist. They run, and the schedule stops after them.
+            //   * It does not notify. MembershipExpiringSoon already warns the customer before the
+            //     lapse (SendMembershipLifecycleNotifications), so the stop is not the first they hear
+            //     of it. A dedicated "your schedule has stopped" event is worth its own ticket.
+            var entitled = await userMembershipRepository
+                .GetEntitledForUserNoTrackingAsync(template.UserId, cancellationToken);
+
+            if (entitled == null)
+            {
+                logger.LogInformation(
+                    "Template {TemplateId} skipped: owner {UserId} has no paid Cleansia Plus membership. "
+                    + "The schedule is preserved and resumes if they resubscribe",
+                    template.Id, template.UserId);
+                return BusinessResult.Success(new Response(0));
             }
 
             var occurrences = ComputeOccurrences(template, now, horizon).ToList();
@@ -202,10 +234,11 @@ public class MaterializeRecurringBookingTemplate
                 template.Bathrooms,
                 defaultCurrency.Id,
                 cleaningDateUtc: null,
-                // A lapsed membership must not stop a schedule, and a live one must not have this
-                // background job spend the member's monthly express waivers on occurrences they never
-                // asked to be express. Both fall out of pricing the occurrence as a guest: null user,
-                // null cleaning date, no waiver resolved, full price.
+                // Priced as a guest — null user, null cleaning date — so this background job cannot
+                // spend the member's monthly express waivers on occurrences they never asked to be
+                // express. It reaches here only for a PAID member (the entitlement gate above), so the
+                // guest price is now a deliberate no-waiver choice rather than the lapsed-member
+                // fallback it used to be.
                 userId: null,
                 nowUtc: now,
                 cancellationToken);

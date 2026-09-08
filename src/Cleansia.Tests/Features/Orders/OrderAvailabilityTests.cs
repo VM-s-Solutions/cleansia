@@ -25,7 +25,11 @@ public class OrderAvailabilityTests
     [InlineData(OrderStatus.Confirmed, PaymentType.Cash, PaymentStatus.Paid, RecurringTemplateId, true)]
     // Checkout open or abandoned: CleanupStalePendingOrders cancels it within ~1h15m.
     [InlineData(OrderStatus.New, PaymentType.Card, PaymentStatus.Pending, null, false)]
-    [InlineData(OrderStatus.New, PaymentType.Card, PaymentStatus.Paid, null, false)]
+    // THE ROW THE RULING TURNS ON (T-0691). A paid card order rests at New, because Confirmed now
+    // means only "a cleaner took this job" and the webhook no longer writes it. If this is false, every
+    // paid card job is invisible on every board, no cleaner can ever take one, and CancelUnfilledOrders
+    // eventually refunds the customer who paid — an outage that reports itself as silence.
+    [InlineData(OrderStatus.New, PaymentType.Card, PaymentStatus.Paid, null, true)]
     [InlineData(OrderStatus.Confirmed, PaymentType.Card, PaymentStatus.Paid, null, true)]
     // Reachable two ways (admin override with no payment guard; a decline deliberately left Pending
     // for retry) and the 15-minute sweep has no OrderStatus term, so it kills this one out from

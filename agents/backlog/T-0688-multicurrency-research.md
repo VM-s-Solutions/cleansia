@@ -14,6 +14,18 @@ caller-supplied `CurrencyId` rule in `CreateOrder`, and the exchange-rate scalin
 
 ---
 
+> **Superseded in part, 2026-09-08 — see
+> [`T-0688-multicurrency-design.md`](T-0688-multicurrency-design.md).** The owner answered all eight
+> decisions the same day and added facts this pass did not have: there is no production, the DB may be
+> dropped, Stripe is in sandbox, and the expansion order is Czechia → Slovakia → **Poland**. A second
+> research pass then **corrected four things below**: the market-practice claim that nobody moves the
+> settlement currency (Airbnb, Booking and Uber all do, as a priced add-on); the geo-blocking argument
+> for address-pinning (Reg 2018/302 does not distinguish the two designs — the legal case is zero, not
+> "safer"); the claim that currency and VAT "agree by construction" today (they do not — they are
+> resolved from two different places); and the sizing of Cleansia Plus (it is the *cheapest* surface,
+> not a blocker). It also found the VAT convention bug in **three** sites rather than one. Read the
+> design document for the current position.
+
 ## 1. The one-paragraph answer
 
 **No — the platform cannot take a euro today, and the reason is not that the machinery is missing. It is that the machinery was built, wired up, and then never once executed.** Every catalogue price is authored in Czech crowns, and a euro price is produced by multiplying the whole basket by a single hand-typed number (`0.041`) that someone entered into a seed file and that nothing anywhere refreshes — there is no rate feed of any kind in this repository. All three client apps send `currencyId: null` on every quote, so the server always resolves the default, the multiplier is always 1.0, and the conversion path has therefore never run in production. That is genuinely good news — nothing is broken for a current customer, and nothing here is a regression. It is also why none of it has been caught: **the first euro order will be the first execution of about fifteen code paths at once.** If you switched euros on this afternoon, the customer would agree to a price labelled in crowns and be charged in euros; the receipt they received would list items that do not sum to its own total, off by roughly 24×; the cleaner who did the job would be issued a tax document in the wrong currency; the admin revenue report would add crowns to euros and stamp "Kč" on the answer; and the customer would earn 4 loyalty points where a Czech customer earns 110 for the identical clean. Separately and more seriously, there is a VAT bug sitting underneath all of this that has nothing to do with currency and would under-declare output VAT by 98.8% on every single sale the day you register for VAT. **Realistic scope: 2–3 weeks of focused work, and it cannot usefully start until you answer one product question (section 4).**

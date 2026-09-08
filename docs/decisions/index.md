@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**55 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**57 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -33,6 +33,7 @@ flowchart LR
   A0042[ADR-0042] --> A0037[ADR-0037]
   A0049[ADR-0049] --> A0045[ADR-0045]
   A0053[ADR-0053] --> A0037[ADR-0037]
+  A0057[ADR-0057] --> A0037[ADR-0037]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
   class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045 old
 ```
@@ -98,6 +99,8 @@ Grey nodes are superseded in whole or in part.
 | **[ADR-0053](./adr-0053)** | The live-commitment cap is one admins decision about one… | `accepted` |
 | **[ADR-0054](./adr-0054)** | Cleaner job reminders dedupe on a stamp per recipient… | `accepted` |
 | **[ADR-0055](./adr-0055)** | A cleaner may set off or start only inside a 60-minute… | `accepted` |
+| **[ADR-0056](./adr-0056)** | Property size is two integers; the label is per-country… | `proposed` |
+| **[ADR-0057](./adr-0057)** | Confirmed means a cleaner took the job, and nothing else | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

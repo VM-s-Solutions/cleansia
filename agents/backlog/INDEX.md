@@ -120,6 +120,7 @@
 | T-0687 | Admin order list renders a blank status pill for every New order | S | `done` | — | guard tested the number not the object; also added the missing New/OnTheWay class cases and their styles |
 | T-0688 | Multicurrency has never run at a rate other than 1, and CreateOrder accepts any currency id | M | `todo` | — | decide single-currency-at-launch first; that decision changes the size by an order of magnitude |
 | T-0689 | The feature-flag mechanism gated nothing and has been removed | S | `done` | — | headline was WRONG: no admin UI ever existed, so no switch could be flipped. Real defect was worse — after T-0685 the table gated nothing at all. Whole mechanism deleted |
-| T-0690 | Remove the free trial; every Plus benefit now requires a PAID subscription | M | `done` | — | trial removed AND made unsettable (admin validators refuse it); entitlement split from lifecycle across 10 benefit sites; web stopped advertising it. Lapsed-member recurring schedules deliberately unchanged |
+| T-0690 | Remove the free trial; every Plus benefit now requires a PAID subscription | M | `done` | — | trial removed AND made unsettable (admin validators refuse it); entitlement split from lifecycle across 10 benefit sites; web stopped advertising it; a lapsed membership now stops the recurring schedule |
+| T-0691 | Confirmed meant two things — money settled OR a cleaner took the job | L | `done` | — | ADR-0057 supersedes ADR-0037 D1s status term. Webhook + recurring confirm write money only; a paid card order rests at New. Mobile timelines needed no change — they were already right |
 
-*Next id: **T-0683**.*
+*Next id: **T-0692**.*

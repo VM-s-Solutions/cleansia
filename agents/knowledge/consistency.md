@@ -316,7 +316,8 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
 - **B4 fetch-and-guard:** the "redundant null-check after validator" flagged by analysis is **not**
   redundant when the handler must load the entity to act on it — that's the canonical guard. We only
   forbid duplicating an existence check that the handler's own fetch already covers.
-- **Order offerability (ADR-0037, `accepted` 2026-08-03 — binding):** ten surfaces answered "which
+- **Order offerability (ADR-0037, `accepted` 2026-08-03, status term superseded by ADR-0057,
+  2026-09-08 — binding):** ten surfaces answered "which
   orders may a cleaner be offered / take" with six different status sets. We canonicalize on **none
   of them** — the majority set (`{New, Pending, Confirmed}`, held by the push and the web pane)
   contains a status with **no production writer**, and the dashboard's `{Pending, Confirmed}` reduces
@@ -326,9 +327,16 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   `Cleansia.Core.Domain.Orders.OrderAvailability`:
 
   ```
-  Offerable(o) ⟺ ( o.CurrentStatus == Confirmed ∨ (o.CurrentStatus == New ∧ o.PaymentType == Cash) )
+  Offerable(o) ⟺ ( o.CurrentStatus ∈ {New, Confirmed, OnTheWay, InProgress} )
                ∧ ( o.PaymentStatus == Paid ∨ (o.PaymentType == Cash ∧ o.RecurringTemplateId == null) )
   ```
+
+  **The status term stopped qualifying payment on 2026-09-08 (ADR-0057).** It used to read
+  `Confirmed ∨ (New ∧ Cash)`, and that `∧ Cash` existed only because a paid CARD order had already
+  been moved to `Confirmed` by the Stripe webhook. Once `Confirmed` means "a cleaner took the job" and
+  nothing else, a paid card order rests at `New` and the qualifier would take every card job off every
+  board. The first conjunct is now the plain fulfilment question — the work is not over — and the
+  second carries the whole payment qualification, which is what it always did.
 
   The second conjunct is the union of the negations of the only two scheduled retractors'
   `WHERE` clauses — **derive it from them, never paraphrase it.** Two evaluation forms (queryable +

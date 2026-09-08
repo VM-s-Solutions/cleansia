@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.notifications
 
 import android.content.Intent
+import cz.cleansia.customer.features.main.MainTab
 import cz.cleansia.customer.navigation.Routes
 
 /**
@@ -67,8 +68,12 @@ object NotificationDeepLink {
             args["orderId"]?.takeIf { it.isNotBlank() }?.let { Routes.OrderDetail(it) }
         "dispute.reply" ->
             args["disputeId"]?.takeIf { it.isNotBlank() }?.let { Routes.DisputeDetail(it) }
+        // The membership MANAGEMENT surface, not the sales page. Both of these are addressed to
+        // someone who ALREADY has a subscription — it is expiring, or a cancellation has taken effect —
+        // so landing them on "buy Cleansia Plus" answered a question they had not asked and hid the one
+        // they had. MembershipManagementCard lives on the Profile tab and renders both states.
         "membership.expiring_soon",
-        "membership.cancellation_effective" -> Routes.SubscribePlus
+        "membership.cancellation_effective" -> Routes.Home(tab = MainTab.Profile.name)
         "loyalty.tier_upgrade" -> Routes.RewardsActivity
         // promo.new_sitewide intentionally lands on Home — there's no
         // single screen that's right for "see the new offer".

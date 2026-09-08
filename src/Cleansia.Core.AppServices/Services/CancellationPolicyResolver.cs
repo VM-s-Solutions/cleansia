@@ -30,7 +30,7 @@ public class CancellationPolicyResolver(IUserMembershipRepository userMembership
         }
 
         var activeMembership = await userMembershipRepository
-            .GetActiveForUserNoTrackingAsync(userId, cancellationToken);
+            .GetEntitledForUserNoTrackingAsync(userId, cancellationToken);
 
         if (activeMembership == null
             || activeMembership.MembershipPlan.FreeCancellationWindowHours <= 0)

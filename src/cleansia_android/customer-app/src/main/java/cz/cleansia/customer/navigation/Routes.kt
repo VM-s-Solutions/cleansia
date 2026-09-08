@@ -28,8 +28,17 @@ object Routes {
     data class EmailVerify(val email: String? = null)
 
     // ── Main shell + booking ──
+    /**
+     * The tabbed shell. [tab] names the tab to open on, by [cz.cleansia.customer.features.main.MainTab]
+     * name, and is null for every ordinary navigation — the shell then opens on Home as it always has.
+     *
+     * A parameter rather than a second route because the shell IS one destination: a sibling route would
+     * duplicate the pager, the bottom bar and every callback wiring in CleansiaNavHost. It exists so a
+     * notification about an existing subscription can land on Profile, where the membership is managed,
+     * instead of on the Plus sales page.
+     */
     @Serializable
-    data object Home
+    data class Home(val tab: String? = null)
 
     /** Post-booking celebration screen; both ids are required. */
     @Serializable

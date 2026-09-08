@@ -1,7 +1,7 @@
 ---
 id: T-0690
 title: Remove the 14-day membership free trial — the discount is the smallest thing it gives away
-status: todo
+status: done
 size: M
 owner: —
 created: 2026-09-07
@@ -128,3 +128,42 @@ needs no migration, and nothing in CI pins the seeded 14.
   beginning". Confirmed, and the discount turned out to be the third-largest item, not the first.
   An adversarial review of the analysis overturned nine claims and added five surfaces; the numbers
   above are the reviewed ones.
+
+
+## Done — owner ruling 2026-09-08
+
+The ruling was broader than the ticket: **no Cleansia Plus benefit is granted until the customer
+actually subscribes.** A trial is benefits without payment, so under that ruling it cannot exist.
+
+**The trial is gone, and cannot be set again.** Both seeded plans carry `TrialPeriodDays = 0`, and
+`CreateMembershipPlan` / `UpdateMembershipPlan` now refuse a non-zero value with
+`membership.plan.trial_not_permitted`. The validator matters more than the seed: a deployed database
+gets its plans from the admin surface, not from `insert_seed_data.sql`, so the seed value alone would
+have enforced nothing where it counts — the same shape as the T-0685 defect.
+
+**Entitlement is now its own predicate.** `GetEntitledForUserAsync` / `...NoTrackingAsync` = a live
+enrolment that is also paid. All ten benefit sites read it; the nine LIFECYCLE reads (subscribe,
+cancel, swap, the Stripe webhook, GDPR erasure) deliberately still read `GetActiveForUser*`. Narrowing
+the original in place would have made a trialing customer look unsubscribed to
+`CreateMembershipSubscription`, minting a second Stripe subscription against a filtered unique index —
+a 500 on a paying customer — and would have refused to cancel a live trial.
+
+**The web stopped advertising a trial it no longer has.** Ten sites across the Plus page and the order
+wizard now branch on `trialDays() > 0`, matching what Android and iOS have always done. Route A alone
+would have left the website promising 14 free days that do not exist.
+
+### Corrections to this ticket
+
+- The line numbers cited for the seeded plans had drifted (1782/1798 -> 1753/1769 at the time of
+  writing, and they moved again with this change). Do not trust line numbers in a ticket.
+- **Recurring cleanings were already Plus-only** to create and to edit. The ticket and the follow-up
+  ruling both implied a free feature was being taken away; it was not, and there is no grandfathering
+  problem because every existing template was authored by someone who held a membership at the time.
+
+### Deliberately NOT done
+
+**A lapsed member's recurring schedule still generates orders**, priced as a non-member
+(`MaterializeRecurringBookingTemplate` — "A lapsed membership must not stop a schedule"). Reversing
+that is the only part of this area that can harm a live customer: their standing clean would silently
+stop. It needs a count of affected templates, a notification event that does not exist, and a decision
+about occurrences already materialised up to seven days ahead. Its own ticket.

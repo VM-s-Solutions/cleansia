@@ -61,6 +61,6 @@ public static class PreferredOfferExit
 
         return !string.IsNullOrEmpty(userId)
             && await userMembershipRepository
-                .GetActiveForUserNoTrackingAsync(userId, cancellationToken) is not null;
+                .GetEntitledForUserNoTrackingAsync(userId, cancellationToken) is not null;
     }
 }

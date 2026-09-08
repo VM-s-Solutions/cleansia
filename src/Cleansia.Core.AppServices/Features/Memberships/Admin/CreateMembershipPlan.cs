@@ -77,9 +77,13 @@ public class CreateMembershipPlan
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
+            // A trial grants Cleansia Plus benefits to somebody who has not paid, which the owner ruling
+            // of 2026-09-08 (T-0690) forbids. Refused here rather than merely defaulted to 0, because a
+            // deployed database gets its plans from this admin surface and not from the dev seed — so the
+            // seed value alone would enforce nothing where it matters.
             RuleFor(x => x.TrialPeriodDays)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+                .Equal(0)
+                .WithMessage(BusinessErrorMessage.MembershipPlanTrialNotPermitted);
         }
     }
 

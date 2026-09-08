@@ -453,6 +453,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'membership.plan.code_already_exists',
   'membership.plan.discount_out_of_range',
   'membership.plan.not_found',
+  'membership.plan.trial_not_permitted',
   'promo.amount_must_be_positive',
   'promo.code_already_exists',
   'promo.code_invalid_format',

@@ -142,7 +142,7 @@ public class RecurringPreferredCleanerCarryThroughTests
 
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: UserId,
                 membershipPlanId: "plan-plus",

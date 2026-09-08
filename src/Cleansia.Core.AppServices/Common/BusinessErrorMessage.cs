@@ -148,6 +148,14 @@ public static class BusinessErrorMessage
     public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
     public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
 
+    /// <summary>
+    /// A free trial is benefits without payment, and the owner ruling of 2026-09-08 (T-0690) is that no
+    /// Cleansia Plus benefit is granted until the customer actually subscribes. The field stays on the
+    /// plan because Stripe subscriptions carry it and historical rows may hold a non-zero value; only
+    /// setting a new one is refused.
+    /// </summary>
+    public const string MembershipPlanTrialNotPermitted = "membership.plan.trial_not_permitted";
+
     // Recurring booking template errors. Backend rejects with these keys; the
     // customer UI maps to localized strings. NotOwnedByUser is the per-user
     // ownership check inside the handler — Validator can't see UserId at the

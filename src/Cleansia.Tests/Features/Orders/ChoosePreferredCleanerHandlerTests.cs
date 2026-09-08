@@ -41,7 +41,7 @@ public class ChoosePreferredCleanerHandlerTests
     {
         _session.Setup(s => s.GetUserId()).Returns(CustomerUserId);
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 CustomerUserId, "plan-plus", "sub_choose", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));

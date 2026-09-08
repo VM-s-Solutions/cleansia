@@ -2522,7 +2522,8 @@
         "action_failed": "Akcia s plánom členstva sa nepodarila. Skúste to znova.",
         "code_already_exists": "Plán s týmto kódom už existuje.",
         "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
-        "not_found": "Plán členstva sa nenašiel."
+        "not_found": "Plán členstva sa nenašiel.",
+        "trial_not_permitted": "Výhody Cleansia Plus vyžadujú aktívne predplatné, skúšobné obdobie preto nemožno nastaviť. Ponechajte 0 dní."
       }
     },
     "order": {

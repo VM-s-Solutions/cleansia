@@ -122,8 +122,30 @@ who has a complaint settled and then finds something else is not out of options.
 
 ### Cleansia Plus
 
-A membership can widen the free-cancellation window. A **trialing** member is active — they keep the
-discount and the cancellation window — but earns **no** express waiver.
+**Every Plus benefit requires an active, PAID subscription** (owner ruling 2026-09-08, T-0690). There
+is no free trial: both seeded plans carry `TrialPeriodDays = 0` and the admin plan commands refuse
+anything else, because a trial is by definition benefits without payment.
+
+There are **six** benefits, not the three this page used to list:
+
+| Benefit | What it does |
+|---|---|
+| Discount | 5% off every clean |
+| Free-cancellation window | Widened from 24h to 4h before the cleaning |
+| Express-upgrade waiver | The express surcharge is waived, N times per calendar month |
+| Recurring schedules | Authoring and editing a standing booking is Plus-only |
+| Preferred cleaner at booking | Request a specific cleaner when placing the order |
+| Preferred cleaner re-pick | Change that choice after booking |
+
+All six resolve through **one** entitlement predicate
+(`UserMembershipRepository.EntitledForUserQuery`), so `PastDue`, `Paused`, `Cancelled`, an elapsed
+period and a trialing enrolment are refused identically. That predicate is deliberately separate from
+the *lifecycle* one that answers "is there a live enrolment?" — the lifecycle question is what stops a
+second Stripe subscription, lets a customer cancel, and is what GDPR erasure reads.
+
+> **A lapsed member keeps their recurring schedule generating orders**, priced as a non-member. That
+> is current shipped behaviour and is deliberately NOT changed by the ruling above — stopping it can
+> silently end a customer's standing cleaning and there is no notification for that yet.
 
 ## Crew size
 

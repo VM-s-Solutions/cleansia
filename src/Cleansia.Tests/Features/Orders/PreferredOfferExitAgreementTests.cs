@@ -211,7 +211,7 @@ public class PreferredOfferExitAgreementTests
 
     private void GiveTheCallerPlus() =>
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 CustomerUserId, "plan-plus", "sub_exit", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
@@ -221,7 +221,7 @@ public class PreferredOfferExitAgreementTests
         if (scenario == "no-plus-membership")
         {
             _userMembershipRepository
-                .Setup(r => r.GetActiveForUserNoTrackingAsync(
+                .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                     It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserMembership?)null);
         }

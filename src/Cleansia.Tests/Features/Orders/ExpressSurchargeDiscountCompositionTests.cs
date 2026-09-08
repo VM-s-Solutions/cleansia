@@ -174,7 +174,7 @@ public class ExpressSurchargeDiscountCompositionTests
                 It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(tierDiscount, LoyaltyTier.GoldPolisher));
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(hasPlus ? ActiveMembership(PlusPercentage) : null);
 
         var factory = new OrderFactory(
@@ -245,7 +245,7 @@ public class ExpressSurchargeDiscountCompositionTests
 
         var membershipRepository = new Mock<IUserMembershipRepository>();
         membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ActiveMembership(plusPercentage));
 
         // Local, because this helper is static and cannot reach the class

@@ -52,7 +52,7 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
                 It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ArrangeActiveMembership());
         _serviceRepository
             .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))

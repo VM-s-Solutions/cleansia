@@ -64,7 +64,7 @@ public class PreferredOfferDisclosureTests
             .Setup(r => r.GetQueryable())
             .Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 CustomerUserId, "plan-plus", "sub_disclosure", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));

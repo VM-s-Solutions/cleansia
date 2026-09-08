@@ -82,7 +82,7 @@ public sealed class OrderFactory(
             tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
 
             var activeMembership = await userMembershipRepository
-                .GetActiveForUserAsync(input.UserId, cancellationToken);
+                .GetEntitledForUserAsync(input.UserId, cancellationToken);
             if (activeMembership != null)
             {
                 membershipDiscount = input.RawSubtotal

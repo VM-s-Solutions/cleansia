@@ -1733,9 +1733,11 @@ WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'LOYAL10' AND
 -- from the Stripe dashboard before deploying. The monthly→yearly upgrade
 -- path (SwapMembershipPlan command) reads BillingInterval to know which
 -- plan is the "upgrade target".
--- TrialPeriodDays is 14 on both; Stripe only honors the trial on the user's
--- first subscription per customer id, so resubscribers don't get another
--- free 14 days.
+-- TrialPeriodDays is 0 on both, and the admin validators refuse anything else (T-0690, owner ruling
+-- 2026-09-08): a customer gets no Cleansia Plus benefit until they actually subscribe. A trial is by
+-- definition benefits without payment, so under that ruling it cannot exist. It gave away far more
+-- than the headline 5% discount — a trialing member could author a recurring schedule that outlives
+-- the trial, and got the widened free-cancellation window with no cap on use.
 
 -- PLUS_MONTHLY — 199 Kč/month
 INSERT INTO public."MembershipPlans" (
@@ -1750,7 +1752,7 @@ SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NUL
     'PLUS_MONTHLY', 'Cleansia Plus (Monthly)', 199.00, 'price_1TSiJ83KjMqxM0RBVaiKAF6r',
     5.00, 4, true,
     1,
-    1, 14
+    1, 0
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY' AND "TenantId" IS NULL);
 
 -- PLUS_YEARLY — 2030 Kč/year (≈169 Kč/month, 15% off vs monthly).
@@ -1766,7 +1768,7 @@ SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NUL
     'PLUS_YEARLY', 'Cleansia Plus (Annual)', 2030.00, 'price_1TSiJ83KjMqxM0RBrfMWdjrF',
     5.00, 4, true,
     1,
-    2, 14
+    2, 0
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY' AND "TenantId" IS NULL);
 
 -- ============================================================================

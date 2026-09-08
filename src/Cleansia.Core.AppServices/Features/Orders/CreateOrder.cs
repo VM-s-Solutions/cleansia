@@ -210,10 +210,14 @@ public class CreateOrder
         /// <summary>
         /// The favourite-cleaner perk is Plus-only (owner ruling 2026-08-07, <c>Q-PLUS-03</c>;
         /// ADR-0039 D12.1 already gates the picker's availability flag on this same answer). The predicate
-        /// is <c>UserMembershipRepository.ActiveForUserQuery</c> — the ONE live-membership predicate the
-        /// platform has, never a second one — so <c>PastDue</c>, <c>Paused</c>, <c>Cancelled</c> and an
-        /// elapsed period are all refused, and a trialing member is allowed: trial withholds only the
-        /// METERED benefits (ADR-0035 AM-18), and this one is not metered.
+        /// is <c>UserMembershipRepository.EntitledForUserQuery</c> — the ONE ENTITLEMENT predicate, shared
+        /// by all six Plus benefits — so <c>PastDue</c>, <c>Paused</c>, <c>Cancelled</c> and an elapsed
+        /// period are all refused.
+        ///
+        /// <para>A trialing member is now refused too (owner ruling 2026-09-08, T-0690). That reverses the
+        /// earlier position, under which a trial withheld only the METERED benefits (ADR-0035 AM-18) and
+        /// this unmetered one was allowed. No Plus benefit is granted before payment, so there is no longer
+        /// a metered/unmetered distinction to draw.</para>
         /// </summary>
         private async Task<bool> CallerHasActiveMembershipAsync(
             Command command,
@@ -223,7 +227,7 @@ public class CreateOrder
 
             return !string.IsNullOrEmpty(userId)
                 && await _userMembershipRepository
-                    .GetActiveForUserNoTrackingAsync(userId, cancellationToken) is not null;
+                    .GetEntitledForUserNoTrackingAsync(userId, cancellationToken) is not null;
         }
 
         private async Task<bool> PreferredEmployeeIsEligibleAsync(

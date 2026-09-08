@@ -238,7 +238,7 @@ public class CreateOrderValidatorCharacterizationTests
     {
         _session.Setup(s => s.GetUserId()).Returns("user-1");
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync("user-1", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var command = CreateOrderTestData.ValidCommand(preferredEmployeeId: "emp-1");
@@ -354,7 +354,7 @@ public class CreateOrderValidatorCharacterizationTests
             allowsExpressUpgrade: true);
 
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(userId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: userId,
                 membershipPlanId: plan.Id,

@@ -261,7 +261,7 @@ public class QuoteOrder
                 }
 
                 var activeMembership = await userMembershipRepository
-                    .GetActiveForUserAsync(userId, cancellationToken);
+                    .GetEntitledForUserAsync(userId, cancellationToken);
                 if (activeMembership != null)
                 {
                     membershipDiscount = rawSubtotal

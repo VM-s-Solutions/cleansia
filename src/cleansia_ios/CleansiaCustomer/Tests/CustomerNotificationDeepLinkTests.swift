@@ -64,11 +64,14 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
         ))
     }
 
-    func testMembershipEventsResolveToSubscribePlus() {
+    /// Both membership events are addressed to someone who ALREADY has a subscription, so they resolve
+    /// to the management surface. They used to resolve to the sales page, which answered a question the
+    /// recipient had not asked and hid the one they had.
+    func testMembershipEventsResolveToMembershipManagement() {
         for key in ["membership.expiring_soon", "membership.cancellation_effective"] {
             XCTAssertEqual(
                 CustomerNotificationDeepLink.resolve(eventKey: key, orderId: nil, disputeId: nil),
-                .subscribePlus,
+                .membershipManagement,
                 key
             )
         }

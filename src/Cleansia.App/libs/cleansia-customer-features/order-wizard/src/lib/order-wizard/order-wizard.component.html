@@ -790,11 +790,21 @@
         @if (plusSavings(); as savings) {
         <p class="cl-body cl-wiz__lead">
           {{ 'pages.order.plus_lead_before' | translate }}
-          <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount) }}</strong
-          >{{ 'pages.order.plus_lead_after' | translate: { days: trialDays() } }}
+          <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount) }}</strong>
+          @if (trialDays() > 0) {
+            {{ 'pages.order.plus_lead_after' | translate: { days: trialDays() } }}
+          } @else {
+            {{ 'pages.order.plus_lead_after_no_trial' | translate }}
+          }
         </p>
         } @else {
-        <p class="cl-body cl-wiz__lead">{{ 'pages.order.plus_lead_plain' | translate: { days: trialDays() } }}</p>
+        <p class="cl-body cl-wiz__lead">
+          @if (trialDays() > 0) {
+            {{ 'pages.order.plus_lead_plain' | translate: { days: trialDays() } }}
+          } @else {
+            {{ 'pages.order.plus_lead_plain_no_trial' | translate }}
+          }
+        </p>
         }
 
         <div class="cl-wiz__plans">
@@ -809,7 +819,7 @@
             <p class="cl-wiz__plan-note">
               @if (plan.savingsPercentVsMonthly > 0) {
               {{ 'pages.order.plus_saves_vs_monthly' | translate: { percent: plan.savingsPercentVsMonthly } }}
-              } @else {
+              } @else if (plan.trialPeriodDays > 0) {
               {{ 'pages.order.plus_trial_free' | translate: { days: plan.trialPeriodDays } }}
               }
             </p>

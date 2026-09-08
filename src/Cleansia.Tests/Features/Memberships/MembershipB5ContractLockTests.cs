@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -45,6 +47,7 @@ public class MembershipB5ContractLockTests
             _planRepository.Object,
             _session.Object,
             _stripe.Object,
+            new StripeConfig(new ConfigurationBuilder().Build()),
             NullLogger<SwapMembershipPlan.Handler>.Instance);
 
     [Fact]

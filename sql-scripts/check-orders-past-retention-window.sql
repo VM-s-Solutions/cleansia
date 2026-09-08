@@ -101,10 +101,9 @@ JOIN doomed d ON d.address_id = e."AddressId"
 WHERE e."IsActive" = TRUE;
 
 \echo ''
-\echo '=== 4. Context: total orders, and the feature-flag table this ticket is about ==='
+\echo '=== 4. Context: how much order history exists at all ==='
 
 SELECT
-    (SELECT COUNT(*) FROM public."Orders")        AS total_orders,
-    (SELECT COUNT(*) FROM public."FeatureFlags")  AS total_feature_flags,
-    (SELECT COUNT(*) FROM public."FeatureFlags"
-      WHERE "Name" = 'DataRetentionJobEnabled')   AS retention_flag_rows;
+    (SELECT COUNT(*) FROM public."Orders")     AS total_orders,
+    (SELECT COUNT(*) FROM public."Addresses")  AS total_addresses,
+    (SELECT MIN("CleaningDateTime") FROM public."Orders") AS oldest_order;

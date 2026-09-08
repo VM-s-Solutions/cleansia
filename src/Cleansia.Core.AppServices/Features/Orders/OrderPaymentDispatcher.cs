@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging;
 using StripeException = Stripe.StripeException;
@@ -25,6 +26,7 @@ public sealed class OrderPaymentDispatcher(
     IStripeClientFactory stripeClientFactory,
     IPendingDispatch pending,
     IOrderChannelProvider channelProvider,
+    IStripeConfig stripeConfig,
     ILogger<OrderPaymentDispatcher> logger) : IOrderPaymentDispatcher
 {
     public async Task<OrderPaymentDispatchResult> DispatchAsync(
@@ -33,6 +35,20 @@ public sealed class OrderPaymentDispatcher(
         switch (order.PaymentType)
         {
             case PaymentType.Card:
+                // Stripe:Enabled defaults true, so this refuses only when somebody deliberately turned
+                // card payments off. Reuses PaymentGatewayUnavailable rather than minting a key: from the
+                // customer's side "we cannot take a card right now" is the same fact whether Stripe is
+                // down or switched off, and that key already has all five locales in every app.
+                if (!stripeConfig.Enabled)
+                {
+                    logger.LogWarning(
+                        "Card payment refused for order {OrderId}: card payments are disabled (Stripe:Enabled=false)",
+                        order.Id);
+                    return OrderPaymentDispatchResult.Fail(new Error(
+                        nameof(PaymentType.Card),
+                        BusinessErrorMessage.PaymentGatewayUnavailable));
+                }
+
                 if (channelProvider.Channel == OrderChannel.Mobile)
                 {
                     return OrderPaymentDispatchResult.Ok(null);

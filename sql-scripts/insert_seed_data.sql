@@ -1090,33 +1090,6 @@ WHERE c."IsoCode" IN ('CZE', 'SVK')
 ON CONFLICT ("CountryId", "DocumentType") DO NOTHING;
 
 -- ============================================================
--- FEATURE FLAGS
--- ============================================================
-INSERT INTO public."FeatureFlags" (
-  "Id", "IsActive", "CreatedBy", "CreatedOn",
-  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
-  "Name", "Description", "IsEnabled", "Scope", "ScopeValue"
-)
-VALUES
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'StripePayments', 'Enable Stripe payment processing', true, 'global', NULL),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'EcoFriendlyBadge', 'Show eco-friendly badge on qualifying services', true, 'global', NULL),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'EmployeeSelfService', 'Allow employees to manage their own profiles', true, 'global', NULL),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'AutoInvoiceGeneration', 'Automatically generate invoices when pay period closes', true, 'global', NULL),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'DisputeSystem', 'Enable customer dispute/complaint system', true, 'global', NULL),
-  -- The GDPR retention sweep is deliberately NOT here. Its switch moved to the "DataRetention"
-  -- configuration section (DataRetentionConfig.Enabled, default true) precisely because a seeded row
-  -- could not reach production: no migration inserts it, deployed hosts apply the EF bundle without
-  -- ever calling the seeder, and execute-sql.yml refuses this fixture against PRO. A compliance clock
-  -- cannot depend on a row that production never gets.
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'PushNotifications', 'Enable push notifications for mobile app', false, 'global', NULL);
-
--- ============================================================
 -- COMPANY INFO
 -- ============================================================
 INSERT INTO public."CompanyInfo" (

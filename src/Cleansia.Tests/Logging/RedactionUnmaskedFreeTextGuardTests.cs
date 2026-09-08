@@ -32,8 +32,9 @@ namespace Cleansia.Tests.Logging;
 /// Two bounded limits on its reach, both verified rather than assumed:
 /// <list type="bullet">
 /// <item>Response types are sourced from <c>[ProducesResponseType]</c>. <b>14 of 449 actions (3.1%)
-/// declare none</b> and are therefore invisible to the walk — all GDPR/feature-flag deletes, none
-/// returning a token-carrying DTO today.</item>
+/// declare none</b> and are therefore invisible to the walk — all GDPR deletes, none returning a
+/// token-carrying DTO today. (Counts measured before T-0689 removed the five feature-flag
+/// controllers; the shape of the limit is unchanged, the totals are now slightly lower.)</item>
 /// <item><c>DeclaredOnly</c> means an action moved onto a shared controller base class would be
 /// missed. Refuted as live — the four base controllers declare zero actions — but latent.</item>
 /// </list>

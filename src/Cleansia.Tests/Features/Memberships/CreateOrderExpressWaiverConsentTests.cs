@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.AppServices.Authentication;
+﻿using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -115,6 +117,7 @@ public class CreateOrderExpressWaiverConsentTests
                 _stripeClientFactory.Object,
                 _pending.Object,
                 new OrderChannelProvider(OrderChannel.Mobile),
+                new StripeConfig(new ConfigurationBuilder().Build()),
                 NullLogger<OrderPaymentDispatcher>.Instance),
             _expressWaiverConsumer.Object,
             // No credit account: these suites characterize pricing, dispatch and the waiver slot, and

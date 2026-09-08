@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
@@ -77,6 +79,7 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
             _planRepository.Object,
             _session.Object,
             _stripe.Object,
+            new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
 

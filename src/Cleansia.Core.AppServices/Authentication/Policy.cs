@@ -183,13 +183,6 @@ public class Policy
     public const string CanViewEmailTemplates = nameof(CanViewEmailTemplates); // Admin
     public const string CanUpdateEmailTemplate = nameof(CanUpdateEmailTemplate); // Admin
 
-    // Feature Flags
-    public const string CanViewFeatureFlags = nameof(CanViewFeatureFlags); // Admin
-    public const string CanCreateFeatureFlag = nameof(CanCreateFeatureFlag); // Admin
-    public const string CanToggleFeatureFlag = nameof(CanToggleFeatureFlag); // Admin
-    public const string CanDeleteFeatureFlag = nameof(CanDeleteFeatureFlag); // Admin
-    public const string CanCheckFeatureFlag = nameof(CanCheckFeatureFlag); // Authenticated (All roles)
-
     // Country Configuration
     public const string CanViewCountryConfigurations = nameof(CanViewCountryConfigurations); // Admin
     public const string CanCreateCountryConfiguration = nameof(CanCreateCountryConfiguration); // Admin

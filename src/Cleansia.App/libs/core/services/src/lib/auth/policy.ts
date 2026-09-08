@@ -131,13 +131,6 @@ export const Policy = {
   CanViewEmailTemplates: 'CanViewEmailTemplates',
   CanUpdateEmailTemplate: 'CanUpdateEmailTemplate',
 
-  // Feature Flags
-  CanViewFeatureFlags: 'CanViewFeatureFlags',
-  CanCreateFeatureFlag: 'CanCreateFeatureFlag',
-  CanToggleFeatureFlag: 'CanToggleFeatureFlag',
-  CanDeleteFeatureFlag: 'CanDeleteFeatureFlag',
-  CanCheckFeatureFlag: 'CanCheckFeatureFlag',
-
   // Country / Tenant Configuration
   CanViewCountryConfigurations: 'CanViewCountryConfigurations',
   CanCreateCountryConfiguration: 'CanCreateCountryConfiguration',
@@ -307,12 +300,6 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
 
   CanViewEmailTemplates: PhysicalPolicy.AdminOnly,
   CanUpdateEmailTemplate: PhysicalPolicy.AdminOnly,
-
-  CanViewFeatureFlags: PhysicalPolicy.AdminOnly,
-  CanCreateFeatureFlag: PhysicalPolicy.AdminOnly,
-  CanToggleFeatureFlag: PhysicalPolicy.AdminOnly,
-  CanDeleteFeatureFlag: PhysicalPolicy.AdminOnly,
-  CanCheckFeatureFlag: PhysicalPolicy.Authenticated,
 
   CanViewCountryConfigurations: PhysicalPolicy.AdminOnly,
   CanCreateCountryConfiguration: PhysicalPolicy.AdminOnly,

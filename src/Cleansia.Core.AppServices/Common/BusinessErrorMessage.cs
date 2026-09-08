@@ -438,10 +438,6 @@ public static class BusinessErrorMessage
     // Live Activity (iOS lock-screen / Dynamic Island)
     public const string LiveActivityOrderNotActive = "live_activity.order_not_active";
 
-    // Feature Flag
-    public const string FeatureFlagNotFound = "feature_flag.not_found";
-    public const string FeatureFlagAlreadyExists = "feature_flag.already_exists";
-
     // Tenant Configuration
     public const string TenantConfigNotFound = "tenant_config.not_found";
     public const string TenantConfigKeyAlreadyExists = "tenant_config.key_already_exists";

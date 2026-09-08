@@ -216,7 +216,6 @@ Country, Language}**, **mobile = {Service, Package, Extra, MembershipPlan}**.
 | `Membership/GetPlans` (web+mobile) | MembershipPlan | Yes (`MembershipPlan.cs:24`) | Yes (`GetMembershipPlans.cs:42`) | plans-missing + leak + write-side webhook mismatch | **BUG — T-0113 (Option A)** |
 | `Country/GetOverview`+`GetServiced` (**web only**) | Country | **No** (`Country.cs:7`) | No | none | **CORRECT (platform config)** |
 | `Language/GetOverview` (**web only**) | Language | **No** (`Language.cs:6`) | No | none | **CORRECT (platform config)** |
-| `FeatureFlag/check` (**web only**) | FeatureFlag | **No** (`FeatureFlag.cs:6`) | No — scope/value params (`AppConfigurationProvider.cs:26-55`) | none | **CORRECT (by-design provider)** |
 | `Order/Lookup`+`LookupBatch` (web+mobile) | Order (+Service/Package) | Yes | Yes but **credentialed** by `DisplayOrderNumber`+`CustomerEmail` (`LookupOrder.cs:51-53`) | collapse fails it **shut** (hides), cannot enumerate | **CREDENTIALED — different risk class (this is the backlog's "BSP-9" / T-0123 LookupBatch item)** |
 | `Order/Quote` (web+mobile) | Service/Package/Extra (pricing) | Yes | Yes — loads catalog by id (`OrderPricingCalculator.cs:41-48`) | resolves only null-slice catalog when pricing anonymously | **BUG — catalog batch (pricing path), PANEL-MISSED** |
 | `Referral/Validate` (web+mobile) | ReferralCode + User | Yes (`ReferralCode.cs:14`, `User.cs:12`) | Yes (`ValidateReferral.cs:43-52`) | validates only null-tenant codes/users at sign-up | **BUG — anon tenant-scoped read, PANEL-MISSED** |

@@ -223,6 +223,38 @@ They now live in the `cronSettings` var in `main.bicep`, unioned into the Functi
 tokenized timer is added without a matching key — a hand-maintained list would not have caught the two
 timers added the same day.
 
+### Kill switches — how to stop something without a deploy {#kill-switches}
+
+Three things can be switched off by configuration. All three default to **ON** when their section is
+absent, so "off" is always something a person typed — never the consequence of an unset value. That
+direction is deliberate and was learned the hard way: the retention sweep's switch used to be a database
+row that no migration inserted, an absent row read as "off", and the job therefore never ran on any
+deployed database while reporting success (T-0685).
+
+| Setting | Turns off | Keeps working |
+|---|---|---|
+| `DataRetention__Enabled` | The weekly GDPR retention sweep (Sun 03:00) — expired codes, stale devices, old GDPR requests, order PII anonymisation, withdrawn consents, superseded documents, notifications | Everything else |
+| `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, **and generating + emailing an invoice per employee** | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod` |
+| `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders**, and everything that returns or releases money: refunds, cash-collection intent cancellation, membership cancellation, and GDPR erasure of the Stripe customer |
+
+::: danger Set these as app settings, never in `Cleansia.Functions/appsettings.json`
+The Functions worker composes configuration in the **opposite order** to the five API hosts:
+`ConfigureFunctionsWorkerDefaults` registers the environment-variable providers first and `Program.cs`
+adds `appsettings.json` last. **Last provider wins**, so a value committed to that file BEATS the app
+setting an operator sets in the portal — silently removing the very switch it looks like it documents.
+
+Set `Section__Key` as an application setting (the double underscore is the nesting separator). Leave the
+section absent from `appsettings.json` entirely; the C# default supplies the ON value.
+:::
+
+A card charge refused by `Stripe__Enabled` returns the existing `order.payment_gateway_unavailable` key,
+which is already translated in all three web apps, both Android apps and iOS — the same message a
+customer sees when Stripe is genuinely down, which is what it means to them.
+
+`CardPaymentsChargeSurfaceCoverageTests` fails the build if a new Stripe call is added without the gate,
+because the first draft of that switch closed three of the seven surfaces and left memberships and
+recurring orders charging.
+
 ### Docker Deployment
 
 Functions run in a custom Docker image because QuestPDF requires native Linux libraries:

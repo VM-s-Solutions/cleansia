@@ -2480,10 +2480,6 @@
       "not_owned": "You can only access your own documents",
       "unauthorized": "You are not authorized to access this document"
     },
-    "feature_flag": {
-      "already_exists": "A feature flag with this name and scope already exists.",
-      "not_found": "Feature flag not found."
-    },
     "file": {
       "content_type_doesnt_match": "File content type doesn't match",
       "count_exceeded": "Too many files uploaded",

@@ -1,10 +1,17 @@
 # Domain model
 
-Generated from the 70 EF Core entity configurations, not described from memory. A relationship on a
+Generated from the EF Core entity configurations, not described from memory. A relationship on a
 diagram is a `HasOne(...)` declared in a configuration file; if it is not there, it is not enforced.
 
-One diagram per area, because a single picture of 70 entities is a picture nobody reads. Entities
+One diagram per area, because a single picture of all 76 entities is a picture nobody reads. Entities
 appear in the area they are owned by, not everywhere they are referenced.
+
+::: tip Checking the count
+`grep -c 'migrationBuilder.CreateTable' src/Cleansia.Infra.Database/Migrations/*_Initial.cs` — the
+migration is regenerated rather than stacked, so it always reflects the current model. The count above
+was 70 for long enough to be wrong by six before anyone noticed, which is why the check is written
+down rather than the number being trusted.
+:::
 
 ## Identity and access
 
@@ -144,7 +151,6 @@ erDiagram
 | `DeadLetter` | — |
 | `EmailTemplateTranslation` | references `Language` |
 | `EmailTranslation` | — |
-| `FeatureFlag` | — |
 | `GdprRequest` | references `User` |
 | `LiveActivityToken` | — |
 | `OrderReview` | references `Order` |

@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -31,10 +32,22 @@ public class SwapMembershipPlan
         IMembershipPlanRepository membershipPlanRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
+        IStripeConfig stripeConfig,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+
+            // Card payments can be switched off platform-wide, and a membership is a card charge like
+            // any other — the first invoice bills immediately. Checked before any Stripe object is
+            // created. -> IStripeConfig
+            if (!stripeConfig.Enabled)
+            {
+                logger.LogWarning("Membership plan swap refused: card payments are disabled (Stripe:Enabled=false)");
+                return BusinessResult.Failure<Response>(new Error(
+                    "MembershipPlanId", BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
+
             var userId = userSessionProvider.GetUserId()!;
             var membership = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
             if (membership == null)

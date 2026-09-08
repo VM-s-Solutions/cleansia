@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -75,13 +77,43 @@ public class ResumeOrderCheckoutTests
         return new ResumeOrderCheckout.Validator(_orders.Object, _session.Object);
     }
 
+    /// <summary>
+    /// T-0689 follow-up — the resume path mints a NEW checkout session, so it is one of the seven card
+    /// charge surfaces the <c>Stripe:Enabled</c> kill switch must close. Behavioural proof that this one
+    /// refuses; <c>CardPaymentsChargeSurfaceCoverageTests</c> holds the structural proof for the rest.
+    /// </summary>
+    [Fact]
+    public async Task Disabled_Card_Payments_Refuse_The_Resume_Without_Calling_Stripe()
+    {
+        var order = BuildOrder();
+        _orders
+            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+
+        var handler = new ResumeOrderCheckout.Handler(
+            _orders.Object,
+            _stripeFactory.Object,
+            new StripeConfig(new ConfigurationBuilder()
+                .AddInMemoryCollection([new KeyValuePair<string, string?>("Stripe:Enabled", "false")])
+                .Build()),
+            NullLogger<ResumeOrderCheckout.Handler>.Instance);
+
+        var result = await handler.Handle(
+            new ResumeOrderCheckout.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, result.Error!.Message);
+        _stripeFactory.Verify(f => f.CreateClient(), Times.Never);
+    }
+
     private ResumeOrderCheckout.Handler CreateHandler(Order order)
     {
         _orders
             .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         return new ResumeOrderCheckout.Handler(
-            _orders.Object, _stripeFactory.Object, NullLogger<ResumeOrderCheckout.Handler>.Instance);
+            _orders.Object, _stripeFactory.Object, new StripeConfig(new ConfigurationBuilder().Build()),
+            NullLogger<ResumeOrderCheckout.Handler>.Instance);
     }
 
     private async Task<string?> FirstErrorFor(Order? order)

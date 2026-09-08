@@ -3113,90 +3113,6 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
     }
 }
 
-export interface IFeatureFlagClient {
-    /**
-     * @param featureName (optional) 
-     * @param countryId (optional) 
-     * @return OK
-     */
-    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse>;
-}
-
-@Injectable({
-    providedIn: 'root'
-})
-export class FeatureFlagClient implements IFeatureFlagClient {
-    private http: HttpClient;
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
-        this.http = http;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * @param featureName (optional) 
-     * @param countryId (optional) 
-     * @return OK
-     */
-    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse> {
-        let url = this.baseUrl + "/api/FeatureFlag/check?";
-        if (featureName === null)
-            throw new globalThis.Error("The parameter 'featureName' cannot be null.");
-        else if (featureName !== undefined)
-            url += "featureName=" + encodeURIComponent("" + featureName) + "&";
-        if (countryId === null)
-            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
-        else if (countryId !== undefined)
-            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processCheck(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processCheck(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CheckFeatureFlagResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<CheckFeatureFlagResponse>;
-        }));
-    }
-
-    protected processCheck(response: HttpResponseBase): Observable<CheckFeatureFlagResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = CheckFeatureFlagResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-}
-
 export interface IGdprClient {
     /**
      * @return OK
@@ -3777,6 +3693,16 @@ export interface IOrderClient {
      * @return OK
      */
     declinePreferredOffer(body?: DeclinePreferredOfferCommand | undefined): Observable<DeclinePreferredOfferResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    requestCover(body?: RequestCoverCommand | undefined): Observable<RequestCoverResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    dropOrder(body?: DropOrderCommand | undefined): Observable<DropOrderResponse>;
 }
 
 @Injectable({
@@ -5092,6 +5018,160 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = DeclinePreferredOfferResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    requestCover(body?: RequestCoverCommand | undefined): Observable<RequestCoverResponse> {
+        let url = this.baseUrl + "/api/Order/RequestCover";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRequestCover(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRequestCover(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RequestCoverResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RequestCoverResponse>;
+        }));
+    }
+
+    protected processRequestCover(response: HttpResponseBase): Observable<RequestCoverResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RequestCoverResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    dropOrder(body?: DropOrderCommand | undefined): Observable<DropOrderResponse> {
+        let url = this.baseUrl + "/api/Order/DropOrder";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDropOrder(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDropOrder(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DropOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DropOrderResponse>;
+        }));
+    }
+
+    protected processDropOrder(response: HttpResponseBase): Observable<DropOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DropOrderResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -7005,46 +7085,6 @@ export class CheckCurrentEmployeeQuery implements ICheckCurrentEmployeeQuery {
 export interface ICheckCurrentEmployeeQuery {
 }
 
-export class CheckFeatureFlagResponse implements ICheckFeatureFlagResponse {
-    featureName!: string | undefined;
-    isEnabled!: boolean;
-
-    constructor(data?: ICheckFeatureFlagResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.featureName = Data["featureName"];
-            this.isEnabled = Data["isEnabled"];
-        }
-    }
-
-    static fromJS(data: any): CheckFeatureFlagResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new CheckFeatureFlagResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["featureName"] = this.featureName;
-        data["isEnabled"] = this.isEnabled;
-        return data;
-    }
-}
-
-export interface ICheckFeatureFlagResponse {
-    featureName: string | undefined;
-    isEnabled: boolean;
-}
-
 export class Code implements ICode {
     type!: string | undefined;
     name!: string | undefined;
@@ -7865,6 +7905,82 @@ export enum DocumentType {
     TaxDocument = 8,
     InsuranceDocument = 9,
     Other = 10,
+}
+
+export class DropOrderCommand implements IDropOrderCommand {
+    orderId!: string | undefined;
+
+    constructor(data?: IDropOrderCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+        }
+    }
+
+    static fromJS(data: any): DropOrderCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new DropOrderCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        return data;
+    }
+}
+
+export interface IDropOrderCommand {
+    orderId: string | undefined;
+}
+
+export class DropOrderResponse implements IDropOrderResponse {
+    orderId!: string | undefined;
+    crewRemaining!: number;
+
+    constructor(data?: IDropOrderResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.crewRemaining = Data["crewRemaining"];
+        }
+    }
+
+    static fromJS(data: any): DropOrderResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DropOrderResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["crewRemaining"] = this.crewRemaining;
+        return data;
+    }
+}
+
+export interface IDropOrderResponse {
+    orderId: string | undefined;
+    crewRemaining: number;
 }
 
 export class EarningsAnalyticsDto implements IEarningsAnalyticsDto {
@@ -11660,6 +11776,7 @@ export interface IPackageServiceRef {
 }
 
 export class PackageServiceSummary implements IPackageServiceSummary {
+    serviceId!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
 
@@ -11674,6 +11791,7 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 
     init(Data?: any) {
         if (Data) {
+            this.serviceId = Data["serviceId"];
             this.name = Data["name"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -11694,6 +11812,7 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
         data["name"] = this.name;
         if (this.translations) {
             data["translations"] = {};
@@ -11707,6 +11826,7 @@ export class PackageServiceSummary implements IPackageServiceSummary {
 }
 
 export interface IPackageServiceSummary {
+    serviceId: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
 }
@@ -12996,6 +13116,82 @@ export interface IReportOrderIssueResponse {
     issueId: string | undefined;
     description: string | undefined;
     createdAt: Date;
+}
+
+export class RequestCoverCommand implements IRequestCoverCommand {
+    orderId!: string | undefined;
+
+    constructor(data?: IRequestCoverCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+        }
+    }
+
+    static fromJS(data: any): RequestCoverCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new RequestCoverCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        return data;
+    }
+}
+
+export interface IRequestCoverCommand {
+    orderId: string | undefined;
+}
+
+export class RequestCoverResponse implements IRequestCoverResponse {
+    orderId!: string | undefined;
+    coverRequestedAt!: Date;
+
+    constructor(data?: IRequestCoverResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.coverRequestedAt = Data["coverRequestedAt"] ? new Date(Data["coverRequestedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): RequestCoverResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RequestCoverResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["coverRequestedAt"] = this.coverRequestedAt ? this.coverRequestedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IRequestCoverResponse {
+    orderId: string | undefined;
+    coverRequestedAt: Date;
 }
 
 export class RequestMyDocumentDeletionRequest implements IRequestMyDocumentDeletionRequest {

@@ -322,7 +322,6 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     /// integers, never the preset. -> /decisions/adr-0056
     /// </summary>
     public virtual DbSet<PropertySizePreset> PropertySizePresets { get; set; }
-    public virtual DbSet<FeatureFlag> FeatureFlags { get; set; }
     public virtual DbSet<UserConsent> UserConsents { get; set; }
     public virtual DbSet<GdprRequest> GdprRequests { get; set; }
     public virtual DbSet<LoyaltyAccount> LoyaltyAccounts { get; set; }

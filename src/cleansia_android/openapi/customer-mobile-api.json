@@ -1868,52 +1868,6 @@
         }
       }
     },
-    "/api/FeatureFlag/check": {
-      "get": {
-        "tags": [
-          "FeatureFlag"
-        ],
-        "operationId": "FeatureFlag_Check",
-        "parameters": [
-          {
-            "name": "featureName",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "countryId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckFeatureFlag_Response"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckFeatureFlag_Response"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckFeatureFlag_Response"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/Gdpr/export": {
       "get": {
         "tags": [
@@ -7078,19 +7032,6 @@
         },
         "additionalProperties": false
       },
-      "CheckFeatureFlag_Response": {
-        "type": "object",
-        "properties": {
-          "featureName": {
-            "type": "string",
-            "nullable": true
-          },
-          "isEnabled": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
       "ChoosePreferredCleaner_Command": {
         "type": "object",
         "properties": {
@@ -10304,7 +10245,7 @@
             "nullable": true
           }
         },
-        "additionalProperties": {}
+        "additionalProperties": { }
       },
       "QuoteOrder_Command": {
         "type": "object",
@@ -11454,9 +11395,6 @@
     },
     {
       "name": "Extra"
-    },
-    {
-      "name": "FeatureFlag"
     },
     {
       "name": "Gdpr"

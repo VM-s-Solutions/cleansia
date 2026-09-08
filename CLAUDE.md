@@ -112,9 +112,30 @@ Mobile :5004. `README.md` has the full run/test/build commands.
 > Nx project names carry a **dot** before `app` — `cleansia-partner.app`, not `cleansia-partner-app`,
 > which fails with "Cannot find project". Check `npx nx show projects` before hand-writing one.
 
-## Manual steps — there are none left
+## Manual steps — there are none left, with one hard exception
 
-**Nothing in this repo is owner-only any more** (owner ruling 2026-09-07, extending the migration
+> ### ⛔ NEVER EXECUTE ANYTHING AGAINST PRODUCTION (PRO)
+>
+> **Owner ruling 2026-09-08. This overrides every "nothing is owner-only" statement below.**
+>
+> No SQL against PRO — **not even a read-only `SELECT COUNT(*)`**. No `gh workflow run execute-sql.yml
+> -f environment=PRO`. No deploy workflow. No direct connection to a production database. No `az`
+> command that touches a prod resource. Do not ask for a one-off exemption.
+>
+> **Why, in the owner's words: he is the only one who can keep an accurate picture of what production
+> holds, and an agent cannot.** The reason is not blast radius — it is that the decision to touch
+> production depends on knowledge of live data that only he has. Production does not exist yet
+> (`deploy-pro.yml`: one run, cancelled; `deploy-azure.yml`: zero), which is exactly why the rule is
+> written now rather than after there is data to lose.
+>
+> **What to do instead:** write the query or script into `sql-scripts/`, say plainly that it needs to
+> run against PRO and what its result would decide, and stop. Report the question as unresolved —
+> never resolve it yourself. If a plan depends on a production fact, finish everything else and name
+> that step as blocked on the owner.
+>
+> **DEV is not restricted.** Run whatever you need there.
+
+**Otherwise nothing in this repo is owner-only** (owner ruling 2026-09-07, extending the migration
 rulings of 2026-08-15 and 2026-08-25). Run it yourself:
 
 - **NSwag client regeneration.** `npm run generate-*-client` when a backend DTO or endpoint changes.
@@ -122,7 +143,7 @@ rulings of 2026-08-15 and 2026-08-25). Run it yourself:
   same change as the DTO — a client that disagrees with the contract is the failure this rule exists
   to prevent.
 - **EF Core migrations** — see the next section, unchanged.
-- **The DEV database drop** — previously the last owner-only step. Yours now.
+- **The DEV database drop** — previously the last owner-only step. Yours now. **DEV only.**
 
 > **Never write `manual_step:` / `MANUAL_STEP:` on a ticket again**, and do not "flag it for the
 > owner". If a step is needed, take it. The older process pages (`agents/process/quality-gates.md`,

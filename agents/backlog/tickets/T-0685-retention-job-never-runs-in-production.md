@@ -1,7 +1,7 @@
 ---
 id: T-0685
 title: The GDPR retention sweep has never run in production — an absent feature flag reads as disabled
-status: in_progress
+status: done
 size: S
 owner: —
 created: 2026-09-07
@@ -107,7 +107,7 @@ withdrawn consents**. Both are retention obligations, not housekeeping.
   2. **The production check script only counted `SavedAddresses`**, and would have reported a false
      zero. `Addresses` has three dependants; the likeliest sharing case is two ORDERS at one flat, one
      past the window and one recent. Section 3 now covers Orders, SavedAddresses and Employees.
-## Gate before this ships
+## The gate, resolved
 
 Turning the sweep on activates `CleanOrderCustomerPii`, which calls `Anonymize()` on the order's
 `Address` row. Address rows are **deduplicated across users** on (Street, City, ZipCode, CountryId)
@@ -115,6 +115,16 @@ Turning the sweep on activates `CleanOrderCustomerPii`, which calls `Anonymize()
 `Anonymize()` overwrites Street/City/ZipCode/State in place with `[DELETED]`. A two-year-old order can
 therefore blank the saved address of a different, currently-active customer.
 
-`sql-scripts/check-orders-past-retention-window.sql` counts the exposure. Run it against PRO via the
-Execute SQL Script workflow. **If section 3 returns non-zero, do not enable the sweep** until the
-shared-address defect is fixed — it becomes a blocker on this ticket rather than a separate one.
+**Resolved 2026-09-08, but not by measuring production — by establishing there is none.**
+`deploy-pro.yml` has one run in its entire history (2026-04-01, **cancelled**) and `deploy-azure.yml`
+has zero. The PRO run of the check script failed at Azure login with `AADSTS700213: No matching
+federated identity record ... environment:prod-weu` — there is no production environment to log in to.
+So there is no production database, no production order history, and the exposure is zero.
+
+**This corrects the framing of the ticket above and of `agents/HANDOVER.md`:** the sweep never ran, but
+nothing was ever harmed and no data was unlawfully retained, because the platform has never been
+deployed. The defect was real and would have shipped on day one; it was never a live incident.
+
+`sql-scripts/check-orders-past-retention-window.sql` is committed and covers all three tables holding a
+foreign key into `Addresses`. **Re-run it against PRO the day production exists**, and do not enable the
+sweep on real data until the shared-address defect is fixed.

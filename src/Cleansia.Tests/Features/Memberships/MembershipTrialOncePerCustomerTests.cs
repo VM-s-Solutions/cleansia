@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -85,6 +87,7 @@ public class MembershipTrialOncePerCustomerTests
             _planRepository.Object,
             _session.Object,
             _stripe.Object,
+            new StripeConfig(new ConfigurationBuilder().Build()),
             Resolver(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
 
@@ -95,6 +98,7 @@ public class MembershipTrialOncePerCustomerTests
             _planRepository.Object,
             _session.Object,
             _stripe.Object,
+            new StripeConfig(new ConfigurationBuilder().Build()),
             Resolver(),
             NullLogger<CreateMembershipCheckoutSession.Handler>.Instance);
 

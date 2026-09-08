@@ -178,12 +178,10 @@ public class FrozenPermissionMapTests
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.AdminOnly,
 
-        // Feature Flags
-        [Policy.CanViewFeatureFlags] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateFeatureFlag] = PhysicalPolicy.AdminOnly,
-        [Policy.CanToggleFeatureFlag] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteFeatureFlag] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCheckFeatureFlag] = PhysicalPolicy.Authenticated,
+        // Feature Flags — REMOVED (T-0689). The five Can*FeatureFlag policies guarded a CRUD surface
+        // over a table that gated nothing; endpoints, policies and table were deleted together. This is a
+        // removal, not the additive case or the semantic case the class doc names: no surviving route
+        // changed its physical policy, and no permission was widened. -> /decisions/adr-0001
 
         // Country Configuration
         [Policy.CanViewCountryConfigurations] = PhysicalPolicy.AdminOnly,

@@ -25,8 +25,10 @@ public static class RefundAllocator
     /// amounts sum exactly to the selection's rounded target <c>round(Σ(selectedGross)/Σ(allGrosses) ×
     /// TotalPrice, 2)</c> — equal to <c>TotalPrice</c> when the whole order is selected.
     /// </para>
-    /// VAT per line is <c>round(lineRefund × rate / (100 + rate), 2)</c>, and 0 when
-    /// <paramref name="appliedVatRate"/> is null (non-VAT-payer order).
+    /// VAT per line is <c>round(lineRefund × rate / (1 + rate), 2)</c>, and 0 when
+    /// <paramref name="appliedVatRate"/> is null (non-VAT-payer order). <b>The rate is a FRACTION</b>
+    /// — <c>Order.AppliedVatRate</c> comes from <c>CountryConfiguration.StandardVatRate</c>, a
+    /// <c>numeric(5,4)</c> column that cannot hold a percent. See <c>VatCalculator</c>.
     /// </summary>
     public static IReadOnlyList<RefundAllocationResult> Allocate(
         IReadOnlyList<RefundAllocationLine> lines,

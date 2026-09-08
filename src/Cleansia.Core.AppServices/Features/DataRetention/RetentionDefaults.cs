@@ -2,8 +2,6 @@ namespace Cleansia.Core.AppServices.Features.DataRetention;
 
 public static class RetentionDefaults
 {
-    public const string FeatureFlagName = "DataRetentionJobEnabled";
-
     public const string ExpiredCodesEnabledKey = "retention.expired_codes.enabled";
     public const string StaleDevicesDaysKey = "retention.stale_devices.days";
     public const string GdprRequestsYearsKey = "retention.gdpr_requests.years";

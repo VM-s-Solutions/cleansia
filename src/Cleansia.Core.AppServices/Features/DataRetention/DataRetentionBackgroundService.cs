@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -18,6 +19,7 @@ public class DataRetentionBackgroundService(
     IEmployeeDocumentRepository employeeDocumentRepository,
     IUserNotificationRepository userNotificationRepository,
     IAppConfigurationProvider configProvider,
+    IDataRetentionConfig retentionConfig,
     IBlobContainerClientFactory blobClientFactory,
     ILogger<DataRetentionBackgroundService> logger)
     : IDataRetentionBackgroundService
@@ -26,12 +28,13 @@ public class DataRetentionBackgroundService(
     {
         logger.LogInformation("Data retention job started");
 
-        var isEnabled = await configProvider.IsFeatureEnabledAsync(
-            RetentionDefaults.FeatureFlagName, cancellationToken: cancellationToken);
-
-        if (!isEnabled)
+        // Configuration, not a FeatureFlags row. The row was never inserted by a migration and its only
+        // INSERT lives in the development-only seed, so on every deployed database this gate read "off"
+        // — IsFeatureEnabledAsync resolves an absent flag to false — and all seven tasks below had never
+        // run. The default now lives in code, where an empty database cannot silence it.
+        if (!retentionConfig.Enabled)
         {
-            logger.LogInformation("Data retention job disabled by feature flag. Skipping");
+            logger.LogWarning("Data retention job disabled by configuration (DataRetention:Enabled). Skipping");
             return;
         }
 

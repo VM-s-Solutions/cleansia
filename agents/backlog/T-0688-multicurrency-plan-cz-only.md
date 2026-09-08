@@ -19,6 +19,15 @@ convention fix — so **Wave 1 Step 1 of the old plan is done and must not be re
 **Eighteen numbered steps become nine. Seven waves become three. No Mac session, no NSwag
 regeneration, and no mobile spec re-dump appear anywhere in this plan.**
 
+
+> **§§3–5 superseded 2026-09-08 — see
+> [`T-0688-multicurrency-plan-final.md`](T-0688-multicurrency-plan-final.md).** The owner ordered
+> Option B (per-currency price tables built now, before production), overruling this document's
+> recommendation to defer — and his argument was right: the deferral case assumed the retrofit cost is
+> flat pre-production, but the retrofit would land *after* production exists.
+> **§§1–2 below stand unchanged** — Adaptive Pricing, the drafted accountant letters and the EU SME
+> answer are all still current.
+
 ---
 
 ## 1. Adaptive Pricing is on — what that means and what to do

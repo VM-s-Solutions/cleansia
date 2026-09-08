@@ -47,6 +47,23 @@ public class SetDefaultCurrency
                 return BusinessResult.Success(new Response(currency.Id));
             }
 
+            // THE DEFAULT CURRENCY IS THE PRICING CURRENCY, so it may only ever be one the catalogue is
+            // actually priced in. Until per-currency price tables exist (Wave B) the catalogue carries a
+            // single unlabelled set of numbers, and the pricing calculator no longer scales them by an
+            // exchange rate — so promoting a second currency here would charge the CZK figures under its
+            // code. On the seeded basket that is roughly a 25x overcharge, on the card and on the fiscal
+            // receipt, from one star icon in Admin -> Currencies.
+            //
+            // `IsActive` is the gate, and this is its FIRST reader anywhere in the platform: no
+            // repository predicate, no query filter and no endpoint consulted it before. Wave B replaces
+            // the condition with "has price rows in this currency" and activates EUR in the same commit
+            // that gives it those rows.
+            if (!currency.IsActive)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.CurrencyId), BusinessErrorMessage.InvalidCurrency));
+            }
+
             var previousDefault = await currencyRepository.GetDefaultAsync(cancellationToken);
             previousDefault.SetAsDefault(false);
             currency.SetAsDefault(true);

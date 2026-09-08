@@ -28,6 +28,36 @@ public class SetDefaultCurrencyHandlerTests
         return currency;
     }
 
+    /// <summary>
+    /// <b>The default currency is the pricing currency.</b> Since the exchange rate left the pricing
+    /// path, the calculator returns the catalogue's own numbers and labels them with the default
+    /// currency's code — so promoting a currency the catalogue is not priced in charges CZK figures
+    /// under that code. On the seeded basket that is roughly a 25x overcharge, on the card and on the
+    /// fiscal receipt, from one star icon in Admin → Currencies.
+    ///
+    /// <para>This was introduced by the Wave A change that deleted the scaling, and <b>4410 passing
+    /// tests did not see it</b> — the suite had no case where a non-default currency was promoted and
+    /// then priced against. It was found by an adversarial review of the commit. Wave B replaces the
+    /// <c>IsActive</c> condition with "has price rows in this currency".</para>
+    /// </summary>
+    [Fact]
+    public async Task SetDefault_RefusesAnInactiveCurrency_BecauseTheCatalogueIsNotPricedInIt()
+    {
+        var previousDefault = ArrangeCurrency("currency-czk", "CZK", isDefault: true);
+        var target = ArrangeCurrency("currency-eur", "EUR");
+        target.IsActive = false;
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(previousDefault);
+
+        var result = await CreateHandler().Handle(
+            new SetDefaultCurrency.Command("currency-eur"), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.False(target.IsDefault);
+        Assert.True(previousDefault.IsDefault, "the existing default must survive a refused promotion");
+    }
+
     [Fact]
     public async Task SetDefault_PromotesTarget_And_ClearsPreviousDefault()
     {

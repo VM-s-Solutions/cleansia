@@ -524,16 +524,21 @@ INSERT INTO public."Currencies" (
 -- rates nobody had reviewed, and until Wave A every one of them was nameable by any authenticated
 -- caller on the quote and create paths -- HUF at 16.2 meant a ~16x mispricing on demand.
 --
--- EUR is seeded ACTIVE and PRICELESS, deliberately (owner ruling 2026-09-08). It carries no catalogue
--- price rows, so once Wave B's fail-closed pricing lands it is correctly unofferable -- which makes
--- "the machinery is built, only CZK is reachable" provable by an integration test rather than asserted
--- in a fixture. Adding a market then means authoring its prices, not writing code.
+-- EUR is seeded but INACTIVE, and the distinction earns its keep. The owner asked for EUR present with
+-- zero prices so that "the machinery is built, only CZK is reachable" is provable rather than asserted
+-- -- but that proof is a Wave B property: it needs fail-closed pricing to exist. In Wave A a second
+-- ACTIVE currency is a live footgun, because the pricing calculator no longer scales anything and the
+-- shipped admin "set default" star would charge the CZK catalogue under EUR (~25x). Caught by the Wave A
+-- adversarial review, not by 4410 passing tests.
+--
+-- So: EUR exists here from day one, and Wave B flips IsActive = true in the same commit that gives it
+-- price rows and the fail-closed rule. SetDefaultCurrency refuses an inactive currency in the meantime.
 --
 -- ExchangeRate is a dead column as of Wave A: nothing in the pricing path reads it. It is left at 1.0
 -- rather than dropped because the field is still on two mobile contracts that treat it as required.
 VALUES
   (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 1.0),
-  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', 1.0);
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', 1.0);
 
 -- 6. SERVICE CATEGORIES
 -- Slugs are the client-facing stable identifier (mobile maps them to icons/colors).

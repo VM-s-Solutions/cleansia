@@ -64,11 +64,11 @@ public class RefundAllocatorTests
     [Fact]
     public void Vat_IsApportionedPerLine_AtTheVatFractionOfGross()
     {
-        // 21% VAT: refundVat = round(lineRefund * 21 / 121, 2).
+        // 21% VAT, as a FRACTION (0.21): refundVat = round(lineRefund * 0.21 / 1.21, 2).
         var allocation = RefundAllocator.Allocate(
             Lines((1m, true)),
             totalPrice: 121m,
-            appliedVatRate: 21m);
+            appliedVatRate: 0.21m);
 
         Assert.Equal(121m, allocation[0].RefundAmount);
         Assert.Equal(21m, allocation[0].RefundVat);

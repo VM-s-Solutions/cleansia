@@ -64,7 +64,7 @@ public class IssuePartialRefundHandlerTests
 
     private void ArrangeCountryFee(decimal? rate, decimal? fixedFee)
     {
-        var config = CountryConfiguration.Create("cz", "CZK", "cs", 21m);
+        var config = CountryConfiguration.Create("cz", "CZK", "cs", 0.21m);
         config.UpdateRefundStripeFee(rate, fixedFee);
         _countryConfigurationRepository
             .Setup(r => r.GetByCountryIdAsync(CountryId, It.IsAny<CancellationToken>()))
@@ -103,8 +103,12 @@ public class IssuePartialRefundHandlerTests
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.SetVatBreakdown(
-            netAmount: appliedVatRate is { } rate ? totalPrice * 100m / (100m + rate) : totalPrice,
-            vatAmount: appliedVatRate is { } r ? totalPrice * r / (100m + r) : 0m,
+            // FRACTION, not percent — AppliedVatRate is copied from CountryConfiguration.StandardVatRate,
+            // a numeric(5,4) column that cannot hold 21. This helper used to build its fixture in the
+            // percent form, which meant the suite fed the handler an input shape production cannot
+            // produce and then asserted against the same wrong formula.
+            netAmount: appliedVatRate is { } rate ? totalPrice / (1m + rate) : totalPrice,
+            vatAmount: appliedVatRate is { } r ? totalPrice * r / (1m + r) : 0m,
             appliedRate: appliedVatRate);
         if (services is not null)
         {
@@ -343,7 +347,7 @@ public class IssuePartialRefundHandlerTests
     public async Task AdminDiscretion_VatPayer_VatAndNetDeriveFromConfirmedAmount_NotPreFee()
     {
         var svc = Svc("svc-a", 1210m);
-        var order = CreateOrder(1210m, appliedVatRate: 21m, completed: true, services: [svc]);
+        var order = CreateOrder(1210m, appliedVatRate: 0.21m, completed: true, services: [svc]);
         ArrangeOrder(order);
         ArrangeConsumed(1210m);
         ArrangeCountryFee(rate: 1.4m, fixedFee: 6m);
@@ -511,7 +515,7 @@ public class IssuePartialRefundHandlerTests
     public async Task VatIsApportioned_AndLoyaltyClawbackIsOnNet()
     {
         var svc = Svc("svc-a", 1210m);
-        var order = CreateOrder(1210m, appliedVatRate: 21m, completed: true, services: [svc]);
+        var order = CreateOrder(1210m, appliedVatRate: 0.21m, completed: true, services: [svc]);
         ArrangeOrder(order);
         ArrangeConsumed(1210m);
 

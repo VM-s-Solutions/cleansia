@@ -62,7 +62,7 @@ public class PartialRefundFeeRoundingTests
 
     private void ArrangeCountryFee(decimal? rate, decimal? fixedFee)
     {
-        var config = CountryConfiguration.Create("cz", "CZK", "cs", 21m);
+        var config = CountryConfiguration.Create("cz", "CZK", "cs", 0.21m);
         config.UpdateRefundStripeFee(rate, fixedFee);
         _countryConfigurationRepository
             .Setup(r => r.GetByCountryIdAsync(CountryId, It.IsAny<CancellationToken>()))
@@ -90,8 +90,9 @@ public class PartialRefundFeeRoundingTests
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.SetVatBreakdown(
-            netAmount: appliedVatRate is { } rate ? totalPrice * 100m / (100m + rate) : totalPrice,
-            vatAmount: appliedVatRate is { } r ? totalPrice * r / (100m + r) : 0m,
+            // FRACTION, not percent — see the note in IssuePartialRefundHandlerTests.
+            netAmount: appliedVatRate is { } rate ? totalPrice / (1m + rate) : totalPrice,
+            vatAmount: appliedVatRate is { } r ? totalPrice * r / (1m + r) : 0m,
             appliedRate: appliedVatRate);
         var svc = Service.Create("cat-1", "Service A", "", totalPrice, 0m);
         svc.Id = "svc-a";
@@ -181,8 +182,8 @@ public class PartialRefundFeeRoundingTests
         // VAT-payer order, whole order, AdminDiscretion. Fee deducts FIRST off the gross, THEN VAT/net
         // derive from the seam-confirmed (post-fee) amount — not the pre-fee gross.
         // total 10 @21% VAT; fee 4.05% of 10 = 0.405 → 0.41 → confirmed 9.59.
-        // VAT off 9.59 = round(9.59 × 21/121) = round(1.6643…) = 1.66; net = 9.59 − 1.66 = 7.93 (hand-derived).
-        var order = SingleServiceOrder(totalPrice: 10m, appliedVatRate: 21m);
+        // VAT off 9.59 = round(9.59 × 0.21/1.21) = round(1.6643…) = 1.66; net = 9.59 − 1.66 = 7.93 (hand-derived).
+        var order = SingleServiceOrder(totalPrice: 10m, appliedVatRate: 0.21m);
         Arrange(order);
         ArrangeCountryFee(rate: 4.05m, fixedFee: 0m);
 

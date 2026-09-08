@@ -231,7 +231,11 @@ public class IssuePartialRefund
                 return 0m;
             }
 
-            return Math.Round(amount * rate / (100m + rate), 2, MidpointRounding.AwayFromZero);
+            // Fraction, not percent — Order.AppliedVatRate is copied from
+            // CountryConfiguration.StandardVatRate, a numeric(5,4) column that cannot hold 21.
+            // See VatCalculator for the full note; the two must agree or a credit note declares a
+            // different VAT than the invoice it reverses.
+            return Math.Round(amount * rate / (1m + rate), 2, MidpointRounding.AwayFromZero);
         }
     }
 

@@ -90,6 +90,8 @@ public static class RefundAllocator
             return 0m;
         }
 
-        return Math.Round(lineRefund * rate / (100m + rate), 2, MidpointRounding.AwayFromZero);
+        // Fraction, not percent — see the note in VatCalculator. This is the third copy of the
+        // gross-inclusive formula and all three must agree.
+        return Math.Round(lineRefund * rate / (1m + rate), 2, MidpointRounding.AwayFromZero);
     }
 }

@@ -31,6 +31,19 @@ public class CompanyInfo : Auditable, ITenantEntity
     /// </summary>
     public bool IsVatPayer { get; private set; }
 
+    /// <summary>
+    /// The date VAT registration took effect, or null while the company is a neplátce.
+    ///
+    /// <para>Stored because it is UNRECOVERABLE after the fact and nothing else records it. The flag
+    /// alone says what is true today; a receipt reprinted for an order supplied before registration has
+    /// to know the company was not a payer THEN, and once the flag has flipped there is no way to work
+    /// out when. It is also the date every VAT return is filed against.</para>
+    ///
+    /// <para><c>DateOnly</c>, not a timestamp: a tax authority registers a company on a DAY. Same
+    /// choice as <c>PayPeriod.StartDate</c>.</para>
+    /// </summary>
+    public DateOnly? VatRegisteredFrom { get; private set; }
+
     [Required]
     [MaxLength(100)]
     public string Street { get; private set; } = default!;
@@ -132,13 +145,35 @@ public class CompanyInfo : Auditable, ITenantEntity
         return this;
     }
 
-    public CompanyInfo SetVatPayerStatus(bool isVatPayer)
+    /// <summary>
+    /// Turns VAT on or off, and it is the ONLY way either happens.
+    ///
+    /// <para>Until now this had no production caller at all — its only references were its own
+    /// definition and one unit test. <c>Create</c> did not take the flag and its initializer omitted it,
+    /// so every company row was permanently <c>false</c>, and neither admin command carried it.
+    /// Registering for VAT meant a hand-written UPDATE against the production database, which is the one
+    /// operation the owner has forbidden outright.</para>
+    ///
+    /// <para><b>Clearing the flag clears the VAT number</b>, because a neplátce that keeps one is how
+    /// §108 ZDPH liability gets stated on a document by accident. Callers therefore apply this AFTER
+    /// <see cref="UpdateTaxInfo"/> — the entity is the arbiter, not the ordering, but the ordering is
+    /// what lets the entity win.</para>
+    ///
+    /// <para>Clearing also clears the registration date: a company that is not registered has no date
+    /// on which it became registered, and leaving a stale one behind would make the next flip look like
+    /// a re-registration on the old date.</para>
+    /// </summary>
+    public CompanyInfo SetVatPayerStatus(bool isVatPayer, DateOnly? registeredFrom = null)
     {
         IsVatPayer = isVatPayer;
         if (!isVatPayer)
         {
             VatNumber = null;
+            VatRegisteredFrom = null;
+            return this;
         }
+
+        VatRegisteredFrom = registeredFrom;
         return this;
     }
 

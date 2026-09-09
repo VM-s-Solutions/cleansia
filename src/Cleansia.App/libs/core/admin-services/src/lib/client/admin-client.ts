@@ -17118,6 +17118,8 @@ export class CompanyInfoDetailDto implements ICompanyInfoDetailDto {
     bankAccountNumber!: string | undefined;
     iban!: string | undefined;
     swift!: string | undefined;
+    isVatPayer!: boolean;
+    vatRegisteredFrom!: Date | undefined;
 
     constructor(data?: ICompanyInfoDetailDto) {
         if (data) {
@@ -17148,6 +17150,8 @@ export class CompanyInfoDetailDto implements ICompanyInfoDetailDto {
             this.bankAccountNumber = Data["bankAccountNumber"];
             this.iban = Data["iban"];
             this.swift = Data["swift"];
+            this.isVatPayer = Data["isVatPayer"];
+            this.vatRegisteredFrom = Data["vatRegisteredFrom"] ? new Date(Data["vatRegisteredFrom"].toString()) : undefined as any;
         }
     }
 
@@ -17178,6 +17182,8 @@ export class CompanyInfoDetailDto implements ICompanyInfoDetailDto {
         data["bankAccountNumber"] = this.bankAccountNumber;
         data["iban"] = this.iban;
         data["swift"] = this.swift;
+        data["isVatPayer"] = this.isVatPayer;
+        data["vatRegisteredFrom"] = this.vatRegisteredFrom ? formatDate(this.vatRegisteredFrom) : undefined as any;
         return data;
     }
 }
@@ -17201,6 +17207,8 @@ export interface ICompanyInfoDetailDto {
     bankAccountNumber: string | undefined;
     iban: string | undefined;
     swift: string | undefined;
+    isVatPayer: boolean;
+    vatRegisteredFrom: Date | undefined;
 }
 
 export class CompanyInfoListItem implements ICompanyInfoListItem {
@@ -17507,6 +17515,8 @@ export class CreateCompanyInfoCommand implements ICreateCompanyInfoCommand {
     bankAccountNumber!: string | undefined;
     iban!: string | undefined;
     swift!: string | undefined;
+    isVatPayer!: boolean;
+    vatRegisteredFrom!: Date | undefined;
 
     constructor(data?: ICreateCompanyInfoCommand) {
         if (data) {
@@ -17535,6 +17545,8 @@ export class CreateCompanyInfoCommand implements ICreateCompanyInfoCommand {
             this.bankAccountNumber = Data["bankAccountNumber"];
             this.iban = Data["iban"];
             this.swift = Data["swift"];
+            this.isVatPayer = Data["isVatPayer"];
+            this.vatRegisteredFrom = Data["vatRegisteredFrom"] ? new Date(Data["vatRegisteredFrom"].toString()) : undefined as any;
         }
     }
 
@@ -17563,6 +17575,8 @@ export class CreateCompanyInfoCommand implements ICreateCompanyInfoCommand {
         data["bankAccountNumber"] = this.bankAccountNumber;
         data["iban"] = this.iban;
         data["swift"] = this.swift;
+        data["isVatPayer"] = this.isVatPayer;
+        data["vatRegisteredFrom"] = this.vatRegisteredFrom ? formatDate(this.vatRegisteredFrom) : undefined as any;
         return data;
     }
 }
@@ -17584,6 +17598,8 @@ export interface ICreateCompanyInfoCommand {
     bankAccountNumber: string | undefined;
     iban: string | undefined;
     swift: string | undefined;
+    isVatPayer: boolean;
+    vatRegisteredFrom: Date | undefined;
 }
 
 export class CreateCompanyInfoResponse implements ICreateCompanyInfoResponse {
@@ -29326,6 +29342,8 @@ export class UpdateCompanyInfoCommand implements IUpdateCompanyInfoCommand {
     bankAccountNumber!: string | undefined;
     iban!: string | undefined;
     swift!: string | undefined;
+    isVatPayer!: boolean;
+    vatRegisteredFrom!: Date | undefined;
 
     constructor(data?: IUpdateCompanyInfoCommand) {
         if (data) {
@@ -29355,6 +29373,8 @@ export class UpdateCompanyInfoCommand implements IUpdateCompanyInfoCommand {
             this.bankAccountNumber = Data["bankAccountNumber"];
             this.iban = Data["iban"];
             this.swift = Data["swift"];
+            this.isVatPayer = Data["isVatPayer"];
+            this.vatRegisteredFrom = Data["vatRegisteredFrom"] ? new Date(Data["vatRegisteredFrom"].toString()) : undefined as any;
         }
     }
 
@@ -29384,6 +29404,8 @@ export class UpdateCompanyInfoCommand implements IUpdateCompanyInfoCommand {
         data["bankAccountNumber"] = this.bankAccountNumber;
         data["iban"] = this.iban;
         data["swift"] = this.swift;
+        data["isVatPayer"] = this.isVatPayer;
+        data["vatRegisteredFrom"] = this.vatRegisteredFrom ? formatDate(this.vatRegisteredFrom) : undefined as any;
         return data;
     }
 }
@@ -29406,6 +29428,8 @@ export interface IUpdateCompanyInfoCommand {
     bankAccountNumber: string | undefined;
     iban: string | undefined;
     swift: string | undefined;
+    isVatPayer: boolean;
+    vatRegisteredFrom: Date | undefined;
 }
 
 export class UpdateCompanyInfoResponse implements IUpdateCompanyInfoResponse {

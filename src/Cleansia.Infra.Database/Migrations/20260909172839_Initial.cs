@@ -479,6 +479,7 @@ namespace Cleansia.Infra.Database.Migrations
                     RegistrationNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     VatNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     IsVatPayer = table.Column<bool>(type: "boolean", nullable: false),
+                    VatRegisteredFrom = table.Column<DateOnly>(type: "date", nullable: true),
                     Street = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     City = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ZipCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -2850,9 +2851,9 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "IsActive");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CompanyInfo_RegistrationNumber",
+                name: "IX_CompanyInfo_RegistrationNumber_CountryId",
                 table: "CompanyInfo",
-                column: "RegistrationNumber",
+                columns: new[] { "RegistrationNumber", "CountryId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

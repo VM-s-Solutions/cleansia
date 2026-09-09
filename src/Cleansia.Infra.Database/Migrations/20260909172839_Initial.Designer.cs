@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260909153537_Initial")]
+    [Migration("20260909172839_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -364,6 +364,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateOnly?>("VatRegisteredFrom")
+                        .HasColumnType("date");
+
                     b.Property<string>("Website")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -378,14 +381,14 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("IsActive")
                         .HasDatabaseName("IX_CompanyInfo_IsActive");
 
-                    b.HasIndex("RegistrationNumber")
-                        .IsUnique()
-                        .HasDatabaseName("IX_CompanyInfo_RegistrationNumber");
-
                     b.HasIndex("TenantId");
 
                     b.HasIndex("CountryId", "IsActive")
                         .HasDatabaseName("IX_CompanyInfo_CountryId_IsActive");
+
+                    b.HasIndex("RegistrationNumber", "CountryId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CompanyInfo_RegistrationNumber_CountryId");
 
                     b.ToTable("CompanyInfo", (string)null);
                 });

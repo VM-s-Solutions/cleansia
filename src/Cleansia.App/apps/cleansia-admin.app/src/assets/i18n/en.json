@@ -1211,10 +1211,25 @@
       }
     },
     "company_info": {
-      "title": "Company Information",
+      "bank_account_number": "Bank Account Number",
+      "bank_name": "Bank Name",
+      "city": "City",
+      "country": "Country",
       "create_title": "Create Company",
-      "edit_title": "Edit Company",
       "description": "Manage company details used in invoices and receipts",
+      "edit_title": "Edit Company",
+      "email": "Email",
+      "iban": "IBAN",
+      "is_vat_payer": "VAT payer",
+      "legal_name": "Legal Name",
+      "messages": {
+        "load_error": "Failed to load company information",
+        "save_success": "Company information saved successfully",
+        "save_error": "Failed to save company information",
+        "create_success": "Company information created successfully"
+      },
+      "phone": "Phone",
+      "registration_number": "Registration Number",
       "sections": {
         "legal_info": "Legal Information",
         "tax_info": "Tax Information",
@@ -1222,28 +1237,16 @@
         "contact": "Contact Information",
         "banking": "Banking Information"
       },
-      "legal_name": "Legal Name",
-      "trading_name": "Trading Name",
-      "tagline": "Tagline",
-      "registration_number": "Registration Number",
-      "vat_number": "VAT Number (DIC)",
       "street": "Street",
-      "city": "City",
-      "zip_code": "ZIP Code",
-      "country": "Country",
-      "phone": "Phone",
-      "email": "Email",
-      "website": "Website",
-      "bank_name": "Bank Name",
-      "bank_account_number": "Bank Account Number",
-      "iban": "IBAN",
       "swift": "SWIFT/BIC",
-      "messages": {
-        "load_error": "Failed to load company information",
-        "save_success": "Company information saved successfully",
-        "save_error": "Failed to save company information",
-        "create_success": "Company information created successfully"
-      }
+      "tagline": "Tagline",
+      "title": "Company Information",
+      "trading_name": "Trading Name",
+      "vat_number": "VAT Number (DIC)",
+      "vat_registered_from": "VAT registered from",
+      "vat_registered_from_hint": "The date registration took effect. Kept because it cannot be recovered once the status changes.",
+      "website": "Website",
+      "zip_code": "ZIP Code"
     },
     "template_management": {
       "title": "Template Management",

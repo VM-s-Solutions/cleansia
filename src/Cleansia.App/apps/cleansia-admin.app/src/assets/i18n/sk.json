@@ -1211,10 +1211,25 @@
       }
     },
     "company_info": {
-      "title": "Informácie o spoločnosti",
+      "bank_account_number": "Číslo bankového účtu",
+      "bank_name": "Názov banky",
+      "city": "Mesto",
+      "country": "Krajina",
       "create_title": "Vytvoriť spoločnosť",
-      "edit_title": "Upraviť spoločnosť",
       "description": "Spravujte údaje o spoločnosti používané vo faktúrach a účtenkách",
+      "edit_title": "Upraviť spoločnosť",
+      "email": "E-mail",
+      "iban": "IBAN",
+      "is_vat_payer": "Platiteľ DPH",
+      "legal_name": "Obchodný názov",
+      "messages": {
+        "load_error": "Nepodarilo sa načítať informácie o spoločnosti",
+        "save_success": "Informácie o spoločnosti boli úspešne uložené",
+        "save_error": "Nepodarilo sa uložiť informácie o spoločnosti",
+        "create_success": "Informácie o spoločnosti boli úspešne vytvorené"
+      },
+      "phone": "Telefón",
+      "registration_number": "Registračné číslo",
       "sections": {
         "legal_info": "Právne informácie",
         "tax_info": "Daňové informácie",
@@ -1222,28 +1237,16 @@
         "contact": "Kontaktné údaje",
         "banking": "Bankové údaje"
       },
-      "legal_name": "Obchodný názov",
-      "trading_name": "Prevádzkový názov",
-      "tagline": "Slogan",
-      "registration_number": "Registračné číslo",
-      "vat_number": "DIČ",
       "street": "Ulica",
-      "city": "Mesto",
-      "zip_code": "PSČ",
-      "country": "Krajina",
-      "phone": "Telefón",
-      "email": "E-mail",
-      "website": "Webová stránka",
-      "bank_name": "Názov banky",
-      "bank_account_number": "Číslo bankového účtu",
-      "iban": "IBAN",
       "swift": "SWIFT/BIC",
-      "messages": {
-        "load_error": "Nepodarilo sa načítať informácie o spoločnosti",
-        "save_success": "Informácie o spoločnosti boli úspešne uložené",
-        "save_error": "Nepodarilo sa uložiť informácie o spoločnosti",
-        "create_success": "Informácie o spoločnosti boli úspešne vytvorené"
-      }
+      "tagline": "Slogan",
+      "title": "Informácie o spoločnosti",
+      "trading_name": "Prevádzkový názov",
+      "vat_number": "DIČ",
+      "vat_registered_from": "Platiteľom DPH od",
+      "vat_registered_from_hint": "Dátum účinnosti registrácie. Uchovávame ho, pretože po zmene statusu ho už nemožno zistiť.",
+      "website": "Webová stránka",
+      "zip_code": "PSČ"
     },
     "template_management": {
       "title": "Správa šablón",

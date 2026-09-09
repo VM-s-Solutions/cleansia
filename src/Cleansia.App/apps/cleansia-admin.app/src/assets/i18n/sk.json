@@ -2433,6 +2433,7 @@
     "credit": {
       "amount_exceeds_sanity_cap": "Táto suma presahuje limit pre jeden kredit. Ak je správna, vystavte ju po menších sumách.",
       "amount_not_whole_minor_units": "Suma kreditu nemôže byť menšia než stotina menovej jednotky.",
+      "held_in_multiple_currencies": "Tento zákazník má kredit vo viacerých menách; každý zostatok vyrovnajte v jeho vlastnej mene",
       "reason_not_issuable": "Tento dôvod popisuje čerpanie kreditu, nie jeho pridelenie. Zvoľte vybavenie reklamácie, nedostavenie sa upratovačky alebo ústretový krok."
     },
     "currency": {

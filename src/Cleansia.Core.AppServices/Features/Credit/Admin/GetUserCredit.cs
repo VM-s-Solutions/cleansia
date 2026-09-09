@@ -75,8 +75,10 @@ public class GetUserCredit
         public async Task<BusinessResult<Response>> Handle(
             Query request, CancellationToken cancellationToken)
         {
-            var account = await creditAccountRepository.GetByUserIdAsync(
-                request.UserId, cancellationToken);
+            // Largest balance first -- see GetMyCredit for why this is not pinned to the platform
+            // default. Same answer as before for any customer holding one account.
+            var account = (await creditAccountRepository.GetAllForUserAsync(
+                request.UserId, cancellationToken)).FirstOrDefault();
 
             if (account == null)
             {

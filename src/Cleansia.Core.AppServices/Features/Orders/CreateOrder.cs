@@ -590,7 +590,12 @@ public class CreateOrder
                 return 0m;
             }
 
-            var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
+            // Asked FOR the order's currency rather than asked-then-compared. The comparison below is
+            // kept as a belt-and-braces assertion on a money path, but it can no longer be the thing
+            // that decides: an unkeyed read returned whichever account existed, so a customer with a
+            // matching balance and a second account could be told they had none.
+            var spendable = await creditAccountRepository.GetSpendableAsync(
+                userId, order.CurrencyId, cancellationToken);
             if (spendable == null || spendable.CurrencyId != order.CurrencyId)
             {
                 return 0m;

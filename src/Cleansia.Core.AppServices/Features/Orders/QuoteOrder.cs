@@ -209,7 +209,10 @@ public class QuoteOrder
                 return 0m;
             }
 
-            var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
+            // The quote must show the balance the CHECKOUT will actually spend, so it asks the same
+            // question CreateOrder does, keyed the same way.
+            var spendable = await creditAccountRepository.GetSpendableAsync(
+                userId, currencyId, cancellationToken);
             return spendable != null && spendable.CurrencyId == currencyId ? spendable.Balance : 0m;
         }
 

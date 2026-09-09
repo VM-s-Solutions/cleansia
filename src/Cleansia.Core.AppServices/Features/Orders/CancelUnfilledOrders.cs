@@ -275,6 +275,10 @@ public class CancelUnfilledOrders
                 return false;
             }
 
+            // The lookup is keyed on currency now, so this resolves the customer's DEFAULT-currency
+            // account specifically rather than whichever one they happened to open first. The guard
+            // above already refuses to pay this constant against an order in any other currency; what
+            // changed silently is where the money lands when the customer also holds a foreign balance.
             var account = await creditAccountRepository.EnsureForUserAsync(
                 order.UserId, defaultCurrency.Id, cancellationToken);
 

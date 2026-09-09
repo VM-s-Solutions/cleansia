@@ -2433,6 +2433,7 @@
     "credit": {
       "amount_exceeds_sanity_cap": "That amount is above the limit for a single credit. Issue it in smaller amounts if it is correct.",
       "amount_not_whole_minor_units": "A credit amount cannot be smaller than one hundredth of the currency unit.",
+      "held_in_multiple_currencies": "This customer holds credit in more than one currency; discharge each balance from its own currency",
       "reason_not_issuable": "That reason describes credit being spent, not issued. Choose a dispute settlement, cleaner no-show or goodwill."
     },
     "currency": {

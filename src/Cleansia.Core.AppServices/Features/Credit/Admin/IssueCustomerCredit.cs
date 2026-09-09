@@ -118,6 +118,10 @@ public class IssueCustomerCredit
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
             var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
 
+            // Goodwill credit is denominated in the platform default, so it lands in the customer's
+            // DEFAULT-currency account -- opening one if their only balance is in another currency.
+            // The lookup gained that currency term silently (same signature, changed meaning): it
+            // previously returned whatever account existed and added a default-currency number to it.
             var account = await creditAccountRepository.EnsureForUserAsync(
                 command.UserId, currency!.Id, cancellationToken);
 

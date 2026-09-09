@@ -56,7 +56,19 @@ public class GetMyCredit
             Query request, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
+
+            // THE LARGEST BALANCE, not the platform default's. This wire shape carries one balance and
+            // one currency code, and it has always reported the ACCOUNT's own currency rather than the
+            // platform's -- see the Response doc. Pinning it to the default instead would be a
+            // regression, not a deferral: a customer whose account is in a currency that is no longer
+            // the default would be shown zero while the platform still owed them, because accounts are
+            // opened in whatever was default AT THE TIME and the admin can move that star afterwards.
+            //
+            // Identical to today's answer whenever a customer holds one account, which is every
+            // customer until a second currency is operated. When that changes, the per-currency shape
+            // belongs on the wire -- and that is the chunk that regenerates the clients.
+            var spendable = (await creditAccountRepository.GetSpendablesForUserAsync(
+                userId, cancellationToken)).FirstOrDefault();
 
             // No account is the ordinary case, not an error: nothing has ever gone wrong for this
             // customer. It answers zero, in the platform's default currency, so the client renders one

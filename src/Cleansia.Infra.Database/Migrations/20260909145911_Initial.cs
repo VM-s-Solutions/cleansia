@@ -2887,9 +2887,9 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CreditAccounts_UserId",
+                name: "IX_CreditAccounts_UserId_CurrencyId",
                 table: "CreditAccounts",
-                column: "UserId",
+                columns: new[] { "UserId", "CurrencyId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

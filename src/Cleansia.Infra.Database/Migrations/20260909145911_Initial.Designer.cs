@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260909124018_Initial")]
+    [Migration("20260909145911_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -724,7 +724,7 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("UserId", "CurrencyId")
                         .IsUnique();
 
                     b.ToTable("CreditAccounts", (string)null);
@@ -6219,8 +6219,8 @@ namespace Cleansia.Infra.Database.Migrations
             modelBuilder.Entity("Cleansia.Core.Domain.Credit.CreditAccount", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
-                        .WithOne()
-                        .HasForeignKey("Cleansia.Core.Domain.Credit.CreditAccount", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

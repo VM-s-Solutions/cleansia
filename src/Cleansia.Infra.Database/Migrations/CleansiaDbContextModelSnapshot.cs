@@ -721,7 +721,7 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("UserId", "CurrencyId")
                         .IsUnique();
 
                     b.ToTable("CreditAccounts", (string)null);
@@ -6216,8 +6216,8 @@ namespace Cleansia.Infra.Database.Migrations
             modelBuilder.Entity("Cleansia.Core.Domain.Credit.CreditAccount", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
-                        .WithOne()
-                        .HasForeignKey("Cleansia.Core.Domain.Credit.CreditAccount", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

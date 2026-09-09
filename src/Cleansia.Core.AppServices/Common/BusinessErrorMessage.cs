@@ -358,6 +358,8 @@ public static class BusinessErrorMessage
     /// <summary>A spend-side reason was used to ISSUE credit.</summary>
     public const string CreditReasonNotIssuable = "credit.reason_not_issuable";
 
+    public const string CreditHeldInMultipleCurrencies = "credit.held_in_multiple_currencies";
+
     /// <summary>Cash cannot settle an order part of which the customer already paid in credit.</summary>
     public const string CashNotCollectableOnCreditOrder = "credit.cash_not_collectable_on_credit_order";
 

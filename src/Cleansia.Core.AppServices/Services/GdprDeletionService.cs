@@ -175,14 +175,20 @@ public class GdprDeletionService(
     /// act on. → /flows/pay-and-payouts
     /// </summary>
     /// <summary>
-    /// Does the platform still owe this customer money? Reads the balance only — the ledger is
-    /// irrelevant to the question, and a customer with no account has nothing owed.
+    /// Does the platform still owe this customer money, IN ANY CURRENCY? Reads balances only — the
+    /// ledger is irrelevant to the question, and a customer with no account has nothing owed.
+    ///
+    /// <para><b>Any currency is the whole point.</b> This used to read a single account, which under
+    /// one-account-per-customer was the same question. It is not any more: a customer holding nothing
+    /// in one currency and a positive balance in another would have passed the gate and been erased
+    /// while the platform still owed them the second balance. Erasure is irreversible and this is the
+    /// only thing standing in front of it.</para>
     /// </summary>
     private async Task<bool> HasPositiveCreditBalanceAsync(
         string userId, CancellationToken cancellationToken)
     {
-        var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
-        return spendable is { Balance: > 0m };
+        var spendables = await creditAccountRepository.GetSpendablesForUserAsync(userId, cancellationToken);
+        return spendables.Any(s => s.Balance > 0m);
     }
 
     private Task<bool> HasUnsettledPayAsync(string employeeId, CancellationToken cancellationToken)

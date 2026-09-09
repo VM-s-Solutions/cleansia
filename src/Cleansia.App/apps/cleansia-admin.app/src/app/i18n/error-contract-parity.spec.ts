@@ -383,6 +383,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   // Customer credit — AdminCreditController is the only writer of a balance.
   'credit.amount_exceeds_sanity_cap',
   'credit.amount_not_whole_minor_units',
+  'credit.held_in_multiple_currencies',
   'credit.reason_not_issuable',
   // Orders, disputes, refunds, receipts
   'dispute.already_resolved',

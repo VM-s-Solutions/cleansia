@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
@@ -172,7 +173,28 @@ public sealed class OrderFactory(
                 .ThenInclude(s => s.Service)
             .ToListAsync(cancellationToken);
         var selectedPackages = packages
-            .Select(p => OrderPackage.Create(order, p, lineTotal: p.Price))
+            .Select(p =>
+            {
+                var line = OrderPackage.Create(order, p, lineTotal: p.Price);
+
+                // The SPLIT is snapshotted too, not just the total. It is derived from
+                // PackageService.PriceWeight, and both the weights and the package's composition are
+                // editable through the admin package form — so a package re-weighted or re-composed
+                // after ordering would otherwise still move the refund split between a historical
+                // order's bundled lines. The derived share is stored rather than the weight, because a
+                // weight only means anything against the other weights present at the same moment.
+                var included = p.IncludedServices.ToList();
+                if (included.Count > 0)
+                {
+                    var grosses = PackagePricing.DeriveIncludedServiceGrosses(
+                        included.Select(s => s.PriceWeight).ToList(), p.Price);
+                    line.AddIncludedServiceLines(included
+                        .Select((s, i) => OrderPackageService.Create(line, s.ServiceId, grosses[i]))
+                        .ToList());
+                }
+
+                return line;
+            })
             .ToList();
 
         // IsActive is filtered here exactly as the pricing calculator filters it, so an inactive extra

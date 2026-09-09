@@ -259,14 +259,16 @@ public sealed class ReceiptService(
     {
         var items = new List<FiscalLineItem>();
 
+        // Prices from the ORDER'S snapshot, names from the catalogue. These figures are declared to a
+        // tax authority, and they used to be recomputed from the live catalogue every time the receipt
+        // was rendered — including by RetryFiscalRegistrationAsync, which re-renders an old receipt
+        // against today's prices. The name is a label and may drift; the number may not.
         foreach (var s in order.SelectedServices)
         {
-            var basePrice = s.Service?.BasePrice ?? 0;
-            var perRoom = (s.Service?.PerRoomPrice ?? 0) * (order.Rooms + order.Bathrooms);
             items.Add(new FiscalLineItem(
                 Description: s.Service?.Name ?? "Service",
                 Quantity: 1,
-                UnitPrice: basePrice + perRoom,
+                UnitPrice: s.LineTotal,
                 VatRate: vatRate));
         }
 
@@ -275,7 +277,7 @@ public sealed class ReceiptService(
             items.Add(new FiscalLineItem(
                 Description: p.Package?.Name ?? "Package",
                 Quantity: 1,
-                UnitPrice: p.Package?.Price ?? 0,
+                UnitPrice: p.LineTotal,
                 VatRate: vatRate));
         }
 
@@ -374,16 +376,12 @@ public sealed class ReceiptService(
             CustomerEmail = order.CustomerEmail,
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = $"{order.CustomerAddress?.Street}, {order.CustomerAddress?.City}, {order.CustomerAddress?.ZipCode}",
+            // Snapshot prices, catalogue names — see BuildFiscalLineItems.
             Services = order.SelectedServices
-                .Select(s =>
-                {
-                    var basePrice = s.Service?.BasePrice ?? 0;
-                    var perRoom = (s.Service?.PerRoomPrice ?? 0) * (order.Rooms + order.Bathrooms);
-                    return new ReceiptLineItem(s.Service?.Name ?? "Service", basePrice + perRoom);
-                })
+                .Select(s => new ReceiptLineItem(s.Service?.Name ?? "Service", s.LineTotal))
                 .ToList(),
             Packages = order.SelectedPackages
-                .Select(p => new ReceiptLineItem(p.Package?.Name ?? "Package", p.Package?.Price ?? 0))
+                .Select(p => new ReceiptLineItem(p.Package?.Name ?? "Package", p.LineTotal))
                 .ToList(),
             Extras = order.SelectedExtras
                 .Select(e => e.Slug)

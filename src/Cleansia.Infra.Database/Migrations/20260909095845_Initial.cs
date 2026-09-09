@@ -2547,6 +2547,33 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderPackageServices",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    OrderPackageId = table.Column<string>(type: "text", nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    LineGross = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderPackageServices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderPackageServices_OrderPackages_OrderPackageId",
+                        column: x => x.OrderPackageId,
+                        principalTable: "OrderPackages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderPackageServices_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Refunds",
                 columns: table => new
                 {
@@ -3400,6 +3427,17 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "PackageId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderPackageServices_OrderPackageId_ServiceId",
+                table: "OrderPackageServices",
+                columns: new[] { "OrderPackageId", "ServiceId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderPackageServices_ServiceId",
+                table: "OrderPackageServices",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderPhotos_CapturedByEmployeeId",
                 table: "OrderPhotos",
                 column: "CapturedByEmployeeId");
@@ -4123,7 +4161,7 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "OrderNotes");
 
             migrationBuilder.DropTable(
-                name: "OrderPackages");
+                name: "OrderPackageServices");
 
             migrationBuilder.DropTable(
                 name: "OrderPhotos");
@@ -4210,10 +4248,10 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Extras");
 
             migrationBuilder.DropTable(
-                name: "OrderReviews");
+                name: "OrderPackages");
 
             migrationBuilder.DropTable(
-                name: "Packages");
+                name: "OrderReviews");
 
             migrationBuilder.DropTable(
                 name: "Services");
@@ -4235,6 +4273,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "PayPeriods");
+
+            migrationBuilder.DropTable(
+                name: "Packages");
 
             migrationBuilder.DropTable(
                 name: "ServiceCategories");

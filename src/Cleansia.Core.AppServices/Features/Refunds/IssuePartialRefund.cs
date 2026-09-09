@@ -248,38 +248,41 @@ public class IssuePartialRefund
 
         foreach (var service in order.SelectedServices)
         {
-            // ADR-0009 D5.1 — the canonical quote basis (matches OrderPricingCalculator): a standalone
-            // service's ratio weight is BasePrice + PerRoomPrice × (rooms + bathrooms). This is a weight
-            // only; the allocator multiplies the line's share by frozen TotalPrice, so discount/surcharge
-            // stay embedded (D2 — never re-applied).
-            var gross = (service.Service?.BasePrice ?? 0m)
-                + (service.Service?.PerRoomPrice ?? 0m) * (order.Rooms + order.Bathrooms);
-            lines.Add(new LineGross($"svc:{service.ServiceId}", gross, service.ServiceId, PackageId: null));
+            // ADR-0009 D5.1 — the canonical quote basis: a standalone service's ratio weight is
+            // BasePrice + PerRoomPrice × (rooms + bathrooms). That arithmetic now happens ONCE, at order
+            // creation, and is frozen in LineTotal. This used to recompute it from the LIVE catalogue,
+            // so an admin price edit moved the denominator of a refund on an order placed months
+            // earlier. The `?? 0m` is gone with it: a fail-open zero silently shrank the denominator and
+            // over-paid every other line.
+            //
+            // It remains a weight only; the allocator multiplies the line's share by frozen TotalPrice,
+            // so discount and surcharge stay embedded (D2 — never re-applied).
+            lines.Add(new LineGross(
+                $"svc:{service.ServiceId}", service.LineTotal, service.ServiceId, PackageId: null));
         }
 
         foreach (var orderPackage in order.SelectedPackages)
         {
-            var package = orderPackage.Package;
-            if (package is null)
-            {
-                continue;
-            }
-
-            var included = package.IncludedServices.ToList();
+            // The order's own split, not a fresh one derived from live weights. Both the weights and
+            // the package's composition are editable through the admin package form, so re-deriving
+            // here moved a historical order's bundled shares whenever either changed.
+            var included = orderPackage.IncludedServiceLines.ToList();
             if (included.Count == 0)
             {
-                lines.Add(new LineGross($"pkg:{orderPackage.PackageId}", package.Price, ServiceId: string.Empty, orderPackage.PackageId));
+                lines.Add(new LineGross(
+                    $"pkg:{orderPackage.PackageId}",
+                    orderPackage.LineTotal,
+                    ServiceId: string.Empty,
+                    orderPackage.PackageId));
                 continue;
             }
 
-            var grosses = PackagePricing.DeriveIncludedServiceGrosses(
-                included.Select(s => s.PriceWeight).ToList(), package.Price);
-            for (var i = 0; i < included.Count; i++)
+            foreach (var line in included)
             {
                 lines.Add(new LineGross(
-                    $"pkg:{orderPackage.PackageId}:svc:{included[i].ServiceId}",
-                    grosses[i],
-                    included[i].ServiceId,
+                    $"pkg:{orderPackage.PackageId}:svc:{line.ServiceId}",
+                    line.LineGross,
+                    line.ServiceId,
                     orderPackage.PackageId));
             }
         }

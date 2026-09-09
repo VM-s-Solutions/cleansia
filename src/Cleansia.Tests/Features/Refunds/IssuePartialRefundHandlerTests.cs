@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -115,7 +116,25 @@ public class IssuePartialRefundHandlerTests
         }
         if (packages is not null)
         {
-            order.AddSelectedPackages(packages.Select(p => OrderPackage.Create(order, p, p.Price)));
+            // Mirrors OrderFactory: the package's total AND its split across included services are both
+            // snapshotted at creation. Without the split the allocator has no bundled lines to weight,
+            // which is what this fixture exists to exercise. Every expected value in the tests below is
+            // still hand-derived, so building the arrangement with the production helper is arrangement,
+            // not assertion.
+            order.AddSelectedPackages(packages.Select(p =>
+            {
+                var line = OrderPackage.Create(order, p, p.Price);
+                var included = p.IncludedServices.ToList();
+                if (included.Count > 0)
+                {
+                    var grosses = PackagePricing.DeriveIncludedServiceGrosses(
+                        included.Select(s => s.PriceWeight).ToList(), p.Price);
+                    line.AddIncludedServiceLines(included
+                        .Select((s, i) => OrderPackageService.Create(line, s.ServiceId, grosses[i]))
+                        .ToList());
+                }
+                return line;
+            }));
         }
         if (extras is not null)
         {
@@ -543,6 +562,54 @@ public class IssuePartialRefundHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(210m, result.Value!.RefundVat);                 // round(1210 * 21/121)
         Assert.Equal(1000m, _loyaltyService.LastRefundNet);          // net = 1210 - 210
+    }
+
+    /// <summary>
+    /// <b>Re-weighting a package must not move a refund on an order placed before the change.</b>
+    ///
+    /// <para>The package's TOTAL was snapshotted first, which stopped a re-PRICED package restating a
+    /// historical refund. It was not enough: the split across included services is derived from
+    /// <c>PackageService.PriceWeight</c>, and both the weights and the package's composition are
+    /// editable through the shipped admin package form — so a re-weighted package still moved the
+    /// shares between a historical order's bundled lines. The split is snapshotted too now.</para>
+    ///
+    /// <para>The test mutates the catalogue AFTER the order exists, which is exactly what an admin does
+    /// and exactly what nothing previously guarded. Before the snapshot the second refund would have
+    /// been 384 rather than 240 — a 60/40 re-weight applied retroactively.</para>
+    /// </summary>
+    [Fact]
+    public async Task ReWeightingAPackageAfterTheOrder_DoesNotMoveTheRefundSplit()
+    {
+        var inc1 = Svc("inc-1", 0m);
+        var inc2 = Svc("inc-2", 0m);
+        var package = Package.Create("Deep clean bundle", "", 600m);
+        package.Id = "pkg-1";
+        package.AddService(inc1);
+        package.AddService(inc2);
+
+        var standalone = Svc("svc-a", 400m);
+        var order = CreateOrder(800m, appliedVatRate: null, completed: true,
+            services: [standalone], packages: [package]);
+        ArrangeOrder(order);
+        ArrangeConsumed(800m);
+
+        // The admin re-weights the bundle 60/40 AFTER the order was placed.
+        package.IncludedServices.First(ps => ps.ServiceId == "inc-1").SetPriceWeight(6m);
+        package.IncludedServices.First(ps => ps.ServiceId == "inc-2").SetPriceWeight(4m);
+
+        var refund = await CreateHandler().Handle(
+            new IssuePartialRefund.Command(
+                OrderId,
+                [new IssuePartialRefund.RefundLineSelection("inc-2", "pkg-1")],
+                RefundReason.ServiceNotRendered,
+                OverrideReason: null),
+            CancellationToken.None);
+
+        Assert.True(refund.IsSuccess, refund.Error?.Message);
+        // Hand-derived, from the split as it stood AT PURCHASE: equal weights split 600 into 300/300,
+        // and the package's share of the 800 total is 480, so each bundled line is 240.
+        // Under the 60/40 re-weight the same line would be round(4/10 * 600) = 240 of 600 -> 192 of 480.
+        Assert.Equal(240m, refund.Value!.RefundAmount);
     }
 
     // TC-REFUND-BUNDLED — refunding included services within a package never exceeds the package line's

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260909082451_Initial")]
+    [Migration("20260909095845_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -4007,6 +4007,37 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("OrderPackages");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderPackageService", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("LineGross")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("OrderPackageId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ServiceId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("OrderPackageId", "ServiceId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrderPackageServices_OrderPackageId_ServiceId");
+
+                    b.ToTable("OrderPackageServices");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderPhoto", b =>
                 {
                     b.Property<string>("Id")
@@ -6579,6 +6610,25 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Package");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderPackageService", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Orders.OrderPackage", "OrderPackage")
+                        .WithMany("IncludedServiceLines")
+                        .HasForeignKey("OrderPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Services.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OrderPackage");
+
+                    b.Navigation("Service");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderPhoto", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Users.Employee", "CapturedBy")
@@ -6975,6 +7025,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("SelectedPackages");
 
                     b.Navigation("SelectedServices");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderPackage", b =>
+                {
+                    b.Navigation("IncludedServiceLines");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderReview", b =>

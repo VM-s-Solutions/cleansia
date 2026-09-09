@@ -40,11 +40,31 @@ public class GetMyCredit
     /// complaint nobody can answer. Every movement pushes it out, so a customer who books once a year
     /// never loses anything. → CreditAccount.ExpiryMonths</para>
     /// </param>
+    /// <param name="Balances">
+    /// EVERY balance the customer holds, largest first — one per currency.
+    ///
+    /// <para>Credit is only spendable on an order priced in the SAME currency (owner ruling
+    /// 2026-09-09), so a customer holding CZK cannot pay a EUR booking with it. A screen that shows one
+    /// balance therefore cannot answer the only question the customer has, which is whether their
+    /// credit applies to the thing they are about to book.</para>
+    ///
+    /// <para><b>Added beside the scalars rather than replacing them.</b> The four fields above are
+    /// unchanged and still describe the largest balance, so a client built before this deploy keeps
+    /// working byte-identically. They are also DERIVED from this list in the handler, in one
+    /// expression, so the two cannot drift into disagreeing.</para>
+    /// </param>
     public record Response(
         decimal Balance,
         string CurrencyCode,
         decimal MaxShareOfOrder,
         bool AppliesAutomatically,
+        DateTimeOffset? ExpiresOn,
+        IReadOnlyList<CurrencyBalance> Balances);
+
+    /// <summary>One currency's balance. <c>ExpiresOn</c> is per account, not per customer.</summary>
+    public record CurrencyBalance(
+        decimal Balance,
+        string CurrencyCode,
         DateTimeOffset? ExpiresOn);
 
     public class Handler(
@@ -67,22 +87,36 @@ public class GetMyCredit
             // Identical to today's answer whenever a customer holds one account, which is every
             // customer until a second currency is operated. When that changes, the per-currency shape
             // belongs on the wire -- and that is the chunk that regenerates the clients.
-            var spendable = (await creditAccountRepository.GetSpendablesForUserAsync(
-                userId, cancellationToken)).FirstOrDefault();
+            var spendables = await creditAccountRepository.GetSpendablesForUserAsync(
+                userId, cancellationToken);
 
-            // No account is the ordinary case, not an error: nothing has ever gone wrong for this
-            // customer. It answers zero, in the platform's default currency, so the client renders one
-            // shape either way.
-            var currency = spendable == null
+            // One lookup per held currency, which is at most the number of currencies the platform
+            // operates. No account is the ordinary case, not an error: nothing has ever gone wrong for
+            // this customer, and the answer is an empty list plus a zero in the platform default so the
+            // client renders one shape either way.
+            var balances = new List<CurrencyBalance>(spendables.Count);
+            foreach (var s in spendables)
+            {
+                var held = await currencyRepository.GetByIdAsync(s.CurrencyId, cancellationToken);
+                balances.Add(new CurrencyBalance(s.Balance, held?.Code ?? string.Empty, s.ExpiresOn));
+            }
+
+            // THE LEGACY SCALARS ARE DEFINED AS THE FIRST ELEMENT, not computed a second way. That is
+            // what stops "the balance" and "the balances" disagreeing after some later edit changes one
+            // of them: there is only one selection, and the repository's own ordering (largest first)
+            // is the only place it is decided.
+            var first = balances.FirstOrDefault();
+            var fallbackCurrency = first is null
                 ? await currencyRepository.GetDefaultAsync(cancellationToken)
-                : await currencyRepository.GetByIdAsync(spendable.CurrencyId, cancellationToken);
+                : null;
 
             return BusinessResult.Success(new Response(
-                Balance: spendable?.Balance ?? 0m,
-                CurrencyCode: currency?.Code ?? string.Empty,
+                Balance: first?.Balance ?? 0m,
+                CurrencyCode: first?.CurrencyCode ?? fallbackCurrency?.Code ?? string.Empty,
                 MaxShareOfOrder: BookingPolicy.MaxCreditShareOfOrder,
                 AppliesAutomatically: true,
-                ExpiresOn: spendable?.ExpiresOn));
+                ExpiresOn: first?.ExpiresOn,
+                Balances: balances));
         }
     }
 }

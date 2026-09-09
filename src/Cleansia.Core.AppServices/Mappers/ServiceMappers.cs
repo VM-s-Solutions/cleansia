@@ -58,6 +58,7 @@ public static class ServiceMappers
             Id: service.Id,
             Name: service.Name,
             Description: service.Description,
+            CategoryId: service.CategoryId,
             BasePrice: basePrice,
             PerRoomPrice: perRoomPrice,
             EstimatedTime: service.EstimatedTime,

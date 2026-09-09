@@ -130,10 +130,12 @@
 | T-0696 | sql-scripts/seed/insert_orders.sql cannot run — wrong content and mismatched arity | S | `todo` | — | inserts PackageServices, not orders; names 10 columns and supplies 2, so Postgres rejects it outright. Deletion is probably the right answer |
 | T-0697 | src/Cleansia.App/CLAUDE.md still says NSwag regeneration is owner-only | S | `todo` | — | contradicts the 2026-09-07 ruling and the ban on `manual_step:`. Root CLAUDE.md overrides it, so nothing is broken — the hazard is an agent reading the nearest file first. AC3 covers the 6 other pages with the same text |
 
+| T-0698 | Extras have no admin CRUD — an extra can only be priced by editing the seed | M | `todo` | — | owner asked for this during the multicurrency decisions and it was never reached. Split out of chunk 4 by ruling 2026-09-09 rather than growing the batch that needs NSwag + two mobile specs + a Mac session |
+
 > **T-0692–T-0697 filed 2026-09-08** from the out-of-scope findings of T-0690/T-0691, each re-verified
 > against the tree on the day it was filed. A seventh finding — claimed drift between the committed
 > partner mobile spec and the `Order/RequestCover` / `Order/DropOrder` routes — was **re-checked and not
 > substantiated**: both schemas in `src/cleansia_android/openapi/partner-mobile-api.json` match the
 > current commands exactly. It is not filed.
 
-*Next id: **T-0698**.*
+*Next id: **T-0699**.*

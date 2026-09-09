@@ -1,3 +1,5 @@
+using Cleansia.Core.AppServices.Features.Credit.Admin;
+using Cleansia.Core.AppServices.Features.Credit;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
@@ -242,6 +244,133 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
             .GetSpendablesForUserAsync(userId, CancellationToken.None);
 
         Assert.Empty(spendables);
+    }
+
+
+    // ── the read models ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// THE CUSTOMER'S OWN SCREEN shows every balance, and its legacy scalar is the FIRST of them rather
+    /// than a second derivation. A screen that showed one balance could not answer the only question the
+    /// customer has — whether their credit applies to the booking in front of them — because credit is
+    /// spendable only on an order in the same currency.
+    /// </summary>
+    [Fact]
+    public async Task GetMyCredit_Reports_Every_Balance_And_Leads_With_The_Largest()
+    {
+        await ResetAsync();
+        var (userId, czk, eur) = await SeedAsync();
+        await GrantAsync(userId, eur, 25m, "grant-eur");
+        await GrantAsync(userId, czk, 400m, "grant-czk");
+
+        await using var ctx = NewContext();
+        var result = await new GetMyCredit.Handler(
+                new CreditAccountRepository(ctx),
+                new CurrencyRepository(ctx),
+                new TestUserSessionProvider(userId, "credit-percurrency@cleansia.test"))
+            .Handle(new GetMyCredit.Query(), CancellationToken.None);
+
+        var response = result.Value!;
+        Assert.Equal(["CZK", "EUR"], response.Balances.Select(b => b.CurrencyCode));
+        Assert.Equal([400m, 25m], response.Balances.Select(b => b.Balance));
+
+        // The scalars are element[0], so they cannot disagree with the list beside them.
+        Assert.Equal(response.Balances[0].Balance, response.Balance);
+        Assert.Equal(response.Balances[0].CurrencyCode, response.CurrencyCode);
+    }
+
+    /// <summary>
+    /// Anti-vacuity, and the compatibility promise: a customer holding ONE balance gets exactly the
+    /// answer they got before this change, so a client built against the old shape is unaffected.
+    /// </summary>
+    [Fact]
+    public async Task GetMyCredit_Is_Unchanged_For_A_Customer_With_One_Balance()
+    {
+        await ResetAsync();
+        var (userId, czk, _) = await SeedAsync();
+        await GrantAsync(userId, czk, 400m, "grant-czk");
+
+        await using var ctx = NewContext();
+        var result = await new GetMyCredit.Handler(
+                new CreditAccountRepository(ctx),
+                new CurrencyRepository(ctx),
+                new TestUserSessionProvider(userId, "credit-percurrency@cleansia.test"))
+            .Handle(new GetMyCredit.Query(), CancellationToken.None);
+
+        var response = result.Value!;
+        Assert.Equal(400m, response.Balance);
+        Assert.Equal("CZK", response.CurrencyCode);
+        Assert.Single(response.Balances);
+    }
+
+    /// <summary>
+    /// A customer with no credit answers zero in the PLATFORM DEFAULT and an empty list — one shape for
+    /// the client either way, which is what the response has always promised.
+    /// </summary>
+    [Fact]
+    public async Task GetMyCredit_Answers_Zero_In_The_Default_Currency_For_A_Customer_With_Nothing()
+    {
+        await ResetAsync();
+        var (userId, _, _) = await SeedAsync();
+
+        await using var ctx = NewContext();
+        var result = await new GetMyCredit.Handler(
+                new CreditAccountRepository(ctx),
+                new CurrencyRepository(ctx),
+                new TestUserSessionProvider(userId, "credit-percurrency@cleansia.test"))
+            .Handle(new GetMyCredit.Query(), CancellationToken.None);
+
+        var response = result.Value!;
+        Assert.Equal(0m, response.Balance);
+        Assert.Equal("CZK", response.CurrencyCode);
+        Assert.Empty(response.Balances);
+    }
+
+    /// <summary>
+    /// THE ADMIN SCREEN, and the reason it matters more than the customer's: erasure is refused while
+    /// ANY balance is positive, and the discharge refuses outright when more than one is funded. An
+    /// admin looking at a single balance could be told erasure is blocked by money the screen never
+    /// showed them. Each account carries its OWN ledger, capped separately.
+    /// </summary>
+    [Fact]
+    public async Task GetUserCredit_Reports_Every_Account_With_Its_Own_Ledger()
+    {
+        await ResetAsync();
+        var (userId, czk, eur) = await SeedAsync();
+        await GrantAsync(userId, eur, 25m, "grant-eur");
+        await GrantAsync(userId, czk, 400m, "grant-czk");
+
+        await using var ctx = NewContext();
+        var result = await new GetUserCredit.Handler(
+                new CreditAccountRepository(ctx), new CurrencyRepository(ctx))
+            .Handle(new GetUserCredit.Query(userId), CancellationToken.None);
+
+        var response = result.Value!;
+        Assert.True(response.HasAccount);
+        Assert.Equal(["CZK", "EUR"], response.Accounts.Select(a => a.CurrencyCode));
+        Assert.All(response.Accounts, a => Assert.Single(a.Ledger));
+
+        Assert.Equal(response.Accounts[0].Balance, response.Balance);
+        Assert.Equal(response.Accounts[0].CurrencyCode, response.CurrencyCode);
+        Assert.Equal(response.Accounts[0].Ledger, response.Ledger);
+    }
+
+    [Fact]
+    public async Task GetUserCredit_Still_Says_No_Account_For_A_Customer_With_Nothing()
+    {
+        await ResetAsync();
+        var (userId, _, _) = await SeedAsync();
+
+        await using var ctx = NewContext();
+        var result = await new GetUserCredit.Handler(
+                new CreditAccountRepository(ctx), new CurrencyRepository(ctx))
+            .Handle(new GetUserCredit.Query(userId), CancellationToken.None);
+
+        var response = result.Value!;
+        Assert.False(response.HasAccount);
+        Assert.Equal("CZK", response.CurrencyCode);
+        Assert.Empty(response.Accounts);
+        Assert.Empty(response.Ledger);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

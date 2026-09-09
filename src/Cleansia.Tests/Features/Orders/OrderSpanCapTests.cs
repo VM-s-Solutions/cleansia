@@ -232,14 +232,14 @@ public class OrderSpanCapTests
 
     private void SeedCatalog(int serviceMinutes, int packageServiceMinutes)
     {
-        var service = Service.Create(CategoryId, "Span Service", "Under test", 1000m, 0m, serviceMinutes);
+        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes);
         service.Id = ServiceId;
 
         var packagedService = Service.Create(
-            CategoryId, "Packaged Service", "Inside the bundle", 500m, 0m, packageServiceMinutes);
+            CategoryId, "Packaged Service", "Inside the bundle", packageServiceMinutes);
         packagedService.Id = $"{ServiceId}-packaged";
 
-        var package = Package.Create("Span Package", "Under test", 500m);
+        var package = Package.Create("Span Package", "Under test");
         package.Id = PackageId;
         package.AddService(packagedService);
 
@@ -251,12 +251,23 @@ public class OrderSpanCapTests
             .Returns(new[] { package }.AsQueryable().BuildMock());
     }
 
+    /// <summary>
+    /// ONE instance, shared by the price rows and the input: the price lookup filters on currency id,
+    /// so a second <c>Currency.Create</c> would be a different currency and find no rows.
+    /// </summary>
+    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+
     private OrderFactory CreateFactory() =>
         new(
             _orderRepository.Object,
             _serviceRepository.Object,
             _packageRepository.Object,
             ExtraRepositoryDouble.Empty(),
+            // Any price at all — this suite asserts on the booked SPAN, not on money, and the amounts
+            // never reach an assertion. They are here because an unpriced catalogue is not bookable.
+            CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
+            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
+            CataloguePriceDoubles.NoExtras(),
             PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
@@ -289,7 +300,7 @@ public class OrderSpanCapTests
             SelectedExtraSlugs: [],
             CleaningDate: DateTime.UtcNow.AddDays(3),
             PaymentType: PaymentType.Cash,
-            Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+            Currency: Czk,
             SelectedServiceIds: [ServiceId],
             SelectedPackageIds: [PackageId],
             RawSubtotal: 1500m,

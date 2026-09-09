@@ -70,14 +70,16 @@ public static class OrderMappers
                 op.Package!.Id,
                 op.Package!.Name,
                 op.Package!.Description,
-                op.Package!.Price,
+                // THE ORDER'S SNAPSHOT, not the catalogue's current price. These rows describe a sale
+                // that already happened; the catalogue describes what is on sale today.
+                op.LineTotal,
                 op.Package!.Translations)).ToList(),
             o.SelectedServices.Select(os => new OrderListServiceRow(
                 os.Service!.Id,
                 os.Service!.Name,
                 os.Service!.Description,
-                os.Service!.BasePrice,
-                os.Service!.PerRoomPrice,
+                os.UnitBasePrice,
+                os.UnitPerRoomPrice,
                 os.Service!.Translations,
                 new OrderListCategoryRow(
                     os.Service!.Category!.Id,
@@ -205,11 +207,12 @@ public static class OrderMappers
             EstimatedTime: order.EstimatedTime,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
             ConfirmationCode: order.ConfirmationCode,
-            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDto()),
+            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDto(op.LineTotal)),
             CurrencyId: order.CurrencyId,
             Currency: order.Currency.MapToDto(),
             AssignedEmployees: order.AssignedEmployees.Select(e => e.Id),
-            SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDto()),
+            SelectedServices: order.SelectedServices.Select(os =>
+                os.Service.MapToDto(os.UnitBasePrice, os.UnitPerRoomPrice)),
             RequiredEmployees: order.RequiredEmployees,
             MaxEmployees: order.MaxEmployees,
             AvailableSpots: order.AvailableSpots,
@@ -283,7 +286,8 @@ public static class OrderMappers
                 ? order.CancellationReason
                 : null,
             RecurringTemplateId: order.RecurringTemplateId,
-            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDetails(order.Currency.Code)),
+            SelectedPackages: order.SelectedPackages.Select(op =>
+                op.Package.MapToDetails(order.Currency.Code, op.LineTotal)),
             Currency: order.Currency.MapToDetailDto(),
             SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDetails(order.Currency.Code)),
             StatusHistory: order.OrderStatusHistory.Select(sh => sh.MapToDto()) ?? [],

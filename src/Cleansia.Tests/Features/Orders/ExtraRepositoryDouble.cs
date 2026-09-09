@@ -23,11 +23,4 @@ internal static class ExtraRepositoryDouble
     }
 
     public static IExtraRepository Empty() => Holding();
-
-    /// <summary>
-    /// Extras priced by slug, for the suites that do book one. The price becomes the order row's
-    /// frozen <c>UnitPrice</c>, which is what the refund allocator then weights by.
-    /// </summary>
-    public static IExtraRepository Priced(params (string Slug, decimal Price)[] extras) =>
-        Holding(extras.Select(e => Extra.Create(e.Slug, e.Slug, null, e.Price)).ToArray());
 }

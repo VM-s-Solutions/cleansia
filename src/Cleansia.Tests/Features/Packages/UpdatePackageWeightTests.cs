@@ -1,3 +1,5 @@
+using MockQueryable;
+using Cleansia.Core.Domain.Internationalization;
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Mappers;
@@ -17,10 +19,24 @@ public class UpdatePackageWeightTests
 
     private readonly Mock<IPackageRepository> _packageRepository = new();
     private readonly Mock<IServiceRepository> _serviceRepository = new();
+    private readonly Mock<IPackagePriceRepository> _packagePriceRepository = new();
+    private readonly ICurrencyRepository _currencyRepository;
+
+    public UpdatePackageWeightTests()
+    {
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        currency.SetAsDefault(true);
+        _currencyRepository = CataloguePriceDoubles.DefaultCurrency(currency);
+
+        // No existing row, so the handler takes its upsert's insert branch. This suite is about the
+        // WEIGHTS on the join; the price write is arrangement it has to survive, not its subject.
+        _packagePriceRepository.Setup(r => r.GetAll())
+            .Returns(Array.Empty<PackagePrice>().AsQueryable().BuildMock());
+    }
 
     private Package ArrangePackage()
     {
-        var package = Package.Create("Bundle", "desc", 100m);
+        var package = Package.Create("Bundle", "desc");
         package.Id = PackageId;
         _packageRepository
             .Setup(r => r.GetByIdAsync(PackageId, It.IsAny<CancellationToken>()))
@@ -30,7 +46,7 @@ public class UpdatePackageWeightTests
 
     private Service ArrangeService(string id)
     {
-        var service = Service.Create("cat", $"Service {id}", "desc", 10m, 0m);
+        var service = Service.Create("cat", $"Service {id}", "desc");
         service.Id = id;
         _serviceRepository
             .Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
@@ -42,7 +58,12 @@ public class UpdatePackageWeightTests
     {
         var handlerType = typeof(UpdatePackage).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, _packageRepository.Object, _serviceRepository.Object)!;
+        var handler = Activator.CreateInstance(
+            handlerType!,
+            _packageRepository.Object,
+            _packagePriceRepository.Object,
+            _currencyRepository,
+            _serviceRepository.Object)!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult<UpdatePackage.Response>>)handleMethod!.Invoke(
@@ -121,16 +142,18 @@ public class UpdatePackageWeightTests
     [Fact]
     public void Detail_Mapper_Returns_The_Stored_Price_Weight()
     {
-        var package = Package.Create("Bundle", "desc", 100m);
-        var serviceA = Service.Create("cat", "Service A", "desc", 10m, 0m);
+        var package = Package.Create("Bundle", "desc");
+        var serviceA = Service.Create("cat", "Service A", "desc");
         serviceA.Id = ServiceAId;
-        var serviceB = Service.Create("cat", "Service B", "desc", 10m, 0m);
+        var serviceB = Service.Create("cat", "Service B", "desc");
         serviceB.Id = ServiceBId;
 
         package.AddService(serviceA).AddService(serviceB);
         package.IncludedServices.Single(ps => ps.ServiceId == ServiceAId).SetPriceWeight(2m);
 
-        var dto = package.MapToAdminDetail();
+        // The admin detail carries the default currency's price alongside the weights; this suite is
+        // about the weights, so any amount does.
+        var dto = package.MapToAdminDetail(price: 1000m);
 
         Assert.Equal(2m, dto.IncludedServices.Single(s => s.Id == ServiceAId).PriceWeight);
         Assert.Equal(PackageService.DefaultPriceWeight, dto.IncludedServices.Single(s => s.Id == ServiceBId).PriceWeight);

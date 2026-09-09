@@ -49,7 +49,7 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
     private const decimal LongServicePrice = 1000m;
     private const decimal OverflowServicePrice = 100m;
     private const decimal PackagedServicePrice = 300m;
-    private const decimal PackagePrice = 500m;
+    private const decimal CataloguePackagePrice = 500m;
 
     // 1380 + 60 = 1440 min = exactly BookingPolicy.MaxBookableOrderSpanHours. One more minute of
     // catalog is all it takes to cross it.
@@ -67,7 +67,7 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
             {
                 var mediator = provider.GetRequiredService<IMediator>();
                 return await mediator.Send(BuildCommand(
-                    [LongServiceId], [PackageId], LongServicePrice + PackagePrice));
+                    [LongServiceId], [PackageId], LongServicePrice + CataloguePackagePrice));
             },
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
@@ -95,7 +95,7 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
                 return await mediator.Send(BuildCommand(
                     [LongServiceId, OverflowServiceId],
                     [PackageId],
-                    LongServicePrice + OverflowServicePrice + PackagePrice));
+                    LongServicePrice + OverflowServicePrice + CataloguePackagePrice));
             },
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
@@ -161,21 +161,21 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
         context.Add(category);
 
         var longService = Service.Create(
-            CategoryId, "Long Service", "Almost the whole cap", LongServicePrice, 0m, LongServiceMinutes);
+            CategoryId, "Long Service", "Almost the whole cap", LongServiceMinutes);
         longService.Id = LongServiceId;
         context.Add(longService);
 
         var overflowService = Service.Create(
-            CategoryId, "Overflow Service", "One minute past the cap", OverflowServicePrice, 0m, OverflowServiceMinutes);
+            CategoryId, "Overflow Service", "One minute past the cap", OverflowServiceMinutes);
         overflowService.Id = OverflowServiceId;
         context.Add(overflowService);
 
         var packagedService = Service.Create(
-            CategoryId, "Packaged Service", "Counted through the package", PackagedServicePrice, 0m, PackagedServiceMinutes);
+            CategoryId, "Packaged Service", "Counted through the package", PackagedServiceMinutes);
         packagedService.Id = PackagedServiceId;
         context.Add(packagedService);
 
-        var package = Package.Create("Span Cap Package", "Bundle under test", PackagePrice);
+        var package = Package.Create("Span Cap Package", "Bundle under test");
         package.Id = PackageId;
         package.AddService(packagedService);
         context.Add(package);
@@ -187,6 +187,15 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
             EmployeePayConfig.CreateForService(OverflowServiceId, 100m, CurrencyId),
             EmployeePayConfig.CreateForService(PackagedServiceId, 100m, CurrencyId),
             EmployeePayConfig.CreateForPackage(PackageId, 100m, CurrencyId));
+
+        // ...and its PRICE in the currency the order is placed in. A catalogue entry has no price of
+        // its own any more, and an entry with no row is not offerable — so this is the same class of
+        // arrangement as the pay config above it, not decoration.
+        context.ServicePrices.AddRange(
+            ServicePrice.Create(LongServiceId, CurrencyId, LongServicePrice, 0m),
+            ServicePrice.Create(OverflowServiceId, CurrencyId, OverflowServicePrice, 0m),
+            ServicePrice.Create(PackagedServiceId, CurrencyId, PackagedServicePrice, 0m));
+        context.PackagePrices.Add(PackagePrice.Create(PackageId, CurrencyId, CataloguePackagePrice));
 
         var user = User.CreateWithPassword(
             CustomerEmail,

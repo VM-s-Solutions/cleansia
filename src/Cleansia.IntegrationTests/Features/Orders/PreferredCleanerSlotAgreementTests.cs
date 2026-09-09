@@ -157,7 +157,7 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         category.Id = "cat-slot";
         context.Add(category);
 
-        var service = Service.Create(category.Id, "Deep clean", "Deep clean", 1500m, 200m, ServiceMinutes);
+        var service = Service.Create(category.Id, "Deep clean", "Deep clean", ServiceMinutes);
         service.Id = ServiceId;
         context.Add(service);
 

@@ -29,6 +29,13 @@ public class OrderPayCoverageGateTests
     private const string PackageId = "pkg-1";
     private const string CurrencyId = "czk";
 
+    /// <summary>
+    /// ONE instance, shared by the price rows and the input, because the price lookup filters on
+    /// currency id — two <c>Currency.Create</c> calls are two different currencies, and the rows would
+    /// simply not be found.
+    /// </summary>
+    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IServiceRepository> _serviceRepository = new();
     private readonly Mock<IPackageRepository> _packageRepository = new();
@@ -42,9 +49,9 @@ public class OrderPayCoverageGateTests
 
     public OrderPayCoverageGateTests()
     {
-        var service = Service.Create("cat-1", "General Cleaning", "d", 500m, 150m, estimatedTime: 120);
+        var service = Service.Create("cat-1", "General Cleaning", "d", estimatedTime: 120);
         service.Id = ServiceId;
-        var package = Package.Create("Essential Clean", "d", 799m);
+        var package = Package.Create("Essential Clean", "d");
         package.Id = PackageId;
 
         _serviceRepository.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
@@ -69,6 +76,11 @@ public class OrderPayCoverageGateTests
         _serviceRepository.Object,
         _packageRepository.Object,
         ExtraRepositoryDouble.Empty(),
+        // Priced, so the pay gate is what refuses — an unpriced catalogue throws too, and would make
+        // every refusal assertion below pass for the wrong reason.
+        CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
+        CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
+        CataloguePriceDoubles.NoExtras(),
         _payConfigRepository.Object,
         _companyInfoRepository.Object,
         _countryConfigurationRepository.Object,
@@ -92,7 +104,7 @@ public class OrderPayCoverageGateTests
                 SelectedExtraSlugs: [],
                 CleaningDate: DateTime.UtcNow.AddDays(3),
                 PaymentType: PaymentType.Cash,
-                Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+                Currency: Czk,
                 SelectedServiceIds: serviceIds ?? [ServiceId],
                 SelectedPackageIds: packageIds ?? [],
                 RawSubtotal: 1000m,
@@ -179,9 +191,9 @@ public class CreateOrderPayCoverageValidatorTests
 
     public CreateOrderPayCoverageValidatorTests()
     {
-        var service = Service.Create("cat-1", "General Cleaning", "d", 500m, 150m, estimatedTime: 120);
+        var service = Service.Create("cat-1", "General Cleaning", "d", estimatedTime: 120);
         service.Id = CreateOrderTestData.ServiceId;
-        var package = Package.Create("Essential Clean", "d", 799m);
+        var package = Package.Create("Essential Clean", "d");
         package.Id = CreateOrderTestData.PackageId;
 
         _serviceRepository

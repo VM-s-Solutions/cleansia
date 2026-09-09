@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Features.PayConfig;
+﻿using Cleansia.Core.AppServices.Features.Catalog;
+using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Mappers;
@@ -14,6 +15,8 @@ public class GetServiceOverview
 
     public class Handler(
         IServiceRepository serviceRepository,
+        IServicePriceRepository servicePriceRepository,
+        ICurrencyRepository currencyRepository,
         IEmployeePayConfigRepository payConfigRepository)
         : IRequestHandler<Request, IEnumerable<ServiceListItem>>
     {
@@ -40,9 +43,23 @@ public class GetServiceOverview
                 .Select(gap => gap.Id)
                 .ToHashSet();
 
+
+            // AND PRICED IN THE CURRENCY BEING QUOTED. Prices are authored per currency, so an entry
+            // with no row in this one has no price in it -- not a free one. It gets exactly the
+            // treatment, and the silence, that an unquotable or deactivated entry already gets: the
+            // wizard never offers it, so nothing downstream has to decide what a missing price means.
+            //
+            // This is also what makes "the machinery is built, only CZK is reachable" provable: seed a
+            // currency with no price rows and its catalogue is empty, by this line.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var prices = await CataloguePriceLookup.ForServicesAsync(
+                servicePriceRepository, services.Select(s => s.Id).ToList(), currency.Id, cancellationToken);
+
             return services
-                .Where(service => !unquotable.Contains(service.Id))
-                .Select(service => service.MapToDto());
+                .Where(service => !unquotable.Contains(service.Id) && prices.ContainsKey(service.Id))
+                .Select(service => service.MapToDto(
+                    prices[service.Id].BasePrice, prices[service.Id].PerRoomPrice))
+                .ToList();
         }
     }
 }

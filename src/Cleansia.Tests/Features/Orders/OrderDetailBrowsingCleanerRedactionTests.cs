@@ -428,7 +428,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
 
         order.Id = OrderId;
         order.AddSelectedExtras(
-            [OrderExtra.Create(order, Extra.Create("insideOven", "insideOven", null, 250m), 250m)]);
+            [OrderExtra.Create(order, Extra.Create("insideOven", "insideOven", null), 250m)]);
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
         order.UpdateEstimatedTime(180);
 

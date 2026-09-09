@@ -32,9 +32,24 @@ public class GetServiceOverviewTests(PostgresContainerFixture fixture) : BaseInt
 
                 // The overview offers an entry only when it is quotable, so each seeded service needs
                 // its platform-wide pay config or the wizard withholds it and this asserts nothing.
+                // DEFAULT, and priced: the overview prices in the platform default currency, so it
+                // needs one to exist and a row against it for each entry. Withholding is the correct
+                // answer to an unpriced entry, which is exactly why an unpriced fixture would leave
+                // this suite asserting over an empty list.
                 var currency = Currency.Create("CZK", "Kc", "Czech Koruna", 1m);
+                currency.SetAsDefault(true);
                 currency.Created("system", DateTimeOffset.UtcNow);
                 context.Currencies.Add(currency);
+
+                foreach (var price in new[]
+                         {
+                             ServicePrice.Create(service1.Id, currency.Id, 500m, 150m),
+                             ServicePrice.Create(service2.Id, currency.Id, 500m, 150m)
+                         })
+                {
+                    price.Created("system", DateTimeOffset.UtcNow);
+                    context.ServicePrices.Add(price);
+                }
                 foreach (var payConfig in new[]
                          {
                              EmployeePayConfig.CreateForService(service1.Id, 500m, currency.Id),

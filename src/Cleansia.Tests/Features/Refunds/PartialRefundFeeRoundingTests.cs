@@ -93,9 +93,12 @@ public class PartialRefundFeeRoundingTests
             netAmount: appliedVatRate is { } rate ? totalPrice / (1m + rate) : totalPrice,
             vatAmount: appliedVatRate is { } r ? totalPrice * r / (1m + r) : 0m,
             appliedRate: appliedVatRate);
-        var svc = Service.Create("cat-1", "Service A", "", totalPrice, 0m);
+        var svc = Service.Create("cat-1", "Service A", "");
         svc.Id = "svc-a";
-        order.AddSelectedServices([OrderService.Create(order, svc, svc.BasePrice, svc.PerRoomPrice, svc.BasePrice + svc.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
+        // The sole line carries the WHOLE total, so the allocator's share is 1 and every expected value
+        // below is a pure fee-rounding figure. Flat, with no per-room component, for the same reason.
+        order.AddSelectedServices([OrderService.Create(
+            order, svc, unitBasePrice: totalPrice, unitPerRoomPrice: 0m, lineTotal: totalPrice)]);
         order.CompleteOrder(actualCompletionTime: 120);
         return order;
     }

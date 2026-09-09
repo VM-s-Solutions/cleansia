@@ -21,7 +21,7 @@ public class DeactivateActivatePackageHandlerTests
 
     private Package ArrangePackage(bool isActive = true)
     {
-        var package = Package.Create("Deep Clean", "Full home deep clean", 500m);
+        var package = Package.Create("Deep Clean", "Full home deep clean");
         package.Id = PackageId;
         if (!isActive)
         {

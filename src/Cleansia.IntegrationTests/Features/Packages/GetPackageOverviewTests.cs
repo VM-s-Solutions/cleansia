@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Features.Packages;
+﻿using Cleansia.Core.Domain.Packages;
+using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.TestUtilities.MockDataFactories.Packages;
@@ -23,9 +24,21 @@ public class GetPackageOverviewTests(PostgresContainerFixture fixture) : BaseInt
 
                 // The overview offers an entry only when it is quotable, so each seeded package needs
                 // its platform-wide pay config or the wizard withholds it and this asserts nothing.
+                // DEFAULT, and priced — see GetServiceOverviewTests for why both halves matter.
                 var currency = Currency.Create("CZK", "Kc", "Czech Koruna", 1m);
+                currency.SetAsDefault(true);
                 currency.Created("system", DateTimeOffset.UtcNow);
                 context.Currencies.Add(currency);
+
+                foreach (var price in new[]
+                         {
+                             PackagePrice.Create(package1.Id, currency.Id, 1000m),
+                             PackagePrice.Create(package2.Id, currency.Id, 1000m)
+                         })
+                {
+                    price.Created("system", DateTimeOffset.UtcNow);
+                    context.PackagePrices.Add(price);
+                }
                 foreach (var payConfig in new[]
                          {
                              EmployeePayConfig.CreateForPackage(package1.Id, 250m, currency.Id),

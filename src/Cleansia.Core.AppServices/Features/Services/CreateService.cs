@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -77,7 +78,10 @@ public class CreateService
         }
     }
 
-    internal class Handler(IServiceRepository serviceRepository)
+    internal class Handler(
+        IServiceRepository serviceRepository,
+        IServicePriceRepository servicePriceRepository,
+        ICurrencyRepository currencyRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -86,8 +90,6 @@ public class CreateService
                 command.CategoryId,
                 command.Name,
                 command.Description,
-                command.BasePrice,
-                command.PerRoomPrice,
                 command.EstimatedTime);
 
             if (command.Translations != null)
@@ -99,6 +101,14 @@ public class CreateService
             }
 
             serviceRepository.Add(service);
+
+            // The command still carries a price and the wire has not moved -- what changed is where it
+            // LANDS. A catalogue entry has no price of its own any more; it has a price per currency,
+            // and this authors the platform default one. That is also what keeps the entry offerable:
+            // the customer catalogue withholds anything with no row in the currency being quoted.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            servicePriceRepository.Add(ServicePrice.Create(
+                service.Id, currency.Id, command.BasePrice, command.PerRoomPrice));
 
             return BusinessResult.Success(new Response(service.Id));
         }

@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Features.PayConfig;
+﻿using Cleansia.Core.AppServices.Features.Catalog;
+using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.AppServices.Mappers;
@@ -14,6 +15,8 @@ public class GetPackageOverview
 
     public class Handler(
         IPackageRepository packageRepository,
+        IPackagePriceRepository packagePriceRepository,
+        ICurrencyRepository currencyRepository,
         IEmployeePayConfigRepository payConfigRepository)
         : IRequestHandler<Request, IEnumerable<PackageListItem>>
     {
@@ -39,9 +42,15 @@ public class GetPackageOverview
                 .Select(gap => gap.Id)
                 .ToHashSet();
 
+            // AND priced in the currency being quoted -- see GetServiceOverview for the reasoning.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var prices = await CataloguePriceLookup.ForPackagesAsync(
+                packagePriceRepository, packages.Select(p => p.Id).ToList(), currency.Id, cancellationToken);
+
             return packages
-                .Where(package => !unquotable.Contains(package.Id))
-                .Select(package => package.MapToDto());
+                .Where(package => !unquotable.Contains(package.Id) && prices.ContainsKey(package.Id))
+                .Select(package => package.MapToDto(prices[package.Id]))
+                .ToList();
         }
     }
 }

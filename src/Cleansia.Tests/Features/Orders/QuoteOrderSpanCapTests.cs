@@ -137,14 +137,14 @@ public class QuoteOrderSpanCapTests
     /// <summary>Both validators are handed the same catalog under the ids both commands select.</summary>
     private void SeedCatalog(int serviceMinutes, int packageServiceMinutes)
     {
-        var service = Service.Create(CategoryId, "Span Service", "Under test", 1000m, 0m, serviceMinutes);
+        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes);
         service.Id = ServiceId;
 
         var packagedService = Service.Create(
-            CategoryId, "Packaged Service", "Inside the bundle", 500m, 0m, packageServiceMinutes);
+            CategoryId, "Packaged Service", "Inside the bundle", packageServiceMinutes);
         packagedService.Id = $"{ServiceId}-packaged";
 
-        var package = Package.Create("Span Package", "Under test", 500m);
+        var package = Package.Create("Span Package", "Under test");
         package.Id = PackageId;
         package.AddService(packagedService);
 

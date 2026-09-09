@@ -92,7 +92,7 @@ public class ApproveEmployeePayCoverageTests
     private static Service ActiveService(bool isActive = true)
     {
         var service = Service.Create(
-            categoryId: "cat-1", name: ServiceName, description: "d", basePrice: 500m, perRoomPrice: 150m);
+            categoryId: "cat-1", name: ServiceName, description: "d");
         service.Id = ServiceId;
         service.IsActive = isActive;
         return service;
@@ -100,7 +100,7 @@ public class ApproveEmployeePayCoverageTests
 
     private static Package ActivePackage(bool isActive = true)
     {
-        var package = Package.Create(PackageName, "d", 799m);
+        var package = Package.Create(PackageName, "d");
         package.Id = PackageId;
         package.IsActive = isActive;
         return package;

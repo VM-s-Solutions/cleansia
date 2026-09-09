@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
@@ -25,7 +26,10 @@ public class GetServiceById
         }
     }
 
-    internal class Handler(IServiceRepository serviceRepository)
+    internal class Handler(
+        IServiceRepository serviceRepository,
+        IServicePriceRepository servicePriceRepository,
+        ICurrencyRepository currencyRepository)
         : IQueryHandler<Query, AdminServiceDetailDto>
     {
         public async Task<BusinessResult<AdminServiceDetailDto>> Handle(Query query, CancellationToken cancellationToken)
@@ -37,7 +41,14 @@ public class GetServiceById
                     nameof(query.ServiceId), BusinessErrorMessage.ServiceNotFound));
             }
 
-            return BusinessResult.Success(service.MapToAdminDetail());
+            // The platform default currency's price -- 0 when there is no row, for the reason given
+            // in GetPagedServices.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var prices = await CataloguePriceLookup.ForServicesAsync(
+                servicePriceRepository, [service.Id], currency.Id, cancellationToken);
+            var price = prices.GetValueOrDefault(service.Id);
+
+            return BusinessResult.Success(service.MapToAdminDetail(price.BasePrice, price.PerRoomPrice));
         }
     }
 }

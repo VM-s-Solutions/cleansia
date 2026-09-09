@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
@@ -25,7 +26,10 @@ public class GetPackageById
         }
     }
 
-    internal class Handler(IPackageRepository packageRepository)
+    internal class Handler(
+        IPackageRepository packageRepository,
+        IPackagePriceRepository packagePriceRepository,
+        ICurrencyRepository currencyRepository)
         : IQueryHandler<Query, AdminPackageDetailDto>
     {
         public async Task<BusinessResult<AdminPackageDetailDto>> Handle(Query query, CancellationToken cancellationToken)
@@ -37,7 +41,13 @@ public class GetPackageById
                     nameof(query.PackageId), BusinessErrorMessage.PackageNotFound));
             }
 
-            return BusinessResult.Success(package.MapToAdminDetail());
+            // See GetPagedServices for why an absent row shows as 0 rather than hiding the entry.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var prices = await CataloguePriceLookup.ForPackagesAsync(
+                packagePriceRepository, [package.Id], currency.Id, cancellationToken);
+
+            return BusinessResult.Success(
+                package.MapToAdminDetail(prices.GetValueOrDefault(package.Id, 0m)));
         }
     }
 }

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -61,6 +62,8 @@ public class BulkCreateEmployeePayConfigs
     public class Handler(
         IEmployeePayConfigRepository payConfigRepository,
         IServiceRepository serviceRepository,
+        IServicePriceRepository servicePriceRepository,
+        IPackagePriceRepository packagePriceRepository,
         IPackageRepository packageRepository)
         : ICommandHandler<Command, Response>
     {
@@ -70,6 +73,16 @@ public class BulkCreateEmployeePayConfigs
 
             var services = await serviceRepository.GetAll().ToListAsync(cancellationToken);
             var packages = await packageRepository.GetAll().ToListAsync(cancellationToken);
+
+            // THE PRICES MUST BE IN THE CURRENCY THE PAY CONFIG IS BEING WRITTEN IN. This derived the
+            // pay from the catalogue's own column while passing command.CurrencyId straight through --
+            // so generating EUR configs produced EUR pay from CZK numbers, roughly a 24x error in what
+            // a cleaner is paid, from one admin button. The join closes it by construction: a currency
+            // the catalogue is not priced in has no rows, so nothing is generated from it.
+            var servicePrices = await CataloguePriceLookup.ForServicesAsync(
+                servicePriceRepository, services.Select(s => s.Id).ToList(), command.CurrencyId, cancellationToken);
+            var packagePrices = await CataloguePriceLookup.ForPackagesAsync(
+                packagePriceRepository, packages.Select(pk => pk.Id).ToList(), command.CurrencyId, cancellationToken);
 
             var existingConfigs = await payConfigRepository
                 .GetByEmployeeIdAsync(command.EmployeeId, cancellationToken);
@@ -103,8 +116,16 @@ public class BulkCreateEmployeePayConfigs
                     }
                 }
 
-                var basePay = Math.Round(service.BasePrice * multiplier, 2);
-                var extraPerRoom = Math.Round(service.PerRoomPrice * multiplier, 2);
+                // Not sold in this currency, so there is nothing to derive a rate from. Skipped
+                // rather than defaulted: a zero here is a cleaner paid nothing.
+                if (!servicePrices.TryGetValue(service.Id, out var servicePrice))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                var basePay = Math.Round(servicePrice.BasePrice * multiplier, 2);
+                var extraPerRoom = Math.Round(servicePrice.PerRoomPrice * multiplier, 2);
 
                 var config = EmployeePayConfig.CreateForService(
                     service.Id,
@@ -134,7 +155,13 @@ public class BulkCreateEmployeePayConfigs
                     }
                 }
 
-                var basePay = Math.Round(package.Price * multiplier, 2);
+                if (!packagePrices.TryGetValue(package.Id, out var packagePrice))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                var basePay = Math.Round(packagePrice * multiplier, 2);
 
                 var config = EmployeePayConfig.CreateForPackage(
                     package.Id,

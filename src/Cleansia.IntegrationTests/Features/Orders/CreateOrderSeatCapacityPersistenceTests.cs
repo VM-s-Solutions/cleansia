@@ -145,12 +145,12 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
         context.Add(category);
 
         var shortService = Service.Create(
-            CategoryId, "Short Service", "One work unit", ShortServicePrice, 0m, ShortServiceMinutes);
+            CategoryId, "Short Service", "One work unit", ShortServiceMinutes);
         shortService.Id = ShortServiceId;
         context.Add(shortService);
 
         var longService = Service.Create(
-            CategoryId, "Long Service", "Pushes the order over one work unit", LongServicePrice, 0m, LongServiceMinutes);
+            CategoryId, "Long Service", "Pushes the order over one work unit", LongServiceMinutes);
         longService.Id = LongServiceId;
         context.Add(longService);
 
@@ -159,6 +159,13 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
         context.EmployeePayConfigs.AddRange(
             EmployeePayConfig.CreateForService(ShortServiceId, 100m, CurrencyId),
             EmployeePayConfig.CreateForService(LongServiceId, 100m, CurrencyId));
+
+        // ...and its PRICE in the currency the order is placed in. A catalogue entry has no price of
+        // its own any more, and an entry with no row is not offerable — so this is the same class of
+        // arrangement as the pay config above it, not decoration.
+        context.ServicePrices.AddRange(
+            ServicePrice.Create(ShortServiceId, CurrencyId, ShortServicePrice, 0m),
+            ServicePrice.Create(LongServiceId, CurrencyId, LongServicePrice, 0m));
 
         var user = User.CreateWithPassword(
             CustomerEmail,

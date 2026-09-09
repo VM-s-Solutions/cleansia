@@ -21,7 +21,7 @@ public class DeletePackageHandlerTests
 
     private Package ArrangePackage()
     {
-        var package = Package.Create("Deluxe", "Deluxe bundle", 500m);
+        var package = Package.Create("Deluxe", "Deluxe bundle");
         package.Id = PackageId;
 
         _packageRepository

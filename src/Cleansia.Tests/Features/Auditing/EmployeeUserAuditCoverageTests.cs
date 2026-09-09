@@ -279,7 +279,7 @@ public sealed class EmployeeUserAuditCoverageTests
     /// </summary>
     private static (IServiceRepository services, IPackageRepository packages, IEmployeePayConfigRepository payConfigs) CoveredCatalogue()
     {
-        var service = Cleansia.Core.Domain.Services.Service.Create("cat-1", "General Cleaning", "d", 500m, 150m);
+        var service = Cleansia.Core.Domain.Services.Service.Create("cat-1", "General Cleaning", "d");
         service.Id = "svc-audit";
 
         var services = new Mock<IServiceRepository>();

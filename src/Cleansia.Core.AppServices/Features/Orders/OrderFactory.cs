@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -26,6 +27,9 @@ public sealed class OrderFactory(
     IServiceRepository serviceRepository,
     IPackageRepository packageRepository,
     IExtraRepository extraRepository,
+    IServicePriceRepository servicePriceRepository,
+    IPackagePriceRepository packagePriceRepository,
+    IExtraPriceRepository extraPriceRepository,
     IEmployeePayConfigRepository payConfigRepository,
     ICompanyInfoRepository companyInfoRepository,
     ICountryConfigurationRepository countryConfigurationRepository,
@@ -150,21 +154,26 @@ public sealed class OrderFactory(
         // and the fiscal line items all went back to the LIVE catalogue to find out what a historical
         // order had cost — and an admin price edit silently restated all three.
         //
-        // The prices still come from the catalogue columns in this pass; the next one replaces that read
-        // with a join on per-currency price rows. What changes here is WHEN the number is fixed, not
-        // where it comes from.
+        // The prices come from the price ROW for THIS ORDER'S currency. A catalogue entry has no price
+        // of its own; it has a price per currency, and the order's currency is what selects which one.
         var unitCount = input.Rooms + input.Bathrooms;
 
         var services = await serviceRepository
             .GetByIds(input.SelectedServiceIds)
             .ToListAsync(cancellationToken);
+        var servicePrices = await CataloguePriceLookup.ForServicesAsync(
+            servicePriceRepository, services.Select(s => s.Id).ToList(), input.Currency.Id, cancellationToken);
         var selectedServices = services
-            .Select(s => OrderService.Create(
-                order,
-                s,
-                unitBasePrice: s.BasePrice,
-                unitPerRoomPrice: s.PerRoomPrice,
-                lineTotal: s.BasePrice + s.PerRoomPrice * unitCount))
+            .Select(s =>
+            {
+                var price = RequirePrice(servicePrices, s.Id, input.Currency.Code, "service");
+                return OrderService.Create(
+                    order,
+                    s,
+                    unitBasePrice: price.BasePrice,
+                    unitPerRoomPrice: price.PerRoomPrice,
+                    lineTotal: price.BasePrice + price.PerRoomPrice * unitCount);
+            })
             .ToList();
 
         var packages = await packageRepository
@@ -172,10 +181,13 @@ public sealed class OrderFactory(
             .Include(p => p.IncludedServices)
                 .ThenInclude(s => s.Service)
             .ToListAsync(cancellationToken);
+        var packagePrices = await CataloguePriceLookup.ForPackagesAsync(
+            packagePriceRepository, packages.Select(p => p.Id).ToList(), input.Currency.Id, cancellationToken);
         var selectedPackages = packages
             .Select(p =>
             {
-                var line = OrderPackage.Create(order, p, lineTotal: p.Price);
+                var packagePrice = RequireAmount(packagePrices, p.Id, input.Currency.Code, "package");
+                var line = OrderPackage.Create(order, p, lineTotal: packagePrice);
 
                 // The SPLIT is snapshotted too, not just the total. It is derived from
                 // PackageService.PriceWeight, and both the weights and the package's composition are
@@ -187,7 +199,7 @@ public sealed class OrderFactory(
                 if (included.Count > 0)
                 {
                     var grosses = PackagePricing.DeriveIncludedServiceGrosses(
-                        included.Select(s => s.PriceWeight).ToList(), p.Price);
+                        included.Select(s => s.PriceWeight).ToList(), packagePrice);
                     line.AddIncludedServiceLines(included
                         .Select((s, i) => OrderPackageService.Create(line, s.ServiceId, grosses[i]))
                         .ToList());
@@ -210,8 +222,12 @@ public sealed class OrderFactory(
 
         order.AddSelectedServices(selectedServices);
         order.AddSelectedPackages(selectedPackages);
-        order.AddSelectedExtras(
-            selectedExtras.Select(e => OrderExtra.Create(order, e, unitPrice: e.Price)).ToList());
+        var extraPrices = await CataloguePriceLookup.ForExtrasAsync(
+            extraPriceRepository, selectedExtras.Select(e => e.Id).ToList(), input.Currency.Id, cancellationToken);
+        order.AddSelectedExtras(selectedExtras
+            .Select(e => OrderExtra.Create(
+                order, e, unitPrice: RequireAmount(extraPrices, e.Id, input.Currency.Code, "extra")))
+            .ToList());
 
         var estimatedTime = OrderDuration.EstimateMinutes(
             selectedServices.Select(s => s.Service!),
@@ -360,4 +376,29 @@ public sealed class OrderFactory(
                 Charged(MembershipAmount), Charged(TierAmount), Charged(PromoAmount), Charged(TotalAmount));
         }
     }
+
+    /// <summary>
+    /// FAIL CLOSED, and this is the third layer rather than the first. The customer catalogue withholds
+    /// an entry with no price row in the currency being quoted, and the order validators reject one; a
+    /// selection that arrives here unpriced has bypassed both -- a recurring materialization, or an id
+    /// the client was never shown. That is a platform bug, not bad input, which is why it throws rather
+    /// than returning a BusinessResult, exactly as the pay-coverage backstop above it does.
+    /// </summary>
+    private static CataloguePriceLookup.ServiceAmount RequirePrice(
+        IReadOnlyDictionary<string, CataloguePriceLookup.ServiceAmount> prices,
+        string itemId,
+        string currencyCode,
+        string kind) =>
+        prices.TryGetValue(itemId, out var price)
+            ? price
+            : throw new InvalidOperationException(
+                $"No {kind} price for '{itemId}' in {currencyCode}. It is not offerable in that currency.");
+
+    private static decimal RequireAmount(
+        IReadOnlyDictionary<string, decimal> prices, string itemId, string currencyCode, string kind) =>
+        prices.TryGetValue(itemId, out var price)
+            ? price
+            : throw new InvalidOperationException(
+                $"No {kind} price for '{itemId}' in {currencyCode}. It is not offerable in that currency.");
+
 }

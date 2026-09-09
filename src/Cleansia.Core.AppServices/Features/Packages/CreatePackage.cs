@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -79,6 +80,8 @@ public class CreatePackage
 
     internal class Handler(
         IPackageRepository packageRepository,
+        IPackagePriceRepository packagePriceRepository,
+        ICurrencyRepository currencyRepository,
         IServiceRepository serviceRepository)
         : ICommandHandler<Command, Response>
     {
@@ -87,7 +90,6 @@ public class CreatePackage
             var package = Package.Create(
                 command.Name,
                 command.Description,
-                command.Price,
                 command.Tagline,
                 command.IsPopular);
 
@@ -112,6 +114,10 @@ public class CreatePackage
             }
 
             packageRepository.Add(package);
+
+            // The price is a row now, in the platform default currency -- see CreateService.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            packagePriceRepository.Add(PackagePrice.Create(package.Id, currency.Id, command.Price));
 
             return BusinessResult.Success(new Response(package.Id));
         }

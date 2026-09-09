@@ -60,7 +60,7 @@ public class DeletePayConfigCoverageTests
 
     private void ArrangeService(bool isActive)
     {
-        var service = Service.Create("cat-1", ServiceName, "d", 500m, 150m);
+        var service = Service.Create("cat-1", ServiceName, "d");
         service.Id = ServiceId;
         service.IsActive = isActive;
         _serviceRepository.Setup(r => r.GetAll()).Returns(new[] { service }.AsQueryable().BuildMock());
@@ -68,7 +68,7 @@ public class DeletePayConfigCoverageTests
 
     private void ArrangePackage(bool isActive)
     {
-        var package = Package.Create(PackageName, "d", 799m);
+        var package = Package.Create(PackageName, "d");
         package.Id = PackageId;
         package.IsActive = isActive;
         _packageRepository.Setup(r => r.GetAll()).Returns(new[] { package }.AsQueryable().BuildMock());
@@ -80,9 +80,9 @@ public class DeletePayConfigCoverageTests
     private static Order OrderCarryingService(string serviceId)
     {
         var order = OrderMockFactory.Generate();
-        var service = Service.Create("cat-1", "whatever", "d", 1m, 0m);
+        var service = Service.Create("cat-1", "whatever", "d");
         service.Id = serviceId;
-        order.AddSelectedServices([OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
+        order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, service)]);
         return order;
     }
 

@@ -4,7 +4,11 @@ namespace Cleansia.Core.AppServices.Mappers;
 
 public static class PackageMappers
 {
-    public static PackageListItem MapToDto(this Domain.Packages.Package package)
+    /// <summary>
+    /// <paramref name="price"/> is passed in rather than read off the entity — see
+    /// <see cref="ServiceMappers"/> for the rule and why the DTO field name does not move.
+    /// </summary>
+    public static PackageListItem MapToDto(this Domain.Packages.Package package, decimal price)
     {
         return new PackageListItem(
             Id: package.Id,
@@ -12,7 +16,7 @@ public static class PackageMappers
             Description: package.Description,
             Tagline: package.Tagline,
             IsPopular: package.IsPopular,
-            Price: package.Price,
+            Price: price,
             Translations: package.Translations.ToDictionary(),
             IncludedServices: package.IncludedServices.Select(ps => new PackageServiceSummary(
                 ps.ServiceId,
@@ -20,7 +24,8 @@ public static class PackageMappers
                 ps.Service.Translations.ToDictionary())));
     }
 
-    public static PackageDetails MapToDetails(this Domain.Packages.Package package, string currencyCode)
+    public static PackageDetails MapToDetails(
+        this Domain.Packages.Package package, string currencyCode, decimal price)
     {
         return new PackageDetails(
             Id: package.Id,
@@ -28,7 +33,7 @@ public static class PackageMappers
             Description: package.Description,
             Tagline: package.Tagline,
             IsPopular: package.IsPopular,
-            Price: package.Price,
+            Price: price,
             EstimatedTime: package.IncludedServices.Sum(s => s.Service.EstimatedTime),
             CurrencyCode: currencyCode,
             IncludedServices: package.IncludedServices.Select(s => s.Service.Name),
@@ -37,7 +42,8 @@ public static class PackageMappers
         );
     }
 
-    public static AdminPackageDetailDto MapToAdminDetail(this Domain.Packages.Package package)
+    /// <summary>The admin detail shows the platform default currency's row. See MapToDto.</summary>
+    public static AdminPackageDetailDto MapToAdminDetail(this Domain.Packages.Package package, decimal price)
     {
         return new AdminPackageDetailDto(
             Id: package.Id,
@@ -45,7 +51,7 @@ public static class PackageMappers
             Description: package.Description,
             Tagline: package.Tagline,
             IsPopular: package.IsPopular,
-            Price: package.Price,
+            Price: price,
             Translations: package.Translations.ToDictionary(),
             IncludedServices: package.IncludedServices.Select(ps => new PackageServiceDto(
                 ps.Service!.Id,

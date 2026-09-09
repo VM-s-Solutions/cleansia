@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.Extras.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
@@ -15,18 +16,30 @@ public class GetExtraOverview
 {
     public record Request : IRequest<IEnumerable<ExtraListItem>>;
 
-    public class Handler(IExtraRepository extraRepository)
+    public class Handler(
+        IExtraRepository extraRepository,
+        IExtraPriceRepository extraPriceRepository,
+        ICurrencyRepository currencyRepository)
         : IRequestHandler<Request, IEnumerable<ExtraListItem>>
     {
         public async Task<IEnumerable<ExtraListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
             // Soft-deleted extras (IsActive=false) stay referenceable by
             // historical orders but never surface in the catalog.
-            return await extraRepository.GetAll()
+            var extras = await extraRepository.GetAll()
                 .Where(e => e.IsActive)
                 .OrderBy(e => e.DisplayOrder)
-                .Select(extra => extra.MapToDto())
                 .ToListAsync(cancellationToken);
+
+            // And priced in the currency being quoted -- see GetServiceOverview for the reasoning.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var prices = await CataloguePriceLookup.ForExtrasAsync(
+                extraPriceRepository, extras.Select(e => e.Id).ToList(), currency.Id, cancellationToken);
+
+            return extras
+                .Where(extra => prices.ContainsKey(extra.Id))
+                .Select(extra => extra.MapToDto(prices[extra.Id]))
+                .ToList();
         }
     }
 }

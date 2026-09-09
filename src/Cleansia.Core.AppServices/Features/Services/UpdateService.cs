@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -82,7 +84,10 @@ public class UpdateService
         }
     }
 
-    internal class Handler(IServiceRepository serviceRepository)
+    internal class Handler(
+        IServiceRepository serviceRepository,
+        IServicePriceRepository servicePriceRepository,
+        ICurrencyRepository currencyRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -98,9 +103,24 @@ public class UpdateService
                 command.CategoryId,
                 command.Name,
                 command.Description,
-                command.BasePrice,
-                command.PerRoomPrice,
                 command.EstimatedTime);
+
+            // The price is a row now, not a column -- see CreateService. Upsert rather than update,
+            // because a service can reach here without a row for the default currency: one seeded
+            // before that currency existed, or one whose row was removed.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var existing = await servicePriceRepository.GetAll()
+                .FirstOrDefaultAsync(
+                    p => p.ServiceId == service.Id && p.CurrencyId == currency.Id, cancellationToken);
+            if (existing is null)
+            {
+                servicePriceRepository.Add(ServicePrice.Create(
+                    service.Id, currency.Id, command.BasePrice, command.PerRoomPrice));
+            }
+            else
+            {
+                existing.Update(command.BasePrice, command.PerRoomPrice);
+            }
 
             service.ClearTranslations();
             if (command.Translations != null)

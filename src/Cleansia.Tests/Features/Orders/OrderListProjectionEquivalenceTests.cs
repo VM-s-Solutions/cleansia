@@ -1,3 +1,4 @@
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using System.Reflection;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -67,16 +68,16 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         category.SetTranslation("cs", "Hloubkový úklid", "Důkladný úklid");
         ctx.Add(category);
 
-        var serviceOne = Service.Create(category.Id, "Windows", "Window cleaning", 300m, 50m, estimatedTime: 60);
+        var serviceOne = Service.Create(category.Id, "Windows", "Window cleaning", estimatedTime: 60);
         serviceOne.Id = "svc-proj-1";
         serviceOne.SetTranslation("cs", "Okna", "Mytí oken");
         serviceOne.SetTranslation("uk", "Вікна", "Миття вікон");
-        var serviceTwo = Service.Create(category.Id, "Fridge", "Fridge cleaning", 200m, 0m, estimatedTime: 30);
+        var serviceTwo = Service.Create(category.Id, "Fridge", "Fridge cleaning", estimatedTime: 30);
         serviceTwo.Id = "svc-proj-2";
         ctx.Add(serviceOne);
         ctx.Add(serviceTwo);
 
-        var package = Package.Create("Move-out", "Full move-out bundle", 2500m);
+        var package = Package.Create("Move-out", "Full move-out bundle");
         package.Id = "pkg-proj-1";
         package.SetTranslation("cs", "Stěhování", "Kompletní balíček");
         ctx.Add(package);
@@ -98,8 +99,12 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             extras: [("windows", 150m)],
             promoDiscountAmount: 150m);
         full.SetCurrency(currency);
-        full.AddSelectedServices(new[] { OrderService.Create(full, serviceOne, serviceOne.BasePrice, serviceOne.PerRoomPrice, serviceOne.BasePrice + serviceOne.PerRoomPrice * (full.Rooms + full.Bathrooms)), OrderService.Create(full, serviceTwo, serviceTwo.BasePrice, serviceTwo.PerRoomPrice, serviceTwo.BasePrice + serviceTwo.PerRoomPrice * (full.Rooms + full.Bathrooms)) });
-        full.AddSelectedPackages(new[] { OrderPackage.Create(full, package, package.Price) });
+        full.AddSelectedServices(new[]
+        {
+            OrderLineMockFactory.ServiceLine(full, serviceOne),
+            OrderLineMockFactory.ServiceLine(full, serviceTwo)
+        });
+        full.AddSelectedPackages(new[] { OrderLineMockFactory.PackageLine(full, package) });
         full.SetMaxEmployees(2);
         full.AddAssignedEmployee(OrderEmployee.Create(full, employee));
         AppendTrack(full, OrderStatus.New, stamp);
@@ -243,7 +248,7 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             membershipDiscountAmount: membershipDiscountAmount);
         order.Id = orderId;
         order.AddSelectedExtras(extras.Select(e =>
-            OrderExtra.Create(order, Extra.Create(e.Slug, e.Slug, null, e.Price), e.Price)));
+            OrderExtra.Create(order, Extra.Create(e.Slug, e.Slug, null), e.Price)));
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-3));
         return order;
     }

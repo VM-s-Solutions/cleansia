@@ -1,3 +1,4 @@
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using System.Security.Claims;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Authentication;
@@ -215,7 +216,7 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
         category.Id = PayableCategoryId;
         context.Add(category);
 
-        var service = Service.Create(PayableCategoryId, "Deep clean", "A payable service", 900m, 0m, 120);
+        var service = Service.Create(PayableCategoryId, "Deep clean", "A payable service", 120);
         service.Id = PayableServiceId;
         context.Add(service);
 
@@ -228,7 +229,7 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
         for (var index = 0; index < 2; index++)
         {
             var order = NewOfferableOrder(index);
-            order.AddSelectedServices([OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
+            order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, service)]);
             context.Add(order);
         }
 

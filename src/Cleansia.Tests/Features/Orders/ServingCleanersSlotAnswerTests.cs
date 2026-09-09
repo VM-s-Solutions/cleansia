@@ -230,7 +230,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
 
     private static Service NewService(string id, int estimatedMinutes)
     {
-        var service = Service.Create("category-1", id, id, 500m, 100m, estimatedMinutes);
+        var service = Service.Create("category-1", id, id, estimatedMinutes);
         service.Id = id;
         return service;
     }
@@ -238,7 +238,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
     /// <summary>The bundle's own length is its included services' — a package has no estimate of its own.</summary>
     private static Package NewBundle()
     {
-        var bundle = Package.Create("Bundle", "Bundle", 900m);
+        var bundle = Package.Create("Bundle", "Bundle");
         bundle.Id = BundleId;
         bundle.AddService(NewService(BundledIroningId, 90));
         return bundle;

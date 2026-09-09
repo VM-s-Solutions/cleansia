@@ -51,10 +51,10 @@ public sealed class CatalogInUseTemplateGuardTests : IDisposable
         ctx.Add(Cleansia.Core.Domain.Internationalization.Language.Create("en", "English"));
 
         var category = ServiceCategory.Create("cat-1", "Category", "seeded");
-        var templatedService = Service.Create(category.Id, "Templated Service", "seeded", 1000m, 200m);
-        var freeService = Service.Create(category.Id, "Free Service", "seeded", 1000m, 200m);
-        var templatedPackage = Package.Create("Templated Package", "seeded", 500m);
-        var freePackage = Package.Create("Free Package", "seeded", 500m);
+        var templatedService = Service.Create(category.Id, "Templated Service", "seeded");
+        var freeService = Service.Create(category.Id, "Free Service", "seeded");
+        var templatedPackage = Package.Create("Templated Package", "seeded");
+        var freePackage = Package.Create("Free Package", "seeded");
 
         var user = User.CreateWithPassword("plus@cleansia.test", "Passw0rd!", "Plus", "User");
         user.Id = "user-1";

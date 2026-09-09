@@ -67,7 +67,7 @@ public class PayConfigUniqueIndexTests(PostgresContainerFixture fixture) : BaseI
         await using var ctx = NewContext();
         var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
         var category = ServiceCategory.Create("payconfig-cat", "Category", "seeded");
-        var service = Service.Create(category.Id, "Pay Config Service", "seeded", 1000m, 200m);
+        var service = Service.Create(category.Id, "Pay Config Service", "seeded");
         ctx.Currencies.Add(currency);
         ctx.ServiceCategories.Add(category);
         ctx.Services.Add(service);
@@ -118,7 +118,7 @@ public class PayConfigUniqueIndexTests(PostgresContainerFixture fixture) : BaseI
         await SeedCatalogueAsync();
 
         await using var ctx = NewContext();
-        var second = Service.Create(_categoryId, "Second Service", "seeded", 500m, 100m);
+        var second = Service.Create(_categoryId, "Second Service", "seeded");
         ctx.Services.Add(second);
         ctx.Set<EmployeePayConfig>().Add(ForService(employeeId: null));
         ctx.Set<EmployeePayConfig>().Add(EmployeePayConfig.CreateForService(

@@ -1,3 +1,4 @@
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.Domain.Disputes;
@@ -133,7 +134,7 @@ public class CreateDisputeHandlerTests
 
     private static Service Svc(string id, string name)
     {
-        var s = Service.Create("cat-1", name, "", 100m, 0m);
+        var s = Service.Create("cat-1", name, "");
         s.Id = id;
         return s;
     }
@@ -143,9 +144,7 @@ public class CreateDisputeHandlerTests
     {
         var order = ArrangeOrder(OwnedOrderId, CallerUserId);
         var svcOrder = Svc("svc-oven", "Oven cleaning");
-        order.AddSelectedServices([OrderService.Create(
-            order, svcOrder, svcOrder.BasePrice, svcOrder.PerRoomPrice,
-            svcOrder.BasePrice + svcOrder.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
+        order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, svcOrder)]);
 
         Dispute? saved = null;
         _disputeRepository.Setup(r => r.Add(It.IsAny<Dispute>())).Callback<Dispute>(d => saved = d);
@@ -173,9 +172,7 @@ public class CreateDisputeHandlerTests
     {
         var order = ArrangeOrder(OwnedOrderId, CallerUserId);
         var svcOrder = Svc("svc-oven", "Oven cleaning");
-        order.AddSelectedServices([OrderService.Create(
-            order, svcOrder, svcOrder.BasePrice, svcOrder.PerRoomPrice,
-            svcOrder.BasePrice + svcOrder.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
+        order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, svcOrder)]);
 
         var result = await CreateHandler().Handle(
             ValidCommand(OwnedOrderId) with
@@ -200,9 +197,7 @@ public class CreateDisputeHandlerTests
     {
         var other = ArrangeOrder(OtherOrderId, OtherUserId);
         var svcOther = Svc("svc-oven", "Oven cleaning");
-        other.AddSelectedServices([OrderService.Create(
-            other, svcOther, svcOther.BasePrice, svcOther.PerRoomPrice,
-            svcOther.BasePrice + svcOther.PerRoomPrice * (other.Rooms + other.Bathrooms))]);
+        other.AddSelectedServices([OrderLineMockFactory.ServiceLine(other, svcOther)]);
 
         var withRealLine = await CreateHandler().Handle(
             ValidCommand(OtherOrderId) with

@@ -48,10 +48,10 @@ public class DeletePayConfigValidatorTests
 
         // This suite pins the ORDER-PAY guard. The sibling coverage conjunct is held off by a
         // retired, unbooked catalogue so a failure here still means what the test name says.
-        var retiredService = Cleansia.Core.Domain.Services.Service.Create("cat", "Retired", "d", 1m, 0m);
+        var retiredService = Cleansia.Core.Domain.Services.Service.Create("cat", "Retired", "d");
         retiredService.Id = ServiceId;
         retiredService.IsActive = false;
-        var retiredPackage = Cleansia.Core.Domain.Packages.Package.Create("Retired", "d", 1m);
+        var retiredPackage = Cleansia.Core.Domain.Packages.Package.Create("Retired", "d");
         retiredPackage.Id = PackageId;
         retiredPackage.IsActive = false;
         _serviceRepository.Setup(r => r.GetAll()).Returns(new[] { retiredService }.AsQueryable().BuildMock());
@@ -90,7 +90,7 @@ public class DeletePayConfigValidatorTests
         var order = OrderMockFactory.Generate();
         var service = ServiceMockFactory.Generate();
         service.Id = serviceId;
-        order.AddSelectedServices([OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
+        order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, service)]);
         return PayRow(order, employeeId);
     }
 
@@ -99,7 +99,7 @@ public class DeletePayConfigValidatorTests
         var order = OrderMockFactory.Generate();
         var package = PackageMockFactory.Generate();
         package.Id = packageId;
-        order.AddSelectedPackages([OrderPackage.Create(order, package, package.Price)]);
+        order.AddSelectedPackages([OrderLineMockFactory.PackageLine(order, package)]);
         return PayRow(order, employeeId);
     }
 

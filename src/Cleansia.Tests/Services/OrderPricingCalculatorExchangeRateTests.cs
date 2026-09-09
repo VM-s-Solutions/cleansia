@@ -32,20 +32,33 @@ public class OrderPricingCalculatorExchangeRateTests
     private const string ExtraSlug = "inside-oven";
     private const string CurrencyId = "currency-eur";
     private const decimal BaseSubtotal = 1000m;
-    private const decimal PackagePrice = 250m;
-    private const decimal ExtraPrice = 75m;
+    private const decimal PackageAmount = 250m;
+    private const decimal ExtraAmount = 75m;
     private const decimal ExchangeRate = 0.04m;
 
     private readonly Mock<IServiceRepository> _serviceRepository = new();
     private readonly Mock<IPackageRepository> _packageRepository = new();
     private readonly Mock<IExtraRepository> _extraRepository = new();
+    private readonly Mock<IServicePriceRepository> _servicePriceRepository = new();
+    private readonly Mock<IPackagePriceRepository> _packagePriceRepository = new();
+    private readonly Mock<IExtraPriceRepository> _extraPriceRepository = new();
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IExpressWaiverResolver> _expressWaiverResolver = ExpressWaiverMocks.NoWaiver();
 
     private OrderPricingCalculator CreateCalculator(decimal exchangeRate)
     {
-        var service = Service.Create("category-1", "Standard clean", "desc", BaseSubtotal, perRoomPrice: 0m);
+        var service = Service.Create("category-1", "Standard clean", "desc");
         service.Id = ServiceId;
+
+        // The subtotal is a PRICE ROW in this currency now, not a column on the service. That is the
+        // whole subject of the class restated: the row is what the calculator charges, and the rate on
+        // the currency beside it must not be able to move it.
+        _servicePriceRepository.Setup(r => r.GetAll()).Returns(new List<ServicePrice>
+        {
+            ServicePrice.Create(ServiceId, CurrencyId, BaseSubtotal, perRoomPrice: 0m)
+        }.BuildMock());
+        _packagePriceRepository.Setup(r => r.GetAll()).Returns(new List<PackagePrice>().BuildMock());
+        _extraPriceRepository.Setup(r => r.GetAll()).Returns(new List<ExtraPrice>().BuildMock());
         _serviceRepository.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(new List<Service> { service }.BuildMock());
         _packageRepository.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
@@ -64,6 +77,9 @@ public class OrderPricingCalculatorExchangeRateTests
             _serviceRepository.Object,
             _packageRepository.Object,
             _extraRepository.Object,
+            _servicePriceRepository.Object,
+            _packagePriceRepository.Object,
+            _extraPriceRepository.Object,
             _currencyRepository.Object,
             _expressWaiverResolver.Object);
     }
@@ -72,14 +88,25 @@ public class OrderPricingCalculatorExchangeRateTests
     {
         var calculator = CreateCalculator(exchangeRate);
 
-        var package = Package.Create("Deep clean bundle", "desc", PackagePrice);
+        var package = Package.Create("Deep clean bundle", "desc");
         package.Id = PackageId;
         _packageRepository.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(new List<Package> { package }.BuildMock());
 
-        var extra = Extra.Create(ExtraSlug, "Inside oven", null, ExtraPrice);
+        var extra = Extra.Create(ExtraSlug, "Inside oven", null);
         _extraRepository.Setup(r => r.GetAll())
             .Returns(new List<Extra> { extra }.BuildMock());
+
+        // Re-stubbed rather than arranged up front, because the doubles are shared with
+        // CreateCalculator and this basket adds two priced lines to the one service it already had.
+        _packagePriceRepository.Setup(r => r.GetAll()).Returns(new List<PackagePrice>
+        {
+            PackagePrice.Create(PackageId, CurrencyId, PackageAmount)
+        }.BuildMock());
+        _extraPriceRepository.Setup(r => r.GetAll()).Returns(new List<ExtraPrice>
+        {
+            ExtraPrice.Create(extra.Id, CurrencyId, ExtraAmount)
+        }.BuildMock());
 
         return calculator;
     }
@@ -152,8 +179,8 @@ public class OrderPricingCalculatorExchangeRateTests
         var result = await PriceMixedBasketAsync(ExchangeRate);
 
         Assert.Equal(BaseSubtotal, result.ServicesSubtotal);
-        Assert.Equal(PackagePrice, result.PackagesSubtotal);
-        Assert.Equal(ExtraPrice, result.ExtrasSubtotal);
+        Assert.Equal(PackageAmount, result.PackagesSubtotal);
+        Assert.Equal(ExtraAmount, result.ExtrasSubtotal);
     }
 
     /// <summary>
@@ -176,8 +203,8 @@ public class OrderPricingCalculatorExchangeRateTests
         var result = await PriceMixedBasketAsync(1m);
 
         Assert.Equal(BaseSubtotal, result.ServicesSubtotal);
-        Assert.Equal(PackagePrice, result.PackagesSubtotal);
-        Assert.Equal(ExtraPrice, result.ExtrasSubtotal);
+        Assert.Equal(PackageAmount, result.PackagesSubtotal);
+        Assert.Equal(ExtraAmount, result.ExtrasSubtotal);
     }
 
     [Fact]

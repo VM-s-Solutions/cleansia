@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Internationalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Services;
@@ -22,12 +23,34 @@ namespace Cleansia.Tests.Features.Services;
 /// </summary>
 public class GetPagedServicesHandlerTests
 {
+    private const string CurrencyId = "cur-czk";
+    private const string ServiceId = "svc-1";
+
     private readonly Mock<IServiceRepository> _repository = new();
+    private readonly Mock<IServicePriceRepository> _prices = new();
+    private readonly ICurrencyRepository _currencies;
+
+    public GetPagedServicesHandlerTests()
+    {
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        currency.Id = CurrencyId;
+        currency.SetAsDefault(true);
+        _currencies = CataloguePriceDoubles.DefaultCurrency(currency);
+
+        // The row the admin list must READ. The numbers are the ones this suite has always pinned;
+        // what moved is where they live — a price row in the default currency rather than a column on
+        // the service — so an assertion that still sees 999 is the projection reaching the right table.
+        ArrangePrices(ServicePrice.Create(ServiceId, CurrencyId, basePrice: 999m, perRoomPrice: 120m));
+    }
+
+    private void ArrangePrices(params ServicePrice[] prices) =>
+        _prices.Setup(r => r.GetAll()).Returns(prices.AsQueryable().BuildMock());
 
     private Task<PagedData<ServiceListItem>> Handle(GetPagedServices.Request request)
     {
         var handlerType = typeof(GetPagedServices).GetNestedType("Handler", BindingFlags.NonPublic)!;
-        var handler = Activator.CreateInstance(handlerType, _repository.Object)!;
+        var handler = Activator.CreateInstance(
+            handlerType, _repository.Object, _prices.Object, _currencies)!;
         var method = handlerType.GetMethod("Handle")!;
         return (Task<PagedData<ServiceListItem>>)method.Invoke(handler, [request, CancellationToken.None])!;
     }
@@ -36,8 +59,8 @@ public class GetPagedServicesHandlerTests
     {
         var category = ServiceCategory.Create("home", "Home", "Home cleaning", 1);
         category.Id = "cat-1";
-        var service = Service.Create("cat-1", "Deep Clean", "Thorough", 999m, 120m, 90);
-        service.Id = "svc-1";
+        var service = Service.Create("cat-1", "Deep Clean", "Thorough", 90);
+        service.Id = ServiceId;
         var prop = typeof(Service).GetProperty(nameof(Service.Category))!;
         prop.SetValue(service, category);
         return service;
@@ -94,13 +117,39 @@ public class GetPagedServicesHandlerTests
         Assert.NotNull(captured);
         var predicate = captured!.Compile();
 
-        var matchActive = Service.Create("c", "Deep Clean", "x", 1m, 1m);
-        var matchInactive = Service.Create("c", "Deep Clean", "x", 1m, 1m);
+        var matchActive = Service.Create("c", "Deep Clean", "x");
+        var matchInactive = Service.Create("c", "Deep Clean", "x");
         matchInactive.IsActive = false;
-        var noMatch = Service.Create("c", "Window Wash", "y", 1m, 1m);
+        var noMatch = Service.Create("c", "Window Wash", "y");
 
         Assert.True(predicate(matchActive));
         Assert.False(predicate(matchInactive));
         Assert.False(predicate(noMatch));
+    }
+
+    /// <summary>
+    /// The admin list does NOT withhold an unpriced entry, unlike the customer catalogue: an admin has
+    /// to be able to SEE one in order to price it. It reports 0 rather than omitting the row or
+    /// throwing — the one place in the system where a missing price is not a refusal.
+    /// </summary>
+    [Fact]
+    public async Task An_Unpriced_Service_Is_Still_Listed_At_Zero()
+    {
+        var service = ServiceWithCategory();
+        ArrangePrices();
+        _repository
+            .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        _repository
+            .Setup(r => r.GetPagedSort<ServiceSort>(
+                0, 50, It.IsAny<Expression<Func<Service, bool>>>(), It.IsAny<IEnumerable<SortDefinition>>()))
+            .Returns(new[] { service }.AsQueryable().BuildMock());
+
+        var result = await Handle(new GetPagedServices.Request());
+
+        var row = Assert.Single(result.Data);
+        Assert.Equal(ServiceId, row.Id);
+        Assert.Equal(0m, row.BasePrice);
+        Assert.Equal(0m, row.PerRoomPrice);
     }
 }

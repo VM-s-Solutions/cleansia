@@ -20,8 +20,6 @@ public class OrderDetailMapperTranslationsTests
             categoryId: "cat-1",
             name: "Deep Clean",
             description: "Deep clean desc",
-            basePrice: 100m,
-            perRoomPrice: 10m,
             estimatedTime: 30);
         service.SetTranslation("ru", "Генеральная уборка", "Описание");
         service.SetTranslation("cs", "Generální úklid", "Popis");
@@ -30,7 +28,7 @@ public class OrderDetailMapperTranslationsTests
 
     private static Package BuildPackage()
     {
-        var package = Package.Create("Deluxe", "Deluxe bundle", 500m);
+        var package = Package.Create("Deluxe", "Deluxe bundle");
         package.SetTranslation("ru", "Делюкс", "Описание пакета");
         package.SetTranslation("cs", "Deluxe balíček", "Popis");
         return package;
@@ -39,8 +37,8 @@ public class OrderDetailMapperTranslationsTests
     private static Order BuildOrderWith(Service service, Package package)
     {
         var order = OrderMockFactory.Generate();
-        order.AddSelectedServices(new[] { OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms)) });
-        order.AddSelectedPackages(new[] { OrderPackage.Create(order, package, package.Price) });
+        order.AddSelectedServices(new[] { OrderLineMockFactory.ServiceLine(order, service) });
+        order.AddSelectedPackages(new[] { OrderLineMockFactory.PackageLine(order, package) });
         return order;
     }
 
@@ -71,8 +69,8 @@ public class OrderDetailMapperTranslationsTests
     [Fact]
     public void MapToDetail_Untranslated_Lines_Emit_Empty_Translations_And_Keep_English_Name()
     {
-        var service = Service.Create("cat-1", "Windows", "Windows desc", 100m, 10m, 30);
-        var package = Package.Create("Basic", "Basic bundle", 200m);
+        var service = Service.Create("cat-1", "Windows", "Windows desc", 30);
+        var package = Package.Create("Basic", "Basic bundle");
 
         var detail = BuildOrderWith(service, package).MapToDetail();
 

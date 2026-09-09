@@ -292,7 +292,7 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
     // ONE catalogue row for the whole fixture. Extras.Slug is unique platform-wide, so creating an
     // Extra per order raises 23505 on the second — the order's line is a row referencing this, not a
     // copy of it.
-    private static readonly Extra InsideOven = Extra.Create("insideOven", "insideOven", null, 250m);
+    private static readonly Extra InsideOven = Extra.Create("insideOven", "insideOven", null);
 
     private static Order NewHalfCrewedOrder(string orderId, Employee cleanerA, DateTime cleaningDateTime)
     {

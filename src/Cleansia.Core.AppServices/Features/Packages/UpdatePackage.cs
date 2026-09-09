@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -95,6 +96,8 @@ public class UpdatePackage
 
     internal class Handler(
         IPackageRepository packageRepository,
+        IPackagePriceRepository packagePriceRepository,
+        ICurrencyRepository currencyRepository,
         IServiceRepository serviceRepository)
         : ICommandHandler<Command, Response>
     {
@@ -110,9 +113,22 @@ public class UpdatePackage
             package.Update(
                 command.Name,
                 command.Description,
-                command.Price,
                 command.Tagline,
                 command.IsPopular);
+
+            // Upsert the default currency's price row -- see UpdateService for why not a plain update.
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var existingPrice = await packagePriceRepository.GetAll()
+                .FirstOrDefaultAsync(
+                    p => p.PackageId == package.Id && p.CurrencyId == currency.Id, cancellationToken);
+            if (existingPrice is null)
+            {
+                packagePriceRepository.Add(PackagePrice.Create(package.Id, currency.Id, command.Price));
+            }
+            else
+            {
+                existingPrice.Update(command.Price);
+            }
 
             package.ClearTranslations();
             if (command.Translations != null)

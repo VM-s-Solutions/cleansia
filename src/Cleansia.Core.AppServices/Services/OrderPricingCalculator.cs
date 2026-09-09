@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
@@ -9,6 +10,9 @@ public sealed class OrderPricingCalculator(
     IServiceRepository serviceRepository,
     IPackageRepository packageRepository,
     IExtraRepository extraRepository,
+    IServicePriceRepository servicePriceRepository,
+    IPackagePriceRepository packagePriceRepository,
+    IExtraPriceRepository extraPriceRepository,
     ICurrencyRepository currencyRepository,
     IExpressWaiverResolver expressWaiverResolver) : IOrderPricingCalculator
 {
@@ -24,13 +28,33 @@ public sealed class OrderPricingCalculator(
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
+        // THE CURRENCY IS RESOLVED FIRST, because it is now an input to the prices rather than a label
+        // applied afterwards. Prices are AUTHORED per currency (owner ruling 2026-09-08), so there is
+        // nothing to price until we know which currency's rows to read.
+        var currency = string.IsNullOrEmpty(currencyId)
+            ? await currencyRepository.GetDefaultAsync(cancellationToken)
+            : await currencyRepository.GetByIdAsync(currencyId, cancellationToken);
+        if (currency is null)
+        {
+            throw new InvalidOperationException(
+                $"Cannot price an order: currency '{currencyId}' does not exist.");
+        }
+
         var packages = await packageRepository.GetByIds(selectedPackageIds)
             .ToListAsync(cancellationToken);
-        var packagesSubtotal = packages.Sum(p => p.Price);
+        var packagePrices = await CataloguePriceLookup.ForPackagesAsync(
+            packagePriceRepository, packages.Select(p => p.Id).ToList(), currency.Id, cancellationToken);
+        var packagesSubtotal = packages.Sum(p => PriceOf(packagePrices, p.Id, currency.Code, "package"));
 
         var services = await serviceRepository.GetByIds(selectedServiceIds)
             .ToListAsync(cancellationToken);
-        var servicesSubtotal = services.Sum(s => s?.BasePrice + s?.PerRoomPrice * (rooms + bathrooms)) ?? 0m;
+        var servicePrices = await CataloguePriceLookup.ForServicesAsync(
+            servicePriceRepository, services.Select(s => s.Id).ToList(), currency.Id, cancellationToken);
+        var servicesSubtotal = services.Sum(s =>
+        {
+            var price = ServicePriceOf(servicePrices, s.Id, currency.Code);
+            return price.BasePrice + price.PerRoomPrice * (rooms + bathrooms);
+        });
 
         // Extras are slug-keyed in the catalog because slugs are stable platform-wide
         // (Service/Package only use Ids). Pull active extras by slug — inactive ones
@@ -47,19 +71,19 @@ public sealed class OrderPricingCalculator(
             // would be a second chance for the two to disagree.
             var rows = await extraRepository.GetAll()
                 .Where(e => e.IsActive && extraSlugList.Contains(e.Slug))
-                .Select(e => new { e.Slug, e.Price })
+                .Select(e => new { e.Id, e.Slug })
                 .ToListAsync(cancellationToken);
-            extraLines = rows.Select(r => (r.Slug, r.Price)).ToList();
+            var extraPrices = await CataloguePriceLookup.ForExtrasAsync(
+                extraPriceRepository, rows.Select(r => r.Id).ToList(), currency.Id, cancellationToken);
+            extraLines = rows
+                .Select(r => (r.Slug, Price: PriceOf(extraPrices, r.Id, currency.Code, "extra")))
+                .ToList();
             extrasSubtotal = extraLines.Sum(e => e.Price);
         }
 
         // Built alongside the sums above, from the same values, so a row can never
         // disagree with the subtotal it belongs to.
         var unitCount = rooms + bathrooms;
-
-        var currency = string.IsNullOrEmpty(currencyId)
-            ? await currencyRepository.GetDefaultAsync(cancellationToken)
-            : await currencyRepository.GetByIdAsync(currencyId, cancellationToken);
 
         var baseSubtotal = packagesSubtotal + servicesSubtotal + extrasSubtotal;
 
@@ -99,19 +123,21 @@ public sealed class OrderPricingCalculator(
         var lines = new List<OrderPricingLine>();
         foreach (var package in packages.Where(p => p != null))
         {
+            var packagePrice = PriceOf(packagePrices, package.Id, currency.Code, "package");
             lines.Add(new OrderPricingLine(
                 Kind: "package",
                 ItemId: package.Id,
-                BaseAmount: package.Price,
+                BaseAmount: packagePrice,
                 UnitAmount: 0m,
                 Units: 0,
-                Amount: package.Price));
+                Amount: packagePrice));
         }
 
         foreach (var service in services.Where(s => s != null))
         {
-            var perUnit = service.PerRoomPrice;
-            var basePart = service.BasePrice;
+            var servicePrice = ServicePriceOf(servicePrices, service.Id, currency.Code);
+            var perUnit = servicePrice.PerRoomPrice;
+            var basePart = servicePrice.BasePrice;
             lines.Add(new OrderPricingLine(
                 Kind: "service",
                 ItemId: service.Id,
@@ -137,8 +163,8 @@ public sealed class OrderPricingCalculator(
 
         return new OrderPricingResult(
             TotalPrice: totalPrice,
-            CurrencyId: currency?.Id ?? string.Empty,
-            CurrencyCode: currency?.Code ?? string.Empty,
+            CurrencyId: currency.Id,
+            CurrencyCode: currency.Code,
             ServicesSubtotal: servicesSubtotal,
             PackagesSubtotal: packagesSubtotal,
             ExtrasSubtotal: extrasSubtotal,
@@ -152,4 +178,30 @@ public sealed class OrderPricingCalculator(
             ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null,
             Lines: lines);
     }
+
+    /// <summary>
+    /// FAIL CLOSED. An item with no price row in the requested currency has no price in it, not a free
+    /// one. The previous shape coalesced a missing catalogue price to zero, which silently dropped the
+    /// line from the total while the customer still received the work.
+    ///
+    /// <para>It throws rather than returning a result because it is unreachable through the
+    /// customer-facing paths: the catalogue withholds unpriced items and the order validators reject
+    /// them, so a caller that arrives here has bypassed both. That is a platform bug rather than bad
+    /// input, and it mirrors the backstop OrderFactory already keeps for the same shape.</para>
+    /// </summary>
+    private static decimal PriceOf(
+        IReadOnlyDictionary<string, decimal> prices, string itemId, string currencyCode, string kind) =>
+        prices.TryGetValue(itemId, out var price)
+            ? price
+            : throw new InvalidOperationException(
+                $"No {kind} price for '{itemId}' in {currencyCode}. It is not offerable in that currency.");
+
+    private static CataloguePriceLookup.ServiceAmount ServicePriceOf(
+        IReadOnlyDictionary<string, CataloguePriceLookup.ServiceAmount> prices,
+        string serviceId,
+        string currencyCode) =>
+        prices.TryGetValue(serviceId, out var price)
+            ? price
+            : throw new InvalidOperationException(
+                $"No service price for '{serviceId}' in {currencyCode}. It is not offerable in that currency.");
 }

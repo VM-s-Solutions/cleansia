@@ -76,8 +76,8 @@ public class IssuePartialRefundHandlerTests
         decimal totalPrice,
         decimal? appliedVatRate,
         bool completed,
-        IEnumerable<Service>? services = null,
-        IEnumerable<Package>? packages = null,
+        IEnumerable<PricedService>? services = null,
+        IEnumerable<PricedPackage>? packages = null,
         string? countryId = CountryId,
         int rooms = 2,
         int bathrooms = 1,
@@ -112,7 +112,12 @@ public class IssuePartialRefundHandlerTests
             appliedRate: appliedVatRate);
         if (services is not null)
         {
-            order.AddSelectedServices(services.Select(s => OrderService.Create(order, s, s.BasePrice, s.PerRoomPrice, s.BasePrice + s.PerRoomPrice * (order.Rooms + order.Bathrooms))));
+            order.AddSelectedServices(services.Select(s => OrderService.Create(
+                order,
+                s.Service,
+                s.BasePrice,
+                s.PerRoomPrice,
+                s.BasePrice + s.PerRoomPrice * (order.Rooms + order.Bathrooms))));
         }
         if (packages is not null)
         {
@@ -123,8 +128,8 @@ public class IssuePartialRefundHandlerTests
             // not assertion.
             order.AddSelectedPackages(packages.Select(p =>
             {
-                var line = OrderPackage.Create(order, p, p.Price);
-                var included = p.IncludedServices.ToList();
+                var line = OrderPackage.Create(order, p.Package, p.Price);
+                var included = p.Package.IncludedServices.ToList();
                 if (included.Count > 0)
                 {
                     var grosses = PackagePricing.DeriveIncludedServiceGrosses(
@@ -139,7 +144,7 @@ public class IssuePartialRefundHandlerTests
         if (extras is not null)
         {
             order.AddSelectedExtras(extras.Select(e =>
-                OrderExtra.Create(order, Extra.Create(e.Slug, e.Slug, null, e.Price), e.Price)));
+                OrderExtra.Create(order, Extra.Create(e.Slug, e.Slug, null), e.Price)));
         }
         if (completed)
         {
@@ -162,15 +167,25 @@ public class IssuePartialRefundHandlerTests
         _extraRepository
             .Setup(r => r.GetAll())
             .Returns(extras
-                .Select(e => Extra.Create(e.Slug, e.Slug, null, e.Price))
+                .Select(e => Extra.Create(e.Slug, e.Slug, null))
                 .AsQueryable()
                 .BuildMock());
 
-    private static Service Svc(string id, decimal basePrice, decimal perRoomPrice = 0m)
+    /// <summary>
+    /// A catalogue entry PAIRED with what it costs. A service has no price of its own any more — it has
+    /// a price per currency — so the two have to travel together to reach the order line that
+    /// snapshots them. That snapshot is the allocator's whole denominator, which is why the price stays
+    /// an explicit argument here rather than being defaulted somewhere out of sight.
+    /// </summary>
+    private sealed record PricedService(Service Service, decimal BasePrice, decimal PerRoomPrice);
+
+    private sealed record PricedPackage(Package Package, decimal Price);
+
+    private static PricedService Svc(string id, decimal basePrice, decimal perRoomPrice = 0m)
     {
-        var s = Service.Create("cat-1", $"Service {id}", "", basePrice, perRoomPrice);
+        var s = Service.Create("cat-1", $"Service {id}", "");
         s.Id = id;
-        return s;
+        return new PricedService(s, basePrice, perRoomPrice);
     }
 
     /// <summary>
@@ -582,14 +597,14 @@ public class IssuePartialRefundHandlerTests
     {
         var inc1 = Svc("inc-1", 0m);
         var inc2 = Svc("inc-2", 0m);
-        var package = Package.Create("Deep clean bundle", "", 600m);
+        var package = Package.Create("Deep clean bundle", "");
         package.Id = "pkg-1";
-        package.AddService(inc1);
-        package.AddService(inc2);
+        package.AddService(inc1.Service);
+        package.AddService(inc2.Service);
 
         var standalone = Svc("svc-a", 400m);
         var order = CreateOrder(800m, appliedVatRate: null, completed: true,
-            services: [standalone], packages: [package]);
+            services: [standalone], packages: [new PricedPackage(package, 600m)]);
         ArrangeOrder(order);
         ArrangeConsumed(800m);
 
@@ -619,16 +634,16 @@ public class IssuePartialRefundHandlerTests
     {
         var inc1 = Svc("inc-1", 0m);
         var inc2 = Svc("inc-2", 0m);
-        var package = Package.Create("Deep clean bundle", "", 600m);
+        var package = Package.Create("Deep clean bundle", "");
         package.Id = "pkg-1";
-        package.AddService(inc1);
-        package.AddService(inc2);
+        package.AddService(inc1.Service);
+        package.AddService(inc2.Service);
 
         // A standalone service line so the package is only PART of the order; TotalPrice = 800 (discounted
         // from a 1000 list: svc 400 + package 600). The package's share of 800 is round(600/1000*800)=480.
         var standalone = Svc("svc-a", 400m);
         var order = CreateOrder(800m, appliedVatRate: null, completed: true,
-            services: [standalone], packages: [package]);
+            services: [standalone], packages: [new PricedPackage(package, 600m)]);
         ArrangeOrder(order);
         ArrangeConsumed(800m);
 

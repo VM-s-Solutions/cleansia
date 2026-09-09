@@ -135,13 +135,27 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         };
     }
 
+    /// <summary>
+    /// The invoice's currency is DERIVED FROM THE ROWS IT INVOICES, not supplied.
+    ///
+    /// <para>It used to be an argument, and the two callers computed it two different ways — one from
+    /// the work country's default currency, the other from <c>Employee.PreferredCurrencyCode</c> (a
+    /// field with no writer, so always null and always falling through to the platform default).
+    /// Neither read the rows being invoiced. They can disagree for the same employee and period, and
+    /// whichever ran first decided what a cleaner's tax document said.</para>
+    ///
+    /// <para><b>Throws when the rows disagree</b>, because SumPayAmounts is about to add them together
+    /// and a sum across currencies is not a number. This is a backstop, not the guard: both callers
+    /// check first and report it properly. An empty set throws for the same reason — there is no
+    /// currency to derive and no invoice to write.</para>
+    /// </summary>
     public static EmployeeInvoice CreateFromOrderPays(
         string employeeId,
         string payPeriodId,
         IReadOnlyCollection<OrderEmployeePay> orderPays,
-        string currencyId,
         string variableSymbol)
     {
+        var currencyId = SingleCurrencyOf(orderPays);
         var (subTotal, bonusAmount, deductionAmount) = SumPayAmounts(orderPays);
 
         return Create(
@@ -153,6 +167,23 @@ public class EmployeeInvoice : Auditable, ITenantEntity
             variableSymbol,
             bonusAmount,
             deductionAmount);
+    }
+
+    /// <summary>
+    /// The one currency every row shares, or an exception. See <see cref="CreateFromOrderPays"/>.
+    /// </summary>
+    public static string SingleCurrencyOf(IReadOnlyCollection<OrderEmployeePay> orderPays)
+    {
+        var currencies = orderPays.Select(p => p.CurrencyId).Distinct().ToList();
+
+        return currencies.Count switch
+        {
+            1 => currencies[0],
+            0 => throw new InvalidOperationException(
+                "Cannot invoice an empty set of order pays: there is no currency to derive."),
+            _ => throw new InvalidOperationException(
+                $"Order pays span {currencies.Count} currencies; one invoice cannot cover them.")
+        };
     }
 
     public EmployeeInvoice AddOrderPays(IEnumerable<OrderEmployeePay> orderPays)

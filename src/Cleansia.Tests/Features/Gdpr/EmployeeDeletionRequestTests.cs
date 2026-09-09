@@ -301,6 +301,7 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
                 orderId: "order-pay-del-1",
                 employeeId: EmployeeId,
                 payPeriodId: period.Id,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m);
             pay.Id = "order-employee-pay-del-1";

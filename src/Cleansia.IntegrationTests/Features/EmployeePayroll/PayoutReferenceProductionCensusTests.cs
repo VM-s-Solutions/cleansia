@@ -153,12 +153,16 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
 
                 // Park the symbol the allocator is about to produce on an unrelated invoice, so the
                 // insert loses to the unique index exactly as a restored counter row would make it.
-                var squatter = EmployeeInvoice.CreateFromOrderPays(
+                // Create, not CreateFromOrderPays: this invoice exists only to occupy a variable symbol
+                // and deliberately invoices nothing, and deriving a currency from no rows is exactly the
+                // state CreateFromOrderPays now refuses.
+                var squatter = EmployeeInvoice.Create(
                     EmployeeIds[0],
                     await ForeignPeriodIdAsync(context),
-                    [],
-                    CurrencyId,
-                    $"{DateTime.UtcNow.Year:D4}000001");
+                    totalOrders: 0,
+                    subTotal: 0m,
+                    currencyId: CurrencyId,
+                    variableSymbol: $"{DateTime.UtcNow.Year:D4}000001");
                 context.Add(squatter);
                 await context.CommitAsync(CancellationToken.None);
             },
@@ -246,7 +250,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
         for (var i = 0; i < count; i++)
         {
             context.Add(OrderEmployeePay.Create(
-                orders[i].Id, employees[i].Id, payPeriod.Id, basePay: 600m, totalPay: 600m));
+                orders[i].Id, employees[i].Id, payPeriod.Id, currency.Id, basePay: 600m, totalPay: 600m));
         }
 
         await context.CommitAsync(CancellationToken.None);

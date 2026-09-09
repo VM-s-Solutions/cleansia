@@ -329,8 +329,38 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             return null;
         }
 
-        var currency = await _currencyRepository.GetByCodeAsync(employee.PreferredCurrencyCode ?? string.Empty, cancellationToken) ??
-                       await _currencyRepository.GetDefaultAsync(cancellationToken);
+        // THE CURRENCY COMES FROM THE PAY ROWS. It used to come from Employee.PreferredCurrencyCode --
+        // a field with no writer anywhere in the platform, so always null, so this always fell through
+        // to the platform default -- while GenerateInvoice derived the same document's currency from the
+        // work country's configuration. Two answers for one tax document, neither reading the rows being
+        // invoiced, and whichever path ran first decided. Both are deleted.
+        //
+        // A cleaner can work orders in two currencies in one period; one invoice cannot cover them. The
+        // sweep skips that employee and says so, rather than summing amounts with different units --
+        // the same shape it already uses when a payout reference cannot be allocated.
+        var currencyIds = orderPays.Select(p => p.CurrencyId).Distinct().ToList();
+        if (currencyIds.Count > 1)
+        {
+            _logger.LogError(
+                "Employee {EmployeeId} has pay in {CurrencyCount} currencies for period {PeriodId}; "
+                    + "one invoice cannot cover them, so none was generated",
+                employee.Id,
+                currencyIds.Count,
+                period.Id);
+            return null;
+        }
+
+        var currency = await _currencyRepository.GetByIdAsync(currencyIds[0], cancellationToken);
+        if (currency is null)
+        {
+            _logger.LogError(
+                "Employee {EmployeeId}'s pay for period {PeriodId} names currency {CurrencyId}, which "
+                    + "does not exist; skipping this employee's invoice",
+                employee.Id,
+                period.Id,
+                currencyIds[0]);
+            return null;
+        }
 
         var variableSymbol = await _payoutReferenceAllocator.AllocateAsync(cancellationToken);
         if (variableSymbol.IsFailure)
@@ -347,7 +377,6 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             employee.Id,
             period.Id,
             orderPays,
-            currency!.Id,
             variableSymbol.Value!);
 
         _employeeInvoiceRepository.Add(invoice);

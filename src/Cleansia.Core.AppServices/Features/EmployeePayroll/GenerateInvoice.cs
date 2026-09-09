@@ -79,11 +79,27 @@ public class GenerateInvoice
             var orderPays = await orderEmployeePayRepository.GetUnassignedForEmployeePeriodAsync(
                 command.EmployeeId, command.PayPeriodId, cancellationToken);
 
-            var currencyCode = await currencyResolutionService
-                .ResolveCurrencyCodeForEmployeeAsync(command.EmployeeId, cancellationToken);
-            var currency = (currencyCode is not null
-                ? await currencyRepository.GetByCodeAsync(currencyCode, cancellationToken)
-                : null) ?? await currencyRepository.GetDefaultAsync(cancellationToken);
+            // NOTHING TO INVOICE. Reachable here in a way it is not in the background sweep, which
+            // skips an employee with no unassigned pay -- this endpoint would otherwise write a
+            // zero-value tax document with no currency to derive.
+            if (orderPays.Count == 0)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.EmployeeId), BusinessErrorMessage.NoUnpaidOrderPays));
+            }
+
+            // THE CURRENCY COMES FROM THE ROWS BEING INVOICED. It used to come from the work country's
+            // default currency via ICurrencyResolutionService, while the background sweep derived it
+            // from Employee.PreferredCurrencyCode -- two answers for one document, neither of which read
+            // the pay rows. Both are deleted.
+            //
+            // Mixed currencies in one period is a real state, not a bug: a cleaner can work an order in
+            // each. One invoice cannot cover them, so it is refused rather than summed.
+            if (orderPays.Select(p => p.CurrencyId).Distinct().Count() > 1)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.EmployeeId), BusinessErrorMessage.InvoiceSpansMultipleCurrencies));
+            }
 
             var variableSymbol = await payoutReferenceAllocator.AllocateAsync(cancellationToken);
             if (variableSymbol.IsFailure)
@@ -95,7 +111,6 @@ public class GenerateInvoice
                 command.EmployeeId,
                 command.PayPeriodId,
                 orderPays,
-                currency.Id,
                 variableSymbol.Value!);
 
             invoiceRepository.Add(invoice);

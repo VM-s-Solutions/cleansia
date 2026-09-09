@@ -2501,6 +2501,7 @@ namespace Cleansia.Infra.Database.Migrations
                     OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     PayPeriodId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     BasePay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     ExtrasPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     ExpensesPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
@@ -2527,6 +2528,12 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OrderEmployeePays", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderEmployeePays_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_OrderEmployeePays_EmployeeInvoices_EmployeeInvoiceId",
                         column: x => x.EmployeeInvoiceId,
@@ -3465,6 +3472,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_MembershipPlans_TenantId",
                 table: "MembershipPlans",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderEmployeePays_CurrencyId",
+                table: "OrderEmployeePays",
+                column: "CurrencyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderEmployeePays_EmployeeId",

@@ -162,6 +162,10 @@ public class CalculateOrderPay
                 orderId: command.OrderId,
                 employeeId: command.EmployeeId,
                 payPeriodId: payPeriod!.Id,
+                // The order's currency, which is also the pay configs' -- the reads above return only
+                // rates denominated in it, so the amounts below were computed in this currency rather
+                // than merely labelled with it.
+                currencyId: order.CurrencyId,
                 basePay: basePay,
                 extrasPay: extrasPay,
                 expensesPay: expensesPay,

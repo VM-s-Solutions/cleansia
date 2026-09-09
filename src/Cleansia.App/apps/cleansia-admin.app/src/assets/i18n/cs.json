@@ -2618,6 +2618,7 @@
         "reference_capacity_exhausted": "Variabilní symboly pro letošní rok jsou vyčerpány. Kontaktujte podporu.",
         "reference_missing": "Před zaznamenáním platby přiřaďte variabilní symbol.",
         "reference_unavailable": "Tento variabilní symbol se již používá. Zkuste to prosím znovu.",
+        "spans_multiple_currencies": "Odměna tohoto uklízeče za období je ve více měnách; jedna faktura je nemůže pokrýt",
         "template_not_found": "Šablona faktury nenalezena"
       },
       "no_active_period": "Nenalezeno žádné aktivní platební období",

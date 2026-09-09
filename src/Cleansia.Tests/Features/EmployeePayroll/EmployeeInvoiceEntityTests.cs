@@ -58,7 +58,7 @@ public class EmployeeInvoiceEntityTests
         // the bonus/deduction lines AND still total 115, not add them again on top.
         var pays = new[] { PayrollMockFactory.OrderPay(basePay: 100m, bonusPay: 20m, deductionPay: 5m) };
 
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol);
 
         Assert.Equal(100m, invoice.SubTotal);
         Assert.Equal(20m, invoice.BonusAmount);
@@ -76,7 +76,7 @@ public class EmployeeInvoiceEntityTests
             PayrollMockFactory.OrderPay(basePay: 250m, expensesPay: 12.50m)
         };
 
-        var created = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
+        var created = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol);
         var added = PayrollMockFactory.Invoice(totalOrders: 0, subTotal: 0m).AddOrderPays(pays);
 
         Assert.Equal(created.SubTotal, added.SubTotal);

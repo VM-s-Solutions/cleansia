@@ -100,6 +100,12 @@ public class PayPeriodInvoicePdfFailureRecordingTests
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
 
+        // Resolved BY ID now: the invoice's currency comes from the pay rows being invoiced rather
+        // than from the employee, so the sweep looks up the id those rows carry.
+        _currencyRepository
+            .Setup(r => r.GetByIdAsync(PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));

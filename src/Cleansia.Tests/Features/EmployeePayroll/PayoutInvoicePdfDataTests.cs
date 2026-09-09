@@ -185,7 +185,7 @@ public class PayoutInvoicePdfDataTests
     public void Line_Item_Total_Excludes_Bonus_And_Deduction_So_The_Lines_Sum_To_The_SubTotal()
     {
         var pays = new[] { PayrollMockFactory.OrderPay(basePay: 500m, bonusPay: 100m, deductionPay: 40m) };
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol);
 
         var data = Map(invoice: WithPeriod(invoice), orderPays: pays);
 
@@ -201,7 +201,7 @@ public class PayoutInvoicePdfDataTests
             PayrollMockFactory.OrderPay(basePay: 500m, bonusPay: 100m),
             PayrollMockFactory.OrderPay(basePay: 250m, deductionPay: 40m)
         };
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol);
 
         var data = Map(invoice: WithPeriod(invoice), orderPays: pays);
 

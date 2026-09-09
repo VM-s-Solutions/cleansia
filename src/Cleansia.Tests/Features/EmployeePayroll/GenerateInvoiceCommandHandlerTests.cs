@@ -155,6 +155,7 @@ public class GenerateInvoiceCommandHandlerTests
             orderId: $"order-{Guid.NewGuid():N}",
             employeeId: EmployeeId,
             payPeriodId: PayPeriodId,
+            currencyId: PayrollMockFactory.CurrencyId,
             basePay: basePay,
             extrasPay: extrasPay,
             expensesPay: expensesPay,

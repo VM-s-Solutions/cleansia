@@ -55,6 +55,11 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
         if (await Context.EmployeeInvoices.AnyAsync(i => i.CurrencyId == currencyId, cancellationToken))
             return true;
 
+        // A cleaner's recorded pay is denominated too, and its FK restricts -- without this the friendly
+        // refusal is skipped and the delete raises a raw 23503 that nothing maps.
+        if (await Context.OrderEmployeePays.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
         // The catalogue price rows. Without these three, deleting a currency something is priced in
         // raises a raw 23503 at pipeline commit -- DeleteCurrency has no FK-violation mapping and no
         // early flush -- so the admin gets a 500 instead of currency.in_use.

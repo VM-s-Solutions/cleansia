@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260909151624_Initial")]
+    [Migration("20260909153537_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1896,6 +1896,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset>("CreatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CurrencyId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.Property<string>("DeactivatedBy")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -1984,6 +1989,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("EmployeeId");
 
@@ -6457,6 +6464,12 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.OrderEmployeePay", b =>
                 {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", null)
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
                         .WithMany("OrderPays")
                         .HasForeignKey("EmployeeId")

@@ -105,7 +105,7 @@ public class DeletePayConfigValidatorTests
 
     private static OrderEmployeePay PayRow(Order order, string employeeId)
     {
-        var pay = OrderEmployeePay.Create(order.Id, employeeId, "period-1", basePay: 100m, totalPay: 100m);
+        var pay = OrderEmployeePay.Create(order.Id, employeeId, "period-1", CurrencyId, basePay: 100m, totalPay: 100m);
         typeof(OrderEmployeePay).GetProperty(nameof(OrderEmployeePay.Order))!.SetValue(pay, order);
         return pay;
     }

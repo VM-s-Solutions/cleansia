@@ -103,6 +103,12 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
         _currencyRepository
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
+
+        // Resolved BY ID now: the invoice's currency comes from the pay rows being invoiced rather
+        // than from the employee, so the sweep looks up the id those rows carry.
+        _currencyRepository
+            .Setup(r => r.GetByIdAsync(PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
     }
 
     [Fact]
@@ -151,6 +157,7 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
             orderId: $"order-{Guid.NewGuid():N}",
             employeeId: PayrollMockFactory.EmployeeId,
             payPeriodId: PayrollMockFactory.PayPeriodId,
+            currencyId: PayrollMockFactory.CurrencyId,
             basePay: basePay,
             extrasPay: extrasPay,
             expensesPay: expensesPay,

@@ -259,6 +259,7 @@ public static class BusinessErrorMessage
     public const string NoActivePeriod = "payroll.no_active_period";
     public const string NoPayConfiguration = "payroll.no_pay_configuration";
     public const string NoCurrencyFound = "payroll.no_currency";
+    public const string InvoiceSpansMultipleCurrencies = "payroll.invoice.spans_multiple_currencies";
     public const string EmployeeNotAssigned = "payroll.employee_not_assigned";
     public const string PdfGenerationFailed = "payroll.invoice.pdf_generation_failed";
     public const string TemplateNotFound = "payroll.invoice.template_not_found";

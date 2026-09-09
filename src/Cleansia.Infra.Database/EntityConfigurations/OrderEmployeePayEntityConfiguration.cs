@@ -94,6 +94,21 @@ public class OrderEmployeePayEntityConfiguration : AuditableEntityConfiguration<
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // THE UNIT OF THE EIGHT MONEY COLUMNS. Required, and FK-backed with Restrict for the same
+        // reason EmployeePayConfigs and EmployeeInvoices restrict: deleting a currency that a cleaner's
+        // recorded pay is denominated in would leave those amounts meaning nothing, and the row is an
+        // input to a tax document. CurrencyRepository.IsInUseAsync is the friendly refusal in front of
+        // it; this is what happens if anything gets past that.
+        builder.Property(e => e.CurrencyId)
+            .IsRequired()
+            .HasMaxLength(26);
+
+        builder
+            .HasOne<Cleansia.Core.Domain.Internationalization.Currency>()
+            .WithMany()
+            .HasForeignKey(e => e.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(e => e.OrderId);
         builder.HasIndex(e => e.EmployeeId);
         builder.HasIndex(e => e.PayPeriodId);

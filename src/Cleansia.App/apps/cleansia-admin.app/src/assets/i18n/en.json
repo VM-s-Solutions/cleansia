@@ -2618,6 +2618,7 @@
         "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
         "reference_missing": "Assign a payment reference before recording the transfer.",
         "reference_unavailable": "That payment reference is already in use. Please try again.",
+        "spans_multiple_currencies": "This cleaner's pay for the period is in more than one currency; one invoice cannot cover them",
         "template_not_found": "Invoice template not found"
       },
       "no_active_period": "No active pay period found",

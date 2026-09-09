@@ -43,6 +43,18 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
         if (await Context.EmployeeInvoices.AnyAsync(i => i.CurrencyId == currencyId, cancellationToken))
             return true;
 
+        // The catalogue price rows. Without these three, deleting a currency something is priced in
+        // raises a raw 23503 at pipeline commit -- DeleteCurrency has no FK-violation mapping and no
+        // early flush -- so the admin gets a 500 instead of currency.in_use.
+        if (await Context.ServicePrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        if (await Context.PackagePrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        if (await Context.ExtraPrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
         return false;
     }
 }

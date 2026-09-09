@@ -736,6 +736,42 @@ VALUES
    3499.00,
    '{"en":{"Name":"Luxury Full Service","Description":"Premium package with all services included","Tagline":"Everything, included"},"cs":{"Name":"Luxusní kompletní služba","Description":"Prémiový balíček se všemi zahrnutými službami","Tagline":"Vše v jednom"},"sk":{"Name":"Luxusná kompletná služba","Description":"Prémiový balík so všetkými zahrnutými službami","Tagline":"Všetko v jednom"},"uk":{"Name":"Розкішний повний сервіс","Description":"Преміум пакет з усіма включеними послугами","Tagline":"Все в одному"},"ru":{"Name":"Роскошный полный сервис","Description":"Премиум пакет со всеми включенными услугами","Tagline":"Всё в одному"}}');
 
+-- 8b. CATALOGUE PRICES, PER CURRENCY
+-- Owner ruling 2026-09-08: a price is AUTHORED per currency, never converted. The exchange rate that
+-- used to do the converting was one hand-typed column with no feed, no history and no per-order
+-- snapshot, so editing it silently restated every order that referenced it.
+--
+-- Derived by JOIN rather than written out, exactly as the pay configs below are, so a catalogue row
+-- added without a price is impossible by construction rather than by discipline. CZK ONLY: EUR is
+-- seeded inactive with no prices, which is what makes "the machinery is built, only CZK is reachable"
+-- provable rather than asserted.
+INSERT INTO public."ServicePrices" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+  "DeactivatedBy", "DeactivatedOn", "ServiceId", "CurrencyId", "BasePrice", "PerRoomPrice"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       s."Id", c."Id", s."BasePrice", s."PerRoomPrice"
+FROM public."Services" s
+CROSS JOIN (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1) c;
+
+INSERT INTO public."PackagePrices" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+  "DeactivatedBy", "DeactivatedOn", "PackageId", "CurrencyId", "Price"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       p."Id", c."Id", p."Price"
+FROM public."Packages" p
+CROSS JOIN (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1) c;
+
+INSERT INTO public."ExtraPrices" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+  "DeactivatedBy", "DeactivatedOn", "ExtraId", "CurrencyId", "Price"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       e."Id", c."Id", e."Price"
+FROM public."Extras" e
+CROSS JOIN (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1) c;
+
 -- 9. EMPLOYEE PAY CONFIGS
 -- Every catalogue entry gets the PLATFORM-WIDE row (EmployeeId NULL). This is not optional data: an
 -- entry with no platform-wide config quotes NOTHING on every cleaner's board at once, so the booking

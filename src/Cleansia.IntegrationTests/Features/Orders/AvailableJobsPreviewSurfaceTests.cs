@@ -228,7 +228,7 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
         for (var index = 0; index < 2; index++)
         {
             var order = NewOfferableOrder(index);
-            order.AddSelectedServices([OrderService.Create(order, service)]);
+            order.AddSelectedServices([OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
             context.Add(order);
         }
 
@@ -267,7 +267,6 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
             customerAddress: Address.Create(Street, City, ZipCode, CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(2).AddMinutes(index * 30),
             paymentType: PaymentType.Card,
             totalPrice: 1000m + index,

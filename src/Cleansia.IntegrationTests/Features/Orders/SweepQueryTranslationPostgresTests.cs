@@ -158,7 +158,6 @@ public class SweepQueryTranslationPostgresTests(PostgresContainerFixture fixture
             customerAddress: Address.Create("123 Main St", "Prague", "11000", countryId),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,

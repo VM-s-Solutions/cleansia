@@ -210,7 +210,6 @@ public class PreferredOfferGrantTests
             customerAddress: Address.Create("Grant St 1", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: Now.AddHours(24),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,

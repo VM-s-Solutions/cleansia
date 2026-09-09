@@ -234,7 +234,6 @@ public class PreferredOfferExitAgreementTests
             customerAddress: Address.Create("Exit St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

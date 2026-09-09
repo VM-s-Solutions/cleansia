@@ -133,7 +133,7 @@ public sealed class AuditSensitiveSnapshotTests
         var service = Service.Create("cat-1", "Deep clean", "", 1000m, 0m);
         service.Id = "svc-a";
         var order = BuildOrder("order-prt", OrderStatus.Completed, totalPrice: 1000m, completed: true);
-        order.AddSelectedServices([OrderService.Create(order, service)]);
+        order.AddSelectedServices([OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
 
         var orderRepository = new Mock<IOrderRepository>();
         orderRepository.Setup(r => r.GetByIdAsync("order-prt", It.IsAny<CancellationToken>())).ReturnsAsync(order);
@@ -339,7 +339,6 @@ public sealed class AuditSensitiveSnapshotTests
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

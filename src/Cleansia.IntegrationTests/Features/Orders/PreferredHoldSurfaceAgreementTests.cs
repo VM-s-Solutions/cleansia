@@ -259,7 +259,6 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
                 "Held St 7", "Brno", "60200", CountryId, latitude: 49.19506, longitude: 16.606837),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

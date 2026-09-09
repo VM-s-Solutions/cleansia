@@ -135,7 +135,6 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
             customerAddress: Address.Create("Tenant St 1", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddMinutes(60),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,

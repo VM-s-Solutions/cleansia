@@ -125,7 +125,6 @@ public class ActualTenderRoutingTests
             customerAddress: Address.Create("Hauptstr. 2", "Berlin", "10115", CountryId),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: paymentType,
             totalPrice: 1000m,

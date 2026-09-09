@@ -47,7 +47,6 @@ public class LookupOrderSecretTests
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: new DateTime(2026, 6, 10, 9, 0, 0, DateTimeKind.Utc),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,

@@ -342,7 +342,6 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             customerAddress: Address.Create("Webhook St 1", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

@@ -39,8 +39,8 @@ public class OrderDetailMapperTranslationsTests
     private static Order BuildOrderWith(Service service, Package package)
     {
         var order = OrderMockFactory.Generate();
-        order.AddSelectedServices(new[] { OrderService.Create(order, service) });
-        order.AddSelectedPackages(new[] { OrderPackage.Create(order, package) });
+        order.AddSelectedServices(new[] { OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms)) });
+        order.AddSelectedPackages(new[] { OrderPackage.Create(order, package, package.Price) });
         return order;
     }
 

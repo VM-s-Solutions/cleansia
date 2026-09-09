@@ -24,6 +24,7 @@ public sealed class OrderFactory(
     IOrderRepository orderRepository,
     IServiceRepository serviceRepository,
     IPackageRepository packageRepository,
+    IExtraRepository extraRepository,
     IEmployeePayConfigRepository payConfigRepository,
     ICompanyInfoRepository companyInfoRepository,
     ICountryConfigurationRepository countryConfigurationRepository,
@@ -121,7 +122,6 @@ public sealed class OrderFactory(
             input.Address,
             input.Rooms,
             input.Bathrooms,
-            input.Extras,
             input.CleaningDate,
             input.PaymentType,
             finalTotalPrice,
@@ -144,19 +144,52 @@ public sealed class OrderFactory(
 
         order.SetCurrency(input.Currency);
 
-        var selectedServices = await serviceRepository
+        // EVERY LINE SNAPSHOTS ITS OWN PRICE HERE, and this is the only place that happens. Before
+        // these columns existed the lines were pure join rows, so the refund allocator, the receipt PDF
+        // and the fiscal line items all went back to the LIVE catalogue to find out what a historical
+        // order had cost — and an admin price edit silently restated all three.
+        //
+        // The prices still come from the catalogue columns in this pass; the next one replaces that read
+        // with a join on per-currency price rows. What changes here is WHEN the number is fixed, not
+        // where it comes from.
+        var unitCount = input.Rooms + input.Bathrooms;
+
+        var services = await serviceRepository
             .GetByIds(input.SelectedServiceIds)
-            .Select(s => OrderService.Create(order, s))
             .ToListAsync(cancellationToken);
-        var selectedPackages = await packageRepository
+        var selectedServices = services
+            .Select(s => OrderService.Create(
+                order,
+                s,
+                unitBasePrice: s.BasePrice,
+                unitPerRoomPrice: s.PerRoomPrice,
+                lineTotal: s.BasePrice + s.PerRoomPrice * unitCount))
+            .ToList();
+
+        var packages = await packageRepository
             .GetByIds(input.SelectedPackageIds)
             .Include(p => p.IncludedServices)
                 .ThenInclude(s => s.Service)
-            .Select(p => OrderPackage.Create(order, p))
             .ToListAsync(cancellationToken);
+        var selectedPackages = packages
+            .Select(p => OrderPackage.Create(order, p, lineTotal: p.Price))
+            .ToList();
+
+        // IsActive is filtered here exactly as the pricing calculator filters it, so an inactive extra
+        // is absent from the total AND from the order. The refund path used to read the same catalogue
+        // WITHOUT that filter, so an extra deactivated after ordering was excluded from TotalPrice and
+        // included in the refund denominator, inflating every other line's share. Rows the order owns
+        // settle it: there is only one list now.
+        var selectedExtras = input.SelectedExtraSlugs.Count == 0
+            ? []
+            : await extraRepository.GetAll()
+                .Where(e => e.IsActive && input.SelectedExtraSlugs.Contains(e.Slug))
+                .ToListAsync(cancellationToken);
 
         order.AddSelectedServices(selectedServices);
         order.AddSelectedPackages(selectedPackages);
+        order.AddSelectedExtras(
+            selectedExtras.Select(e => OrderExtra.Create(order, e, unitPrice: e.Price)).ToList());
 
         var estimatedTime = OrderDuration.EstimateMinutes(
             selectedServices.Select(s => s.Service!),

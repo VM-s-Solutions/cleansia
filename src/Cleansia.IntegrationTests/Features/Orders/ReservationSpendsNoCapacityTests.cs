@@ -193,7 +193,6 @@ public class ReservationSpendsNoCapacityTests(PostgresContainerFixture fixture) 
             customerAddress: Address.Create("Reserved St 1", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: ReservedSlot,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

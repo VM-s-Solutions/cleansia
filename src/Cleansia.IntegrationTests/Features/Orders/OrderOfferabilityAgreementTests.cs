@@ -301,7 +301,6 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             customerAddress: Address.Create("Open St 1", "Brno", "60200", CountryId, latitude: 49.19506, longitude: 16.606837),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: scenario.PaymentType,
             totalPrice: 1500m,

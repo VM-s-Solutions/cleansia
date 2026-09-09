@@ -3629,10 +3629,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("EstimatedTime")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Extras")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -3815,6 +3811,42 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("OrderEmployees", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderExtra", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExtraId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExtraId");
+
+                    b.HasIndex("OrderId", "ExtraId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrderExtras_OrderId_ExtraId");
+
+                    b.ToTable("OrderExtras");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderIssue", b =>
                 {
                     b.Property<string>("Id")
@@ -3950,6 +3982,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("OrderId")
                         .IsRequired()
@@ -4213,6 +4249,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<decimal>("LineTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("OrderId")
                         .IsRequired()
                         .HasColumnType("character varying(26)");
@@ -4220,6 +4260,14 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("ServiceId")
                         .IsRequired()
                         .HasColumnType("character varying(26)");
+
+                    b.Property<decimal>("UnitBasePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("UnitPerRoomPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.HasKey("Id");
 
@@ -6468,6 +6516,25 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderExtra", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Orders.Extra", "Extra")
+                        .WithMany()
+                        .HasForeignKey("ExtraId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
+                        .WithMany("SelectedExtras")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Extra");
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderIssue", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
@@ -6899,6 +6966,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Receipt");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("SelectedExtras");
 
                     b.Navigation("SelectedPackages");
 

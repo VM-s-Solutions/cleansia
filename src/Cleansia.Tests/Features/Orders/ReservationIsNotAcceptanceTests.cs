@@ -128,7 +128,6 @@ public class ReservationIsNotAcceptanceTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 2000m,

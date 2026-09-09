@@ -385,9 +385,8 @@ public sealed class ReceiptService(
             Packages = order.SelectedPackages
                 .Select(p => new ReceiptLineItem(p.Package?.Name ?? "Package", p.Package?.Price ?? 0))
                 .ToList(),
-            Extras = order.Extras
-                .Where(e => e.Value)
-                .Select(e => e.Key)
+            Extras = order.SelectedExtras
+                .Select(e => e.Slug)
                 .ToList(),
             Total = order.TotalPrice,
             // The sale above, how it was settled below. -> ReceiptPdfData.CreditApplied

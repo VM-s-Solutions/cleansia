@@ -276,7 +276,6 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
                 customerAddress: Address.Create("Seat St 1", "Praha", "11000", "cz"),
                 rooms: 2,
                 bathrooms: 1,
-                extras: new Dictionary<string, bool>(),
                 cleaningDateTime: DateTime.UtcNow.AddHours(6),
                 paymentType: PaymentType.Cash,
                 totalPrice: 1500m,

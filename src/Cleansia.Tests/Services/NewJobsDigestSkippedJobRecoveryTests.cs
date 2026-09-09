@@ -284,7 +284,6 @@ public sealed class NewJobsDigestSkippedJobRecoveryTests : IDisposable
             customerAddress: Address.Create("Recovery St 3", "Praha", "14000", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

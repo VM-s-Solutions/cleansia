@@ -194,11 +194,6 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.Property(o => o.PreCleaningReminderSentAt)
             .IsRequired(false);
 
-        builder.Property(o => o.Extras)
-            .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, bool>>())
-            .Metadata
-            .SetValueComparer(new JsonValueComparer<IReadOnlyDictionary<string, bool>>());
-
         builder.Property(o => o.ConfirmationCode)
             .IsRequired()
             .HasMaxLength(50);

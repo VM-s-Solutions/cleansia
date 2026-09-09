@@ -93,11 +93,13 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         var full = NewOrder(
             "proj-full",
             address: Address.Create("Main St 1", "Praha", "14000", "cz", latitude: 50.05, longitude: 14.41),
-            extras: new Dictionary<string, bool> { ["windows"] = true, ["fridge"] = false },
+            // One row, not two: "fridge = false" was an extra the customer did NOT take, and the row
+            // model cannot express that — absence is how it is said now.
+            extras: [("windows", 150m)],
             promoDiscountAmount: 150m);
         full.SetCurrency(currency);
-        full.AddSelectedServices(new[] { OrderService.Create(full, serviceOne), OrderService.Create(full, serviceTwo) });
-        full.AddSelectedPackages(new[] { OrderPackage.Create(full, package) });
+        full.AddSelectedServices(new[] { OrderService.Create(full, serviceOne, serviceOne.BasePrice, serviceOne.PerRoomPrice, serviceOne.BasePrice + serviceOne.PerRoomPrice * (full.Rooms + full.Bathrooms)), OrderService.Create(full, serviceTwo, serviceTwo.BasePrice, serviceTwo.PerRoomPrice, serviceTwo.BasePrice + serviceTwo.PerRoomPrice * (full.Rooms + full.Bathrooms)) });
+        full.AddSelectedPackages(new[] { OrderPackage.Create(full, package, package.Price) });
         full.SetMaxEmployees(2);
         full.AddAssignedEmployee(OrderEmployee.Create(full, employee));
         AppendTrack(full, OrderStatus.New, stamp);
@@ -109,8 +111,8 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         // CreatedOn-desc-then-Sequence-desc rule (→ Completed); the column is NULLed after commit.
         var legacy = NewOrder(
             "proj-legacy-null",
+            extras: [],
             address: Address.Create("Old St 2", "Brno", "60200", "cz", latitude: 49.19, longitude: 16.60),
-            extras: new Dictionary<string, bool>(),
             tierDiscountAmount: 90m);
         legacy.SetCurrency(currency);
         var tie = stamp.AddHours(3);
@@ -121,8 +123,8 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
 
         var bare = NewOrder(
             "proj-bare",
+            extras: [],
             address: Address.Create("Bare St 3", "Ostrava", "70200", "cz"),
-            extras: new Dictionary<string, bool>(),
             tierDiscountAmount: 40m,
             membershipDiscountAmount: 60m);
         bare.SetCurrency(currency);
@@ -132,7 +134,7 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         var cancelled = NewOrder(
             "proj-cancelled",
             address: Address.Create("Gone St 4", "Praha", "11000", "cz"),
-            extras: new Dictionary<string, bool> { ["balcony"] = true });
+            extras: [("balcony", 90m)]);
         cancelled.SetCurrency(currency);
         AppendTrack(cancelled, OrderStatus.New, stamp.AddHours(5));
         AppendTrack(cancelled, OrderStatus.Confirmed, stamp.AddHours(6));
@@ -201,6 +203,11 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             .Include(o => o.SelectedServices)
                 .ThenInclude(sp => sp.Service)
                     .ThenInclude(s => s!.Category)
+            // Extras became a navigation when they stopped being a JSON column on the order. Without
+            // this Include the entity path returns an EMPTY extras map against a populated projection —
+            // and since both sides feed the same assertion, the comparison would go quietly vacuous
+            // rather than red.
+            .Include(o => o.SelectedExtras)
             .Include(o => o.CustomerAddress)
             .Include(o => o.AssignedEmployees)
             .AsSplitQuery()
@@ -213,7 +220,7 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
     private static Order NewOrder(
         string orderId,
         Address address,
-        Dictionary<string, bool> extras,
+        (string Slug, decimal Price)[] extras,
         decimal? tierDiscountAmount = null,
         decimal? promoDiscountAmount = null,
         decimal? membershipDiscountAmount = null)
@@ -225,7 +232,6 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             customerAddress: address,
             rooms: 3,
             bathrooms: 2,
-            extras: extras,
             cleaningDateTime: DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Card,
             totalPrice: 1800m,
@@ -236,6 +242,8 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             promoDiscountAmount: promoDiscountAmount,
             membershipDiscountAmount: membershipDiscountAmount);
         order.Id = orderId;
+        order.AddSelectedExtras(extras.Select(e =>
+            OrderExtra.Create(order, Extra.Create(e.Slug, e.Slug, null, e.Price), e.Price)));
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-3));
         return order;
     }

@@ -146,7 +146,6 @@ public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
                 customerAddress: Address.Create("Digest St 1", "Praha", "14000", CountryId),
                 rooms: 2,
                 bathrooms: 1,
-                extras: new Dictionary<string, bool>(),
                 cleaningDateTime: DateTime.UtcNow.AddDays(2),
                 paymentType: PaymentType.Card,
                 totalPrice: 1200m,

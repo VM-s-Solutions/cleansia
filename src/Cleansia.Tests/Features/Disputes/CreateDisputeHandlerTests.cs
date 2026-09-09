@@ -66,7 +66,6 @@ public class CreateDisputeHandlerTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
@@ -143,7 +142,10 @@ public class CreateDisputeHandlerTests
     public async Task ADisputeCanNameTheItemsThatWereNotDoneProperly()
     {
         var order = ArrangeOrder(OwnedOrderId, CallerUserId);
-        order.AddSelectedServices([OrderService.Create(order, Svc("svc-oven", "Oven cleaning"))]);
+        var svcOrder = Svc("svc-oven", "Oven cleaning");
+        order.AddSelectedServices([OrderService.Create(
+            order, svcOrder, svcOrder.BasePrice, svcOrder.PerRoomPrice,
+            svcOrder.BasePrice + svcOrder.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
 
         Dispute? saved = null;
         _disputeRepository.Setup(r => r.Add(It.IsAny<Dispute>())).Callback<Dispute>(d => saved = d);
@@ -170,7 +172,10 @@ public class CreateDisputeHandlerTests
     public async Task AnItemThatIsNotOnTheOrder_IsRefused()
     {
         var order = ArrangeOrder(OwnedOrderId, CallerUserId);
-        order.AddSelectedServices([OrderService.Create(order, Svc("svc-oven", "Oven cleaning"))]);
+        var svcOrder = Svc("svc-oven", "Oven cleaning");
+        order.AddSelectedServices([OrderService.Create(
+            order, svcOrder, svcOrder.BasePrice, svcOrder.PerRoomPrice,
+            svcOrder.BasePrice + svcOrder.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
 
         var result = await CreateHandler().Handle(
             ValidCommand(OwnedOrderId) with
@@ -194,7 +199,10 @@ public class CreateDisputeHandlerTests
     public async Task ALineOnSomebodyElsesOrder_IsIndistinguishableFromAMissingOrder()
     {
         var other = ArrangeOrder(OtherOrderId, OtherUserId);
-        other.AddSelectedServices([OrderService.Create(other, Svc("svc-oven", "Oven cleaning"))]);
+        var svcOther = Svc("svc-oven", "Oven cleaning");
+        other.AddSelectedServices([OrderService.Create(
+            other, svcOther, svcOther.BasePrice, svcOther.PerRoomPrice,
+            svcOther.BasePrice + svcOther.PerRoomPrice * (other.Rooms + other.Bathrooms))]);
 
         var withRealLine = await CreateHandler().Handle(
             ValidCommand(OtherOrderId) with

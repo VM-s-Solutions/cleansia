@@ -162,7 +162,6 @@ public class CancellationAcceptanceSignalTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: paymentType,
             totalPrice: TotalPrice,

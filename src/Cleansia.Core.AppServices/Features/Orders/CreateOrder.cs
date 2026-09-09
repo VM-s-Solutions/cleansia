@@ -493,7 +493,7 @@ public class CreateOrder
                 Address: address,
                 Rooms: command.Rooms,
                 Bathrooms: command.Bathrooms,
-                Extras: command.Extras,
+                SelectedExtraSlugs: selectedExtraSlugs,
                 CleaningDate: command.CleaningDate,
                 PaymentType: command.PaymentType,
                 Currency: currency!,

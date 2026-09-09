@@ -289,6 +289,11 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
         await context.CommitAsync(CancellationToken.None);
     }
 
+    // ONE catalogue row for the whole fixture. Extras.Slug is unique platform-wide, so creating an
+    // Extra per order raises 23505 on the second — the order's line is a row referencing this, not a
+    // copy of it.
+    private static readonly Extra InsideOven = Extra.Create("insideOven", "insideOven", null, 250m);
+
     private static Order NewHalfCrewedOrder(string orderId, Employee cleanerA, DateTime cleaningDateTime)
     {
         var order = Order.Create(
@@ -299,7 +304,6 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
                 Street, City, ZipCode, CountryId, latitude: Latitude, longitude: Longitude),
             rooms: 3,
             bathrooms: 2,
-            extras: new Dictionary<string, bool> { ["insideOven"] = true },
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -308,6 +312,7 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
             specialInstructions: SpecialInstructions,
             accessInstructions: AccessInstructions);
         order.Id = orderId;
+        order.AddSelectedExtras([OrderExtra.Create(order, InsideOven, 250m)]);
         order.Created(TestConstants.TestUserSession.TestUserName, DateTime.UtcNow.AddDays(-33));
         order.UpdateEstimatedTime(180);
 

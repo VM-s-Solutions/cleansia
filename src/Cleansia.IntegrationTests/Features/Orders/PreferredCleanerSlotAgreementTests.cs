@@ -267,7 +267,6 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
             customerAddress: Address.Create("Slot St 3", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

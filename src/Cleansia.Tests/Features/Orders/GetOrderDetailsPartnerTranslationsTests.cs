@@ -83,8 +83,8 @@ public class GetOrderDetailsPartnerTranslationsTests
     private static Order BuildOrderWith(Service service, Package package)
     {
         var order = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = OrderId });
-        order.AddSelectedServices(new[] { OrderService.Create(order, service) });
-        order.AddSelectedPackages(new[] { OrderPackage.Create(order, package) });
+        order.AddSelectedServices(new[] { OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms)) });
+        order.AddSelectedPackages(new[] { OrderPackage.Create(order, package, package.Price) });
         return order;
     }
 

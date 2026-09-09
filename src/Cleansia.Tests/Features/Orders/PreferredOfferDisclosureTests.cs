@@ -325,7 +325,6 @@ public class PreferredOfferDisclosureTests
             customerAddress: Address.Create("Disclosure St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: nowUtc.AddHours(48),
             paymentType: paymentType,
             totalPrice: 1500m,

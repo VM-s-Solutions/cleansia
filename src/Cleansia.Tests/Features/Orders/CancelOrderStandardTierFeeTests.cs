@@ -83,7 +83,6 @@ public class CancelOrderStandardTierFeeTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningUtc,
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

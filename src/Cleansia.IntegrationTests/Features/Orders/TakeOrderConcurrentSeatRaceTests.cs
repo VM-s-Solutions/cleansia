@@ -137,7 +137,6 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,

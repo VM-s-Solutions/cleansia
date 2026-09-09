@@ -1162,7 +1162,6 @@ namespace Cleansia.Infra.Database.Migrations
                     RecurringTemplateId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     RecurringReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     PreCleaningReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Extras = table.Column<string>(type: "text", nullable: false),
                     CurrentStatus = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
@@ -1930,6 +1929,34 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderExtras",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    ExtraId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    Slug = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderExtras", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderExtras_Extras_ExtraId",
+                        column: x => x.ExtraId,
+                        principalTable: "Extras",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderExtras_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderIssues",
                 columns: table => new
                 {
@@ -1994,6 +2021,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
                     PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    LineTotal = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -2144,6 +2172,9 @@ namespace Cleansia.Infra.Database.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
                     ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    UnitBasePrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    UnitPerRoomPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    LineTotal = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -3328,6 +3359,17 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderExtras_ExtraId",
+                table: "OrderExtras",
+                column: "ExtraId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderExtras_OrderId_ExtraId",
+                table: "OrderExtras",
+                columns: new[] { "OrderId", "ExtraId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderIssues_OrderId",
                 table: "OrderIssues",
                 column: "OrderId");
@@ -4048,9 +4090,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "EmployeePayoutDetails");
 
             migrationBuilder.DropTable(
-                name: "Extras");
-
-            migrationBuilder.DropTable(
                 name: "FiscalCounters");
 
             migrationBuilder.DropTable(
@@ -4073,6 +4112,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrderEmployees");
+
+            migrationBuilder.DropTable(
+                name: "OrderExtras");
 
             migrationBuilder.DropTable(
                 name: "OrderIssues");
@@ -4163,6 +4205,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "EmployeeInvoices");
+
+            migrationBuilder.DropTable(
+                name: "Extras");
 
             migrationBuilder.DropTable(
                 name: "OrderReviews");

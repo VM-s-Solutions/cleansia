@@ -80,7 +80,6 @@ public class PartialRefundFeeRoundingTests
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
@@ -96,7 +95,7 @@ public class PartialRefundFeeRoundingTests
             appliedRate: appliedVatRate);
         var svc = Service.Create("cat-1", "Service A", "", totalPrice, 0m);
         svc.Id = "svc-a";
-        order.AddSelectedServices([OrderService.Create(order, svc)]);
+        order.AddSelectedServices([OrderService.Create(order, svc, svc.BasePrice, svc.PerRoomPrice, svc.BasePrice + svc.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
         order.CompleteOrder(actualCompletionTime: 120);
         return order;
     }

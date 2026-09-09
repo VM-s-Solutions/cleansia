@@ -82,7 +82,7 @@ public class DeletePayConfigCoverageTests
         var order = OrderMockFactory.Generate();
         var service = Service.Create("cat-1", "whatever", "d", 1m, 0m);
         service.Id = serviceId;
-        order.AddSelectedServices([OrderService.Create(order, service)]);
+        order.AddSelectedServices([OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
         return order;
     }
 

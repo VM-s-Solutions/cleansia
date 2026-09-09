@@ -286,7 +286,6 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
             customerAddress: Address.Create("Picker St 1", "Praha", "14000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-3),
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

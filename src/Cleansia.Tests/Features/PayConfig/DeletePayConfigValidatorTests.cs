@@ -90,7 +90,7 @@ public class DeletePayConfigValidatorTests
         var order = OrderMockFactory.Generate();
         var service = ServiceMockFactory.Generate();
         service.Id = serviceId;
-        order.AddSelectedServices([OrderService.Create(order, service)]);
+        order.AddSelectedServices([OrderService.Create(order, service, service.BasePrice, service.PerRoomPrice, service.BasePrice + service.PerRoomPrice * (order.Rooms + order.Bathrooms))]);
         return PayRow(order, employeeId);
     }
 
@@ -99,7 +99,7 @@ public class DeletePayConfigValidatorTests
         var order = OrderMockFactory.Generate();
         var package = PackageMockFactory.Generate();
         package.Id = packageId;
-        order.AddSelectedPackages([OrderPackage.Create(order, package)]);
+        order.AddSelectedPackages([OrderPackage.Create(order, package, package.Price)]);
         return PayRow(order, employeeId);
     }
 

@@ -19,7 +19,9 @@ public sealed record OrderListRow(
     string DisplayOrderNumber,
     int Rooms,
     int Bathrooms,
-    IReadOnlyDictionary<string, bool> Extras,
+    // Slugs, not a slug->bool map: an order's extras are rows now, and a row means selected. The DTO
+    // boundary still emits { slug: true } so no client or mobile spec moves.
+    IReadOnlyCollection<string> ExtraSlugs,
     DateTime CleaningDateTime,
     PaymentType PaymentType,
     PaymentStatus PaymentStatus,

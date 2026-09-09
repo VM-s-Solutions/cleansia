@@ -258,7 +258,7 @@ public class MaterializeRecurringBookingTemplate
                     Address: address,
                     Rooms: template.Rooms,
                     Bathrooms: template.Bathrooms,
-                    Extras: new(),
+                    SelectedExtraSlugs: [],
                     CleaningDate: occurrence,
                     PaymentType: template.PaymentType,
                     Currency: defaultCurrency,

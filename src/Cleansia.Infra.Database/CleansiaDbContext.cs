@@ -294,6 +294,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<Order> Orders { get; set; }
     public virtual DbSet<OrderService> OrderServices { get; set; }
     public virtual DbSet<OrderPackage> OrderPackages { get; set; }
+    public virtual DbSet<OrderExtra> OrderExtras { get; set; }
     public virtual DbSet<OrderEmployee> OrderEmployees { get; set; }
     public virtual DbSet<OrderStatusTrack> OrderStatusHistory { get; set; }
     public virtual DbSet<OrderNote> OrderNotes { get; set; }

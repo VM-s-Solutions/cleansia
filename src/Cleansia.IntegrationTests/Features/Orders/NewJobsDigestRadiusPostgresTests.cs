@@ -196,7 +196,6 @@ public class NewJobsDigestRadiusPostgresTests(PostgresContainerFixture fixture) 
                 "Job St 1", "Kladno", "27201", job.CountryId, null, job.Latitude, job.Longitude),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

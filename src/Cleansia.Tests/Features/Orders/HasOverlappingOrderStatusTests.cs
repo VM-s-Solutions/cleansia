@@ -180,7 +180,6 @@ public sealed class HasOverlappingOrderStatusTests : IDisposable
             customerAddress: Address.Create("Overlap St 1", "Praha", "14000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

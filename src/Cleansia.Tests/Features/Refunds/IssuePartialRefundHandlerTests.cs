@@ -80,7 +80,7 @@ public class IssuePartialRefundHandlerTests
         string? countryId = CountryId,
         int rooms = 2,
         int bathrooms = 1,
-        Dictionary<string, bool>? extras = null)
+        (string Slug, decimal Price)[]? extras = null)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
         var address = countryId is null
@@ -93,7 +93,6 @@ public class IssuePartialRefundHandlerTests
             customerAddress: address,
             rooms: rooms,
             bathrooms: bathrooms,
-            extras: extras ?? new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
@@ -112,11 +111,16 @@ public class IssuePartialRefundHandlerTests
             appliedRate: appliedVatRate);
         if (services is not null)
         {
-            order.AddSelectedServices(services.Select(s => OrderService.Create(order, s)));
+            order.AddSelectedServices(services.Select(s => OrderService.Create(order, s, s.BasePrice, s.PerRoomPrice, s.BasePrice + s.PerRoomPrice * (order.Rooms + order.Bathrooms))));
         }
         if (packages is not null)
         {
-            order.AddSelectedPackages(packages.Select(p => OrderPackage.Create(order, p)));
+            order.AddSelectedPackages(packages.Select(p => OrderPackage.Create(order, p, p.Price)));
+        }
+        if (extras is not null)
+        {
+            order.AddSelectedExtras(extras.Select(e =>
+                OrderExtra.Create(order, Extra.Create(e.Slug, e.Slug, null, e.Price), e.Price)));
         }
         if (completed)
         {
@@ -166,10 +170,9 @@ public class IssuePartialRefundHandlerTests
         var svc = Svc("svc-a", 1000m);
         var order = CreateOrder(
             1200m, appliedVatRate: null, completed: true, services: [svc],
-            extras: new Dictionary<string, bool> { ["window-clean"] = true });
+            extras: [("window-clean", 200m)]);
         ArrangeOrder(order);
         ArrangeConsumed(0m);
-        ArrangeExtras(("window-clean", 200m));
 
         var result = await CreateHandler().Handle(
             new IssuePartialRefund.Command(
@@ -184,16 +187,26 @@ public class IssuePartialRefundHandlerTests
     }
 
     /// <summary>
-    /// An extra the customer did NOT take must not dilute anyone's share. The dictionary carries
-    /// false entries, and reading them as chosen would under-refund by exactly their weight.
+    /// An extra the customer did NOT buy must not dilute anyone's share — even though the catalogue
+    /// sells one.
+    ///
+    /// <para>This test changed subject when extras became rows, and the new subject is the better one.
+    /// It used to prove that a <c>false</c> entry in the order's extras dictionary was filtered out;
+    /// that state cannot exist any more, because an extra the order did not buy simply has no row.
+    /// What it proves now is that the allocator reads the ORDER'S rows and not the CATALOGUE — which
+    /// is exactly the defect that was live: the refund path queried Extras by slug at refund time, so
+    /// an admin price edit moved the denominator of an old order, and an extra deactivated after
+    /// ordering counted here while being absent from the total.</para>
+    ///
+    /// <para>The catalogue is deliberately stocked with a priced extra the order never took. If a
+    /// future reader reintroduces a catalogue-wide read, this reds.</para>
     /// </summary>
     [Fact]
-    public async Task UnchosenExtras_DoNotEnterTheDenominator()
+    public async Task AnExtraTheOrderDidNotBuy_DoesNotEnterTheDenominator_EvenThoughTheCatalogueSellsIt()
     {
         var svc = Svc("svc-a", 1000m);
         var order = CreateOrder(
-            1000m, appliedVatRate: null, completed: true, services: [svc],
-            extras: new Dictionary<string, bool> { ["window-clean"] = false });
+            1000m, appliedVatRate: null, completed: true, services: [svc]);
         ArrangeOrder(order);
         ArrangeConsumed(0m);
         ArrangeExtras(("window-clean", 200m));

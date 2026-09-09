@@ -82,7 +82,6 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
             customerAddress: Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.Add(cleaningIn),
             paymentType: paymentType,
             totalPrice: 1000m,

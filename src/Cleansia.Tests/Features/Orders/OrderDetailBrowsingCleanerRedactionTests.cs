@@ -417,7 +417,6 @@ public class OrderDetailBrowsingCleanerRedactionTests
             customerAddress: address,
             rooms: 3,
             bathrooms: 2,
-            extras: new Dictionary<string, bool> { ["insideOven"] = true },
             cleaningDateTime: DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -428,6 +427,8 @@ public class OrderDetailBrowsingCleanerRedactionTests
             accessInstructions: AccessInstructions);
 
         order.Id = OrderId;
+        order.AddSelectedExtras(
+            [OrderExtra.Create(order, Extra.Create("insideOven", "insideOven", null, 250m), 250m)]);
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
         order.UpdateEstimatedTime(180);
 

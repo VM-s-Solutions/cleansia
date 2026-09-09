@@ -187,7 +187,6 @@ public static class DomainSeed
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,

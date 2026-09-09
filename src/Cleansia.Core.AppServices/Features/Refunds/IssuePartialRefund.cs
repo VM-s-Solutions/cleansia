@@ -298,20 +298,16 @@ public class IssuePartialRefund
         // PaymentStatus is computed from GetSucceededRefundTotalForOrderAsync, which is cumulative
         // across every refund path. So "refund everything" still works and still lands on Refunded.
         //
-        // Weights only, like the service lines above: the price is the catalogue's current one, read
-        // by slug exactly as OrderPricingCalculator reads it, and the ratio is what carries meaning.
-        var chosenSlugs = order.Extras.Where(e => e.Value).Select(e => e.Key).ToList();
-        if (chosenSlugs.Count > 0)
+        // Weights only, like the service lines above — but read from the ORDER'S OWN ROWS, not the live
+        // catalogue. This used to query Extras by slug at refund time, which meant an admin price edit
+        // moved the denominator of a refund on an order placed months earlier. It also queried WITHOUT
+        // an IsActive filter while the pricing calculator applied one, so an extra deactivated after
+        // ordering was excluded from TotalPrice and still counted here — inflating every other line's
+        // share on any order carrying one. Both are gone: there is one list, and the order owns it.
+        foreach (var extra in order.SelectedExtras)
         {
-            var extras = await extraRepository.GetAll()
-                .Where(e => chosenSlugs.Contains(e.Slug))
-                .Select(e => new { e.Slug, e.Price })
-                .ToListAsync(cancellationToken);
-
-            foreach (var extra in extras)
-            {
-                lines.Add(new LineGross($"extra:{extra.Slug}", extra.Price, ServiceId: string.Empty, PackageId: null));
-            }
+            lines.Add(new LineGross(
+                $"extra:{extra.Slug}", extra.UnitPrice, ServiceId: string.Empty, PackageId: null));
         }
 
         return lines;

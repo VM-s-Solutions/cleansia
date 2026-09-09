@@ -63,7 +63,6 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

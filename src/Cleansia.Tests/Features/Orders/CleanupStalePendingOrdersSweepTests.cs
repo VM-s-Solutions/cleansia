@@ -74,7 +74,6 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.Add(cleaningIn),
             paymentType: paymentType,
             totalPrice: 1000m,

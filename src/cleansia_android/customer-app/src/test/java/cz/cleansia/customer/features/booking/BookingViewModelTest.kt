@@ -160,7 +160,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 80.0,
             packagesSubtotal = 20.0,
-            exchangeRate = 1.0,
         )
         coEvery { bookingApi.quote(any()) } returns Response.success(quote)
         coEvery { bookingApi.create(any()) } returns Response.success(
@@ -208,7 +207,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 100.0,
             packagesSubtotal = 0.0,
-            exchangeRate = 1.0,
         )
         coEvery { bookingApi.quote(any()) } returns Response.success(quote)
         val sent = slot<CreateOrderCommand>()
@@ -253,7 +251,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 100.0,
             packagesSubtotal = 0.0,
-            exchangeRate = 1.0,
         )
         coEvery { bookingApi.quote(any()) } returns Response.success(quote)
         val sent = slot<CreateOrderCommand>()
@@ -301,7 +298,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 100.0,
             packagesSubtotal = 0.0,
-            exchangeRate = 1.0,
         )
         coEvery { bookingApi.quote(any()) } returns Response.success(quote)
         val sent = slot<CreateOrderCommand>()
@@ -346,7 +342,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 100.0,
             packagesSubtotal = 0.0,
-            exchangeRate = 1.0,
         )
         coEvery { bookingApi.quote(any()) } returns Response.success(quote)
         val sent = slot<CreateOrderCommand>()
@@ -417,7 +412,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 100.0,
             packagesSubtotal = 0.0,
-            exchangeRate = 1.0,
         )
         coEvery { bookingApi.quote(any()) } returns Response.success(cachedQuote)
 
@@ -532,7 +526,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 50.0,
             packagesSubtotal = 0.0,
-            exchangeRate = 1.0,
         )
         coEvery { bookingApi.quote(any()) } returns Response.success(quote)
         coEvery { bookingApi.create(any()) } returns Response.success(
@@ -584,7 +577,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 100.0,
             packagesSubtotal = 0.0,
-            exchangeRate = 1.0,
         )
         coEvery { bookingApi.quote(any()) } returns Response.success(quote)
 
@@ -613,7 +605,6 @@ class BookingViewModelTest {
             currencyCode = "CZK",
             servicesSubtotal = 100.0,
             packagesSubtotal = 0.0,
-            exchangeRate = 1.0,
         )
 
         coEvery { bookingApi.quote(any<QuoteOrderCommand>()) } returns Response.success(firstQuote)
@@ -985,6 +976,5 @@ class BookingViewModelTest {
         expressSurchargeApplied = surchargeApplied,
         expressSurchargeAmount = surcharge,
         expressSurchargeWaivedByMembership = waived,
-        exchangeRate = 1.0,
     )
 }

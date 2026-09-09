@@ -7539,10 +7539,6 @@
             "type": "string",
             "nullable": true
           },
-          "exchangeRate": {
-            "type": "number",
-            "format": "double"
-          },
           "isDefault": {
             "type": "boolean"
           }
@@ -7567,10 +7563,6 @@
           "name": {
             "type": "string",
             "nullable": true
-          },
-          "exchangeRate": {
-            "type": "number",
-            "format": "double"
           },
           "isDefault": {
             "type": "boolean"
@@ -8067,10 +8059,6 @@
             "type": "string",
             "nullable": true
           },
-          "vatNumber": {
-            "type": "string",
-            "nullable": true
-          },
           "legalEntityName": {
             "type": "string",
             "nullable": true
@@ -8463,6 +8451,25 @@
         },
         "additionalProperties": false
       },
+      "GetMyCredit_CurrencyBalance": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresOn": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "GetMyCredit_Response": {
         "type": "object",
         "properties": {
@@ -8484,6 +8491,13 @@
           "expiresOn": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "balances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GetMyCredit_CurrencyBalance"
+            },
             "nullable": true
           }
         },
@@ -10378,10 +10392,6 @@
             "type": "boolean"
           },
           "expressSurchargeAmount": {
-            "type": "number",
-            "format": "double"
-          },
-          "exchangeRate": {
             "type": "number",
             "format": "double"
           },

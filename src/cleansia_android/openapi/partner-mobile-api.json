@@ -7260,10 +7260,6 @@
             "type": "string",
             "nullable": true
           },
-          "exchangeRate": {
-            "type": "number",
-            "format": "double"
-          },
           "isDefault": {
             "type": "boolean"
           }
@@ -7288,10 +7284,6 @@
           "name": {
             "type": "string",
             "nullable": true
-          },
-          "exchangeRate": {
-            "type": "number",
-            "format": "double"
           },
           "isDefault": {
             "type": "boolean"
@@ -7915,10 +7907,6 @@
             "type": "string",
             "nullable": true
           },
-          "vatNumber": {
-            "type": "string",
-            "nullable": true
-          },
           "legalEntityName": {
             "type": "string",
             "nullable": true
@@ -8092,10 +8080,6 @@
             "$ref": "#/components/schemas/EmployeeEntityType"
           },
           "registrationNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "vatNumber": {
             "type": "string",
             "nullable": true
           },
@@ -11172,10 +11156,6 @@
             "type": "string",
             "nullable": true
           },
-          "vatNumber": {
-            "type": "string",
-            "nullable": true
-          },
           "legalEntityName": {
             "type": "string",
             "nullable": true
@@ -11258,10 +11238,6 @@
             "nullable": true
           },
           "registrationNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "vatNumber": {
             "type": "string",
             "nullable": true
           },

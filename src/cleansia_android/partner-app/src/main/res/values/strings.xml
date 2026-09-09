@@ -490,8 +490,6 @@
     <string name="business_country">Business country</string>
     <string name="registration_number_label">Registration number</string>
     <string name="registration_number_helper">The format depends on the country you selected.</string>
-    <string name="vat_number_label">VAT number</string>
-    <string name="vat_number_helper">Optional — only if you\'re VAT-registered.</string>
     <string name="legal_entity_name_label">Legal entity name</string>
     <string name="street">Street</string>
     <string name="city">City</string>

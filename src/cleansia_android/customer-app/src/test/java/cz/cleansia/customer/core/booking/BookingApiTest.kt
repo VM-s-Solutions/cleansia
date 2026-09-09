@@ -86,7 +86,6 @@ class BookingApiTest {
                 expressSurchargeApplied = false,
                 expressSurchargeAmount = 0.0,
                 expressSurchargeWaivedByMembership = true,
-                exchangeRate = 1.0,
             ),
         )
 

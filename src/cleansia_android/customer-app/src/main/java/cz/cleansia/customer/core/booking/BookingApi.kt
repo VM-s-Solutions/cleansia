@@ -99,9 +99,13 @@ private fun Int.toWirePaymentType(): GenPaymentType? = when (this) {
  * this response is defaulted: it is the number the customer agrees to before they pay, and a zero
  * this client invented is a price the server never sent.
  *
- * `exchangeRate` is the one that looked harmless — it defaulted to `1.0`, which is not neutral but a
- * silent claim of parity, off by 24.75× on a CZK order priced in EUR. `appliedDiscountSource`
- * defaulted to `0` = None, reporting no discount over a total that already had one deducted.
+ * `appliedDiscountSource` is the one that looked harmless — it defaulted to `0` = None, reporting
+ * no discount over a total that already had one deducted.
+ *
+ * `exchangeRate` used to sit here for the same reason and is GONE from the contract: prices are
+ * authored per currency now rather than converted at a rate, so there is no rate to send. Its old
+ * `1.0` default was never neutral — it was a silent claim of parity, off by 24.75x on a CZK order
+ * quoted in EUR — and removing the field is what retires that hazard rather than defending it.
  *
  * The three nullable-by-design discounts stay nullable: absent means "no tier discount", which is a
  * different sentence from "a 0 Kč tier discount applied".
@@ -123,7 +127,6 @@ private fun GenQuoteOrderResponse.toAppDto(): QuoteOrderResponse? {
         expressSurchargeApplied = expressSurchargeApplied ?: return null,
         expressSurchargeAmount = expressSurchargeAmount ?: return null,
         expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership ?: return null,
-        exchangeRate = exchangeRate ?: return null,
     )
 }
 

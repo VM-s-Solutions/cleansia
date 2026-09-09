@@ -490,8 +490,6 @@
     <string name="business_country">Krajina registrácie</string>
     <string name="registration_number_label">Registračné číslo</string>
     <string name="registration_number_helper">Formát závisí od zvolenej krajiny.</string>
-    <string name="vat_number_label">IČ DPH</string>
-    <string name="vat_number_helper">Voliteľné — len ak ste platiteľ DPH.</string>
     <string name="legal_entity_name_label">Názov právnickej osoby</string>
     <string name="street">Ulica</string>
     <string name="city">Mesto</string>

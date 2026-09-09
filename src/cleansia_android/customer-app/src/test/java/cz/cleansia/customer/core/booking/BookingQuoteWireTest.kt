@@ -113,7 +113,6 @@ class BookingQuoteWireTest {
         assertEquals(450.00, quote.packagesSubtotal, 0.0)
         assertEquals(300.00, quote.extrasSubtotal, 0.0)
         assertEquals(730.00, quote.expressSurchargeAmount, 0.0)
-        assertEquals(24.75, quote.exchangeRate, 0.0)
     }
 
     @Test
@@ -126,15 +125,6 @@ class BookingQuoteWireTest {
     @Test
     fun anExplicitNullQuoteMoneyKeyRefusesTheQuoteToo() = runTest {
         assertQuoteRefused("totalPrice", withKey(CAPTURED_QUOTE, "totalPrice", JsonNull))
-    }
-
-    /**
-     * `exchangeRate` used to default to `1.0`, which is not a neutral fallback: every converted figure
-     * on the confirm step would be off by the true rate — 24.75× for a CZK order priced in EUR.
-     */
-    @Test
-    fun aMissingExchangeRateRefusesTheQuoteRatherThanAssumingParity() = runTest {
-        assertQuoteRefused("exchangeRate", withoutKey(CAPTURED_QUOTE, "exchangeRate"))
     }
 
     /**
@@ -279,7 +269,6 @@ class BookingQuoteWireTest {
               "extrasSubtotal": 300.00,
               "expressSurchargeApplied": true,
               "expressSurchargeAmount": 730.00,
-              "exchangeRate": 24.75,
               "expressSurchargeWaivedByMembership": false,
               "expressUpgradesRemaining": 2
             }
@@ -300,7 +289,6 @@ class BookingQuoteWireTest {
             "extrasSubtotal",
             "expressSurchargeApplied",
             "expressSurchargeAmount",
-            "exchangeRate",
             "expressSurchargeWaivedByMembership",
             "expressUpgradesRemaining",
             "estimatedDurationMinutes",

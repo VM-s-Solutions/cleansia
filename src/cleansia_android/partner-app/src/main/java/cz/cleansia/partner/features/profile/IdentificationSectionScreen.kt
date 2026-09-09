@@ -144,15 +144,6 @@ fun IdentificationSectionScreen(
                 enabled = !saving,
                 transparentContainer = true,
             )
-            Spacer(Modifier.height(Spacing.XS))
-            CleansiaTextField(
-                value = form.vatNumber,
-                onValueChange = viewModel::onVatNumberChange,
-                label = fieldLabels?.vatNumberLabel ?: stringResource(R.string.vat_number_label),
-                helper = stringResource(R.string.vat_number_helper),
-                enabled = !saving,
-                transparentContainer = true,
-            )
 
             // Legal entity name surfaces only for s.r.o.-style cleaners.
             // Animated visibility keeps the field out of the layout when

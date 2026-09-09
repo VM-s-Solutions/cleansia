@@ -46,7 +46,6 @@ data class IdentificationForm(
     val entityType: EmployeeEntityType = EmployeeEntityType._1,
     val businessCountryId: String? = null,
     val registrationNumber: String = "",
-    val vatNumber: String = "",
     val legalEntityName: String = "",
 )
 
@@ -112,7 +111,6 @@ class IdentificationSectionViewModel @Inject constructor(
                             // country so the typical case is zero-tap.
                             businessCountryId = e.countryId,
                             registrationNumber = e.registrationNumber.orEmpty(),
-                            vatNumber = e.vatNumber.orEmpty(),
                             legalEntityName = e.legalEntityName.orEmpty(),
                         ),
                     )
@@ -164,8 +162,6 @@ class IdentificationSectionViewModel @Inject constructor(
 
     fun onRegistrationNumberChange(v: String) = updateForm { it.copy(registrationNumber = v) }
 
-    fun onVatNumberChange(v: String) = updateForm { it.copy(vatNumber = v) }
-
     fun onLegalEntityNameChange(v: String) = updateForm { it.copy(legalEntityName = v) }
 
     fun save() {
@@ -206,7 +202,6 @@ class IdentificationSectionViewModel @Inject constructor(
                 entityType = form.entityType,
                 businessCountryId = businessCountryId,
                 registrationNumber = form.registrationNumber,
-                vatNumber = form.vatNumber.takeIf { it.isNotBlank() },
                 legalEntityName = form.legalEntityName.takeIf { it.isNotBlank() },
             )
             when (result) {

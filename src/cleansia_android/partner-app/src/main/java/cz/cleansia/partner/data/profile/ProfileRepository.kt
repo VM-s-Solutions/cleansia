@@ -109,7 +109,6 @@ interface ProfileRepository {
         entityType: EmployeeEntityType,
         businessCountryId: String,
         registrationNumber: String,
-        vatNumber: String?,
         legalEntityName: String?,
     ): ApiResult<Unit>
 
@@ -283,7 +282,6 @@ class ProfileRepositoryImpl @Inject constructor(
         entityType: EmployeeEntityType,
         businessCountryId: String,
         registrationNumber: String,
-        vatNumber: String?,
         legalEntityName: String?,
     ): ApiResult<Unit> = safeApiCall(json) {
         employeeApi.employeeUpdateIdentificationInfo(
@@ -294,7 +292,6 @@ class ProfileRepositoryImpl @Inject constructor(
                 entityType = entityType,
                 businessCountryId = businessCountryId,
                 registrationNumber = registrationNumber,
-                vatNumber = vatNumber,
                 legalEntityName = legalEntityName,
             ),
         )

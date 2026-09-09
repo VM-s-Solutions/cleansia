@@ -76,7 +76,6 @@ public class ApproveEmployeePayCoverageTests
         employee.UpdateEmployeeDetails(
             EmployeeEntityType.NaturalPerson,
             registrationNumber: "12345678",
-            vatNumber: null,
             legalEntityName: null,
             nationalityId: CountryId,
             passportId: "AB1234567",

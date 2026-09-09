@@ -179,7 +179,6 @@ public sealed class EmployeeUserAuditCoverageTests
                 PassportId: null,
                 EntityType: null,
                 RegistrationNumber: null,
-                VatNumber: null,
                 LegalEntityName: null,
                 EmergencyName: null,
                 EmergencyPhone: null),
@@ -309,7 +308,6 @@ public sealed class EmployeeUserAuditCoverageTests
         employee.UpdateEmployeeDetails(
             EmployeeEntityType.NaturalPerson,
             registrationNumber: "12345678",
-            vatNumber: null,
             legalEntityName: null,
             nationalityId: "country-cz",
             passportId: SubjectPassport,

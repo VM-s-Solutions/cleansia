@@ -131,7 +131,7 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
         var currency = await context.Currencies.FirstOrDefaultAsync(c => c.Code == "CZK");
         if (currency is null)
         {
-            currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+            currency = Currency.Create("CZK", "Kč", "Czech koruna");
             currency.Id = Ulid.NewUlid().ToString();
             context.Currencies.Add(currency);
         }

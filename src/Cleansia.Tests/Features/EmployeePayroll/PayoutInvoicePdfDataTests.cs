@@ -52,7 +52,7 @@ public class PayoutInvoicePdfDataTests
     public void Supplier_Name_Uses_The_Legal_Entity_Name_When_The_Cleaner_Trades_As_One()
     {
         var employee = Cleaner();
-        employee.UpdateBusinessIdentity(EmployeeEntityType.LegalEntity, "12345678", null, "Novák Cleaning s.r.o.");
+        employee.UpdateBusinessIdentity(EmployeeEntityType.LegalEntity, "12345678", "Novák Cleaning s.r.o.");
 
         var data = Map(employee);
 
@@ -219,7 +219,6 @@ public class PayoutInvoicePdfDataTests
         var data = Map();
 
         Assert.False(data.Supplier.IsVatPayer);
-        Assert.Null(data.Supplier.VatNumber);
         Assert.Equal(0m, data.VatAmount);
     }
 
@@ -234,19 +233,20 @@ public class PayoutInvoicePdfDataTests
     /// the same blob URL. A cleaner could change the tax treatment of a document already sent by editing
     /// their own profile.</para>
     ///
-    /// <para>The number still reaches the document: it is printed as an identifier. What it no longer
-    /// does is decide the tax treatment.</para>
+    /// <para>The FIELD is gone as of chunk 4: a cleaner has no VAT number to hold, on the entity or on
+    /// any of the three write paths that used to set it. What survives is the identifier they do have —
+    /// the ICO — which the document prints as the supplier's registration number.</para>
     /// </summary>
     [Fact]
-    public void A_Cleaner_Holding_A_Vat_Number_Is_Still_Not_A_Vat_Payer()
+    public void A_Cleaner_Is_Never_A_Vat_Payer_And_The_Document_Carries_Their_Ico_Instead()
     {
         var employee = Cleaner();
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
 
         var data = Map(employee);
 
         Assert.False(data.Supplier.IsVatPayer);
-        Assert.Equal("CZ12345678", data.Supplier.VatNumber);
+        Assert.Equal("12345678", data.Supplier.RegistrationNumber);
     }
 
     // The country's VAT setting is the CUSTOMER-order regime. A zero here has to follow from the
@@ -275,7 +275,7 @@ public class PayoutInvoicePdfDataTests
     public void No_Vat_Is_Carved_Out_For_A_Cleaner_Holding_A_Vat_Number()
     {
         var employee = Cleaner();
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
         var invoice = Invoice(subTotal: 1000m);
 
         var data = Map(employee, invoice, countryContext: CzechContext());
@@ -290,7 +290,7 @@ public class PayoutInvoicePdfDataTests
     public void Printed_Total_Equals_The_Stored_Total_For_A_Vat_Payer_And_A_Non_Payer_Alike()
     {
         var registered = Cleaner();
-        registered.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        registered.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
 
         var nonPayerInvoice = Invoice(subTotal: 1000m);
         var payerInvoice = Invoice(subTotal: 1000m);
@@ -303,7 +303,7 @@ public class PayoutInvoicePdfDataTests
     public void A_Registered_Cleaner_In_A_Country_That_Requires_No_Vat_Is_Charged_None()
     {
         var employee = Cleaner();
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
 
         var data = Map(employee, Invoice(subTotal: 1000m), countryContext: new CountryInvoiceContext { VatRequired = false, VatRate = 0.21m });
 
@@ -406,7 +406,7 @@ public class PayoutInvoicePdfDataTests
 
         var employee = Employee.CreateWithUser(user);
         employee.UpdateAddress(address);
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null, null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
         employee.UpdateBankDetails("CZ3155000000005885638003");
         return employee;
     }

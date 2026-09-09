@@ -36,7 +36,7 @@ public class GetServiceOverviewTests(PostgresContainerFixture fixture) : BaseInt
                 // needs one to exist and a row against it for each entry. Withholding is the correct
                 // answer to an unpriced entry, which is exactly why an unpriced fixture would leave
                 // this suite asserting over an empty list.
-                var currency = Currency.Create("CZK", "Kc", "Czech Koruna", 1m);
+                var currency = Currency.Create("CZK", "Kc", "Czech Koruna");
                 currency.SetAsDefault(true);
                 currency.Created("system", DateTimeOffset.UtcNow);
                 context.Currencies.Add(currency);

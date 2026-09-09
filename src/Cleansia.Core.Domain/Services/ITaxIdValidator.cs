@@ -9,11 +9,6 @@ public interface ITaxIdValidator
         EmployeeEntityType entityType,
         string? value,
         CancellationToken cancellationToken = default);
-
-    Task<TaxIdValidationResult> ValidateVatNumberAsync(
-        string countryId,
-        string? value,
-        CancellationToken cancellationToken = default);
 }
 
 public sealed record TaxIdValidationResult(bool IsValid, string? ErrorKey)

@@ -245,7 +245,7 @@ public class PreferredOfferExitAgreementTests
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(2);
-        order.SetCurrency(Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        order.SetCurrency(Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna"));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
 
         // The money case stays at New + Card + Pending — the state a card booking sits in until the

@@ -16,24 +16,21 @@ public class Currency : Auditable
     public string Name { get; private set; }
 
     [Required]
-    public decimal ExchangeRate { get; private set; } = 1.0m;
 
     public bool IsDefault { get; private set; }
 
-    public static Currency Create(string code, string symbol, string name, decimal exchangeRate) => new()
+    public static Currency Create(string code, string symbol, string name) => new()
     {
         Code = Canonical(code),
         Symbol = symbol,
         Name = name,
-        ExchangeRate = exchangeRate
     };
 
-    public void Update(string code, string symbol, string name, decimal exchangeRate)
+    public void Update(string code, string symbol, string name)
     {
         Code = Canonical(code);
         Symbol = symbol;
         Name = name;
-        ExchangeRate = exchangeRate;
     }
 
     public void SetAsDefault(bool isDefault)

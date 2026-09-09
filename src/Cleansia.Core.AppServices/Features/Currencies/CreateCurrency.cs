@@ -13,8 +13,7 @@ public class CreateCurrency
     public record Command(
         string Code,
         string Symbol,
-        string Name,
-        decimal ExchangeRate) : ICommand<Response>;
+        string Name) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -46,10 +45,6 @@ public class CreateCurrency
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.ExchangeRate)
-                .Cascade(CascadeMode.Stop)
-                .GreaterThan(0)
-                .WithMessage(BusinessErrorMessage.ExchangeRateMustBePositive);
         }
     }
 
@@ -58,7 +53,7 @@ public class CreateCurrency
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var currency = Currency.Create(command.Code, command.Symbol, command.Name, command.ExchangeRate);
+            var currency = Currency.Create(command.Code, command.Symbol, command.Name);
 
             currencyRepository.Add(currency);
 

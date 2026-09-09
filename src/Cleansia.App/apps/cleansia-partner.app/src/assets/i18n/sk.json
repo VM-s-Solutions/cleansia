@@ -1073,9 +1073,6 @@
       "registration_number": {
         "invalid_format": "Neplatný formát IČO pre vybranú krajinu"
       },
-      "vat_number": {
-        "invalid_format": "Neplatný formát IČ DPH pre vybranú krajinu"
-      },
       "must_be_positive": "Hodnota musí byť kladná",
       "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
       "page_must_be_positive": "Stránka musí byť väčšia ako 0",
@@ -1106,8 +1103,7 @@
       "not_found": "Mena nenájdená",
       "code_already_exists": "Mena s týmto kódom už existuje",
       "in_use": "Menu nie je možné vymazať, pretože sa aktuálne používa",
-      "cannot_delete_default": "Predvolenú menu nie je možné vymazať",
-      "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo"
+      "cannot_delete_default": "Predvolenú menu nie je možné vymazať"
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",

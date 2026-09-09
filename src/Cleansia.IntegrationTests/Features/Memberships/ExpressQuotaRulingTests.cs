@@ -321,7 +321,7 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);

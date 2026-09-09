@@ -58,7 +58,7 @@ public class OrderMockFactory
     /// <para>Never mutated here, and callers that need to mutate one pass their own via the
     /// <c>currency</c> parameter — which is also how a suite gets a SECOND currency.</para>
     /// </summary>
-    private static readonly Currency DefaultCurrency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+    private static readonly Currency DefaultCurrency = Currency.Create("CZK", "Kč", "Czech Koruna");
 
     public static Order Generate(OrderPartial? mergeFrom = null, Currency? currency = null)
     {

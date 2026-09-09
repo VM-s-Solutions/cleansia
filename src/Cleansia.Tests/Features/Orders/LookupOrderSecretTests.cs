@@ -38,7 +38,7 @@ public class LookupOrderSecretTests
     private static Order BuildOrder()
     {
         var address = Address.Create("Street 1", "Praha", "14000", "country-1");
-        var currency = Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna");
 
         var order = Order.Create(
             customerName: "Alice",

@@ -331,7 +331,7 @@ public sealed class AuditSensitiveSnapshotTests
         decimal totalPrice = 1000m,
         bool completed = false)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var address = Address.Create("Street 1", "Prague", "11000", "cz");
         var order = Order.Create(
             customerName: CustomerName,

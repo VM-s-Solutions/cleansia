@@ -65,7 +65,7 @@ public class RecurringPreferredCleanerCarryThroughTests
 
         _currencyRepository
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+            .ReturnsAsync(Currency.Create("CZK", "Kč", "Czech Koruna"));
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),

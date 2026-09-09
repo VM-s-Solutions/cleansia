@@ -34,7 +34,7 @@ public class BookableCatalogueRequiresPayTests
     /// an unpriced entry as well as an unpaid one, and an unpriced fixture would make every assertion
     /// below pass for the wrong reason — the pay filter has to be the only thing removing anything.
     /// </summary>
-    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna");
 
     private readonly ICurrencyRepository _currencies = CataloguePriceDoubles.DefaultCurrency(Czk);
 

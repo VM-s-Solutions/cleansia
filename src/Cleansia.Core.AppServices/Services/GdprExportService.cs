@@ -35,7 +35,7 @@ public class GdprExportService(
         if (user.Employee is { } emp)
             employee = new GdprExportEmployeeDto(
                 emp.Id,
-                emp.EntityType, emp.RegistrationNumber, emp.VatNumber, emp.LegalEntityName,
+                emp.EntityType, emp.RegistrationNumber, emp.LegalEntityName,
                 emp.IBAN, emp.PassportId, emp.NationalityId,
                 emp.EmergencyContactName, emp.EmergencyContactPhone,
                 emp.PreferredCurrencyCode, emp.AverageRating, emp.ContractStatus, emp.CreatedOn);

@@ -110,7 +110,6 @@ public static class FileExtensions
         // no gain, because the posture no longer reads them.
         const bool cleanersAreVatPayers = false;
 
-        var vatNumber = string.IsNullOrWhiteSpace(employee.VatNumber) ? null : employee.VatNumber;
 
         return new InvoiceSupplierData
         {
@@ -122,7 +121,6 @@ public static class FileExtensions
             City = employee.Address?.City,
             Country = employee.Address?.Country?.Name,
             RegistrationNumber = employee.RegistrationNumber,
-            VatNumber = vatNumber,
             IsVatPayer = cleanersAreVatPayers,
             Email = employee.User?.Email,
             Phone = employee.User?.PhoneNumber,

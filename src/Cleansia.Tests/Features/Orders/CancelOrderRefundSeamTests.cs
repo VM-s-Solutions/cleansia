@@ -62,7 +62,7 @@ public class CancelOrderRefundSeamTests
 
     private Order ArrangeCardPaidPendingOrder()
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",

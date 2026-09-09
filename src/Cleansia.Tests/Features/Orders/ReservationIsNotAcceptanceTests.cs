@@ -118,7 +118,7 @@ public class ReservationIsNotAcceptanceTests
 
     private Order ArrangeReservedOrder(double cleaningInHours)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var cleaningDateTime = DateTime.UtcNow.AddHours(cleaningInHours);
 
         var order = Order.Create(

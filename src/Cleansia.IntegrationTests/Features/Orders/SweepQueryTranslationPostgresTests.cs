@@ -103,7 +103,7 @@ public class SweepQueryTranslationPostgresTests(PostgresContainerFixture fixture
 
         var country = Country.Create("Czechia", "CZ", isServiced: true);
         country.Id = Ulid.NewUlid().ToString();
-        var currency = Currency.Create("CZK", "Kc", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kc", "Czech koruna");
         currency.Id = Ulid.NewUlid().ToString();
         context.Countries.Add(country);
         context.Currencies.Add(currency);

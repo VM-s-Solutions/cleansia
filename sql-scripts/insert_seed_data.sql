@@ -518,7 +518,7 @@ VALUES
 INSERT INTO public."Currencies" (
   "Id", "IsActive", "IsDefault", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "Code", "Symbol", "Name", "ExchangeRate"
+  "DeactivatedOn", "Code", "Symbol", "Name"
 )
 -- ONLY THE CURRENCIES THE PLATFORM ACTUALLY OPERATES IN. Twelve were seeded active with hand-typed
 -- rates nobody had reviewed, and until Wave A every one of them was nameable by any authenticated
@@ -534,11 +534,9 @@ INSERT INTO public."Currencies" (
 -- So: EUR exists here from day one, and Wave B flips IsActive = true in the same commit that gives it
 -- price rows and the fail-closed rule. SetDefaultCurrency refuses an inactive currency in the meantime.
 --
--- ExchangeRate is a dead column as of Wave A: nothing in the pricing path reads it. It is left at 1.0
--- rather than dropped because the field is still on two mobile contracts that treat it as required.
 VALUES
-  (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 1.0),
-  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', 1.0);
+  (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna'),
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro');
 
 -- 6. SERVICE CATEGORIES
 -- Slugs are the client-facing stable identifier (mobile maps them to icons/colors).

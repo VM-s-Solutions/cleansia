@@ -15,9 +15,6 @@ public class Employee : Auditable, ITenantEntity
     [MaxLength(50)]
     public string? RegistrationNumber { get; private set; }
 
-    [MaxLength(50)]
-    public string? VatNumber { get; private set; }
-
     [MaxLength(200)]
     public string? LegalEntityName { get; private set; }
 
@@ -233,7 +230,6 @@ public class Employee : Auditable, ITenantEntity
     public Employee UpdateEmployeeDetails(
         EmployeeEntityType entityType,
         string? registrationNumber,
-        string? vatNumber,
         string? legalEntityName,
         string nationalityId,
         string passportId,
@@ -245,7 +241,6 @@ public class Employee : Auditable, ITenantEntity
     {
         EntityType = entityType;
         RegistrationNumber = registrationNumber;
-        VatNumber = vatNumber;
         LegalEntityName = entityType == EmployeeEntityType.LegalEntity ? legalEntityName : null;
         NationalityId = nationalityId;
         PassportId = passportId;
@@ -271,12 +266,10 @@ public class Employee : Auditable, ITenantEntity
     public Employee UpdateBusinessIdentity(
         EmployeeEntityType entityType,
         string? registrationNumber,
-        string? vatNumber,
         string? legalEntityName)
     {
         EntityType = entityType;
         RegistrationNumber = registrationNumber;
-        VatNumber = vatNumber;
         LegalEntityName = entityType == EmployeeEntityType.LegalEntity ? legalEntityName : null;
         return this;
     }
@@ -377,7 +370,6 @@ public class Employee : Auditable, ITenantEntity
     public Employee Anonymize()
     {
         RegistrationNumber = AnonymizationMarker.Value;
-        VatNumber = null;
         LegalEntityName = null;
         IBAN = AnonymizationMarker.Value;
         PassportId = AnonymizationMarker.Value;

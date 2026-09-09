@@ -170,10 +170,6 @@ public sealed class OrderPricingCalculator(
             ExtrasSubtotal: extrasSubtotal,
             ExpressSurchargeApplied: expressSurchargeApplied,
             ExpressSurchargeAmount: expressSurchargeAmount,
-            // Always 1: no conversion happens anywhere in this method any more. The field stays on the
-            // contract because both mobile clients treat it as required and refuse the page rather than
-            // assume parity — deliberately, with tests. It is display-only and never a price input.
-            ExchangeRate: 1m,
             ExpressSurchargeWaivedByMembership: waiver.Waived,
             ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null,
             Lines: lines);

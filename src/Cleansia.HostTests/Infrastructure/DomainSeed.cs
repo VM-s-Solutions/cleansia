@@ -34,7 +34,7 @@ public static class DomainSeed
 
         if (!await ctx.Currencies.IgnoreQueryFilters().AnyAsync(c => c.Id == CurrencyId))
         {
-            var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+            var currency = Currency.Create("CZK", "Kč", "Czech koruna");
             currency.Id = CurrencyId;
             ctx.Currencies.Add(currency);
         }
@@ -109,7 +109,6 @@ public static class DomainSeed
         employee.UpdateEmployeeDetails(
             entityType: EmployeeEntityType.NaturalPerson,
             registrationNumber: "REG-123456",
-            vatNumber: null,
             legalEntityName: null,
             nationalityId: CountryId,
             passportId: "P1234567",

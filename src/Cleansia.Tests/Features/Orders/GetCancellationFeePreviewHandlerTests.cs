@@ -52,7 +52,7 @@ public class GetCancellationFeePreviewHandlerTests
         string ownerId = UserId,
         OrderStatus[]? statuses = null)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",

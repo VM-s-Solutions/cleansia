@@ -34,7 +34,7 @@ public class OrderPayCoverageGateTests
     /// currency id — two <c>Currency.Create</c> calls are two different currencies, and the rows would
     /// simply not be found.
     /// </summary>
-    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna");
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IServiceRepository> _serviceRepository = new();

@@ -60,9 +60,9 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
         await using var ctx = NewContext();
         ctx.Languages.Add(Language.Create("en", "English"));
 
-        var czk = Currency.Create("CZK", "Kc", "Czech koruna", 1.0m);
+        var czk = Currency.Create("CZK", "Kc", "Czech koruna");
         czk.SetAsDefault(true);
-        var eur = Currency.Create("EUR", "E", "Euro", 1.0m);
+        var eur = Currency.Create("EUR", "E", "Euro");
         ctx.Currencies.AddRange(czk, eur);
 
         var user = User.CreateWithPassword(

@@ -335,7 +335,7 @@ public class PreferredOfferDisclosureTests
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(2);
-        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna"));
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
 
         // The hold must be granted before anybody is assigned — the aggregate refuses a reservation on

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260909172839_Initial")]
+    [Migration("20260909201112_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -2210,10 +2210,6 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("ExchangeRate")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -5569,10 +5565,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("character varying(26)");
-
-                    b.Property<string>("VatNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<int?>("WeeklyOrderLimit")
                         .HasColumnType("integer");

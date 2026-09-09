@@ -23,7 +23,6 @@ public class EmployeePayoutProfileGateTests
         employee.UpdateEmployeeDetails(
             entityType: EmployeeEntityType.NaturalPerson,
             registrationNumber: "12345678",
-            vatNumber: null,
             legalEntityName: null,
             nationalityId: "country-cz",
             passportId: "P1234567",

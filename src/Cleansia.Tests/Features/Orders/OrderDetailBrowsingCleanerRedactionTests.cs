@@ -431,7 +431,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
         order.Id = OrderId;
         order.AddSelectedExtras(
             [OrderExtra.Create(order, Extra.Create("insideOven", "insideOven", null), 250m)]);
-        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna"));
         order.UpdateEstimatedTime(180);
 
         // Two required seats, no spare, one of them filled below — so none of the five seat members

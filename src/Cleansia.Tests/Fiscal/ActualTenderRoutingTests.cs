@@ -56,8 +56,7 @@ public class ActualTenderRoutingTests
             street: "Hauptstr. 1",
             city: "Berlin",
             zipCode: "10115",
-            countryId: CountryId,
-            vatNumber: "DE123456789");
+            countryId: CountryId);
         _companyInfoRepository
             .Setup(r => r.GetActiveByCountryAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);

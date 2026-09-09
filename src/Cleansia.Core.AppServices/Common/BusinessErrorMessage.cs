@@ -44,7 +44,6 @@ public static class BusinessErrorMessage
     public const string CurrencyDefaultChangedConcurrently = "currency.default_changed_concurrently";
     public const string CurrencyInUse = "currency.in_use";
     public const string CannotDeleteDefaultCurrency = "currency.cannot_delete_default";
-    public const string ExchangeRateMustBePositive = "currency.exchange_rate_must_be_positive";
     
     // Email
     public const string InvalidEmailFormat = "email.invalid_format";
@@ -394,7 +393,6 @@ public static class BusinessErrorMessage
     public const string InvalidZipCode = "validation.invalid_zip_code";
     // Country-scoped IČO/VAT format checks, driven by CountryConfiguration's regexes.
     public const string RegistrationNumberInvalidFormat = "validation.registration_number.invalid_format";
-    public const string VatNumberInvalidFormat = "validation.vat_number.invalid_format";
 
     // Payout details (ADR-0034 D4) — every key the payout validator can return, plus the feature's own.
     public const string PayoutCountryNotSupported = "validation.payout.country_not_supported";

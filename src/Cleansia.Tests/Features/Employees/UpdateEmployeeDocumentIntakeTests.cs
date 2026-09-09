@@ -46,9 +46,6 @@ public class UpdateEmployeeDocumentIntakeTests
             .Setup(v => v.ValidateRegistrationNumberAsync(
                 It.IsAny<string>(), It.IsAny<EmployeeEntityType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TaxIdValidationResult.Valid());
-        _taxIdValidator
-            .Setup(v => v.ValidateVatNumberAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(TaxIdValidationResult.Valid());
     }
 
     private UpdateEmployee.Validator CreateValidator() => new(
@@ -87,7 +84,6 @@ public class UpdateEmployeeDocumentIntakeTests
         PassportId: "AB12345",
         EntityType: EmployeeEntityType.NaturalPerson,
         RegistrationNumber: "12345678",
-        VatNumber: null,
         LegalEntityName: null,
         EmergencyName: null,
         EmergencyPhone: null,

@@ -248,7 +248,7 @@ public class RegenerateInvoicePdfFailureRecordingTests
 
         var employee = Employee.CreateWithUser(user);
         employee.UpdateAddress(address);
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null, null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
         return employee;
     }
 
@@ -261,7 +261,6 @@ public class RegenerateInvoicePdfFailureRecordingTests
             city: "Praha",
             zipCode: "11000",
             countryId: "cz",
-            vatNumber: "CZ87654321",
             iban: "CZ1101000000001234567890",
             bankAccountNumber: "1234567890/0100",
             swift: "KOMBCZPP");

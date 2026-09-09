@@ -35,7 +35,7 @@ public class LookupOrderBatchSecretTests
     private static Order BuildOrder(string id, string customerEmail)
     {
         var address = Address.Create("Street 1", "Praha", "14000", "country-1");
-        var currency = Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna");
 
         var order = Order.Create(
             customerName: "Alice",

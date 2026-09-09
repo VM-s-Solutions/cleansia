@@ -163,7 +163,7 @@ public class ReservationSpendsNoCapacityTests(PostgresContainerFixture fixture) 
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);

@@ -52,7 +52,7 @@ public class AdminRefundOrderHandlerTests
         OrderStatus latestStatus = OrderStatus.Confirmed,
         PaymentStatus paymentStatus = PaymentStatus.Paid)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -86,7 +86,7 @@ public class AdminRefundOrderHandlerTests
         OrderStatus latestStatus = OrderStatus.Confirmed,
         PaymentStatus paymentStatus = PaymentStatus.Paid)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",

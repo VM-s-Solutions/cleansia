@@ -58,7 +58,7 @@ public class CreateOrderExpressWaiverConsentTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         _currencyRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);

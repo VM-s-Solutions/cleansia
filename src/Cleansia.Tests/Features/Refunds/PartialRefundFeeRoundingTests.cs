@@ -71,7 +71,7 @@ public class PartialRefundFeeRoundingTests
 
     private static Order SingleServiceOrder(decimal totalPrice, decimal? appliedVatRate = null)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var address = Address.Create("Street 1", "Prague", "11000", CountryId);
         var order = Order.Create(
             customerName: "Cust",

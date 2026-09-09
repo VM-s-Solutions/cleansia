@@ -206,7 +206,7 @@ public class ExpressSurchargeDiscountCompositionTests
                 SelectedExtraSlugs: [],
                 CleaningDate: express ? Now.AddHours(3) : Now.AddDays(3),
                 PaymentType: PaymentType.Cash,
-                Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+                Currency: Currency.Create("CZK", "Kč", "Czech Koruna"),
                 SelectedServiceIds: ["service-1"],
                 SelectedPackageIds: [],
                 RawSubtotal: RawSubtotal,
@@ -235,8 +235,7 @@ public class ExpressSurchargeDiscountCompositionTests
                 PackagesSubtotal: 0m,
                 ExtrasSubtotal: 0m,
                 ExpressSurchargeApplied: express,
-                ExpressSurchargeAmount: surcharge,
-                ExchangeRate: 1m));
+                ExpressSurchargeAmount: surcharge));
 
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserId()).Returns(UserId);

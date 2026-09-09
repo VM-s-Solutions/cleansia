@@ -32,7 +32,7 @@ public class GetPagedServicesHandlerTests
 
     public GetPagedServicesHandlerTests()
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         _currencies = CataloguePriceDoubles.DefaultCurrency(currency);

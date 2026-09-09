@@ -24,7 +24,7 @@ public class UpdatePackageWeightTests
 
     public UpdatePackageWeightTests()
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.SetAsDefault(true);
         _currencyRepository = CataloguePriceDoubles.DefaultCurrency(currency);
 

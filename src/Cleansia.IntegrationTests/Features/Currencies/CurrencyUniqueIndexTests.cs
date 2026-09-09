@@ -58,14 +58,14 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
 
     private static Currency Czk(bool isDefault = false)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.SetAsDefault(isDefault);
         return currency;
     }
 
     private static Currency Eur(bool isDefault = false)
     {
-        var currency = Currency.Create("EUR", "€", "Euro", 1.0m);
+        var currency = Currency.Create("EUR", "€", "Euro");
         currency.SetAsDefault(isDefault);
         return currency;
     }
@@ -120,7 +120,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
         await SeedAsync(Czk(isDefault: true));
 
         await using var ctx = NewContext();
-        ctx.Currencies.Add(Currency.Create("czk", "Kč", "Czech koruna lower", 1.0m));
+        ctx.Currencies.Add(Currency.Create("czk", "Kč", "Czech koruna lower"));
 
         var ex = await Assert.ThrowsAsync<DbUpdateException>(
             () => ctx.CommitAsync(CancellationToken.None));
@@ -152,7 +152,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
     public async Task Many_NonDefault_Currencies_Coexist()
     {
         await ResetAsync();
-        await SeedAsync(Czk(isDefault: true), Eur(), Currency.Create("PLN", "zł", "Polish złoty", 1.0m));
+        await SeedAsync(Czk(isDefault: true), Eur(), Currency.Create("PLN", "zł", "Polish złoty"));
 
         await using var ctx = NewContext();
         Assert.Equal(2, await ctx.Currencies.CountAsync(c => !c.IsDefault));
@@ -310,7 +310,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
         await SeedAsync(Czk(isDefault: true));
 
         await using var ctx = NewContext();
-        var result = await CreateAsync(ctx, new CreateCurrency.Command("CZK", "Kč", "Czech koruna", 1.0m));
+        var result = await CreateAsync(ctx, new CreateCurrency.Command("CZK", "Kč", "Czech koruna"));
 
         Assert.False(result.IsSuccess);
         Assert.Equal(BusinessErrorMessage.CurrencyCodeAlreadyExists, result.Error?.Message);
@@ -329,7 +329,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
 
         await using (var ctx = NewContext())
         {
-            var result = await CreateAsync(ctx, new CreateCurrency.Command(" pln ", "zł", "Polish złoty", 1.0m));
+            var result = await CreateAsync(ctx, new CreateCurrency.Command(" pln ", "zł", "Polish złoty"));
 
             Assert.True(result.IsSuccess, $"CreateCurrency failed with: {result.Error?.Message}");
         }

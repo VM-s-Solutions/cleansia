@@ -82,5 +82,5 @@ internal static class CataloguePriceDoubles
     }
 
     /// <summary>A currency for the empty cases, where nothing is ever looked up against it.</summary>
-    private static Currency Any => Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+    private static Currency Any => Currency.Create("CZK", "Kč", "Czech Koruna");
 }

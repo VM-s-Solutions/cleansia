@@ -59,7 +59,7 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = "cur-proj-czk";
         currency.SetAsDefault(true);
 

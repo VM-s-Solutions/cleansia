@@ -46,7 +46,7 @@ public class CancelUnfilledOrdersTests
 
     public CancelUnfilledOrdersTests()
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = DefaultCurrencyId;
         _currencies.Setup(c => c.GetDefaultAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);

@@ -74,6 +74,5 @@ internal static class CreateOrderTestData
             PackagesSubtotal: 500m,
             ExtrasSubtotal: 0m,
             ExpressSurchargeApplied: false,
-            ExpressSurchargeAmount: 0m,
-            ExchangeRate: 1m);
+            ExpressSurchargeAmount: 0m);
 }

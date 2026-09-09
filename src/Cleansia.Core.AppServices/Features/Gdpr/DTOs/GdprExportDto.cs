@@ -37,7 +37,6 @@ public record GdprExportEmployeeDto(
     string Id,
     EmployeeEntityType EntityType,
     string? RegistrationNumber,
-    string? VatNumber,
     string? LegalEntityName,
     string? IBAN,
     string? PassportId,

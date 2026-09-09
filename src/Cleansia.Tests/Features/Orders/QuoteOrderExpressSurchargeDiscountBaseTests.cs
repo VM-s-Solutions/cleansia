@@ -100,8 +100,7 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
                 PackagesSubtotal: 0m,
                 ExtrasSubtotal: 0m,
                 ExpressSurchargeApplied: expressSlot,
-                ExpressSurchargeAmount: surcharge,
-                ExchangeRate: 1m));
+                ExpressSurchargeAmount: surcharge));
     }
 
     private QuoteOrder.Handler CreateHandler() =>

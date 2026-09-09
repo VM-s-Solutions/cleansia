@@ -105,7 +105,7 @@ public sealed class CustomerProfileStatsQueryTests : IDisposable
 
     private static Currency NewCurrency(string id, string code)
     {
-        var currency = Currency.Create(code, code == "EUR" ? "€" : "Kč", code, 1m);
+        var currency = Currency.Create(code, code == "EUR" ? "€" : "Kč", code);
         currency.Id = id;
         currency.Created("system", DateTimeOffset.UtcNow.AddDays(-30));
         return currency;

@@ -344,7 +344,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "currency-czk";
         currency.SetAsDefault(true);
         ctx.Set<Currency>().Add(currency);

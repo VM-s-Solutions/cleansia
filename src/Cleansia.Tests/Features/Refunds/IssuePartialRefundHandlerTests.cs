@@ -83,7 +83,7 @@ public class IssuePartialRefundHandlerTests
         int bathrooms = 1,
         (string Slug, decimal Price)[]? extras = null)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var address = countryId is null
             ? null!
             : Address.Create("Street 1", "Prague", "11000", countryId);

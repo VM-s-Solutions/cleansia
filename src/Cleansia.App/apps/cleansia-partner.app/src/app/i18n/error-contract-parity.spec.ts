@@ -375,7 +375,6 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Country-scoped IČO/VAT format checks on the cleaner's own profile save
   // (UpdateEmployee, dispatched by Cleansia.Web.Partner).
   'validation.registration_number.invalid_format',
-  'validation.vat_number.invalid_format',
   // User account
   'user.email_confirmed',
   'user.existing_email',

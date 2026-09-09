@@ -64,7 +64,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         // Bookable is IsActive AND quotable, so the entries this suite expects to SEE need a
         // platform-wide pay config; without one they would be withheld for the other reason and the
         // deactivation assertions would pass vacuously.
-        var currency = Currency.Create("CZK", "Kc", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kc", "Czech Koruna");
         currency.SetAsDefault(true);
         ctx.Currencies.Add(currency);
 

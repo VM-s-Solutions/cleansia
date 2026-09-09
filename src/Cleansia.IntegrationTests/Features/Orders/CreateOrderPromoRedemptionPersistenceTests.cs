@@ -147,7 +147,7 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
 
         // Exchange rate 1.0 keeps the quoted total equal to the catalog price, so the validator's
         // price-match check is exact and the promo discount is a clean 20% of 1000.
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);

@@ -13,8 +13,7 @@ public class UpdateCurrency
         string CurrencyId,
         string Code,
         string Symbol,
-        string Name,
-        decimal ExchangeRate) : ICommand<Response>;
+        string Name) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -57,10 +56,6 @@ public class UpdateCurrency
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.ExchangeRate)
-                .Cascade(CascadeMode.Stop)
-                .GreaterThan(0)
-                .WithMessage(BusinessErrorMessage.ExchangeRateMustBePositive);
         }
     }
 
@@ -76,7 +71,7 @@ public class UpdateCurrency
                 return BusinessResult.Failure<Response>(new Error(nameof(command.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
             }
 
-            currency.Update(command.Code, command.Symbol, command.Name, command.ExchangeRate);
+            currency.Update(command.Code, command.Symbol, command.Name);
 
             // Renaming a code races the same way a create does -- see CreateCurrency.
             try

@@ -62,8 +62,7 @@ public class FiscalModeReceiptServiceMatrixTests
             street: "Hauptstr. 1",
             city: "Berlin",
             zipCode: "10115",
-            countryId: DeId,
-            vatNumber: "DE123456789");
+            countryId: DeId);
         _companyInfoRepository
             .Setup(r => r.GetActiveByCountryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);

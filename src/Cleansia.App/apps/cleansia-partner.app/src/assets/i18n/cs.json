@@ -1073,9 +1073,6 @@
       "registration_number": {
         "invalid_format": "Neplatný formát IČO pro vybranou zemi"
       },
-      "vat_number": {
-        "invalid_format": "Neplatný formát DIČ pro vybranou zemi"
-      },
       "must_be_positive": "Hodnota musí být kladná",
       "invalid_availability_format": "Neplatný formát dostupnosti. Dny musí být platné názvy dnů nebo data (yyyy-MM-dd) a časové rozsahy musí mít začátek před koncem.",
       "page_must_be_positive": "Stránka musí být větší než 0",
@@ -1106,8 +1103,7 @@
       "not_found": "Měna nenalezena",
       "code_already_exists": "Měna s tímto kódem již existuje",
       "in_use": "Měnu nelze smazat, protože je aktuálně používána",
-      "cannot_delete_default": "Výchozí měnu nelze smazat",
-      "exchange_rate_must_be_positive": "Směnný kurz musí být kladné číslo"
+      "cannot_delete_default": "Výchozí měnu nelze smazat"
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",

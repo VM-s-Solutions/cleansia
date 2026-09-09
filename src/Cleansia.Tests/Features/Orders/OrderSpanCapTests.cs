@@ -255,7 +255,7 @@ public class OrderSpanCapTests
     /// ONE instance, shared by the price rows and the input: the price lookup filters on currency id,
     /// so a second <c>Currency.Create</c> would be a different currency and find no rows.
     /// </summary>
-    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna");
 
     private OrderFactory CreateFactory() =>
         new(

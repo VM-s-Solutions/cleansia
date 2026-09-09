@@ -13,7 +13,7 @@ using Moq;
 namespace Cleansia.Tests.Services;
 
 /// <summary>
-/// <b>The calculator must ignore <c>Currency.ExchangeRate</c> entirely.</b>
+/// <b>The calculator converts nothing, and there is no longer a rate for it to ignore.</b>
 ///
 /// <para>This class used to assert the opposite — that every money figure was SCALED by the stored
 /// rate — and its fixtures are kept because they are the only ones in the suite that price against a
@@ -25,7 +25,7 @@ namespace Cleansia.Tests.Services;
 /// priced in CZK, which is how the conversion path shipped unexercised in the first place — so the
 /// guard against it coming back has to price at a rate that is not 1 and prove nothing moves.</para>
 /// </summary>
-public class OrderPricingCalculatorExchangeRateTests
+public class OrderPricingCalculatorNoConversionTests
 {
     private const string ServiceId = "service-1";
     private const string PackageId = "package-1";
@@ -34,7 +34,6 @@ public class OrderPricingCalculatorExchangeRateTests
     private const decimal BaseSubtotal = 1000m;
     private const decimal PackageAmount = 250m;
     private const decimal ExtraAmount = 75m;
-    private const decimal ExchangeRate = 0.04m;
 
     private readonly Mock<IServiceRepository> _serviceRepository = new();
     private readonly Mock<IPackageRepository> _packageRepository = new();
@@ -45,7 +44,7 @@ public class OrderPricingCalculatorExchangeRateTests
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IExpressWaiverResolver> _expressWaiverResolver = ExpressWaiverMocks.NoWaiver();
 
-    private OrderPricingCalculator CreateCalculator(decimal exchangeRate)
+    private OrderPricingCalculator CreateCalculator()
     {
         var service = Service.Create("category-1", "Standard clean", "desc");
         service.Id = ServiceId;
@@ -66,7 +65,7 @@ public class OrderPricingCalculatorExchangeRateTests
         _extraRepository.Setup(r => r.GetAll())
             .Returns(new List<Extra>().BuildMock());
 
-        var currency = Currency.Create("EUR", "€", "Euro", exchangeRate);
+        var currency = Currency.Create("EUR", "€", "Euro");
         currency.Id = CurrencyId;
         _currencyRepository.Setup(r => r.GetByIdAsync(CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
@@ -84,9 +83,9 @@ public class OrderPricingCalculatorExchangeRateTests
             _expressWaiverResolver.Object);
     }
 
-    private OrderPricingCalculator CreateMixedBasketCalculator(decimal exchangeRate)
+    private OrderPricingCalculator CreateMixedBasketCalculator()
     {
-        var calculator = CreateCalculator(exchangeRate);
+        var calculator = CreateCalculator();
 
         var package = Package.Create("Deep clean bundle", "desc");
         package.Id = PackageId;
@@ -110,19 +109,15 @@ public class OrderPricingCalculatorExchangeRateTests
 
         return calculator;
     }
-
-    private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceMixedBasketAsync(
-        decimal exchangeRate)
-        => CreateMixedBasketCalculator(exchangeRate).CalculateAsync(
+    private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceMixedBasketAsync()
+        => CreateMixedBasketCalculator().CalculateAsync(
             [ServiceId], [PackageId], [ExtraSlug], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
             cleaningDateUtc: DateTime.UtcNow.AddHours(3),
             userId: null,
             nowUtc: DateTime.UtcNow,
             CancellationToken.None);
-
-    private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceExpressSlotAsync(
-        decimal exchangeRate)
-        => CreateCalculator(exchangeRate).CalculateAsync(
+    private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceExpressSlotAsync()
+        => CreateCalculator().CalculateAsync(
             [ServiceId], [], [], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
             cleaningDateUtc: DateTime.UtcNow.AddHours(3),
             userId: null,
@@ -132,7 +127,7 @@ public class OrderPricingCalculatorExchangeRateTests
     [Fact]
     public async Task ExpressSurcharge_IsUnmovedByANonUnitExchangeRate()
     {
-        var result = await PriceExpressSlotAsync(ExchangeRate);
+        var result = await PriceExpressSlotAsync();
 
         Assert.True(result.ExpressSurchargeApplied);
         Assert.Equal(
@@ -143,7 +138,7 @@ public class OrderPricingCalculatorExchangeRateTests
     [Fact]
     public async Task TotalMinusSurcharge_IsTheAuthoredSubtotal_AtAnyStoredRate()
     {
-        var result = await PriceExpressSlotAsync(ExchangeRate);
+        var result = await PriceExpressSlotAsync();
 
         // The invariant CreateOrder.Handler relies on to derive the discount base.
         Assert.Equal(BaseSubtotal, result.TotalPrice - result.ExpressSurchargeAmount);
@@ -152,7 +147,7 @@ public class OrderPricingCalculatorExchangeRateTests
     [Fact]
     public async Task Total_IsUnmovedByANonUnitExchangeRate()
     {
-        var result = await PriceExpressSlotAsync(ExchangeRate);
+        var result = await PriceExpressSlotAsync();
 
         Assert.Equal(
             BaseSubtotal + BaseSubtotal * BookingPolicy.ExpressSurchargeRate,
@@ -162,7 +157,7 @@ public class OrderPricingCalculatorExchangeRateTests
     [Fact]
     public async Task ExpressSurcharge_UnitExchangeRate_IsUnchanged()
     {
-        var result = await PriceExpressSlotAsync(1m);
+        var result = await PriceExpressSlotAsync();
 
         Assert.Equal(BaseSubtotal * BookingPolicy.ExpressSurchargeRate, result.ExpressSurchargeAmount);
         Assert.Equal(BaseSubtotal, result.TotalPrice - result.ExpressSurchargeAmount);
@@ -176,7 +171,7 @@ public class OrderPricingCalculatorExchangeRateTests
     [Fact]
     public async Task LineItemSubtotals_AreUnmovedByANonUnitExchangeRate()
     {
-        var result = await PriceMixedBasketAsync(ExchangeRate);
+        var result = await PriceMixedBasketAsync();
 
         Assert.Equal(BaseSubtotal, result.ServicesSubtotal);
         Assert.Equal(PackageAmount, result.PackagesSubtotal);
@@ -190,7 +185,7 @@ public class OrderPricingCalculatorExchangeRateTests
     [Fact]
     public async Task LineItemSubtotals_StillSumToThePreSurchargeSubtotal()
     {
-        var result = await PriceMixedBasketAsync(ExchangeRate);
+        var result = await PriceMixedBasketAsync();
 
         Assert.Equal(
             result.TotalPrice - result.ExpressSurchargeAmount,
@@ -200,7 +195,7 @@ public class OrderPricingCalculatorExchangeRateTests
     [Fact]
     public async Task LineItemSubtotals_UnitExchangeRate_AreUnchanged()
     {
-        var result = await PriceMixedBasketAsync(1m);
+        var result = await PriceMixedBasketAsync();
 
         Assert.Equal(BaseSubtotal, result.ServicesSubtotal);
         Assert.Equal(PackageAmount, result.PackagesSubtotal);
@@ -210,7 +205,7 @@ public class OrderPricingCalculatorExchangeRateTests
     [Fact]
     public async Task NoExpressSlot_ChargesTheAuthoredSubtotal_AndReportsRateOne()
     {
-        var result = await CreateCalculator(ExchangeRate).CalculateAsync(
+        var result = await CreateCalculator().CalculateAsync(
             [ServiceId], [], [], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
             cleaningDateUtc: DateTime.UtcNow.AddDays(3),
             userId: null,
@@ -220,6 +215,5 @@ public class OrderPricingCalculatorExchangeRateTests
         Assert.False(result.ExpressSurchargeApplied);
         Assert.Equal(0m, result.ExpressSurchargeAmount);
         Assert.Equal(BaseSubtotal, result.TotalPrice);
-        Assert.Equal(1m, result.ExchangeRate);
     }
 }

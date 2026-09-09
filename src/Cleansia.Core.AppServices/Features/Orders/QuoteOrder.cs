@@ -49,7 +49,6 @@ public class QuoteOrder
         decimal ExtrasSubtotal,
         bool ExpressSurchargeApplied,
         decimal ExpressSurchargeAmount,
-        decimal ExchangeRate,
         /// <summary>
         /// The slot IS express and the surcharge was nevertheless not charged, because the member has a
         /// free express upgrade left. Without this field <c>ExpressSurchargeApplied: false</c> is
@@ -332,7 +331,6 @@ public class QuoteOrder
                 ExtrasSubtotal: result.ExtrasSubtotal,
                 ExpressSurchargeApplied: result.ExpressSurchargeApplied,
                 ExpressSurchargeAmount: result.ExpressSurchargeAmount,
-                ExchangeRate: result.ExchangeRate,
                 EstimatedDurationMinutes: estimatedMinutes,
                 RequiredEmployees: requiredEmployees,
                 Lines: (result.Lines ?? [])

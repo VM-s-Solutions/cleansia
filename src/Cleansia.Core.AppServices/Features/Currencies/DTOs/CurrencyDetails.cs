@@ -5,5 +5,4 @@ public record CurrencyDetailDto(
     string Code,
     string Name,
     string Symbol,
-    decimal ExchangeRate,
     bool IsDefault);

@@ -56,7 +56,7 @@ public class SetDefaultCurrencyHandlerTests
 
     private Currency ArrangeCurrency(string id, string code, bool isDefault = false)
     {
-        var currency = Currency.Create(code, code, code, 1.0m);
+        var currency = Currency.Create(code, code, code);
         currency.Id = id;
         currency.SetAsDefault(isDefault);
         _currencyRepository

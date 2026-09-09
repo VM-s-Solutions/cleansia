@@ -26,7 +26,6 @@ public static class CurrencyMappers
             Code: currency.Code,
             Symbol: currency.Symbol,
             Name: currency.Name,
-            ExchangeRate: NoConversionApplied,
             IsDefault: currency.IsDefault);
     }
 
@@ -37,7 +36,6 @@ public static class CurrencyMappers
             Code: currency.Code,
             Name: currency.Name,
             Symbol: currency.Symbol,
-            ExchangeRate: NoConversionApplied,
             IsDefault: currency.IsDefault);
     }
 }

@@ -238,7 +238,7 @@ public class OrderFactoryPreferredHoldTests
             SelectedExtraSlugs: [],
             CleaningDate: Now.AddDays(3),
             PaymentType: paymentType,
-            Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+            Currency: Currency.Create("CZK", "Kč", "Czech Koruna"),
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
             RawSubtotal: 1500m,

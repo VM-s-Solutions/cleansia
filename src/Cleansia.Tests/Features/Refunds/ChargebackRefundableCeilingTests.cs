@@ -50,7 +50,7 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "cur-1";
         var country = Country.Create("Czechia", "CZE");
         country.Id = "country-1";

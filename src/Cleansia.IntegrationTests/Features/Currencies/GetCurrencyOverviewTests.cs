@@ -17,7 +17,7 @@ public class GetCurrencyOverviewTests(PostgresContainerFixture fixture) : BaseIn
             {
                 var currency1 = CurrencyMockFactory.Generate();
                 var currency2 = CurrencyMockFactory.Generate(new CurrencyMockFactory.CurrencyPartial
-                    { Code = "EUR", Symbol = "$", Name = "Euro", ExchangeRate = 0.041M });
+                    { Code = "EUR", Symbol = "$", Name = "Euro" });
                 context.Currencies.AddRange(currency1, currency2);
             },
             act: async provider =>

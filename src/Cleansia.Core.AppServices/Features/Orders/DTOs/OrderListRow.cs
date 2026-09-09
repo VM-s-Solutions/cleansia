@@ -57,7 +57,6 @@ public sealed record OrderListCurrencyRow(
     string Code,
     string Symbol,
     string Name,
-    decimal ExchangeRate,
     bool IsDefault);
 
 public sealed record OrderListServiceRow(

@@ -2438,6 +2438,7 @@
     "currency": {
       "cannot_delete_default": "Cannot delete the default currency",
       "code_already_exists": "A currency with this code already exists",
+      "default_changed_concurrently": "The default currency was changed by someone else. Refresh and try again",
       "exchange_rate_must_be_positive": "Exchange rate must be a positive number",
       "in_use": "Cannot delete currency because it is currently in use",
       "invalid": "Invalid currency",

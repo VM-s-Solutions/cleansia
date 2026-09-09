@@ -37,6 +37,16 @@ public class SetDefaultCurrencyHandlerTests
             .Setup(r => r.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<IDbContextTransaction>());
 
+    /// <summary>
+    /// The clear lives on the repository now, so the double has to perform it — otherwise the handler
+    /// looks like it never cleared and the promote assertions below pass or fail for the wrong reason.
+    /// </summary>
+    private void ArrangeClear(params Currency[] currentDefaults) =>
+        _currencyRepository
+            .Setup(r => r.ClearDefaultAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => Array.ForEach(currentDefaults, c => c.SetAsDefault(false)))
+            .Returns(Task.CompletedTask);
+
     /// <summary>Records the two currencies' default flags at the moment of each flush.</summary>
     private void RecordFlushes(Currency previousDefault, Currency target) =>
         _currencyRepository
@@ -73,9 +83,7 @@ public class SetDefaultCurrencyHandlerTests
         var previousDefault = ArrangeCurrency("currency-czk", "CZK", isDefault: true);
         var target = ArrangeCurrency("currency-eur", "EUR");
         target.IsActive = false;
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(previousDefault);
+        ArrangeClear(previousDefault);
 
         var result = await CreateHandler().Handle(
             new SetDefaultCurrency.Command("currency-eur"), CancellationToken.None);
@@ -97,9 +105,7 @@ public class SetDefaultCurrencyHandlerTests
     {
         var previousDefault = ArrangeCurrency("currency-czk", "CZK", isDefault: true);
         var target = ArrangeCurrency("currency-eur", "EUR");
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(previousDefault);
+        ArrangeClear(previousDefault);
         ArrangeTransaction();
         RecordFlushes(previousDefault, target);
 
@@ -115,9 +121,7 @@ public class SetDefaultCurrencyHandlerTests
     {
         var previousDefault = ArrangeCurrency("currency-czk", "CZK", isDefault: true);
         var target = ArrangeCurrency("currency-eur", "EUR");
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(previousDefault);
+        ArrangeClear(previousDefault);
         ArrangeTransaction();
 
         var result = await CreateHandler().Handle(new SetDefaultCurrency.Command("currency-eur"), CancellationToken.None);
@@ -137,6 +141,12 @@ public class SetDefaultCurrencyHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.True(current.IsDefault);
-        _currencyRepository.Verify(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()), Times.Never);
+
+        // Nothing is written at all -- no clear, no flush, no transaction. Verified against the CLEAR
+        // rather than against GetDefaultAsync, which the handler no longer calls on any path and which
+        // would therefore be a Times.Never that can never fail.
+        _currencyRepository.Verify(r => r.ClearDefaultAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _currencyRepository.Verify(r => r.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

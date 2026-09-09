@@ -1,3 +1,6 @@
+using Cleansia.Infra.Common.Validations;
+using System.Reflection;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.AppServices.Features.Currencies;
 using Cleansia.Core.Domain.Internationalization;
@@ -287,6 +290,66 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
 
         await using var verify = NewContext();
         Assert.Equal("CZK", (await verify.Currencies.SingleAsync(c => c.IsDefault)).Code);
+    }
+
+
+    /// <summary>
+    /// The loser of a create race gets the business error the client already knows how to render, not a
+    /// 500. The validator catches an ordinary duplicate, so the only way to reach the index is for two
+    /// creates to both pass that check — which is what calling the handler directly reproduces.
+    ///
+    /// <para>Worth being precise about why this mattered: an unhandled 23505 leaves the exception
+    /// handler writing a PLAIN TEXT 500 body, which the client's error interceptor cannot parse, so the
+    /// admin sees the generic "An error occurred" while the correct translated key sits unused in all
+    /// five locales.</para>
+    /// </summary>
+    [Fact]
+    public async Task A_Create_That_Loses_The_Race_Returns_A_Business_Error()
+    {
+        await ResetAsync();
+        await SeedAsync(Czk(isDefault: true));
+
+        await using var ctx = NewContext();
+        var result = await CreateAsync(ctx, new CreateCurrency.Command("CZK", "Kč", "Czech koruna", 1.0m));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.CurrencyCodeAlreadyExists, result.Error?.Message);
+    }
+
+    /// <summary>
+    /// A code is stored CANONICAL, not merely unique-up-to-case. <c>citext</c> folds for comparison and
+    /// stores what was typed, and that string is passed straight through as the receipt's currency code
+    /// and onto the request sent to the tax authority — so "czk" would be wrong on a statutory document
+    /// even though the index correctly refuses a second row beside it.
+    /// </summary>
+    [Fact]
+    public async Task A_Lowercase_Code_Is_Stored_Uppercase()
+    {
+        await ResetAsync();
+
+        await using (var ctx = NewContext())
+        {
+            var result = await CreateAsync(ctx, new CreateCurrency.Command(" pln ", "zł", "Polish złoty", 1.0m));
+
+            Assert.True(result.IsSuccess, $"CreateCurrency failed with: {result.Error?.Message}");
+        }
+
+        await using var verify = NewContext();
+        Assert.Equal("PLN", (await verify.Currencies.SingleAsync()).Code);
+    }
+
+    /// <summary>
+    /// <c>CreateCurrency.Handler</c> is internal and no project has InternalsVisibleTo, so it is built
+    /// reflectively — the same way GetPagedServicesHandlerTests reaches its handler.
+    /// </summary>
+    private static Task<BusinessResult<CreateCurrency.Response>> CreateAsync(
+        CleansiaDbContext ctx, CreateCurrency.Command command)
+    {
+        var handlerType = typeof(CreateCurrency).GetNestedType("Handler", BindingFlags.NonPublic)!;
+        var handler = Activator.CreateInstance(handlerType, new CurrencyRepository(ctx))!;
+        return (Task<BusinessResult<CreateCurrency.Response>>)handlerType
+            .GetMethod("Handle")!
+            .Invoke(handler, [command, CancellationToken.None])!;
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

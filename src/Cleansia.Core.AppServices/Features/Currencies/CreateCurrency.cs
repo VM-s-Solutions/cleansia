@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Internationalization;
@@ -55,13 +56,31 @@ public class CreateCurrency
     internal class Handler(ICurrencyRepository currencyRepository)
         : ICommandHandler<Command, Response>
     {
-        public Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var currency = Currency.Create(command.Code, command.Symbol, command.Name, command.ExchangeRate);
 
             currencyRepository.Add(currency);
 
-            return Task.FromResult(BusinessResult.Success(new Response(currency.Id)));
+            // The validator's ExistsWithCodeAsync and this insert cross a snapshot boundary with no
+            // lock, so IX_Currencies_Code_Unique is what actually arbitrates two simultaneous
+            // creations. FLUSH here and own the loser's 23505: the pipeline commit runs after this
+            // handler returns, where the same violation can only surface as a 500 -- and it surfaces as
+            // a PLAIN TEXT 500 that the client's error interceptor cannot read, so the admin gets
+            // "An error occurred" while the correct key sits translated in all five locales. Same shape
+            // as CreateAdminUser.
+            try
+            {
+                await currencyRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(Command.Code), BusinessErrorMessage.CurrencyCodeAlreadyExists));
+            }
+
+            return BusinessResult.Success(new Response(currency.Id));
         }
     }
 }

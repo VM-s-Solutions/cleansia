@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
@@ -72,8 +73,6 @@ public class SetDefaultCurrency
                     nameof(command.CurrencyId), BusinessErrorMessage.InvalidCurrency));
             }
 
-            var previousDefault = await currencyRepository.GetDefaultAsync(cancellationToken);
-
             // ORDERED, AND ATOMIC. `IX_Currencies_IsDefault_Unique` is a partial unique index, which
             // Postgres cannot defer -- it is checked at the end of every statement, so the moment both
             // rows are true is a violation rather than an intermediate state.
@@ -81,34 +80,48 @@ public class SetDefaultCurrency
             // Leaving both writes to the pipeline's single commit does not work, and not merely
             // sometimes: EF emits the two UPDATEs in the order the entities entered the CHANGE TRACKER,
             // not in the order they were mutated. This handler loads the promote target first (the
-            // GetByIdAsync above) and the current default second, so the promote would ALWAYS be
-            // emitted first and every promote would be a 23505. Reordering the two loads would fix
-            // today's code and leave the next reader one innocent-looking edit away from breaking it,
-            // which is why the ordering is made explicit here instead.
+            // GetByIdAsync above), so the promote would ALWAYS be emitted first and every promote would
+            // be a 23505. Reordering the loads would fix today's code and leave the next reader one
+            // innocent-looking edit away from breaking it, which is why the ordering is explicit here.
             //
-            // So the clear is flushed first, and the promote second. The transaction is what keeps the
-            // window between them from being observable: `GetDefaultAsync` throws when no default
-            // exists, and it has roughly fifteen production callers including the recurring materializer
-            // and the pay-period background service -- a durable zero-default gap would take order
-            // creation down, not just this screen. Both flushes are ordinary `CommitAsync` calls, so
-            // both rows still get their audit stamp.
+            // The clear takes EVERY default rather than the one a prior read named: reading first and
+            // clearing that row leaves the promote racing a snapshot it no longer holds, and it cannot
+            // recover a database that has none. Clearing zero rows is a valid outcome.
             //
-            // WHAT THIS COSTS. The pipeline commit afterwards is NOT a no-op: AuditLogBehavior is
-            // registered inner to the UnitOfWork behavior so its AdminActionAudit row rides that
-            // commit, and this command is audited. Committing here means the promote is durable before
-            // the audit row exists, so a failure in between leaves a currency change with no audit
-            // trail. The eight other handlers that flush early -- CreateAdminUser, Register,
-            // RegisterEmployee, CreatePromoCode, TakeOrder, GenerateInvoice among them -- all share
-            // that property, so it is a pattern-wide question rather than one this handler invented.
-            // It is accepted here because the alternative is a 500 on a promote whose statement order
-            // nobody controls, which is the worse of the two.
+            // The transaction is what keeps the window between the two flushes unobservable:
+            // `GetDefaultAsync` throws when no default exists, and it has roughly fifteen production
+            // callers including the recurring materializer and the pay-period background service -- a
+            // durable zero-default gap would take order creation down, not just this screen. Both
+            // flushes are ordinary `CommitAsync` calls, so both rows still get their audit stamp.
+            //
+            // WHAT THIS COSTS, stated because it is a real trade and not a free one. The pipeline
+            // commit afterwards is NOT a no-op: AuditLogBehavior is registered inner to the UnitOfWork
+            // behavior so its AdminActionAudit row rides that commit, and this command is audited.
+            // Committing here means the promote is durable before the audit row exists. The nine other
+            // handlers that flush early all share that property, so it is a pattern-wide question
+            // rather than one this handler invented -- and it is accepted here because the alternative
+            // is a promote that cannot succeed at all.
             await using var transaction = await currencyRepository.BeginTransactionAsync(cancellationToken);
 
-            previousDefault.SetAsDefault(false);
+            await currencyRepository.ClearDefaultAsync(cancellationToken);
             await currencyRepository.CommitAsync(cancellationToken);
 
             currency.SetAsDefault(true);
-            await currencyRepository.CommitAsync(cancellationToken);
+
+            // OWN THE LOSER'S 23505. Two admins promoting different currencies in the same second both
+            // clear, and the second one's promote lands while the first's is already true. Without this
+            // the index -- which exists precisely to make that impossible -- reports it as an
+            // untranslated 500 instead of the error key the client already has.
+            try
+            {
+                await currencyRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.CurrencyId), BusinessErrorMessage.CurrencyDefaultChangedConcurrently));
+            }
 
             await transaction.CommitAsync(cancellationToken);
 

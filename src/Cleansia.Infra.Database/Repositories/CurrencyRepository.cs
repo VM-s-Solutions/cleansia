@@ -22,6 +22,18 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
                ?? throw new EntityNotFoundException("Default Currency was not found");
     }
 
+    public async Task ClearDefaultAsync(CancellationToken cancellationToken)
+    {
+        var existingDefaults = await GetDbSet()
+            .Where(c => c.IsDefault)
+            .ToListAsync(cancellationToken);
+
+        foreach (var currency in existingDefaults)
+        {
+            currency.SetAsDefault(false);
+        }
+    }
+
     public Task<Currency?> GetByCodeAsync(string code, CancellationToken cancellationToken)
     {
         return GetDbSet().FirstOrDefaultAsync(c => c.Code == code, cancellationToken);

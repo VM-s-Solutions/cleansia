@@ -351,6 +351,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'country.required',
   'currency.cannot_delete_default',
   'currency.code_already_exists',
+  'currency.default_changed_concurrently',
   'currency.exchange_rate_must_be_positive',
   'currency.in_use',
   'currency.invalid',

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
@@ -76,6 +77,18 @@ public class UpdateCurrency
             }
 
             currency.Update(command.Code, command.Symbol, command.Name, command.ExchangeRate);
+
+            // Renaming a code races the same way a create does -- see CreateCurrency.
+            try
+            {
+                await currencyRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex)
+                when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(Command.Code), BusinessErrorMessage.CurrencyCodeAlreadyExists));
+            }
 
             return BusinessResult.Success(new Response(currency.Id));
         }

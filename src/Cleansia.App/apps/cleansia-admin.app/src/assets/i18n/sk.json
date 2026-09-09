@@ -2438,6 +2438,7 @@
     "currency": {
       "cannot_delete_default": "Nie je možné odstrániť predvolenú menu",
       "code_already_exists": "Mena s týmto kódom už existuje",
+      "default_changed_concurrently": "Predvolenú menu medzitým zmenil niekto iný. Obnovte stránku a skúste to znova",
       "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo",
       "in_use": "Nie je možné odstrániť menu, pretože sa práve používa",
       "invalid": "Neplatná mena",

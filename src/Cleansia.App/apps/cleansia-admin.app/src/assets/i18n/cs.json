@@ -2438,6 +2438,7 @@
     "currency": {
       "cannot_delete_default": "Výchozí měnu nelze smazat",
       "code_already_exists": "Měna s tímto kódem již existuje",
+      "default_changed_concurrently": "Výchozí měnu mezitím změnil někdo jiný. Obnovte stránku a zkuste to znovu",
       "exchange_rate_must_be_positive": "Směnný kurz musí být kladné číslo",
       "in_use": "Měnu nelze smazat, protože je aktuálně používána",
       "invalid": "Neplatná měna",

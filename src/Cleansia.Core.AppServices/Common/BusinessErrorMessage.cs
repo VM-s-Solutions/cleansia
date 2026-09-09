@@ -41,6 +41,7 @@ public static class BusinessErrorMessage
     public const string InvalidCurrency = "currency.invalid";
     public const string CurrencyNotFound = "currency.not_found";
     public const string CurrencyCodeAlreadyExists = "currency.code_already_exists";
+    public const string CurrencyDefaultChangedConcurrently = "currency.default_changed_concurrently";
     public const string CurrencyInUse = "currency.in_use";
     public const string CannotDeleteDefaultCurrency = "currency.cannot_delete_default";
     public const string ExchangeRateMustBePositive = "currency.exchange_rate_must_be_positive";

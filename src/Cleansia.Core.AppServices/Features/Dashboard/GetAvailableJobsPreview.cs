@@ -70,6 +70,9 @@ public class GetAvailableJobsPreview
                     o.Rooms,
                     o.Bathrooms,
                     o.TravelDistance,
+                    // Carried for the pay estimate too: a rate is denominated, so the estimate has to
+                    // know which of the caller's rates applies to THIS job.
+                    o.CurrencyId,
                     ServiceIds = o.SelectedServices.Select(s => s.ServiceId).ToList(),
                     PackageIds = o.SelectedPackages.Select(p => p.PackageId).ToList(),
                     City = o.CustomerAddress!.City,
@@ -83,18 +86,19 @@ public class GetAvailableJobsPreview
             // row cannot exist for any row here. Reading one would be a round trip that always misses.
             var serviceIds = orders.SelectMany(o => o.ServiceIds).Distinct().ToList();
             var packageIds = orders.SelectMany(o => o.PackageIds).Distinct().ToList();
+            var currencyIds = orders.Select(o => o.CurrencyId).Distinct().ToList();
 
             IReadOnlyList<Domain.EmployeePayroll.EmployeePayConfig> serviceConfigs = [];
             IReadOnlyList<Domain.EmployeePayroll.EmployeePayConfig> packageConfigs = [];
             if (serviceIds.Count > 0)
             {
                 serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
-                    serviceIds, employeeId, cancellationToken);
+                    serviceIds, employeeId, currencyIds, cancellationToken);
             }
             if (packageIds.Count > 0)
             {
                 packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
-                    packageIds, employeeId, cancellationToken);
+                    packageIds, employeeId, currencyIds, cancellationToken);
             }
 
             var jobs = orders.Select(o => new AvailableJobPreviewDto(
@@ -116,6 +120,7 @@ public class GetAvailableJobsPreview
                 o.Rooms,
                 o.Bathrooms,
                 o.TravelDistance,
+                o.CurrencyId,
                 employeeId,
                 serviceConfigs,
                 packageConfigs) ?? 0m);

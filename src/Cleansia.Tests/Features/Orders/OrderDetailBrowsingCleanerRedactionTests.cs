@@ -374,11 +374,13 @@ public class OrderDetailBrowsingCleanerRedactionTests
             .ReturnsAsync((OrderEmployeePay?)null);
         _payConfigRepository
             .Setup(r => r.GetServiceConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
         _payConfigRepository
             .Setup(r => r.GetPackageConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
     }
 

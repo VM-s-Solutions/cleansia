@@ -69,11 +69,13 @@ public class GetOrderDetailsPartnerTranslationsTests
             .ReturnsAsync((OrderEmployeePay?)null);
         _payConfigRepository
             .Setup(r => r.GetServiceConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), EmployeeId, It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), EmployeeId,
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
         _payConfigRepository
             .Setup(r => r.GetPackageConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), EmployeeId, It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), EmployeeId,
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
         _orderPhotoRepository
             .Setup(r => r.GetPhotoCountByOrderIdAndTypeAsync(OrderId, PhotoType.After, It.IsAny<CancellationToken>()))

@@ -156,6 +156,57 @@ public class PayConfigUniqueIndexTests(PostgresContainerFixture fixture) : BaseI
         Assert.Equal(1, await ctx.Set<EmployeePayConfig>().CountAsync());
     }
 
+
+    /// <summary>
+    /// WHAT THE CURRENCY TERM MAKES POSSIBLE, and the reason it had to be added rather than merely
+    /// wanted: without it a cleaner could hold exactly ONE rate for a service across the whole platform,
+    /// so a second market could not pay anybody at all. Two platform-wide rows for one service in
+    /// DIFFERENT currencies are now storable — and were not, an hour ago.
+    /// </summary>
+    [Fact]
+    public async Task Two_PlatformWide_Configs_For_One_Service_In_Different_Currencies_Are_Allowed()
+    {
+        await ResetAsync();
+        await SeedCatalogueAsync();
+
+        await using var ctx = NewContext();
+        var eur = Currency.Create("EUR", "E", "Euro", 1.0m);
+        ctx.Currencies.Add(eur);
+        ctx.Set<EmployeePayConfig>().Add(ForService(employeeId: null));
+        ctx.Set<EmployeePayConfig>().Add(EmployeePayConfig.CreateForService(
+            _serviceId, basePay: 12m, currencyId: eur.Id, employeeId: null));
+
+        await ctx.CommitAsync(CancellationToken.None);
+
+        Assert.Equal(2, await ctx.Set<EmployeePayConfig>().CountAsync());
+    }
+
+    /// <summary>
+    /// And the pair is still unique WITHIN a currency — the property the old index had, kept. Widening
+    /// a unique index is how one wrong answer becomes an unbounded number of them if the narrower
+    /// guarantee is lost on the way.
+    /// </summary>
+    [Fact]
+    public async Task Two_PlatformWide_Configs_For_One_Service_In_The_Same_Currency_Are_Still_Refused()
+    {
+        await ResetAsync();
+        await SeedCatalogueAsync();
+
+        await using (var first = NewContext())
+        {
+            first.Set<EmployeePayConfig>().Add(ForService(employeeId: null));
+            await first.CommitAsync(CancellationToken.None);
+        }
+
+        await using var second = NewContext();
+        second.Set<EmployeePayConfig>().Add(ForService(employeeId: null));
+
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(
+            () => second.CommitAsync(CancellationToken.None));
+
+        Assert.Contains("23505", ex.InnerException?.ToString() ?? string.Empty);
+    }
+
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
         private string? _tenantId = tenantId;

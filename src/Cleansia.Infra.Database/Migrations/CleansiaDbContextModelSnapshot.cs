@@ -1855,10 +1855,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("ServiceId", "PackageId");
 
-                    b.HasIndex("EmployeeId", "ServiceId", "PackageId")
+                    b.HasIndex("EmployeeId", "ServiceId", "PackageId", "CurrencyId")
                         .IsUnique();
 
-                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("EmployeeId", "ServiceId", "PackageId"), false);
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("EmployeeId", "ServiceId", "PackageId", "CurrencyId"), false);
 
                     b.ToTable("EmployeePayConfigs");
                 });

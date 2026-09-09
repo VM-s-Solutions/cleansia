@@ -3207,9 +3207,9 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmployeePayConfigs_EmployeeId_ServiceId_PackageId",
+                name: "IX_EmployeePayConfigs_EmployeeId_ServiceId_PackageId_CurrencyId",
                 table: "EmployeePayConfigs",
-                columns: new[] { "EmployeeId", "ServiceId", "PackageId" },
+                columns: new[] { "EmployeeId", "ServiceId", "PackageId", "CurrencyId" },
                 unique: true)
                 .Annotation("Npgsql:NullsDistinct", false);
 

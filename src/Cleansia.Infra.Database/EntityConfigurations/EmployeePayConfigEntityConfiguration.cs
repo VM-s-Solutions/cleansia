@@ -94,7 +94,22 @@ public class EmployeePayConfigEntityConfiguration : AuditableEntityConfiguration
         // platform-wide rows for one service means a cleaner's pay depends on row order.
         // CreatePayConfig's validator already checks for a duplicate; a check-then-add is not an
         // arbiter under concurrency, which is the one thing a unique index is for.
-        builder.HasIndex(e => new { e.EmployeeId, e.ServiceId, e.PackageId })
+        // CURRENCYID IS PART OF THE KEY. A pay rate is an amount in a currency, and without this term
+        // a cleaner could hold exactly ONE rate for a service across the whole platform -- so a second
+        // market could not pay anybody. Adding it is what makes per-currency pay storable at all.
+        //
+        // It is also the term that makes the reads below it safe to widen: with the currency in the
+        // key there is at most one platform-wide row and one override per (target, currency), so the
+        // estimator's `FirstOrDefault(EmployeeId != null) ?? First()` is choosing between exactly those
+        // two rather than between an unbounded set. Widening the index WITHOUT scoping the reads would
+        // have made the arbitrary pick worse instead of fixing it, which is why they move together.
+        //
+        // .AreNullsDistinct(false) STAYS. Every config carries a null by construction -- one is written
+        // per service OR per package, never both, and EmployeeId is null on the platform-wide rows --
+        // so without it Postgres treats the tuples as distinct and the index enforces nothing.
+        // NullsNotDistinctIndexModelTests walks every unique index in the model and fails any that
+        // drops it, which is what would catch this if a future edit reformats the chain.
+        builder.HasIndex(e => new { e.EmployeeId, e.ServiceId, e.PackageId, e.CurrencyId })
             .IsUnique()
             .AreNullsDistinct(false);
     }

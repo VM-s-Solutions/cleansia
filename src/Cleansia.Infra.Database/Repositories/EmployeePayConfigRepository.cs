@@ -49,7 +49,10 @@ public class EmployeePayConfigRepository(CleansiaDbContext context) : BaseReposi
     }
 
     public async Task<IReadOnlyList<EmployeePayConfig>> GetServiceConfigsForOrderAsync(
-        IEnumerable<string> serviceIds, string employeeId, CancellationToken cancellationToken)
+        IEnumerable<string> serviceIds,
+        string employeeId,
+        IReadOnlyCollection<string> currencyIds,
+        CancellationToken cancellationToken)
     {
         var ids = serviceIds.Distinct().ToList();
         return await GetDbSet()
@@ -57,12 +60,16 @@ public class EmployeePayConfigRepository(CleansiaDbContext context) : BaseReposi
             .Include(c => c.Package)
             .Include(c => c.Currency)
             .Where(c => c.ServiceId != null && ids.Contains(c.ServiceId)
+                && currencyIds.Contains(c.CurrencyId)
                 && (c.EmployeeId == null || c.EmployeeId == employeeId))
             .ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<EmployeePayConfig>> GetPackageConfigsForOrderAsync(
-        IEnumerable<string> packageIds, string employeeId, CancellationToken cancellationToken)
+        IEnumerable<string> packageIds,
+        string employeeId,
+        IReadOnlyCollection<string> currencyIds,
+        CancellationToken cancellationToken)
     {
         var ids = packageIds.Distinct().ToList();
         return await GetDbSet()
@@ -70,6 +77,7 @@ public class EmployeePayConfigRepository(CleansiaDbContext context) : BaseReposi
             .Include(c => c.Package)
             .Include(c => c.Currency)
             .Where(c => c.PackageId != null && ids.Contains(c.PackageId)
+                && currencyIds.Contains(c.CurrencyId)
                 && (c.EmployeeId == null || c.EmployeeId == employeeId))
             .ToListAsync(cancellationToken);
     }
@@ -78,12 +86,14 @@ public class EmployeePayConfigRepository(CleansiaDbContext context) : BaseReposi
         IEnumerable<string> serviceIds,
         IEnumerable<string> packageIds,
         string employeeId,
+        IReadOnlyCollection<string> currencyIds,
         CancellationToken cancellationToken)
     {
         var sIds = serviceIds.Distinct().ToList();
         var pIds = packageIds.Distinct().ToList();
         return await GetDbSet()
             .AnyAsync(c =>
+                currencyIds.Contains(c.CurrencyId) &&
                 (c.EmployeeId == null || c.EmployeeId == employeeId) &&
                 ((c.ServiceId != null && sIds.Contains(c.ServiceId)) ||
                  (c.PackageId != null && pIds.Contains(c.PackageId))),

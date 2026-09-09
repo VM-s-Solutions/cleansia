@@ -139,15 +139,19 @@ public class GetDashboardStats
                 new Dictionary<string, decimal>(0);
             if (allCompletedOrders.Count > 0)
             {
+                // Every currency across the window -- these stats aggregate many orders, so the read
+                // spans what they span and the estimator narrows per order.
+                var currencyIds = allCompletedOrders.Select(o => o.CurrencyId).Distinct().ToList();
+
                 if (allServiceIds.Count > 0)
                 {
                     serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
-                        allServiceIds, employeeId, cancellationToken);
+                        allServiceIds, employeeId, currencyIds, cancellationToken);
                 }
                 if (allPackageIds.Count > 0)
                 {
                     packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
-                        allPackageIds, employeeId, cancellationToken);
+                        allPackageIds, employeeId, currencyIds, cancellationToken);
                 }
                 var allOrderIds = allCompletedOrders.Select(o => o.Id).ToList();
                 bookedPayByOrderId = await orderEmployeePayRepository.GetTotalPayByOrderIdsAsync(

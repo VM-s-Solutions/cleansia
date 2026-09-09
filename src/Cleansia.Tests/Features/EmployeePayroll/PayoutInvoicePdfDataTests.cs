@@ -223,15 +223,29 @@ public class PayoutInvoicePdfDataTests
         Assert.Equal(0m, data.VatAmount);
     }
 
+    /// <summary>
+    /// A CLEANER IS NEVER A VAT PAYER, even holding a VAT number. Owner ruling 2026-09-09: cleaners
+    /// contract as živnostníci on an IČO and do not register for VAT.
+    ///
+    /// <para>This test asserted the opposite until that ruling, and the behaviour it pinned was a live
+    /// hazard rather than a feature: the posture was derived from <c>employee.VatNumber</c>, a field the
+    /// CLEANER sets on themselves from the partner mobile app, and <c>RegenerateInvoicePdf</c> — which
+    /// has no status gate, so a PAID invoice qualifies — re-reads it and overwrites the issued PDF at
+    /// the same blob URL. A cleaner could change the tax treatment of a document already sent by editing
+    /// their own profile.</para>
+    ///
+    /// <para>The number still reaches the document: it is printed as an identifier. What it no longer
+    /// does is decide the tax treatment.</para>
+    /// </summary>
     [Fact]
-    public void Cleaner_With_A_Vat_Number_Is_A_Vat_Payer_And_The_Number_Reaches_The_Document()
+    public void A_Cleaner_Holding_A_Vat_Number_Is_Still_Not_A_Vat_Payer()
     {
         var employee = Cleaner();
         employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
 
         var data = Map(employee);
 
-        Assert.True(data.Supplier.IsVatPayer);
+        Assert.False(data.Supplier.IsVatPayer);
         Assert.Equal("CZ12345678", data.Supplier.VatNumber);
     }
 
@@ -248,10 +262,17 @@ public class PayoutInvoicePdfDataTests
         Assert.Equal(invoice.TotalAmount, data.TotalAmount);
     }
 
-    // The pay is gross — the cleaner receives the stored total and settles their own taxes — so a
-    // registered supplier's VAT comes OUT of that total. Adding it would pay them more than was owed.
+    /// <summary>
+    /// NO VAT IS CARVED OUT, even for a cleaner holding a VAT number in a country that requires VAT —
+    /// the two conditions that used to produce a carve-out, together. The country's VAT setting is the
+    /// CUSTOMER-order regime and says nothing about what a self-billed payout owes.
+    ///
+    /// <para>This is the sharpest form of the ruling: the fixture is the one that previously produced
+    /// 173.55 out of a 1000 total, so a regression restoring the old derivation fails here with a
+    /// concrete number rather than a vague zero.</para>
+    /// </summary>
     [Fact]
-    public void Vat_Is_Carved_Out_Of_The_Stored_Total_When_The_Cleaner_Is_Registered()
+    public void No_Vat_Is_Carved_Out_For_A_Cleaner_Holding_A_Vat_Number()
     {
         var employee = Cleaner();
         employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
@@ -259,8 +280,8 @@ public class PayoutInvoicePdfDataTests
 
         var data = Map(employee, invoice, countryContext: CzechContext());
 
-        Assert.Equal(173.55m, data.VatAmount);
-        Assert.Equal(826.45m, data.TotalAmount - data.VatAmount);
+        Assert.Equal(0m, data.VatAmount);
+        Assert.Equal(invoice.TotalAmount, data.TotalAmount);
     }
 
     // AC7's identity, and the reason gross is the better answer: it now holds EXACTLY in both variants

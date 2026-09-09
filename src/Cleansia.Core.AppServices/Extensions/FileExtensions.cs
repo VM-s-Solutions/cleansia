@@ -91,6 +91,25 @@ public static class FileExtensions
     {
         // A registered cleaner is rare rather than impossible, so the document expresses both variants
         // and the presence of a validated DIČ is what selects between them.
+        // A CLEANER IS NEVER A VAT PAYER. Owner ruling 2026-09-09: cleaners contract as zivnostnici on
+        // an ICO and do not register for VAT, so a payout invoice always carries the non-payer notice
+        // and never a VAT line.
+        //
+        // This is the fix for a live hazard, not a tidy-up. The supplier's posture used to be derived
+        // as `vatNumber != null` from a field the CLEANER can set on themselves at any time, from their
+        // own phone (PUT /api/Employee/UpdateIdentificationInfo on the partner mobile host). Nothing
+        // snapshots it, and RegenerateInvoicePdf -- which has no status gate, so a PAID invoice
+        // qualifies -- re-reads it and overwrites the issued PDF AT THE SAME BLOB URL. So a cleaner
+        // could change the tax treatment of a document that had already been sent, after the fact, by
+        // editing their own profile.
+        //
+        // Deriving it from the ruling instead of from mutable state closes that without a schema
+        // column: there is nothing left to snapshot when the answer cannot vary. The field itself, and
+        // its three write paths, are wire-shaped and come out in the chunk that regenerates the clients
+        // and the two mobile specs -- removing them here would break the Android and iOS mappers for
+        // no gain, because the posture no longer reads them.
+        const bool cleanersAreVatPayers = false;
+
         var vatNumber = string.IsNullOrWhiteSpace(employee.VatNumber) ? null : employee.VatNumber;
 
         return new InvoiceSupplierData
@@ -104,7 +123,7 @@ public static class FileExtensions
             Country = employee.Address?.Country?.Name,
             RegistrationNumber = employee.RegistrationNumber,
             VatNumber = vatNumber,
-            IsVatPayer = vatNumber != null,
+            IsVatPayer = cleanersAreVatPayers,
             Email = employee.User?.Email,
             Phone = employee.User?.PhoneNumber,
             BankName = payoutDetails?.BankName,

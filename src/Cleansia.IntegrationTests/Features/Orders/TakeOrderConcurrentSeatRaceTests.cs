@@ -124,10 +124,19 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
         var country = Country.Create("Czechia", "CZ", isServiced: true);
         country.Id = Ulid.NewUlid().ToString();
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
-        currency.Id = Ulid.NewUlid().ToString();
+        // Same reason as the language above, and now enforced rather than merely untidy: `Code` is
+        // unique, so a second CZK row is a 23505. This suite is non-transactional, so its rows outlive
+        // the test and the SECOND run in a shared container was the one that collided -- which is why
+        // it passed in isolation and failed in a full pass.
+        var currency = await context.Currencies.FirstOrDefaultAsync(c => c.Code == "CZK");
+        if (currency is null)
+        {
+            currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+            currency.Id = Ulid.NewUlid().ToString();
+            context.Currencies.Add(currency);
+        }
+
         context.Countries.Add(country);
-        context.Currencies.Add(currency);
 
         var address = Address.Create("123 Main St", "Prague", "11000", country.Id);
         var order = Order.Create(

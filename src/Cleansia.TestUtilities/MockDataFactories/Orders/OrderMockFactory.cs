@@ -46,10 +46,24 @@ public class OrderMockFactory
         public string? PromoCodeId { get; set; }
     }
 
+    /// <summary>
+    /// ONE crown, shared by every order this factory makes.
+    ///
+    /// <para>It used to mint a fresh <c>Currency.Create("CZK", ...)</c> per order, which meant two
+    /// factory orders in one context were two CZK rows — invisible until <c>Currencies.Code</c> became
+    /// unique, and wrong the whole time: production has one row per currency and many orders pointing
+    /// at it. Sharing the instance also keeps EF from seeing two different objects claiming the same
+    /// key, which is what a fixed-Id-per-call variant would produce.</para>
+    ///
+    /// <para>Never mutated here, and callers that need to mutate one pass their own via the
+    /// <c>currency</c> parameter — which is also how a suite gets a SECOND currency.</para>
+    /// </summary>
+    private static readonly Currency DefaultCurrency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+
     public static Order Generate(OrderPartial? mergeFrom = null, Currency? currency = null)
     {
         var partial = mergeFrom ?? new OrderPartial();
-        var resolvedCurrency = currency ?? Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var resolvedCurrency = currency ?? DefaultCurrency;
 
         var order = Order.Create(
             customerName: partial.CustomerName ?? "Test Customer",
@@ -106,7 +120,7 @@ public class OrderMockFactory
         string? stripePaymentIntentId = null,
         Currency? currency = null)
     {
-        var resolvedCurrency = currency ?? Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var resolvedCurrency = currency ?? DefaultCurrency;
         var order = Order.Create(
             customerName: "Test Customer",
             customerEmail: Constants.TestUserSession.TestUserEmail,

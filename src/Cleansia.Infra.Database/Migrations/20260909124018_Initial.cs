@@ -1184,15 +1184,15 @@ namespace Cleansia.Infra.Database.Migrations
                     CashCollectedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CollectedByEmployeeId = table.Column<string>(type: "text", nullable: true),
                     TotalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    NetAmount = table.Column<decimal>(type: "numeric", nullable: false),
-                    VatAmount = table.Column<decimal>(type: "numeric", nullable: false),
-                    AppliedVatRate = table.Column<decimal>(type: "numeric", nullable: true),
+                    NetAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    VatAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    AppliedVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
                     EstimatedTime = table.Column<int>(type: "integer", nullable: false),
                     ActualCompletionTime = table.Column<int>(type: "integer", nullable: true),
                     CompletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CompletionNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     EmployeePayCalculated = table.Column<bool>(type: "boolean", nullable: false),
-                    TravelDistance = table.Column<decimal>(type: "numeric", nullable: true),
+                    TravelDistance = table.Column<decimal>(type: "numeric(9,2)", precision: 9, scale: 2, nullable: true),
                     RequiredEmployees = table.Column<int>(type: "integer", nullable: false),
                     MaxEmployees = table.Column<int>(type: "integer", nullable: false),
                     ConfirmationCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
@@ -1209,8 +1209,8 @@ namespace Cleansia.Infra.Database.Migrations
                     ReceiptId = table.Column<string>(type: "text", nullable: true),
                     CancelledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CreditAppliedAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
-                    CancellationRefundAmount = table.Column<decimal>(type: "numeric", nullable: true),
-                    CancellationFeeRate = table.Column<decimal>(type: "numeric", nullable: true),
+                    CancellationRefundAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    CancellationFeeRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
                     CancelledBy = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     CancellationReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     TierDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
@@ -2907,6 +2907,19 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_CreditTransactions_TenantId",
                 table: "CreditTransactions",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Currencies_Code_Unique",
+                table: "Currencies",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Currencies_IsDefault_Unique",
+                table: "Currencies",
+                column: "IsDefault",
+                unique: true,
+                filter: "\"IsDefault\" = true");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Currencies_TenantId",

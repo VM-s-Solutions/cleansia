@@ -416,6 +416,15 @@ public static class BusinessErrorMessage
     public const string TranslationsRequired = "service.translations_required";
     public const string MissingTranslationForLanguage = "service.missing_translation_for_language";
 
+    /// <summary>A catalogue entry saved with no price block at all. Shared with packages, like the
+    /// translation keys above.</summary>
+    public const string PricesRequired = "service.prices_required";
+
+    /// <summary>A catalogue entry saved without a price in some currency the platform operates in.
+    /// The entry would exist but be unbookable in that market, which is never what an admin means.
+    /// </summary>
+    public const string MissingPriceForCurrency = "service.missing_price_for_currency";
+
     // Package
     public const string PackageNotFound = "package.not_found";
     public const string PackageInUse = "package.in_use";

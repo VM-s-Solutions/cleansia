@@ -73,11 +73,22 @@ internal static class CataloguePriceDoubles
     /// A currency repository whose default is <paramref name="currency"/> — the companion the customer
     /// catalogue handlers need, because they resolve the default currency to decide WHICH price rows to
     /// read. Same instance in both halves or the lookup finds nothing.
+    ///
+    /// <para><c>GetAll</c> is stubbed with the same single row, not left null: the admin catalogue
+    /// handlers key their per-currency price upsert off the whole table, so a double that answers only
+    /// <c>GetDefaultAsync</c> takes every one of them through a null queryable.</para>
     /// </summary>
-    public static ICurrencyRepository DefaultCurrency(Currency currency)
+    public static ICurrencyRepository DefaultCurrency(Currency currency) => Currencies(currency, currency);
+
+    /// <summary>
+    /// A currency repository holding <paramref name="all"/>, with <paramref name="defaultCurrency"/> as
+    /// the platform default — for the suites that care what happens across more than one.
+    /// </summary>
+    public static ICurrencyRepository Currencies(Currency defaultCurrency, params Currency[] all)
     {
         var mock = new Mock<ICurrencyRepository>();
-        mock.Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>())).ReturnsAsync(currency);
+        mock.Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>())).ReturnsAsync(defaultCurrency);
+        mock.Setup(r => r.GetAll()).Returns(all.AsQueryable().BuildMock());
         return mock.Object;
     }
 

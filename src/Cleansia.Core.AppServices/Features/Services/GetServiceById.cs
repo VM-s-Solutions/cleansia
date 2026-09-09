@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Catalog;
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
@@ -28,8 +28,7 @@ public class GetServiceById
 
     internal class Handler(
         IServiceRepository serviceRepository,
-        IServicePriceRepository servicePriceRepository,
-        ICurrencyRepository currencyRepository)
+        IServicePriceRepository servicePriceRepository)
         : IQueryHandler<Query, AdminServiceDetailDto>
     {
         public async Task<BusinessResult<AdminServiceDetailDto>> Handle(Query query, CancellationToken cancellationToken)
@@ -41,14 +40,22 @@ public class GetServiceById
                     nameof(query.ServiceId), BusinessErrorMessage.ServiceNotFound));
             }
 
-            // The platform default currency's price -- 0 when there is no row, for the reason given
-            // in GetPagedServices.
-            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
-            var prices = await CataloguePriceLookup.ForServicesAsync(
-                servicePriceRepository, [service.Id], currency.Id, cancellationToken);
-            var price = prices.GetValueOrDefault(service.Id);
+            // EVERY currency's row, keyed by code, because this is what the edit form patches. An
+            // entry the admin has not priced in some currency simply has no key for it — absent, not
+            // zero, so the form can tell "not priced yet" from "priced at nothing".
+            var rows = await servicePriceRepository.GetAll()
+                .Where(p => p.ServiceId == service.Id)
+                .Include(p => p.Currency)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
-            return BusinessResult.Success(service.MapToAdminDetail(price.BasePrice, price.PerRoomPrice));
+            var prices = rows
+                .Where(p => p.Currency != null)
+                .ToDictionary(
+                    p => p.Currency!.Code,
+                    p => new AdminServicePriceDto(p.BasePrice, p.PerRoomPrice));
+
+            return BusinessResult.Success(service.MapToAdminDetail(prices));
         }
     }
 }

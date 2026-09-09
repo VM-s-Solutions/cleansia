@@ -43,7 +43,8 @@ public static class PackageMappers
     }
 
     /// <summary>The admin detail shows the platform default currency's row. See MapToDto.</summary>
-    public static AdminPackageDetailDto MapToAdminDetail(this Domain.Packages.Package package, decimal price)
+    public static AdminPackageDetailDto MapToAdminDetail(
+        this Domain.Packages.Package package, Dictionary<string, decimal> prices)
     {
         return new AdminPackageDetailDto(
             Id: package.Id,
@@ -51,7 +52,7 @@ public static class PackageMappers
             Description: package.Description,
             Tagline: package.Tagline,
             IsPopular: package.IsPopular,
-            Price: price,
+            Prices: prices,
             Translations: package.Translations.ToDictionary(),
             IncludedServices: package.IncludedServices.Select(ps => new PackageServiceDto(
                 ps.Service!.Id,

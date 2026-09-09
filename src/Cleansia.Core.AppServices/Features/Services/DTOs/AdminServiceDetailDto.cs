@@ -14,9 +14,12 @@ public record AdminServiceDetailDto(
     string Name,
     string Description,
     string CategoryId,
-    decimal BasePrice,
-    decimal PerRoomPrice,
+    // Price per currency CODE. Empty for an entry nobody has priced yet -- absent rather than zero,
+    // so the edit form can tell "not priced in this currency" from "priced at nothing".
+    Dictionary<string, AdminServicePriceDto> Prices,
     int EstimatedTime,
     Dictionary<string, Translation> Translations,
     DateTimeOffset CreatedOn,
     DateTimeOffset? UpdatedOn);
+
+public record AdminServicePriceDto(decimal BasePrice, decimal PerRoomPrice);

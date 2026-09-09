@@ -1,4 +1,4 @@
-using Cleansia.Core.AppServices.Features.Catalog;
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
@@ -28,8 +28,7 @@ public class GetPackageById
 
     internal class Handler(
         IPackageRepository packageRepository,
-        IPackagePriceRepository packagePriceRepository,
-        ICurrencyRepository currencyRepository)
+        IPackagePriceRepository packagePriceRepository)
         : IQueryHandler<Query, AdminPackageDetailDto>
     {
         public async Task<BusinessResult<AdminPackageDetailDto>> Handle(Query query, CancellationToken cancellationToken)
@@ -41,13 +40,19 @@ public class GetPackageById
                     nameof(query.PackageId), BusinessErrorMessage.PackageNotFound));
             }
 
-            // See GetPagedServices for why an absent row shows as 0 rather than hiding the entry.
-            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
-            var prices = await CataloguePriceLookup.ForPackagesAsync(
-                packagePriceRepository, [package.Id], currency.Id, cancellationToken);
+            // EVERY currency's row, keyed by code -- see GetServiceById. Absent, not zero, so the edit
+            // form can tell "not priced in this currency yet" from "priced at nothing".
+            var rows = await packagePriceRepository.GetAll()
+                .Where(p => p.PackageId == package.Id)
+                .Include(p => p.Currency)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
-            return BusinessResult.Success(
-                package.MapToAdminDetail(prices.GetValueOrDefault(package.Id, 0m)));
+            var prices = rows
+                .Where(p => p.Currency != null)
+                .ToDictionary(p => p.Currency!.Code, p => p.Price);
+
+            return BusinessResult.Success(package.MapToAdminDetail(prices));
         }
     }
 }

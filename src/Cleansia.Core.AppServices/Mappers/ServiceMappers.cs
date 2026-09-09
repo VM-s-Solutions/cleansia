@@ -52,15 +52,14 @@ public static class ServiceMappers
 
     /// <summary>The admin detail shows the platform default currency's row. See MapToDto.</summary>
     public static AdminServiceDetailDto MapToAdminDetail(
-        this Service service, decimal basePrice, decimal perRoomPrice)
+        this Service service, Dictionary<string, AdminServicePriceDto> prices)
     {
         return new AdminServiceDetailDto(
             Id: service.Id,
             Name: service.Name,
             Description: service.Description,
             CategoryId: service.CategoryId,
-            BasePrice: basePrice,
-            PerRoomPrice: perRoomPrice,
+            Prices: prices,
             EstimatedTime: service.EstimatedTime,
             Translations: service.Translations.ToDictionary(),
             CreatedOn: service.CreatedOn,

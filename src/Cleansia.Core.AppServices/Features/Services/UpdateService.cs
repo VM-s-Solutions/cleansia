@@ -16,16 +16,19 @@ public class UpdateService
         string CategoryId,
         string Name,
         string Description,
-        decimal BasePrice,
-        decimal PerRoomPrice,
         int EstimatedTime,
+        Dictionary<string, CreateService.ServicePriceInput>? Prices,
         Dictionary<string, CreateService.TranslationInput>? Translations) : ICommand<Response>;
 
     public record Response(string ServiceId);
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IServiceRepository serviceRepository, ILanguageRepository languageRepository, IServiceCategoryRepository categoryRepository)
+        public Validator(
+            IServiceRepository serviceRepository,
+            ILanguageRepository languageRepository,
+            IServiceCategoryRepository categoryRepository,
+            ICurrencyRepository currencyRepository)
         {
             RuleFor(x => x.ServiceId)
                 .Cascade(CascadeMode.Stop)
@@ -52,12 +55,12 @@ public class UpdateService
                 .MaximumLength(500)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.BasePrice)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
-
-            RuleFor(x => x.PerRoomPrice)
-                .GreaterThanOrEqualTo(0)
+            // A price per currency, and never a negative one. The coverage half is the business rule --
+            // see MustCoverAllActiveCurrencies -- and the sign check is what the two scalar
+            // MustBePositive rules that used to live here became.
+            RuleFor(x => x.Prices)
+                .MustCoverAllActiveCurrencies(currencyRepository)
+                .Must(prices => prices!.Values.All(p => p.BasePrice >= 0 && p.PerRoomPrice >= 0))
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
             RuleFor(x => x.EstimatedTime)
@@ -105,21 +108,39 @@ public class UpdateService
                 command.Description,
                 command.EstimatedTime);
 
-            // The price is a row now, not a column -- see CreateService. Upsert rather than update,
-            // because a service can reach here without a row for the default currency: one seeded
-            // before that currency existed, or one whose row was removed.
-            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
-            var existing = await servicePriceRepository.GetAll()
-                .FirstOrDefaultAsync(
-                    p => p.ServiceId == service.Id && p.CurrencyId == currency.Id, cancellationToken);
-            if (existing is null)
+
+            // ONE ROW PER CURRENCY THE FORM SENT, upserted, and rows for a currency the payload does
+            // NOT mention are left alone rather than deleted. The form renders a block per active
+            // currency, so an absent code is a currency this entry is not sold in -- which the row's
+            // absence already says, and is not a reason to destroy a row that exists. Deleting a price
+            // stays its own act, not a side effect of an unrelated save.
+            //
+            // Keyed off EVERY currency rather than the active ones: the validator requires the active
+            // set and PERMITS the rest, because pricing a market before opening it is how a currency
+            // gets activated at all -- EUR is seeded inactive and gains price rows in the same change
+            // that flips it. Those rows have to actually land.
+            var byCode = await currencyRepository.GetAll()
+                .ToDictionaryAsync(c => c.Code, c => c.Id, cancellationToken);
+
+            foreach (var (code, price) in command.Prices ?? [])
             {
-                servicePriceRepository.Add(ServicePrice.Create(
-                    service.Id, currency.Id, command.BasePrice, command.PerRoomPrice));
-            }
-            else
-            {
-                existing.Update(command.BasePrice, command.PerRoomPrice);
+                if (!byCode.TryGetValue(code, out var currencyId))
+                {
+                    continue;
+                }
+
+                var existing = await servicePriceRepository.GetAll().FirstOrDefaultAsync(
+                    p => p.ServiceId == service.Id && p.CurrencyId == currencyId, cancellationToken);
+
+                if (existing is null)
+                {
+                    servicePriceRepository.Add(ServicePrice.Create(
+                        service.Id, currencyId, price.BasePrice, price.PerRoomPrice));
+                }
+                else
+                {
+                    existing.Update(price.BasePrice, price.PerRoomPrice);
+                }
             }
 
             service.ClearTranslations();

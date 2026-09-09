@@ -84,7 +84,7 @@ public class UpdatePackageWeightTests
             "desc",
             null,
             false,
-            100m,
+            new Dictionary<string, decimal> { ["CZK"] = 100m },
             [ServiceAId, ServiceBId],
             new Dictionary<string, decimal> { [ServiceAId] = 3m, [ServiceBId] = 1m },
             null));
@@ -107,7 +107,7 @@ public class UpdatePackageWeightTests
             "desc",
             null,
             false,
-            100m,
+            new Dictionary<string, decimal> { ["CZK"] = 100m },
             [ServiceAId, ServiceBId],
             new Dictionary<string, decimal> { [ServiceAId] = 5m },
             null));
@@ -130,7 +130,7 @@ public class UpdatePackageWeightTests
             "desc",
             null,
             false,
-            100m,
+            new Dictionary<string, decimal> { ["CZK"] = 100m },
             [ServiceAId, ServiceBId],
             null,
             null));
@@ -153,7 +153,7 @@ public class UpdatePackageWeightTests
 
         // The admin detail carries the default currency's price alongside the weights; this suite is
         // about the weights, so any amount does.
-        var dto = package.MapToAdminDetail(price: 1000m);
+        var dto = package.MapToAdminDetail(new Dictionary<string, decimal> { ["CZK"] = 1000m });
 
         Assert.Equal(2m, dto.IncludedServices.Single(s => s.Id == ServiceAId).PriceWeight);
         Assert.Equal(PackageService.DefaultPriceWeight, dto.IncludedServices.Single(s => s.Id == ServiceBId).PriceWeight);

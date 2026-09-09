@@ -22,6 +22,7 @@ public class CatalogTranslationCompletenessValidatorTests
     private readonly Mock<IServiceCategoryRepository> _categoryRepository = new();
     private readonly Mock<IServiceRepository> _serviceRepository = new();
     private readonly Mock<IPackageRepository> _packageRepository = new();
+    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
 
     public CatalogTranslationCompletenessValidatorTests()
     {
@@ -47,16 +48,32 @@ public class CatalogTranslationCompletenessValidatorTests
         _packageRepository
             .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+
+        // These cases are about translations, so the price side is set up to pass: CZK is the default
+        // and every command below prices it. The price rule has its own file.
+        var czk = Currency.Create("CZK", "Kc", "Czech koruna");
+        czk.SetAsDefault(true);
+        var currencies = new List<Currency> { czk };
+        _currencyRepository.Setup(r => r.GetAll()).Returns(currencies.AsQueryable().BuildMock());
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(czk);
     }
+
+    /// <summary>A price in the fixture's default currency, so the price rule passes.</summary>
+    private static Dictionary<string, CreateService.ServicePriceInput> Prices() =>
+        new() { ["CZK"] = new CreateService.ServicePriceInput(100m, 10m) };
+
+    private static Dictionary<string, decimal> PackagePrices() => new() { ["CZK"] = 500m };
 
     private static Dictionary<string, CreateService.TranslationInput> Translations(params string[] codes) =>
         codes.ToDictionary(c => c, c => new CreateService.TranslationInput($"Name {c}", $"Description {c}"));
 
     private CreateService.Command ServiceCommand(Dictionary<string, CreateService.TranslationInput>? translations) =>
-        new("cat-1", "Windows", "Window cleaning", 100m, 10m, 30, translations);
+        new("cat-1", "Windows", "Window cleaning", 30, Prices(), translations);
 
     private UpdateService.Command UpdateServiceCommand(Dictionary<string, CreateService.TranslationInput>? translations) =>
-        new("service-1", "cat-1", "Windows", "Window cleaning", 100m, 10m, 30, translations);
+        new("service-1", "cat-1", "Windows", "Window cleaning", 30, Prices(), translations);
 
     // A package's translation carries the card's tagline as well, so it takes its own input
     // type; the shared service one is projected onto it here rather than duplicating the cases.
@@ -65,15 +82,16 @@ public class CatalogTranslationCompletenessValidatorTests
         translations?.ToDictionary(t => t.Key, t => new PackageTranslationInput(t.Value.Name, t.Value.Description, null));
 
     private CreatePackage.Command PackageCommand(Dictionary<string, CreateService.TranslationInput>? translations) =>
-        new("Deep Clean", "Full home deep clean", null, false, 500m, null, AsPackageTranslations(translations));
+        new("Deep Clean", "Full home deep clean", null, false, PackagePrices(), null, AsPackageTranslations(translations));
 
     private UpdatePackage.Command UpdatePackageCommand(Dictionary<string, CreateService.TranslationInput>? translations) =>
-        new("package-1", "Deep Clean", "Full home deep clean", null, false, 500m, null, null, AsPackageTranslations(translations));
+        new("package-1", "Deep Clean", "Full home deep clean", null, false, PackagePrices(), null, null, AsPackageTranslations(translations));
 
     [Fact]
     public async Task CreateService_CoveringAllActiveLanguages_Passes_DespiteInactiveLanguage()
     {
-        var validator = new CreateService.Validator(_languageRepository.Object, _categoryRepository.Object);
+        var validator = new CreateService.Validator(
+            _languageRepository.Object, _categoryRepository.Object, _currencyRepository.Object);
 
         var result = await validator.ValidateAsync(ServiceCommand(Translations("en", "cs")));
 
@@ -83,7 +101,8 @@ public class CatalogTranslationCompletenessValidatorTests
     [Fact]
     public async Task CreateService_MissingAnActiveLanguage_Fails()
     {
-        var validator = new CreateService.Validator(_languageRepository.Object, _categoryRepository.Object);
+        var validator = new CreateService.Validator(
+            _languageRepository.Object, _categoryRepository.Object, _currencyRepository.Object);
 
         var result = await validator.ValidateAsync(ServiceCommand(Translations("en")));
 
@@ -95,7 +114,8 @@ public class CatalogTranslationCompletenessValidatorTests
     public async Task UpdateService_CoveringAllActiveLanguages_Passes_DespiteInactiveLanguage()
     {
         var validator = new UpdateService.Validator(
-            _serviceRepository.Object, _languageRepository.Object, _categoryRepository.Object);
+            _serviceRepository.Object, _languageRepository.Object, _categoryRepository.Object,
+            _currencyRepository.Object);
 
         var result = await validator.ValidateAsync(UpdateServiceCommand(Translations("en", "cs")));
 
@@ -105,7 +125,8 @@ public class CatalogTranslationCompletenessValidatorTests
     [Fact]
     public async Task CreatePackage_WithoutTranslations_Fails_TranslationsRequired()
     {
-        var validator = new CreatePackage.Validator(_serviceRepository.Object, _languageRepository.Object);
+        var validator = new CreatePackage.Validator(
+            _serviceRepository.Object, _languageRepository.Object, _currencyRepository.Object);
 
         var result = await validator.ValidateAsync(PackageCommand(null));
 
@@ -116,7 +137,8 @@ public class CatalogTranslationCompletenessValidatorTests
     [Fact]
     public async Task CreatePackage_MissingAnActiveLanguage_Fails()
     {
-        var validator = new CreatePackage.Validator(_serviceRepository.Object, _languageRepository.Object);
+        var validator = new CreatePackage.Validator(
+            _serviceRepository.Object, _languageRepository.Object, _currencyRepository.Object);
 
         var result = await validator.ValidateAsync(PackageCommand(Translations("en")));
 
@@ -127,7 +149,8 @@ public class CatalogTranslationCompletenessValidatorTests
     [Fact]
     public async Task CreatePackage_CoveringAllActiveLanguages_Passes()
     {
-        var validator = new CreatePackage.Validator(_serviceRepository.Object, _languageRepository.Object);
+        var validator = new CreatePackage.Validator(
+            _serviceRepository.Object, _languageRepository.Object, _currencyRepository.Object);
 
         var result = await validator.ValidateAsync(PackageCommand(Translations("en", "cs")));
 
@@ -138,7 +161,8 @@ public class CatalogTranslationCompletenessValidatorTests
     public async Task UpdatePackage_WithoutTranslations_Fails_TranslationsRequired()
     {
         var validator = new UpdatePackage.Validator(
-            _packageRepository.Object, _serviceRepository.Object, _languageRepository.Object);
+            _packageRepository.Object, _serviceRepository.Object, _languageRepository.Object,
+            _currencyRepository.Object);
 
         var result = await validator.ValidateAsync(UpdatePackageCommand(null));
 
@@ -150,7 +174,8 @@ public class CatalogTranslationCompletenessValidatorTests
     public async Task UpdatePackage_CoveringAllActiveLanguages_Passes()
     {
         var validator = new UpdatePackage.Validator(
-            _packageRepository.Object, _serviceRepository.Object, _languageRepository.Object);
+            _packageRepository.Object, _serviceRepository.Object, _languageRepository.Object,
+            _currencyRepository.Object);
 
         var result = await validator.ValidateAsync(UpdatePackageCommand(Translations("en", "cs")));
 

@@ -107,9 +107,12 @@ a defect.)
 **Mechanism (real):**
 - `Currency : Auditable` (NOT `ITenantEntity`) — **platform config**. Fields: `Code`, `Symbol`,
   `Name`, `ExchangeRate` (default `1.0m`), `IsDefault` (`Currency.cs`).
-- Seeded with **12 currencies** with real exchange rates relative to CZK
-  (`insert_seed_data.sql:230-248`: CZK=1.0 `IsDefault=true`, EUR=0.041, USD=0.044, GBP, PLN, CHF, SEK,
-  NOK, DKK, HUF, RON, BGN). Exactly one default (CZK).
+- Seeded with **two currencies**: CZK (`IsDefault`, active) and EUR (**inactive**, no catalogue
+  prices). The other ten — USD, GBP, PLN, CHF, SEK, NOK, DKK, HUF, RON, BGN — were removed on
+  2026-09-09: each was seeded active with a hand-typed rate nobody had reviewed, and until the same
+  change any authenticated caller could name one on the quote and create paths.
+- `ExchangeRate` still exists as a column and defaults to `1.0m`, but **nothing reads it**. It is
+  deleted with the per-currency price tables.
 - `CurrencyId` is **per-record** on `Order` (`Order.cs:111`), `PromoCode` (`PromoCode.cs:28`, nullable —
   fixed-discount codes only), `EmployeePayConfig` (`EmployeePayConfig.cs:34`, required),
   `EmployeeInvoice` (`EmployeeInvoice.cs:37`, required). **Not per-tenant.**
@@ -132,19 +135,29 @@ a defect.)
 There is **no per-tenant currency setting anywhere**. The only tenant-shaped currency surface is the
 per-record `CurrencyId`, and even that is populated from country/default, not from a tenant config.
 
-**How `ExchangeRate` is actually used (important nuance):** `OrderPricingCalculator` computes the base
-subtotal from catalog prices (`Service.BasePrice`, `Package.Price`, `Extra.Price`) **as authored**, then
-multiplies the whole total by the selected currency's `ExchangeRate`
-(`OrderPricingCalculator.cs:46-66`: `totalPrice = (baseSubtotal + surcharge) * exchangeRate`). So
-multi-currency today is a **flat conversion of CZK-authored prices**, not per-currency catalog pricing.
-Catalog prices have no `CurrencyId` — they are implicitly in the default currency (CZK). The Quote
-response surfaces `ExchangeRate` and `CurrencyCode` so a client could display a converted price.
+**How `ExchangeRate` is used: it is not.** `OrderPricingCalculator` computes the subtotal from catalogue
+prices (`Service.BasePrice`, `Package.Price`, `Extra.Price`) **as authored** and returns them unscaled.
 
-**Verdict:** the **exchange-rate multi-currency MECHANISM is real and wired end-to-end** (entity, seed
-data with rates, per-record stamping, resolution service, conversion in pricing, symbol/code on
-receipts/invoices/emails). But **operation is single-currency**: every catalog price is authored in CZK,
-CZK is the sole default, and CZE is the only serviced country, so in practice `ExchangeRate` is always
-`1.0` on the live path. The CZK/"Kč" hardcoding is a **safety-net fallback string** for when a record
+It used to multiply the whole basket by the selected currency's rate. That was removed on 2026-09-09
+under the owner ruling that **a price is authored per currency, never converted** — a hand-typed column
+with no feed, no history and no per-order snapshot meant editing it silently restated every historical
+order that referenced it. Fourteen multiplication sites went; the quote and the order list both now
+report `ExchangeRate: 1`, and `OrderPricingCalculatorExchangeRateTests` prices against a currency whose
+stored rate is not 1 and proves nothing moves.
+
+Catalogue prices still have no `CurrencyId` — they are implicitly in the default currency (CZK), and the
+default may only be a currency the catalogue is actually priced in (`SetDefaultCurrency` refuses an
+inactive one). Per-currency price tables replace that implicitness. → `agents/backlog/T-0688-multicurrency-plan-final.md`
+
+**Verdict:** the **per-record currency mechanism is real and wired end-to-end** (entity, per-record
+stamping, resolution service, symbol/code on receipts/invoices/emails). The **conversion** half is gone
+— deliberately, and it is not coming back. What replaces it is per-currency authored prices, so that
+adding a market is data rather than code.
+
+**Operation is single-currency and the platform now enforces it** rather than merely happening to be
+it: CZE is the only serviced country, CZK is the only active currency, the caller cannot name a
+currency on any quote or create path, and the default cannot be moved to a currency the catalogue is
+not priced in. The CZK/"Kč" hardcoding is a **safety-net fallback string** for when a record
 has no currency row (`Constants.Currency.Czk` comment: "Multi-currency is supported via the Currency
 entity; this is just the safety-net string default"), not a design assumption that the platform is
 CZK-only.

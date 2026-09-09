@@ -60,7 +60,11 @@ public static class OrderMappers
                 o.Currency.Code,
                 o.Currency.Symbol,
                 o.Currency.Name,
-                o.Currency.ExchangeRate,
+                // 1, not the stored column. Nothing converts any more (Wave A removed every scaling
+                // site), so reporting the admin-typed number here made the SAME named field disagree
+                // between the quote — which reports 1 — and the order list, for the same order. The
+                // column is deleted in Wave B; until then this is the honest value.
+                1m,
                 o.Currency.IsDefault),
             o.SelectedPackages.Select(op => new OrderListPackageRow(
                 op.Package!.Id,
@@ -142,7 +146,8 @@ public static class OrderMappers
                 Code: row.Currency.Code,
                 Symbol: row.Currency.Symbol,
                 Name: row.Currency.Name,
-                ExchangeRate: row.Currency.ExchangeRate,
+                // See the note in SelectOrderListRows — 1, not the stored column.
+                ExchangeRate: 1m,
                 IsDefault: row.Currency.IsDefault),
             AssignedEmployees: row.AssignedEmployees.Select(e => e.Id),
             SelectedServices: row.SelectedServices.Select(s => new ServiceListItem(

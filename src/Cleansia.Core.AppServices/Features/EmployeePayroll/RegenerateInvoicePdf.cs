@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -22,16 +23,38 @@ public class RegenerateInvoicePdf
 
     public class Validator : AbstractValidator<Command>
     {
+        private readonly IEmployeeInvoiceRepository _invoiceRepository;
+
         public Validator(
             IEmployeeInvoiceRepository invoiceRepository,
             ILanguageRepository languageRepository)
         {
+            _invoiceRepository = invoiceRepository;
+
+            // A SETTLED INVOICE IS A FILED DOCUMENT AND IS NOT RE-RENDERED. Owner ruling 2026-09-09.
+            //
+            // This validator checked only that the invoice and the language existed, so a PAID payout
+            // invoice could be re-rendered — and the render OVERWRITES THE PDF IN PLACE, at the URL the
+            // cleaner already has. Nothing about the money can move (the amounts and the currency are
+            // frozen on the row, and the VAT posture is now fixed by ruling), but the LANGUAGE can:
+            // re-rendering a settled invoice in another language replaces the document a cleaner has
+            // already filed with their tax return. InvoiceDocumentLanguageTests says in its own words
+            // that a copy in another language is a SECOND document; this is what stops the first one
+            // being destroyed to make it.
+            //
+            // The same four-way shape as AssignInvoiceVariableSymbol, minus the two rules that are
+            // specific to allocating a payment reference. Both keys already exist and are already
+            // translated in all five admin locales — this adds no new error contract.
             RuleFor(x => x.InvoiceId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(invoiceRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.InvoiceNotFound);
+                .WithMessage(BusinessErrorMessage.InvoiceNotFound)
+                .MustAsync(NotCancelledAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceAlreadyCancelled)
+                .MustAsync(NotPaidAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceAlreadyPaid);
 
             RuleFor(x => x.LanguageCode)
                 .Cascade(CascadeMode.Stop)
@@ -39,6 +62,18 @@ public class RegenerateInvoicePdf
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(languageRepository.ExistsWithCodeAsync)
                 .WithMessage(BusinessErrorMessage.LanguageNotFound);
+        }
+
+        private async Task<bool> NotCancelledAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return !invoice!.IsCancelled;
+        }
+
+        private async Task<bool> NotPaidAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return invoice!.Status != EmployeeInvoiceStatus.Paid;
         }
     }
 
@@ -203,11 +238,17 @@ public class RegenerateInvoicePdf
 
         private async Task<string> UploadPdfAsync(EmployeeInvoice invoice, Employee employee, byte[] pdfBytes, CancellationToken cancellationToken)
         {
-            var employeeName = $"{employee.User?.FirstName}_{employee.User?.LastName}";
+            // THE EMPLOYEE'S ID, NOT THEIR NAME. The path used to interpolate FirstName_LastName, which
+            // is mutable: a cleaner who married and changed their surname made the next render write to
+            // a NEW path, leaving the original PDF orphaned at the old URL and moving PdfBlobUrl to a
+            // document with different contents. "Overwrites in place" was only true while nobody's name
+            // changed. Less readable when browsing the container, and stable, which is the property a
+            // document's address needs.
+            var employeeFolder = employee.Id;
             var payPeriodDescription = invoice.PayPeriod!.GetPeriodLabel();
             var invoiceFileName = invoice.InvoiceNumber;
 
-            var blobName = $"{payPeriodDescription}/{employeeName}/{invoiceFileName}.pdf";
+            var blobName = $"{payPeriodDescription}/{employeeFolder}/{invoiceFileName}.pdf";
             var blobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
 
             using var pdfStream = new MemoryStream(pdfBytes);

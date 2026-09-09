@@ -340,7 +340,6 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
     command.entityType = data['entityType'] ?? employee.entityType;
     command.registrationNumber =
       data['registrationNumber'] ?? employee.registrationNumber;
-    command.vatNumber = data['vatNumber'] ?? employee.vatNumber;
     command.legalEntityName =
       data['legalEntityName'] ?? employee.legalEntityName;
     command.emergencyName =

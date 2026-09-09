@@ -405,6 +405,11 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'validation.payout.swift_required',
   // Payroll — invoices, pay periods, pay calculation
   'payroll.employee_not_assigned',
+  // A SETTLED invoice is not re-rendered. RegenerateInvoicePdf gained a status gate, so both of
+  // these became reachable from the partner surface — the render would otherwise overwrite the
+  // document a cleaner was already paid against.
+  'payroll.invoice.already_cancelled',
+  'payroll.invoice.already_paid',
   'payroll.invoice.not_found',
   // cdd3133b — RegenerateInvoicePdf now RECORDS a failed render on the row instead of
   // clearing the flag it never set, so this key became reachable rather than theoretical.

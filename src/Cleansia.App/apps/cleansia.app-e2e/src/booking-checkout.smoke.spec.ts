@@ -74,7 +74,6 @@ const QUOTE_FIXTURE = {
   extrasSubtotal: 0,
   expressSurchargeApplied: false,
   expressSurchargeAmount: 0,
-  exchangeRate: 1,
   estimatedDurationMinutes: 120,
   requiredEmployees: 1,
   expressSurchargeWaivedByMembership: false,

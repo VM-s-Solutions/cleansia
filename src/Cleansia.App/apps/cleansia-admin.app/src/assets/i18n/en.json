@@ -334,7 +334,6 @@
       "entity_type_natural_person": "Self-employed individual",
       "entity_type_legal_entity": "Legal entity",
       "registration_number": "Registration Number",
-      "vat_number": "VAT Number",
       "legal_entity_name": "Legal Entity Name",
       "iban": "IBAN",
       "emergency_contact": "Emergency Contact",
@@ -910,8 +909,9 @@
       "name": "Name",
       "description": "Description",
       "category": "Category",
-      "base_price": "Base Price (CZK)",
-      "per_room_price": "Per Room Price (CZK)",
+      "base_price": "Base price",
+      "per_room_price": "Per-room price",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
       "estimated_time": "Estimated Time (minutes)",
       "messages": {
         "load_error": "Failed to load service",
@@ -969,7 +969,9 @@
       "translations": "Translations",
       "name": "Name",
       "description": "Description",
-      "price": "Price (CZK)",
+      "price": "Price",
+      "pricing": "Pricing",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
       "included_services": "Included Services",
       "select_services": "Select services to include",
       "weights_title": "Relative price weights",
@@ -1177,7 +1179,6 @@
         "code": "Code",
         "symbol": "Symbol",
         "name": "Name",
-        "exchange_rate": "Exchange Rate",
         "is_default": "Default",
         "actions": "Actions"
       },
@@ -1200,7 +1201,6 @@
       "symbol_placeholder": "e.g., $, €, Kč",
       "name": "Currency Name",
       "name_placeholder": "e.g., US Dollar, Euro, Czech Koruna",
-      "exchange_rate": "Exchange Rate",
       "exchange_rate_placeholder": "e.g., 1.0, 0.92, 24.50",
       "messages": {
         "load_error": "Failed to load currency",
@@ -2668,7 +2668,9 @@
       "in_use": "Cannot delete service because it is currently in use",
       "missing_translation_for_language": "Missing translation for required language",
       "not_found": "Service not found",
-      "translations_required": "Translations are required for all supported languages"
+      "translations_required": "Translations are required for all supported languages",
+      "prices_required": "A price is required",
+      "missing_price_for_currency": "Missing a price for a currency the platform operates in"
     },
     "service_area": {
       "city_not_serviced": "We don't currently serve this city.",

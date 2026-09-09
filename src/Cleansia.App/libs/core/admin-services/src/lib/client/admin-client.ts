@@ -15008,7 +15008,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     passportId!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
-    vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
@@ -15056,7 +15055,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
             this.passportId = Data["passportId"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
-            this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
@@ -15114,7 +15112,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
         data["passportId"] = this.passportId;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
-        data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
@@ -15165,7 +15162,6 @@ export interface IAdminEmployeeDetail {
     passportId: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;
-    vatNumber: string | undefined;
     legalEntityName: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
@@ -15392,7 +15388,7 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
     description!: string | undefined;
     tagline!: string | undefined;
     isPopular!: boolean;
-    price!: number;
+    prices!: { [key: string]: number; } | undefined;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceDto[] | undefined;
     createdOn!: Date;
@@ -15414,7 +15410,13 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
             this.description = Data["description"];
             this.tagline = Data["tagline"];
             this.isPopular = Data["isPopular"];
-            this.price = Data["price"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key];
+                }
+            }
             if (Data["translations"]) {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
@@ -15446,7 +15448,13 @@ export class AdminPackageDetailDto implements IAdminPackageDetailDto {
         data["description"] = this.description;
         data["tagline"] = this.tagline;
         data["isPopular"] = this.isPopular;
-        data["price"] = this.price;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = (this.prices as any)[key];
+            }
+        }
         if (this.translations) {
             data["translations"] = {};
             for (let key in this.translations) {
@@ -15471,7 +15479,7 @@ export interface IAdminPackageDetailDto {
     description: string | undefined;
     tagline: string | undefined;
     isPopular: boolean;
-    price: number;
+    prices: { [key: string]: number; } | undefined;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceDto[] | undefined;
     createdOn: Date;
@@ -15722,8 +15730,8 @@ export class AdminServiceDetailDto implements IAdminServiceDetailDto {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
-    basePrice!: number;
-    perRoomPrice!: number;
+    categoryId!: string | undefined;
+    prices!: { [key: string]: AdminServicePriceDto; } | undefined;
     estimatedTime!: number;
     translations!: { [key: string]: Translation; } | undefined;
     createdOn!: Date;
@@ -15743,8 +15751,14 @@ export class AdminServiceDetailDto implements IAdminServiceDetailDto {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
-            this.basePrice = Data["basePrice"];
-            this.perRoomPrice = Data["perRoomPrice"];
+            this.categoryId = Data["categoryId"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key] ? AdminServicePriceDto.fromJS(Data["prices"][key]) : new AdminServicePriceDto();
+                }
+            }
             this.estimatedTime = Data["estimatedTime"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -15770,8 +15784,14 @@ export class AdminServiceDetailDto implements IAdminServiceDetailDto {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
-        data["basePrice"] = this.basePrice;
-        data["perRoomPrice"] = this.perRoomPrice;
+        data["categoryId"] = this.categoryId;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = this.prices[key] ? this.prices[key].toJSON() : undefined as any;
+            }
+        }
         data["estimatedTime"] = this.estimatedTime;
         if (this.translations) {
             data["translations"] = {};
@@ -15790,12 +15810,52 @@ export interface IAdminServiceDetailDto {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
-    basePrice: number;
-    perRoomPrice: number;
+    categoryId: string | undefined;
+    prices: { [key: string]: AdminServicePriceDto; } | undefined;
     estimatedTime: number;
     translations: { [key: string]: Translation; } | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+}
+
+export class AdminServicePriceDto implements IAdminServicePriceDto {
+    basePrice!: number;
+    perRoomPrice!: number;
+
+    constructor(data?: IAdminServicePriceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.basePrice = Data["basePrice"];
+            this.perRoomPrice = Data["perRoomPrice"];
+        }
+    }
+
+    static fromJS(data: any): AdminServicePriceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminServicePriceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["basePrice"] = this.basePrice;
+        data["perRoomPrice"] = this.perRoomPrice;
+        return data;
+    }
+}
+
+export interface IAdminServicePriceDto {
+    basePrice: number;
+    perRoomPrice: number;
 }
 
 export class AdminSetEmployeeWeeklyOrderLimitRequest implements IAdminSetEmployeeWeeklyOrderLimitRequest {
@@ -16013,7 +16073,6 @@ export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
     passportId!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
-    vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
     emergencyName!: string | undefined;
     emergencyPhone!: string | undefined;
@@ -16043,7 +16102,6 @@ export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
             this.passportId = Data["passportId"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
-            this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
             this.emergencyName = Data["emergencyName"];
             this.emergencyPhone = Data["emergencyPhone"];
@@ -16073,7 +16131,6 @@ export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
         data["passportId"] = this.passportId;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
-        data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
         data["emergencyName"] = this.emergencyName;
         data["emergencyPhone"] = this.emergencyPhone;
@@ -16096,7 +16153,6 @@ export interface IAdminUpdateEmployeeCommand {
     passportId: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;
-    vatNumber: string | undefined;
     legalEntityName: string | undefined;
     emergencyName: string | undefined;
     emergencyPhone: string | undefined;
@@ -17718,7 +17774,6 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
     code!: string | undefined;
     symbol!: string | undefined;
     name!: string | undefined;
-    exchangeRate!: number;
 
     constructor(data?: ICreateCurrencyCommand) {
         if (data) {
@@ -17734,7 +17789,6 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
             this.code = Data["code"];
             this.symbol = Data["symbol"];
             this.name = Data["name"];
-            this.exchangeRate = Data["exchangeRate"];
         }
     }
 
@@ -17750,7 +17804,6 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
         data["code"] = this.code;
         data["symbol"] = this.symbol;
         data["name"] = this.name;
-        data["exchangeRate"] = this.exchangeRate;
         return data;
     }
 }
@@ -17759,7 +17812,6 @@ export interface ICreateCurrencyCommand {
     code: string | undefined;
     symbol: string | undefined;
     name: string | undefined;
-    exchangeRate: number;
 }
 
 export class CreateCurrencyResponse implements ICreateCurrencyResponse {
@@ -18071,7 +18123,7 @@ export class CreatePackageCommand implements ICreatePackageCommand {
     description!: string | undefined;
     tagline!: string | undefined;
     isPopular!: boolean;
-    price!: number;
+    prices!: { [key: string]: number; } | undefined;
     serviceIds!: string[] | undefined;
     translations!: { [key: string]: PackageTranslationInput; } | undefined;
 
@@ -18090,7 +18142,13 @@ export class CreatePackageCommand implements ICreatePackageCommand {
             this.description = Data["description"];
             this.tagline = Data["tagline"];
             this.isPopular = Data["isPopular"];
-            this.price = Data["price"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key];
+                }
+            }
             if (Array.isArray(Data["serviceIds"])) {
                 this.serviceIds = [] as any;
                 for (let item of Data["serviceIds"])
@@ -18119,7 +18177,13 @@ export class CreatePackageCommand implements ICreatePackageCommand {
         data["description"] = this.description;
         data["tagline"] = this.tagline;
         data["isPopular"] = this.isPopular;
-        data["price"] = this.price;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = (this.prices as any)[key];
+            }
+        }
         if (Array.isArray(this.serviceIds)) {
             data["serviceIds"] = [];
             for (let item of this.serviceIds)
@@ -18141,7 +18205,7 @@ export interface ICreatePackageCommand {
     description: string | undefined;
     tagline: string | undefined;
     isPopular: boolean;
-    price: number;
+    prices: { [key: string]: number; } | undefined;
     serviceIds: string[] | undefined;
     translations: { [key: string]: PackageTranslationInput; } | undefined;
 }
@@ -18570,9 +18634,8 @@ export class CreateServiceCommand implements ICreateServiceCommand {
     categoryId!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
-    basePrice!: number;
-    perRoomPrice!: number;
     estimatedTime!: number;
+    prices!: { [key: string]: CreateServiceServicePriceInput; } | undefined;
     translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
 
     constructor(data?: ICreateServiceCommand) {
@@ -18589,9 +18652,14 @@ export class CreateServiceCommand implements ICreateServiceCommand {
             this.categoryId = Data["categoryId"];
             this.name = Data["name"];
             this.description = Data["description"];
-            this.basePrice = Data["basePrice"];
-            this.perRoomPrice = Data["perRoomPrice"];
             this.estimatedTime = Data["estimatedTime"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key] ? CreateServiceServicePriceInput.fromJS(Data["prices"][key]) : new CreateServiceServicePriceInput();
+                }
+            }
             if (Data["translations"]) {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
@@ -18614,9 +18682,14 @@ export class CreateServiceCommand implements ICreateServiceCommand {
         data["categoryId"] = this.categoryId;
         data["name"] = this.name;
         data["description"] = this.description;
-        data["basePrice"] = this.basePrice;
-        data["perRoomPrice"] = this.perRoomPrice;
         data["estimatedTime"] = this.estimatedTime;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = this.prices[key] ? this.prices[key].toJSON() : undefined as any;
+            }
+        }
         if (this.translations) {
             data["translations"] = {};
             for (let key in this.translations) {
@@ -18632,9 +18705,8 @@ export interface ICreateServiceCommand {
     categoryId: string | undefined;
     name: string | undefined;
     description: string | undefined;
-    basePrice: number;
-    perRoomPrice: number;
     estimatedTime: number;
+    prices: { [key: string]: CreateServiceServicePriceInput; } | undefined;
     translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
 }
 
@@ -18672,6 +18744,46 @@ export class CreateServiceResponse implements ICreateServiceResponse {
 
 export interface ICreateServiceResponse {
     serviceId: string | undefined;
+}
+
+export class CreateServiceServicePriceInput implements ICreateServiceServicePriceInput {
+    basePrice!: number;
+    perRoomPrice!: number;
+
+    constructor(data?: ICreateServiceServicePriceInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.basePrice = Data["basePrice"];
+            this.perRoomPrice = Data["perRoomPrice"];
+        }
+    }
+
+    static fromJS(data: any): CreateServiceServicePriceInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateServiceServicePriceInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["basePrice"] = this.basePrice;
+        data["perRoomPrice"] = this.perRoomPrice;
+        return data;
+    }
+}
+
+export interface ICreateServiceServicePriceInput {
+    basePrice: number;
+    perRoomPrice: number;
 }
 
 export class CreateServiceTranslationInput implements ICreateServiceTranslationInput {
@@ -18728,7 +18840,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
     code!: string | undefined;
     name!: string | undefined;
     symbol!: string | undefined;
-    exchangeRate!: number;
     isDefault!: boolean;
 
     constructor(data?: ICurrencyDetailDto) {
@@ -18746,7 +18857,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
             this.code = Data["code"];
             this.name = Data["name"];
             this.symbol = Data["symbol"];
-            this.exchangeRate = Data["exchangeRate"];
             this.isDefault = Data["isDefault"];
         }
     }
@@ -18764,7 +18874,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
         data["code"] = this.code;
         data["name"] = this.name;
         data["symbol"] = this.symbol;
-        data["exchangeRate"] = this.exchangeRate;
         data["isDefault"] = this.isDefault;
         return data;
     }
@@ -18775,7 +18884,6 @@ export interface ICurrencyDetailDto {
     code: string | undefined;
     name: string | undefined;
     symbol: string | undefined;
-    exchangeRate: number;
     isDefault: boolean;
 }
 
@@ -18784,7 +18892,6 @@ export class CurrencyListItem implements ICurrencyListItem {
     code!: string | undefined;
     symbol!: string | undefined;
     name!: string | undefined;
-    exchangeRate!: number;
     isDefault!: boolean;
 
     constructor(data?: ICurrencyListItem) {
@@ -18802,7 +18909,6 @@ export class CurrencyListItem implements ICurrencyListItem {
             this.code = Data["code"];
             this.symbol = Data["symbol"];
             this.name = Data["name"];
-            this.exchangeRate = Data["exchangeRate"];
             this.isDefault = Data["isDefault"];
         }
     }
@@ -18820,7 +18926,6 @@ export class CurrencyListItem implements ICurrencyListItem {
         data["code"] = this.code;
         data["symbol"] = this.symbol;
         data["name"] = this.name;
-        data["exchangeRate"] = this.exchangeRate;
         data["isDefault"] = this.isDefault;
         return data;
     }
@@ -18831,7 +18936,6 @@ export interface ICurrencyListItem {
     code: string | undefined;
     symbol: string | undefined;
     name: string | undefined;
-    exchangeRate: number;
     isDefault: boolean;
 }
 
@@ -21709,7 +21813,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     id!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
-    vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
     iban!: string | undefined;
     passportId!: string | undefined;
@@ -21735,7 +21838,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
             this.id = Data["id"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
-            this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.passportId = Data["passportId"];
@@ -21761,7 +21863,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
         data["id"] = this.id;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
-        data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["passportId"] = this.passportId;
@@ -21780,7 +21881,6 @@ export interface IGdprExportEmployeeDto {
     id: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;
-    vatNumber: string | undefined;
     legalEntityName: string | undefined;
     iban: string | undefined;
     passportId: string | undefined;
@@ -22652,6 +22752,62 @@ export interface IGetReferralsByUserResponse {
     asReferred: AdminReferralListItem[] | undefined;
 }
 
+export class GetUserCreditCurrencyAccount implements IGetUserCreditCurrencyAccount {
+    accountId!: string | undefined;
+    balance!: number;
+    currencyCode!: string | undefined;
+    ledger!: GetUserCreditLedgerEntry[] | undefined;
+
+    constructor(data?: IGetUserCreditCurrencyAccount) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.accountId = Data["accountId"];
+            this.balance = Data["balance"];
+            this.currencyCode = Data["currencyCode"];
+            if (Array.isArray(Data["ledger"])) {
+                this.ledger = [] as any;
+                for (let item of Data["ledger"])
+                    this.ledger!.push(GetUserCreditLedgerEntry.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): GetUserCreditCurrencyAccount {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetUserCreditCurrencyAccount();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["accountId"] = this.accountId;
+        data["balance"] = this.balance;
+        data["currencyCode"] = this.currencyCode;
+        if (Array.isArray(this.ledger)) {
+            data["ledger"] = [];
+            for (let item of this.ledger)
+                data["ledger"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IGetUserCreditCurrencyAccount {
+    accountId: string | undefined;
+    balance: number;
+    currencyCode: string | undefined;
+    ledger: GetUserCreditLedgerEntry[] | undefined;
+}
+
 export class GetUserCreditLedgerEntry implements IGetUserCreditLedgerEntry {
     id!: string | undefined;
     amount!: number;
@@ -22718,6 +22874,7 @@ export class GetUserCreditResponse implements IGetUserCreditResponse {
     balance!: number;
     currencyCode!: string | undefined;
     ledger!: GetUserCreditLedgerEntry[] | undefined;
+    accounts!: GetUserCreditCurrencyAccount[] | undefined;
 
     constructor(data?: IGetUserCreditResponse) {
         if (data) {
@@ -22738,6 +22895,11 @@ export class GetUserCreditResponse implements IGetUserCreditResponse {
                 this.ledger = [] as any;
                 for (let item of Data["ledger"])
                     this.ledger!.push(GetUserCreditLedgerEntry.fromJS(item));
+            }
+            if (Array.isArray(Data["accounts"])) {
+                this.accounts = [] as any;
+                for (let item of Data["accounts"])
+                    this.accounts!.push(GetUserCreditCurrencyAccount.fromJS(item));
             }
         }
     }
@@ -22760,6 +22922,11 @@ export class GetUserCreditResponse implements IGetUserCreditResponse {
             for (let item of this.ledger)
                 data["ledger"].push(item ? item.toJSON() : undefined as any);
         }
+        if (Array.isArray(this.accounts)) {
+            data["accounts"] = [];
+            for (let item of this.accounts)
+                data["accounts"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -22770,6 +22937,7 @@ export interface IGetUserCreditResponse {
     balance: number;
     currencyCode: string | undefined;
     ledger: GetUserCreditLedgerEntry[] | undefined;
+    accounts: GetUserCreditCurrencyAccount[] | undefined;
 }
 
 export class GetUserLoyaltyAccountResponse implements IGetUserLoyaltyAccountResponse {
@@ -29549,7 +29717,6 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
     code!: string | undefined;
     symbol!: string | undefined;
     name!: string | undefined;
-    exchangeRate!: number;
 
     constructor(data?: IUpdateCurrencyCommand) {
         if (data) {
@@ -29566,7 +29733,6 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
             this.code = Data["code"];
             this.symbol = Data["symbol"];
             this.name = Data["name"];
-            this.exchangeRate = Data["exchangeRate"];
         }
     }
 
@@ -29583,7 +29749,6 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
         data["code"] = this.code;
         data["symbol"] = this.symbol;
         data["name"] = this.name;
-        data["exchangeRate"] = this.exchangeRate;
         return data;
     }
 }
@@ -29593,7 +29758,6 @@ export interface IUpdateCurrencyCommand {
     code: string | undefined;
     symbol: string | undefined;
     name: string | undefined;
-    exchangeRate: number;
 }
 
 export class UpdateCurrencyResponse implements IUpdateCurrencyResponse {
@@ -30058,7 +30222,7 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
     description!: string | undefined;
     tagline!: string | undefined;
     isPopular!: boolean;
-    price!: number;
+    prices!: { [key: string]: number; } | undefined;
     serviceIds!: string[] | undefined;
     serviceWeights!: { [key: string]: number; } | undefined;
     translations!: { [key: string]: PackageTranslationInput; } | undefined;
@@ -30079,7 +30243,13 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
             this.description = Data["description"];
             this.tagline = Data["tagline"];
             this.isPopular = Data["isPopular"];
-            this.price = Data["price"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key];
+                }
+            }
             if (Array.isArray(Data["serviceIds"])) {
                 this.serviceIds = [] as any;
                 for (let item of Data["serviceIds"])
@@ -30116,7 +30286,13 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
         data["description"] = this.description;
         data["tagline"] = this.tagline;
         data["isPopular"] = this.isPopular;
-        data["price"] = this.price;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = (this.prices as any)[key];
+            }
+        }
         if (Array.isArray(this.serviceIds)) {
             data["serviceIds"] = [];
             for (let item of this.serviceIds)
@@ -30146,7 +30322,7 @@ export interface IUpdatePackageCommand {
     description: string | undefined;
     tagline: string | undefined;
     isPopular: boolean;
-    price: number;
+    prices: { [key: string]: number; } | undefined;
     serviceIds: string[] | undefined;
     serviceWeights: { [key: string]: number; } | undefined;
     translations: { [key: string]: PackageTranslationInput; } | undefined;
@@ -30561,9 +30737,8 @@ export class UpdateServiceCommand implements IUpdateServiceCommand {
     categoryId!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
-    basePrice!: number;
-    perRoomPrice!: number;
     estimatedTime!: number;
+    prices!: { [key: string]: CreateServiceServicePriceInput; } | undefined;
     translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
 
     constructor(data?: IUpdateServiceCommand) {
@@ -30581,9 +30756,14 @@ export class UpdateServiceCommand implements IUpdateServiceCommand {
             this.categoryId = Data["categoryId"];
             this.name = Data["name"];
             this.description = Data["description"];
-            this.basePrice = Data["basePrice"];
-            this.perRoomPrice = Data["perRoomPrice"];
             this.estimatedTime = Data["estimatedTime"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key] ? CreateServiceServicePriceInput.fromJS(Data["prices"][key]) : new CreateServiceServicePriceInput();
+                }
+            }
             if (Data["translations"]) {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
@@ -30607,9 +30787,14 @@ export class UpdateServiceCommand implements IUpdateServiceCommand {
         data["categoryId"] = this.categoryId;
         data["name"] = this.name;
         data["description"] = this.description;
-        data["basePrice"] = this.basePrice;
-        data["perRoomPrice"] = this.perRoomPrice;
         data["estimatedTime"] = this.estimatedTime;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = this.prices[key] ? this.prices[key].toJSON() : undefined as any;
+            }
+        }
         if (this.translations) {
             data["translations"] = {};
             for (let key in this.translations) {
@@ -30626,9 +30811,8 @@ export interface IUpdateServiceCommand {
     categoryId: string | undefined;
     name: string | undefined;
     description: string | undefined;
-    basePrice: number;
-    perRoomPrice: number;
     estimatedTime: number;
+    prices: { [key: string]: CreateServiceServicePriceInput; } | undefined;
     translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
 }
 

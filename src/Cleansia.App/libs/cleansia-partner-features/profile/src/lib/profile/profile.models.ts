@@ -34,7 +34,6 @@ export interface ProfileFormData {
   passportId?: string;
   entityType?: EmployeeEntityType;
   registrationNumber?: string;
-  vatNumber?: string;
   legalEntityName?: string;
   emergencyName?: string;
   emergencyPhone?: string;
@@ -108,7 +107,6 @@ export class ProfileFormFactory {
         Validators.required,
         Validators.maxLength(50),
       ]),
-      vatNumber: new FormControl(undefined, [Validators.maxLength(50)]),
       legalEntityName: new FormControl(undefined, [Validators.maxLength(200)]),
       emergencyName: new FormControl(undefined, [Validators.maxLength(100)]),
       emergencyPhone: new FormControl(undefined, [
@@ -145,7 +143,6 @@ export class ProfileFormFactory {
       passportId: employee.passportId || undefined,
       entityType: employee.entityType ?? EmployeeEntityType.NaturalPerson,
       registrationNumber: employee.registrationNumber || undefined,
-      vatNumber: employee.vatNumber || undefined,
       legalEntityName: employee.legalEntityName || undefined,
       emergencyName: employee.emergencyContactName || undefined,
       emergencyPhone: employee.emergencyContactPhone || undefined,
@@ -208,7 +205,6 @@ export class ProfileFormFactory {
     command.passportId = formData.passportId;
     command.entityType = formData.entityType ?? EmployeeEntityType.NaturalPerson;
     command.registrationNumber = formData.registrationNumber;
-    command.vatNumber = formData.vatNumber || undefined;
     command.legalEntityName =
       formData.entityType === EmployeeEntityType.LegalEntity
         ? formData.legalEntityName

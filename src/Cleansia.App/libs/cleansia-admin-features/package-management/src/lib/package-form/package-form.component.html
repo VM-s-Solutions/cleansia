@@ -29,15 +29,6 @@
             />
           </div>
 
-          <div class="form-field">
-            <cleansia-text-input
-              [label]="'pages.package_form.price' | translate"
-              formControlName="price"
-              dataType="number"
-              [required]="true"
-            />
-          </div>
-
           <div class="form-field full-width">
             <cleansia-textarea
               [label]="'pages.package_form.description' | translate"
@@ -59,6 +50,31 @@
               formControlName="isPopular"
             />
           </div>
+        </div>
+      </cleansia-section>
+
+      <cleansia-section [title]="'pages.package_form.pricing' | translate">
+        <div formGroupName="prices">
+          @for (currency of facade.currencies(); track currency.code) {
+          <div class="currency-price-block">
+            <h4 class="currency-price-block__title">
+              {{ currency.name }} ({{ currency.symbol }})
+            </h4>
+            <div class="form-grid">
+              <div class="form-field">
+                <cleansia-text-input
+                  [label]="'pages.package_form.price' | translate"
+                  [formControlName]="currency.code"
+                  dataType="number"
+                />
+              </div>
+            </div>
+          </div>
+          } @empty {
+          <p class="currency-price-block__empty">
+            {{ 'pages.package_form.no_currencies' | translate }}
+          </p>
+          }
         </div>
       </cleansia-section>
 

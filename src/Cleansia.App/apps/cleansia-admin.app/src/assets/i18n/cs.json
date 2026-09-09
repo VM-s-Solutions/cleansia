@@ -334,7 +334,6 @@
       "entity_type_natural_person": "Osoba samostatně výdělečně činná",
       "entity_type_legal_entity": "Právnická osoba",
       "registration_number": "Registrační číslo",
-      "vat_number": "DIČ",
       "legal_entity_name": "Název firmy",
       "iban": "IBAN",
       "emergency_contact": "Kontakt v nouzi",
@@ -1020,8 +1019,9 @@
       "name": "Název",
       "description": "Popis",
       "category": "Kategorie",
-      "base_price": "Základní cena (CZK)",
-      "per_room_price": "Cena za pokoj (CZK)",
+      "base_price": "Základní cena",
+      "per_room_price": "Cena za pokoj",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
       "estimated_time": "Odhadovaný čas (minuty)",
       "messages": {
         "load_error": "Nepodařilo se načíst službu",
@@ -1079,7 +1079,9 @@
       "translations": "Překlady",
       "name": "Název",
       "description": "Popis",
-      "price": "Cena (CZK)",
+      "price": "Cena",
+      "pricing": "Ceník",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
       "included_services": "Zahrnuté služby",
       "select_services": "Vyberte služby k zahrnutí",
       "weights_title": "Relativní cenové váhy",
@@ -1287,7 +1289,6 @@
         "code": "Kód",
         "symbol": "Symbol",
         "name": "Název",
-        "exchange_rate": "Směnný kurz",
         "is_default": "Výchozí",
         "actions": "Akce"
       },
@@ -1310,7 +1311,6 @@
       "symbol_placeholder": "např. $, €, Kč",
       "name": "Název měny",
       "name_placeholder": "např. Americký dolar, Euro, Česká koruna",
-      "exchange_rate": "Směnný kurz",
       "exchange_rate_placeholder": "např. 1.0, 0.92, 24.50",
       "messages": {
         "load_error": "Nepodařilo se načíst měnu",
@@ -2668,7 +2668,9 @@
       "in_use": "Službu nelze smazat, protože je aktuálně používána",
       "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk",
       "not_found": "Služba nenalezena",
-      "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky"
+      "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky",
+      "prices_required": "Cena je povinná",
+      "missing_price_for_currency": "Chybí cena pro měnu, ve které platforma prodává"
     },
     "service_area": {
       "city_not_serviced": "V tomto městě zatím nepůsobíme.",

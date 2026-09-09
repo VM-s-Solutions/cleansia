@@ -334,7 +334,6 @@
       "entity_type_natural_person": "Фізична особа-підприємець",
       "entity_type_legal_entity": "Юридична особа",
       "registration_number": "Реєстраційний номер",
-      "vat_number": "Номер платника ПДВ",
       "legal_entity_name": "Назва юридичної особи",
       "iban": "IBAN",
       "emergency_contact": "Екстрений контакт",
@@ -910,8 +909,9 @@
       "name": "Назва",
       "description": "Опис",
       "category": "Категорія",
-      "base_price": "Базова ціна (CZK)",
-      "per_room_price": "Ціна за кімнату (CZK)",
+      "base_price": "Базова ціна",
+      "per_room_price": "Ціна за кімнату",
+      "no_currencies": "Валюти не налаштовані, тому ціну поки що не можна вказати.",
       "estimated_time": "Орієнтовний час (хвилини)",
       "messages": {
         "load_error": "Не вдалося завантажити послугу",
@@ -969,7 +969,9 @@
       "translations": "Переклади",
       "name": "Назва",
       "description": "Опис",
-      "price": "Ціна (CZK)",
+      "price": "Ціна",
+      "pricing": "Ціни",
+      "no_currencies": "Валюти не налаштовані, тому ціну поки що не можна вказати.",
       "included_services": "Включені послуги",
       "select_services": "Оберіть послуги для включення",
       "weights_title": "Відносні цінові ваги",
@@ -1177,7 +1179,6 @@
         "code": "Код",
         "symbol": "Символ",
         "name": "Назва",
-        "exchange_rate": "Обмінний курс",
         "is_default": "За замовчуванням",
         "actions": "Дії"
       },
@@ -1200,7 +1201,6 @@
       "symbol_placeholder": "напр. $, €, Kč",
       "name": "Назва валюти",
       "name_placeholder": "напр. Долар США, Євро, Чеська крона",
-      "exchange_rate": "Обмінний курс",
       "exchange_rate_placeholder": "напр. 1.0, 0.92, 24.50",
       "messages": {
         "load_error": "Не вдалося завантажити валюту",
@@ -2668,7 +2668,9 @@
       "in_use": "Неможливо видалити послугу, оскільки вона зараз використовується",
       "missing_translation_for_language": "Відсутній переклад для обов'язкової мови",
       "not_found": "Послугу не знайдено",
-      "translations_required": "Переклади є обов'язковими для всіх підтримуваних мов"
+      "translations_required": "Переклади є обов'язковими для всіх підтримуваних мов",
+      "prices_required": "Ціна є обов'язковою",
+      "missing_price_for_currency": "Відсутня ціна для валюти, у якій працює платформа"
     },
     "service_area": {
       "city_not_serviced": "Ми наразі не обслуговуємо це місто.",

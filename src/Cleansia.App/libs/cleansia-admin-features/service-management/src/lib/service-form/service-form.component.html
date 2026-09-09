@@ -52,30 +52,43 @@
         <div class="form-grid">
           <div class="form-field">
             <cleansia-text-input
-              [label]="'pages.service_form.base_price' | translate"
-              formControlName="basePrice"
-              dataType="number"
-              [required]="true"
-            />
-          </div>
-
-          <div class="form-field">
-            <cleansia-text-input
-              [label]="'pages.service_form.per_room_price' | translate"
-              formControlName="perRoomPrice"
-              dataType="number"
-              [required]="true"
-            />
-          </div>
-
-          <div class="form-field">
-            <cleansia-text-input
               [label]="'pages.service_form.estimated_time' | translate"
               formControlName="estimatedTime"
               dataType="number"
               [required]="true"
             />
           </div>
+        </div>
+
+        <div formGroupName="prices">
+          @for (currency of facade.currencies(); track currency.code) {
+          <div class="currency-price-block" [formGroupName]="currency.code">
+            <h4 class="currency-price-block__title">
+              {{ currency.name }} ({{ currency.symbol }})
+            </h4>
+            <div class="form-grid">
+              <div class="form-field">
+                <cleansia-text-input
+                  [label]="'pages.service_form.base_price' | translate"
+                  formControlName="basePrice"
+                  dataType="number"
+                />
+              </div>
+
+              <div class="form-field">
+                <cleansia-text-input
+                  [label]="'pages.service_form.per_room_price' | translate"
+                  formControlName="perRoomPrice"
+                  dataType="number"
+                />
+              </div>
+            </div>
+          </div>
+          } @empty {
+          <p class="currency-price-block__empty">
+            {{ 'pages.service_form.no_currencies' | translate }}
+          </p>
+          }
         </div>
       </cleansia-section>
 

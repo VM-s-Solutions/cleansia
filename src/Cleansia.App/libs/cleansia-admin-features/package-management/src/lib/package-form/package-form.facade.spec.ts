@@ -17,13 +17,14 @@ describe('PackageFormFacade', () => {
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
   let navigate: jest.Mock;
   let getLanguagesMock: jest.Mock;
+  let getCurrenciesMock: jest.Mock;
 
   const formData: PackageFormData = {
     name: 'Move-out bundle',
     description: 'desc',
     tagline: 'Handover day',
     isPopular: false,
-    price: 100,
+    prices: { CZK: 100, EUR: 4 },
     serviceIds: ['svc-a', 'svc-b'],
     translations: {},
   };
@@ -35,10 +36,12 @@ describe('PackageFormFacade', () => {
     navigate = jest.fn();
 
     getLanguagesMock = jest.fn().mockReturnValue(of([]));
+    getCurrenciesMock = jest.fn().mockReturnValue(of([]));
 
     const adminClient = {
       adminPackageClient: { update: updateMock, create: createMock },
       adminLanguageClient: { getOverview: getLanguagesMock },
+      adminCurrencyClient: { getOverview: getCurrenciesMock },
     };
 
     TestBed.configureTestingModule({
@@ -217,7 +220,7 @@ describe('PackageFormFacade', () => {
       },
     };
 
-    it('serializes a create with the price, the services and only the filled translations', () => {
+    it('serializes a create with a price per currency, the services and only the filled translations', () => {
       createMock.mockReturnValue(of({ id: 'pkg-1' }));
 
       facade.createPackage(translatedData);
@@ -229,7 +232,7 @@ describe('PackageFormFacade', () => {
         description: 'desc',
         tagline: 'Handover day',
         isPopular: false,
-        price: 100,
+        prices: { CZK: 100, EUR: 4 },
         serviceIds: ['svc-a', 'svc-b'],
         translations: {
           cs: { name: 'Balíček', description: 'Popis', tagline: 'Předání bytu' },
@@ -255,11 +258,50 @@ describe('PackageFormFacade', () => {
         description: 'desc',
         tagline: 'Handover day',
         isPopular: false,
-        price: 100,
+        prices: { CZK: 100, EUR: 4 },
         serviceIds: ['svc-a', 'svc-b'],
         serviceWeights: { 'svc-a': 3, 'svc-b': 1 },
         translations: {},
       });
+    });
+  });
+
+  // The gross preview splits ONE number by weight, so it has to be denominated in something. The
+  // default currency is the pick, and this is what names it -- a facade that returned the first
+  // currency in the list would work in the seed and break the day a second one sorts ahead of it.
+  describe('the currency the gross preview follows', () => {
+    it('is the default one, not the first in the list', () => {
+      getCurrenciesMock.mockReturnValue(
+        of([
+          { code: 'EUR', symbol: '€', name: 'Euro', isDefault: false },
+          { code: 'CZK', symbol: 'Kč', name: 'Czech koruna', isDefault: true },
+        ])
+      );
+
+      facade.loadCurrencies();
+
+      expect(facade.defaultCurrencyCode()).toBe('CZK');
+    });
+
+    it('is null when no currency is marked default, rather than a wrong guess', () => {
+      getCurrenciesMock.mockReturnValue(
+        of([{ code: 'EUR', symbol: '€', name: 'Euro', isDefault: false }])
+      );
+
+      facade.loadCurrencies();
+
+      expect(facade.defaultCurrencyCode()).toBeNull();
+    });
+
+    it('leaves the currency list an empty array when the client answers null', () => {
+      facade.currencies.set([
+        { code: 'CZK', symbol: 'Kč', name: 'Czech koruna', isDefault: true },
+      ]);
+      getCurrenciesMock.mockReturnValue(of(null));
+
+      facade.loadCurrencies();
+
+      expect(facade.currencies()).toEqual([]);
     });
   });
 });

@@ -63,7 +63,6 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
     code: ['', [Validators.required, Validators.maxLength(3)]],
     symbol: ['', [Validators.required, Validators.maxLength(5)]],
     name: ['', [Validators.required, Validators.maxLength(50)]],
-    exchangeRate: [1, [Validators.required, Validators.min(0.000001)]],
   });
 
   private currencyLoadEffect = effect(() => {
@@ -97,13 +96,11 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
     code?: string;
     symbol?: string;
     name?: string;
-    exchangeRate?: number;
   }): void {
     this.form.patchValue({
       code: currency.code ?? '',
       symbol: currency.symbol ?? '',
       name: currency.name ?? '',
-      exchangeRate: currency.exchangeRate ?? 1,
     });
   }
 
@@ -119,7 +116,6 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
       code: formValue.code,
       symbol: formValue.symbol,
       name: formValue.name,
-      exchangeRate: formValue.exchangeRate,
     };
 
     if (this.isEditMode()) {

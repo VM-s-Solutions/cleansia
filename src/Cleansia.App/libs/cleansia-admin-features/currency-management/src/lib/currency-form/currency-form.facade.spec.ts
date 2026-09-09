@@ -21,7 +21,6 @@ describe('CurrencyFormFacade', () => {
     code: 'CZK',
     symbol: 'Kč',
     name: 'Czech koruna',
-    exchangeRate: 1,
   };
 
   beforeEach(() => {
@@ -74,10 +73,10 @@ describe('CurrencyFormFacade', () => {
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.
-  // These pin the serialized body instead (ADR-0031) — a dropped exchange rate reprices
-  // every order held in this currency.
+  // These pin the serialized body instead (ADR-0031) — a currency saved without its code or
+  // symbol is one nothing can be priced or displayed in.
   describe('command bodies on the wire', () => {
-    it('serializes a create with the code, symbol, name and exchange rate', () => {
+    it('serializes a create with the code, symbol and name', () => {
       facade.createCurrency(formData);
 
       const command: CreateCurrencyCommand = createMock.mock.calls[0][0];
@@ -86,12 +85,11 @@ describe('CurrencyFormFacade', () => {
         code: 'CZK',
         symbol: 'Kč',
         name: 'Czech koruna',
-        exchangeRate: 1,
       });
     });
 
     it('serializes an update with the currency id alongside every field', () => {
-      facade.updateCurrency('cur-1', { ...formData, exchangeRate: 24.5 });
+      facade.updateCurrency('cur-1', { ...formData, name: 'Czech crown' });
 
       const command: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
       expect(command).toBeInstanceOf(UpdateCurrencyCommand);
@@ -99,8 +97,7 @@ describe('CurrencyFormFacade', () => {
         currencyId: 'cur-1',
         code: 'CZK',
         symbol: 'Kč',
-        name: 'Czech koruna',
-        exchangeRate: 24.5,
+        name: 'Czech crown',
       });
     });
   });

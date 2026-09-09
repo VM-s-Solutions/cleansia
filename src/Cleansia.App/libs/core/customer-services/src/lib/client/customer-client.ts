@@ -8475,7 +8475,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
     code!: string | undefined;
     name!: string | undefined;
     symbol!: string | undefined;
-    exchangeRate!: number;
     isDefault!: boolean;
 
     constructor(data?: ICurrencyDetailDto) {
@@ -8493,7 +8492,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
             this.code = Data["code"];
             this.name = Data["name"];
             this.symbol = Data["symbol"];
-            this.exchangeRate = Data["exchangeRate"];
             this.isDefault = Data["isDefault"];
         }
     }
@@ -8511,7 +8509,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
         data["code"] = this.code;
         data["name"] = this.name;
         data["symbol"] = this.symbol;
-        data["exchangeRate"] = this.exchangeRate;
         data["isDefault"] = this.isDefault;
         return data;
     }
@@ -8522,7 +8519,6 @@ export interface ICurrencyDetailDto {
     code: string | undefined;
     name: string | undefined;
     symbol: string | undefined;
-    exchangeRate: number;
     isDefault: boolean;
 }
 
@@ -8531,7 +8527,6 @@ export class CurrencyListItem implements ICurrencyListItem {
     code!: string | undefined;
     symbol!: string | undefined;
     name!: string | undefined;
-    exchangeRate!: number;
     isDefault!: boolean;
 
     constructor(data?: ICurrencyListItem) {
@@ -8549,7 +8544,6 @@ export class CurrencyListItem implements ICurrencyListItem {
             this.code = Data["code"];
             this.symbol = Data["symbol"];
             this.name = Data["name"];
-            this.exchangeRate = Data["exchangeRate"];
             this.isDefault = Data["isDefault"];
         }
     }
@@ -8567,7 +8561,6 @@ export class CurrencyListItem implements ICurrencyListItem {
         data["code"] = this.code;
         data["symbol"] = this.symbol;
         data["name"] = this.name;
-        data["exchangeRate"] = this.exchangeRate;
         data["isDefault"] = this.isDefault;
         return data;
     }
@@ -8578,7 +8571,6 @@ export interface ICurrencyListItem {
     code: string | undefined;
     symbol: string | undefined;
     name: string | undefined;
-    exchangeRate: number;
     isDefault: boolean;
 }
 
@@ -9419,7 +9411,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     id!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
-    vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
     iban!: string | undefined;
     passportId!: string | undefined;
@@ -9445,7 +9436,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
             this.id = Data["id"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
-            this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.passportId = Data["passportId"];
@@ -9471,7 +9461,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
         data["id"] = this.id;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
-        data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["passportId"] = this.passportId;
@@ -9490,7 +9479,6 @@ export interface IGdprExportEmployeeDto {
     id: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;
-    vatNumber: string | undefined;
     legalEntityName: string | undefined;
     iban: string | undefined;
     passportId: string | undefined;
@@ -10181,12 +10169,57 @@ export interface IGetMembershipPlansResponse {
     savingsPercentVsMonthly: number;
 }
 
+export class GetMyCreditCurrencyBalance implements IGetMyCreditCurrencyBalance {
+    balance!: number;
+    currencyCode!: string | undefined;
+    expiresOn!: Date | undefined;
+
+    constructor(data?: IGetMyCreditCurrencyBalance) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.balance = Data["balance"];
+            this.currencyCode = Data["currencyCode"];
+            this.expiresOn = Data["expiresOn"] ? new Date(Data["expiresOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GetMyCreditCurrencyBalance {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetMyCreditCurrencyBalance();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["balance"] = this.balance;
+        data["currencyCode"] = this.currencyCode;
+        data["expiresOn"] = this.expiresOn ? this.expiresOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGetMyCreditCurrencyBalance {
+    balance: number;
+    currencyCode: string | undefined;
+    expiresOn: Date | undefined;
+}
+
 export class GetMyCreditResponse implements IGetMyCreditResponse {
     balance!: number;
     currencyCode!: string | undefined;
     maxShareOfOrder!: number;
     appliesAutomatically!: boolean;
     expiresOn!: Date | undefined;
+    balances!: GetMyCreditCurrencyBalance[] | undefined;
 
     constructor(data?: IGetMyCreditResponse) {
         if (data) {
@@ -10204,6 +10237,11 @@ export class GetMyCreditResponse implements IGetMyCreditResponse {
             this.maxShareOfOrder = Data["maxShareOfOrder"];
             this.appliesAutomatically = Data["appliesAutomatically"];
             this.expiresOn = Data["expiresOn"] ? new Date(Data["expiresOn"].toString()) : undefined as any;
+            if (Array.isArray(Data["balances"])) {
+                this.balances = [] as any;
+                for (let item of Data["balances"])
+                    this.balances!.push(GetMyCreditCurrencyBalance.fromJS(item));
+            }
         }
     }
 
@@ -10221,6 +10259,11 @@ export class GetMyCreditResponse implements IGetMyCreditResponse {
         data["maxShareOfOrder"] = this.maxShareOfOrder;
         data["appliesAutomatically"] = this.appliesAutomatically;
         data["expiresOn"] = this.expiresOn ? this.expiresOn.toISOString() : undefined as any;
+        if (Array.isArray(this.balances)) {
+            data["balances"] = [];
+            for (let item of this.balances)
+                data["balances"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -10231,6 +10274,7 @@ export interface IGetMyCreditResponse {
     maxShareOfOrder: number;
     appliesAutomatically: boolean;
     expiresOn: Date | undefined;
+    balances: GetMyCreditCurrencyBalance[] | undefined;
 }
 
 export class GetMyLoyaltyResponse implements IGetMyLoyaltyResponse {
@@ -13199,7 +13243,6 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
     extrasSubtotal!: number;
     expressSurchargeApplied!: boolean;
     expressSurchargeAmount!: number;
-    exchangeRate!: number;
     estimatedDurationMinutes!: number;
     requiredEmployees!: number;
     expressSurchargeWaivedByMembership!: boolean;
@@ -13233,7 +13276,6 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
             this.extrasSubtotal = Data["extrasSubtotal"];
             this.expressSurchargeApplied = Data["expressSurchargeApplied"];
             this.expressSurchargeAmount = Data["expressSurchargeAmount"];
-            this.exchangeRate = Data["exchangeRate"];
             this.estimatedDurationMinutes = Data["estimatedDurationMinutes"];
             this.requiredEmployees = Data["requiredEmployees"];
             this.expressSurchargeWaivedByMembership = Data["expressSurchargeWaivedByMembership"];
@@ -13271,7 +13313,6 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
         data["extrasSubtotal"] = this.extrasSubtotal;
         data["expressSurchargeApplied"] = this.expressSurchargeApplied;
         data["expressSurchargeAmount"] = this.expressSurchargeAmount;
-        data["exchangeRate"] = this.exchangeRate;
         data["estimatedDurationMinutes"] = this.estimatedDurationMinutes;
         data["requiredEmployees"] = this.requiredEmployees;
         data["expressSurchargeWaivedByMembership"] = this.expressSurchargeWaivedByMembership;
@@ -13302,7 +13343,6 @@ export interface IQuoteOrderResponse {
     extrasSubtotal: number;
     expressSurchargeApplied: boolean;
     expressSurchargeAmount: number;
-    exchangeRate: number;
     estimatedDurationMinutes: number;
     requiredEmployees: number;
     expressSurchargeWaivedByMembership: boolean;

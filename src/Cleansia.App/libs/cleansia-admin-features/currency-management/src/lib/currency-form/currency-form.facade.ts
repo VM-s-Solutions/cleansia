@@ -15,7 +15,6 @@ export interface CurrencyFormData {
   code: string;
   symbol: string;
   name: string;
-  exchangeRate: number;
 }
 
 @Injectable()
@@ -56,7 +55,6 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
     command.code = data.code;
     command.symbol = data.symbol;
     command.name = data.name;
-    command.exchangeRate = data.exchangeRate;
 
     this.adminClient.adminCurrencyClient
       .create(command)
@@ -83,7 +81,6 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
     command.code = data.code;
     command.symbol = data.symbol;
     command.name = data.name;
-    command.exchangeRate = data.exchangeRate;
 
     this.adminClient.adminCurrencyClient
       .update(currencyId, command)

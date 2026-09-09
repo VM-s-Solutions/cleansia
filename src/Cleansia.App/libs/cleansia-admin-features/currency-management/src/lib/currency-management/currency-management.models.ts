@@ -120,14 +120,7 @@ export function getCurrencyTableDefinition(
         field: 'name',
         header: translate.instant('pages.currency_management.columns.name'),
         sortable: true,
-        width: '30%',
-      },
-      {
-        id: 'exchangeRate',
-        field: 'exchangeRate',
-        header: translate.instant('pages.currency_management.columns.exchange_rate'),
-        sortable: true,
-        width: '15%',
+        width: '45%',
       },
       {
         id: 'isDefault',

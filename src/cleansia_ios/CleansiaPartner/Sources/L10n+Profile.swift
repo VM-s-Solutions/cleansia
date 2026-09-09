@@ -189,10 +189,6 @@ extension L10n {
             localized("profile_registration_number")
         }
 
-        static var vatNumber: String {
-            localized("profile_vat_number")
-        }
-
         static var legalEntityName: String {
             localized("profile_legal_entity_name")
         }

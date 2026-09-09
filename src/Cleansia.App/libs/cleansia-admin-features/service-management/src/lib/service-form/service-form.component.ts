@@ -205,13 +205,12 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
       if (!pricesGroup.contains(currency.code)) {
         pricesGroup.addControl(
           currency.code,
-          this.fb.group({
-            basePrice: new FormControl<number | null>(null, [
-              Validators.min(0),
-            ]),
-            perRoomPrice: new FormControl<number | null>(null, [
-              Validators.min(0),
-            ]),
+          this.fb.nonNullable.group({
+            // Explicit FormControls, not raw values: `nonNullable` would coerce a raw `null` seed
+            // back to a non-null default and take the blank-versus-zero distinction with it. An
+            // instance passes through the builder untouched.
+            basePrice: new FormControl<number | null>(null, [Validators.min(0)]),
+            perRoomPrice: new FormControl<number | null>(null, [Validators.min(0)]),
           })
         );
       }

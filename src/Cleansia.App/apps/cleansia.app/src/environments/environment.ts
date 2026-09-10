@@ -19,9 +19,5 @@ export const environment = {
   appleClientId: '',
   sentryDsn: '',
   bugReportUrl: '',
-  // The Mapbox token must NEVER ship in the browser bundle.
-  // It now lives server-side and is injected by the same-origin proxy
-  // (server.ts, reads process.env.MAPBOX_TOKEN). This is only a token-free
-  // "is geocoding configured" flag that toggles the UI.
-  mapboxToken: 'enabled',
+  addressSearchEnabled: true,
 };

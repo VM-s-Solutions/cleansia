@@ -138,4 +138,25 @@
 > substantiated**: both schemas in `src/cleansia_android/openapi/partner-mobile-api.json` match the
 > current commands exactly. It is not filed.
 
-*Next id: **T-0699**.*
+| T-0699 | Nothing resolves a booking currency — every order is stamped with the platform default | L | `todo` | — | Two currencies can never be live at once. The only "switch" is promoting a new default, which swaps the whole platform in one click. |
+| T-0700 | A currency cannot be switched on, and a new one is on by default with no prices | M | `todo` | — | The market switch has no writer, and the gate that guards promotion is vacuous for every currency an admin can create. |
+| T-0701 | The pay-coverage gates are currency-blind while the pay writer is currency-strict | M | `todo` | — | An order in a currency no cleaner has a rate in passes every gate, and then silently never gets a pay row. |
+| T-0702 | Reports and roll-ups add amounts in different currencies into one number | M | `todo` | — | Every total on the admin revenue report, the payroll report, partner earnings and pay-period aggregation is a sum over mixed units the moment a second currency exists. |
+| T-0703 | Money constants and thresholds are bare decimals with no currency | M | `todo` | — | Six business rules are expressed as numbers that only mean anything in crowns. |
+| T-0704 | A pay period holding two currencies can never be invoiced, and the period can still close | M | `todo` | — | The payout-invoice currency is derived from the pay rows being invoiced and fails if they disagree — with no recovery path. |
+| T-0705 | Admin goodwill credit lands in the default currency, and the admin sees only one balance | S | `todo` | — | The issue command carries no currency and the admin screen renders accounts[0]. |
+| T-0706 | The customer surfaces format everything as CZK and offer no way to choose a currency | M | `todo` | — | The booking wizard has its own module-level CZK formatters, bound about twenty times, and the catalogue DTOs carry no currency at all. |
+| T-0707 | FK_Orders_Currencies_CurrencyId is Cascade — deleting a currency would delete its orders | S | `todo` | — | Every sibling money table is Restrict. Orders is not. |
+| T-0708 | A payout can be issued in any currency to any bank account | M | `todo` | — | The payout-details model has no currency, and nothing checks that the account can receive what is being sent. |
+| T-0709 | docs/ still describes ExchangeRate conversion as the live multicurrency mechanism | S | `todo` | — | The architecture pages describe a column that no longer exists and a conversion that no longer happens. |
+
+> **T-0699–T-0709 filed 2026-09-10**, split out of T-0688 by a readiness audit of the multicurrency
+> programme. Every claim was re-verified against the tree that day and the ones that did not survive
+> were not filed — three audit claims were refuted outright, and two more were narrowed. Two defects
+> the audit turned up were fixed rather than filed, because one destroyed data and both were reachable
+> with EUR still switched off: `CreatePayConfig`'s duplicate probes ignored the currency, so a second
+> currency's rate could never be created; and `BulkCreateEmployeePayConfigs` deleted rates it could
+> not replace. Both are in `b269efe4`.
+
+
+*Next id: **T-0710**.*

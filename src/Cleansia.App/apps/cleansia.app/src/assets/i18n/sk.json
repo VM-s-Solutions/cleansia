@@ -1919,6 +1919,7 @@
       "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou."
     },
     "promo": {
+      "already_sent": "Na túto e-mailovú adresu už bol promo kód odoslaný. Skontrolujte doručenú poštu aj priečinok so spamom.",
       "not_found": "Tento zľavový kód neexistuje.",
       "expired": "Platnosť tohto zľavového kódu vypršala.",
       "not_yet_valid": "Tento zľavový kód ešte nie je aktívny.",

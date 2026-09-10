@@ -44,4 +44,14 @@
     <EmbeddedResource Include="..\..\email-templates\*.html" Link="EmailTemplates\%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- A wildcard silently matches nothing when a deployment omits email-templates/.
+       Validate the files used by EmailService before publishing an unusable worker. -->
+  <Target Name="ValidateEmailTemplates" BeforeTargets="PrepareForBuild">
+    <ItemGroup>
+      <RequiredEmailTemplate Include="email-confirmation.html;password-reset.html;order-receipt.html;order-status-update.html;close-period-notification.html;closure-period-reminder.html;promo-code.html" />
+    </ItemGroup>
+    <Error Condition="!Exists('$(MSBuildProjectDirectory)/../../email-templates/%(RequiredEmailTemplate.Identity)')"
+           Text="Required email template '%(RequiredEmailTemplate.Identity)' is missing. Include the repository email-templates directory in the build context." />
+  </Target>
+
 </Project>

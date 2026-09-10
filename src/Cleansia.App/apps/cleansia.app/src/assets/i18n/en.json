@@ -1919,6 +1919,7 @@
       "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first."
     },
     "promo": {
+      "already_sent": "A promo code has already been sent to this email address. Please check your inbox and spam folder.",
       "not_found": "That promo code doesn't exist.",
       "expired": "This promo code has expired.",
       "not_yet_valid": "This promo code isn't active yet.",

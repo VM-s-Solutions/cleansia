@@ -43,6 +43,21 @@ reclaimed by a sweep.
 The resolver answers for **everyone, guests included** — a client needs to tell "express, charged"
 apart from "not an express slot at all".
 
+## Public promo-code requests
+
+The public site's promo form accepts one request per email address, normalized by trimming
+whitespace and ignoring case. The first request creates a deterministic code and its email outbox
+message in one database transaction. A successful response means the email is queued for delivery.
+
+A repeated request returns HTTP 400 with `promo.already_sent`; the form displays a localized
+"A promo code has already been sent to this email address" message. It does not queue another email
+or create another code. The same rule applies when submissions arrive concurrently: the database's
+unique constraints choose one successful request and the others receive the same business error.
+If saving the email message fails, the code is rolled back so a later request can try again.
+
+The code is sent only by email, never in the HTTP response. Queue redelivery retains the same
+idempotency key. This flow does not look up whether the address has a registered account.
+
 ## Referrals
 
 A referral code is randomly generated, never derived from a name — which is also why erasure leaves it

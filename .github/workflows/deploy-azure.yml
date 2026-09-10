@@ -1111,7 +1111,7 @@ jobs:
             --image cleansia-functions:${{ github.sha }} \
             --image cleansia-functions:latest \
             --file src/Cleansia.Functions/Dockerfile \
-            src/
+            .
 
       - name: Deploy to Azure Functions
         run: |

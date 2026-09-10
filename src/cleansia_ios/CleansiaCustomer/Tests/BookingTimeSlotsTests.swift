@@ -29,9 +29,14 @@ final class BookingTimeSlotsTests: XCTestCase {
         let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: now))
         let slots = BookingTimeSlots.slots(for: tomorrow, now: now, calendar: calendar)
 
-        XCTAssertEqual(slots.count, 12)
+        XCTAssertEqual(slots.count, 48)
         XCTAssertEqual(slots.first?.time, "08:00")
-        XCTAssertEqual(slots.last?.time, "19:00")
+        XCTAssertEqual(slots.last?.time, "19:45")
+        XCTAssertEqual(
+            slots.filter { $0.time.hasPrefix("10:") }.map(\.time),
+            ["10:00", "10:15", "10:30", "10:45"]
+        )
+        XCTAssertEqual(Set(slots.map(\.time)).count, slots.count)
         XCTAssertTrue(slots.allSatisfy { $0.state == .available })
     }
 
@@ -43,6 +48,25 @@ final class BookingTimeSlotsTests: XCTestCase {
         let slot11 = slots.first { $0.time == "11:00" }
         XCTAssertEqual(slot10?.state, .unavailable)
         XCTAssertEqual(slot11?.state, .unavailable)
+    }
+
+    func testQuarterHoursKeepLeadTimeAndExpressBoundaries() {
+        let now = date(DateComponents(year: 2026, month: 9, day: 10, hour: 10, minute: 15))
+        let slots = BookingTimeSlots.slots(for: now, now: now, calendar: calendar)
+
+        XCTAssertEqual(slots.first { $0.time == "12:00" }?.state, .unavailable)
+        XCTAssertEqual(slots.first { $0.time == "12:15" }?.state, .express)
+        XCTAssertEqual(slots.first { $0.time == "14:00" }?.state, .express)
+        XCTAssertEqual(slots.first { $0.time == "14:15" }?.state, .earliest)
+        XCTAssertEqual(slots.first { $0.time == "14:30" }?.state, .available)
+    }
+
+    func testSlotJustInsideLeadTimeIsUnavailable() {
+        let now = date(DateComponents(year: 2026, month: 9, day: 10, hour: 10, minute: 15, second: 1))
+        let slots = BookingTimeSlots.slots(for: now, now: now, calendar: calendar)
+
+        XCTAssertEqual(slots.first { $0.time == "12:15" }?.state, .unavailable)
+        XCTAssertEqual(slots.first { $0.time == "12:30" }?.state, .express)
     }
 
     func testTodaySlotsBetweenTwoAndFourHoursAreExpress() {
@@ -93,6 +117,20 @@ final class BookingTimeSlotsTests: XCTestCase {
         let day = date(DateComponents(year: 2026, month: 7, day: 4))
         XCTAssertNil(BookingTimeSlots.instant(date: day, timeLabel: "9am", calendar: calendar))
         XCTAssertNil(BookingTimeSlots.instant(date: day, timeLabel: "", calendar: calendar))
+    }
+
+    func testQuarterHourMinutesSurviveConversionToUtc() throws {
+        var prague = Calendar(identifier: .gregorian)
+        prague.timeZone = try XCTUnwrap(TimeZone(identifier: "Europe/Prague"))
+        let formatter = ISO8601DateFormatter()
+        let day = try XCTUnwrap(formatter.date(from: "2026-09-10T00:00:00Z"))
+
+        for minute in [15, 45] {
+            let instant = try XCTUnwrap(
+                BookingTimeSlots.instant(date: day, timeLabel: "10:\(minute)", calendar: prague)
+            )
+            XCTAssertEqual(formatter.string(from: instant), "2026-09-10T08:\(minute):00Z")
+        }
     }
 
     func testVisibleSlotsDropUnavailable() {

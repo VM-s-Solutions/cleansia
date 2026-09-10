@@ -30,6 +30,7 @@ struct BookingTimeSlot: Equatable, Identifiable {
 enum BookingTimeSlots {
     static let firstWindowHour = 8
     static let lastWindowHour = 20
+    static let bookingSlotIntervalMinutes = 15
 
     static func days(now: Date = Date(), calendar: Calendar = .current) -> [BookingDay] {
         let today = calendar.startOfDay(for: now)
@@ -48,8 +49,12 @@ enum BookingTimeSlots {
         let isToday = calendar.isDate(date, inSameDayAs: now)
         var earliestAssigned = false
 
-        return (firstWindowHour ... lastWindowHour - 1).map { hour in
-            let label = String(format: "%02d:00", hour)
+        return stride(
+            from: firstWindowHour * 60,
+            to: lastWindowHour * 60,
+            by: bookingSlotIntervalMinutes
+        ).map { minutes in
+            let label = String(format: "%02d:%02d", minutes / 60, minutes % 60)
             guard isToday else { return BookingTimeSlot(time: label, state: .available) }
 
             guard let slotInstant = instant(date: date, timeLabel: label, calendar: calendar) else {

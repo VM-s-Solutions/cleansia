@@ -98,19 +98,22 @@ internal fun buildDays(locale: Locale, todayLabel: String): List<DayChip> {
     }
 }
 
-private fun combineDateAndTime(date: LocalDate, timeLabel: String): kotlinx.datetime.Instant? {
-    // timeLabel is "HH:mm" (08:00, 09:00, ...) from timeSlots below.
+internal fun combineDateAndTime(
+    date: LocalDate,
+    timeLabel: String,
+    tz: TimeZone = TimeZone.currentSystemDefault(),
+): kotlinx.datetime.Instant? {
     val parts = timeLabel.split(":")
     if (parts.size != 2) return null
     val hour = parts[0].toIntOrNull() ?: return null
     val minute = parts[1].toIntOrNull() ?: return null
     val local = LocalDateTime(date, LocalTime(hour, minute))
-    return local.toInstant(TimeZone.currentSystemDefault())
+    return local.toInstant(tz)
 }
 
-private enum class SlotState { Available, Express, Unavailable, Earliest }
+internal enum class SlotState { Available, Express, Unavailable, Earliest }
 
-private data class TimeSlot(val time: String, val state: SlotState)
+internal data class TimeSlot(val time: String, val state: SlotState)
 
 // Booking window — keep in sync with backend `BookingPolicy` (FirstWindowHour = 8,
 // LastWindowHour = 20). Slot states are derived from the user's selected date so "Today" never shows
@@ -118,9 +121,10 @@ private data class TimeSlot(val time: String, val state: SlotState)
 private const val EXPRESS_LEAD_HOURS = 2
 private const val FIRST_WINDOW_HOUR = 8
 private const val LAST_WINDOW_HOUR = 20
+private const val BOOKING_SLOT_INTERVAL_MINUTES = 15
 
 /**
- * Build the 1-hour window list for a given local date, gated on lead time.
+ * Build the quarter-hour arrival list for a given local date, gated on lead time.
  * - Below [EXPRESS_LEAD_HOURS] from now → Unavailable (rendered greyed out).
  * - Inside [BookingPricing.requiresExpressSurcharge]'s band → Express (a tag, never a price).
  * - The first slot past it → Earliest (visual hint).
@@ -130,20 +134,24 @@ private const val LAST_WINDOW_HOUR = 20
  * (no lead-time checks needed). For "Today", the first selectable slot
  * shifts forward in real time.
  */
-private fun timeSlotsFor(date: LocalDate): List<TimeSlot> {
-    val tz = TimeZone.currentSystemDefault()
-    val now = Clock.System.now()
+internal fun timeSlotsFor(
+    date: LocalDate,
+    now: kotlinx.datetime.Instant = Clock.System.now(),
+    tz: TimeZone = TimeZone.currentSystemDefault(),
+): List<TimeSlot> {
     val today = now.toLocalDateTime(tz).date
     val isToday = date == today
     var earliestAssigned = false
 
-    return (FIRST_WINDOW_HOUR..LAST_WINDOW_HOUR - 1).map { hour ->
-        val label = "%02d:00".format(hour)
+    return (FIRST_WINDOW_HOUR * 60 until LAST_WINDOW_HOUR * 60 step BOOKING_SLOT_INTERVAL_MINUTES).map { minutes ->
+        val hour = minutes / 60
+        val minute = minutes % 60
+        val label = "%02d:%02d".format(Locale.ROOT, hour, minute)
         if (!isToday) {
             // Future days: every slot bookable, no express tier needed.
             return@map TimeSlot(label, SlotState.Available)
         }
-        val slotInstant = LocalDateTime(date, LocalTime(hour, 0)).toInstant(tz)
+        val slotInstant = LocalDateTime(date, LocalTime(hour, minute)).toInstant(tz)
         val leadHours = (slotInstant - now).inWholeMinutes / 60.0
         val state = when {
             leadHours < EXPRESS_LEAD_HOURS -> SlotState.Unavailable

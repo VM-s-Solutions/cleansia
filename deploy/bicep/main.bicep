@@ -113,6 +113,9 @@ Conflict that fails the entire release, because every deploy job declares `needs
 Full origins including scheme, e.g. [ 'https://admin.dev.cleansia.cz' ].''')
 param extraCorsOrigins string[] = []
 
+@description('Additional customer SSR hostnames to authorize without creating domain bindings or certificates. Bare hostnames, no scheme or port. Bicep-managed ssr/ssr-www domains and Azure default hostnames are included automatically. See deploy/AZURE-DEV-RUNBOOK.md §12.6.')
+param extraSsrAllowedHosts string[] = []
+
 @description('''Google OAuth **web** client id for the customer web API's token verification.
 
 Per-environment on purpose. GoogleTokenVerifier pins a single audience, so this must be the client id
@@ -438,6 +441,11 @@ var customerWebAuthSettings = union(
 // password, order status, checkout success/cancel). The SSR default hostname until the `ssr` custom
 // domain is configured — then the links move onto it.
 var ssrCustomHost = contains(customDomains, 'ssr') ? customDomains.ssr : ''
+var ssrCustomHostCandidates = [
+  ssrCustomHost
+  customDomains[?'ssr-www'] ?? ''
+]
+var ssrAllowedHosts = union(['*.azurewebsites.net'], filter(ssrCustomHostCandidates, host => !empty(host)), extraSsrAllowedHosts)
 var derivedCustomerWebBaseUrl = empty(ssrCustomHost) ? 'https://${ssr.outputs.defaultHostName}' : 'https://${ssrCustomHost}'
 var customerWebBaseUrl = empty(customerWebBaseUrlOverride) ? derivedCustomerWebBaseUrl : customerWebBaseUrlOverride
 
@@ -734,29 +742,11 @@ module ssr 'modules/appService.bicep' = {
       // process.env.MAPBOX_TOKEN and, when it is empty, answers 503 {"features":[]} — which is what
       // every environment did, because this site previously received exactly ONE app setting.
       MAPBOX_TOKEN: mapboxTokenKvRef
-      // THE TWO SETTINGS THAT MAKE THIS SITE ACTUALLY RENDER ON THE SERVER (T-0681).
-      //
-      // @angular/ssr refuses to render for a host that is not on its allowlist, and an EMPTY
-      // allowlist refuses EVERYTHING — silently, with a 200 carrying the 12 KB client shell instead
-      // of the 227 KB document. server.ts defaults the manifest field to `[]` and its comment says
-      // hosts are authorized "via the NG_ALLOWED_HOSTS env var"; until now that variable appeared
-      // exactly once in the whole repository, in that comment. Measured cost of the fallback on the
-      // landing page: Lighthouse mobile 35 against 73 for the same build.
-      //
-      // `*.` is a suffix wildcard (isHostAllowed: `hostname.endsWith(allowedHost.slice(1))`), so one
-      // entry covers the default hostname AND the `-staging` slot across every region and env. The
-      // slot matters: deploy-azure.yml probes `/` on it and gates the swap on a real render, so a
-      // missing staging host would not degrade the deploy, it would FAIL it. Ports are stripped
-      // before matching, so no `:port` entries. The custom domain is prepended only once it exists.
-      NG_ALLOWED_HOSTS: empty(ssrCustomHost) ? '*.azurewebsites.net' : '${ssrCustomHost},*.azurewebsites.net'
-      // App Service injects X-Forwarded-For on every request, and an UNTRUSTED `x-forwarded-*` header
-      // deopts the render to CSR on its own — so the allowlist above is necessary but not sufficient.
-      // Measured: the same request with X-Forwarded-For returned 12,182 bytes instead of 227,446.
-      //
-      // This is the framework's own default set PLUS `x-forwarded-for`, and nothing else.
-      // `x-forwarded-prefix` and `-port` stay untrusted deliberately: they are the SSRF surface the
-      // Angular 19.2.16 fix exists to close, and Azure does not send them.
-      NG_TRUST_PROXY_HEADERS: 'x-forwarded-for,x-forwarded-host,x-forwarded-proto'
+      // Runtime authorization also covers externally bound domains. See the runbook §12.6.
+      NG_ALLOWED_HOSTS: join(ssrAllowedHosts, ',')
+      NG_TRUST_PROXY_HEADERS: 'x-forwarded-for,x-forwarded-host,x-forwarded-proto,x-forwarded-tlsversion'
+      WEBSITE_WARMUP_PATH: '/health'
+      WEBSITE_WARMUP_STATUSES: '200'
     }
     corsAllowedOrigins: []
     httpsOnly: true

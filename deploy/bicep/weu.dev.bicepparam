@@ -58,13 +58,17 @@ param alertEmail = 'cmisa695@gmail.com'
 // `needs: provision`, so one certificate conflict blocks the migration, all five APIs, Functions, the
 // SSR host and both SPAs.
 //
-// So the two jobs this parameter used to conflate are now split: extraCorsOrigins tells the APIs which
-// origins to trust (the only part that was ever needed once the domains exist), and
-// customerWebBaseUrlOverride sets the customer-facing link base. Neither creates a resource.
+// Runtime configuration is separate: extraCorsOrigins authorizes browser origins,
+// extraSsrAllowedHosts authorizes customer SSR hosts, and customerWebBaseUrlOverride sets the
+// customer-facing link base. None creates a binding or certificate.
 //
 // Populate customDomains ONLY for a hostname Bicep should create from nothing — a fresh environment
 // where no binding or certificate exists yet. Adding one that already exists will fail the deploy.
 param customDomains = {}
+
+param extraSsrAllowedHosts = [
+  'customer.dev.cleansia.cz'
+]
 
 // ── Browser origins allowed through CORS (no binding, no certificate) ───────────────────────────────
 // These three are where the frontends are actually served from. The API hostnames are deliberately

@@ -87,12 +87,22 @@ public class BulkCreateEmployeePayConfigs
             var existingConfigs = await payConfigRepository
                 .GetByEmployeeIdAsync(command.EmployeeId, cancellationToken);
 
-            var existingServiceIds = existingConfigs
+            // ONLY THE ROWS IN THE CURRENCY BEING GENERATED. The repository read is per employee and
+            // carries every currency, while the unique index is
+            // (EmployeeId, ServiceId, PackageId, CurrencyId) -- so a cleaner legitimately holds a CZK
+            // rate and a EUR rate for the same service. Deciding "already exists" without the currency
+            // term made a EUR run see the CZK row and skip; deciding what to REMOVE without it made an
+            // overwrite delete the CZK row to make room for a EUR one.
+            var existingInCurrency = existingConfigs
+                .Where(c => c.CurrencyId == command.CurrencyId)
+                .ToList();
+
+            var existingServiceIds = existingInCurrency
                 .Where(c => c.ServiceId != null)
                 .Select(c => c.ServiceId!)
                 .ToHashSet();
 
-            var existingPackageIds = existingConfigs
+            var existingPackageIds = existingInCurrency
                 .Where(c => c.PackageId != null)
                 .Select(c => c.PackageId!)
                 .ToHashSet();
@@ -103,25 +113,28 @@ public class BulkCreateEmployeePayConfigs
 
             foreach (var service in services)
             {
+                // THE PRICE GUARD RUNS FIRST, and that order is the point. Not sold in this currency
+                // means there is nothing to derive a rate from -- skipped rather than defaulted,
+                // because a zero here is a cleaner paid nothing. Deciding that BEFORE the overwrite
+                // branch is what stops a bulk run against an unpriced currency from deleting the
+                // cleaner's existing rates and creating nothing to replace them.
+                if (!servicePrices.TryGetValue(service.Id, out var servicePrice))
+                {
+                    skipped++;
+                    continue;
+                }
+
                 if (existingServiceIds.Contains(service.Id))
                 {
                     if (command.OverwriteExisting)
                     {
-                        toRemove.AddRange(existingConfigs.Where(c => c.ServiceId == service.Id));
+                        toRemove.AddRange(existingInCurrency.Where(c => c.ServiceId == service.Id));
                     }
                     else
                     {
                         skipped++;
                         continue;
                     }
-                }
-
-                // Not sold in this currency, so there is nothing to derive a rate from. Skipped
-                // rather than defaulted: a zero here is a cleaner paid nothing.
-                if (!servicePrices.TryGetValue(service.Id, out var servicePrice))
-                {
-                    skipped++;
-                    continue;
                 }
 
                 var basePay = Math.Round(servicePrice.BasePrice * multiplier, 2);
@@ -142,23 +155,24 @@ public class BulkCreateEmployeePayConfigs
 
             foreach (var package in packages)
             {
+                // Guard before overwrite -- see the services loop above.
+                if (!packagePrices.TryGetValue(package.Id, out var packagePrice))
+                {
+                    skipped++;
+                    continue;
+                }
+
                 if (existingPackageIds.Contains(package.Id))
                 {
                     if (command.OverwriteExisting)
                     {
-                        toRemove.AddRange(existingConfigs.Where(c => c.PackageId == package.Id));
+                        toRemove.AddRange(existingInCurrency.Where(c => c.PackageId == package.Id));
                     }
                     else
                     {
                         skipped++;
                         continue;
                     }
-                }
-
-                if (!packagePrices.TryGetValue(package.Id, out var packagePrice))
-                {
-                    skipped++;
-                    continue;
                 }
 
                 var basePay = Math.Round(packagePrice * multiplier, 2);

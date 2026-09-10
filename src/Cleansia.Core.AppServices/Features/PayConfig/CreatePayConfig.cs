@@ -72,14 +72,21 @@ public class CreatePayConfig
                     return await _serviceRepository.ExistsAsync(serviceId, ct);
                 })
                 .WithMessage(BusinessErrorMessage.NotFound)
+                // DUPLICATE MEANS SAME CURRENCY TOO. A cleaner may hold one rate per currency for a
+                // service -- that is what the unique index says -- so probing without the currency
+                // term refuses the second one. An empty CurrencyId matches nothing here and the
+                // Required rule below still fires; the class cascade is Continue, so nothing depends
+                // on rule order.
                 .MustAsync(async (cmd, serviceId, ct) =>
                 {
                     if (string.IsNullOrEmpty(serviceId)) return true;
                     if (!string.IsNullOrEmpty(cmd.EmployeeId))
                     {
-                        return await _payConfigRepository.GetByEmployeeServiceIdAsync(cmd.EmployeeId, serviceId, ct) == null;
+                        return await _payConfigRepository.GetByEmployeeServiceIdAsync(
+                            cmd.EmployeeId, serviceId, cmd.CurrencyId, ct) == null;
                     }
-                    return await _payConfigRepository.GetByServiceIdAsync(serviceId, ct) == null;
+                    return await _payConfigRepository.GetByServiceIdAsync(
+                        serviceId, cmd.CurrencyId, ct) == null;
                 })
                 .WithMessage(BusinessErrorMessage.PayConfigAlreadyExists);
 
@@ -90,14 +97,17 @@ public class CreatePayConfig
                     return await _packageRepository.ExistsAsync(packageId, ct);
                 })
                 .WithMessage(BusinessErrorMessage.NotFound)
+                // Same currency term as the service rule above, same reason.
                 .MustAsync(async (cmd, packageId, ct) =>
                 {
                     if (string.IsNullOrEmpty(packageId)) return true;
                     if (!string.IsNullOrEmpty(cmd.EmployeeId))
                     {
-                        return await _payConfigRepository.GetByEmployeePackageIdAsync(cmd.EmployeeId, packageId, ct) == null;
+                        return await _payConfigRepository.GetByEmployeePackageIdAsync(
+                            cmd.EmployeeId, packageId, cmd.CurrencyId, ct) == null;
                     }
-                    return await _payConfigRepository.GetByPackageIdAsync(packageId, ct) == null;
+                    return await _payConfigRepository.GetByPackageIdAsync(
+                        packageId, cmd.CurrencyId, ct) == null;
                 })
                 .WithMessage(BusinessErrorMessage.PayConfigAlreadyExists);
 

@@ -6,36 +6,48 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class EmployeePayConfigRepository(CleansiaDbContext context) : BaseRepository<EmployeePayConfig>(context), IEmployeePayConfigRepository
 {
-    public Task<EmployeePayConfig?> GetByServiceIdAsync(string serviceId, CancellationToken cancellationToken)
+    public Task<EmployeePayConfig?> GetByServiceIdAsync(
+        string serviceId, string currencyId, CancellationToken cancellationToken)
     {
         return GetDbSet()
             .Include(c => c.Service)
             .Include(c => c.Currency)
-            .FirstOrDefaultAsync(c => c.ServiceId == serviceId && c.EmployeeId == null, cancellationToken);
+            .FirstOrDefaultAsync(
+                c => c.ServiceId == serviceId && c.EmployeeId == null && c.CurrencyId == currencyId,
+                cancellationToken);
     }
 
-    public Task<EmployeePayConfig?> GetByPackageIdAsync(string packageId, CancellationToken cancellationToken)
+    public Task<EmployeePayConfig?> GetByPackageIdAsync(
+        string packageId, string currencyId, CancellationToken cancellationToken)
     {
         return GetDbSet()
             .Include(c => c.Package)
             .Include(c => c.Currency)
-            .FirstOrDefaultAsync(c => c.PackageId == packageId && c.EmployeeId == null, cancellationToken);
+            .FirstOrDefaultAsync(
+                c => c.PackageId == packageId && c.EmployeeId == null && c.CurrencyId == currencyId,
+                cancellationToken);
     }
 
-    public Task<EmployeePayConfig?> GetByEmployeeServiceIdAsync(string employeeId, string serviceId, CancellationToken cancellationToken)
+    public Task<EmployeePayConfig?> GetByEmployeeServiceIdAsync(
+        string employeeId, string serviceId, string currencyId, CancellationToken cancellationToken)
     {
         return GetDbSet()
             .Include(c => c.Service)
             .Include(c => c.Currency)
-            .FirstOrDefaultAsync(c => c.EmployeeId == employeeId && c.ServiceId == serviceId, cancellationToken);
+            .FirstOrDefaultAsync(
+                c => c.EmployeeId == employeeId && c.ServiceId == serviceId && c.CurrencyId == currencyId,
+                cancellationToken);
     }
 
-    public Task<EmployeePayConfig?> GetByEmployeePackageIdAsync(string employeeId, string packageId, CancellationToken cancellationToken)
+    public Task<EmployeePayConfig?> GetByEmployeePackageIdAsync(
+        string employeeId, string packageId, string currencyId, CancellationToken cancellationToken)
     {
         return GetDbSet()
             .Include(c => c.Package)
             .Include(c => c.Currency)
-            .FirstOrDefaultAsync(c => c.EmployeeId == employeeId && c.PackageId == packageId, cancellationToken);
+            .FirstOrDefaultAsync(
+                c => c.EmployeeId == employeeId && c.PackageId == packageId && c.CurrencyId == currencyId,
+                cancellationToken);
     }
 
     public async Task<IReadOnlyList<EmployeePayConfig>> GetByEmployeeIdAsync(string employeeId, CancellationToken cancellationToken)

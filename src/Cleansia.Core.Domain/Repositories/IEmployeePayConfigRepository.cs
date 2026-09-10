@@ -4,13 +4,23 @@ namespace Cleansia.Core.Domain.Repositories;
 
 public interface IEmployeePayConfigRepository : IRepository<EmployeePayConfig, string>
 {
-    Task<EmployeePayConfig?> GetByServiceIdAsync(string serviceId, CancellationToken cancellationToken);
+    /// <summary>
+    /// The four duplicate probes behind <c>CreatePayConfig</c>. Each takes a CURRENCY, and must:
+    /// the unique index is <c>(EmployeeId, ServiceId, PackageId, CurrencyId)</c>, so a rate in a
+    /// second currency for the same entry is a legal row and the intended shape.
+    ///
+    /// <para>Without the currency term these compared two of the index's four columns, which made
+    /// them refuse a EUR rate on the strength of the CZK one — and since the seed writes a
+    /// platform-wide CZK row for every priced service and package, that refusal was guaranteed for
+    /// the very first EUR pay config anyone tried to create.</para>
+    /// </summary>
+    Task<EmployeePayConfig?> GetByServiceIdAsync(string serviceId, string currencyId, CancellationToken cancellationToken);
 
-    Task<EmployeePayConfig?> GetByPackageIdAsync(string packageId, CancellationToken cancellationToken);
+    Task<EmployeePayConfig?> GetByPackageIdAsync(string packageId, string currencyId, CancellationToken cancellationToken);
 
-    Task<EmployeePayConfig?> GetByEmployeeServiceIdAsync(string employeeId, string serviceId, CancellationToken cancellationToken);
+    Task<EmployeePayConfig?> GetByEmployeeServiceIdAsync(string employeeId, string serviceId, string currencyId, CancellationToken cancellationToken);
 
-    Task<EmployeePayConfig?> GetByEmployeePackageIdAsync(string employeeId, string packageId, CancellationToken cancellationToken);
+    Task<EmployeePayConfig?> GetByEmployeePackageIdAsync(string employeeId, string packageId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// All pay configs scoped to one employee (both employee-specific and

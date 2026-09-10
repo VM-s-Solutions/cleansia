@@ -56,7 +56,8 @@ public record OrderPricingResult(
     decimal ExchangeRate,
     bool ExpressSurchargeWaivedByMembership = false,
     int? ExpressUpgradesRemaining = null,
-    IReadOnlyList<OrderPricingLine>? Lines = null);
+    IReadOnlyList<OrderPricingLine>? Lines = null,
+    int EstimatedDurationMinutes = 0);
 
 public interface IOrderPricingCalculator
 {

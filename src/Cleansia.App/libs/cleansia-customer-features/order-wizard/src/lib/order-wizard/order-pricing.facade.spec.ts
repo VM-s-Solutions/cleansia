@@ -1,7 +1,7 @@
 import { PLATFORM_ID, signal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { CustomerClient } from '@cleansia/customer-services';
-import { of, throwError } from 'rxjs';
+import { CustomerClient, QuoteOrderResponse } from '@cleansia/customer-services';
+import { of, Subject, throwError } from 'rxjs';
 import { OrderPricingFacade } from './order-pricing.facade';
 import {
   DISCOUNTED_QUOTE,
@@ -223,6 +223,125 @@ describe('OrderPricingFacade', () => {
 
   describe('live quote stream (browser)', () => {
     beforeEach(() => build('browser'));
+
+    it('requests the latest selection after 200 ms and marks it pending immediately', fakeAsync(() => {
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      expect(facade.quoting()).toBe(true);
+      tick(100);
+
+      formData.update((d) => ({ ...d, rooms: 4 }));
+      TestBed.flushEffects();
+      tick(199);
+      expect(orderClient.quote).not.toHaveBeenCalled();
+      tick(1);
+
+      expect(orderClient.quote).toHaveBeenCalledTimes(1);
+      expect(orderClient.quote.mock.calls[0][0].rooms).toBe(4);
+      expect(facade.quote()).toEqual(PLAIN_QUOTE);
+    }));
+
+    it('does not postpone a quote when contact details change', fakeAsync(() => {
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      tick(150);
+      formData.update((d) => ({ ...d, customerFirstName: 'Mike' }));
+      TestBed.flushEffects();
+      tick(50);
+
+      expect(orderClient.quote).toHaveBeenCalledTimes(1);
+    }));
+
+    it('cancels an obsolete request before the replacement debounce finishes', fakeAsync(() => {
+      const oldResponse = new Subject<QuoteOrderResponse>();
+      orderClient.quote.mockReturnValueOnce(oldResponse);
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      tick(800);
+      expect(oldResponse.observed).toBe(true);
+
+      formData.update((d) => ({ ...d, rooms: 4 }));
+      TestBed.flushEffects();
+      expect(oldResponse.observed).toBe(false);
+      oldResponse.next(EXPRESS_QUOTE);
+      expect(facade.quote()).toBeNull();
+      tick(200);
+      expect(facade.quote()).toEqual(PLAIN_QUOTE);
+    }));
+
+    it('cancels an in-flight quote immediately when the selection empties', fakeAsync(() => {
+      const oldResponse = new Subject<QuoteOrderResponse>();
+      orderClient.quote.mockReturnValueOnce(oldResponse);
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      tick(800);
+
+      formData.update((d) => ({ ...d, selectedServiceIds: [] }));
+      TestBed.flushEffects();
+      expect(oldResponse.observed).toBe(false);
+      expect(facade.quoting()).toBe(false);
+      oldResponse.next(EXPRESS_QUOTE);
+      expect(facade.quote()).toBeNull();
+      tick(200);
+      expect(orderClient.quote).toHaveBeenCalledTimes(1);
+    }));
+
+    it('keeps the matching cached quote when reverting from an in-flight selection', fakeAsync(() => {
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      tick(800);
+      const originalRooms = formData().rooms;
+      const oldResponse = new Subject<QuoteOrderResponse>();
+      orderClient.quote.mockReturnValueOnce(oldResponse);
+      formData.update((d) => ({ ...d, rooms: originalRooms + 1 }));
+      TestBed.flushEffects();
+      tick(800);
+
+      formData.update((d) => ({ ...d, rooms: originalRooms }));
+      TestBed.flushEffects();
+      expect(oldResponse.observed).toBe(false);
+      oldResponse.next(EXPRESS_QUOTE);
+      tick(200);
+      expect(orderClient.quote).toHaveBeenCalledTimes(2);
+      expect(facade.quote()).toEqual(PLAIN_QUOTE);
+      expect(facade.cachedQuoteMatchesCurrentState()).toBe(true);
+      expect(facade.quoting()).toBe(false);
+    }));
+
+    it('reuses an identical live request when checkout needs the pending quote', fakeAsync(() => {
+      const response = new Subject<QuoteOrderResponse>();
+      orderClient.quote.mockReturnValue(response);
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      tick(800);
+      let checkoutQuote: QuoteOrderResponse | null = null;
+      facade.refreshQuoteNow().then((quote) => (checkoutQuote = quote));
+
+      expect(orderClient.quote).toHaveBeenCalledTimes(1);
+      response.next(PLAIN_QUOTE);
+      response.complete();
+      tick();
+      expect(checkoutQuote).toEqual(PLAIN_QUOTE);
+      expect(facade.quoting()).toBe(false);
+    }));
+
+    it('returns no checkout quote if the inputs change while that request is pending', fakeAsync(() => {
+      const response = new Subject<QuoteOrderResponse>();
+      orderClient.quote.mockReturnValue(response);
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      let checkoutQuote: QuoteOrderResponse | null | undefined;
+      facade.refreshQuoteNow().then((quote) => (checkoutQuote = quote));
+      formData.update((d) => ({ ...d, selectedServiceIds: [] }));
+      TestBed.flushEffects();
+      response.next(PLAIN_QUOTE);
+      response.complete();
+      tick(200);
+
+      expect(checkoutQuote).toBeNull();
+      expect(facade.quote()).toBeNull();
+      expect(facade.cachedQuoteMatchesCurrentState()).toBe(false);
+    }));
 
     it('debounces selection changes into one quote call and populates quote()', fakeAsync(() => {
       formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));

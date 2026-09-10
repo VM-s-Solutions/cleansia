@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +26,8 @@ public sealed class OrderPricingCalculator(
         CancellationToken cancellationToken)
     {
         var packages = await packageRepository.GetByIds(selectedPackageIds)
+            .Include(p => p.IncludedServices)
+            .ThenInclude(p => p.Service)
             .ToListAsync(cancellationToken);
         var packagesSubtotal = packages.Sum(p => p.Price);
 
@@ -148,6 +151,7 @@ public sealed class OrderPricingCalculator(
             ExchangeRate: exchangeRate,
             ExpressSurchargeWaivedByMembership: waiver.Waived,
             ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null,
-            Lines: lines);
+            Lines: lines,
+            EstimatedDurationMinutes: OrderDuration.EstimateMinutes(services, packages));
     }
 }

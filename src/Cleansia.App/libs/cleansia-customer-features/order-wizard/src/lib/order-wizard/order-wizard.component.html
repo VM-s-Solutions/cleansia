@@ -1,3 +1,38 @@
+<ng-template #roomCounts>
+  <div class="cl-wiz__counts">
+    <div role="group" [attr.aria-label]="'pages.order.rooms_count_label' | translate">
+      <div class="cl-lbl">{{ 'pages.order.rooms_count_label' | translate }}</div>
+      <div class="cl-wiz__count-chips">
+        @for (n of roomChoices; track n) {
+        <button
+          type="button"
+          class="cl-chip cl-wiz__count-chip"
+          [class.cl-chip--on]="facade.formData().rooms === n"
+          [attr.aria-pressed]="facade.formData().rooms === n"
+          [attr.aria-label]="'aria.set_rooms' | translate: { count: n }"
+          (click)="setRooms(n)"
+        >{{ n }}</button>
+        }
+      </div>
+    </div>
+    <div role="group" [attr.aria-label]="'pages.order.bathrooms_count_label' | translate">
+      <div class="cl-lbl">{{ 'pages.order.bathrooms_count_label' | translate }}</div>
+      <div class="cl-wiz__count-chips">
+        @for (n of bathroomChoices; track n) {
+        <button
+          type="button"
+          class="cl-chip cl-wiz__count-chip"
+          [class.cl-chip--on]="facade.formData().bathrooms === n"
+          [attr.aria-pressed]="facade.formData().bathrooms === n"
+          [attr.aria-label]="'aria.set_bathrooms' | translate: { count: n }"
+          (click)="setBathrooms(n)"
+        >{{ n }}</button>
+        }
+      </div>
+    </div>
+  </div>
+</ng-template>
+
 <!--
   The artboard's header: a title, one sentence, and the step rail. The old
   full-bleed hero carried three trust badges and a wave, which put a marketing
@@ -37,14 +72,17 @@
       <!-- Step 0: Services -->
       <!--
         Step 1, to the approved artboard: packages that say what is in them, then
-        the services as a priced list, then the two counts the price is computed
-        from. No category filter - eleven services in one list is shorter than
+        the services as a priced list. No category filter - eleven services in one list is shorter than
         the filter that would hide them.
       -->
       @if (facade.activeStep() === 0) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.services_section_title' | translate }}</h1>
         <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_services_lead' | translate }}</p>
+
+        <div class="cl-wiz__counts-mobile">
+          <ng-container [ngTemplateOutlet]="roomCounts" />
+        </div>
 
         @if (facade.packages().length > 0) {
         <div class="cl-lbl cl-wiz__section-label">{{ 'pages.order.packages_section_title' | translate }}</div>
@@ -121,46 +159,6 @@
         </div>
         }
 
-        <div class="cl-wiz__rule"></div>
-
-        <!--
-          The two numbers the price is computed from. Chips, not a stepper: the
-          artboard draws a specific set, and OrderPricingCalculator multiplies
-          per-room price by (rooms + bathrooms), so these are the inputs and not
-          a preset that stands for them.
-        -->
-        <div class="cl-wiz__counts">
-          <div>
-            <div class="cl-lbl">{{ 'pages.order.rooms_count_label' | translate }}</div>
-            <div class="cl-wiz__count-chips">
-              @for (n of roomChoices; track n) {
-              <button
-                type="button"
-                class="cl-chip cl-wiz__count-chip"
-                [class.cl-chip--on]="facade.formData().rooms === n"
-                [attr.aria-pressed]="facade.formData().rooms === n"
-                [attr.aria-label]="'aria.set_rooms' | translate: { count: n }"
-                (click)="setRooms(n)"
-              >{{ n }}</button>
-              }
-            </div>
-          </div>
-          <div>
-            <div class="cl-lbl">{{ 'pages.order.bathrooms_count_label' | translate }}</div>
-            <div class="cl-wiz__count-chips">
-              @for (n of bathroomChoices; track n) {
-              <button
-                type="button"
-                class="cl-chip cl-wiz__count-chip"
-                [class.cl-chip--on]="facade.formData().bathrooms === n"
-                [attr.aria-pressed]="facade.formData().bathrooms === n"
-                [attr.aria-label]="'aria.set_bathrooms' | translate: { count: n }"
-                (click)="setBathrooms(n)"
-              >{{ n }}</button>
-              }
-            </div>
-          </div>
-        </div>
       </div>
       }
 
@@ -1022,6 +1020,12 @@
 
     <!-- Price Sidebar (Desktop) -->
       <aside class="cl-wiz__summary">
+        @if (facade.activeStep() === 0) {
+        <div class="cl-wiz__counts-desktop">
+          <ng-container [ngTemplateOutlet]="roomCounts" />
+          <div class="cl-wiz__rule"></div>
+        </div>
+        }
         <h2 class="cl-h3">{{ 'pages.order.summary_heading' | translate }}</h2>
 
         <!--

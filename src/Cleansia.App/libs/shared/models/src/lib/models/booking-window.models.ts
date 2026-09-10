@@ -5,11 +5,12 @@
  * offer the same choice: the wizard's scheduling step, and the home page's price
  * calculator. The wizard is lazy-loaded, so the calculator cannot import from it
  * without pulling the whole wizard into the landing bundle — and a second copy
- * of "08:00 to 20:00, hourly" is a rule that drifts the first time one of them
+ * of the daily arrival times is a rule that drifts the first time one of them
  * changes.
  */
 export const FIRST_WINDOW_HOUR = 8;
 export const LAST_WINDOW_HOUR = 20;
+export const BOOKING_SLOT_INTERVAL_MINUTES = 15;
 
 /** Minimum hours between now and cleaning start for any booking to be accepted. */
 export const EXPRESS_LEAD_TIME_HOURS = 2;
@@ -39,13 +40,20 @@ export interface TimeOption {
 }
 
 /**
- * One option per 1-hour window from FIRST_WINDOW_HOUR to LAST_WINDOW_HOUR.
+ * Quarter-hour starts from FIRST_WINDOW_HOUR inclusive to LAST_WINDOW_HOUR exclusive.
  * Availability is computed by the caller from the selected date and the clock.
  */
 export function generateTimeOptions(): TimeOption[] {
   const options: TimeOption[] = [];
-  for (let h = FIRST_WINDOW_HOUR; h < LAST_WINDOW_HOUR; h++) {
-    const start = `${h.toString().padStart(2, '0')}:00`;
+  for (
+    let minute = FIRST_WINDOW_HOUR * 60;
+    minute < LAST_WINDOW_HOUR * 60;
+    minute += BOOKING_SLOT_INTERVAL_MINUTES
+  ) {
+    const hour = Math.floor(minute / 60);
+    const start = `${hour.toString().padStart(2, '0')}:${(minute % 60)
+      .toString()
+      .padStart(2, '0')}`;
     // Show only the arrival time (mobile parity). Orders can run longer than one
     // hour — "10:00 – 11:00" reads as a promise that the clean ends at 11.
     options.push({ label: start, value: start, availability: 'available' });

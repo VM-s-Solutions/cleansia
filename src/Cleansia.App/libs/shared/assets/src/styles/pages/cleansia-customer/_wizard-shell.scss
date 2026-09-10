@@ -199,6 +199,9 @@
   // Below the fixed navbar, not below the viewport top: the bar reappears on
   // scroll-up and would otherwise cover the total and the button under it.
   top: calc(var(--cl-nav-h, 64px) + 24px);
+  max-height: calc(100dvh - var(--cl-nav-h, 64px) - 48px);
+  overflow-y: auto;
+  box-sizing: border-box;
   background: var(--cl-surface);
   border-radius: 28px;
   padding: 24px 26px;
@@ -342,6 +345,8 @@
 
   .cl-wiz__summary {
     position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 
@@ -640,6 +645,35 @@
   min-width: 52px;
   justify-content: center;
   cursor: pointer;
+}
+
+.cl-wiz__counts-mobile {
+  display: none;
+}
+
+.cl-wiz__counts-desktop .cl-wiz__counts {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.cl-wiz__counts-desktop .cl-wiz__count-chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cl-wiz__counts-desktop .cl-wiz__count-chip {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .cl-wiz__counts-desktop {
+    display: none;
+  }
+
+  .cl-wiz__counts-mobile {
+    display: block;
+    margin: 24px 0;
+  }
 }
 
 // What is still missing, right where the button that is waiting on it sits.

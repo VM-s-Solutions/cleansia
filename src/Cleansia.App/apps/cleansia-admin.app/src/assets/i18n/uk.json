@@ -912,6 +912,8 @@
       "base_price": "Базова ціна",
       "per_room_price": "Ціна за кімнату",
       "no_currencies": "Валюти не налаштовані, тому ціну поки що не можна вказати.",
+      "price_required": "Обов'язково",
+      "price_optional": "Необов’язково",
       "estimated_time": "Орієнтовний час (хвилини)",
       "messages": {
         "load_error": "Не вдалося завантажити послугу",
@@ -972,6 +974,8 @@
       "price": "Ціна",
       "pricing": "Ціни",
       "no_currencies": "Валюти не налаштовані, тому ціну поки що не можна вказати.",
+      "price_required": "Обов'язково",
+      "price_optional": "Необов’язково",
       "included_services": "Включені послуги",
       "select_services": "Оберіть послуги для включення",
       "weights_title": "Відносні цінові ваги",
@@ -1179,9 +1183,12 @@
         "code": "Код",
         "symbol": "Символ",
         "name": "Назва",
+        "is_active": "Використовується",
         "is_default": "За замовчуванням",
         "actions": "Дії"
       },
+      "operated": "Так",
+      "not_operated": "Ще ні",
       "messages": {
         "load_error": "Не вдалося завантажити валюти",
         "delete_success": "Валюту успішно видалено",

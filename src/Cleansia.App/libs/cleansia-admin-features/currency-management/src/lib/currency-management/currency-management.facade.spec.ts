@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { AdminClient, CurrencyListItem } from '@cleansia/admin-services';
+import { AdminClient, AdminCurrencyListItem } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
@@ -14,8 +14,8 @@ describe('CurrencyManagementFacade', () => {
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
 
   const currencies = [
-    CurrencyListItem.fromJS({ id: 'cur-1', code: 'CZK', isDefault: true }),
-    CurrencyListItem.fromJS({ id: 'cur-2', code: 'EUR', isDefault: false }),
+    AdminCurrencyListItem.fromJS({ id: 'cur-1', code: 'CZK', isDefault: true }),
+    AdminCurrencyListItem.fromJS({ id: 'cur-2', code: 'EUR', isDefault: false }),
   ];
 
   beforeEach(() => {
@@ -81,7 +81,7 @@ describe('CurrencyManagementFacade', () => {
   });
 
   it('does not call setDefault for a row without id', () => {
-    facade.setDefaultCurrency(CurrencyListItem.fromJS({}));
+    facade.setDefaultCurrency(AdminCurrencyListItem.fromJS({}));
 
     expect(setDefaultMock).not.toHaveBeenCalled();
   });

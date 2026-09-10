@@ -1,5 +1,5 @@
 import { TemplateRef } from '@angular/core';
-import { CurrencyListItem } from '@cleansia/admin-services';
+import { AdminCurrencyListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -85,13 +85,13 @@ export function resolveCurrencyErrorKey(error: unknown): string {
 
 export function getCurrencyTableDefinition(
   defs: {
-    onEdit: (row: CurrencyListItem) => void;
-    onDelete: (row: CurrencyListItem) => void;
-    onSetDefault: (row: CurrencyListItem) => void;
+    onEdit: (row: AdminCurrencyListItem) => void;
+    onDelete: (row: AdminCurrencyListItem) => void;
+    onSetDefault: (row: AdminCurrencyListItem) => void;
   },
   translate: TranslateService,
-  flagTemplate?: TemplateRef<CurrencyListItem>
-): { columns: TableColumn<CurrencyListItem>[]; actions: TableAction<CurrencyListItem>[] } {
+  flagTemplate?: TemplateRef<AdminCurrencyListItem>
+): { columns: TableColumn<AdminCurrencyListItem>[]; actions: TableAction<AdminCurrencyListItem>[] } {
   return {
     columns: [
       {
@@ -120,13 +120,26 @@ export function getCurrencyTableDefinition(
         field: 'name',
         header: translate.instant('pages.currency_management.columns.name'),
         sortable: true,
-        width: '45%',
+        width: '32%',
+      },
+      {
+        // WHETHER THE PLATFORM SELLS IN IT. Without this column an admin cannot tell why the star
+        // refuses a currency (SetDefaultCurrency will not promote an inactive one) or why the
+        // catalogue form insists on pricing some currencies and not others.
+        id: 'isActive',
+        field: 'isActive',
+        header: translate.instant('pages.currency_management.columns.is_active'),
+        getValue: (row: AdminCurrencyListItem) =>
+          row.isActive
+            ? translate.instant('pages.currency_management.operated')
+            : translate.instant('pages.currency_management.not_operated'),
+        width: '13%',
       },
       {
         id: 'isDefault',
         field: 'isDefault',
         header: translate.instant('pages.currency_management.columns.is_default'),
-        getValue: (row: CurrencyListItem) =>
+        getValue: (row: AdminCurrencyListItem) =>
           row.isDefault
             ? translate.instant('global.yes')
             : translate.instant('global.no'),
@@ -138,21 +151,21 @@ export function getCurrencyTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.currency_management.edit_currency'),
         color: 'warning',
-        onClick: (row: CurrencyListItem) => defs.onEdit(row),
+        onClick: (row: AdminCurrencyListItem) => defs.onEdit(row),
       },
       {
         icon: 'pi pi-star',
         tooltip: translate.instant('pages.currency_management.set_default'),
         color: 'info',
-        onClick: (row: CurrencyListItem) => defs.onSetDefault(row),
-        visible: (row: CurrencyListItem) => !row.isDefault,
+        onClick: (row: AdminCurrencyListItem) => defs.onSetDefault(row),
+        visible: (row: AdminCurrencyListItem) => !row.isDefault,
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.currency_management.delete_currency'),
         color: 'danger',
-        onClick: (row: CurrencyListItem) => defs.onDelete(row),
-        visible: (row: CurrencyListItem) => !row.isDefault,
+        onClick: (row: AdminCurrencyListItem) => defs.onDelete(row),
+        visible: (row: AdminCurrencyListItem) => !row.isDefault,
       },
     ],
   };

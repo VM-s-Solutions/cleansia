@@ -59,6 +59,16 @@
           <div class="currency-price-block">
             <h4 class="currency-price-block__title">
               {{ currency.name }} ({{ currency.symbol }})
+              <span
+                class="currency-price-block__badge"
+                [class.currency-price-block__badge--optional]="!currency.isActive"
+                >{{
+                  (currency.isActive
+                    ? 'pages.package_form.price_required'
+                    : 'pages.package_form.price_optional'
+                  ) | translate
+                }}</span
+              >
             </h4>
             <div class="form-grid">
               <div class="form-field">

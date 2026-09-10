@@ -5,7 +5,7 @@ import {
   AdminPackageDetailDto,
   CreatePackageCommand,
   CreatePackageResponse,
-  CurrencyListItem,
+  AdminCurrencyListItem,
   PackageTranslationInput,
   LanguageListItem,
   ServiceListItem,
@@ -38,6 +38,8 @@ export interface CurrencyOption {
   symbol: string;
   name: string;
   isDefault: boolean;
+  /** Whether the platform OPERATES in it — see the service form's twin for what that decides. */
+  isActive: boolean;
 }
 
 export interface PackageFormData {
@@ -195,20 +197,21 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
       .getOverview()
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of([] as CurrencyListItem[]))
+        catchError(() => of([] as AdminCurrencyListItem[]))
       )
-      .subscribe((currencies: CurrencyListItem[]) => {
+      .subscribe((currencies: AdminCurrencyListItem[]) => {
         // The same generated-client null as `loadLanguages` above.
         this.currencies.set(
           (currencies ?? [])
             .filter(
-              (c): c is CurrencyListItem & { code: string } => Boolean(c.code)
+              (c): c is AdminCurrencyListItem & { code: string } => Boolean(c.code)
             )
             .map((c) => ({
               code: c.code,
               symbol: c.symbol ?? c.code,
               name: c.name ?? c.code,
               isDefault: c.isDefault,
+              isActive: c.isActive,
             }))
         );
       });

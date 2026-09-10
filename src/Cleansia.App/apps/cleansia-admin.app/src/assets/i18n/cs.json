@@ -1022,6 +1022,8 @@
       "base_price": "Základní cena",
       "per_room_price": "Cena za pokoj",
       "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
       "estimated_time": "Odhadovaný čas (minuty)",
       "messages": {
         "load_error": "Nepodařilo se načíst službu",
@@ -1082,6 +1084,8 @@
       "price": "Cena",
       "pricing": "Ceník",
       "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
       "included_services": "Zahrnuté služby",
       "select_services": "Vyberte služby k zahrnutí",
       "weights_title": "Relativní cenové váhy",
@@ -1289,9 +1293,12 @@
         "code": "Kód",
         "symbol": "Symbol",
         "name": "Název",
+        "is_active": "V provozu",
         "is_default": "Výchozí",
         "actions": "Akce"
       },
+      "operated": "Ano",
+      "not_operated": "Zatím ne",
       "messages": {
         "load_error": "Nepodařilo se načíst měny",
         "delete_success": "Měna byla úspěšně smazána",

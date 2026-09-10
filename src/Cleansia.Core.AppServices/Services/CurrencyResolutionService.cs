@@ -17,9 +17,29 @@ public sealed class CurrencyResolutionService(
         {
             var countryConfig = await countryConfigurationRepository
                 .GetByCountryIdAsync(workCountryId, cancellationToken);
+            // THE CODE HAS TO NAME A REAL CURRENCY. `CountryConfiguration.DefaultCurrencyCode` is
+            // free text with no FK -- three characters an admin types -- and this is its only reader,
+            // so an unrecognised value used to travel straight out to a DTO and label money in a
+            // currency the platform does not have. Resolving it here turns a typo, or a currency that
+            // was deleted after the country was configured, into the platform default rather than a
+            // dangling label.
+            //
+            // Deliberately NOT filtered on IsActive: EUR is seeded real-but-inactive, and a country
+            // configured for it should resolve to EUR the moment it is switched on rather than read
+            // as broken until then.
+            //
+            // The alternative -- a real FK on CountryConfiguration -- was weighed and is the wrong
+            // shape today: nothing in the platform WRITES this column (no admin command carries it,
+            // the seed authors it), so a schema constraint would guard a path that does not exist
+            // while the one path that does exist would still hand out whatever it read.
             if (!string.IsNullOrWhiteSpace(countryConfig?.DefaultCurrencyCode))
             {
-                return countryConfig.DefaultCurrencyCode;
+                var configured = await currencyRepository.GetByCodeAsync(
+                    countryConfig.DefaultCurrencyCode, cancellationToken);
+                if (configured is not null)
+                {
+                    return configured.Code;
+                }
             }
         }
 

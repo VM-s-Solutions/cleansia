@@ -117,7 +117,9 @@ describe('ServiceFormFacade', () => {
     });
 
     it('leaves the currency list an empty array', () => {
-      facade.currencies.set([{ code: 'CZK', symbol: 'Kč', name: 'Czech koruna' }]);
+      facade.currencies.set([
+        { code: 'CZK', symbol: 'Kč', name: 'Czech koruna', isActive: true },
+      ]);
       getCurrenciesMock.mockReturnValue(of(null));
 
       facade.loadCurrencies();
@@ -126,17 +128,38 @@ describe('ServiceFormFacade', () => {
     });
   });
 
+  /**
+   * The form marks a block REQUIRED when its currency is operated and OPTIONAL when it is not, which
+   * is exactly what the backend rule does — so the flag has to survive the mapping. A dropped
+   * `isActive` reads as "nothing is required", and the admin learns the rule from a rejected save.
+   */
+  it('carries whether the platform operates in each currency', () => {
+    getCurrenciesMock.mockReturnValue(
+      of([
+        { code: 'CZK', symbol: 'Kč', name: 'Czech koruna', isActive: true },
+        { code: 'EUR', symbol: '€', name: 'Euro', isActive: false },
+      ])
+    );
+
+    facade.loadCurrencies();
+
+    expect(facade.currencies().map((c) => [c.code, c.isActive])).toEqual([
+      ['CZK', true],
+      ['EUR', false],
+    ]);
+  });
+
   // A currency's symbol and name are what the form's block headings read; the CODE is what the
   // backend keys the price row by, so a row with none is a price the upsert cannot place.
   it('falls back to the code when a currency arrives with no symbol or name', () => {
     getCurrenciesMock.mockReturnValue(
-      of([{ code: 'CZK' }, { symbol: '€', name: 'Euro' }])
+      of([{ code: 'CZK', isActive: true }, { symbol: '€', name: 'Euro' }])
     );
 
     facade.loadCurrencies();
 
     expect(facade.currencies()).toEqual([
-      { code: 'CZK', symbol: 'CZK', name: 'CZK' },
+      { code: 'CZK', symbol: 'CZK', name: 'CZK', isActive: true },
     ]);
   });
 

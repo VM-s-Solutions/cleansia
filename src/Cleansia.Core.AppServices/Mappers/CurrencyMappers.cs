@@ -29,6 +29,18 @@ public static class CurrencyMappers
             IsDefault: currency.IsDefault);
     }
 
+    /// <summary>Admin only — see <see cref="AdminCurrencyListItem"/> for why it is not the same DTO.</summary>
+    public static AdminCurrencyListItem MapToAdminListItem(this Currency currency)
+    {
+        return new AdminCurrencyListItem(
+            Id: currency.Id,
+            Code: currency.Code,
+            Symbol: currency.Symbol,
+            Name: currency.Name,
+            IsDefault: currency.IsDefault,
+            IsActive: currency.IsActive);
+    }
+
     public static CurrencyDetailDto MapToDetailDto(this Currency currency)
     {
         return new CurrencyDetailDto(

@@ -295,13 +295,37 @@ describe('PackageFormFacade', () => {
 
     it('leaves the currency list an empty array when the client answers null', () => {
       facade.currencies.set([
-        { code: 'CZK', symbol: 'Kč', name: 'Czech koruna', isDefault: true },
+        {
+          code: 'CZK',
+          symbol: 'Kč',
+          name: 'Czech koruna',
+          isDefault: true,
+          isActive: true,
+        },
       ]);
       getCurrenciesMock.mockReturnValue(of(null));
 
       facade.loadCurrencies();
 
       expect(facade.currencies()).toEqual([]);
+    });
+
+    // The block heading reads Required or Optional off this flag, matching what the backend rule
+    // actually enforces. Drop it and every block reads optional.
+    it('carries whether the platform operates in each currency', () => {
+      getCurrenciesMock.mockReturnValue(
+        of([
+          { code: 'CZK', symbol: 'Kč', name: 'Czech koruna', isDefault: true, isActive: true },
+          { code: 'EUR', symbol: '€', name: 'Euro', isDefault: false, isActive: false },
+        ])
+      );
+
+      facade.loadCurrencies();
+
+      expect(facade.currencies().map((c) => [c.code, c.isActive])).toEqual([
+        ['CZK', true],
+        ['EUR', false],
+      ]);
     });
   });
 });

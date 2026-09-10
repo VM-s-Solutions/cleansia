@@ -912,6 +912,8 @@
       "base_price": "Базовая цена",
       "per_room_price": "Цена за комнату",
       "no_currencies": "Валюты не настроены, поэтому цену пока указать нельзя.",
+      "price_required": "Обязательно",
+      "price_optional": "Необязательно",
       "estimated_time": "Расчётное время (минуты)",
       "messages": {
         "load_error": "Не удалось загрузить услугу",
@@ -972,6 +974,8 @@
       "price": "Цена",
       "pricing": "Цены",
       "no_currencies": "Валюты не настроены, поэтому цену пока указать нельзя.",
+      "price_required": "Обязательно",
+      "price_optional": "Необязательно",
       "included_services": "Включённые услуги",
       "select_services": "Выберите услуги для включения",
       "weights_title": "Относительные ценовые веса",
@@ -1179,9 +1183,12 @@
         "code": "Код",
         "symbol": "Символ",
         "name": "Название",
+        "is_active": "Используется",
         "is_default": "По умолчанию",
         "actions": "Действия"
       },
+      "operated": "Да",
+      "not_operated": "Пока нет",
       "messages": {
         "load_error": "Не удалось загрузить валюты",
         "delete_success": "Валюта успешно удалена",

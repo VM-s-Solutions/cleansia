@@ -912,6 +912,8 @@
       "base_price": "Base price",
       "per_room_price": "Per-room price",
       "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "price_required": "Required",
+      "price_optional": "Optional",
       "estimated_time": "Estimated Time (minutes)",
       "messages": {
         "load_error": "Failed to load service",
@@ -972,6 +974,8 @@
       "price": "Price",
       "pricing": "Pricing",
       "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "price_required": "Required",
+      "price_optional": "Optional",
       "included_services": "Included Services",
       "select_services": "Select services to include",
       "weights_title": "Relative price weights",
@@ -1179,9 +1183,12 @@
         "code": "Code",
         "symbol": "Symbol",
         "name": "Name",
+        "is_active": "Operated",
         "is_default": "Default",
         "actions": "Actions"
       },
+      "operated": "Yes",
+      "not_operated": "Not yet",
       "messages": {
         "load_error": "Failed to load currencies",
         "delete_success": "Currency deleted successfully",

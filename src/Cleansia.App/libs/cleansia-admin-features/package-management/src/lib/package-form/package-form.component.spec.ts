@@ -165,8 +165,22 @@ class FacadeStub {
     { code: 'en', name: 'English' },
   ]);
   readonly currencies = signal<
-    { code: string; symbol: string; name: string; isDefault: boolean }[]
-  >([{ code: 'CZK', symbol: 'Kc', name: 'Czech koruna', isDefault: true }]);
+    {
+      code: string;
+      symbol: string;
+      name: string;
+      isDefault: boolean;
+      isActive: boolean;
+    }[]
+  >([
+    {
+      code: 'CZK',
+      symbol: 'Kc',
+      name: 'Czech koruna',
+      isDefault: true,
+      isActive: true,
+    },
+  ]);
   readonly defaultCurrencyCode = signal<string | null>('CZK');
   readonly availableServices = signal<unknown[]>([]);
   readonly weightRows = signal<PackageServiceWeightRow[]>([]);

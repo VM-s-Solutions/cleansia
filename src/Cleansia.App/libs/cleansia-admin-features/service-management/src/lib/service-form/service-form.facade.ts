@@ -8,7 +8,7 @@ import {
   CreateServiceResponse,
   CreateServiceServicePriceInput,
   CreateServiceTranslationInput,
-  CurrencyListItem,
+  AdminCurrencyListItem,
   LanguageListItem,
   UpdateServiceCommand,
   UpdateServiceResponse,
@@ -27,6 +27,13 @@ export interface CurrencyOption {
   code: string;
   symbol: string;
   name: string;
+  /**
+   * Whether the platform OPERATES in this currency. The backend refuses a catalogue entry that is not
+   * priced in every active currency, and permits — deliberately — a price in an inactive one, because
+   * pricing a market before opening it is how a currency gets switched on at all. The form has to say
+   * which is which, or the admin learns it from a rejected save.
+   */
+  isActive: boolean;
 }
 
 /** A service's two money components in ONE currency. They are authored together. */
@@ -123,19 +130,20 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
       .getOverview()
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of([] as CurrencyListItem[]))
+        catchError(() => of([] as AdminCurrencyListItem[]))
       )
-      .subscribe((currencies: CurrencyListItem[]) => {
+      .subscribe((currencies: AdminCurrencyListItem[]) => {
         // The same generated-client null as `loadLanguages` above.
         this.currencies.set(
           (currencies ?? [])
             .filter(
-              (c): c is CurrencyListItem & { code: string } => Boolean(c.code)
+              (c): c is AdminCurrencyListItem & { code: string } => Boolean(c.code)
             )
             .map((c) => ({
               code: c.code,
               symbol: c.symbol ?? c.code,
               name: c.name ?? c.code,
+              isActive: c.isActive,
             }))
         );
       });

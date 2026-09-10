@@ -97,10 +97,11 @@ public class SetDefaultCurrency
             // WHAT THIS COSTS, stated because it is a real trade and not a free one. The pipeline
             // commit afterwards is NOT a no-op: AuditLogBehavior is registered inner to the UnitOfWork
             // behavior so its AdminActionAudit row rides that commit, and this command is audited.
-            // Committing here means the promote is durable before the audit row exists. The nine other
-            // handlers that flush early all share that property, so it is a pattern-wide question
+            // Committing here means the promote is durable before the audit row exists. Eight other
+            // admin commands flush early and share that property, so it is a pattern-wide question
             // rather than one this handler invented -- and it is accepted here because the alternative
-            // is a promote that cannot succeed at all.
+            // is a promote that cannot succeed at all. The nine are enumerated once, with what is and
+            // is not lost, in ADR-0012's 2026-09-10 amendment -> /decisions/adr-0012#later-amendment-2026-09-10-the-early-flush-carve-out
             await using var transaction = await currencyRepository.BeginTransactionAsync(cancellationToken);
 
             await currencyRepository.ClearDefaultAsync(cancellationToken);

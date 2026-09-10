@@ -6365,41 +6365,6 @@
         }
       }
     },
-    "error.validation.vat_number.invalid_format": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platné DIČ pro vybranou zemi."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid VAT number for the selected country."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введите действительный номер НДС для выбранной страны."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platné IČ DPH pre vybranú krajinu."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введіть дійсний номер ПДВ для обраної країни."
-          }
-        }
-      }
-    },
     "error.wire.contract_violation": {
       "extractionState": "stale",
       "localizations": {

@@ -9,7 +9,7 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { CurrencyListItem } from '@cleansia/admin-services';
+import { AdminCurrencyListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -58,8 +58,8 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
 
   flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
 
-  currencyColumns!: TableColumn<CurrencyListItem>[];
-  currencyActions!: TableAction<CurrencyListItem>[];
+  currencyColumns!: TableColumn<AdminCurrencyListItem>[];
+  currencyActions!: TableAction<AdminCurrencyListItem>[];
 
   // Expose helper function to template
   getCurrencyFlagCode = getCurrencyFlagCode;
@@ -104,11 +104,11 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.navigateToCreateCurrency();
   }
 
-  editCurrency(currency: CurrencyListItem): void {
+  editCurrency(currency: AdminCurrencyListItem): void {
     this.facade.navigateToEditCurrency(currency);
   }
 
-  confirmSetDefaultCurrency(currency: CurrencyListItem): void {
+  confirmSetDefaultCurrency(currency: AdminCurrencyListItem): void {
     this.confirmationService.confirm({
       message: this.translate.instant(
         'pages.currency_management.set_default_confirm',
@@ -122,7 +122,7 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  confirmDeleteCurrency(currency: CurrencyListItem): void {
+  confirmDeleteCurrency(currency: AdminCurrencyListItem): void {
     if (currency.isDefault) {
       this.confirmationService.confirm({
         message: this.translate.instant('pages.currency_management.cannot_delete_default'),

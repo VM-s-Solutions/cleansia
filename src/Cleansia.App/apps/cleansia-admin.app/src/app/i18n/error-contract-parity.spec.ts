@@ -28,6 +28,8 @@ const BUSINESS_ERROR_MESSAGE_PATH = join(
 
 const FEATURES_DIR = join(APP_SERVICES_DIR, 'Features');
 
+const SHARED_VALIDATORS_DIR = join(APP_SERVICES_DIR, 'Common/Validators');
+
 // The host that serves this app: Cleansia.Web.Admin listens on :5001 and the
 // admin dev server proxies /api to it (apps/cleansia-admin.app/proxy.conf.json).
 const HOST_CONTROLLERS_DIR = join(
@@ -162,6 +164,7 @@ interface HostSurface {
 // shows up here without anyone remembering to paste it into the roster below.
 function deriveHostSurface(): HostSurface {
   const featureFiles = featureFilesByClassName();
+  const extensions = ruleBuilderExtensionKeys();
   const constants = parseBusinessErrorConstants();
   const sites: DispatchSite[] = [];
   const featureClasses = new Set<string>();
@@ -221,6 +224,22 @@ function deriveHostSurface(): HostSurface {
             .join('/')}`;
           keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
         }
+
+        // ...and the keys this file reaches through a shared rule-builder extension, which carries
+        // no `BusinessErrorMessage.` token of its own. Anchored on `.Helper(` rather than a bare
+        // mention, because a doc comment naming a helper is not a call to it.
+        for (const [helper, helperKeys] of extensions) {
+          if (!new RegExp(`\\.${helper}\\s*(?:<|\\()`).test(fileSource)) continue;
+          const provenance = `${controller.replace('.cs', '')} -> ${relative(
+            FEATURES_DIR,
+            file
+          )
+            .split(sep)
+            .join('/')} -> ${helper}()`;
+          for (const value of helperKeys) {
+            keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
+          }
+        }
       }
     }
   }
@@ -232,6 +251,76 @@ function deriveHostSurface(): HostSurface {
     featureClasses,
     keys,
   };
+}
+
+/**
+ * Keys emitted by a SHARED RULE-BUILDER EXTENSION, indexed by the extension's name.
+ *
+ * `deriveHostSurface` finds keys by scanning a feature file for `BusinessErrorMessage.` tokens. A
+ * validator that writes `.MustCoverAllActiveCurrencies(currencyRepository)` carries no such token —
+ * the keys live in the helper — so every key reached that way was invisible to the walker, and
+ * therefore neither required on the contract nor checked for translation through this path. Four
+ * catalogue keys sat in that hole.
+ *
+ * Indexed by scanning the DIRECTORY rather than a hand-written list, so a new helper file is picked
+ * up without an edit here.
+ */
+function ruleBuilderExtensionKeys(): Map<string, Set<string>> {
+  const constants = parseBusinessErrorConstants();
+  const index = new Map<string, Set<string>>();
+  for (const file of listCsFiles(SHARED_VALIDATORS_DIR)) {
+    const source = readFileSync(file, 'utf8');
+    const signature = /public static\s+[^\n(]*?\b(\w+)(?:<[^>]*>)?\s*\(/g;
+    const defs: { name: string; at: number }[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = signature.exec(source)) !== null) {
+      defs.push({ name: m[1], at: m.index });
+    }
+    for (let i = 0; i < defs.length; i++) {
+      const body = source.slice(
+        defs[i].at,
+        i + 1 < defs.length ? defs[i + 1].at : source.length
+      );
+      // Only rule-builder extensions. A plain static helper is reached by a normal call the
+      // scanner already sees, and folding its keys in by name would attribute them everywhere.
+      if (!/this IRuleBuilder/.test(body)) continue;
+      const keys = index.get(defs[i].name) ?? new Set<string>();
+      const emitted = /BusinessErrorMessage\.(\w+)/g;
+      let k: RegExpExecArray | null;
+      while ((k = emitted.exec(body)) !== null) {
+        const value = constants.get(k[1]);
+        if (value) keys.add(value);
+      }
+      index.set(defs[i].name, keys);
+    }
+  }
+  return index;
+}
+
+/**
+ * Every key emitted from AppServices but OUTSIDE `Features/` — shared validators, shared services.
+ *
+ * This is the backstop, and it is the half that cannot rot. The extension follow above is regex-driven
+ * and can quietly stop matching (a reformatted signature, a helper moved into `Services/`), at which
+ * point it would silently cover nothing and no test would notice. This one asks a different question —
+ * "is every shared-emitter key accounted for on this host, one way or another?" — and it is answered
+ * by accounting rather than by attribution, so a new shared emitter in ANY shape fails it.
+ */
+function keysEmittedOutsideFeatures(): Set<string> {
+  const constants = parseBusinessErrorConstants();
+  const emitted = new Set<string>();
+  for (const file of listCsFiles(APP_SERVICES_DIR)) {
+    if (file.startsWith(FEATURES_DIR)) continue;
+    if (file.endsWith('BusinessErrorMessage.cs')) continue;
+    const source = readFileSync(file, 'utf8');
+    const regex = /BusinessErrorMessage\.(\w+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(source)) !== null) {
+      const value = constants.get(match[1]);
+      if (value) emitted.add(value);
+    }
+  }
+  return emitted;
 }
 
 function keysEmittedAnywhere(): Set<string> {
@@ -473,6 +562,33 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   // Users
   'user.not_existing_id',
   'user.not_found',
+  // ---------------------------------------------------------------------------
+  // Reached through a SHARED emitter, and invisible to this walker until it learned
+  // to follow one (2026-09-10). Three shapes hid keys here: a rule-builder extension
+  // in Common/Validators (`.MustCoverAllActiveCurrencies(repo)` carries no
+  // `BusinessErrorMessage.` token), a base-class validator (`class Validator :
+  // UserEmailValidator<Command>`), and a shared service called from a handler
+  // (`GdprDeletionService`, `RefundService`). Every one of these was already
+  // translated in all five locales — the hazard was that the next one would not be,
+  // and nothing would have said so.
+  'address.invalid_length',
+  'auth.invalid_password_format',
+  'file.content_type_doesnt_match',
+  'file.invalid_file_type',
+  'file.size_exceeded',
+  'file.type_not_allowed',
+  'gdpr.deletion_already_pending',
+  'gdpr.deletion_blocked_by_assigned_order',
+  'gdpr.deletion_blocked_by_credit_balance',
+  'gdpr.deletion_blocked_by_invoice',
+  'gdpr.deletion_blocked_by_order',
+  'gdpr.deletion_blocked_by_unsettled_pay',
+  'refund.failed',
+  'service.missing_price_for_currency',
+  'service.missing_translation_for_language',
+  'service.prices_required',
+  'service.translations_required',
+  'user.not_existing_email',
 ];
 
 // Reachable from a Cleansia.Web.Admin controller and deliberately left out of the
@@ -482,6 +598,19 @@ const DELIBERATELY_NOT_TRANSLATED: ReadonlyArray<{
   key: string;
   reason: string;
 }> = [];
+
+/**
+ * Keys emitted by a SHARED emitter outside `Features/` that this host genuinely cannot reach.
+ *
+ * The only escape from the shared-emitter accounting assertion. Each entry says why in prose, and a
+ * blank reason fails its own test — the point is that skipping a key costs a sentence of thought,
+ * not a line of list.
+ */
+const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
+  key: string;
+  reason: string;
+}> = [];
+
 
 // Contract keys that no BusinessErrorMessage reference anywhere in
 // Cleansia.Core.AppServices emits — the constant is declared and dead. Asserted
@@ -518,6 +647,12 @@ const PAYOUT_KEYS = [
   ...ADMIN_PAYOUT_SURFACE_ERROR_KEYS,
   ...ADMIN_PAYOUT_EDITOR_KEYS,
 ];
+
+/**
+ * Keys the shared-emitter assertion should treat as ACCOUNTED FOR because another list in this file
+ * already owns them and asserts their translation. Not an exemption — a cross-reference.
+ */
+const ALSO_ACCOUNTED_ELSEWHERE: readonly string[] = [...PAYOUT_KEYS];
 
 describe('error-contract parity (admin app)', () => {
   const en = readLocale('en');
@@ -586,6 +721,60 @@ describe('error-contract parity (admin app)', () => {
         (key) => !emitted.has(key)
       ).sort();
       expect(dead).toEqual([...DECLARED_BUT_NEVER_EMITTED].sort());
+    });
+
+    /**
+     * The extension index is regex-driven, so its silent failure mode is an EMPTY map that covers
+     * nothing while every other assertion still passes. This reads it back.
+     */
+    it('reads the shared rule-builder helpers, and does not merely remember them', () => {
+      const extensions = ruleBuilderExtensionKeys();
+      expect(extensions.size).toBeGreaterThanOrEqual(10);
+      expect(
+        [...(extensions.get('MustCoverAllActiveCurrencies') ?? [])].sort()
+      ).toEqual([
+        'currency.not_found',
+        'service.missing_price_for_currency',
+        'service.prices_required',
+      ]);
+      expect(
+        [...(extensions.get('MustCoverAllActiveLanguages') ?? [])].sort()
+      ).toEqual([
+        'service.missing_translation_for_language',
+        'service.translations_required',
+      ]);
+    });
+
+    /**
+     * The backstop. Fails the moment ANY new shared emitter appears anywhere in AppServices, in any
+     * shape, and forces the author to put the key on the contract or write down why this host cannot
+     * reach it.
+     */
+    it('accounts for every key emitted outside Features/', () => {
+      const outside = keysEmittedOutsideFeatures();
+      // A REACH FLOOR, because this assertion's own failure mode is passing on an empty set: point
+      // the scan at nothing and "everything is accounted for" is trivially true. Measured at 39 on
+      // 2026-09-10; the floor is far below that and far above zero, so it survives ordinary churn
+      // and dies the moment the reader breaks.
+      expect(outside.size).toBeGreaterThanOrEqual(25);
+
+      const excused = SHARED_KEYS_NOT_REACHABLE_HERE.map((entry) => entry.key);
+      const unaccounted = [...outside]
+        .filter(
+          (key) =>
+            !surface.keys.has(key) &&
+            !ALSO_ACCOUNTED_ELSEWHERE.includes(key) &&
+            !ADMIN_SURFACE_ERROR_KEYS.includes(key) &&
+            !excused.includes(key)
+        )
+        .sort();
+      const unexplained = SHARED_KEYS_NOT_REACHABLE_HERE.filter(
+        (entry) => entry.reason.trim().length === 0
+      ).map((entry) => entry.key);
+      expect({ unaccounted, unexplained }).toEqual({
+        unaccounted: [],
+        unexplained: [],
+      });
     });
   });
 

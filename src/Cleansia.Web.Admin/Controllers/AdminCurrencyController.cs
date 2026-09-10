@@ -15,13 +15,13 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
 {
     [HttpGet("get-overview")]
     [Permission(Policy.CanViewCurrencies)]
-    [ProducesResponseType(typeof(IEnumerable<CurrencyListItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<AdminCurrencyListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IEnumerable<CurrencyListItem>> GetCurrencies(CancellationToken cancellationToken)
+    public async Task<IEnumerable<AdminCurrencyListItem>> GetCurrencies(CancellationToken cancellationToken)
     {
-        return await Mediator.Send(new GetCurrencyOverview.Request(), cancellationToken);
+        return await Mediator.Send(new GetAdminCurrencyOverview.Request(), cancellationToken);
     }
 
     [HttpGet("details/{currencyId}")]

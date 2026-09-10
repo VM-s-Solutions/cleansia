@@ -65,6 +65,27 @@
       color: var(--cleansia-primary-700);
     }
 
+    &__badge {
+      margin-left: 0.5rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      vertical-align: middle;
+      background: var(--cleansia-primary-100);
+      color: var(--cleansia-primary-700);
+
+      // An inactive currency MAY be priced and is not required, so its badge must not read as an
+      // unmet obligation — same size, quieter ground.
+      &--optional {
+        background: transparent;
+        color: var(--cleansia-primary-500);
+        border: 1px solid var(--cleansia-primary-200);
+      }
+    }
+
     &__empty {
       margin: 1rem 0 0;
       color: var(--cleansia-primary-700);

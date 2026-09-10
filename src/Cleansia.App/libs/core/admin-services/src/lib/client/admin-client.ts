@@ -2066,7 +2066,7 @@ export interface IAdminCurrencyClient {
     /**
      * @return OK
      */
-    getOverview(): Observable<CurrencyListItem[]>;
+    getOverview(): Observable<AdminCurrencyListItem[]>;
     /**
      * @return OK
      */
@@ -2107,7 +2107,7 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
     /**
      * @return OK
      */
-    getOverview(): Observable<CurrencyListItem[]> {
+    getOverview(): Observable<AdminCurrencyListItem[]> {
         let url = this.baseUrl + "/api/AdminCurrency/get-overview";
         url = url.replace(/[?&]$/, "");
 
@@ -2126,14 +2126,14 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
                 try {
                     return this.processGetOverview(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CurrencyListItem[]>;
+                    return ObservableThrow(e) as any as Observable<AdminCurrencyListItem[]>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<CurrencyListItem[]>;
+                return ObservableThrow(response) as any as Observable<AdminCurrencyListItem[]>;
         }));
     }
 
-    protected processGetOverview(response: HttpResponseBase): Observable<CurrencyListItem[]> {
+    protected processGetOverview(response: HttpResponseBase): Observable<AdminCurrencyListItem[]> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -2147,7 +2147,7 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
-                    result200!.push(CurrencyListItem.fromJS(item));
+                    result200!.push(AdminCurrencyListItem.fromJS(item));
             }
             else {
                 result200 = null as any;
@@ -14988,6 +14988,62 @@ export class AdminCountryControllerSetCountryServicedRequest implements IAdminCo
 
 export interface IAdminCountryControllerSetCountryServicedRequest {
     isServiced: boolean;
+}
+
+export class AdminCurrencyListItem implements IAdminCurrencyListItem {
+    id!: string | undefined;
+    code!: string | undefined;
+    symbol!: string | undefined;
+    name!: string | undefined;
+    isDefault!: boolean;
+    isActive!: boolean;
+
+    constructor(data?: IAdminCurrencyListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.code = Data["code"];
+            this.symbol = Data["symbol"];
+            this.name = Data["name"];
+            this.isDefault = Data["isDefault"];
+            this.isActive = Data["isActive"];
+        }
+    }
+
+    static fromJS(data: any): AdminCurrencyListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminCurrencyListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["code"] = this.code;
+        data["symbol"] = this.symbol;
+        data["name"] = this.name;
+        data["isDefault"] = this.isDefault;
+        data["isActive"] = this.isActive;
+        return data;
+    }
+}
+
+export interface IAdminCurrencyListItem {
+    id: string | undefined;
+    code: string | undefined;
+    symbol: string | undefined;
+    name: string | undefined;
+    isDefault: boolean;
+    isActive: boolean;
 }
 
 export class AdminEmployeeDetail implements IAdminEmployeeDetail {

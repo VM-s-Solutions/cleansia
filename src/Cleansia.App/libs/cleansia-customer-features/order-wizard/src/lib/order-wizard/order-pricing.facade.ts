@@ -9,15 +9,19 @@ import {
 } from '@cleansia/customer-services';
 import {
   catchError,
-  debounceTime,
   distinctUntilChanged,
-  filter,
+  EMPTY,
   finalize,
   firstValueFrom,
+  map,
+  Observable,
   of,
+  shareReplay,
+  Subject,
   switchMap,
   takeUntil,
   tap,
+  timer,
 } from 'rxjs';
 import {
   capCreditForOrder,
@@ -25,6 +29,8 @@ import {
   composeSlotMoment,
   OrderWizardFormData,
 } from './order-wizard.models';
+
+const QUOTE_DEBOUNCE_MS = 200;
 
 /**
  * Snapshot of the wizard inputs that affect pricing. Sorted arrays so
@@ -79,6 +85,11 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   readonly quoting = signal(false);
   /** Snapshot of inputs that produced the current `quote()`, for cache reuse. */
   private readonly lastQuotedInputs = signal<QuoteInputs | null>(null);
+  private readonly cancelQuote$ = new Subject<void>();
+  private pendingQuote: {
+    inputs: QuoteInputs;
+    response$: Observable<QuoteOrderResponse | null>;
+  } | null = null;
 
   /**
    * Undiscounted gross, surcharge included — the value `submitOrder` resubmits verbatim. This is
@@ -242,41 +253,66 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
 
     toObservable(this.quoteInputs, { injector: this.injector })
       .pipe(
-        // 800ms matches the typing-pause UX norm for booking wizards and keeps
-        // us under the backend's interactive rate-limit (60/min).
-        debounceTime(800),
         distinctUntilChanged((a, b) => this.quoteInputsEqual(a, b)),
-        tap((inputs) => {
+        switchMap((inputs) => {
+          if (this.pendingQuote && !this.quoteInputsEqual(inputs, this.pendingQuote.inputs)) {
+            this.cancelQuote$.next();
+          }
           if (this.isEmptyInputs(inputs)) {
             this.quote.set(null);
             this.lastQuotedInputs.set(null);
             this.quoting.set(false);
+            return EMPTY;
           }
-        }),
-        filter((inputs) => !this.isEmptyInputs(inputs)),
-        // Skip when the most recent successful quote already matches the pending
-        // inputs — re-issuing would burn a rate-limit token for the same answer.
-        filter((inputs) => !this.quoteInputsEqual(inputs, this.lastQuotedInputs())),
-        switchMap((inputs) => {
+          if (this.quoteInputsEqual(inputs, this.lastQuotedInputs())) {
+            this.quoting.set(false);
+            return EMPTY;
+          }
+
           this.quoting.set(true);
-          return this.customerClient.orderClient.quote(this.toQuoteCommand(inputs)).pipe(
-            takeUntil(this.destroyed$),
-            // Silent during editing — keep the prior quote so the user doesn't
-            // see a "—" flash on a transient backend hiccup. Errors surface
-            // only at submit time.
-            catchError(() => of(null)),
-            tap((resp) => {
-              if (resp) {
-                this.quote.set(resp);
-                this.lastQuotedInputs.set(inputs);
+          return timer(QUOTE_DEBOUNCE_MS).pipe(
+            switchMap(() => {
+              if (this.quoteInputsEqual(inputs, this.lastQuotedInputs())) {
+                this.quoting.set(false);
+                return EMPTY;
               }
+              return this.requestQuote(inputs);
             }),
-            finalize(() => this.quoting.set(false)),
           );
         }),
         takeUntil(this.destroyed$),
       )
       .subscribe();
+  }
+
+  private requestQuote(inputs: QuoteInputs): Observable<QuoteOrderResponse | null> {
+    if (this.pendingQuote && this.quoteInputsEqual(inputs, this.pendingQuote.inputs)) {
+      return this.pendingQuote.response$;
+    }
+    this.cancelQuote$.next();
+    this.quoting.set(true);
+
+    const response$ = this.customerClient.orderClient.quote(this.toQuoteCommand(inputs)).pipe(
+      takeUntil(this.cancelQuote$),
+      takeUntil(this.destroyed$),
+      catchError(() => of(null)),
+      map((resp) => this.quoteInputsEqual(inputs, this.quoteInputs()) ? resp : null),
+      tap((resp) => {
+        if (resp) {
+          this.quote.set(resp);
+          this.lastQuotedInputs.set(inputs);
+        }
+      }),
+      finalize(() => {
+        if (this.pendingQuote?.response$ === response$) {
+          this.pendingQuote = null;
+          this.quoting.set(false);
+        }
+      }),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+    this.pendingQuote = { inputs, response$ };
+    return response$;
   }
 
   /**
@@ -287,21 +323,14 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   async refreshQuoteNow(): Promise<QuoteOrderResponse | null> {
     const inputs = this.quoteInputs();
     if (this.isEmptyInputs(inputs)) {
+      this.cancelQuote$.next();
       this.quote.set(null);
       this.lastQuotedInputs.set(null);
+      this.quoting.set(false);
       return null;
     }
-    this.quoting.set(true);
     try {
-      const resp = await firstValueFrom(
-        this.customerClient.orderClient.quote(this.toQuoteCommand(inputs)).pipe(
-          takeUntil(this.destroyed$),
-          finalize(() => this.quoting.set(false)),
-        ),
-      );
-      this.quote.set(resp);
-      this.lastQuotedInputs.set(inputs);
-      return resp;
+      return await firstValueFrom(this.requestQuote(inputs));
     } catch {
       return null;
     }

@@ -58,20 +58,21 @@ Authenticated users can save addresses to localStorage (`cleansia_saved_addresse
 
 ### Step 2: Date & Time
 
-The customer picks a cleaning date and a **1-hour arrival window**. Scheduling is still on a 30-min
-grid internally; the window's start is the target start.
+The customer picks a cleaning date and an **arrival time in 15-minute increments**, from 08:00
+through 19:45. The home calculator, web booking wizard, Android and iOS offer the same times.
+The selected minutes are preserved in the booking sent to the API.
 
 **Date selection:**
 - Minimum date: today (if time slots remain) or tomorrow
 - Uses PrimeNG `DatePicker`
 
-**Time selection** — the constants mirror `BookingPolicy` on the backend and must be kept in sync
-(`order-wizard.models.ts:136-147`):
+**Time selection** — the daily bounds and lead times mirror `BookingPolicy` on the backend.
+Web arrival options live in the shared `booking-window.models.ts`:
 
 | Constant | Value |
 |---|---|
-| `WINDOW_DURATION_MINUTES` | 60 |
-| `FIRST_WINDOW_HOUR` / `LAST_WINDOW_HOUR` | 8 / 20 (inclusive start, exclusive end → 12 windows) |
+| `BOOKING_SLOT_INTERVAL_MINUTES` | 15 → 48 arrival times |
+| `FIRST_WINDOW_HOUR` / `LAST_WINDOW_HOUR` | 8 / 20 (inclusive start, exclusive end) |
 | `EXPRESS_LEAD_TIME_HOURS` | 2 — below this, nothing is bookable |
 | `STANDARD_LEAD_TIME_HOURS` | 4 — between 2 and 4 h, the slot is bookable **with surcharge** |
 

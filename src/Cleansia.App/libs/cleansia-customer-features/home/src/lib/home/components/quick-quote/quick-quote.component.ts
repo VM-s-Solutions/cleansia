@@ -96,9 +96,11 @@ export class QuickQuoteComponent {
     const isToday = !!date && date.toDateString() === now.toDateString();
 
     return generateTimeOptions().map((opt) => {
-      if (!isToday) return { ...opt, disabled: false };
-      const hour = Number(opt.value.slice(0, 2));
-      const hoursAhead = hour - (now.getHours() + now.getMinutes() / 60);
+      if (!isToday || !date) return { ...opt, disabled: false };
+      const [hour, minute] = opt.value.split(':').map(Number);
+      const slot = new Date(date);
+      slot.setHours(hour, minute, 0, 0);
+      const hoursAhead = (slot.getTime() - now.getTime()) / (60 * 60 * 1000);
       return { ...opt, disabled: hoursAhead < EXPRESS_LEAD_TIME_HOURS };
     });
   });

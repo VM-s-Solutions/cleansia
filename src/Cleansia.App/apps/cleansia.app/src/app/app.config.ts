@@ -106,12 +106,10 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: CUSTOMER_API_BASE_URL, useValue: environment.apiBaseUrl },
-    // The Mapbox token is NOT shipped to the browser. We only advertise
-    // (token-free) whether geocoding is configured; the credential lives on the
-    // API, which is also what performs the lookup.
+    // Credential setup: deploy/AZURE-DEV-RUNBOOK.md#customer-address-search-mapbox
     {
       provide: MAPBOX_AUTOCOMPLETE_ENABLED,
-      useValue: !!(environment.mapboxToken ?? '').trim(),
+      useValue: environment.addressSearchEnabled,
     },
     { provide: ADDRESS_SEARCH_PORT, useFactory: customerAddressSearchPort },
     // The GSI client id is public by design (Google gates access on the page

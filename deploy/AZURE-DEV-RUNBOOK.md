@@ -757,6 +757,26 @@ continue through the existing GitHub Environment secrets → Key Vault flow (§6
 
 ---
 
+## Customer address search (Mapbox)
+
+The customer browser calls `/api/AddressSearch/search` on the Customer API. The API holds the
+Mapbox credential; the customer SSR server does not perform the lookup. GitHub Environment
+`dev-weu` secret `MAPBOX_TOKEN` is copied to Key Vault secret `Mapbox--GeocodingAccessToken`
+and referenced by the API's `Mapbox__GeocodingAccessToken` app setting (§6).
+
+The browser only needs `addressSearchEnabled: true` in the customer app's
+`environment.staging.ts`. DEV deployment uses the `staging` Angular build. A disabled setting
+hides the search field even when the API token works. This is a public UI setting, not a secret;
+never paste a Mapbox token into an Angular environment file. After changing the setting, rebuild
+and deploy the customer frontend. Local development is also enabled; production remains disabled
+until its provider is provisioned and the production build setting is enabled.
+
+To distinguish a frontend setting problem from a provider problem, request
+`https://customer-api.dev.cleansia.cz/api/AddressSearch/search?q=Vaclavske%20namesti%201&country=cz&limit=3`.
+A successful response with suggestions confirms the API can use its server-side credential.
+
+---
+
 ## Related owner steps (separate from this runbook, do when convenient)
 
 - **Custom domains under `cleansia.cz` (§12)** — required before **any deployed web URL** can

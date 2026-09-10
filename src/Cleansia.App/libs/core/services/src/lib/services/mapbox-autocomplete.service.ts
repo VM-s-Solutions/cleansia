@@ -62,10 +62,9 @@ export const MAPBOX_PROXY_PATH = new InjectionToken<string>(
 );
 
 /**
- * Token-free signal that the autocomplete UI may be shown. Provide it from each
- * app as `!!environment.mapboxToken` (i.e. "is a token configured for the
- * server proxy"), so the no-token-hides-UI behavior is preserved without ever
- * shipping the token to the browser. Defaults to disabled.
+ * Token-free signal that the autocomplete UI may be shown. Provide a boolean
+ * from each app's configuration. The credential belongs to the platform API,
+ * behind ADDRESS_SEARCH_PORT; the browser never receives it. Defaults to disabled.
  */
 export const MAPBOX_AUTOCOMPLETE_ENABLED = new InjectionToken<boolean>(
   'MAPBOX_AUTOCOMPLETE_ENABLED',

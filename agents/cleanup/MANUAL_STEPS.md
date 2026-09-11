@@ -102,8 +102,10 @@ owe?"* would not find it. That is what `CL-043` is.
 ### MS-9 — Invite yourself to the admin console — **owner, BEFORE the next admin deploy**
 
 `apps/cleansia-admin.app/src/staticwebapp.config.json` now requires the role `admin_console` on
-every route and redirects 401/403 to `/.auth/login/aad`, the same shape the docs site has used
-since it was gated. Owner ruling 2026-08-27: docs + admin, not the two self-service funnels.
+every route and redirects anonymous visitors (401) to `/.auth/login/aad`. Authenticated visitors
+without the role receive 403; redirecting them back to sign-in would loop. See
+[`docs/admin-app/overview.md`](../../docs/admin-app/overview.md#access-to-the-deployed-console).
+Owner ruling 2026-08-27: docs + admin, not the two self-service funnels.
 
 **Action, before the next admin deploy:** Portal → `swa-cleansia-admin-*` → *Role management* →
 **Invite** yourself with the role `admin_console`.

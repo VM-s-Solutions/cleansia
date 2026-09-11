@@ -6,6 +6,34 @@ The **Admin App** (`cleansia-admin.app`) is the internal management dashboard fo
 
 Enable administrators to oversee all aspects of the Cleansia platform: approve partner applications, manage orders and disputes, configure services and packages, handle invoicing, and view business reports.
 
+## Access to the deployed console
+
+Azure Static Web Apps requires an accepted Microsoft sign-in invitation with the custom role
+`admin_console` before it serves the admin frontend. This is separate from the Cleansia admin
+account and applies to deployed sites; the local Angular development server has no Azure gate.
+
+Anonymous visitors are redirected to Microsoft sign-in (HTTP 401 → 302). A signed-in visitor
+without the required role receives HTTP 403. A 403 must not redirect to sign-in: authenticating
+again does not grant the missing role and would repeat the login loop. The platform's standard
+forbidden page handles this case without needing the protected Angular app to load.
+
+For DEV, check **Azure Portal → `swa-cleansia-admin-weu-dev` → Role management**. The Microsoft
+identity used to sign in must have `admin_console` (with an underscore). If absent, create an
+invitation using the Microsoft Entra ID provider and the DEV admin domain, then open and accept
+its link with that identity. An invitation to the docs site or an Azure subscription role does
+not grant access to this app.
+
+After accepting the invitation, sign out of the site's Microsoft session at
+`https://admin.dev.cleansia.cz/.auth/logout` and open the admin site again. To check the active
+site session, visit `https://admin.dev.cleansia.cz/.auth/me` in the same browser: `clientPrincipal`
+must exist and its `userRoles` must contain `admin_console`. A null principal means no site
+session was established. If Microsoft itself refuses sign-in before returning to the site,
+check the Microsoft account/tenant sign-in error; the app's 403 correction does not resolve
+identity-provider failures.
+
+See Microsoft's [route response codes](https://learn.microsoft.com/en-us/azure/static-web-apps/configuration#response-overrides)
+and [authentication guide](https://learn.microsoft.com/en-us/azure/static-web-apps/authentication-authorization).
+
 ## Internal Login
 
 The admin app has its own authentication system separate from the customer and partner apps. Admin users are created through the backend (e.g., via SQL scripts like `set-admin-role.sql`). Only users with the Administrator role can access the admin app.

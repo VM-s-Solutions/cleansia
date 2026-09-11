@@ -31,6 +31,15 @@ session was established. If Microsoft itself refuses sign-in before returning to
 check the Microsoft account/tenant sign-in error; the app's 403 correction does not resolve
 identity-provider failures.
 
+If the browser reports CORS errors for `main-*.js`, `chunk-*.js`, or `polyfills-*.js` after a
+redirect to `identity.*.azurestaticapps.net`, the script request has reached Microsoft sign-in
+instead of receiving JavaScript. Check the same-domain `/.auth/me` session first. If its role
+is correct, try the admin login in a new private window. When the private window works, close
+the normal browser's admin tabs, clear site data for `admin.dev.cleansia.cz`, and sign in again.
+This recovers stale or conflicting browser state without changing the app's access rules.
+If a fresh private session also fails, investigate the original file response and site session;
+do not make protected scripts public or add CORS headers to work around an authentication redirect.
+
 See Microsoft's [route response codes](https://learn.microsoft.com/en-us/azure/static-web-apps/configuration#response-overrides)
 and [authentication guide](https://learn.microsoft.com/en-us/azure/static-web-apps/authentication-authorization).
 

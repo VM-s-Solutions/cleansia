@@ -99,13 +99,20 @@ near-empty e-mail rather than an error anyone sees. The six older e-mails have t
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
-### MS-9 — Invite yourself to the admin console — **owner, BEFORE the next admin deploy**
+### MS-9 — Invite yourself to the admin console — **DEV verified 2026-09-11**
+
+The owner confirmed the DEV site's `/.auth/me` reports `aad` with `admin_console`, and the
+deployed Cleansia login loads after Microsoft sign-in in a fresh private browser window.
+The normal browser's script redirects did not occur in that fresh session. This confirms DEV
+access only; each additional admin Static Web App requires its own invitation.
 
 `apps/cleansia-admin.app/src/staticwebapp.config.json` now requires the role `admin_console` on
-every route and redirects 401/403 to `/.auth/login/aad`, the same shape the docs site has used
-since it was gated. Owner ruling 2026-08-27: docs + admin, not the two self-service funnels.
+every route and redirects anonymous visitors (401) to `/.auth/login/aad`. Authenticated visitors
+without the role receive 403; redirecting them back to sign-in would loop. See
+[`docs/admin-app/overview.md`](../../docs/admin-app/overview.md#access-to-the-deployed-console).
+Owner ruling 2026-08-27: docs + admin, not the two self-service funnels.
 
-**Action, before the next admin deploy:** Portal → `swa-cleansia-admin-*` → *Role management* →
+**For each additional admin site:** Portal → `swa-cleansia-admin-*` → *Role management* →
 **Invite** yourself with the role `admin_console`.
 
 **This is the step that makes the console reachable.** The built-in `aad` provider admits any

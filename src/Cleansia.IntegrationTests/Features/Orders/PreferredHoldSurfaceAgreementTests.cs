@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
@@ -79,10 +80,12 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
                 var board = await mediator.Send(AvailableRequest());
 
                 var orderRepository = provider.GetRequiredService<IOrderRepository>();
+                var currencyResolution = provider.GetRequiredService<ICurrencyResolutionService>();
+                var currency = await currencyResolution.ResolveCurrencyForEmployeeAsync(CallerEmployeeId, CancellationToken.None);
                 var counted = await orderRepository
                     .GetQueryable()
                     .Where(DashboardSpecifications
-                        .CreateAvailableOrdersSpec(CallerEmployeeId, DateTime.UtcNow)
+                        .CreateAvailableOrdersSpec(CallerEmployeeId, currency.Id, DateTime.UtcNow)
                         .SatisfiedBy())
                     .Select(o => o.Id)
                     .ToListAsync();
@@ -91,7 +94,8 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
                 var validator = new TakeOrder.Validator(
                     orderRepository,
                     provider.GetRequiredService<IEmployeeRepository>(),
-                    accessService);
+                    accessService,
+                    currencyResolution);
 
                 var browsable = new Dictionary<string, bool>();
                 var takeVerdicts = new Dictionary<string, string?>();

@@ -151,7 +151,8 @@ public class OrderSeatCapacityTests
         var validator = new TakeOrder.Validator(
             orderRepository.Object,
             employeeRepository.Object,
-            accessService.Object);
+            accessService.Object,
+            ValidatorTestHelpers.CurrencyResolver());
 
         return await validator.ValidateAsync(new TakeOrder.Command(OrderId));
     }

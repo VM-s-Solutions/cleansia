@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
@@ -84,16 +85,19 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
                 var board = await mediator.Send(AvailableRequest());
 
                 var orderRepository = provider.GetRequiredService<IOrderRepository>();
+                var currencyResolution = provider.GetRequiredService<ICurrencyResolutionService>();
+                var currency = await currencyResolution.ResolveCurrencyForEmployeeAsync(EmployeeId, CancellationToken.None);
                 var counted = await orderRepository
                     .GetQueryable()
-                    .Where(DashboardSpecifications.CreateAvailableOrdersSpec(EmployeeId, DateTime.UtcNow).SatisfiedBy())
+                    .Where(DashboardSpecifications.CreateAvailableOrdersSpec(EmployeeId, currency.Id, DateTime.UtcNow).SatisfiedBy())
                     .Select(o => o.Id)
                     .ToListAsync();
 
                 var validator = new TakeOrder.Validator(
                     orderRepository,
                     provider.GetRequiredService<IEmployeeRepository>(),
-                    provider.GetRequiredService<IOrderAccessService>());
+                    provider.GetRequiredService<IOrderAccessService>(),
+                    currencyResolution);
 
                 var takeVerdicts = new Dictionary<string, string?>();
                 foreach (var scenario in Cases)

@@ -162,6 +162,7 @@ public class OrderBrowseGateOfferabilityTests
             .Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
             .Returns(new Claim(ClaimTypes.Role, role.ToString()));
 
-        return new OrderAccessService(session.Object, new Mock<IEmployeeRepository>().Object);
+        return new OrderAccessService(
+            session.Object, new Mock<IEmployeeRepository>().Object, ValidatorTestHelpers.CurrencyResolver());
     }
 }

@@ -120,6 +120,7 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
             .Include(i => i.PayPeriod)
             .Include(i => i.Currency)
             .Include(i => i.OrderPays)
+                .ThenInclude(op => op.Currency)
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
     }
 }

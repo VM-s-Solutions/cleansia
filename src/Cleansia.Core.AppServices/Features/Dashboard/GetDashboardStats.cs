@@ -93,7 +93,7 @@ public class GetDashboardStats
             var (currentMonthStart, currentMonthEnd) = ConvertMonthRangeToUtc(nowLocal.GetCurrentMonthRange(), tz);
             var (previousMonthStart, previousMonthEnd) = ConvertMonthRangeToUtc(nowLocal.GetPreviousMonthRange(), tz);
 
-            var availableOrdersCount = await GetAvailableOrdersCountAsync(employeeId, cancellationToken);
+            var availableOrdersCount = await GetAvailableOrdersCountAsync(employeeId, currency.Id, cancellationToken);
             var activeOrdersCount = await GetActiveOrdersCountAsync(employeeId, cancellationToken);
 
             // Counts come from Order.CompletedAt directly via the
@@ -221,9 +221,9 @@ public class GetDashboardStats
             );
         }
 
-        private async Task<int> GetAvailableOrdersCountAsync(string employeeId, CancellationToken cancellationToken)
+        private async Task<int> GetAvailableOrdersCountAsync(string employeeId, string cleanerCurrencyId, CancellationToken cancellationToken)
         {
-            var specification = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, DateTime.UtcNow);
+            var specification = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, cleanerCurrencyId, DateTime.UtcNow);
             return await orderRepository.GetCountAsync(specification.SatisfiedBy(), cancellationToken);
         }
 

@@ -55,7 +55,8 @@ public class GetPeriodPaysOwnershipTests
             _orderPayRepository.Object,
             _orderAccessService.Object,
             _session.Object,
-            _currencyResolution.Object);
+            _currencyResolution.Object,
+            new Mock<ICurrencyRepository>().Object);
 
     private void SetRole(UserProfile role) =>
         _session.Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))

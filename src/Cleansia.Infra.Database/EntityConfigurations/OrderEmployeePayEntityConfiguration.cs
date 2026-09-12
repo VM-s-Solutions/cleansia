@@ -104,7 +104,7 @@ public class OrderEmployeePayEntityConfiguration : AuditableEntityConfiguration<
             .HasMaxLength(26);
 
         builder
-            .HasOne<Cleansia.Core.Domain.Internationalization.Currency>()
+            .HasOne(e => e.Currency)
             .WithMany()
             .HasForeignKey(e => e.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);

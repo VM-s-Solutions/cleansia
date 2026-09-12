@@ -509,6 +509,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'payroll.pay_period.not_found',
   'company.not_found',
   'currency.invalid',
+  // GetPeriodPays.Validator: a named currency view that names no currency.
+  'currency.not_found',
   'receipt.not_found',
   // Pay configuration
   'pay_config.already_exists',
@@ -568,11 +570,6 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   key: string;
   reason: string;
 }> = [
-  {
-    key: 'currency.not_found',
-    reason:
-      'Emitted by MustCoverAllActiveCurrencies and by the Currencies CRUD features. The helper has four callers — Create/UpdateService and Create/UpdatePackage — and those plus every Currencies command are dispatched only by AdminServiceController, AdminPackageController, AdminCurrencyController and AdminPromoCodeController. This host\'s CurrencyController has one action, GetOverview, which names no key.',
-  },
   {
     key: 'payroll.invoice.reference_capacity_exhausted',
     reason:

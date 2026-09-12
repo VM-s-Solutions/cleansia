@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Extensions;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
 
@@ -32,6 +33,7 @@ public class OrderEmployeePay : Auditable, ITenantEntity
     /// a label attached afterwards — it is the currency the arithmetic was done in.</para>
     /// </summary>
     public string CurrencyId { get; private set; }
+    public Currency? Currency { get; private set; }
 
     public decimal BasePay { get; private set; }
 

@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -20,7 +21,9 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// deadline, the seat arithmetic, the caller's own assignment, and <c>OrderAvailability.IsOfferableSql</c>
 /// CONJOINED — never extended. <c>OrderAvailability</c> answers "is this live work someone may take", a
 /// property of the order alone; "is it reserved for me right now" is the (order, cleaner) pair. Had this
-/// needed a new arm in <c>OrderAvailability</c>, that would have been the signal the design was wrong.</para>
+/// needed a new arm in <c>OrderAvailability</c>, that would have been the signal the design was wrong.
+/// The one (order, cleaner) term it does carry is <c>OrderVisibility.PayableTo</c>: a hold on an order
+/// the beneficiary cannot be paid for is not an offer they can answer.</para>
 ///
 /// <para>The assignment conjunct is the one both siblings already carry — <c>NewJobsDigestService</c>'s
 /// <c>AssignedEmployees.All(...)</c> and the available board's <c>excludeEmployeeId</c> — and it is what
@@ -48,7 +51,8 @@ public class GetMyPendingOffers
 
     public class Handler(
         IOrderRepository orderRepository,
-        IOrderAccessService orderAccessService) : IQueryHandler<Query, IReadOnlyList<PendingOfferItem>>
+        IOrderAccessService orderAccessService,
+        ICurrencyResolutionService currencyResolutionService) : IQueryHandler<Query, IReadOnlyList<PendingOfferItem>>
     {
         public async Task<BusinessResult<IReadOnlyList<PendingOfferItem>>> Handle(
             Query query, CancellationToken cancellationToken)
@@ -63,6 +67,9 @@ public class GetMyPendingOffers
                 return BusinessResult.Success<IReadOnlyList<PendingOfferItem>>([]);
             }
 
+            var currency = await currencyResolutionService
+                .ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
+
             var rows = await orderRepository
                 .GetQueryable()
                 .AsNoTracking()
@@ -71,6 +78,7 @@ public class GetMyPendingOffers
                 .Where(o => o.AssignedEmployees.Count < o.MaxEmployees)
                 .Where(o => o.AssignedEmployees.All(ae => ae.EmployeeId != employeeId))
                 .Where(OrderAvailability.IsOfferableSql)
+                .Where(OrderVisibility.PayableTo(employeeId, currency.Id))
                 .OrderBy(o => o.PreferredHoldUntilUtc)
                 .Take(MaxOffers)
                 .Select(o => new PendingOfferRow(

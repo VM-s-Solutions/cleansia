@@ -15,8 +15,12 @@ public static class DashboardSpecifications
     /// <c>excludeEmployeeId</c> drops orders they are already on, <c>notHeldFromEmployeeId</c> keeps the
     /// ones held FOR them. Same id, opposite meanings — neither may be folded into the other.
     /// → /domain/offerability</para>
+    ///
+    /// <para><paramref name="cleanerCurrencyId"/> is the currency the cleaner is paid in
+    /// (<c>ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync</c>); an order priced in any
+    /// other is not on their board. → <see cref="OrderVisibility.PayableTo(string?, string?)"/></para>
     /// </summary>
-    public static OrderSpecification CreateAvailableOrdersSpec(string employeeId, DateTime nowUtc)
+    public static OrderSpecification CreateAvailableOrdersSpec(string employeeId, string cleanerCurrencyId, DateTime nowUtc)
     {
         return OrderSpecification.Create(
             id: null,
@@ -43,7 +47,8 @@ public static class DashboardSpecifications
             excludeEmployeeId: employeeId,
             offerableOnly: true,
             notHeldFromEmployeeId: employeeId,
-            nowUtc: nowUtc
+            nowUtc: nowUtc,
+            cleanerCurrencyId: cleanerCurrencyId
         );
     }
 

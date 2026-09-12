@@ -32,6 +32,7 @@ public class GetPeriodPaysCurrencyScopeTests
     private readonly Mock<IOrderAccessService> _orderAccessService = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ICurrencyResolutionService> _currencyResolution = new();
+    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
 
     public GetPeriodPaysCurrencyScopeTests()
     {
@@ -46,6 +47,12 @@ public class GetPeriodPaysCurrencyScopeTests
         _currencyResolution
             .Setup(s => s.ResolveCurrencyForEmployeeAsync(EmployeeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(czk);
+        _currencyRepository
+            .Setup(r => r.GetByIdAsync(EurId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CurrencyWithId(EurId, "EUR"));
+        _currencyRepository
+            .Setup(r => r.ExistsAsync(EurId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
     }
 
     [Fact]
@@ -112,6 +119,113 @@ public class GetPeriodPaysCurrencyScopeTests
         Assert.Equal(czkInvoice.Id, dto.InvoiceId);
     }
 
+    // ── the currency VIEW: a named currency is exact ─────────────────
+
+    /// <summary>
+    /// Both mobile apps open My Pay from an invoice and carry that invoice's currency to the screen; it
+    /// is now sent to the server, and the server answers in it — whatever the cleaner resolves to.
+    /// </summary>
+    [Fact]
+    public async Task A_Named_Currency_View_Overrides_The_Resolved_Currency()
+    {
+        ArrangeInvoices([]);
+        ArrangePays(
+            PayrollMockFactory.OrderPay(basePay: 300m),
+            PayrollMockFactory.OrderPay(basePay: 20m, currencyId: EurId),
+            PayrollMockFactory.OrderPay(basePay: 25m, currencyId: EurId));
+
+        var result = await CreateHandler().Handle(
+            new GetPeriodPays.Query(EmployeeId, PayPeriodId, CurrencyId: EurId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var dto = result.Value!;
+        Assert.Equal("EUR", dto.CurrencyCode);
+        Assert.Equal(45m, dto.GrandTotal);
+        Assert.Equal(2, dto.TotalOrders);
+        Assert.All(dto.OrderPays, row => Assert.Equal("EUR", row.CurrencyCode));
+    }
+
+    /// <summary>
+    /// A named view does NOT fall through to another currency's invoice. The fallback exists for the
+    /// unnamed case (the cleaner holds a document in the other currency and the screen must agree with
+    /// it); a caller who asked for EUR and got CZK would be looking at the wrong money.
+    /// </summary>
+    [Fact]
+    public async Task A_Named_Currency_View_Does_Not_Fall_Through_To_Another_Currencys_Invoice()
+    {
+        ArrangeInvoices([InvoiceIn(PayrollMockFactory.CurrencyId, "CZK")]);
+        ArrangePays(
+            PayrollMockFactory.OrderPay(basePay: 300m),
+            PayrollMockFactory.OrderPay(basePay: 20m, currencyId: EurId));
+
+        var result = await CreateHandler().Handle(
+            new GetPeriodPays.Query(EmployeeId, PayPeriodId, CurrencyId: EurId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var dto = result.Value!;
+        Assert.Equal("EUR", dto.CurrencyCode);
+        Assert.Equal(20m, dto.GrandTotal);
+        Assert.False(dto.HasInvoice);
+        Assert.Null(dto.InvoiceId);
+    }
+
+    /// <summary>
+    /// The per-row code is the summary's code on every row, never null: the DTO promises one currency
+    /// for everything on it, and the row now says so itself so a client can label a row without
+    /// reaching for the summary.
+    /// </summary>
+    [Fact]
+    public async Task Every_Row_Names_The_Summarys_Currency()
+    {
+        ArrangeInvoices([]);
+        ArrangePays(
+            PayrollMockFactory.OrderPay(basePay: 300m),
+            PayrollMockFactory.OrderPay(basePay: 400m),
+            PayrollMockFactory.OrderPay(basePay: 20m, currencyId: EurId));
+
+        var result = await CreateHandler().Handle(new GetPeriodPays.Query(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var dto = result.Value!;
+        Assert.Equal(2, dto.OrderPays.Count());
+        Assert.All(dto.OrderPays, row =>
+        {
+            Assert.NotNull(row.CurrencyCode);
+            Assert.Equal(dto.CurrencyCode, row.CurrencyCode);
+        });
+    }
+
+    [Fact]
+    public async Task An_Unknown_Currency_View_Is_Refused()
+    {
+        _currencyRepository
+            .Setup(r => r.ExistsAsync("currency-nope", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        _employeeRepository.Setup(r => r.ExistsAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _payPeriodRepository.Setup(r => r.ExistsAsync(PayPeriodId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var validator = new GetPeriodPays.Validator(
+            _employeeRepository.Object, _payPeriodRepository.Object, _currencyRepository.Object);
+
+        var result = await validator.ValidateAsync(new GetPeriodPays.Query(EmployeeId, PayPeriodId, "currency-nope"));
+
+        Assert.False(result.IsValid);
+        Assert.Equal(BusinessErrorMessage.CurrencyNotFound, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task An_Unnamed_Currency_View_Is_Not_Existence_Checked()
+    {
+        _employeeRepository.Setup(r => r.ExistsAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _payPeriodRepository.Setup(r => r.ExistsAsync(PayPeriodId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var validator = new GetPeriodPays.Validator(
+            _employeeRepository.Object, _payPeriodRepository.Object, _currencyRepository.Object);
+
+        var result = await validator.ValidateAsync(new GetPeriodPays.Query(EmployeeId, PayPeriodId));
+
+        Assert.True(result.IsValid);
+        _currencyRepository.Verify(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ── arrangement ──────────────────────────────────────────────────
 
     private GetPeriodPays.Handler CreateHandler() =>
@@ -122,17 +236,35 @@ public class GetPeriodPaysCurrencyScopeTests
             _orderPayRepository.Object,
             _orderAccessService.Object,
             _session.Object,
-            _currencyResolution.Object);
+            _currencyResolution.Object,
+            _currencyRepository.Object);
 
     private void ArrangeInvoices(IReadOnlyList<EmployeeInvoice> invoices) =>
         _invoiceRepository
             .Setup(r => r.GetAllForEmployeeAndPayPeriodAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invoices);
 
-    private void ArrangePays(params OrderEmployeePay[] pays) =>
+    // The repository includes the Currency navigation; the mocked rows carry it the same way.
+    private void ArrangePays(params OrderEmployeePay[] pays)
+    {
+        foreach (var pay in pays)
+        {
+            var code = pay.CurrencyId == EurId ? "EUR" : "CZK";
+            typeof(OrderEmployeePay).GetProperty(nameof(OrderEmployeePay.Currency))!
+                .SetValue(pay, CurrencyWithId(pay.CurrencyId, code));
+        }
+
         _orderPayRepository
             .Setup(r => r.GetByEmployeeAndPeriodAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pays);
+    }
+
+    private static Currency CurrencyWithId(string id, string code)
+    {
+        var currency = Currency.Create(code, code, code);
+        currency.Id = id;
+        return currency;
+    }
 
     private static EmployeeInvoice InvoiceIn(string currencyId, string code)
     {

@@ -37,6 +37,7 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
 {
     private const string CurrencyId = "currency-czk-preview";
     private const string EurCurrencyId = "currency-eur-preview";
+    private const string EurOrderId = "order-preview-eur";
     private const string CountryId = "country-cz-preview";
     private const string CallerEmployeeId = "employee-preview-caller";
     private const string CallerUserId = "user-preview-caller";
@@ -197,12 +198,14 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
     }
 
     /// <summary>
-    /// The headline is a sum in the currency the dashboard prints beside it (the cleaner's resolved
-    /// currency -- CZK here, no country configuration is seeded). A EUR job on the board is listed and
-    /// counted, but its pay is not added into a figure labelled Kč (T-0702).
+    /// The board is the cleaner's currency (the resolved one -- CZK here, no country configuration is
+    /// seeded), and so is the headline printed beside it. A EUR job is not on a CZK cleaner's board at
+    /// all: not listed, not counted, not summed (owner ruling 2026-09-12 -- a cleaner is paid in the
+    /// currency of the country they work in, so a EUR job would end in an invoice their payout account
+    /// cannot receive).
     /// </summary>
     [Fact]
-    public async Task The_Headline_Sums_Only_Jobs_In_The_Cleaners_Currency()
+    public async Task A_Job_In_Another_Currency_Is_Not_On_The_Cleaners_Board()
     {
         await TestMethod(
             setup: ReplaceWithCallerSession,
@@ -218,6 +221,7 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
 
                 var service = await context.Services.SingleAsync(s => s.Id == PayableServiceId);
                 var eurOrder = NewOfferableOrder(2, EurCurrencyId);
+                eurOrder.Id = EurOrderId;
                 eurOrder.AddSelectedServices([OrderLineMockFactory.ServiceLine(eurOrder, service)]);
                 context.Add(eurOrder);
 
@@ -231,8 +235,9 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
                 Assert.True(result.IsSuccess);
                 var response = result.Value!;
 
-                Assert.Equal(3, response.Jobs.Count);
-                Assert.Equal(3, response.TotalAvailableCount);
+                Assert.Equal(2, response.Jobs.Count);
+                Assert.DoesNotContain(response.Jobs, job => job.Id == EurOrderId);
+                Assert.Equal(2, response.TotalAvailableCount);
                 Assert.Equal(PayPerJob * 2, response.TotalPotentialEarnings);
 
                 return Task.CompletedTask;

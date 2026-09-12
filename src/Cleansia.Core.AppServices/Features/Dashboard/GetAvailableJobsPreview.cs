@@ -56,12 +56,14 @@ public class GetAvailableJobsPreview
 
             var currency = await currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
 
-            // Sorted by TotalPrice DESC so the cleaner sees the highest-value jobs first.
-            var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, DateTime.UtcNow);
+            // The spec admits only the cleaner's currency; the currency-first key stays in front of
+            // the price sort so the top-N can never be chosen across currencies should that change.
+            var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, currency.Id, DateTime.UtcNow);
             var totalCount = await orderRepository.GetCountAsync(spec.SatisfiedBy(), cancellationToken);
             var orders = await orderRepository.GetQueryable()
                 .Where(spec.SatisfiedBy())
-                .OrderByDescending(o => o.TotalPrice)
+                .OrderByDescending(o => o.CurrencyId == currency.Id)
+                .ThenByDescending(o => o.TotalPrice)
                 .Take(Math.Clamp(query.Limit, 1, MaxJobs))
                 .Select(o => new
                 {
@@ -119,8 +121,8 @@ public class GetAvailableJobsPreview
             // offered. Unquotable rows contribute 0, matching how the orders list sums the same phrase
             // (`filtered.sumOf { it.estimatedCleanerPay ?: 0.0 }`), so one definition serves both.
             // Scoped to the currency the dashboard prints beside this headline (DashboardStatsDto
-            // .CurrencyCode); a EUR job on a CZK board is still listed and counted, it just is not
-            // added into a figure labelled Kč.
+            // .CurrencyCode) — the same one the board is scoped to, restated here so the figure's
+            // unit does not depend on the spec.
             var potentialEarnings = orders.Where(o => o.CurrencyId == currency.Id).Sum(o => OrderPayEstimator.Estimate(
                 o.ServiceIds.ToHashSet(),
                 o.PackageIds.ToHashSet(),

@@ -71,6 +71,7 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
         return await GetDbSet()
             .Include(p => p.Order)
             .Include(p => p.PayPeriod)
+            .Include(p => p.Currency)
             .Where(p => p.EmployeeId == employeeId && p.PayPeriodId == payPeriodId)
             .ToListAsync(cancellationToken);
     }
@@ -81,6 +82,7 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
         return await GetDbSet()
             .Include(p => p.Order)
             .Include(p => p.Employee)
+            .Include(p => p.Currency)
             .Where(p => p.EmployeeInvoiceId == invoiceId)
             .ToListAsync(cancellationToken);
     }

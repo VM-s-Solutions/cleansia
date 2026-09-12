@@ -46,6 +46,15 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     public string? NotHeldFromEmployeeId { get; set; }
     public DateTime? NowUtc { get; set; }
 
+    // The currency the browsing cleaner is paid in. Read together with NotHeldFromEmployeeId through
+    // OrderVisibility.OpenTo, so a cleaner-scoped read cannot apply the hold and skip the currency.
+    // Null while NowUtc is set fails closed (an empty board), never open.
+    public string? CleanerCurrencyId { get; set; }
+
+    // A plain list filter (admin lists, the customer's own orders): which currency the rows are
+    // priced in. Unlike CleanerCurrencyId it carries no "already on it" arm.
+    public string? CurrencyId { get; set; }
+
     public Expression<Func<Order, bool>> SatisfiedBy()
     {
         Specification<Order> specification = new TrueSpecification<Order>();
@@ -178,7 +187,12 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         if (NowUtc.HasValue)
         {
             specification &= new DirectSpecification<Order>(
-                OrderVisibility.NotHeldFrom(NotHeldFromEmployeeId, NowUtc.Value));
+                OrderVisibility.OpenTo(NotHeldFromEmployeeId, CleanerCurrencyId, NowUtc.Value));
+        }
+
+        if (!string.IsNullOrEmpty(CurrencyId))
+        {
+            specification &= new DirectSpecification<Order>(x => x.CurrencyId == CurrencyId);
         }
 
         return specification.SatisfiedBy();
@@ -191,7 +205,8 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null,
         bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null,
         string? userId = null, string? restrictToEmployeeId = null, bool? offerableOnly = null,
-        string? notHeldFromEmployeeId = null, DateTime? nowUtc = null) =>
+        string? notHeldFromEmployeeId = null, DateTime? nowUtc = null, string? cleanerCurrencyId = null,
+        string? currencyId = null) =>
         new()
         {
             Id = id,
@@ -215,6 +230,8 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             RestrictToEmployeeId = restrictToEmployeeId,
             OfferableOnly = offerableOnly,
             NotHeldFromEmployeeId = notHeldFromEmployeeId,
-            NowUtc = nowUtc
+            NowUtc = nowUtc,
+            CleanerCurrencyId = cleanerCurrencyId,
+            CurrencyId = currencyId
         };
 }

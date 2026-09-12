@@ -21,6 +21,7 @@ describe('CurrencyFormFacade', () => {
     code: 'CZK',
     symbol: 'Kč',
     name: 'Czech koruna',
+    loyaltyPointsDivisor: null,
   };
 
   beforeEach(() => {
@@ -99,6 +100,23 @@ describe('CurrencyFormFacade', () => {
         symbol: 'Kč',
         name: 'Czech crown',
       });
+    });
+
+    it('serializes the loyalty divisor on create and update, and omits it when empty', () => {
+      facade.createCurrency({ ...formData, loyaltyPointsDivisor: 0.4 });
+      facade.updateCurrency('cur-1', { ...formData, loyaltyPointsDivisor: null });
+
+      const created: CreateCurrencyCommand = createMock.mock.calls[0][0];
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(created.toJSON().loyaltyPointsDivisor).toBe(0.4);
+      expect(updated.toJSON().loyaltyPointsDivisor).toBeUndefined();
+    });
+
+    it('serializes the loyalty divisor on update when set', () => {
+      facade.updateCurrency('cur-1', { ...formData, loyaltyPointsDivisor: 10 });
+
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(updated.toJSON().loyaltyPointsDivisor).toBe(10);
     });
   });
 });

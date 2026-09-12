@@ -1215,6 +1215,8 @@
       "name": "Название валюты",
       "name_placeholder": "напр. Доллар США, Евро, Чешская крона",
       "exchange_rate_placeholder": "напр. 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Сумма, за которую начисляется один балл лояльности",
+      "loyalty_points_divisor_placeholder": "напр. 10 для CZK — если оставить пустым, валюта не начисляет баллы",
       "messages": {
         "load_error": "Не удалось загрузить валюту",
         "create_success": "Валюта успешно создана",

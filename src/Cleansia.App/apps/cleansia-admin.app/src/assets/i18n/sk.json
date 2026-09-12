@@ -1215,6 +1215,8 @@
       "name": "Názov meny",
       "name_placeholder": "napr. Americký dolár, Euro, Česká koruna",
       "exchange_rate_placeholder": "napr. 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Suma, za ktorú sa získa jeden vernostný bod",
+      "loyalty_points_divisor_placeholder": "napr. 10 pre CZK — ak pole necháte prázdne, mena žiadne body nezískava",
       "messages": {
         "load_error": "Nepodarilo sa načítať menu",
         "create_success": "Mena bola úspešne vytvorená",

@@ -1215,6 +1215,8 @@
       "name": "Currency Name",
       "name_placeholder": "e.g., US Dollar, Euro, Czech Koruna",
       "exchange_rate_placeholder": "e.g., 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Amount that earns one loyalty point",
+      "loyalty_points_divisor_placeholder": "e.g. 10 for CZK — leave empty and the currency earns no points",
       "messages": {
         "load_error": "Failed to load currency",
         "create_success": "Currency created successfully",

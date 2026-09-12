@@ -1325,6 +1325,8 @@
       "name": "Název měny",
       "name_placeholder": "např. Americký dolar, Euro, Česká koruna",
       "exchange_rate_placeholder": "např. 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Částka, za kterou se získá jeden věrnostní bod",
+      "loyalty_points_divisor_placeholder": "např. 10 pro CZK — pokud pole necháte prázdné, měna žádné body nezískává",
       "messages": {
         "load_error": "Nepodařilo se načíst měnu",
         "create_success": "Měna byla úspěšně vytvořena",

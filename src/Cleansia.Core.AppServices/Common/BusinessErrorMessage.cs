@@ -437,6 +437,14 @@ public static class BusinessErrorMessage
     public const string PackageInUse = "package.in_use";
     public const string PackageInvalidWeight = "package.invalid_weight";
 
+    // Extra
+    public const string ExtraNotFound = "extra.not_found";
+    /// <summary>Referenced by an order line (OrderExtras.ExtraId is ON DELETE RESTRICT). Deactivate instead.</summary>
+    public const string ExtraInUse = "extra.in_use";
+    public const string ExtraSlugAlreadyExists = "extra.slug_already_exists";
+    /// <summary>Lower-case words joined by single hyphens, e.g. "inside-oven" — the alphabet the client-side icon maps and OrderExtra.Slug snapshots key by.</summary>
+    public const string ExtraSlugInvalid = "extra.slug_invalid";
+
     // Common Validation
     public const string MustBePositive = "validation.must_be_positive";
 

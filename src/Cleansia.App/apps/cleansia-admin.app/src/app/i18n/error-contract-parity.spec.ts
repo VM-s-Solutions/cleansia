@@ -450,7 +450,11 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'language.in_use',
   'language.not_found',
   'language.not_supported',
-  // Catalogue: services, packages, serviced cities
+  // Catalogue: services, packages, extras, serviced cities
+  'extra.in_use',
+  'extra.not_found',
+  'extra.slug_already_exists',
+  'extra.slug_invalid',
   'package.in_use',
   'package.invalid_weight',
   'package.not_found',

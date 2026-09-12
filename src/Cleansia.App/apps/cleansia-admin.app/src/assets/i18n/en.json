@@ -2585,6 +2585,12 @@
         "positive": "Total price must be positive"
       }
     },
+    "extra": {
+      "in_use": "Cannot delete extra because an order references it. Deactivate it instead.",
+      "not_found": "Extra not found",
+      "slug_already_exists": "An extra with this slug already exists",
+      "slug_invalid": "Slug must be lower-case words joined by single hyphens, e.g. inside-oven"
+    },
     "package": {
       "in_use": "Cannot delete package because it is currently in use",
       "invalid_weight": "Service weights must be greater than zero",

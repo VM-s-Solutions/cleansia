@@ -20,4 +20,19 @@ public static class ExtraMappers
             DisplayOrder: extra.DisplayOrder,
             Translations: extra.Translations.ToDictionary());
     }
+
+    /// <summary>Every currency's row, keyed by code. See ServiceMappers.MapToAdminDetail.</summary>
+    public static AdminExtraDetailDto MapToAdminDetail(this Extra extra, Dictionary<string, decimal> prices)
+    {
+        return new AdminExtraDetailDto(
+            Id: extra.Id,
+            Slug: extra.Slug,
+            Name: extra.Name,
+            Description: extra.Description,
+            DisplayOrder: extra.DisplayOrder,
+            Prices: prices,
+            Translations: extra.Translations.ToDictionary(),
+            CreatedOn: extra.CreatedOn,
+            UpdatedOn: extra.UpdatedOn);
+    }
 }

@@ -2585,6 +2585,12 @@
         "positive": "Celková cena musí byť kladná"
       }
     },
+    "extra": {
+      "in_use": "Doplnok nie je možné odstrániť, pretože naň odkazuje objednávka. Namiesto toho ho deaktivujte.",
+      "not_found": "Doplnok nebol nájdený",
+      "slug_already_exists": "Doplnok s týmto identifikátorom (slug) už existuje",
+      "slug_invalid": "Identifikátor (slug) musia byť malé písmená spojené jednotlivými pomlčkami, napr. inside-oven"
+    },
     "package": {
       "in_use": "Nie je možné odstrániť balíček, pretože sa práve používa",
       "invalid_weight": "Váhy služieb musia byť väčšie ako nula",

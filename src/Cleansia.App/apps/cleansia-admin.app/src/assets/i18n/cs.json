@@ -2585,6 +2585,12 @@
         "positive": "Celková cena musí být kladná"
       }
     },
+    "extra": {
+      "in_use": "Doplněk nelze smazat, protože na něj odkazuje objednávka. Místo toho jej deaktivujte.",
+      "not_found": "Doplněk nenalezen",
+      "slug_already_exists": "Doplněk s tímto identifikátorem (slug) již existuje",
+      "slug_invalid": "Identifikátor (slug) musí být malá písmena spojená jednotlivými pomlčkami, např. inside-oven"
+    },
     "package": {
       "in_use": "Balíček nelze smazat, protože je aktuálně používán",
       "invalid_weight": "Váhy služeb musí být větší než nula",

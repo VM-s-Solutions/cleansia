@@ -4,6 +4,8 @@ using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
@@ -112,9 +114,16 @@ public class ApproveEmployeeDocumentGateTests
 
     private async Task<bool> ApprovalIsAllowed()
     {
+        // Any currency: this suite is about the documents gate, and the pay gate's answer on an
+        // empty catalogue does not depend on which currency it is asked in.
+        var currencyResolution = new Mock<ICurrencyResolutionService>();
+        currencyResolution
+            .Setup(s => s.ResolveCurrencyForWorkCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Currency.Create("CZK", "Kč", "Czech koruna"));
+
         var validator = new ApproveEmployee.Validator(
             _employees.Object, _countries.Object, _services.Object, _packages.Object,
-            _payConfigs.Object, _requirements.Object);
+            _payConfigs.Object, _requirements.Object, currencyResolution.Object);
 
         var result = await validator.ValidateAsync(
             new ApproveEmployee.Command(EmployeeId, CountryId), CancellationToken.None);

@@ -6,6 +6,8 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using MockQueryable;
@@ -122,29 +124,60 @@ public class ApproveEmployeePayCoverageTests
     private static EmployeePayConfig PackageConfig(string? employeeId = null) =>
         EmployeePayConfig.CreateForPackage(PackageId, 400m, CurrencyId, employeeId: employeeId);
 
+    private static EmployeePayConfig ServiceConfigIn(string currencyId, string? employeeId = null) =>
+        EmployeePayConfig.CreateForService(ServiceId, 250m, currencyId, employeeId: employeeId);
+
+    private static EmployeePayConfig PackageConfigIn(string currencyId, string? employeeId = null) =>
+        EmployeePayConfig.CreateForPackage(PackageId, 400m, currencyId, employeeId: employeeId);
+
     // No document requirements configured for the country, so the documents gate passes and these
     // cases stay about PAY coverage. ApproveEmployeeDocumentGateTests owns the gate itself.
     private readonly Mock<IEmployeeDocumentRequirementRepository> _documentRequirements = new();
+
+    // The work country's currency, which is what the cleaner's board is paid in and therefore what the
+    // gate asks in. CZK, and its id is the literal the pay configs above are stamped with.
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = new();
 
     private ApproveEmployee.Validator CreateValidator()
     {
         _documentRequirements
             .Setup(r => r.GetForCountryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyForWorkCountryAsync(CountryId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CurrencyWithId(CurrencyId));
 
         return new(
             _employees.Object, _countries.Object, _services.Object, _packages.Object,
-            _payConfigs.Object, _documentRequirements.Object);
+            _payConfigs.Object, _documentRequirements.Object, _currencyResolution.Object);
     }
 
-    private ApproveEmployee.Handler CreateHandler() => new(
-        _employees.Object,
-        _users.Object,
-        _session.Object,
-        _audit.Object,
-        _services.Object,
-        _packages.Object,
-        _payConfigs.Object);
+    private ApproveEmployee.Handler CreateHandler()
+    {
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyForWorkCountryAsync(CountryId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CurrencyWithId(CurrencyId));
+
+        return new(
+            _employees.Object,
+            _users.Object,
+            _session.Object,
+            _audit.Object,
+            _services.Object,
+            _packages.Object,
+            _payConfigs.Object,
+            _currencyResolution.Object);
+    }
+
+    /// <summary>A Currency whose Id is the literal the pay configs are stamped with, so the gate and the rows agree.</summary>
+    private static Currency CurrencyWithId(string id)
+    {
+        var currency = Currency.Create(id.ToUpperInvariant(), "¤", id);
+        currency.Id = id;
+        currency.IsActive = true;
+        return currency;
+    }
+
 
     private static ApproveEmployee.Command Command() => new(EmployeeId, CountryId, Notes: null);
 
@@ -284,5 +317,34 @@ public class ApproveEmployeePayCoverageTests
 
         Assert.True(_employee.IsProfileComplete());
         Assert.Empty(result.Errors);
+    }
+
+    // ---------------------------------------------------------------- the currency term
+
+    /// <summary>
+    /// The gate asks in the currency the cleaner will be PAID in — the work country's. A full set of
+    /// rates in another currency is not coverage on this cleaner's board, however complete it is.
+    /// </summary>
+    [Fact]
+    public async Task Rates_In_Another_Currency_Do_Not_Cover_The_Approval()
+    {
+        ArrangeCatalogue(ActiveService(), ActivePackage());
+        ArrangeConfigs(ServiceConfigIn("eur"), PackageConfigIn("eur"));
+
+        var result = await CreateValidator().ValidateAsync(Command());
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeePayConfigMissing);
+    }
+
+    [Fact]
+    public async Task Rates_In_The_Work_Countrys_Currency_Cover_Beside_Others()
+    {
+        ArrangeCatalogue(ActiveService(), ActivePackage());
+        ArrangeConfigs(ServiceConfigIn("eur"), ServiceConfig(), PackageConfigIn("eur"), PackageConfig());
+
+        var result = await CreateValidator().ValidateAsync(Command());
+
+        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeePayConfigMissing);
     }
 }

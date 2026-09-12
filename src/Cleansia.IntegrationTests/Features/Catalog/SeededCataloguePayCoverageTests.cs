@@ -91,12 +91,17 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
             Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", "insert_seed_data.sql")));
     }
 
-    private Task<IReadOnlyList<PayCoverageTarget>> PlatformWideGapsAsync(CleansiaDbContext ctx) =>
-        PayCoverageLookup.FindActiveCatalogueGapsAsync(
+    /// <summary>The seed's one operated currency — the gate is asked in it, as every quote is.</summary>
+    private static Task<string> DefaultCurrencyIdAsync(CleansiaDbContext ctx) =>
+        ctx.Currencies.Where(c => c.IsDefault).Select(c => c.Id).SingleAsync();
+
+    private async Task<IReadOnlyList<PayCoverageTarget>> PlatformWideGapsAsync(CleansiaDbContext ctx) =>
+        await PayCoverageLookup.FindActiveCatalogueGapsAsync(
             new ServiceRepository(ctx),
             new PackageRepository(ctx),
             new EmployeePayConfigRepository(ctx),
             employeeId: null,
+            await DefaultCurrencyIdAsync(ctx),
             CancellationToken.None);
 
     /// <summary>
@@ -194,6 +199,7 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
             new PackageRepository(ctx),
             new EmployeePayConfigRepository(ctx),
             employeeId: "a-cleaner-with-nothing-of-their-own",
+            await DefaultCurrencyIdAsync(ctx),
             CancellationToken.None);
 
         Assert.Empty(gaps);

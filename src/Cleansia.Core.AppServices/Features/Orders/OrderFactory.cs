@@ -55,14 +55,16 @@ public sealed class OrderFactory(
         // CreateOrder.Validator because the recurring materializer reaches this factory without running
         // that validator — the same reason the booked-span cap is enforced in both places. First,
         // before any pricing work, so the refusal costs one query.
+        // IN THE ORDER'S CURRENCY: input.Currency is what the order is stamped with, and the pay
+        // writer reads only rates denominated in it.
         var payCoverageGaps = await PayCoverageLookup.FindSelectionGapsAsync(
             serviceRepository, packageRepository, payConfigRepository,
-            input.SelectedServiceIds, input.SelectedPackageIds, cancellationToken);
+            input.SelectedServiceIds, input.SelectedPackageIds, input.Currency.Id, cancellationToken);
 
         if (payCoverageGaps.Count > 0)
         {
             throw new InvalidOperationException(
-                "No platform-wide EmployeePayConfig covers: "
+                $"No platform-wide EmployeePayConfig in {input.Currency.Code} covers: "
                 + string.Join(", ", payCoverageGaps.Select(gap => $"{gap.Kind} '{gap.Name}'"))
                 + ". An order carrying it would show no pay to any cleaner.");
         }

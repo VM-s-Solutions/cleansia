@@ -38,10 +38,24 @@ public class PayCoverageEstimatorAgreementTests
     private static EmployeePayConfig PackageConfig(string packageId, string? employeeId = null) =>
         EmployeePayConfig.CreateForPackage(packageId, basePay: 400m, currencyId: CurrencyId, employeeId: employeeId);
 
-    /// <summary>The repository's narrowing, restated. Production never hands the estimator anything else.</summary>
+    /// <summary>
+    /// The repository's narrowing, restated — including its currency-set term. Production never hands
+    /// the estimator anything else.
+    /// </summary>
     private static List<EmployeePayConfig> AsRepositoryWouldReturn(
-        IEnumerable<EmployeePayConfig> all, string employeeId) =>
-        all.Where(c => c.EmployeeId == null || c.EmployeeId == employeeId).ToList();
+        IEnumerable<EmployeePayConfig> all, string employeeId)
+    {
+        string[] currencyIds = [CurrencyId];
+        return all
+            .Where(c => currencyIds.Contains(c.CurrencyId) && (c.EmployeeId == null || c.EmployeeId == employeeId))
+            .ToList();
+    }
+
+    private static EmployeePayConfig ServiceConfigIn(string currencyId, string serviceId, string? employeeId = null) =>
+        EmployeePayConfig.CreateForService(serviceId, basePay: 250m, currencyId: currencyId, employeeId: employeeId);
+
+    private static EmployeePayConfig PackageConfigIn(string currencyId, string packageId, string? employeeId = null) =>
+        EmployeePayConfig.CreateForPackage(packageId, basePay: 400m, currencyId: currencyId, employeeId: employeeId);
 
     private static decimal? Estimate(
         IEnumerable<string> serviceIds,
@@ -79,7 +93,13 @@ public class PayCoverageEstimatorAgreementTests
         { "override for both", [ServiceConfig(ServiceA, Employee), PackageConfig(PackageA, Employee)] },
         { "service covered, package not", [ServiceConfig(ServiceA)] },
         { "package covered, service not", [PackageConfig(PackageA)] },
-        { "unrelated target only", [ServiceConfig("svc-other"), PackageConfig("pkg-other")] }
+        { "unrelated target only", [ServiceConfig("svc-other"), PackageConfig("pkg-other")] },
+        // The currency term. These fail against a PayCoverage without it: the estimator quotes nothing
+        // from a EUR row on a CZK order, and a gate that counted it would disagree with the board.
+        { "platform-wide rate in another currency only", [ServiceConfigIn("eur", ServiceA)] },
+        { "this cleaner's override in another currency only", [ServiceConfigIn("eur", ServiceA, Employee)] },
+        { "package rate in another currency only", [PackageConfigIn("eur", PackageA)] },
+        { "another currency beside the asked one", [ServiceConfigIn("eur", ServiceA), ServiceConfig(ServiceA)] }
     };
 
     [Theory]
@@ -92,7 +112,7 @@ public class PayCoverageEstimatorAgreementTests
             new(PayCoverageTargetKind.Package, PackageA, "Essential Clean")
         };
 
-        var gaps = PayCoverage.FindGaps(catalogue, configs, Employee);
+        var gaps = PayCoverage.FindGaps(catalogue, configs, Employee, CurrencyId);
         var estimate = Estimate([ServiceA], [PackageA], Employee, configs);
 
         // The estimator quotes on ANY matched config, so it is non-null whenever at least one target
@@ -108,7 +128,7 @@ public class PayCoverageEstimatorAgreementTests
     {
         var catalogue = new PayCoverageTarget[] { new(PayCoverageTargetKind.Service, ServiceA, "General Cleaning") };
 
-        var gaps = PayCoverage.FindGaps(catalogue, configs, Employee);
+        var gaps = PayCoverage.FindGaps(catalogue, configs, Employee, CurrencyId);
         var estimate = Estimate([ServiceA], [], Employee, configs);
 
         Assert.Equal(gaps.Count == 0, estimate is not null);
@@ -148,7 +168,7 @@ public class PayCoverageEstimatorAgreementTests
         };
         var configs = new[] { ServiceConfig(ServiceA), PackageConfig(PackageA) };
 
-        Assert.Empty(PayCoverage.FindGaps(catalogue, configs, employeeId: null));
+        Assert.Empty(PayCoverage.FindGaps(catalogue, configs, employeeId: null, CurrencyId));
 
         var estimate = Estimate([ServiceA], [PackageA], "a-brand-new-cleaner", configs);
         Assert.NotNull(estimate);

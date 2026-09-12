@@ -44,6 +44,10 @@ public class CreateOrderValidatorCharacterizationTests
         _currencyRepository
             .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The pay gate asks in the order's currency, which with no CurrencyId named is the default.
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.DefaultCurrency());
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(),

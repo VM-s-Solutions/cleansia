@@ -66,6 +66,10 @@ public class OrderSpanCapTests
         _currencyRepository
             .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The pay gate asks in the order's currency, which with no CurrencyId named is the default.
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.DefaultCurrency());
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(),
@@ -255,7 +259,7 @@ public class OrderSpanCapTests
     /// ONE instance, shared by the price rows and the input: the price lookup filters on currency id,
     /// so a second <c>Currency.Create</c> would be a different currency and find no rows.
     /// </summary>
-    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna");
+    private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
 
     private OrderFactory CreateFactory() =>
         new(
@@ -268,7 +272,7 @@ public class OrderSpanCapTests
             CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
             CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
             CataloguePriceDoubles.NoExtras(),
-            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]),
+            PayConfigRepositoryDouble.Covering(CreateOrderTestData.CurrencyId, [ServiceId], [PackageId]),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
             _vatCalculator.Object,
@@ -285,7 +289,7 @@ public class OrderSpanCapTests
             _orderRepository.Object,
             _userMembershipRepository.Object,
             _session.Object,
-            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]),
+            PayConfigRepositoryDouble.Covering(CreateOrderTestData.CurrencyId, [ServiceId], [PackageId]),
             _currencyRepository.Object);
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>

@@ -33,9 +33,9 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// priced, not default), HUF (active, unpriced) and PLN (priced, switched off). Only the first two are
 /// offerable, and the cases below book in each of them and refuse each of the others.</para>
 ///
-/// <para>Pay configs stay in CZK only. The pay-coverage gate is currency-blind today (T-0701), so a
-/// EUR order is admitted on the strength of a CZK rate; that is the next ticket's subject, not this
-/// one's, and seeding EUR pay here would hide it.</para>
+/// <para>Pay is seeded in BOTH live currencies, because the pay-coverage gate asks in the order's
+/// currency: a EUR order is admitted only on a EUR rate. The last case here removes the EUR rate and
+/// proves the gate refuses what the writer could not pay — the agreement the gate exists for.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
@@ -189,6 +189,37 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
             transactional: false);
     }
 
+    /// <summary>
+    /// THE GATE AND THE WRITER AGREE. Every pay gate used to be currency-blind while the pay writer
+    /// reads only rows in the order's currency, so a EUR order was admitted on the strength of a CZK
+    /// rate and then silently never got a pay row. Now a EUR order with only CZK rates is refused at
+    /// the door -- the selection is "invalid" in EUR exactly as an unpriced one would be -- and nothing
+    /// is written.
+    /// </summary>
+    [Fact]
+    public async Task A_Booking_In_A_Currency_With_No_Pay_Rate_Is_Refused_Rather_Than_Left_Unpayable()
+    {
+        await TestMethod(
+            setup: ConfigureCustomerSession,
+            arrange: async context =>
+            {
+                await SeedAsync(context);
+                var eurRates = await context.EmployeePayConfigs.Where(c => c.CurrencyId == Eur).ToListAsync();
+                context.EmployeePayConfigs.RemoveRange(eurRates);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(BuildCommand(Eur, EurServicePrice + EurPackagePrice)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.False(result.IsSuccess);
+                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
+                Assert.Contains(validation.Errors, e => e.Message == BusinessErrorMessage.InvalidSelectedServices);
+                Assert.Empty(await context.Orders.IgnoreQueryFilters().ToListAsync());
+            },
+            transactional: false);
+    }
+
     private static CreateOrder.Command BuildCommand(string currencyId, decimal totalPrice) => new(
         CustomerName: "Caller Currency Customer",
         CustomerEmail: CustomerEmail,
@@ -255,10 +286,12 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
         package.Id = PackageId;
         context.Add(package);
 
-        // Pay in CZK only -- see the class doc.
+        // Pay in both live currencies -- see the class doc. The gate asks in the order's currency.
         context.EmployeePayConfigs.AddRange(
             EmployeePayConfig.CreateForService(ServiceId, 100m, Czk),
-            EmployeePayConfig.CreateForPackage(PackageId, 100m, Czk));
+            EmployeePayConfig.CreateForPackage(PackageId, 100m, Czk),
+            EmployeePayConfig.CreateForService(ServiceId, 4m, Eur),
+            EmployeePayConfig.CreateForPackage(PackageId, 4m, Eur));
 
         // CZK and EUR priced; PLN priced but off; HUF on but unpriced.
         context.ServicePrices.AddRange(

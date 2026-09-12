@@ -60,8 +60,8 @@ public class BookableCatalogueRequiresPayTests
 
         _payConfigs.Setup(r => r.GetAll()).Returns(new[]
         {
-            EmployeePayConfig.CreateForService(ConfiguredServiceId, 250m, "czk"),
-            EmployeePayConfig.CreateForPackage(ConfiguredPackageId, 400m, "czk")
+            EmployeePayConfig.CreateForService(ConfiguredServiceId, 250m, Czk.Id),
+            EmployeePayConfig.CreateForPackage(ConfiguredPackageId, 400m, Czk.Id)
         }.AsQueryable().BuildMock());
     }
 
@@ -112,7 +112,7 @@ public class BookableCatalogueRequiresPayTests
     {
         _payConfigs.Setup(r => r.GetAll()).Returns(new[]
         {
-            EmployeePayConfig.CreateForService(UnconfiguredServiceId, 250m, "czk", employeeId: "emp-1")
+            EmployeePayConfig.CreateForService(UnconfiguredServiceId, 250m, Czk.Id, employeeId: "emp-1")
         }.AsQueryable().BuildMock());
 
         var handler = new GetServiceOverview.Handler(
@@ -132,8 +132,8 @@ public class BookableCatalogueRequiresPayTests
     {
         _payConfigs.Setup(r => r.GetAll()).Returns(new[]
         {
-            EmployeePayConfig.CreateForService(ConfiguredServiceId, 250m, "czk"),
-            EmployeePayConfig.CreateForService(UnconfiguredServiceId, 250m, "czk")
+            EmployeePayConfig.CreateForService(ConfiguredServiceId, 250m, Czk.Id),
+            EmployeePayConfig.CreateForService(UnconfiguredServiceId, 250m, Czk.Id)
         }.AsQueryable().BuildMock());
 
         var handler = new GetServiceOverview.Handler(

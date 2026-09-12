@@ -12,6 +12,7 @@ using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
+using Cleansia.Core.Domain.Internationalization;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auditing;
@@ -77,7 +78,8 @@ public sealed class EmployeeUserAuditCoverageTests
 
         var handler = new ApproveEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
-            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs);
+            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs,
+            CzkResolution());
         var result = await handler.Handle(
             new ApproveEmployee.Command(SubjectEmployeeId, "country-cz", "fast-track onboarding"),
             CancellationToken.None);
@@ -105,7 +107,8 @@ public sealed class EmployeeUserAuditCoverageTests
 
         var handler = new ApproveEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
-            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs);
+            CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs,
+            CzkResolution());
         var result = await handler.Handle(
             new ApproveEmployee.Command("missing-emp", "country-cz"), CancellationToken.None);
 
@@ -295,6 +298,19 @@ public sealed class EmployeeUserAuditCoverageTests
         }.AsQueryable().BuildMock());
 
         return (services.Object, packages.Object, payConfigs.Object);
+    }
+
+    /// <summary>The work country's currency, with the id the covered catalogue's rates are stamped with.</summary>
+    private static ICurrencyResolutionService CzkResolution()
+    {
+        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        czk.Id = "czk";
+        czk.IsActive = true;
+        var resolution = new Mock<ICurrencyResolutionService>();
+        resolution
+            .Setup(s => s.ResolveCurrencyForWorkCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(czk);
+        return resolution.Object;
     }
 
     private static Employee BuildEmployee()

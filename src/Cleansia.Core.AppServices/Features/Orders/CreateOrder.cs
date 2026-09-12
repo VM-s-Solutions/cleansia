@@ -129,6 +129,10 @@ public class CreateOrder
             // offers an entry without a platform-wide pay config, so a caller that reaches this is
             // submitting an id it was not shown, and a dedicated customer-visible key would describe an
             // internal payroll condition to the wrong audience.
+            // The pay gate is asked IN THE ORDER'S CURRENCY -- the one the caller named, or the
+            // platform default -- because the pay writer reads only rates denominated in it. The
+            // resolution is the same the handler stamps the order with, so the gate asks about the
+            // rows the order will actually be paid from.
             RuleFor(x => x.SelectedServiceIds)
                 .Cascade(CascadeMode.Stop)
                 .MustAsync(serviceRepository.ExistWithIdsAsync)
@@ -243,16 +247,28 @@ public class CreateOrder
                 _userSessionProvider.GetUserId()!, command.PreferredEmployeeId!, cancellationToken);
 
         private async Task<bool> HavePayCoverageAsync(
-            IEnumerable<string> serviceIds, CancellationToken cancellationToken) =>
+            Command command, IEnumerable<string> serviceIds, CancellationToken cancellationToken) =>
             (await PayCoverageLookup.FindSelectionGapsAsync(
                 _serviceRepository, _packageRepository, _payConfigRepository,
-                serviceIds, [], cancellationToken)).Count == 0;
+                serviceIds, [], await ResolveOrderCurrencyIdAsync(command, cancellationToken),
+                cancellationToken)).Count == 0;
 
         private async Task<bool> HavePackagePayCoverageAsync(
-            IEnumerable<string> packageIds, CancellationToken cancellationToken) =>
+            Command command, IEnumerable<string> packageIds, CancellationToken cancellationToken) =>
             (await PayCoverageLookup.FindSelectionGapsAsync(
                 _serviceRepository, _packageRepository, _payConfigRepository,
-                [], packageIds, cancellationToken)).Count == 0;
+                [], packageIds, await ResolveOrderCurrencyIdAsync(command, cancellationToken),
+                cancellationToken)).Count == 0;
+
+        /// <summary>
+        /// The same resolution the handler stamps the order with: the caller's currency when named, the
+        /// platform default otherwise. A named-but-unknown id resolves to itself here and is refused by
+        /// the currency rule on the price chain; the pay rows it finds nothing for are moot by then.
+        /// </summary>
+        private async Task<string> ResolveOrderCurrencyIdAsync(Command command, CancellationToken cancellationToken)
+            => string.IsNullOrEmpty(command.CurrencyId)
+                ? (await _currencyRepository.GetDefaultAsync(cancellationToken)).Id
+                : command.CurrencyId;
 
         /// <summary>
         /// Null is the platform default and needs no lookup; a named currency must be one the platform

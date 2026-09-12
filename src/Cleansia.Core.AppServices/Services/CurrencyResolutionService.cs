@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 
 namespace Cleansia.Core.AppServices.Services;
@@ -13,7 +14,15 @@ public sealed class CurrencyResolutionService(
         CancellationToken cancellationToken)
     {
         var employee = await employeeRepository.GetByIdAsync(employeeId, cancellationToken);
-        if (employee?.WorkCountryId is { } workCountryId)
+        var currency = await ResolveCurrencyForWorkCountryAsync(employee?.WorkCountryId, cancellationToken);
+        return currency.Code;
+    }
+
+    public async Task<Currency> ResolveCurrencyForWorkCountryAsync(
+        string? workCountryId,
+        CancellationToken cancellationToken)
+    {
+        if (workCountryId is not null)
         {
             var countryConfig = await countryConfigurationRepository
                 .GetByCountryIdAsync(workCountryId, cancellationToken);
@@ -38,12 +47,11 @@ public sealed class CurrencyResolutionService(
                     countryConfig.DefaultCurrencyCode, cancellationToken);
                 if (configured is not null)
                 {
-                    return configured.Code;
+                    return configured;
                 }
             }
         }
 
-        var defaultCurrency = await currencyRepository.GetDefaultAsync(cancellationToken);
-        return defaultCurrency?.Code;
+        return await currencyRepository.GetDefaultAsync(cancellationToken);
     }
 }

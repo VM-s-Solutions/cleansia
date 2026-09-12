@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
@@ -77,9 +78,17 @@ public class DeletePayConfigCoverageTests
     private void ArrangeOrders(params Order[] orders) =>
         _orderRepository.Setup(r => r.GetAll()).Returns(orders.AsQueryable().BuildMock());
 
-    private static Order OrderCarryingService(string serviceId)
+    /// <summary>
+    /// Stamped with the currency it means. The factory's default is a fresh ULID, and the carried-by-
+    /// order term is currency-scoped now: only an order in THIS currency consults this row.
+    /// </summary>
+    private static Order OrderCarryingService(string serviceId, string currencyId = CurrencyId)
     {
-        var order = OrderMockFactory.Generate();
+        // Via the currency INSTANCE: the factory's SetCurrency stamps the id off it, overriding the
+        // partial's CurrencyId, so the partial alone would leave the factory's fresh ULID in place.
+        var currency = Currency.Create(currencyId.ToUpperInvariant(), "¤", currencyId);
+        currency.Id = currencyId;
+        var order = OrderMockFactory.Generate(currency: currency);
         var service = Service.Create("cat-1", "whatever", "d");
         service.Id = serviceId;
         order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, service)]);
@@ -118,6 +127,9 @@ public class DeletePayConfigCoverageTests
 
     private static EmployeePayConfig ServiceConfig(string? employeeId = null) =>
         EmployeePayConfig.CreateForService(ServiceId, 250m, CurrencyId, employeeId: employeeId);
+
+    private static EmployeePayConfig ServiceConfigIn(string currencyId, string? employeeId = null) =>
+        EmployeePayConfig.CreateForService(ServiceId, 250m, currencyId, employeeId: employeeId);
 
     private static EmployeePayConfig PackageConfig(string? employeeId = null) =>
         EmployeePayConfig.CreateForPackage(PackageId, 400m, CurrencyId, employeeId: employeeId);
@@ -212,6 +224,39 @@ public class DeletePayConfigCoverageTests
         var result = await ValidateAsync();
 
         Assert.Contains(result.Errors, e =>
+            e.ErrorMessage == BusinessErrorMessage.PayConfigLastForLiveCatalogueEntry);
+    }
+
+    // ---------------------------------------------------------------- the currency term
+
+    /// <summary>
+    /// A sibling in ANOTHER currency keeps nothing quotable in this one: every CZK board reads only CZK
+    /// rows, so the last CZK row is the last row as far as they are concerned, however many EUR rows
+    /// remain. Deleting it must still be refused.
+    /// </summary>
+    [Fact]
+    public async Task A_Sibling_In_Another_Currency_Does_Not_Release_The_Last_Config()
+    {
+        ArrangeService(isActive: true);
+        ArrangeConfigUnderTest(ServiceConfig(), ServiceConfigIn("eur"));
+
+        var result = await ValidateAsync();
+
+        Assert.Contains(result.Errors, e =>
+            e.ErrorMessage == BusinessErrorMessage.PayConfigLastForLiveCatalogueEntry);
+    }
+
+    /// <summary>An order in another currency never consulted this row, so it does not hold it.</summary>
+    [Fact]
+    public async Task An_Order_In_Another_Currency_Does_Not_Hold_This_Config()
+    {
+        ArrangeService(isActive: false);
+        ArrangeOrders(OrderCarryingService(ServiceId, currencyId: "eur"));
+        ArrangeConfigUnderTest(ServiceConfig());
+
+        var result = await ValidateAsync();
+
+        Assert.DoesNotContain(result.Errors, e =>
             e.ErrorMessage == BusinessErrorMessage.PayConfigLastForLiveCatalogueEntry);
     }
 

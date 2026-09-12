@@ -316,7 +316,7 @@ and resolves them the same way.
 | `expressSurchargeWaivedByMembership` | Disambiguates `expressSurchargeApplied: false`. Without it, "waived" and "not an express slot at all" look identical |
 | `expressUpgradesRemaining` | Waivers left **this calendar month, before this booking** — server-computed. Null when the caller has no membership. A client that counts its own orders disagrees with the server the first time a cancellation releases a slot |
 | `tierDiscountMinOrderAmount` | The tier-discount floor the quote judged the order against, so a client can state the same rule. Null when no floor applied — the floor is a platform-default-currency number and is enforced only on an order in that currency |
-| `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, else the request's `countryId`'s, else the platform default. There is no exchange rate on the wire; nothing converts |
+| `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, else the request's `countryId`'s, else (no country named) the platform default. A named country without a configured currency throws rather than defaulting. There is no exchange rate on the wire; nothing converts |
 
 Promo codes are **not** priced here — they are entered at checkout and applied at create time.
 
@@ -398,9 +398,11 @@ GET /api/Extra/GetOverview?countryId=country-id
 `countryId` — optional; the service address's country once the wizard has one. The overview is priced
 in that country's currency and **withholds** any entry that has no price row in it or no platform-wide
 pay config in it — the same two gates the quote enforces, applied before the customer can pick the
-entry. Without `countryId` the overview is in the platform default. An unknown or unconfigured country
-falls through to the platform default rather than refusing; the quote is where an unserviced country
-is refused. Each `ServiceListItem` / `PackageListItem` / `ExtraListItem` carries `currencyCode`, so a
+entry. Without `countryId` the overview is in the platform default. A named country the seed has not
+configured with a real currency does **not** fall through to the default — the resolver throws (owner
+ruling 2026-09-12; a serviced country without a currency is a deploy defect, never a market), and the
+overview runs no serviced check of its own; the quote is where an unserviced country is refused as
+`country.not_serviced`. Each `ServiceListItem` / `PackageListItem` / `ExtraListItem` carries `currencyCode`, so a
 surface labels the prices it was sent rather than a currency it assumed.
 
 **Response** (service overview; the others are the same shape with one `price`):

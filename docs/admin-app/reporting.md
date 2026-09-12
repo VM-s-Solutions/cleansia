@@ -152,8 +152,9 @@ authored on the entry's form.
 The partner side answers the same question the other way round. The partner dashboard earnings,
 earnings chart, personal bests, order-distribution money columns, available-jobs headline and My Pay
 are all scoped to the currency `ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync` returns
-for the cleaner — their work country's default currency when that names a real currency, otherwise
-the platform default — and that currency's code is what those screens print. Counts stay over all
+for the cleaner — their work country's configured currency; the platform default only for a cleaner
+with no work country, since a named country without a real currency throws rather than defaulting
+(owner ruling 2026-09-12) — and that currency's code is what those screens print. Counts stay over all
 orders; only the money is scoped. The cleaner's **board** is scoped the same way: an order in another
 currency is not listed, counted or takeable by them. → [Business rules](/product/business-rules#cleaner-currency)
 

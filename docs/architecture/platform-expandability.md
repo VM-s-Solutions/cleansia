@@ -187,7 +187,9 @@ EUR and taken by a cleaner who is paid in EUR.
   country once the wizard has one — and resolve the currency from it
   (`ICurrencyResolutionService.ResolveCurrencyForCountryAsync`); with no country the quote is in the
   platform default, which is what the wizard's first step and the home page's quick quote get. A
-  country the platform does not service is `country.not_serviced`. An explicit `CurrencyId` on the
+  country the platform does not service is `country.not_serviced`, judged before the currency is
+  resolved; a serviced country with no configured currency is not a case the quote handles — the
+  resolver throws (see [currency resolution](#currency-resolution)). An explicit `CurrencyId` on the
   quote wins over the country, because the create path echoes the quote's currency back and the two
   must resolve identically. Whichever way it resolves, the currency must be offerable
   (`currency.invalid`), and that rule runs before pricing so the calculator is never asked to price in a
@@ -203,8 +205,9 @@ EUR and taken by a cleaner who is paid in EUR.
 - **Catalogue.** `GET api/Service|Package|Extra/GetOverview?countryId=` (Customer and Mobile.Customer
   hosts) prices the overview in that country's currency and withholds any entry without a price row or
   a pay config in it; the list items carry `currencyCode`, so a surface labels what it was sent. With
-  no `countryId` the overview is in the platform default. The Partner host's overviews are untouched
-  and stay in the default.
+  no `countryId` the overview is in the platform default; a named country the seed has not configured
+  throws rather than defaulting (the overview runs no serviced check of its own, so it is the resolver
+  that answers). The Partner host's overviews are untouched and stay in the default.
 - **Item level.** Prices are authored per currency and nothing converts, so a selected service or
   package with no price row in the resolved currency is refused on quote and create as
   `order.selected_services.invalid` / `order.selected_package.invalid` — a 400, never the calculator's
@@ -240,15 +243,20 @@ EUR and taken by a cleaner who is paid in EUR.
 ### The cleaner's currency is resolved from country — never from tenant {#currency-resolution}
 
 - `ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync` returns the `Currency` **entity**, never
-  null. Chain: **`Employee.WorkCountryId` → `CountryConfiguration.DefaultCurrencyCode` if it names a
-  real currency → platform default.** The same body serves the order side as
-  `ResolveCurrencyForCountryAsync(countryId)`. The middle step is guarded because the column is free
-  text with no foreign key — three characters an admin types — so a typo, or a currency deleted after
-  the country was configured, falls through to the default rather than labelling money with a code the
-  platform does not have; under the 2026-09-12 ruling that fall-through is a configuration defect, so
-  it is logged at error level naming the country and the code. It is deliberately **not** filtered on
-  `IsActive`: a country configured for EUR resolves to EUR as soon as the EUR row exists, switched on
-  or not, rather than reading as broken until the market opens.
+  null. Chain: **`Employee.WorkCountryId` → `CountryConfiguration.DefaultCurrencyCode` → the `Currency`
+  row it names; a null country → platform default.** The same body serves the order side as
+  `ResolveCurrencyForCountryAsync(countryId)`. **A named country has no fallback** (owner ruling
+  2026-09-12, "throw instead, 100 %"): a country with no `CountryConfiguration` row, a blank
+  `DefaultCurrencyCode`, or a code naming no `Currency` row throws `InvalidOperationException` naming
+  the country and the code. The column is free text with no foreign key — three characters the seed
+  authors — so a typo, or a currency deleted after the country was configured, used to fall through to
+  the platform default with an error log; it now fails on every partner money screen, board read and
+  invoice approval for that country, because paying a cleaner in the platform default is the outcome
+  the ruling forbids and a loud failure is the one that gets the seed fixed. The platform default is
+  reached only through a **null** country: an unapproved cleaner with no `WorkCountryId`, or a customer
+  quote before an address is known. The lookup is deliberately **not** filtered on `IsActive`: a
+  country configured for EUR resolves to EUR as soon as the EUR row exists, switched on or not, rather
+  than reading as broken until the market opens.
 - **The cleaner's board is scoped to that currency** (owner ruling 2026-09-12: a cleaner is paid in the
   currency of the country they work in). `OrderVisibility.PayableTo(employeeId, currencyId)` — the
   order is in the cleaner's currency, or the cleaner is already on it — is conjoined with the
@@ -396,9 +404,11 @@ nothing assumes the platform is CZK-only.
    currency-resolution chain (§2), on both sides of an order: it is the currency a booking at an address
    in this country is priced, charged and stamped in, the currency the country's catalogue overview is
    shown in, and the currency a cleaner working in this country is paid in, sees their board in and is
-   approved against. It has to name a real `Currency` row or it falls through to the platform default
-   (logged as an error); nothing in the platform writes it — the seed authors it (CZE→CZK, SVK→EUR,
-   POL→PLN). Its other reader is the refund fee rule (item 7).
+   approved against. It has to name a real `Currency` row — a serviced country with no row, a blank
+   code or a code naming no currency makes the resolver **throw** rather than fall through (owner
+   ruling 2026-09-12), so an unconfigured serviced country is a deploy-blocking defect; nothing in the
+   platform writes it — the seed authors it (CZE→CZK, SVK→EUR, POL→PLN) and must for every serviced
+   country. Its other reader is the refund fee rule (item 7).
 2. **VAT calculation** — `VatCalculator.Calculate` reads `CountryConfiguration.StandardVatRate` (gross-
    inclusive formula); returns `NotApplicable` if `countryConfig == null` or company isn't a VAT payer
    (`VatCalculator.cs:14-34`).
@@ -418,9 +428,10 @@ nothing assumes the platform is CZK-only.
 7. **Stripe refund fee** — `IssuePartialRefund` deducts `RefundStripeFeeRate` (unit-free) plus
    `RefundStripeFixedFee`, a number in the country's `DefaultCurrencyCode`. The fixed part is deducted
    only when the order's currency code equals the country's — which it does by construction now that
-   the order's currency comes from the same column; the guard covers the fall-through case where the
-   configured code names no currency row and the order landed in the platform default, and there the
-   fixed part is absorbed. Dormant today: no production writer sets either figure.
+   the order's currency comes from the same column; the guard covers an order stamped before the
+   country's code was re-pointed at another currency (a code naming no row no longer falls through —
+   it throws), and there the fixed part is absorbed. Dormant today: no production writer sets either
+   figure.
 
 **Verdict:** the **per-country mechanism is real and consumed by live VAT/tax/fiscal/invoice code**, and
 seed data exists for ~10 countries. But **operation is single-country**: only CZE is `IsServiced`, so
@@ -488,7 +499,8 @@ COUNTRY ──(CountryId)──────►  CountryConfiguration / CountryIn
             │
             ├──(Address.CountryId → DefaultCurrencyCode, order side)───┐
             └──(Employee.WorkCountryId → DefaultCurrencyCode, cleaner side)──┴──► CURRENCY ──(price rows per currency + per-record CurrencyId)──► price / label / board
-                                                                     nothing converts; no country known (a first-step quote) means the platform default
+                                                                     nothing converts; no country known (a first-step quote) means the platform default;
+                                                                     a named country with no configured currency throws — it never defaults
 ```
 
 - **Currency is always derived from COUNTRY**, never from tenant and never from a person
@@ -513,6 +525,7 @@ class does NOT touch currency or country**, because currency display was never p
 | Location | Hardcoded? | Nature |
 |---|---|---|
 | `Constants.Currency.Czk = "CZK"` | declared, **no reader** — no render or register path falls back to it | dead constant |
+| `CurrencyResolutionService` — a named country's currency | **no fallback** — a serviced country with no `CountryConfiguration`, a blank `DefaultCurrencyCode` or a code naming no `Currency` row throws `InvalidOperationException` (owner ruling 2026-09-12); only a null country reads the platform default | fails closed |
 | `ReceiptService.cs` — the fiscal request's currency | **no fallback** — a receipt whose order has no resolved currency is recorded as a failed fiscal attempt, never registered as CZK | fails closed |
 | `ReceiptService.cs` — the fiscal regime and the receipt-number counter scope | **no fallback** — an order whose country cannot be resolved is refused on the same landing (recorded failed attempt, retried by the job), never declared to the Czech authority; the counter resolves an empty provider key to the `DEFAULT` issuer scope, not `cz-eet2` | fails closed |
 | `ReceiptService.cs` — the receipt PDF symbol | `order.Currency?.Symbol ?? string.Empty` — the bare number, no unit | configurable, no hardcoded fallback |
@@ -654,8 +667,10 @@ The scaffolding is deliberately built so each axis flips on independently:
    1. **The currency row exists and is switched off.** EUR is seeded that way; a new one is created
       through Admin → Currencies and is born inactive.
    2. **`CountryConfiguration.DefaultCurrencyCode` names it** (SVK → `EUR` is seeded). Nothing in the
-      platform writes this column; the seed or a SQL script does. Until it names a real row the
-      country's bookings and cleaners fall through to the platform default, logged as an error.
+      platform writes this column; the seed or a SQL script does. Until it names a real row every
+      resolution for that country — a booking at an address there, a cleaner approved for it, their
+      board and every money screen — throws rather than defaulting (owner ruling 2026-09-12), which
+      is why this step precedes servicing the country and not the other way round.
    3. **Author `LoyaltyPointsDivisor`** on the currency form. `ActivateCurrency` refuses without it.
    4. **Price the catalogue in it** — every service, package and extra that should be sold there needs
       a row in `ServicePrices` / `PackagePrices` / `ExtraPrices`. An entry without one is withheld

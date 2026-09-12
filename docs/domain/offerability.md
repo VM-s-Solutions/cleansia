@@ -93,9 +93,12 @@ them a pay row, then an invoice, in a currency their payout account does not hol
 `OrderVisibility.PayableTo` — the order is in the cleaner's currency, or the cleaner is already on it —
 is conjoined with the hold into `OpenTo`, which the board, the count, the browse gate and the take all
 read; the pending-offer list conjoins `PayableTo` alone. A null resolved currency fails closed: an
-empty board, never every board. The take answers `order.not_found`, exactly as for a held order, for
-the same reason. `AdminReassignOrder` is deliberately not gated — it is the override — and an
-assignment made over the rule stays visible to the cleaner it was made for.
+empty board, never every board. The resolver itself never hands the predicate a guess: a work country
+with no configured currency throws before the board is read (owner ruling 2026-09-12), so a cleaner is
+never shown the platform default's orders because their country's row is missing. The take answers
+`order.not_found`, exactly as for a held order, for the same reason. `AdminReassignOrder` is
+deliberately not gated — it is the override — and an assignment made over the rule stays visible to
+the cleaner it was made for.
 → [Business rules](/product/business-rules#cleaner-currency)
 
 ## Seat allocation

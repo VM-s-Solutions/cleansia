@@ -106,7 +106,10 @@ record is reported as missing, never as a currency mismatch). It reads `Employee
 to hold the currency of the country the cleaner works in (CZ is CZK, SK is EUR, PL is PLN; owner ruling
 2026-09-12), resolved through the same work-country chain every partner screen uses and never the
 platform default. A mismatch is refused as `payroll.invoice.payout_currency_mismatch`; the cleaner
-corrects the declaration (or the account) and the admin approves again.
+corrects the declaration (or the account) and the admin approves again. That chain has no fallback for
+a named country: a work country the seed left without a real currency makes the approval throw rather
+than compare against the platform default — a configuration defect surfaces here as loudly as it does
+on the cleaner's own screens. → [Business rules](/product/business-rules#cleaner-currency)
 
 Why here and not earlier or later: generation is too early — it would withhold a numbered tax document
 that already carries an allocated payout reference — and Mark paid is too late, because the money has
@@ -120,8 +123,9 @@ The cleaner's period view (`GetPeriodPays`) is denominated in a single currency,
 totals and rows — is filtered to that currency. The query takes an optional `currencyId`, the **view**:
 when a client names one, that is the currency shown, exactly — a client that opened My Pay from a EUR
 invoice must get EUR back, not a fallback to another currency's document, which was the mislabel this
-parameter closes. With no view named, the cleaner's resolved currency (work country → platform default,
-the one the partner dashboard labels with) is shown when the period holds an invoice in it or no
+parameter closes. With no view named, the cleaner's resolved currency (the work country's configured
+currency — the one the partner dashboard labels with; the platform default only for a cleaner with no
+work country) is shown when the period holds an invoice in it or no
 invoice at all; when the period is invoiced only in another currency, that invoice's own currency wins,
 because the payout document is what the cleaner holds and "My Pay" disagreeing with it was the earlier
 defect. Every pay row on the response carries `currencyCode`, and it always equals the summary's. An

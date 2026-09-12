@@ -275,9 +275,11 @@ full platform access. The country must exist and be serviced (`country.not_found
 The work country also decides the currency the cleaner will be paid in — and the currency of every
 order they will see on their board and be allowed to take (owner ruling 2026-09-12) — and approval is
 refused when that currency is not covered. `ICurrencyResolutionService.ResolveCurrencyForCountryAsync`
-takes the country's `CountryConfiguration.DefaultCurrencyCode` when it names a real currency and the
-platform default otherwise (logged as an error, because a working country without a currency is a
-configuration defect) — the same chain that later labels the cleaner's earnings, and the same one that
+reads the country's `CountryConfiguration.DefaultCurrencyCode` and returns the `Currency` row it names;
+a country with no configuration, a blank code or a code naming no row makes it **throw** rather than
+hand back the platform default (owner ruling 2026-09-12: a working country without a currency is a
+configuration defect, and the approval fails loudly instead of approving a cleaner into the wrong
+currency) — the same chain that later labels the cleaner's earnings, and the same one that
 prices a customer's booking from its address country, entered here at the work country because this
 is the command that assigns it. Every active service and package must then have a pay
 config in that currency, platform-wide or this cleaner's own (`PayCoverage.Applies`); an uncovered

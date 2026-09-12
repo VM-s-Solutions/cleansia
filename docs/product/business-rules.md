@@ -258,9 +258,15 @@ and that one currency scopes everything the cleaner sees and does with money:
   customer's to learn. A hold granted across currencies could only lapse: the cleaner's board would not
   show the job and their take would be refused, while the seat sat withheld for the whole hold.
 
-The resolution falls through to the platform default when a work country has no configured currency
-code or the code names no currency row; that fallback is logged as an error, because under this ruling
-it is a configuration defect rather than a choice. → [Pay and payouts](/flows/pay-and-payouts#approval-is-the-last-refusal)
+**There is no fallback for a named country** (owner ruling 2026-09-12, "throw instead, 100 %"). A work
+country with no `CountryConfiguration`, a blank `DefaultCurrencyCode`, or a code that names no `Currency`
+row makes `CurrencyResolutionService` throw `InvalidOperationException`, naming the country and the
+code — so a configuration defect fails loudly on every partner money screen, every board read and
+every invoice approval for that country, instead of quietly paying the cleaner in the platform
+default. Only a **null** country resolves to the platform default: an unapproved cleaner with no work
+country yet, or the customer wizard before an address is known. The seed is what keeps this from ever
+firing — see [Money constants](#money-constants).
+→ [Pay and payouts](/flows/pay-and-payouts#approval-is-the-last-refusal)
 
 ## Charging a package and a service together
 
@@ -334,6 +340,15 @@ no resolved currency, or no resolved country, is not built — it lands as a rec
 the receipt, never as a CZK declaration to the Czech authority by default.
 → [Payment and fiscal](/flows/payment-and-fiscal#no-guessed-unit-no-guessed-regime)
 
+**An unconfigured serviced country is a deploy-blocking defect.** Every currency the platform decides
+is read off `CountryConfiguration.DefaultCurrencyCode` for a named country — the service address's on
+the order side, the work country's on the cleaner side — and for a named country there is no
+fallback: a missing configuration row, a blank code or a code naming no `Currency` row throws
+(owner ruling 2026-09-12). Nothing in the platform writes that column; **the seed must configure a
+real currency for every serviced country** (CZE → CZK, SVK → EUR, POL → PLN are seeded), and a
+deploy that services a country without one breaks that country's bookings, boards and approvals on
+first use rather than paying anyone in the platform default. → [Cleaner currency](#cleaner-currency)
+
 **No-show credit — `BookingPolicy.NoShowCreditCzk = 250`.** A CZK scalar, paid by `CancelUnfilledOrders`
 only on an order in the platform default currency; on any other currency the credit is skipped and
 logged, the refund is unaffected, and the push sent is the plain cancellation rather than the one that
@@ -381,9 +396,10 @@ rows in the ledger under their name.
 **Stripe fixed refund fee — `CountryConfiguration.RefundStripeFixedFee`.** A number in the country's
 `DefaultCurrencyCode` (6 on the CZE row means 6 CZK), deducted only from a refund whose order is in that
 same currency. Since an order is priced in its address country's currency, the two agree by
-construction; the guard still exists for the one way they can differ — a country whose configured code
-names no currency row, whose orders fall through to the platform default — and there the fixed part is
-absorbed by the platform while the percentage (`RefundStripeFeeRate`), being unit-free, still applies.
+construction; the guard still exists for the one way they can differ — an order stamped before the
+country's configured code was re-pointed at another currency (a named country with no usable code no
+longer falls through; it throws) — and there the fixed part is absorbed by the platform while the
+percentage (`RefundStripeFeeRate`), being unit-free, still applies.
 Both figures are dormant: no production writer sets either today, and while either is null the whole
 fee — rate included — is 0.
 
@@ -412,7 +428,10 @@ quote and create refuse a selected service or package without one as `order.sele
 / `order.selected_package.invalid` (an extra without one is dropped from the line items rather than
 refused, because no extras-level error key exists). A recurring occurrence is priced in the currency
 of its saved address's country. A quote that names no country yet — the wizard's first step, the home
-page's quick quote — is in the platform default until the address supplies one.
+page's quick quote — is in the platform default until the address supplies one; that null-country
+case is the **only** one the chain defaults. A named country with no configured currency does not
+fall through — the resolver throws, because the seed configures every serviced country and a gap is a
+deploy defect, not a market ([Money constants](#money-constants)).
 
 The pricing calculator returns a **raw subtotal before any user-level discount** — tier, membership or
 promo. The **express surcharge is already folded in**, because the surcharge is a property of the

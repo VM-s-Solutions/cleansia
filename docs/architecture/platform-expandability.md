@@ -263,12 +263,28 @@ EUR and taken by a cleaner who is paid in EUR.
   headline, pending earnings and My Pay. Counts stay over all orders. My Pay (`GetPeriodPays`) also
   takes an explicit `currencyId` view, so a client that opened it from an invoice shows that invoice's
   currency exactly; each pay row on it carries `currencyCode`.
-- **Orders / receipts / e-mails** render the record's own `Order.Currency` (`ReceiptService.cs`,
-  `EmailService.cs`). **Invoice PDFs** render `EmployeeInvoice.Currency` (`FileExtensions.CreatePdfData`)
-  and the fiscal request the order's — and both **fail closed** on a record with no resolved currency
-  rather than printing crowns: the PDF render records `PdfGenerationError`, the fiscal registration is
-  recorded as a failed attempt on the receipt row. The `?? "Kč"` fallbacks those two paths used to carry
-  are gone; the ones that remain are on the customer receipt PDF's symbol and the order e-mails (§5).
+- **The preferred-cleaner request is gated on the same currency.** A customer may name a cleaner
+  only if they have completed an order together **and** the cleaner is paid in the order's currency —
+  `CreateOrder` and `ChoosePreferredCleaner` compare `ResolveCurrencyForEmployeeAsync` against the
+  order's currency, `CreateRecurringBooking` and `UpdateRecurringBooking` against the saved address's
+  country's currency, all as one rule with one key (`order.preferred_employee.not_eligible`, judged after
+  the completed-order term). Without it the hold could only lapse: the push would go out, the seat be
+  withheld for the whole hold, and the cleaner unable to take a job their board does not show.
+- **No money is rendered with a guessed unit.** Every path reads the record's own currency row. The
+  order e-mails (`EmailService.cs`) and the customer receipt PDF (`ReceiptService.cs`) render
+  `Order.Currency.Symbol`, and when the navigation was not loaded they print the **bare number with no
+  unit** (`order.Currency?.Symbol ?? string.Empty`) — an unloaded navigation is a loader omission, not a
+  CZK order. The two money-of-record paths **refuse** instead: an invoice PDF with no resolved
+  `EmployeeInvoice.Currency` records `PdfGenerationError` (`FileExtensions.CreatePdfData`), and a fiscal
+  request for an order with no resolved currency throws before it is built and lands as a recorded
+  failed attempt on the receipt row. The `?? "Kč"` fallbacks are gone from every path (§5).
+- **The fiscal regime is never guessed either.** The receipt's country comes from
+  `Order.CustomerAddress.CountryId`; an order whose country cannot be resolved is refused on the same
+  landing as a missing currency — `FiscalCountryCodeOf` throws inside `HandleFiscalAsync`'s try, the
+  receipt is marked `FiscalRegistrationFailed`, and the retry job sees it — never registered under the
+  Czech authority by default. The receipt-number counter follows the same rule: with no ISO code there
+  is no provider key, and `FiscalSequenceScope.Resolve` maps the empty key to the `DEFAULT` issuer scope
+  (no annual reset), not to the Czech provider's.
 
 There is **no per-tenant currency setting anywhere**. The only tenant-shaped currency surface is the
 per-record `CurrencyId`, and it is populated from the address country (orders), from the pay rows
@@ -349,8 +365,9 @@ it is not coming back.
 CZE is the only serviced country, so every address resolves to CZK; CZK is the only active currency and
 EUR is seeded switched off and unpriced, so a booking could not be priced in anything else even if a
 second country were switched on — and the default cannot be moved to a currency the catalogue is not
-priced in. The remaining "Kč" literals (§5) are fallback strings on two render paths for a record with
-no currency row, not a design assumption that the platform is CZK-only.
+priced in. No runtime "Kč" literal remains outside `MembershipPlan` (§5): a record with no currency
+row renders a bare number on the display paths and is refused on the money-of-record paths, and
+nothing assumes the platform is CZK-only.
 
 ---
 
@@ -495,22 +512,24 @@ class does NOT touch currency or country**, because currency display was never p
 
 | Location | Hardcoded? | Nature |
 |---|---|---|
-| `Constants.Currency.Czk = "CZK"` | declared, **no reader left** — both paths that fell back to it now fail closed | dead constant |
-| `ReceiptService.cs` — the fiscal request | **no fallback** — a receipt whose order has no resolved currency is recorded as a failed fiscal attempt, never registered as CZK | fails closed |
-| `ReceiptService.cs` — the receipt PDF symbol | `order.Currency?.Symbol ?? "Kč"` | configurable primary, hardcoded fallback (the one render path still carrying one; its refusal has nowhere safe to land yet) |
-| `EmailService.cs` | `order.Currency?.Symbol ?? "Kč"` | configurable primary, hardcoded fallback |
+| `Constants.Currency.Czk = "CZK"` | declared, **no reader** — no render or register path falls back to it | dead constant |
+| `ReceiptService.cs` — the fiscal request's currency | **no fallback** — a receipt whose order has no resolved currency is recorded as a failed fiscal attempt, never registered as CZK | fails closed |
+| `ReceiptService.cs` — the fiscal regime and the receipt-number counter scope | **no fallback** — an order whose country cannot be resolved is refused on the same landing (recorded failed attempt, retried by the job), never declared to the Czech authority; the counter resolves an empty provider key to the `DEFAULT` issuer scope, not `cz-eet2` | fails closed |
+| `ReceiptService.cs` — the receipt PDF symbol | `order.Currency?.Symbol ?? string.Empty` — the bare number, no unit | configurable, no hardcoded fallback |
+| `EmailService.cs` — order e-mail amounts | `order.Currency?.Symbol ?? string.Empty` — the bare number, no unit | configurable, no hardcoded fallback |
 | `FileExtensions.CreatePdfData` | **no fallback** — an invoice with no resolved currency refuses to render and records `PdfGenerationError` | fails closed |
 | `MembershipPlan.MonthlyPriceCzk` / `MonthlyEquivalentPriceCzk` | **genuinely CZK-only** (field name + XML doc "Display price in CZK") | see §7 |
 | Catalogue prices (`ServicePrices`, `PackagePrices`, `ExtraPrices`) | **not hardcoded** — one row per (entry, currency), each row carries `CurrencyId` | authored per currency, never converted |
 | `BookingPolicy.NoShowCreditCzk`, `LoyaltyTierConfig.MinimumOrderAmountForDiscount`, a promo minimum on a code with no `CurrencyId` | **bound to the platform default** — enforced only on an order in it | §2 "What is still bound to the platform default" |
 | Customer clients — membership screens on both mobile apps, both payment-sheet configurations, locale copy | "Kč" / `CZK` as content | known residuals of T-0706, not runtime currency logic |
 
-**Net:** outside MembershipPlan, "Kč" appears at runtime only as a *fallback* on two display paths when
-a record has no `Currency` row, and the two money-of-record paths (invoice PDF, fiscal request) refuse
-instead. The configurable path (record `CurrencyId` → `Currency.Symbol/Code`, or the price row in the
-order's currency) is always preferred. The one **structurally** CZK-bound surface is
-**MembershipPlan**; the three default-bound numbers are CZK today because CZK is the default, not because
-they name it.
+**Net:** outside MembershipPlan, "Kč" does not appear at runtime at all (`grep '"Kč"'` over
+`Cleansia.Core.AppServices` finds only a comment). A record with no `Currency` row renders a bare
+number on the two display paths (order e-mails, receipt PDF) and is refused on the two money-of-record
+paths (invoice PDF, fiscal request); the fiscal regime is likewise never defaulted. The only path is the
+configurable one — record `CurrencyId` → `Currency.Symbol/Code`, or the price row in the order's
+currency. The one **structurally** CZK-bound surface is **MembershipPlan**; the three default-bound
+numbers are CZK today because CZK is the default, not because they name it.
 
 ---
 

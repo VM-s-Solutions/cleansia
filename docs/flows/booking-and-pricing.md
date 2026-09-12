@@ -81,6 +81,18 @@ until the customer confirms it, so *"pending for over an hour"* is its **normal*
 abandoned checkout — which is why the stale-checkout sweep explicitly excludes rows with a
 `RecurringTemplateId`. A separate sweep retracts unconfirmed occurrences an hour before the slot.
 
+**A schedule is priced in the market of its saved address.** The template carries no currency; every
+occurrence is priced in the currency of the saved address's country, the same rule as a one-off
+booking. Two consequences follow. A preferred cleaner named on the template (`CreateRecurringBooking`,
+`UpdateRecurringBooking`) must be paid in that currency as well as have a completed order with the
+customer — one key, `order.preferred_employee.not_eligible`, for both terms — because a cleaner paid in
+another currency would never see an occurrence on their board. And every recurring wizard -- web,
+Android and iOS -- reads the catalogue for the country of whichever saved address is chosen (the web
+one reads the platform default first), then trims any selected service or package the new list no
+longer offers (with a notice to the customer), like the one-off wizard — otherwise the server would refuse the quote as
+`order.selected_services.invalid` / `order.selected_package.invalid` for an entry with no price in that
+market. → [Business rules — order currency](/product/business-rules#price-stages)
+
 > The materialiser decides "did I already spawn this occurrence?" with an unlocked read, and **the
 > answer is enforced by a unique index** — `IX_Orders_RecurringTemplateId_CleaningDateTime`, on the
 > template plus the exact occurrence instant, filtered to spawned orders. The read is the fast path; the

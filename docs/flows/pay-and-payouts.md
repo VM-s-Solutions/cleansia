@@ -129,6 +129,13 @@ unknown `currencyId` is `currency.not_found`. Because the board keeps a cleaner 
 period with pay in two is reachable only through an admin reassignment; a client that shows one invoice
 at a time and passes its currency sees each of them correctly.
 
+So that a client can pass it, `EmployeeInvoiceDto` and `EmployeeInvoiceDetailDto` carry `currencyId`
+right after `currencyCode` on every host. Opened from an invoice, My Pay is that invoice's currency view:
+both partner apps' invoice detail (Android and iOS) hand `invoice.currencyId` to the period-pay
+route, which sends it as `GetPeriodPays`' `currencyId`. The code alone was not enough — the view is keyed by id, and
+a client that only had the code would have had to look the id up or fall back to the resolved-currency
+rule, which is the mislabel the parameter exists to close.
+
 ## Numbering is allocated, never derived
 
 Both the invoice number and the payout variable symbol come from an atomic `ON CONFLICT` counter, and
@@ -171,6 +178,7 @@ already does.
 | Two invoices allocate a number at once | The `ON CONFLICT` counter serialises them; the unique index is the backstop. |
 | A cleaner with no payout destination | Blocked by the profile-completeness gate before they can work. |
 | A cleaner with pay rows but no payout record | The invoice is generated and the cleaner gets their document; approval is refused as `payroll.invoice.payout_details_missing` until a record with a scheme and `Provided` exists. Reached by admin reassignment onto an incomplete cleaner or by erasure deleting the record. |
-| A cleaner with a legacy `IBAN` but no payout record | Passes the completeness gate (it reads `HasPayoutDetails || IBAN`), and their invoice is refused at approval by the presence rule above — the `IBAN` mirror is not a record. |
+| A cleaner with a legacy `IBAN` but no payout record | Passes the completeness gate (it reads `HasPayoutDetails`, or a non-empty `IBAN` that is not the anonymisation marker), and their invoice is refused at approval by the presence rule above — the `IBAN` mirror is not a record. |
+| An anonymised cleaner | Has no payout destination: erasure clears `HasPayoutDetails` and overwrites `IBAN` with the marker, and the gate does not read the marker as a destination — so an erased cleaner is incomplete, not complete-by-accident. |
 | My Pay opened from a EUR invoice | A client that passes the invoice's `currencyId` gets the EUR view exactly, whatever the cleaner's resolved currency; one that passes nothing gets the fallback rule above. |
 | Bonus or deduction applied later | Re-clamps the same core identically, because the clamp bounds are persisted on the row. |

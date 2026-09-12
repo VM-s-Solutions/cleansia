@@ -152,7 +152,7 @@ in another market fails as `order.total_price.not_match`.
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
 | `Cash` | `1` | Receipt queued. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
-| `Card` | `2` | Web: a Stripe Checkout Session is created. Mobile: no session — the client drives a PaymentSheet against the PaymentIntent. Either way the order stays `New` + `PaymentStatus.Pending` and is **not** offerable until the webhook writes `Paid` + `Confirmed` |
+| `Card` | `2` | Web: a Stripe Checkout Session is created. Mobile: no session — the client drives a PaymentSheet against the PaymentIntent. Either way the order stays `New` + `PaymentStatus.Pending` and is **not** offerable until the webhook writes `Paid`; the status stays `New` until a cleaner takes it (ADR-0057) |
 
 ::: warning A cash order is not auto-confirmed at creation
 `OrderPaymentDispatcher` queues a receipt for cash and nothing else — it writes neither
@@ -191,6 +191,7 @@ failure is reported:
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
 | A membership express waiver the client assumed is still available | `membership.express_waiver.no_longer_available` |
 | Server-recalculated price equals the submitted `totalPrice` | `order.total_price.not_match` |
+| A `promoCode`, if any, is sent by a signed-in customer | `promo.requires_account` — error code `PromoCode` |
 | The `promoCode`, if any, would be honoured — previewed again in the address currency on the pre-surcharge subtotal | the preview's own reason: `promo.currency_mismatch`, `promo.expired`, `promo.global_limit_reached`, `promo.per_user_limit_reached`, `promo.below_minimum_order_amount`, `promo.not_found`, `promo.inactive`, `promo.not_yet_valid` — error code `PromoCode` |
 
 The two currency rules head the chain, and sit in this chain rather than in a rule of their own,
@@ -199,12 +200,21 @@ price rules from running it, and a 400 would become a 500. Separately from this 
 service or package with no price row in the address country's currency fails as
 `order.selected_services.invalid` / `order.selected_package.invalid`.
 
-The promo rule is last and it **refuses the booking** rather than silently dropping the code: a
+The two promo rules are last and they **refuse the booking** rather than silently dropping the code: a
 customer who applied a code and was shown a discounted price must not be charged the full price
-because the code bound to another currency, expired, or hit its cap between apply and submit. The
-rule skips when there is no code or no signed-in user (a promo needs a user to redeem against), and
-the handler applies the discount from the same preview the validator accepted, so the two cannot
-disagree.
+because the code bound to another currency, expired, or hit its cap between apply and submit. A
+redemption is recorded against a user, so an anonymous caller who names a code is refused
+(`promo.requires_account`) rather than having the code dropped and the full price charged; the honour
+rule then previews the code for the signed-in customer, and the handler applies the discount from the
+same preview the validator accepted, so the two cannot disagree.
+
+`preferredEmployeeId`, when set, runs its own `Cascade.Stop` chain after these: the caller holds an
+active, paid Plus membership (`order.preferred_employee.membership_required`), then the named cleaner is
+**eligible** — a completed order together **and** paid in the order's currency, the service address's
+country's (`order.preferred_employee.not_eligible`, one key for both terms). A cleaner paid in another
+currency does not see the order on their board and cannot take it, so a hold on them could only lapse.
+`ChoosePreferredCleaner` runs the same two rules against the existing order's currency; the recurring
+template commands run the eligibility rule against the saved address's country's currency.
 
 The waiver rule sits **before** the price rule deliberately: a Plus member who used up their last
 free express upgrade between quoting and submitting would otherwise get
@@ -309,6 +319,65 @@ and resolves them the same way.
 | `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, else the request's `countryId`'s, else the platform default. There is no exchange rate on the wire; nothing converts |
 
 Promo codes are **not** priced here — they are entered at checkout and applied at create time.
+
+---
+
+### QuotePlusSavings <Badge type="info" text="Customer" />
+
+What this basket would cost with a Cleansia Plus plan the caller does not have — the wizard's Plus
+step's "you would save X on today's order". Server-side for the same reason the quote is: the 12 %
+combined cap and the un-grossing of the express surcharge are not representable in a client.
+
+```
+POST /api/Order/QuotePlusSavings
+```
+
+**Auth:** Anonymous (rate-limited: `interactive` policy)
+
+**Request body:**
+
+```json
+{
+  "selectedServiceIds": ["svc-1"],
+  "selectedPackageIds": [],
+  "rooms": 3,
+  "bathrooms": 1,
+  "planCode": "PLUS_MONTHLY",
+  "selectedExtraSlugs": ["inside-oven"],
+  "countryId": "country-id",
+  "currencyId": null,
+  "cleaningDate": "2026-04-15T10:00:00Z"
+}
+```
+
+It prices the same basket the quote does, so it runs the **same rules with the same keys**, and the
+validator refuses before the calculator can throw:
+
+| Rule | Error key |
+|---|---|
+| Every selected service exists **and** has a price row in the resolved currency | `order.selected_services.invalid` |
+| Every selected package exists **and** has a price row in the resolved currency | `order.selected_package.invalid` |
+| `countryId`, if named, is a serviced country | `country.not_serviced` |
+| The resolved currency (named `currencyId`, else the country's, else the platform default) is offerable | `currency.invalid` |
+| Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
+
+The span cap is the one `QuoteOrder` and `CreateOrder` draw (ADR-0039 D3.4): a preview must not show
+savings on a basket the booking will refuse. An empty selection still previews, as it still quotes.
+
+**Response:**
+
+```json
+{
+  "wouldSaveAmount": 75.00,
+  "wouldPayTotal": 1425.00,
+  "currentTotal": 1500.00,
+  "currencyCode": "CZK",
+  "planCode": "PLUS_MONTHLY"
+}
+```
+
+`wouldSaveAmount` is the **discount only** — the value of a waived express surcharge is not added to
+it.
 
 ---
 

@@ -198,7 +198,9 @@ erDiagram
 
 ## Platform
 
-*No configuration-declared relationships between these entities — they are referenced by id.*
+*Mostly referenced by id rather than by a configuration-declared relationship. The exceptions are
+named on their rows: `OrderReview` and `OrderReviewLine` (declared, with delete behaviour) and
+`PackageService` (the package–service join).*
 
 | Entity | |
 |---|---|

@@ -35,11 +35,15 @@ destination requires, and so an invoice with no usable destination, or in a curr
 not hold, is refused at *approval*, the last point before the transfer is keyed by hand.
 
 ## Collaborators
-- **`Employee`** — its owner. `Employee.IsProfileComplete()` asks only *"does this record exist?"*
-  (ADR-0034 D7) — **and it asks the `Employee.HasPayoutDetails` column, never this navigation**, because
-  the repo has no lazy loading and an unloaded navigation is indistinguishable from "no payout details"
-  (which would 403 every cleaner on the partner surface). `Employee.Anonymize()` sets that flag `false`
-  and **does not** attempt to clear this record.
+- **`Employee`** — its owner. `Employee.IsProfileComplete()` asks only *"is there a payout
+  destination?"* (ADR-0034 D7), never whether it is valid — **and it asks two scalars on the employee
+  row, never this navigation**, because the repo has no lazy loading and an unloaded navigation is
+  indistinguishable from "no payout details" (which would 403 every cleaner on the partner surface).
+  The two scalars are `Employee.HasPayoutDetails`, or a non-empty legacy `Employee.IBAN` that is not the
+  anonymisation marker; the `IBAN` term exists because launch and DEV cleaners predate this record and
+  there is no backfill, and it retires with the column. `Employee.Anonymize()` sets the flag `false` and
+  overwrites `IBAN` with the marker — which the gate does not count, so an erased cleaner has no
+  destination — and **does not** attempt to clear this record.
 - **`GdprDeletionService`** — the *only* thing that erases this record, through an **id-keyed,
   set-based** repository call, so erasure is correct regardless of what the caller `Include`d.
 - **`CountryConfiguration.PayoutScheme`** (via `BankCountryId`) — supplies the scheme. The *only*
@@ -84,8 +88,8 @@ not hold, is refused at *approval*, the last point before the transfer is keyed 
   never from this record, the employee or the work country. This record says what the account *holds*;
   the two are compared at approval, not reconciled.
 - **Whether a cleaner may take orders.** That is `Employee.IsProfileComplete()` reading
-  `Employee.HasPayoutDetails`; this record's `Status` gates invoice *approval* (D7, relocated), not
-  work. **This record is never on the path that answers "may this person work" — deliberately, so it
+  `Employee.HasPayoutDetails` (or the legacy `IBAN`, marker excluded); this record's `Status` gates
+  invoice *approval* (D7, relocated), not work. **This record is never on the path that answers "may this person work" — deliberately, so it
   cannot take the workforce off the job board by being unloaded.**
 - **How it is displayed or masked.** Masking, the owner-or-admin read authorization and the audited
   admin **reveal command** are the read contract's job (D8), not the entity's. It does not know that

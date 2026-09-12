@@ -10,7 +10,9 @@ account. Get a live price quote before committing, including whether an express 
 whether a membership waives it.
 
 **Recurring bookings** — set up a repeating clean; occurrences materialise ahead of time and are
-confirmed individually, so a single occurrence can be skipped without cancelling the arrangement.
+confirmed individually, so a single occurrence can be skipped without cancelling the arrangement. A
+schedule is priced in the currency of its saved address's country, like a one-off booking, and every
+wizard -- web, Android and iOS -- offers only what that market sells.
 
 **Choosing a cleaner** — nominate a preferred cleaner, who gets first refusal for a bounded window
 before the job opens to everyone.

@@ -134,7 +134,7 @@ After `MaxFiscalRetries = 10` attempts, `FiscalNextRetryAt` is cleared and the r
 
 ### Orchestration (`Cleansia.Core.AppServices`)
 
-- **`ReceiptService.HandleFiscalAsync`** — Reads the enforcement mode from `CountryConfiguration`, branches on it, and catches every exception so the customer flow is never aborted.
+- **`ReceiptService.HandleFiscalAsync`** — Reads the enforcement mode from `CountryConfiguration`, branches on it, and catches every exception so the customer flow is never aborted. The request is built from the order's own currency code and country ISO code and **never from a default**: an order with no resolved currency (`FiscalCurrencyCodeOf`) or no resolved country (`FiscalCountryCodeOf`) throws before the authority is called, lands as a recorded failed attempt, and is retried like any other failure. The receipt-number counter resolves an empty provider key to the `DEFAULT` issuer scope, not the Czech provider's. → [Payment and fiscal](/flows/payment-and-fiscal#no-guessed-unit-no-guessed-regime)
 - **`ReceiptService.RetryFiscalRegistrationAsync`** — Re-attempts registration for a previously-failed receipt, regenerates the PDF with the fiscal code on success, and re-uploads it to the blob store.
 - **`FiscalRetryService.ProcessDueRetriesAsync`** — Batch processes receipts where `FiscalNextRetryAt <= UtcNow`. For `BlockingOnline` modes, releases the held receipt email once a retry succeeds.
 
@@ -163,6 +163,7 @@ Multiple defences prevent a fiscal outage from cascading:
 - Order persistence never depends on fiscal success.
 - Stripe webhook acknowledgment never waits on the fiscal authority.
 - Receipt generation never throws because of fiscal failure — it marks the receipt and continues.
+- A receipt is never registered in a guessed currency or under a guessed regime — a missing currency or country is a recorded failure, not a CZK declaration to the Czech authority.
 - Blocking countries hold the receipt *email*, never the order or payment.
 - An admin can always force a retry or acknowledge a failure, breaking any stuck state.
 

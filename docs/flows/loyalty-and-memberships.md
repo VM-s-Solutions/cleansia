@@ -27,9 +27,15 @@ answer for a row that reaches that state anyway.
 A membership buys a discount, a wider free-cancellation window, and a quota of express-surcharge
 waivers.
 
-A **trialing** member is active — they keep the discount and the cancellation window — but earns
-**no** waiver. The reported quota still shows the plan's number so a client can say when waivers start
-rather than showing zero and looking broken.
+**There is no free trial, and a trialing enrolment is not a member** (owner ruling 2026-09-08,
+T-0690). Both seeded plans carry `TrialPeriodDays = 0` and the admin plan commands refuse any other
+value (`membership.plan.trial_not_permitted`), because a trial is benefits without payment. Every Plus
+benefit — the discount, the cancellation window, the waiver quota, recurring schedules and the preferred
+cleaner — resolves through the one entitlement predicate (`UserMembershipRepository
+.EntitledForUserQuery`), which refuses a `Trialing` enrolment exactly as it refuses `PastDue`, `Paused`,
+`Cancelled` or an elapsed period. The `trialEndsAtUtc` / `trialEligible` fields on `GetMyMembership`
+still ride the wire for clients built before the ruling; with every plan at zero days no enrolment
+carries a trial end. → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
 
 ## The express waiver is metered per calendar month
 

@@ -250,6 +250,13 @@ and that one currency scopes everything the cleaner sees and does with money:
   resolved currency and printed with its code; counts stay over all orders.
 - **Approval checks the account against it.** An undeclared payout account is read as holding the
   work country's currency, never the platform default — so the normal case needs no declaration.
+- **A customer can only ask for a cleaner who is paid in the order's currency.** The preferred-cleaner
+  request has two terms, judged in this order: a completed order together, then the cleaner's currency
+  equals the order's — the service address's country's on `CreateOrder` and `ChoosePreferredCleaner`,
+  the saved address's country's on `CreateRecurringBooking` and `UpdateRecurringBooking`. Both terms
+  fail as one key, `order.preferred_employee.not_eligible`, because which one failed is not the
+  customer's to learn. A hold granted across currencies could only lapse: the cleaner's board would not
+  show the job and their take would be refused, while the seat sat withheld for the whole hold.
 
 The resolution falls through to the platform default when a work country has no configured currency
 code or the code names no currency row; that fallback is logged as an error, because under this ruling
@@ -319,6 +326,14 @@ says which, and what happens on an order priced in another. The pattern is delib
 platform cannot denominate is not applied, rather than applied at the wrong scale — 250 CZK handed over
 as 250 EUR is a twenty-five-fold apology.
 
+The same rule holds on the way out. **Nothing prints a unit it was not given.** An order e-mail or a
+customer receipt PDF rendered for an order whose currency row was not loaded shows the bare number with
+no symbol — never "Kč" — and the two documents of record refuse outright: a cleaner's invoice PDF with
+no resolved currency is not rendered (`PdfGenerationError`), and a fiscal registration for an order with
+no resolved currency, or no resolved country, is not built — it lands as a recorded failed attempt on
+the receipt, never as a CZK declaration to the Czech authority by default.
+→ [Payment and fiscal](/flows/payment-and-fiscal#no-guessed-unit-no-guessed-regime)
+
 **No-show credit — `BookingPolicy.NoShowCreditCzk = 250`.** A CZK scalar, paid by `CancelUnfilledOrders`
 only on an order in the platform default currency; on any other currency the credit is skipped and
 logged, the refund is unaffected, and the push sent is the plain cancellation rather than the one that
@@ -352,7 +367,10 @@ the quote's currency) answers the `CurrencyMismatch` error code, and the create 
 booking** with `promo.currency_mismatch` rather than charging a full price the customer did not consent
 to. The same holds for every other reason the preview can refuse — a code that expired or hit its cap
 between apply and submit is `promo.expired` / `promo.global_limit_reached` on create, never a silent
-drop. A percent code with no minimum is global.
+drop. Nor is a code dropped for want of an account: a redemption is recorded against a user, so an
+anonymous `CreateOrder` that names a promo code is refused as `promo.requires_account` — before the
+honour check, and instead of quietly charging the undiscounted price. A percent code with no minimum is
+global.
 
 **Credit sanity cap — `IssueCustomerCredit.SanityCap = 10 000`.** A typo guard on the *number* typed by
 an admin issuing credit, unit-free on purpose: it caps 10 000 in whatever currency the grant names, so

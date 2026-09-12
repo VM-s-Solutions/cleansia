@@ -33,6 +33,7 @@ public class CreateOrder
         private readonly ICurrencyResolutionService _currencyResolutionService;
         private readonly IServicePriceRepository _servicePriceRepository;
         private readonly IPackagePriceRepository _packagePriceRepository;
+        private readonly IPromoCodeService _promoCodeService;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -46,7 +47,8 @@ public class CreateOrder
             IOrderAddressResolver orderAddressResolver,
             ICurrencyResolutionService currencyResolutionService,
             IServicePriceRepository servicePriceRepository,
-            IPackagePriceRepository packagePriceRepository)
+            IPackagePriceRepository packagePriceRepository,
+            IPromoCodeService promoCodeService)
         {
             _packageRepository = packageRepository;
             _serviceRepository = serviceRepository;
@@ -56,6 +58,7 @@ public class CreateOrder
             _currencyResolutionService = currencyResolutionService;
             _servicePriceRepository = servicePriceRepository;
             _packagePriceRepository = packagePriceRepository;
+            _promoCodeService = promoCodeService;
             _pricingCalculator = pricingCalculator;
             _orderRepository = orderRepository;
             _userMembershipRepository = userMembershipRepository;
@@ -165,11 +168,13 @@ public class CreateOrder
                 .MustAsync(ArePackagesPricedInOrderCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
-            // The two price rules are ORDERED and share one calculator run. The waiver rule goes first
+            // The three price rules are ORDERED and share one calculator run. The waiver rule goes first
             // because Cascade.Stop means only the first failure is reported, and a member who lost their
             // free upgrade between the quote and here must get the dedicated code — TotalPriceNotMatch is
             // rendered by every client as a generic "the price changed", which is exactly the sentence
-            // that cannot explain this.
+            // that cannot explain this. The promo rule is LAST: it previews against the subtotal the
+            // calculator produced, so it only has an answer once the price the customer consented to
+            // has been confirmed.
             //
             // The two currency rules are FIRST, and in THIS chain rather than their own RuleFor: the
             // class-level cascade is Continue, so a separate rule would not stop the two price rules
@@ -191,7 +196,10 @@ public class CreateOrder
                 .MustAsync(ExpressWaiverStillAvailableAsync)
                 .WithMessage(BusinessErrorMessage.ExpressWaiverNoLongerAvailable)
                 .MustAsync(PriceMatchesAsync)
-                .WithMessage(BusinessErrorMessage.TotalPriceNotMatch);
+                .WithMessage(BusinessErrorMessage.TotalPriceNotMatch)
+                .MustAsync(PromoWouldBeHonouredAsync)
+                .WithMessage(PromoErrorTemplate)
+                .WithErrorCode(nameof(Command.PromoCode));
 
             // Optional free-text. Null/empty passes (MaximumLength is a no-op on
             // null), so old clients that never send the field are unaffected.
@@ -391,7 +399,7 @@ public class CreateOrder
             return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
         }
 
-        private const string PriceMatchesKey = "createOrder.priceMatches";
+        private const string PricingResultKey = "createOrder.pricingResult";
 
         /// <summary>
         /// Runs the ONE waiver-aware pricing recompute for this validation and classifies the outcome.
@@ -426,10 +434,9 @@ public class CreateOrder
                 DateTime.UtcNow,
                 cancellationToken);
 
-            var priceMatches = result.TotalPrice == command.TotalPrice;
-            context.RootContextData[PriceMatchesKey] = priceMatches;
+            context.RootContextData[PricingResultKey] = result;
 
-            return priceMatches
+            return result.TotalPrice == command.TotalPrice
                 || !result.ExpressSurchargeApplied
                 || command.TotalPrice != result.TotalPrice - result.ExpressSurchargeAmount;
         }
@@ -439,8 +446,66 @@ public class CreateOrder
             Command _,
             ValidationContext<Command> context,
             CancellationToken cancellationToken)
-            => Task.FromResult(
-                context.RootContextData.TryGetValue(PriceMatchesKey, out var matches) && matches is true);
+            => Task.FromResult(CachedPricing(context).TotalPrice == command.TotalPrice);
+
+        private static OrderPricingResult CachedPricing(ValidationContext<Command> context)
+            => (OrderPricingResult)context.RootContextData[PricingResultKey];
+
+        // The promo rule cannot pick its message up front: which refusal applies is only known after
+        // the preview inside the predicate. So the predicate hands the resolved message key to the rule
+        // through the MessageFormatter, and the rule's template is nothing but this placeholder.
+        private const string PromoErrorPlaceholder = "PromoError";
+        private const string PromoErrorTemplate = "{" + PromoErrorPlaceholder + "}";
+
+        /// <summary>
+        /// A promo the server will not honour refuses the booking. The client displayed a discounted
+        /// total the customer consented to; silently booking at full price is the same consent defect
+        /// the express-waiver refusal exists to prevent. The preview is the one the handler's applier
+        /// re-runs: the same code, the same pre-surcharge subtotal from the cached calculator result,
+        /// and the address country's currency -- so a code bound to another market's currency, or one
+        /// that expired or hit its cap between apply and submit, is refused here rather than dropped.
+        /// No code, or no signed-in customer, is nothing to honour.
+        /// </summary>
+        private async Task<bool> PromoWouldBeHonouredAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(command.PromoCode) || string.IsNullOrEmpty(userId))
+            {
+                return true;
+            }
+
+            var pricing = CachedPricing(context);
+            var preview = await _promoCodeService.PreviewAsync(
+                command.PromoCode,
+                userId,
+                pricing.TotalPrice - pricing.ExpressSurchargeAmount,
+                await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
+                cancellationToken);
+            if (preview.Error is not { } error)
+            {
+                return true;
+            }
+
+            context.MessageFormatter.AppendArgument(PromoErrorPlaceholder, PromoErrorMessage(error));
+            return false;
+        }
+
+        private static string PromoErrorMessage(PromoCodeError error) => error switch
+        {
+            PromoCodeError.NotFound => BusinessErrorMessage.PromoNotFound,
+            PromoCodeError.Inactive => BusinessErrorMessage.PromoInactive,
+            PromoCodeError.Expired => BusinessErrorMessage.PromoExpired,
+            PromoCodeError.NotYetValid => BusinessErrorMessage.PromoNotYetValid,
+            PromoCodeError.GlobalLimitReached => BusinessErrorMessage.PromoGlobalLimitReached,
+            PromoCodeError.PerUserLimitReached => BusinessErrorMessage.PromoPerUserLimitReached,
+            PromoCodeError.BelowMinimumOrderAmount => BusinessErrorMessage.PromoBelowMinimumOrderAmount,
+            PromoCodeError.CurrencyMismatch => BusinessErrorMessage.PromoCurrencyMismatch,
+            _ => throw new ArgumentOutOfRangeException(nameof(error), error, null),
+        };
 
         /// <summary>
         /// Filter the slug-keyed Extras map down to slugs the client

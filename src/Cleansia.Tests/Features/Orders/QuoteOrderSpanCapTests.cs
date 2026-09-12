@@ -197,7 +197,8 @@ public class QuoteOrderSpanCapTests
             OrderMarketDoubles.AddressIn("cz"),
             OrderMarketDoubles.Trading(Czk),
             CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
-            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)));
+            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
+            Mock.Of<IPromoCodeService>());
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

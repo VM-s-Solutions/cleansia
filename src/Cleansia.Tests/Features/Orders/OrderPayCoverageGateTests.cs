@@ -240,7 +240,8 @@ public class CreateOrderPayCoverageValidatorTests
         CataloguePriceDoubles.Services(
             CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.ServiceId, 500m, 100m)),
         CataloguePriceDoubles.Packages(
-            CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.PackageId, 1000m)));
+            CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.PackageId, 1000m)),
+        Mock.Of<IPromoCodeService>());
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

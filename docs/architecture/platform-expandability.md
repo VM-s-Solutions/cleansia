@@ -266,7 +266,8 @@ Three numbers are authored in one currency and enforced only on an order in it: 
 any other currency fails closed and logs, the refund is unaffected), the tier floor
 `LoyaltyTierConfig.MinimumOrderAmountForDiscount` (1000; no floor applies elsewhere) and the minimum on
 a promo code that names no currency (on an order in any other currency the validate preview answers the
-`CurrencyMismatch` error code and the create path applies no discount). Promoting a different default with `SetDefaultCurrency` re-denominates all three —
+`CurrencyMismatch` error code and the create path refuses the booking with `promo.currency_mismatch`).
+Promoting a different default with `SetDefaultCurrency` re-denominates all three —
 an owner-level event, not an admin click. Loyalty earning is per currency through
 `Currency.LoyaltyPointsDivisor`; `IssueCustomerCredit.SanityCap = 10 000` is a unit-free typo guard in
 whatever currency the grant names; `CountryConfiguration.RefundStripeFixedFee` is a number in the

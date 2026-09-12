@@ -522,7 +522,8 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.consent_not_found',
   'gdpr.consent_already_granted',
-  // Promo — request a first-clean code and checkout promo apply
+  // Promo — request a first-clean code, and CreateOrder refusing a promo the
+  // server will not honour (one key per PromoCodeError reason)
   'promo.already_sent',
   'promo.not_found',
   'promo.expired',
@@ -721,12 +722,16 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
 // as an exact set in both directions: a contract entry that goes dead has to be
 // listed or deleted, and one that comes back to life has to leave.
 //
-// Two different things sit here. The promo.* codes are alive but travel a
-// different road: ValidatePromoCode returns the PromoValidationError enum name in
-// its Response, and the order-promo facade maps that onto api.promo.*, so no
-// handler ever names the constant. The rest were declared for refusals that were
-// never wired to a validator; their strings ship ahead of the rule, the way
-// auth.invalid_apple_token does.
+// These were declared for refusals that were never wired to a validator; their
+// strings ship ahead of the rule, the way auth.invalid_apple_token does.
+//
+// Seven promo.* codes used to sit here too (promo.not_found was always emitted, by
+// the admin promo features). They are emitted now: CreateOrder refuses a booking
+// whose promo the server would not honour, keyed to PromoCode under the
+// api.promo.* string for the preview's reason. The checkout preview
+// (ValidatePromoCode) still travels its own road -- it answers the PromoCodeError
+// enum name in its Response, which order-wizard.models.ts maps onto
+// pages.order.promo.error_*, never onto api.promo.*.
 const DECLARED_BUT_NEVER_EMITTED: readonly string[] = [
   'file.count_too_few',
   'file.size_exceeded_10mb',
@@ -737,13 +742,6 @@ const DECLARED_BUT_NEVER_EMITTED: readonly string[] = [
   'order.cancellation_window_closed',
   'order.creation_failed',
   'order.review.already_exists',
-  'promo.below_minimum_order_amount',
-  'promo.currency_mismatch',
-  'promo.expired',
-  'promo.global_limit_reached',
-  'promo.inactive',
-  'promo.not_yet_valid',
-  'promo.per_user_limit_reached',
   'receipt.generation_failed',
   'referral.already_referred',
   'referral.inactive',

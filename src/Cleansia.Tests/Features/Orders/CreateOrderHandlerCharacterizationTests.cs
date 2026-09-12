@@ -486,6 +486,49 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Same(Czk, captured!.Currency);
     }
 
+    /// <summary>
+    /// The validator refuses a promo the preview will not honour, and the handler re-runs the SAME
+    /// preview -- the same code, the pre-surcharge subtotal, the address country's currency -- so the
+    /// two cannot disagree. The service is set up on exactly those arguments: a handler that previewed
+    /// on a different subtotal or currency would get no answer here and book without the discount.
+    /// </summary>
+    [Fact]
+    public async Task A_Promo_The_Validator_Honoured_Is_Applied_From_The_Same_Preview()
+    {
+        _pricingCalculator
+            .Setup(c => c.CalculateAsync(
+                It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+                It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.MatchingPricing(totalPrice: 1800m) with
+            {
+                ExpressSurchargeApplied = true, ExpressSurchargeAmount = 300m,
+            });
+        _promoCodeService
+            .Setup(s => s.PreviewAsync("SAVE10", UserId, 1500m, Eur.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PromoCodePreviewResult(true, 100m, "promo-1", null));
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia),
+            totalPrice: 1800m,
+            promoCode: "SAVE10") with { CurrencyId = null };
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(100m, captured!.PromoDiscountAmount);
+        Assert.Equal("promo-1", captured.PromoCodeId);
+    }
+
     [Fact]
     public async Task AC10_CardPath_NonStripeException_IsNotCaught_Bubbles()
     {

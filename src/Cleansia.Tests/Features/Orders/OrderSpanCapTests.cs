@@ -295,7 +295,8 @@ public class OrderSpanCapTests
             OrderMarketDoubles.Trading(Czk),
             // The validator prices what the COMMAND selects, which is the shared fixture's ids.
             CataloguePriceDoubles.Services(Czk, (CreateOrderTestData.ServiceId, 500m, 100m)),
-            CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)));
+            CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)),
+            Mock.Of<IPromoCodeService>());
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

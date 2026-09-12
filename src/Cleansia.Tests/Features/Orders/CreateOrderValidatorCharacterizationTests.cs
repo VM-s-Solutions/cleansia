@@ -25,6 +25,7 @@ public class CreateOrderValidatorCharacterizationTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<IPromoCodeService> _promoCodeService = new();
 
     private const string Slovakia = "sk";
     private const string Hungary = "hu";
@@ -93,7 +94,8 @@ public class CreateOrderValidatorCharacterizationTests
             OrderMarketDoubles.AddressAsGiven(),
             OrderMarketDoubles.Trading(Czk, ("cz", Czk), (Slovakia, Eur), (Hungary, Huf)),
             servicePrices ?? PricedServices(Czk, Eur),
-            packagePrices ?? PricedPackages(Czk, Eur));
+            packagePrices ?? PricedPackages(Czk, Eur),
+            _promoCodeService.Object);
 
     private static IServicePriceRepository PricedServices(params Currency[] currencies)
     {
@@ -379,6 +381,179 @@ public class CreateOrderValidatorCharacterizationTests
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(CreateOrder.Command.SelectedPackageIds)
             && e.ErrorMessage == BusinessErrorMessage.InvalidSelectedPackage);
+    }
+
+    // ---------------------------------------------------------------- a promo the server will not honour
+
+    private const string PromoCode = "SAVE10";
+    private const string PromoUser = "user-1";
+
+    private void ArrangePromoPreview(decimal subtotal, string currencyId, PromoCodePreviewResult result)
+    {
+        _session.Setup(s => s.GetUserId()).Returns(PromoUser);
+        _promoCodeService
+            .Setup(s => s.PreviewAsync(PromoCode, PromoUser, subtotal, currencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+    }
+
+    private static PromoCodePreviewResult Refused(PromoCodeError error) => new(false, 0m, null, error);
+    private static readonly PromoCodePreviewResult Honoured = new(true, 100m, "promo-1", null);
+
+    private void VerifyPromoPreviewed(Times times) =>
+        _promoCodeService.Verify(s => s.PreviewAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(),
+            It.IsAny<string?>(), It.IsAny<CancellationToken>()), times);
+
+    /// <summary>
+    /// THE REFUSAL. A code bound to CZK on a Slovak (EUR) booking is refused with the promo key,
+    /// keyed to the field -- not silently booked at the full price the customer never consented to.
+    /// The preview is asked in the ADDRESS country's currency, which is what the handler previews in.
+    /// </summary>
+    [Fact]
+    public async Task A_Promo_The_Server_Will_Not_Honour_Refuses_The_Booking()
+    {
+        ArrangePromoPreview(CreateOrderTestData.MatchingTotalPrice, Eur.Id, Refused(PromoCodeError.CurrencyMismatch));
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia),
+            promoCode: PromoCode) with { CurrencyId = null };
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.PromoCurrencyMismatch, failure.ErrorMessage);
+        Assert.Equal(nameof(CreateOrder.Command.PromoCode), failure.ErrorCode);
+    }
+
+    /// <summary>
+    /// The preview runs against the same figures the handler's applier will use: the pre-surcharge
+    /// subtotal from the ONE calculator run this validation made, in the resolved currency. A
+    /// preview against the gross total would refuse a minimum the applier honours, and vice versa.
+    /// </summary>
+    [Fact]
+    public async Task A_Promo_Is_Previewed_At_The_Pre_Surcharge_Subtotal_In_The_Address_Countrys_Currency()
+    {
+        _pricingCalculator
+            .Setup(c => c.CalculateAsync(
+                It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+                It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.MatchingPricing(totalPrice: 1800m) with
+            {
+                ExpressSurchargeApplied = true, ExpressSurchargeAmount = 300m,
+            });
+        ArrangePromoPreview(1500m, Eur.Id, Honoured);
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia),
+            totalPrice: 1800m,
+            promoCode: PromoCode) with { CurrencyId = null };
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+        _promoCodeService.Verify(s => s.PreviewAsync(
+            PromoCode, PromoUser, 1500m, Eur.Id, It.IsAny<CancellationToken>()), Times.Once);
+        VerifyCalculatorTold(Eur.Id, Times.Once());
+    }
+
+    [Fact]
+    public async Task A_Promo_The_Server_Honours_Passes()
+    {
+        ArrangePromoPreview(CreateOrderTestData.MatchingTotalPrice, Czk.Id, Honoured);
+        var command = CreateOrderTestData.ValidCommand(promoCode: PromoCode);
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    [Fact]
+    public async Task No_Promo_Code_Consults_The_Promo_Service_For_Nothing()
+    {
+        _session.Setup(s => s.GetUserId()).Returns(PromoUser);
+
+        var result = await CreateValidator().ValidateAsync(CreateOrderTestData.ValidCommand(promoCode: null));
+
+        Assert.True(result.IsValid);
+        VerifyPromoPreviewed(Times.Never());
+    }
+
+    /// <summary>
+    /// The handler's applier ignores a code with no signed-in customer, so there is nothing here to
+    /// honour or refuse.
+    /// </summary>
+    [Fact]
+    public async Task A_Promo_With_No_Signed_In_Customer_Is_Not_Previewed()
+    {
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+
+        var result = await CreateValidator().ValidateAsync(CreateOrderTestData.ValidCommand(promoCode: PromoCode));
+
+        Assert.True(result.IsValid);
+        VerifyPromoPreviewed(Times.Never());
+    }
+
+    /// <summary>
+    /// Cascade.Stop: the promo is previewed only once the price the customer consented to has been
+    /// confirmed, so a stale total reports the price refusal alone and never reaches the promo service.
+    /// </summary>
+    [Fact]
+    public async Task A_Price_Mismatch_Is_Reported_Alone_And_The_Promo_Is_Never_Previewed()
+    {
+        ArrangePromoPreview(CreateOrderTestData.MatchingTotalPrice, Czk.Id, Refused(PromoCodeError.Expired));
+        var command = CreateOrderTestData.ValidCommand(totalPrice: 1499m, promoCode: PromoCode);
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.TotalPriceNotMatch, failure.ErrorMessage);
+        VerifyPromoPreviewed(Times.Never());
+    }
+
+    [Theory]
+    [InlineData(PromoCodeError.NotFound, BusinessErrorMessage.PromoNotFound)]
+    [InlineData(PromoCodeError.Inactive, BusinessErrorMessage.PromoInactive)]
+    [InlineData(PromoCodeError.Expired, BusinessErrorMessage.PromoExpired)]
+    [InlineData(PromoCodeError.NotYetValid, BusinessErrorMessage.PromoNotYetValid)]
+    [InlineData(PromoCodeError.GlobalLimitReached, BusinessErrorMessage.PromoGlobalLimitReached)]
+    [InlineData(PromoCodeError.PerUserLimitReached, BusinessErrorMessage.PromoPerUserLimitReached)]
+    [InlineData(PromoCodeError.BelowMinimumOrderAmount, BusinessErrorMessage.PromoBelowMinimumOrderAmount)]
+    [InlineData(PromoCodeError.CurrencyMismatch, BusinessErrorMessage.PromoCurrencyMismatch)]
+    public async Task Every_Preview_Refusal_Is_Reported_Under_Its_Own_Promo_Key(PromoCodeError error, string expectedKey)
+    {
+        ArrangePromoPreview(CreateOrderTestData.MatchingTotalPrice, Czk.Id, Refused(error));
+        var command = CreateOrderTestData.ValidCommand(promoCode: PromoCode);
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(expectedKey, failure.ErrorMessage);
+        Assert.Equal(nameof(CreateOrder.Command.PromoCode), failure.ErrorCode);
+    }
+
+    /// <summary>
+    /// The mapping must cover the whole enum: a value added to PromoCodeError without an arm would
+    /// throw out of the validator, and a rule whose template placeholder was never filled would ship
+    /// the placeholder as the message. Distinct keys, because two refusals sharing one string is a
+    /// customer told the wrong reason.
+    /// </summary>
+    [Fact]
+    public async Task Every_PromoCodeError_Value_Maps_To_A_Distinct_Promo_Key()
+    {
+        var keys = new List<string>();
+        foreach (var error in Enum.GetValues<PromoCodeError>())
+        {
+            ArrangePromoPreview(CreateOrderTestData.MatchingTotalPrice, Czk.Id, Refused(error));
+
+            var result = await CreateValidator().ValidateAsync(CreateOrderTestData.ValidCommand(promoCode: PromoCode));
+
+            var failure = Assert.Single(result.Errors);
+            Assert.StartsWith("promo.", failure.ErrorMessage);
+            keys.Add(failure.ErrorMessage);
+        }
+
+        Assert.Equal(keys.Count, keys.Distinct().Count());
     }
 
     [Fact]

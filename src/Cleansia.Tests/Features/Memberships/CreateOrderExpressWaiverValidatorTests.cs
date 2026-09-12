@@ -64,7 +64,8 @@ public class CreateOrderExpressWaiverValidatorTests
             OrderMarketDoubles.AddressIn("cz"),
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             CataloguePriceDoubles.NoServices(),
-            CataloguePriceDoubles.NoPackages());
+            CataloguePriceDoubles.NoPackages(),
+            Mock.Of<IPromoCodeService>());
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

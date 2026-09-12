@@ -318,9 +318,12 @@ when none was judged), so the wizard states exactly the rule the order used.
 **Promo minimum — `PromoCode.MinimumOrderAmount`.** A code with a minimum is bound to **one** currency:
 its own `CurrencyId` when set (a fixed-amount code always has one), otherwise the platform default,
 because every percent code with a minimum was authored that way. On an order in any other currency the
-code is refused **before** the minimum is compared: the checkout preview (`ValidatePromoCode`) answers
-the `CurrencyMismatch` error code, and the create path applies no discount rather than a wrong one. A
-percent code with no minimum is global.
+code is refused **before** the minimum is compared: the checkout preview (`ValidatePromoCode`, asked in
+the quote's currency) answers the `CurrencyMismatch` error code, and the create path **refuses the
+booking** with `promo.currency_mismatch` rather than charging a full price the customer did not consent
+to. The same holds for every other reason the preview can refuse — a code that expired or hit its cap
+between apply and submit is `promo.expired` / `promo.global_limit_reached` on create, never a silent
+drop. A percent code with no minimum is global.
 
 **Credit sanity cap — `IssueCustomerCredit.SanityCap = 10 000`.** A typo guard on the *number* typed by
 an admin issuing credit, unit-free on purpose: it caps 10 000 in whatever currency the grant names, so

@@ -1678,8 +1678,8 @@ VALUES
 -- ============================================================
 -- DISPUTES
 -- ============================================================
--- Dispute seed data lives in seed/insert_disputes.sql, which selects orders this file never
--- creates and so cannot run any more (see sql-scripts/README.md). Nothing seeds disputes.
+-- Nothing seeds disputes. The old seed/insert_disputes.sql selected orders this file never
+-- creates and was deleted on 2026-09-12 (owner ruling; in git history).
 
 -- ============================================================
 -- LOYALTY TIER CONFIGS (Phase A defaults)

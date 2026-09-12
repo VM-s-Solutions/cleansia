@@ -15,7 +15,7 @@ Operational SQL scripts for the Cleansia database. These are executed via the **
 - `fix-*.sql` — data fixes wrapped in transactions
 - `migrate-*.sql` — schema or data migrations wrapped in transactions
 
-## `seed/` — dev fixture data, and most of it no longer runs
+## `seed/` — dev fixture data
 
 > ### ⚠️ This is NOT the seed the DEV database uses.
 >
@@ -23,26 +23,14 @@ Operational SQL scripts for the Cleansia database. These are executed via the **
 > at startup in Development. Every seeded-data test reads that file and only that file. Nothing in
 > `seed/` is run by any workflow, any host or any test.
 
-Twelve scripts that were written to populate an empty database with plausible data. They arrived
-here in 2026-08 from a `Cleansia.Infra.Scripts` project that contained no C# at all — a compiled
-assembly that existed only to carry SQL, referenced by nothing. There were twenty; an audit on
-2026-09-10 found that twelve could not run against the current schema, and on 2026-09-12 the eight of
-those that no accepted ADR cites were deleted (`insert_currencies.sql`, `insert_services.sql`,
-`insert_packages.sql`, `insert_orders.sql`, `insert_order_employee_pay.sql`,
-`insert_employee_pay_config.sql`, `insert_pay_periods.sql`, `fix_employee_addresses.sql` — all in git
-history).
-
-**Four of the twelve still cannot run.** Three stay only because accepted ADRs cite them as evidence
-(ADR-0041, ADR-0046), and an accepted ADR's citations are not rewritten; `insert_disputes.sql` stays
-because the live seed's disputes section points at it:
-
-| Script | Why it cannot run |
-|---|---|
-| `insert_users_employees.sql` | `Employees.VatNumber` is deleted — a cleaner is IČO and never a VAT payer |
-| `insert_employee_payroll.sql`, `insert_employee_invoices.sql` | depend on orders, employees and pay periods that nothing runnable creates; the pay-config, pay-period and order-pay blocks that used to be separate files are byte-duplicated inside the first |
-| `insert_disputes.sql` | selects orders by `DisplayOrderNumber` that nothing runnable creates |
-
-**Do not run them, and do not copy from them** — they describe a schema the platform no longer has.
+Eight scripts that populate an empty database with plausible catalogue and translation data. They
+arrived here in 2026-08 from a `Cleansia.Infra.Scripts` project that contained no C# at all — a
+compiled assembly that existed only to carry SQL, referenced by nothing. There were twenty; an audit
+on 2026-09-10 found that twelve could not run against the current schema, and all twelve were deleted
+on 2026-09-12 (the eight no accepted ADR cited first, then, on the owner's ruling, the four that ADRs
+cite as evidence — `insert_users_employees.sql`, `insert_employee_payroll.sql`,
+`insert_employee_invoices.sql`, `insert_disputes.sql`; ADR-0041 and ADR-0046 still read true, and
+every file is in git history).
 
 **The eight that still work** are the catalogue and translation fixtures: `insert_countries.sql`,
 `insert_languages.sql`, `insert_addresses.sql`, `insert_property_size_presets.sql`,

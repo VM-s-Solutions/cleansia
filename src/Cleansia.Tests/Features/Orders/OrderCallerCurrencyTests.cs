@@ -78,8 +78,6 @@ public class OrderCallerCurrencyTests
     private QuoteOrder.Handler QuoteHandler() =>
         new(
             _pricingCalculator.Object,
-            _serviceRepository.Object,
-            _packageRepository.Object,
             _session.Object,
             _loyaltyService.Object,
             _membershipRepository.Object,

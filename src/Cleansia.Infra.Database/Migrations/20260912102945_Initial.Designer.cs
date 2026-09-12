@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260909201112_Initial")]
+    [Migration("20260912102945_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1749,10 +1749,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsUnique()
                         .HasFilter("\"VariableSymbol\" IS NOT NULL");
 
-                    b.HasIndex("EmployeeId", "PayPeriodId")
-                        .IsUnique();
-
                     b.HasIndex("Status", "GeneratedAt");
+
+                    b.HasIndex("EmployeeId", "PayPeriodId", "CurrencyId")
+                        .IsUnique();
 
                     b.ToTable("EmployeeInvoices");
                 });
@@ -6715,7 +6715,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
                         .WithMany()
                         .HasForeignKey("CurrencyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Cleansia.Core.Domain.Users.Address", "CustomerAddress")

@@ -1746,10 +1746,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsUnique()
                         .HasFilter("\"VariableSymbol\" IS NOT NULL");
 
-                    b.HasIndex("EmployeeId", "PayPeriodId")
-                        .IsUnique();
-
                     b.HasIndex("Status", "GeneratedAt");
+
+                    b.HasIndex("EmployeeId", "PayPeriodId", "CurrencyId")
+                        .IsUnique();
 
                     b.ToTable("EmployeeInvoices");
                 });
@@ -6712,7 +6712,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
                         .WithMany()
                         .HasForeignKey("CurrencyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Cleansia.Core.Domain.Users.Address", "CustomerAddress")

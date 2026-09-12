@@ -16,7 +16,13 @@ public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, strin
 
     Task<EmployeeInvoice?> GetByEmployeeAndPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken);
 
-    Task<bool> ExistsForPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken);
+    /// <summary>
+    /// True when any of the employee's NOT-YET-INVOICED pay rows in the period is in a currency this
+    /// employee-period already holds an invoice for. One invoice per (employee, period, currency): a
+    /// period whose CZK pay is invoiced can still be invoiced for its EUR pay, while a late CZK row
+    /// cannot grow a second CZK invoice. The GenerateInvoice validator's already-exists guard.
+    /// </summary>
+    Task<bool> ExistsForUnassignedPayCurrencyAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken);
 
     Task<EmployeeInvoice?> GetLatestInvoiceAsync(string employeeId, CancellationToken cancellationToken);
 

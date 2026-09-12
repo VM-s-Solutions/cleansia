@@ -48,7 +48,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
 
                 var invoice = await context.Set<EmployeeInvoice>()
                     .IgnoreQueryFilters()
-                    .SingleAsync(i => i.Id == result.Value!.InvoiceId);
+                    .SingleAsync(i => i.Id == result.Value!.InvoiceIds.Single());
 
                 Assert.NotNull(invoice.VariableSymbol);
                 Assert.Matches(ProducedSymbolPattern, invoice.VariableSymbol!);

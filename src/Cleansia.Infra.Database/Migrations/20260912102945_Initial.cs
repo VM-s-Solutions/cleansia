@@ -1249,7 +1249,7 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.CurrencyId,
                         principalTable: "Currencies",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Orders_PromoCodes_PromoCodeId",
                         column: x => x.PromoCodeId,
@@ -3159,9 +3159,9 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmployeeInvoices_EmployeeId_PayPeriodId",
+                name: "IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId",
                 table: "EmployeeInvoices",
-                columns: new[] { "EmployeeId", "PayPeriodId" },
+                columns: new[] { "EmployeeId", "PayPeriodId", "CurrencyId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

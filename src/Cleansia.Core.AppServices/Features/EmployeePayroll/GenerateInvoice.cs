@@ -15,7 +15,8 @@ public class GenerateInvoice
         string EmployeeId,
         string PayPeriodId) : ICommand<Response>;
 
-    public record Response(string InvoiceId);
+    /// <summary>One id per invoice written -- one per currency the period's unassigned pay holds.</summary>
+    public record Response(IReadOnlyList<string> InvoiceIds);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -46,7 +47,7 @@ public class GenerateInvoice
                 .WithMessage(BusinessErrorMessage.PayPeriodNotFound);
 
             RuleFor(x => x)
-                .MustAsync(NoInvoiceExistsForPayPeriodAsync)
+                .MustAsync(NoInvoiceExistsForAnUnassignedPayCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceAlreadyExists);
 
             RuleFor(x => x)
@@ -54,11 +55,14 @@ public class GenerateInvoice
                 .WithMessage(BusinessErrorMessage.NoUnpaidOrderPays);
         }
 
-        // The rule must PASS when there is NO existing invoice (so a first-time generation
-        // proceeds) and FAIL with "already exists" when one is already present (the at-least-once
-        // redelivery dedup). MustAsync passes on a true predicate, so the existence check is negated.
-        private async Task<bool> NoInvoiceExistsForPayPeriodAsync(Command command, CancellationToken cancellationToken) =>
-            !await _employeeInvoiceRepository.ExistsForPayPeriodAsync(command.EmployeeId, command.PayPeriodId,
+        // PER CURRENCY: one invoice per (employee, period, currency), so the rule passes while every
+        // not-yet-invoiced row is in a currency the pair has no invoice for, and fails "already exists"
+        // when a row would join an invoice that already exists (a late pay row). At-least-once
+        // redelivery is NOT dedup'd here any more -- after a full run there is no unassigned row left,
+        // so the NoUnpaidOrderPays rule below is what makes a second delivery a no-op. MustAsync passes
+        // on a true predicate, so the existence check is negated.
+        private async Task<bool> NoInvoiceExistsForAnUnassignedPayCurrencyAsync(Command command, CancellationToken cancellationToken) =>
+            !await _employeeInvoiceRepository.ExistsForUnassignedPayCurrencyAsync(command.EmployeeId, command.PayPeriodId,
                 cancellationToken);
 
         private Task<bool> NoUnpaidOrderPaysExist(Command command, CancellationToken cancellationToken) =>
@@ -93,31 +97,44 @@ public class GenerateInvoice
             // from Employee.PreferredCurrencyCode -- two answers for one document, neither of which read
             // the pay rows. Both are deleted.
             //
-            // Mixed currencies in one period is a real state, not a bug: a cleaner can work an order in
-            // each. One invoice cannot cover them, so it is refused rather than summed.
-            if (orderPays.Select(p => p.CurrencyId).Distinct().Count() > 1)
+            // ONE INVOICE PER CURRENCY. A cleaner can work an order in each, and a tax document is in
+            // one unit, so the honest representation of a mixed period is two documents -- not a
+            // refusal, which had no admin action to resolve it (a EUR job cannot be made a CZK job) and
+            // stranded the rows with no invoice forever while the sweep re-enqueued the pair every tick.
+            var groups = orderPays
+                .GroupBy(p => p.CurrencyId)
+                .OrderBy(g => g.Key, StringComparer.Ordinal)
+                .ToList();
+
+            // Every payout reference is claimed BEFORE any invoice is staged, so a refused allocation
+            // leaves nothing half-written.
+            var symbols = new List<string>(groups.Count);
+            foreach (var _ in groups)
             {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(command.EmployeeId), BusinessErrorMessage.InvoiceSpansMultipleCurrencies));
+                var variableSymbol = await payoutReferenceAllocator.AllocateAsync(cancellationToken);
+                if (variableSymbol.IsFailure)
+                {
+                    return BusinessResult.Failure<Response>(variableSymbol.Error!);
+                }
+                symbols.Add(variableSymbol.Value!);
             }
 
-            var variableSymbol = await payoutReferenceAllocator.AllocateAsync(cancellationToken);
-            if (variableSymbol.IsFailure)
+            var invoices = new List<EmployeeInvoice>(groups.Count);
+            for (var i = 0; i < groups.Count; i++)
             {
-                return BusinessResult.Failure<Response>(variableSymbol.Error!);
-            }
+                var rows = groups[i].ToList();
+                var invoice = EmployeeInvoice.CreateFromOrderPays(
+                    command.EmployeeId,
+                    command.PayPeriodId,
+                    rows,
+                    symbols[i]);
 
-            var invoice = EmployeeInvoice.CreateFromOrderPays(
-                command.EmployeeId,
-                command.PayPeriodId,
-                orderPays,
-                variableSymbol.Value!);
-
-            invoiceRepository.Add(invoice);
-
-            foreach (var orderPay in orderPays)
-            {
-                orderPay.AssignToInvoice(invoice.Id);
+                invoiceRepository.Add(invoice);
+                foreach (var orderPay in rows)
+                {
+                    orderPay.AssignToInvoice(invoice.Id);
+                }
+                invoices.Add(invoice);
             }
 
             // This handler does NOT own its own commit — UnitOfWorkPipelineBehavior commits after it
@@ -125,24 +142,28 @@ public class GenerateInvoice
             // an unhandled DbUpdateException (a 500 on the admin path, a poisoned message on the queue
             // one). FLUSH here and own the failure: the allocator makes a duplicate impossible by
             // construction, so this is the backstop for a hand-written INSERT or a restored counter row,
-            // and it must be a refusal the admin can act on rather than a stack trace.
+            // and it must be a refusal the admin can act on rather than a stack trace. One flush for
+            // every currency's invoice, so a period is invoiced whole or not at all.
             try
             {
                 await invoiceRepository.CommitAsync(cancellationToken);
             }
             catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
             {
-                // Detach the rejected insert so the pipeline's later CommitAsync cannot retry it and
+                // Detach the rejected inserts so the pipeline's later CommitAsync cannot retry them and
                 // re-raise the same 23505. Nothing was persisted, so Remove() on a still-Added entity
                 // simply detaches it.
-                invoiceRepository.Remove(invoice);
+                foreach (var invoice in invoices)
+                {
+                    invoiceRepository.Remove(invoice);
+                }
 
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(EmployeeInvoice.VariableSymbol),
                     BusinessErrorMessage.InvoiceReferenceUnavailable));
             }
 
-            return BusinessResult.Success(new Response(invoice.Id));
+            return BusinessResult.Success(new Response(invoices.Select(i => i.Id).ToList()));
         }
     }
 }

@@ -146,8 +146,9 @@ public class EmployeeInvoice : Auditable, ITenantEntity
     ///
     /// <para><b>Throws when the rows disagree</b>, because SumPayAmounts is about to add them together
     /// and a sum across currencies is not a number. This is a backstop, not the guard: both callers
-    /// check first and report it properly. An empty set throws for the same reason — there is no
-    /// currency to derive and no invoice to write.</para>
+    /// group the rows by currency first and create one invoice per group, so it only fires on a caller
+    /// that forgot to. An empty set throws for the same reason — there is no currency to derive and no
+    /// invoice to write.</para>
     /// </summary>
     public static EmployeeInvoice CreateFromOrderPays(
         string employeeId,

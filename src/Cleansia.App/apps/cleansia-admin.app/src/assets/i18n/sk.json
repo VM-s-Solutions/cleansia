@@ -2635,7 +2635,6 @@
         "reference_capacity_exhausted": "Variabilné symboly pre tento rok sú vyčerpané. Kontaktujte podporu.",
         "reference_missing": "Pred zaznamenaním platby priraďte variabilný symbol.",
         "reference_unavailable": "Tento variabilný symbol sa už používa. Skúste to prosím znova.",
-        "spans_multiple_currencies": "Odmena tohto upratovača za obdobie je vo viacerých menách; jedna faktúra ich nemôže pokryť",
         "template_not_found": "Šablóna faktúry nebola nájdená"
       },
       "no_active_period": "Nenašlo sa žiadne aktívne výplatné obdobie",

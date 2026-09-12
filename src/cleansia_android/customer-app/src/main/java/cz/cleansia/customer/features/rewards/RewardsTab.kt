@@ -45,12 +45,8 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,25 +61,19 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
-import cz.cleansia.customer.core.catalog.CatalogRepositoryEntryPoint
-import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyEarnSource
-import cz.cleansia.customer.core.loyalty.LoyaltyRepositoryEntryPoint
 import cz.cleansia.customer.core.loyalty.LoyaltyTier
 import cz.cleansia.customer.core.loyalty.LoyaltyTransactionType
 import cz.cleansia.customer.core.loyalty.TierInfoDto
 import cz.cleansia.customer.core.loyalty.TierPerkDto
 import cz.cleansia.customer.core.referral.ReferralAccountDto
-import cz.cleansia.customer.core.referral.ReferralRepositoryEntryPoint
-import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.core.snackbar.SnackbarControllerEntryPoint
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.ui.theme.SuccessText
-import dagger.hilt.android.EntryPointAccessors
-import kotlinx.coroutines.launch
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Rewards tab — Loyalty Phase A (M2).
@@ -110,75 +100,22 @@ import kotlinx.coroutines.launch
 fun RewardsTab(
     modifier: Modifier = Modifier,
     onOpenActivity: () -> Unit = {},
+    viewModel: RewardsTabViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
-    // TODO(W3.3): refactor to VM injection — a small @HiltViewModel exposing
-    // LoyaltyRepository + ReferralRepository would let this drop the
-    // EntryPointAccessors detour.
-    val loyaltyRepo = remember {
-        EntryPointAccessors
-            .fromApplication(context, LoyaltyRepositoryEntryPoint::class.java)
-            .loyaltyRepository()
-    }
-    val referralRepo = remember {
-        EntryPointAccessors
-            .fromApplication(context, ReferralRepositoryEntryPoint::class.java)
-            .referralRepository()
-    }
-    val snackbar = remember {
-        EntryPointAccessors
-            .fromApplication(context, SnackbarControllerEntryPoint::class.java)
-            .snackbarController()
-    }
-    // The tier floor is a platform-default-currency number, so it is labelled with the catalogue's
-    // default code — the same source the booking wizard's tier-floor hint reads.
-    val catalogRepo = remember {
-        EntryPointAccessors
-            .fromApplication(context, CatalogRepositoryEntryPoint::class.java)
-            .catalogRepository()
-    }
-    val scope = rememberCoroutineScope()
+    val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
+    val account by viewModel.account.collectAsStateWithLifecycle()
+    val tiers by viewModel.tiers.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val loaded by viewModel.loaded.collectAsStateWithLifecycle()
+    val referralAccount by viewModel.referralAccount.collectAsStateWithLifecycle()
+    val activityPreview by viewModel.activityPreview.collectAsStateWithLifecycle()
 
-    val currencyCode by catalogRepo.currencyCode.collectAsState()
-    val account by loyaltyRepo.account.collectAsState()
-    val tiers by loyaltyRepo.tiers.collectAsState()
-    val loading by loyaltyRepo.loading.collectAsState()
-    val loaded by loyaltyRepo.loaded.collectAsState()
-    val referralAccount by referralRepo.account.collectAsState()
-
-    // Activity preview — up to 5 items shown inline. Fetched independently of
-    // the cached account/tiers since [LoyaltyRepository] doesn't hold activity
-    // (the activity sub-screen pages the whole list itself). Local state only.
-    var activityPreview by remember { mutableStateOf<List<LoyaltyActivityItemDto>>(emptyList()) }
     LaunchedEffect(loaded) {
-        if (loaded) {
-            loyaltyRepo.loadActivity(offset = 0, limit = 5)
-                .onSuccess { activityPreview = it.data }
-                .onError { error ->
-                    if (error !is ApiError.Network) snackbar.showError(error)
-                }
-        }
+        if (loaded) viewModel.loadActivityPreview()
     }
 
     val pullState = rememberPullToRefreshState()
-    val refresh: () -> Unit = {
-        scope.launch {
-            loyaltyRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error)
-            }
-            // Pull-to-refresh also re-fetches the referral snapshot so the stats
-            // counters stay current after a friend qualifies.
-            referralRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error)
-            }
-            // Re-prime the preview after a manual refresh — the repo doesn't cache it.
-            loyaltyRepo.loadActivity(offset = 0, limit = 5)
-                .onSuccess { activityPreview = it.data }
-                .onError { error ->
-                    if (error !is ApiError.Network) snackbar.showError(error)
-                }
-        }
-    }
+    val refresh: () -> Unit = viewModel::refresh
 
     Column(
         modifier = modifier
@@ -228,6 +165,8 @@ fun RewardsTab(
                     referralAccount = referralAccount,
                     activityPreview = activityPreview,
                     onOpenActivity = onOpenActivity,
+                    onReferralCodeCopied = viewModel::onReferralCodeCopied,
+                    onReferralShareUnavailable = viewModel::onReferralShareUnavailable,
                 )
             }
         }
@@ -244,6 +183,8 @@ private fun LoyaltyContent(
     referralAccount: ReferralAccountDto?,
     activityPreview: List<LoyaltyActivityItemDto>,
     onOpenActivity: () -> Unit,
+    onReferralCodeCopied: () -> Unit,
+    onReferralShareUnavailable: () -> Unit,
 ) {
     val currentTier = LoyaltyTier.fromValue(account.currentTier) ?: LoyaltyTier.BronzeCleaner
 
@@ -274,7 +215,11 @@ private fun LoyaltyContent(
         // or the rare backend failure). MainShell prefetch + pull-to-refresh
         // both call referralRepo.refresh() which triggers EnsureCodeForUserAsync.
         if (referralAccount != null && referralAccount.code.isNotBlank()) {
-            InviteFriendsCard(referralAccount)
+            InviteFriendsCard(
+                referral = referralAccount,
+                onCodeCopied = onReferralCodeCopied,
+                onShareUnavailable = onReferralShareUnavailable,
+            )
             Spacer(Modifier.height(16.dp))
         }
 
@@ -818,15 +763,12 @@ private fun transactionDescription(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun InviteFriendsCard(referral: ReferralAccountDto) {
+private fun InviteFriendsCard(
+    referral: ReferralAccountDto,
+    onCodeCopied: () -> Unit,
+    onShareUnavailable: () -> Unit,
+) {
     val context = LocalContext.current
-    // TODO(W3.3): refactor to VM injection — leaf composable; lift snackbar
-    // through parent RewardsTab once it grows a VM.
-    val snackbar = remember {
-        EntryPointAccessors
-            .fromApplication(context, SnackbarControllerEntryPoint::class.java)
-            .snackbarController()
-    }
     val code = referral.code
 
     val statsLine: String = when {
@@ -848,11 +790,11 @@ private fun InviteFriendsCard(referral: ReferralAccountDto) {
 
     val onCopy: () -> Unit = {
         copyToClipboard(context, code)
-        snackbar.showSuccess(context.getString(R.string.loyalty_referral_copied_toast))
+        onCodeCopied()
     }
 
     val onShare: () -> Unit = {
-        shareReferralOrFallback(context, code, snackbar)
+        shareReferralOrFallback(context, code, onShareUnavailable)
     }
 
     Column(
@@ -990,7 +932,7 @@ private fun copyToClipboard(context: android.content.Context, code: String) {
 private fun shareReferralOrFallback(
     context: android.content.Context,
     code: String,
-    snackbar: SnackbarController,
+    onShareUnavailable: () -> Unit,
 ) {
     val landingUrl = "https://cleansia.cz/r/$code"
     val message = context.getString(R.string.loyalty_referral_share_text, code, landingUrl)
@@ -1009,7 +951,7 @@ private fun shareReferralOrFallback(
         context.startActivity(chooser)
     } catch (e: android.content.ActivityNotFoundException) {
         copyToClipboard(context, code)
-        snackbar.showInfo(context.getString(R.string.loyalty_referral_share_failed))
+        onShareUnavailable()
     }
 }
 

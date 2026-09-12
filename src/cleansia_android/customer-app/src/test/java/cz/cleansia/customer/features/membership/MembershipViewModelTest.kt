@@ -167,18 +167,20 @@ class MembershipViewModelTest {
     }
 
     @Test
-    fun `cancel success runs callback and returns to Idle`() = runTest {
+    fun `cancel success snackbars the period end and returns to Idle`() = runTest {
         coEvery { repository.cancel() } returns ApiResult.Success(
-            CancelMembershipSubscriptionResponse(effectiveEndDate = "2026-07-01"),
+            CancelMembershipSubscriptionResponse(effectiveEndDate = "2026-07-01T00:00:00Z"),
         )
+        every { appContext.getString(R.string.membership_cancelled_until, any()) } answers {
+            "Active until ${secondArg<Array<Any?>>()[0]}"
+        }
 
-        var endDate: String? = null
         val vm = viewModel()
         advanceUntilIdle()
-        vm.cancel { endDate = it }
+        vm.cancel()
         advanceUntilIdle()
 
-        assertEquals("2026-07-01", endDate)
+        verify(exactly = 1) { snackbar.showSuccess("Active until ${formatPeriodEnd("2026-07-01T00:00:00Z")}") }
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
@@ -189,7 +191,7 @@ class MembershipViewModelTest {
 
         val vm = viewModel()
         advanceUntilIdle()
-        vm.cancel { }
+        vm.cancel()
         advanceUntilIdle()
 
         verify { snackbar.showError(match<ApiError> { it.getUserMessage() == "server boom" }) }
@@ -203,15 +205,16 @@ class MembershipViewModelTest {
 
         val vm = viewModel()
         advanceUntilIdle()
-        vm.cancel { }
+        vm.cancel()
         advanceUntilIdle()
 
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showSuccess(any<String>()) }
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
     @Test
-    fun `swapPlan success runs callback`() = runTest {
+    fun `swapPlan success snackbars the switch`() = runTest {
         coEvery { repository.swapPlan("plus_yearly") } returns ApiResult.Success(
             SwapMembershipPlanResponse(
                 newPlanCode = "plus_yearly",
@@ -219,13 +222,42 @@ class MembershipViewModelTest {
             ),
         )
 
-        var swapped = false
         val vm = viewModel()
         advanceUntilIdle()
-        vm.swapPlan("plus_yearly") { swapped = true }
+        vm.swapPlan("plus_yearly")
         advanceUntilIdle()
 
-        assertTrue(swapped)
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.membership_switch_success) }
         assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `swapPlan failure snackbars nothing as success`() = runTest {
+        coEvery { repository.swapPlan("plus_yearly") } returns
+            ApiResult.Error(ApiError.Network("network error"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.swapPlan("plus_yearly")
+        advanceUntilIdle()
+
+        verify(exactly = 0) { snackbar.showSuccessKey(any()) }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `the payment-sheet outcomes are keyed notices, a failure carries Stripe's own message`() = runTest {
+        every { appContext.getString(R.string.error_payment_failed) } returns "Payment failed."
+        val vm = viewModel()
+
+        vm.onPaymentCancelled()
+        vm.onPaymentFailed("Card declined")
+        vm.onPaymentFailed(null)
+        vm.onAlreadyActive()
+
+        verify(exactly = 1) { snackbar.showErrorKey(R.string.error_payment_cancelled) }
+        verify(exactly = 1) { snackbar.showError("Card declined") }
+        verify(exactly = 1) { snackbar.showError("Payment failed.") }
+        verify(exactly = 1) { snackbar.showSuccessKey(R.string.membership_already_active) }
     }
 }

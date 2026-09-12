@@ -1,7 +1,4 @@
 package cz.cleansia.customer.navigation
-import cz.cleansia.customer.core.auth.TokenStoreEntryPoint
-import cz.cleansia.core.auth.TokenStore
-import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.SessionEvent
 
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -48,6 +45,7 @@ import cz.cleansia.customer.features.profile.NotificationsScreen
 import cz.cleansia.customer.features.profile.SecurityScreen
 import cz.cleansia.customer.features.rewards.RewardsActivityScreen
 import cz.cleansia.customer.features.splash.SplashScreen
+import cz.cleansia.customer.features.splash.SplashViewModel
 
 // ── Transition specs ──
 // Horizontal push (settings drill-down, auth stack) — 280ms
@@ -126,23 +124,11 @@ fun CleansiaNavHost(
             enterTransition = fadeEnterLong,
             exitTransition = fadeExitLong,
         ) {
-            val context = androidx.compose.ui.platform.LocalContext.current
-            // TODO(W3.3): refactor to VM injection — Splash gates on TokenStore
-            // pre-Hilt-VM scope; a holder VM here is feasible but the splash is
-            // a one-shot route. Acceptable residue mirroring CleansiaApp.kt.
-            val tokenStore = androidx.compose.runtime.remember {
-                dagger.hilt.android.EntryPointAccessors.fromApplication(
-                    context,
-                    cz.cleansia.customer.core.auth.TokenStoreEntryPoint::class.java,
-                ).tokenStore()
-            }
+            val splashVm: SplashViewModel = hiltViewModel()
 
             SplashScreen(
                 onContinue = {
-                    // Resume the session if the refresh token is still valid.
-                    // The access token may have expired — the 401 Authenticator will refresh it.
-                    val hasValidSession = tokenStore.current()?.let { !it.isRefreshExpired() } == true
-                    val destination: Any = if (hasValidSession) Routes.Home() else Routes.SignIn
+                    val destination: Any = if (splashVm.hasValidSession()) Routes.Home() else Routes.SignIn
                     navController.navigate(destination) {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
@@ -509,23 +495,8 @@ fun CleansiaNavHost(
             val deleteState by vm.deleteState.collectAsStateWithLifecycle()
             val loading = deleteState is cz.cleansia.customer.ui.state.ActionState.Submitting
 
-            // Read the current user's email from TokenStore so we can pre-fill the confirm-match check.
-            // TODO(W3.3): refactor to VM injection — DeleteAccountViewModel
-            // could expose the decoded email; this in-screen TokenStore reach
-            // mirrors the splash pattern.
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val email = androidx.compose.runtime.remember {
-                val tokens = dagger.hilt.android.EntryPointAccessors.fromApplication(
-                    context,
-                    cz.cleansia.customer.core.auth.TokenStoreEntryPoint::class.java,
-                ).tokenStore().current()?.accessToken
-                tokens?.let { jwt ->
-                    cz.cleansia.core.auth.JwtDecoder.extractEmail(jwt)
-                }.orEmpty()
-            }
-
             cz.cleansia.customer.features.profile.DeleteAccountScreen(
-                userEmail = email,
+                userEmail = vm.userEmail,
                 onBack = { navController.popBackStack() },
                 onConfirmDelete = { vm.deleteAccount() },
                 loading = loading,

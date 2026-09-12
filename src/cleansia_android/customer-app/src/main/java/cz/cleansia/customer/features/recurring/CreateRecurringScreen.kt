@@ -106,6 +106,7 @@ fun CreateRecurringScreen(
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
     val currentStep by viewModel.step.collectAsStateWithLifecycle()
     val canStepBack by viewModel.canStepBack.collectAsStateWithLifecycle()
+    val canAdvance by viewModel.canAdvance.collectAsStateWithLifecycle()
     val savedAddresses by viewModel.savedAddresses.collectAsStateWithLifecycle()
     val services by viewModel.services.collectAsStateWithLifecycle()
     val packages by viewModel.packages.collectAsStateWithLifecycle()
@@ -134,13 +135,6 @@ fun CreateRecurringScreen(
     }
 
     val isPathB = viewModel.sourceOrderId != null
-
-    val canAdvance = when (currentStep) {
-        1 -> state.timeOfDay.isNotBlank()  // freq + day always have defaults
-        2 -> state.selectedServiceIds.isNotEmpty() || state.selectedPackageIds.isNotEmpty()
-        3 -> state.savedAddressId.isNotBlank() && state.startsOnIso.isNotBlank()
-        else -> false
-    }
 
     Scaffold(
         topBar = {

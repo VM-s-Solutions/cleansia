@@ -32,7 +32,7 @@ class RewardsCurrencyBindingTest {
         )
         assertTrue(
             "the rewards tab no longer reads the catalogue default currency",
-            flat.contains("catalogRepo.currencyCode.collectAsState()"),
+            flat.contains("viewModel.currencyCode.collectAsStateWithLifecycle()"),
         )
     }
 

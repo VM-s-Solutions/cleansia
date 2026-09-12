@@ -37,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,8 +46,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.core.ui.components.CleansiaDialog
-import cz.cleansia.core.snackbar.SnackbarController
-import dagger.hilt.android.EntryPointAccessors
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -77,15 +74,6 @@ fun MembershipManagementCard(
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
     val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
-    val context = LocalContext.current
-
-    // TODO(W3.3): refactor to VM injection — pull snackbar into
-    // MembershipViewModel like ProfileViewModel/OrderDetailViewModel.
-    val snackbar = remember {
-        EntryPointAccessors
-            .fromApplication(context, SubscribePlusEntryPoint::class.java)
-            .snackbarController()
-    }
 
     var showCancelDialog by remember { mutableStateOf(false) }
     var showSwitchDialog by remember { mutableStateOf(false) }
@@ -124,14 +112,7 @@ fun MembershipManagementCard(
             confirmLabel = stringResource(R.string.membership_cancel_dialog_confirm),
             onConfirm = {
                 showCancelDialog = false
-                viewModel.cancel { effectiveDate ->
-                    snackbar.showSuccess(
-                        context.getString(
-                            R.string.membership_cancelled_until,
-                            formatPeriodEnd(effectiveDate),
-                        ),
-                    )
-                }
+                viewModel.cancel()
             },
             dismissLabel = stringResource(R.string.common_back),
         )
@@ -148,9 +129,7 @@ fun MembershipManagementCard(
             confirmLabel = stringResource(R.string.membership_switch_dialog_confirm),
             onConfirm = {
                 showSwitchDialog = false
-                viewModel.swapPlan(yearlyPlan.code) {
-                    snackbar.showSuccess(context.getString(R.string.membership_switch_success))
-                }
+                viewModel.swapPlan(yearlyPlan.code)
             },
             dismissLabel = stringResource(R.string.common_back),
         )
@@ -496,7 +475,7 @@ private val EndingAccent = androidx.compose.ui.graphics.Color(0xFFB91C1C)
 
 
 /** Format a backend ISO-8601 instant as a localized short date (e.g. "May 30, 2026"). */
-private fun formatPeriodEnd(iso: String): String {
+internal fun formatPeriodEnd(iso: String): String {
     return runCatching {
         val instant = Instant.parse(iso)
         val formatter = DateTimeFormatter

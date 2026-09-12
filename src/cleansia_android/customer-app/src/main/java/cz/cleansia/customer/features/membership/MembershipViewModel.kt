@@ -166,14 +166,16 @@ class MembershipViewModel @Inject constructor(
      * Cancel the user's active membership at period end. UI refreshes from
      * [current] which reflects the cancellation request flag.
      */
-    fun cancel(onSuccess: (effectiveEndDate: String) -> Unit = {}) {
+    fun cancel() {
         if (_submitState.value is ActionState.Submitting) return
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             try {
                 val resp = repository.cancel().showErrorUnlessNetwork().getOrNull()
                     ?: return@launch
-                onSuccess(resp.effectiveEndDate)
+                snackbar.showSuccess(
+                    appContext.getString(R.string.membership_cancelled_until, formatPeriodEnd(resp.effectiveEndDate)),
+                )
             } finally {
                 _submitState.value = ActionState.Idle
             }
@@ -185,18 +187,30 @@ class MembershipViewModel @Inject constructor(
      * prorates and charges/credits the user's default payment method on
      * the spot — no PaymentSheet round-trip needed.
      */
-    fun swapPlan(newPlanCode: String, onSuccess: () -> Unit = {}) {
+    fun swapPlan(newPlanCode: String) {
         if (_submitState.value is ActionState.Submitting) return
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             try {
                 repository.swapPlan(newPlanCode).showErrorUnlessNetwork().getOrNull()
                     ?: return@launch
-                onSuccess()
+                snackbar.showSuccessKey(R.string.membership_switch_success)
             } finally {
                 _submitState.value = ActionState.Idle
             }
         }
+    }
+
+    fun onPaymentCancelled() {
+        snackbar.showErrorKey(R.string.error_payment_cancelled)
+    }
+
+    fun onPaymentFailed(message: String?) {
+        snackbar.showError(message ?: appContext.getString(R.string.error_payment_failed))
+    }
+
+    fun onAlreadyActive() {
+        snackbar.showSuccessKey(R.string.membership_already_active)
     }
 
     private fun <T> ApiResult<T>.showErrorUnlessNetwork(): ApiResult<T> = onError { error ->

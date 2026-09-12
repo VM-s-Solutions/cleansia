@@ -150,6 +150,13 @@ class BookingViewModel @Inject constructor(
     private val _state = MutableStateFlow(BookingState())
     val state: StateFlow<BookingState> = _state.asStateFlow()
 
+    private val _step = MutableStateFlow(1)
+    val step: StateFlow<Int> = _step.asStateFlow()
+
+    val canStepBack: StateFlow<Boolean> = _step
+        .map { it > 1 }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     /**
      * The wizard's one read of the express waiver, shared by the slot grid's disclosure and its chip.
      * A failed or absent membership read degrades to [ExpressWaiver.None] — the same silence a
@@ -333,6 +340,7 @@ class BookingViewModel @Inject constructor(
      */
     fun reset() {
         _state.value = BookingState()
+        returnToFirstStep()
         _quoteState.value = QuoteState.Idle
         _submitState.value = ActionState.Idle
         _promoCodeState.value = PromoCodeUiState.Idle
@@ -344,6 +352,10 @@ class BookingViewModel @Inject constructor(
     fun update(transform: (BookingState) -> BookingState) {
         _state.value = transform(_state.value)
     }
+
+    fun nextStep() { _step.update { (it + 1).coerceAtMost(TOTAL_STEPS) } }
+    fun previousStep() { _step.update { (it - 1).coerceAtLeast(1) } }
+    fun returnToFirstStep() { _step.value = 1 }
 
     /**
      * Clamps to the backend's own limit at the keystroke, so an over-long note
@@ -665,6 +677,8 @@ class BookingViewModel @Inject constructor(
     )
 
     companion object {
+        const val TOTAL_STEPS = 3
+
         /** Mirrors `CreateOrder`'s `RuleFor(x => x.AccessInstructions).MaximumLength(2000)`. */
         const val ACCESS_INSTRUCTIONS_MAX_LENGTH = 2000
     }

@@ -7,9 +7,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
 /**
- * Exposes [TokenStore] to non-Hilt composables (e.g. the splash branch inside
- * the navigation host). Prefer `hiltViewModel()` or constructor-injected VMs
- * over this pattern in feature code.
+ * Exposes [TokenStore] outside the Hilt graph, to the `Application` that starts Sentry's user
+ * tracking before any ViewModel exists. Feature code takes it through `hiltViewModel()` or a
+ * constructor-injected ViewModel, never through this.
  */
 @EntryPoint
 @InstallIn(SingletonComponent::class)

@@ -49,7 +49,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -65,11 +64,9 @@ import com.stripe.android.paymentsheet.PaymentSheetResult
 import com.stripe.android.paymentsheet.rememberPaymentSheet
 import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
-import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.theme.Sky400
 import cz.cleansia.customer.ui.theme.Sky950
 import cz.cleansia.customer.ui.theme.Slate900
-import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 
 /**
@@ -83,7 +80,6 @@ fun SubscribePlusScreen(
     onSubscribed: () -> Unit,
     viewModel: MembershipViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
@@ -96,13 +92,6 @@ fun SubscribePlusScreen(
     }
     val selectedPlan = remember(plans, selectedPlanCode) { plans.firstOrNull { it.code == selectedPlanCode } }
 
-    // TODO(W3.3): refactor to VM injection — pull snackbar into
-    // MembershipViewModel like ProfileViewModel/OrderDetailViewModel.
-    val snackbar = remember {
-        EntryPointAccessors
-            .fromApplication(context, SubscribePlusEntryPoint::class.java)
-            .snackbarController()
-    }
     // Guards the post-purchase nav so it only fires once even when both the
     // PaymentSheet result handler AND the membership-state LaunchedEffect
     // observe success. Without it the user can briefly bounce out of the
@@ -127,15 +116,8 @@ fun SubscribePlusScreen(
                     }
                 }
             }
-            is PaymentSheetResult.Canceled -> {
-                snackbar.showError(context.getString(R.string.error_payment_cancelled))
-            }
-            is PaymentSheetResult.Failed -> {
-                snackbar.showError(
-                    result.error.localizedMessage
-                        ?: context.getString(R.string.error_payment_failed),
-                )
-            }
+            is PaymentSheetResult.Canceled -> viewModel.onPaymentCancelled()
+            is PaymentSheetResult.Failed -> viewModel.onPaymentFailed(result.error.localizedMessage)
         }
     }
 
@@ -260,7 +242,7 @@ fun SubscribePlusScreen(
                             )
                         }
                         SubscribeOutcome.AlreadyActive -> {
-                            snackbar.showSuccess(context.getString(R.string.membership_already_active))
+                            viewModel.onAlreadyActive()
                             onBack()
                         }
                         SubscribeOutcome.Failed -> Unit
@@ -726,14 +708,3 @@ private fun buildDisclosure(
  */
 private fun formatPlanPrice(amount: Double?, currencyCode: String?): String =
     if (amount == null) "\u2014" else formatOrderPrice(amount, currencyCode)
-
-/**
- * Snackbar pulled out of the Hilt graph at composition time. Same pattern
- * as the BookingSheetEntryPoint — the screen needs the singleton snackbar
- * controller for PaymentSheet result handling without going through a VM.
- */
-@dagger.hilt.EntryPoint
-@dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
-interface SubscribePlusEntryPoint {
-    fun snackbarController(): SnackbarController
-}

@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -80,6 +81,15 @@ class CreateRecurringViewModel @Inject constructor(
     val canStepBack: StateFlow<Boolean> = _step
         .map { it > 1 }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val canAdvance: StateFlow<Boolean> = combine(_state, _step) { s, step ->
+        when (step) {
+            1 -> s.timeOfDay.isNotBlank()
+            2 -> s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()
+            3 -> s.savedAddressId.isNotBlank() && s.startsOnIso.isNotBlank()
+            else -> false
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val savedAddresses: StateFlow<List<UserAddress>> = addressRepo.addresses
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -247,7 +257,17 @@ class CreateRecurringViewModel @Inject constructor(
     private suspend fun followMarket(countryId: String?) {
         if (catalogRepo.countryId.value == countryId) return
         if (catalogRepo.refresh(countryId) !is ApiResult.Success) return
+        pruneSelectionToCatalogue()
+    }
 
+    /**
+     * A market reload still in flight prunes when it lands; pruning against the catalogue it is
+     * replacing would drop what the new market may well price.
+     */
+    private suspend fun isCatalogueForSelectedMarket(): Boolean =
+        catalogRepo.loaded.value && catalogRepo.countryId.value == resolveCountryId(_state.value.savedAddressId)
+
+    private fun pruneSelectionToCatalogue() {
         val services = catalogRepo.services.value.map { it.id }.toSet()
         val packages = catalogRepo.packages.value.map { it.id }.toSet()
         var dropped = false
@@ -341,6 +361,7 @@ class CreateRecurringViewModel @Inject constructor(
                     dayOfWeek = dayOfWeek ?: current.dayOfWeek,
                 )
             }
+            if (isCatalogueForSelectedMarket()) pruneSelectionToCatalogue()
         }
     }
 }

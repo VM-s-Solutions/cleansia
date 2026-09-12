@@ -39,18 +39,15 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -61,15 +58,13 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.ui.format.orderStatusColor
-import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.orders.OrderListItemDto
-import cz.cleansia.customer.core.orders.OrderRepositoryEntryPoint
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
-import dagger.hilt.android.EntryPointAccessors
-import kotlinx.coroutines.launch
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Orders tab — lists the signed-in user's cleaning orders with filter chips,
@@ -88,23 +83,13 @@ fun OrdersTab(
     modifier: Modifier = Modifier,
     onOrderClick: (orderId: String) -> Unit = {},
     onBookCleaning: () -> Unit = {},
+    viewModel: OrdersTabViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
-    // TODO(W3.3): refactor to VM injection — observed StateFlows from a
-    // singleton; a small @HiltViewModel exposing OrderRepository would let
-    // this drop the EntryPointAccessors detour.
-    val entryPoint = remember {
-        EntryPointAccessors.fromApplication(context, OrderRepositoryEntryPoint::class.java)
-    }
-    val orderRepo = remember { entryPoint.orderRepository() }
-    val snackbar = remember { entryPoint.snackbarController() }
-    val scope = rememberCoroutineScope()
-
-    val orders by orderRepo.orders.collectAsState()
-    val loading by orderRepo.loading.collectAsState()
-    val loadingMore by orderRepo.loadingMore.collectAsState()
-    val loaded by orderRepo.loaded.collectAsState()
-    val totalRecords by orderRepo.totalRecords.collectAsState()
+    val orders by viewModel.orders.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val loadingMore by viewModel.loadingMore.collectAsStateWithLifecycle()
+    val loaded by viewModel.loaded.collectAsStateWithLifecycle()
+    val totalRecords by viewModel.totalRecords.collectAsStateWithLifecycle()
 
     var activeFilter by remember { mutableStateOf(OrderFilter.All) }
 
@@ -124,27 +109,13 @@ fun OrdersTab(
     }
 
     val pullState = rememberPullToRefreshState()
-    val refresh: () -> Unit = {
-        scope.launch {
-            orderRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error)
-            }
-        }
-    }
+    val refresh: () -> Unit = viewModel::refresh
 
     // Safety-net auto-refresh on tab entry. The MainShell prefetch only fires
     // once per shell composition; if a booking is created between the initial
     // prefetch and the first time the user opens this tab, the cache would be
-    // stale. Trigger a background refresh on every tab entry — gated on
-    // `loading` to avoid stacking parallel calls. Pull-to-refresh stays
-    // available for explicit manual refreshes.
-    LaunchedEffect(Unit) {
-        if (!orderRepo.loading.value) {
-            orderRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error)
-            }
-        }
-    }
+    // stale. Pull-to-refresh stays available for explicit manual refreshes.
+    LaunchedEffect(Unit) { viewModel.refreshUnlessLoading() }
 
     Column(
         modifier = modifier
@@ -196,7 +167,7 @@ fun OrdersTab(
                     onFilterChange = { activeFilter = it },
                     loadingMore = loadingMore,
                     hasMore = orders.size < totalRecords,
-                    onLoadMore = { scope.launch { orderRepo.loadNextPage() } },
+                    onLoadMore = viewModel::loadNextPage,
                     onOrderClick = onOrderClick,
                 )
             }

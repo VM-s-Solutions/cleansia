@@ -421,6 +421,83 @@ class BookingViewModelTest {
         assertEquals("  Ring the bell twice.  ", vm.state.value.accessInstructions)
     }
 
+    // ── wizard steps ──
+
+    @Test
+    fun steps_openOnTheFirstStepAndCannotStepBack() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(1, vm.step.value)
+        assertEquals(false, vm.canStepBack.value)
+    }
+
+    @Test
+    fun steps_forwardThenBackReturnsExactlyOneStep() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+        assertEquals(3, vm.step.value)
+        assertEquals(true, vm.canStepBack.value)
+
+        vm.previousStep()
+        runCurrent()
+        assertEquals(2, vm.step.value)
+        assertEquals(true, vm.canStepBack.value)
+
+        vm.previousStep()
+        runCurrent()
+        assertEquals(1, vm.step.value)
+        assertEquals(false, vm.canStepBack.value)
+    }
+
+    @Test
+    fun steps_areClampedAtBothEnds() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        vm.previousStep()
+        assertEquals(1, vm.step.value)
+
+        repeat(BookingViewModel.TOTAL_STEPS + 2) { vm.nextStep() }
+        assertEquals(BookingViewModel.TOTAL_STEPS, vm.step.value)
+    }
+
+    @Test
+    fun returnToFirstStep_reopensTheWizardOnItsFirstStepWithTheFormKept() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.update { it.copy(rooms = 4) }
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+
+        vm.returnToFirstStep()
+        runCurrent()
+
+        assertEquals(1, vm.step.value)
+        assertEquals(false, vm.canStepBack.value)
+        assertEquals(4, vm.state.value.rooms)
+    }
+
+    @Test
+    fun reset_returnsTheWizardToItsFirstStep() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+
+        vm.reset()
+        runCurrent()
+
+        assertEquals(1, vm.step.value)
+        assertEquals(false, vm.canStepBack.value)
+    }
+
     @Test
     fun submit_whenAlreadySubmitting_secondCallShortCircuitsToFailed() = runTest {
         currentUserFlow.value = completeUser()

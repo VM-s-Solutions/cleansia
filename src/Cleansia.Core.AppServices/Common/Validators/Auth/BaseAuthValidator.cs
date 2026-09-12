@@ -1,9 +1,8 @@
 ﻿using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Common.Validators;
 using FluentValidation;
 using System.Linq.Expressions;
 
-namespace Cleansia.Core.AppServices.Features.Auth.Validators;
+namespace Cleansia.Core.AppServices.Common.Validators.Auth;
 
 public class BaseAuthValidator<TRequest> : AbstractValidator<TRequest>
 {

@@ -1,12 +1,13 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using FluentValidation;
 using System.Linq.Expressions;
 
-namespace Cleansia.Core.AppServices.Features.Auth.Validators;
+namespace Cleansia.Core.AppServices.Common.Validators.Auth;
 
 /// <summary>
 /// The single shared login validator: the email-existence/auth-type rules, the lockout-then-

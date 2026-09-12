@@ -12,10 +12,9 @@ namespace Cleansia.Core.AppServices.Features.Currencies;
 ///
 /// <para>It exists as its own query rather than as a flag on <see cref="CurrencyListItem"/> because
 /// that DTO is nested inside <c>OrderListItem</c> and reaches every host — both committed mobile
-/// specs, both Android apps and iOS. Putting a LIVE market switch on a historical order row is the
-/// same defect <c>CurrencyMappers</c> already documents for <c>ExchangeRate</c>: the same named field
-/// would disagree between the quote and the order list for the same order. An admin screen wanting a
-/// boolean is not a reason to put one there.</para>
+/// specs, both Android apps and iOS. A LIVE market switch on a historical order row would make the
+/// same named field disagree between the quote and the order list for the same order once the
+/// currency is deactivated. An admin screen wanting a boolean is not a reason to put one there.</para>
 ///
 /// <para>Same route, same permission, same ordering as <see cref="GetCurrencyOverview"/> — only the
 /// admin host's response type moves.</para>

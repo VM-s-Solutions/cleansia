@@ -1,7 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Features.Auth.Validators;
+using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;

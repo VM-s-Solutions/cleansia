@@ -157,22 +157,6 @@ public static class ValidationExtensions
             .WithMessage(BusinessErrorMessage.InvalidLength);
     }
 
-    public static IRuleBuilderOptions<T, string> ValidateTaxId<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
-    {
-        return ruleBuilder
-            .MaximumLength(20)
-            .WithMessage(BusinessErrorMessage.InvalidLength);
-    }
-
-    public static IRuleBuilderOptions<T, string> ValidateIban<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
-    {
-        return ruleBuilder
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty()
-            .WithMessage(BusinessErrorMessage.Required)
-            .Length(15, 34)
-            .WithMessage(BusinessErrorMessage.InvalidLength);
-    }
 
     public static IRuleBuilderOptions<T, string> ValidateEmergencyName<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
     {
@@ -204,18 +188,6 @@ public static class ValidationExtensions
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required)
-            .MaximumLength(50)
-            .WithMessage(BusinessErrorMessage.MaxLength);
-    }
-
-    public static IRuleBuilderOptions<T, string> ValidateUserEmail<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
-    {
-        return ruleBuilder
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty()
-            .WithMessage(BusinessErrorMessage.Required)
-            .EmailAddress()
-            .WithMessage(BusinessErrorMessage.InvalidEmailFormat)
             .MaximumLength(50)
             .WithMessage(BusinessErrorMessage.MaxLength);
     }

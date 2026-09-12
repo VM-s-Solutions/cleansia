@@ -393,6 +393,7 @@ function resolveKey(
 // merely remembered cannot fail on a key added after it was written.
 const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Auth — partner login / confirm / reset / refresh
+  'auth.account_locked',
   'auth.insufficient_privileges',
   'auth.invalid_confirmation_code',
   'auth.invalid_google_token',
@@ -753,6 +754,22 @@ describe('error-contract parity (partner app)', () => {
         unaccounted: [],
         unexplained: [],
       });
+    });
+
+    /**
+     * The backstop above skips Features/, and the controller walk only reads the file named for
+     * the dispatched class - it never follows a base class. A generic validator base under
+     * Features/ is therefore invisible to both, and every key it emits goes unaccounted for on
+     * every host. Such a base belongs under Common/Validators, where the backstop reads it.
+     */
+    it('no generic AbstractValidator base class lives under Features/', () => {
+      const basesUnderFeatures = listCsFiles(FEATURES_DIR)
+        .filter((file) =>
+          /class\s+\w+<\w+>\s*:\s*AbstractValidator</.test(readFileSync(file, 'utf8'))
+        )
+        .map((file) => relative(FEATURES_DIR, file).split(sep).join('/'))
+        .sort();
+      expect(basesUnderFeatures).toEqual([]);
     });
   });
 

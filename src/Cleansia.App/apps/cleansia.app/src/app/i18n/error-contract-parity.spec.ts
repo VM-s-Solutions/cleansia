@@ -876,6 +876,22 @@ describe('error-contract parity (customer app, EP-1/EP-2/DA-7)', () => {
         unexplained: [],
       });
     });
+
+    /**
+     * The backstop above skips Features/, and the controller walk only reads the file named for
+     * the dispatched class - it never follows a base class. A generic validator base under
+     * Features/ is therefore invisible to both, and every key it emits goes unaccounted for on
+     * every host. Such a base belongs under Common/Validators, where the backstop reads it.
+     */
+    it('no generic AbstractValidator base class lives under Features/', () => {
+      const basesUnderFeatures = listCsFiles(FEATURES_DIR)
+        .filter((file) =>
+          /class\s+\w+<\w+>\s*:\s*AbstractValidator</.test(readFileSync(file, 'utf8'))
+        )
+        .map((file) => relative(FEATURES_DIR, file).split(sep).join('/'))
+        .sort();
+      expect(basesUnderFeatures).toEqual([]);
+    });
   });
 
   it('AC4 contract: every customer-surface key exists as a BusinessErrorMessage value', () => {

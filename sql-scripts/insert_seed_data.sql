@@ -1678,8 +1678,8 @@ VALUES
 -- ============================================================
 -- DISPUTES
 -- ============================================================
--- Dispute seed data has been moved to insert_disputes.sql
--- Run that script separately after this one to populate disputes
+-- Dispute seed data lives in seed/insert_disputes.sql, which selects orders this file never
+-- creates and so cannot run any more (see sql-scripts/README.md). Nothing seeds disputes.
 
 -- ============================================================
 -- LOYALTY TIER CONFIGS (Phase A defaults)

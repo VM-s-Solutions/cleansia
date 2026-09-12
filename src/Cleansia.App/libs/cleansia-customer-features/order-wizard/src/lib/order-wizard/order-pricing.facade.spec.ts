@@ -10,7 +10,11 @@ import {
   PLAIN_QUOTE,
   WAIVED_EXPRESS_QUOTE,
 } from './order-quote.fixtures';
-import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData } from './order-wizard.models';
+import {
+  createAddressDto,
+  ORDER_WIZARD_INITIAL_DATA,
+  OrderWizardFormData,
+} from './order-wizard.models';
 
 describe('OrderPricingFacade', () => {
   let facade: OrderPricingFacade;
@@ -388,6 +392,56 @@ describe('OrderPricingFacade', () => {
       tick(800);
 
       expect(orderClient.quote).not.toHaveBeenCalled();
+    }));
+  });
+
+  // The booking is priced in the currency of the country the service address is in, and the
+  // server derives that from the country the quote names. The wizard learns the country one step
+  // after the first quote fires, so the address step has to re-ask.
+  describe('the market the quote is priced for', () => {
+    beforeEach(() => build('browser'));
+
+    it('re-fires the quote with the country when the address step names one', fakeAsync(() => {
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      tick(800);
+      expect(orderClient.quote).toHaveBeenCalledTimes(1);
+      expect(orderClient.quote.mock.calls[0][0].countryId).toBeUndefined();
+
+      formData.update((d) => ({ ...d, address: createAddressDto({ countryId: 'svk' }) }));
+      TestBed.flushEffects();
+      tick(800);
+
+      expect(orderClient.quote).toHaveBeenCalledTimes(2);
+      expect(orderClient.quote.mock.calls[1][0].countryId).toBe('svk');
+    }));
+
+    it('does not re-quote when the address changes but its country does not', fakeAsync(() => {
+      formData.update((d) => ({
+        ...d,
+        selectedServiceIds: ['s1'],
+        address: createAddressDto({ countryId: 'svk', street: 'Hlavná 1' }),
+      }));
+      TestBed.flushEffects();
+      tick(800);
+
+      formData.update((d) => ({ ...d, address: createAddressDto({ countryId: 'svk', street: 'Hlavná 2' }) }));
+      TestBed.flushEffects();
+      tick(800);
+
+      expect(orderClient.quote).toHaveBeenCalledTimes(1);
+    }));
+
+    it('never names the currency itself — the server derives it from the country', fakeAsync(() => {
+      formData.update((d) => ({
+        ...d,
+        selectedServiceIds: ['s1'],
+        address: createAddressDto({ countryId: 'svk' }),
+      }));
+      TestBed.flushEffects();
+      tick(800);
+
+      expect(orderClient.quote.mock.calls[0][0].currencyId).toBeUndefined();
     }));
   });
 

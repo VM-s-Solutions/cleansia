@@ -1,4 +1,4 @@
-import { inject, Injectable, PLATFORM_ID, signal, computed } from '@angular/core';
+import { inject, Injectable, Injector, PLATFORM_ID, signal, computed } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -26,13 +26,15 @@ import {
   SavedAddressStore,
   selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
+  selectCustomerPackagesCatalogue,
   selectCustomerServices,
+  selectCustomerServicesCatalogue,
 } from '@cleansia/customer-stores';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
@@ -63,6 +65,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly savedAddress = inject(OrderSavedAddressFacade);
   private readonly membership = inject(OrderMembershipFacade);
   private readonly preferredCleaner = inject(OrderPreferredCleanerFacade);
+  private readonly injector = inject(Injector);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   isAuthenticated = signal(false);
@@ -96,10 +99,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     { initialValue: null },
   );
   countries = signal<CountryListItem[]>([]);
-  // Anonymous catalog of bookable extras. Loaded once when the facade
-  // initialises; rendered as a toggle list on the summary step. Best-effort:
-  // if the call fails the wizard still works, the extras section just stays
-  // empty (same approach the mobile app uses).
+  // Anonymous catalog of bookable extras, read with the rest of the catalogue for the address's
+  // country. Best-effort: if the call fails the wizard still works, the extras section just
+  // stays empty (same approach the mobile app uses).
   extras = signal<ExtraListItem[]>([]);
 
   // ─── Saved-address management ───────────────────────────────────
@@ -175,13 +177,23 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   // summary-step keep reading the wizard facade.
   readonly quote = this.pricing.quote;
   /**
-   * The currency every figure on the wizard is printed in: the quote's own once there is one, and
-   * the platform default before that, because the catalogue is priced in the default and carries
-   * no code of its own. Null until either is known, which prints a bare number rather than a guess.
+   * The currency a figure with no payload of its own is printed in: the quote's once there is
+   * one, and the platform default before that. A catalogue item carries its own code and is
+   * labelled from it. Null until either is known, which prints a bare number rather than a guess.
    */
   readonly currencyCode = computed<string | null>(
     () => this.quote()?.currencyCode || this.defaultCurrencyCode(),
   );
+
+  /**
+   * The service address's country, which decides the currency the booking is priced in — and
+   * with it which catalogue entries can be offered at all.
+   */
+  private readonly addressCountryId = computed<string | null>(
+    () => this.formData().address.countryId || null,
+  );
+  /** The country the catalogue was last read for, so a same-country address edit re-reads nothing. */
+  private catalogueCountryId: string | null = null;
   readonly quoting = this.pricing.quoting;
   readonly totalPrice = this.pricing.totalPrice;
   readonly preSurchargeSubtotal = this.pricing.preSurchargeSubtotal;
@@ -242,6 +254,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     });
     this.promo.connect({
       preSurchargeSubtotal: this.preSurchargeSubtotal,
+      currencyId: computed(() => this.quote()?.currencyId ?? null),
       persistPromoCode: (value) => this.updateFormData({ promoCode: value }),
     });
     this.serviceArea.connect({
@@ -326,8 +339,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   }
 
   initialize(): void {
-    this.store.dispatch(loadCustomerServices());
-    this.store.dispatch(loadCustomerPackages());
+    this.followAddressCountry();
     this.store.dispatch(loadCustomerCurrencies());
     // `getServiced` returns only countries the company operates in. The old
     // `getOverview` call alphabetically returned the full catalog, so the
@@ -357,18 +369,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         }
       },
     });
-    // Best-effort load — empty catalog just hides the extras section.
-    // `?? []` for the same generated-client null as the countries read above; spreading null
-    // throws "not iterable", so this one takes the whole wizard init down rather than storing
-    // a lie — and it does so past the `error` handler, which sees a failed request, not a bad body.
-    this.customerClient.extraClient.getOverview().pipe(takeUntil(this.destroyed$)).subscribe({
-      next: (extras) =>
-        this.extras.set(
-          [...(extras ?? [])].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)),
-        ),
-      error: () => this.extras.set([]),
-    });
-
     const loggedIn = this.authService.isLoggedIn();
     this.isAuthenticated.set(loggedIn);
     this.membership.load(loggedIn);
@@ -407,6 +407,92 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         },
       });
     }
+  }
+
+  /**
+   * The catalogue is priced per market and the server withholds what has no price in the
+   * address country's currency, so it is read for the platform default first and again for every
+   * country the address names. A basket entry the new list no longer offers would make the server
+   * refuse the quote outright, so the basket is trimmed to the new list — with a word to the
+   * customer — once that list has landed.
+   */
+  private followAddressCountry(): void {
+    toObservable(this.addressCountryId, { injector: this.injector })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((countryId) => {
+        if (countryId !== this.catalogueCountryId) this.loadCatalogue(countryId);
+      });
+    this.loadCatalogue(this.addressCountryId());
+
+    this.store
+      .select(selectCustomerServicesCatalogue)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(({ services, countryId }) => {
+        if (!this.pricedForAddress(countryId)) return;
+        const offered = new Set(services.map((s) => s.id));
+        this.keepSelectedServices((id) => offered.has(id));
+      });
+    this.store
+      .select(selectCustomerPackagesCatalogue)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(({ packages, countryId }) => {
+        if (!this.pricedForAddress(countryId)) return;
+        const offered = new Set(packages.map((p) => p.id));
+        this.keepSelectedPackages((id) => offered.has(id));
+      });
+  }
+
+  private loadCatalogue(countryId: string | null): void {
+    this.catalogueCountryId = countryId;
+    this.store.dispatch(loadCustomerServices(countryId));
+    this.store.dispatch(loadCustomerPackages(countryId));
+    // `?? []` for the same generated-client null as the countries read in `initialize`; spreading
+    // null throws "not iterable", so this one takes the whole wizard init down rather than storing
+    // a lie — and it does so past the `error` handler, which sees a failed request, not a bad body.
+    this.customerClient.extraClient
+      .getOverview(countryId ?? undefined)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: (extras) => {
+          const offered = [...(extras ?? [])].sort(
+            (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0),
+          );
+          this.extras.set(offered);
+          if (!this.pricedForAddress(countryId)) return;
+          const slugs = new Set(offered.map((e) => e.slug));
+          this.keepSelectedExtras((slug) => slugs.has(slug));
+        },
+        error: () => this.extras.set([]),
+      });
+  }
+
+  /** A list priced for the platform default never trims: nothing was ever picked outside it. */
+  private pricedForAddress(countryId: string | null): boolean {
+    return countryId !== null && countryId === this.addressCountryId();
+  }
+
+  private keepSelectedServices(offered: (id: string) => boolean): void {
+    const selected = this.formData().selectedServiceIds;
+    const kept = selected.filter(offered);
+    if (kept.length === selected.length) return;
+    this.updateFormData({ selectedServiceIds: kept });
+    this.snackbarService.showInfoTranslated('pages.order.wizard.catalogue_changed_for_country');
+  }
+
+  private keepSelectedPackages(offered: (id: string) => boolean): void {
+    const selected = this.formData().selectedPackageIds;
+    const kept = selected.filter(offered);
+    if (kept.length === selected.length) return;
+    this.updateFormData({ selectedPackageIds: kept });
+    this.snackbarService.showInfoTranslated('pages.order.wizard.catalogue_changed_for_country');
+  }
+
+  private keepSelectedExtras(offered: (slug: string) => boolean): void {
+    const selected = this.formData().extras;
+    const kept = Object.fromEntries(Object.entries(selected).filter(([slug]) => offered(slug)));
+    if (Object.keys(kept).length === Object.keys(selected).length) return;
+    this.updateFormData({ extras: kept });
+    this.snackbarService.showInfoTranslated('pages.order.wizard.catalogue_changed_for_country');
   }
 
   /**
@@ -779,6 +865,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     command.extras = data.extras;
     command.cleaningDate = cleaningDate;
     command.paymentType = data.paymentType;
+    // The currency the server resolved for the address's country, echoed so the create prices in
+    // the same one the quote did.
     command.currencyId = quoted.currencyId;
     // Send the server-quoted total unchanged — it already includes any
     // express surcharge for the quoted slot. `CreateOrder.PriceMatchesAsync`
@@ -811,16 +899,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         .createOrder(command)
         .pipe(
           takeUntil(this.destroyed$),
-          catchError(() => of(null)),
+          catchError((error: unknown) => {
+            this.onCreateRefused(error);
+            return of(null);
+          }),
           finalize(() => this.submitting.set(false)),
         )
         .subscribe((response) => {
-          if (!response) {
-            this.snackbarService.showError(
-              this.translate.instant('pages.order.submit_error'),
-            );
-            return;
-          }
+          if (!response) return;
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
@@ -838,16 +924,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         .createOrder(command)
         .pipe(
           takeUntil(this.destroyed$),
-          catchError(() => of(null)),
+          catchError((error: unknown) => {
+            this.onCreateRefused(error);
+            return of(null);
+          }),
           finalize(() => this.submitting.set(false)),
         )
         .subscribe((response) => {
-          if (!response) {
-            this.snackbarService.showError(
-              this.translate.instant('pages.order.submit_error'),
-            );
-            return;
-          }
+          if (!response) return;
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
@@ -857,5 +941,19 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
           });
         });
     }
+  }
+
+  /**
+   * A promo the server will not honour refuses the whole create rather than booking at full
+   * price. The interceptor has already toasted which promo rule refused it, and a second, generic
+   * toast would replace that sentence — so this one only takes the code off the order, which is
+   * what lets the customer submit again.
+   */
+  private onCreateRefused(error: unknown): void {
+    if (extractApiErrorCode(error)?.startsWith('promo.')) {
+      this.promo.clearPromoCode();
+      return;
+    }
+    this.snackbarService.showError(this.translate.instant('pages.order.submit_error'));
   }
 }

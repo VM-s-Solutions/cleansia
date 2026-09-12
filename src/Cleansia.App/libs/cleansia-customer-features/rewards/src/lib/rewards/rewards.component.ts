@@ -10,6 +10,7 @@ import {
   LoyaltyTransactionType,
 } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -131,8 +132,10 @@ export class RewardsComponent implements OnInit {
   }
 
   /**
-   * Pick a translation key + interpolation for a tier's discount line so
-   * the template stays free of branching. Keys come from `pages.rewards.*`.
+   * A tier's discount line: the percent, and the floor it applies above when the tier has one.
+   * The floor is the server's `MinimumOrderAmountForDiscount` — a platform-default-currency
+   * number — printed as money with the default's code; the perk labels beside it state the
+   * percent only, so the floor is said once and from data.
    */
   discountLabel(tier: GetLoyaltyTiersTierInfo): { key: string; params: Record<string, unknown> } {
     if (!tier.discountPercent) {
@@ -143,7 +146,11 @@ export class RewardsComponent implements OnInit {
         key: 'pages.rewards.discount_min_order',
         params: {
           percent: this.percentOf(tier.discountPercent),
-          minAmount: tier.minimumOrderAmountForDiscount,
+          minAmount: formatMoney(
+            tier.minimumOrderAmountForDiscount,
+            this.facade.defaultCurrencyCode(),
+            this.getLocale(),
+          ),
         },
       };
     }

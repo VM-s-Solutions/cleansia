@@ -5,6 +5,8 @@ import { customerCatalogInitialState } from './catalog.state';
 import {
   selectCustomerCatalogLoading,
   selectCustomerDefaultCurrencyCode,
+  selectCustomerPackagesCatalogue,
+  selectCustomerServicesCatalogue,
 } from './catalog.selectors';
 
 const SERVICES = [ServiceListItem.fromJS({ id: 'svc-1', name: 'Standard' })];
@@ -19,7 +21,9 @@ describe('customerCatalogReducer', () => {
   it('starts with every list empty and nothing loading', () => {
     expect(customerCatalogReducer(undefined, { type: '@@init' })).toEqual({
       services: [],
+      servicesCountryId: null,
       packages: [],
+      packagesCountryId: null,
       currencies: [],
       loading: {},
     });
@@ -36,7 +40,7 @@ describe('customerCatalogReducer', () => {
     );
     const servicesArrived = customerCatalogReducer(
       loadingBoth,
-      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES }),
+      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: null }),
     );
 
     expect(servicesArrived.loading).toEqual({ services: false, packages: true });
@@ -47,12 +51,14 @@ describe('customerCatalogReducer', () => {
   it('holds the packages on success without disturbing the services', () => {
     const loaded = customerCatalogReducer(
       { ...customerCatalogInitialState, services: SERVICES },
-      CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES }),
+      CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES, countryId: null }),
     );
 
     expect(loaded).toEqual({
       services: SERVICES,
+      servicesCountryId: null,
       packages: PACKAGES,
+      packagesCountryId: null,
       currencies: [],
       loading: { packages: false },
     });
@@ -85,7 +91,7 @@ describe('customerCatalogReducer', () => {
     );
     const emptyButFine = customerCatalogReducer(
       customerCatalogInitialState,
-      CatalogActions.loadCustomerServicesSuccess({ services: [] }),
+      CatalogActions.loadCustomerServicesSuccess({ services: [], countryId: null }),
     );
 
     expect(failed).toEqual(emptyButFine);
@@ -107,10 +113,35 @@ describe('customerCatalogReducer', () => {
 
     customerCatalogReducer(
       before,
-      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES }),
+      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: null }),
     );
 
-    expect(before).toEqual({ services: [], packages: [], currencies: [], loading: {} });
+    expect(before).toEqual({
+      services: [],
+      servicesCountryId: null,
+      packages: [],
+      packagesCountryId: null,
+      currencies: [],
+      loading: {},
+    });
+  });
+
+  // Each list remembers the country it was priced for on its own: the two reads land in either
+  // order, and a reader pruning a basket against one must not be told the other has arrived.
+  it('remembers per list which country the loaded catalogue is priced for', () => {
+    const servicesForSlovakia = customerCatalogReducer(
+      customerCatalogInitialState,
+      CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: 'svk' }),
+    );
+
+    expect(selectCustomerServicesCatalogue.projector(servicesForSlovakia)).toEqual({
+      services: SERVICES,
+      countryId: 'svk',
+    });
+    expect(selectCustomerPackagesCatalogue.projector(servicesForSlovakia)).toEqual({
+      packages: [],
+      countryId: null,
+    });
   });
 
   it('reports loading while either half is in flight', () => {

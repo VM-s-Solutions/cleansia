@@ -14,7 +14,7 @@ import {
 } from '@cleansia/customer-stores';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -47,7 +47,7 @@ export class ServicesCatalogComponent implements OnInit {
   services = toSignal(this.store.select(selectCustomerServices), { initialValue: [] });
   packages = toSignal(this.store.select(selectCustomerPackages), { initialValue: [] });
   loading = toSignal(this.store.select(selectCustomerCatalogLoading), { initialValue: false });
-  /** The catalogue is priced in the platform default currency; its DTOs carry no code of their own. */
+  /** The label for a figure with no item behind it; every catalogue item carries its own code. */
   private readonly currencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
     initialValue: null,
   });
@@ -153,8 +153,8 @@ export class ServicesCatalogComponent implements OnInit {
     return (item as unknown as Record<string, string>)[field] || '';
   }
 
-  formatPrice(price: number): string {
-    return formatMoney(price, this.currencyCode(), 'cs-CZ');
+  formatPrice(price: number, currencyCode?: string | null): string {
+    return formatMoney(price, currencyCode || this.currencyCode(), localeFor(this.translate.currentLang));
   }
 
   /**

@@ -7,11 +7,17 @@ import {
   GetMyReferralResponse,
   LoyaltyTier,
 } from '@cleansia/customer-services';
+import {
+  loadCustomerCurrencies,
+  selectCustomerDefaultCurrencyCode,
+} from '@cleansia/customer-stores';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of, throwError } from 'rxjs';
 import { RewardsFacade } from './rewards.facade';
 
 describe('RewardsFacade', () => {
   let facade: RewardsFacade;
+  let store: MockStore;
   let loyaltyClient: {
     getMy: jest.Mock;
     getTiers: jest.Mock;
@@ -47,11 +53,35 @@ describe('RewardsFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         RewardsFacade,
+        provideMockStore(),
         { provide: CustomerClient, useValue: { loyaltyClient, referralClient } },
       ],
     });
 
+    store = TestBed.inject(MockStore);
+    store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
     facade = TestBed.inject(RewardsFacade);
+  });
+
+  // The tier floor is a platform-default-currency number and the page prints it as money, so
+  // the page needs the default's code — which the catalogue store already knows how to fetch.
+  describe('the currency the tier floor is stated in', () => {
+    it('asks the store for the platform currencies with the loyalty snapshot', () => {
+      jest.spyOn(store, 'dispatch');
+
+      facade.loadAll();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+    });
+
+    it('re-exposes the platform default once it is known', () => {
+      expect(facade.defaultCurrencyCode()).toBeNull();
+
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'EUR');
+      store.refreshState();
+
+      expect(facade.defaultCurrencyCode()).toBe('EUR');
+    });
   });
 
   describe('loadAll — the three data states', () => {

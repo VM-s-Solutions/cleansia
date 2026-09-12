@@ -58,7 +58,7 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerServices());
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES }),
+        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: null }),
       ]);
     });
 
@@ -69,7 +69,23 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerServices());
 
       expect(serviceClient.getOverview).toHaveBeenCalledTimes(1);
+      expect(serviceClient.getOverview).toHaveBeenCalledWith(undefined);
       expect(packageClient.getOverview).not.toHaveBeenCalled();
+    });
+
+    // The catalogue is priced per market: the server withholds what has no price in the
+    // country's currency, so the country the wizard's address names has to reach the read, and
+    // the answer has to say which country it was priced for.
+    it('asks for the country it was given and labels the answer with it', () => {
+      serviceClient.getOverview.mockReturnValue(of(SERVICES));
+
+      const emitted = collect(createEffects().loadServices$);
+      actions$.next(CatalogActions.loadCustomerServices('svk'));
+
+      expect(serviceClient.getOverview).toHaveBeenCalledWith('svk');
+      expect(emitted).toEqual([
+        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: 'svk' }),
+      ]);
     });
 
     // The generated client emits NULL — not `[]` — for a 200 with a non-array body or a 204, and
@@ -82,7 +98,7 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerServices());
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerServicesSuccess({ services: [] }),
+        CatalogActions.loadCustomerServicesSuccess({ services: [], countryId: null }),
       ]);
     });
 
@@ -133,7 +149,7 @@ describe('CustomerCatalogEffects', () => {
       first.next([]);
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES }),
+        CatalogActions.loadCustomerServicesSuccess({ services: SERVICES, countryId: null }),
       ]);
     });
   });
@@ -146,7 +162,19 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerPackages());
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES }),
+        CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES, countryId: null }),
+      ]);
+    });
+
+    it('asks for the country it was given and labels the answer with it', () => {
+      packageClient.getOverview.mockReturnValue(of(PACKAGES));
+
+      const emitted = collect(createEffects().loadPackages$);
+      actions$.next(CatalogActions.loadCustomerPackages('svk'));
+
+      expect(packageClient.getOverview).toHaveBeenCalledWith('svk');
+      expect(emitted).toEqual([
+        CatalogActions.loadCustomerPackagesSuccess({ packages: PACKAGES, countryId: 'svk' }),
       ]);
     });
 
@@ -173,7 +201,7 @@ describe('CustomerCatalogEffects', () => {
       actions$.next(CatalogActions.loadCustomerPackages());
 
       expect(emitted).toEqual([
-        CatalogActions.loadCustomerPackagesSuccess({ packages: [] }),
+        CatalogActions.loadCustomerPackagesSuccess({ packages: [], countryId: null }),
       ]);
     });
 

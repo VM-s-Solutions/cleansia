@@ -130,6 +130,60 @@ describe('RecurringBookingsFacade', () => {
     });
   });
 
+  // A schedule is priced in the currency of the country its saved address is in — the server
+  // derives it from the country the quote names, and from the saved address itself on create.
+  describe('the market a schedule is quoted for', () => {
+    const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk' });
+    const quoted = () =>
+      of(QuoteOrderResponse.fromJS({ totalPrice: 40, finalPriceAfterDiscount: 40, currencyCode: 'EUR' }));
+
+    it("names the chosen saved address's country on the form quote", async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      orderClient.quote.mockReturnValue(quoted());
+      facade.updateFormData({ selectedServiceIds: ['s1'], savedAddressId: 'addr-sk' });
+
+      await facade.quoteForm();
+
+      expect(orderClient.quote.mock.calls[0][0]).toMatchObject({ countryId: 'svk' });
+      expect(orderClient.quote.mock.calls[0][0].currencyId).toBeUndefined();
+    });
+
+    it("names the template's saved address country on a card quote", async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      orderClient.quote.mockReturnValue(quoted());
+
+      await facade.quoteTemplate(template({ selectedServiceIds: ['s1'], savedAddressId: 'addr-sk' }));
+
+      expect(orderClient.quote.mock.calls[0][0].countryId).toBe('svk');
+    });
+
+    it('names no country before an address is chosen, which the server reads as the default', async () => {
+      orderClient.quote.mockReturnValue(quoted());
+      facade.updateFormData({ selectedServiceIds: ['s1'], savedAddressId: null });
+
+      await facade.quoteForm();
+
+      expect(orderClient.quote.mock.calls[0][0].countryId).toBeUndefined();
+    });
+
+    it('sends no currency on create — the server derives it from the saved address', async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        savedAddressId: 'addr-sk',
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+      });
+
+      await facade.submit();
+
+      expect(client.create).toHaveBeenCalledTimes(1);
+      const body = JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
+      expect(body).not.toHaveProperty('currencyId');
+      expect(body.savedAddressId).toBe('addr-sk');
+    });
+  });
+
   describe('refreshList — the three data states', () => {
     it('starts empty and not loading', () => {
       expect(facade.templates()).toEqual([]);

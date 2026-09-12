@@ -235,7 +235,7 @@
       "addresses_title": "Adresy, história, faktúry",
       "addresses_text": "Uložené adresy, všetky dokončené objednávky a faktúry nájdete na jednom mieste.",
       "points_title": "Body za každé dokončené upratovanie",
-      "points_text": "Za každú dokončenú objednávku získate 1 bod za každých 10 Kč. Pri 500 bodoch máte strieborný stupeň — 5 % z objednávok nad 1 000 Kč.",
+      "points_text": "Za každé dokončené upratovanie získate body a body odomykajú zľavy podľa stupňa na vaše ďalšie objednávky.",
       "cancel_title": "Zrušenie zdarma",
       "cancel_text": "Až do 24 hodín pred upratovaním. S členstvom Cleansia Plus do 4 hodín.",
       "track_text": "Chcete len sledovať objednávku? Účet na to nepotrebujete — stačí číslo objednávky a e-mail.",
@@ -1011,7 +1011,10 @@
       "trust_certified": "Certifikovaní pracovníci",
       "trust_no_hidden": "Žiadne skryté poplatky",
       "trust_satisfaction": "100% spokojnosť",
-      "zip_code": "PSČ"
+      "zip_code": "PSČ",
+      "wizard": {
+        "catalogue_changed_for_country": "Časť vášho výberu sa na tejto adrese neponúka, preto bola odobratá. Ceny sú uvedené v mene krajiny, v ktorej objednávate."
+      }
     },
     "orders": {
       "title": "Moje objednávky",
@@ -1294,6 +1297,9 @@
       "points_threshold": "{{count}} bodov",
       "percent_off": "{{percent}} %",
       "no_discount": "Bez zľavy",
+      "discount_min_order": "{{percent}} % zľava na objednávky nad {{minAmount}}",
+      "discount_basic": "{{percent}} % zľava na každú objednávku",
+      "no_discount_yet": "Zatiaľ bez zľavy",
       "discount_cap": "Zľava zo stupňa a zľava z Cleansia Plus sa sčítajú, ale dokopy najviac {{cap}} % z ceny. Najvyšší stupeň na tento strop dosiahne sám — Plus mu zľavu ďalej nezdvihne.",
       "recent_title": "Posledné pohyby",
       "history_title": "História bodov",
@@ -1306,7 +1312,7 @@
       "load_older": "Načítať staršie",
       "empty_filter": "Zatiaľ nič také.",
       "how": {
-        "rate_title": "1 bod za 10 Kč",
+        "rate_title": "Body za každú objednávku",
         "rate_note": "Z celkovej ceny objednávky, zaokrúhlené nadol.",
         "on_completion_title": "Až po upratovaní",
         "on_completion_note": "Pripíšeme ich, keď je objednávka dokončená — nie keď ju zadáte.",
@@ -1362,9 +1368,6 @@
       "switch_dialog_confirm": "Prejsť a doplatiť rozdiel",
       "switch_success": "Vitajte v ročnom predplatnom!",
       "hero_headline": "Začnite šetriť ešte dnes",
-      "hero_trial_price": "0 Kč / prvých {{days}} dní",
-      "hero_then_price": "potom {{price}} / mesiac",
-      "hero_then_price_year": "potom {{price}} / rok",
       "social_proof_headline": "Ako funguje členská zľava",
       "social_proof_sub": "Plus a váš vernostný program sa spočítajú maximálne do 12%. Promo kódy sa nesčítajú — uplatní sa vyššia zľava.",
       "perks_section_title": "Čo získate",
@@ -1934,7 +1937,7 @@
       "global_limit_reached": "Tento zľavový kód dosiahol limit použitia.",
       "per_user_limit_reached": "Tento zľavový kód ste už použili.",
       "below_minimum_order_amount": "Vaša objednávka nespĺňa minimálnu sumu pre tento zľavový kód.",
-      "currency_mismatch": "Tento zľavový kód nie je možné použiť s vybranou menou."
+      "currency_mismatch": "Tento zľavový kód nie je možné použiť v mene, v ktorej je táto objednávka nacenená."
     },
     "referral": {
       "not_found": "Tento odporúčací kód neexistuje.",
@@ -1991,9 +1994,9 @@
   "loyalty": {
     "perks": {
       "welcome_badge": "Vitajte v odmenách Cleansia",
-      "discount_5_above_1000": "5 % zľava na objednávky nad 1000 CZK",
-      "discount_10": "10 % zľava na objednávky nad 1000 CZK",
-      "discount_12": "12 % zľava na objednávky nad 1000 CZK",
+      "discount_5_above_1000": "5 % zľava na objednávky",
+      "discount_10": "10 % zľava na objednávky",
+      "discount_12": "12 % zľava na objednávky",
       "priority_support": "Prioritná zákaznícka podpora",
       "dedicated_pool": "Vyhradený tím upratovačov"
     }

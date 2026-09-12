@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CustomerAuthService, CustomerClient } from '@cleansia/customer-services';
+import { TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { PlusPageComponent } from './plus-page.component';
 import { PlusPageFacade } from './plus-page.facade';
@@ -21,10 +22,15 @@ describe('PlusPageComponent', () => {
   const isMember = signal(false);
   let navigate: jest.Mock;
   let startCheckout: jest.Mock;
+  let translate: { currentLang: string };
 
-  function build(plans: { code?: string; billingInterval?: number }[] = []): PlusPageComponent {
+  function build(
+    plans: { code?: string; billingInterval?: number }[] = [],
+    defaultCurrencyCode: string | null = null,
+  ): PlusPageComponent {
     navigate = jest.fn();
     startCheckout = jest.fn();
+    translate = { currentLang: 'en' };
     isMember.set(false);
 
     TestBed.resetTestingModule();
@@ -36,6 +42,7 @@ describe('PlusPageComponent', () => {
           provide: CustomerClient,
           useValue: { membershipClient: { getPlans: () => of([]), getMine: () => of(null) } },
         },
+        { provide: TranslateService, useValue: translate },
       ],
     });
     TestBed.overrideComponent(PlusPageComponent, {
@@ -54,7 +61,7 @@ describe('PlusPageComponent', () => {
               trialDays: signal(14),
               hasExpressPerk: signal(true),
               expressPerMonth: signal(1),
-              defaultCurrencyCode: signal<string | null>(null),
+              defaultCurrencyCode: signal<string | null>(defaultCurrencyCode),
             },
           },
         ],
@@ -111,6 +118,18 @@ describe('PlusPageComponent', () => {
 
     expect(startCheckout).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith([], { fragment: 'membership' });
+  });
+
+  // The locale was a `'cs-CZ'` literal, so an English reader got Czech digit grouping and symbol
+  // placement on the Plus page while every order screen formatted per language.
+  it("groups and places the symbol the way the reader's language does", () => {
+    const component = build([], 'CZK');
+
+    translate.currentLang = 'en';
+    expect(component.formatPrice(1200)).toMatch(/CZK\s?1,200/);
+
+    translate.currentLang = 'cs';
+    expect(component.formatPrice(1200)).toMatch(/1\s200\sKč/);
   });
 
   it('asks for nothing when the plan catalogue is empty', () => {

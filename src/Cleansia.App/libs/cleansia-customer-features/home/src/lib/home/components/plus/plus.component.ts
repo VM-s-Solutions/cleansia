@@ -11,10 +11,10 @@ import {
   MembershipPlanFactsService,
 } from '@cleansia/customer-services';
 import { selectCustomerDefaultCurrencyCode } from '@cleansia/customer-stores';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 /**
  * The home page's argument for Cleansia Plus.
@@ -40,6 +40,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 export class PlusComponent implements OnInit {
   private readonly authService = inject(CustomerAuthService);
   private readonly store = inject(Store);
+  private readonly translate = inject(TranslateService);
   readonly facts = inject(MembershipPlanFactsService);
 
   /**
@@ -80,6 +81,6 @@ export class PlusComponent implements OnInit {
   }
 
   formatPrice(amount: number): string {
-    return formatMoney(amount, this.currencyCode(), 'cs-CZ');
+    return formatMoney(amount, this.currencyCode(), localeFor(this.translate.currentLang));
   }
 }

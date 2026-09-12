@@ -11,9 +11,9 @@ import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { MembershipManagementComponent } from '@cleansia-customer/profile';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import { EXPRESS_SURCHARGE_RATE } from '@cleansia/models';
-import { clearOnBackForwardRestore, formatMoney } from '@cleansia/utils';
+import { clearOnBackForwardRestore, formatMoney, localeFor } from '@cleansia/utils';
 import { CleansiaCustomerRoute } from '@cleansia/services';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PlusPageFacade } from './plus-page.facade';
 
 /**
@@ -47,6 +47,7 @@ import { PlusPageFacade } from './plus-page.facade';
 export class PlusPageComponent implements OnInit {
   private readonly authService = inject(CustomerAuthService);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
   readonly facade = inject(PlusPageFacade);
 
   private readonly isLoggedIn = this.authService.isLoggedIn;
@@ -104,6 +105,10 @@ export class PlusPageComponent implements OnInit {
   }
 
   formatPrice(amount: number): string {
-    return formatMoney(amount, this.facade.defaultCurrencyCode(), 'cs-CZ');
+    return formatMoney(
+      amount,
+      this.facade.defaultCurrencyCode(),
+      localeFor(this.translate.currentLang),
+    );
   }
 }

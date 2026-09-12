@@ -197,6 +197,8 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
 
     const size = this._size();
     const command = new QuoteOrderCommand();
+    // No country, so the platform default: the booking's currency is the service address's
+    // country's, and the quick quote has no address — a locale is not a market.
     command.selectedServiceIds = [serviceId];
     command.selectedPackageIds = [];
     command.selectedExtraSlugs = [];

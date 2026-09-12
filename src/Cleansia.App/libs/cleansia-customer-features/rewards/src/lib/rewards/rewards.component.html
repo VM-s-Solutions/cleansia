@@ -132,11 +132,9 @@
             {{ 'pages.rewards.tier.' + facade.tierKey(tier.tier) | translate }}
           </div>
           <div class="cl-rwd__tier-discount">
-            {{
-              tier.discountPercent > 0
-                ? ('pages.rewards.percent_off' | translate: { percent: percentOf(tier.discountPercent) })
-                : ('pages.rewards.no_discount' | translate)
-            }}
+            @if (discountLabel(tier); as discount) {
+            {{ discount.key | translate: discount.params }}
+            }
           </div>
           <ul class="cl-rwd__tier-perks">
             <!--

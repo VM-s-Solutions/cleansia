@@ -8,9 +8,10 @@ export const customerCatalogReducer = createReducer(
     ...state,
     loading: { ...state.loading, services: true },
   })),
-  on(CatalogActions.loadCustomerServicesSuccess, (state, { services }) => ({
+  on(CatalogActions.loadCustomerServicesSuccess, (state, { services, countryId }) => ({
     ...state,
     services,
+    servicesCountryId: countryId,
     loading: { ...state.loading, services: false },
   })),
   on(CatalogActions.loadCustomerServicesFailure, (state) => ({
@@ -21,9 +22,10 @@ export const customerCatalogReducer = createReducer(
     ...state,
     loading: { ...state.loading, packages: true },
   })),
-  on(CatalogActions.loadCustomerPackagesSuccess, (state, { packages }) => ({
+  on(CatalogActions.loadCustomerPackagesSuccess, (state, { packages, countryId }) => ({
     ...state,
     packages,
+    packagesCountryId: countryId,
     loading: { ...state.loading, packages: false },
   })),
   on(CatalogActions.loadCustomerPackagesFailure, (state) => ({

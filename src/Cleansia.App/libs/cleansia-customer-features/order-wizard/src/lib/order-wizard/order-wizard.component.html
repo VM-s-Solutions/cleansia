@@ -120,7 +120,7 @@
             }
             <span class="cl-wiz__pack-spacer"></span>
             <span class="cl-wiz__pack-foot">
-              <span class="cl-num cl-wiz__pack-price">{{ formatPrice(pkg.price) }}</span>
+              <span class="cl-num cl-wiz__pack-price">{{ formatPrice(pkg.price, pkg.currencyCode) }}</span>
               <span class="cl-muted">{{ 'pages.order.per_cleaning' | translate }}</span>
             </span>
             <span class="cl-chip cl-wiz__pack-cta">
@@ -142,7 +142,7 @@
               <div class="cl-muted cl-wiz__svc-desc">{{ desc }}</div>
               }
             </div>
-            <div class="cl-num cl-wiz__svc-price">{{ formatPrice(service.basePrice) }}</div>
+            <div class="cl-num cl-wiz__svc-price">{{ formatPrice(service.basePrice, service.currencyCode) }}</div>
             <button
               type="button"
               class="cl-chip cl-wiz__svc-add"
@@ -923,7 +923,7 @@
               <div class="cl-muted cl-wiz__cross-desc">{{ desc }}</div>
               }
             </div>
-            <div class="cl-num cl-wiz__cross-price">{{ formatPrice(service.basePrice) }}</div>
+            <div class="cl-num cl-wiz__cross-price">{{ formatPrice(service.basePrice, service.currencyCode) }}</div>
             <button
               type="button"
               class="cl-chip cl-wiz__cross-add"

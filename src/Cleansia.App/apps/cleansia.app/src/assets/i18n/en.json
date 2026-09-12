@@ -235,7 +235,7 @@
       "addresses_title": "Addresses, history, invoices",
       "addresses_text": "Saved addresses, every completed order and all your invoices in one place.",
       "points_title": "Points for every completed clean",
-      "points_text": "Every completed order earns 1 point per 10 CZK. At 500 points you reach the silver tier — 5% off orders over 1,000 CZK.",
+      "points_text": "Every completed clean earns points, and points unlock tier discounts on your future bookings.",
       "cancel_title": "Free cancellation",
       "cancel_text": "Up to 24 hours before the clean. With a Cleansia Plus membership, up to 4 hours.",
       "track_text": "Only want to track an order? You do not need an account — the order number and an e-mail are enough.",
@@ -1011,7 +1011,10 @@
       "trust_certified": "Certified Cleaners",
       "trust_no_hidden": "No Hidden Fees",
       "trust_satisfaction": "100% Satisfaction",
-      "zip_code": "ZIP Code"
+      "zip_code": "ZIP Code",
+      "wizard": {
+        "catalogue_changed_for_country": "Some of your selection is not offered at this address, so it was removed. Prices are shown in the currency of the country you are booking in."
+      }
     },
     "orders": {
       "title": "My Orders",
@@ -1294,6 +1297,9 @@
       "points_threshold": "{{count}} points",
       "percent_off": "{{percent}}%",
       "no_discount": "No discount",
+      "discount_min_order": "{{percent}}% off orders over {{minAmount}}",
+      "discount_basic": "{{percent}}% off every order",
+      "no_discount_yet": "No discount yet",
       "discount_cap": "A tier discount and a Cleansia Plus discount add up — but to at most {{cap}}% of the price together. The top tier reaches that ceiling on its own, so Plus adds nothing on top of it.",
       "recent_title": "Recent movements",
       "history_title": "Points history",
@@ -1306,7 +1312,7 @@
       "load_older": "Load older",
       "empty_filter": "Nothing of that kind yet.",
       "how": {
-        "rate_title": "1 point per 10 CZK",
+        "rate_title": "Points on every order",
         "rate_note": "From the order total, rounded down.",
         "on_completion_title": "Once the clean is done",
         "on_completion_note": "We add them when the booking completes — not when you place it.",
@@ -1362,9 +1368,6 @@
       "switch_dialog_confirm": "Switch and pay difference",
       "switch_success": "Welcome to the annual plan!",
       "hero_headline": "Start saving today",
-      "hero_trial_price": "0 Kč / first {{days}} days",
-      "hero_then_price": "then {{price}} / month",
-      "hero_then_price_year": "then {{price}} / year",
       "social_proof_headline": "How the member discount works",
       "social_proof_sub": "Plus and your loyalty tier add up to a combined 12% maximum. Promo codes don't stack — the larger discount applies.",
       "perks_section_title": "What you get",
@@ -1934,7 +1937,7 @@
       "global_limit_reached": "This promo code has reached its usage limit.",
       "per_user_limit_reached": "You've already used this promo code.",
       "below_minimum_order_amount": "Your order doesn't meet the minimum amount for this promo code.",
-      "currency_mismatch": "This promo code can't be used with your selected currency."
+      "currency_mismatch": "This promo code can't be used in the currency this booking is priced in."
     },
     "referral": {
       "not_found": "That referral code doesn't exist.",
@@ -1991,9 +1994,9 @@
   "loyalty": {
     "perks": {
       "welcome_badge": "Welcome to Cleansia rewards",
-      "discount_5_above_1000": "5% off bookings over 1000 CZK",
-      "discount_10": "10% off bookings over 1000 CZK",
-      "discount_12": "12% off bookings over 1000 CZK",
+      "discount_5_above_1000": "5% off bookings",
+      "discount_10": "10% off bookings",
+      "discount_12": "12% off bookings",
       "priority_support": "Priority customer support",
       "dedicated_pool": "Dedicated cleaner pool"
     }

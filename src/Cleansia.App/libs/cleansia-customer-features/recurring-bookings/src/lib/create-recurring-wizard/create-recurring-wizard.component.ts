@@ -121,9 +121,10 @@ export class CreateRecurringWizardComponent implements OnInit {
   ]);
 
   /**
-   * Re-quote whenever the priced inputs change. Watching those four fields
-   * rather than the whole form object: the day, the time and the address move
-   * no money, and quoting on each of them would put a request behind every tap.
+   * Re-quote whenever the priced inputs change. Watching those five fields
+   * rather than the whole form object: the day and the time move no money, and
+   * quoting on each of them would put a request behind every tap. The address
+   * does — its country decides the currency the schedule is priced in.
    */
   private readonly quoteEffect = effect(() => {
     const d = this.facade.formData();
@@ -131,6 +132,7 @@ export class CreateRecurringWizardComponent implements OnInit {
     void d.selectedPackageIds;
     void d.rooms;
     void d.bathrooms;
+    void d.savedAddressId;
     this.facade.quoteForm();
   });
 

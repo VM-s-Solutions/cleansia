@@ -5,14 +5,20 @@ import {
   AddressDto,
   CustomerAuthService,
   CustomerClient,
+  ExtraListItem,
   PaymentType,
+  ServiceListItem,
 } from '@cleansia/customer-services';
 import {
   loadCustomerCurrencies,
+  loadCustomerPackages,
+  loadCustomerServices,
   SavedAddressStore,
   selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
+  selectCustomerPackagesCatalogue,
   selectCustomerServices,
+  selectCustomerServicesCatalogue,
 } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
@@ -47,7 +53,7 @@ describe('OrderWizardFacade', () => {
   let apiClient: { serviceCity: jest.Mock };
   let membershipClient: { getMine: jest.Mock };
   let authService: { isLoggedIn: jest.Mock };
-  let snackbar: { showError: jest.Mock };
+  let snackbar: { showError: jest.Mock; showInfoTranslated: jest.Mock };
   let router: { navigate: jest.Mock };
   let guestOrderService: { save: jest.Mock };
   let savedAddressStore: {
@@ -89,7 +95,7 @@ describe('OrderWizardFacade', () => {
     apiClient = { serviceCity: jest.fn().mockReturnValue(of([])) };
     membershipClient = { getMine: jest.fn().mockReturnValue(of({ hasMembership: false })) };
     authService = { isLoggedIn: jest.fn().mockReturnValue(false) };
-    snackbar = { showError: jest.fn() };
+    snackbar = { showError: jest.fn(), showInfoTranslated: jest.fn() };
     router = { navigate: jest.fn() };
     guestOrderService = { save: jest.fn() };
     savedAddressStore = {
@@ -147,11 +153,134 @@ describe('OrderWizardFacade', () => {
     store = TestBed.inject(MockStore);
     store.overrideSelector(selectCustomerServices, []);
     store.overrideSelector(selectCustomerPackages, []);
+    store.overrideSelector(selectCustomerServicesCatalogue, { services: [], countryId: null });
+    store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
     store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
     facade = TestBed.inject(OrderWizardFacade);
   }
 
   beforeEach(() => configure());
+
+  // The booking is priced in the currency of the country the service address is in, and the
+  // catalogue is priced per market: what has no price in that currency is withheld from it, and
+  // the server refuses a quote that still names it. So when the address step names a country, the
+  // catalogue is re-read for it and the basket is trimmed to what the new list offers.
+  describe('the catalogue follows the address country', () => {
+    const nameACountry = (countryId: string) =>
+      facade.updateFormData({ address: createAddressDto({ countryId }) });
+
+    it('reads the catalogue for the platform default before an address names a country', () => {
+      jest.spyOn(store, 'dispatch');
+
+      facade.initialize();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices(null));
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages(null));
+      expect(extraClient.getOverview).toHaveBeenCalledWith(undefined);
+    });
+
+    it('re-reads services, packages and extras for the country the address names', () => {
+      facade.initialize();
+      jest.spyOn(store, 'dispatch');
+      extraClient.getOverview.mockClear();
+
+      nameACountry('svk');
+      TestBed.flushEffects();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('svk'));
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('svk'));
+      expect(extraClient.getOverview).toHaveBeenCalledWith('svk');
+    });
+
+    it('does not re-read when the address changes within the same country', () => {
+      facade.initialize();
+      nameACountry('svk');
+      TestBed.flushEffects();
+      jest.spyOn(store, 'dispatch');
+      extraClient.getOverview.mockClear();
+
+      facade.updateFormData({ address: createAddressDto({ countryId: 'svk', street: 'Hlavna 2' }) });
+      TestBed.flushEffects();
+
+      expect(store.dispatch).not.toHaveBeenCalled();
+      expect(extraClient.getOverview).not.toHaveBeenCalled();
+    });
+
+    it('drops a selected service the country does not offer and says so', () => {
+      facade.initialize();
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+      nameACountry('svk');
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' })],
+        countryId: 'svk',
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+    });
+
+    it('drops a selected extra the country does not offer', () => {
+      facade.initialize();
+      facade.updateFormData({ extras: { windows: true, oven: true } });
+      extraClient.getOverview.mockReturnValue(of([ExtraListItem.fromJS({ slug: 'oven' })]));
+
+      nameACountry('svk');
+      TestBed.flushEffects();
+
+      expect(facade.formData().extras).toEqual({ oven: true });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+    });
+
+    it('keeps the basket while the list on screen is still the old country', () => {
+      facade.initialize();
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+      nameACountry('svk');
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' })],
+        countryId: null,
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1', 's2']);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('says nothing when every selection survives the new country', () => {
+      facade.initialize();
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      nameACountry('svk');
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' }), ServiceListItem.fromJS({ id: 's2' })],
+        countryId: 'svk',
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('the currency the promo preview asks in', () => {
+    it("is the quote's, so the preview answers the question the submit will ask", async () => {
+      orderClient.quote.mockReturnValue(
+        of(quoteFixture({ currencyId: 'eur', currencyCode: 'EUR' })),
+      );
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+
+      await facade.validatePromoCodeNow('save10');
+
+      expect(promoCodeClient.validate.mock.calls[0][0].currencyId).toBe('eur');
+    });
+  });
 
   describe('the currency the wizard prints in', () => {
     it('asks the store for the platform currencies alongside the catalogue', () => {
@@ -842,6 +971,52 @@ describe('OrderWizardFacade', () => {
 
       expect(snackbar.showError).toHaveBeenCalledWith('pages.order.submit_error');
       expect(facade.submitting()).toBe(false);
+    });
+
+    // CreateOrder refuses a promo it will not honour instead of booking at full price. The
+    // interceptor has already toasted WHICH rule refused it (`api.promo.*`); a second, generic
+    // toast would replace that sentence, and a code left applied would refuse the retry too.
+    describe('a promo the server refuses at submit', () => {
+      // The generated client throws the parsed ProblemDetails bare on a 400 — `errors` and all.
+      const refusal = (code: string) => throwError(() => ({ errors: { PromoCode: code } }));
+
+      beforeEach(async () => {
+        await facade.validatePromoCodeNow('save10');
+      });
+
+      it('leaves the interceptor toast standing and takes the code off the order', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Cash });
+        orderClient.createOrder.mockReturnValue(refusal('promo.currency_mismatch'));
+
+        await facade.submitOrder();
+
+        expect(snackbar.showError).not.toHaveBeenCalled();
+        expect(facade.promoCodeState()).toEqual({ kind: 'idle' });
+        expect(facade.promoCode()).toBe('');
+        expect(facade.submitting()).toBe(false);
+      });
+
+      it('does the same on the card path', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Card });
+        paymentClient.createOrder.mockReturnValue(refusal('promo.expired'));
+
+        await facade.submitOrder();
+
+        expect(snackbar.showError).not.toHaveBeenCalled();
+        expect(facade.promoCodeState()).toEqual({ kind: 'idle' });
+      });
+
+      it('keeps an applied code when the refusal was about something else', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Cash });
+        orderClient.createOrder.mockReturnValue(
+          throwError(() => ({ errors: { CurrencyId: 'currency.invalid' } })),
+        );
+
+        await facade.submitOrder();
+
+        expect(snackbar.showError).toHaveBeenCalledWith('pages.order.submit_error');
+        expect(facade.promoCodeState()).toEqual({ kind: 'valid', discount: 100 });
+      });
     });
 
     it('sends customerAddress and no savedAddressId for a custom address', async () => {

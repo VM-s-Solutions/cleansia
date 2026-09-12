@@ -316,14 +316,14 @@ describe('ServicesCatalogComponent', () => {
     it('drops the trailing zeroes a whole crown price would otherwise carry', () => {
       build();
 
-      expect(component.formatPrice(1200)).not.toMatch(/[.,]\d/);
+      expect(component.formatPrice(1200)).not.toMatch(/[.,]00$/);
       expect(component.formatPrice(1200).replace(/\D/g, '')).toBe('1200');
     });
 
     it('renders in the platform default currency, which is what the catalogue is priced in', () => {
       build([], [], 'CZK');
 
-      expect(component.formatPrice(1200)).toContain('Kč');
+      expect(component.formatPrice(1200)).toContain('CZK');
     });
 
     it('follows the default currency rather than assuming crowns', () => {
@@ -338,6 +338,28 @@ describe('ServicesCatalogComponent', () => {
 
       expect(component.formatPrice(1200).replace(/\D/g, '')).toBe('1200');
       expect(component.formatPrice(1200)).not.toContain('Kč');
+    });
+
+    // The locale was a `'cs-CZ'` literal, so an English reader got Czech digit grouping and
+    // symbol placement on the catalogue while every order screen formatted per language.
+    it("groups and places the symbol the way the reader's language does", () => {
+      build([], [], 'CZK');
+
+      currentLang = 'en';
+      expect(component.formatPrice(1200)).toMatch(/CZK\s?1,200/);
+
+      currentLang = 'cs';
+      expect(component.formatPrice(1200)).toMatch(/1\s200\sKč/);
+    });
+
+    // Every catalogue item now says which currency it is priced in; the platform default is only
+    // the label for a figure with no item behind it.
+    it("labels a price with the item's own code when it carries one", () => {
+      build([], [], 'CZK');
+
+      expect(component.formatPrice(40, 'EUR')).toContain('€');
+      expect(component.formatPrice(40, 'EUR')).not.toContain('CZK');
+      expect(component.formatPrice(40, undefined)).toContain('CZK');
     });
   });
 });

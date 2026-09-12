@@ -1,4 +1,4 @@
-import { formatMoney } from './money-formatters.utils';
+import { formatMoney, localeFor } from './money-formatters.utils';
 
 /** Digits only, so the assertion survives the locale's choice of grouping character. */
 const digits = (s: string) => s.replace(/\D/g, '');
@@ -38,5 +38,23 @@ describe('formatMoney', () => {
   it('formats in the locale it was given', () => {
     expect(formatMoney(1234.5, 'EUR', 'de-DE')).toBe('1.234,50 €');
     expect(formatMoney(1234.5, 'EUR', 'en-GB')).toBe('€1,234.50');
+  });
+});
+
+describe('localeFor', () => {
+  it.each([
+    ['en', 'en-US'],
+    ['cs', 'cs-CZ'],
+    ['sk', 'sk-SK'],
+    ['uk', 'uk-UA'],
+    ['ru', 'ru-RU'],
+  ])('maps the %s language to the %s locale', (lang, locale) => {
+    expect(localeFor(lang)).toBe(locale);
+  });
+
+  it('falls back to en-US for a language it does not know, and for none at all', () => {
+    expect(localeFor('de')).toBe('en-US');
+    expect(localeFor(undefined)).toBe('en-US');
+    expect(localeFor('')).toBe('en-US');
   });
 });

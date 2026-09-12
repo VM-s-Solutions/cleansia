@@ -7,7 +7,7 @@ import {
   selectCustomerServices,
 } from '@cleansia/customer-stores';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -42,7 +42,7 @@ export class ServicesComponent {
   services = toSignal(this.store.select(selectCustomerServices), {
     initialValue: [] as ServiceListItem[],
   });
-  /** The catalogue is priced in the platform default currency; its DTOs carry no code of their own. */
+  /** The label for the fallback figures, which have no item behind them; a catalogue item carries its own code. */
   private readonly currencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
     initialValue: null,
   });
@@ -80,9 +80,9 @@ export class ServicesComponent {
     return (item as unknown as Record<string, string>)[field] || '';
   }
 
-  formatPrice(price: number | undefined): string {
+  formatPrice(price: number | undefined, currencyCode?: string | null): string {
     if (price == null) return '';
-    return formatMoney(price, this.currencyCode(), 'cs-CZ');
+    return formatMoney(price, currencyCode || this.currencyCode(), localeFor(this.lang()));
   }
 
   /**

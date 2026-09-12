@@ -471,8 +471,12 @@ export class OrderWizardComponent implements OnInit {
     }
   }
 
-  formatPrice(price: number): string {
-    return formatMoney(price, this.facade.currencyCode(), this.localeTag());
+  /**
+   * A catalogue item is labelled with its own `currencyCode`; a figure with no payload of its own
+   * (a quote line, a plan price) with the wizard's.
+   */
+  formatPrice(price: number, currencyCode?: string | null): string {
+    return formatMoney(price, currencyCode || this.facade.currencyCode(), this.localeTag());
   }
 
   // Same icon rotation as the services-catalog page so both card sets read
@@ -716,6 +720,7 @@ export class OrderWizardComponent implements OnInit {
     void data.selectedPackageIds;
     void data.rooms;
     void data.bathrooms;
+    void data.address.countryId;
     if (onPlusStep && havePlans) {
       this.refreshPlusSavings();
     }
@@ -732,6 +737,8 @@ export class OrderWizardComponent implements OnInit {
     query.rooms = data.rooms;
     query.bathrooms = data.bathrooms;
     query.planCode = plan.code;
+    // The address's country decides the currency the saving is priced in.
+    query.countryId = data.address.countryId || undefined;
     // The SLOT, not the date: midnight is a different express band.
     query.cleaningDate = composeSlotMoment(data.cleaningDate, data.cleaningTime) ?? undefined;
     this.facade.loadPlusSavings(query);

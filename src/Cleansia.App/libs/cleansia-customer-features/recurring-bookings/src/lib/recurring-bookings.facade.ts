@@ -264,6 +264,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       template.selectedPackageIds ?? [],
       template.rooms,
       template.bathrooms,
+      this.countryOf(template.savedAddressId),
     );
     if (!quoted) return;
     this.templatePrices.update((all) => ({ ...all, [template.id as string]: quoted }));
@@ -279,11 +280,23 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.quoting.set(true);
     try {
       this.formPrice.set(
-        await this.quote(d.selectedServiceIds, d.selectedPackageIds, d.rooms, d.bathrooms),
+        await this.quote(
+          d.selectedServiceIds,
+          d.selectedPackageIds,
+          d.rooms,
+          d.bathrooms,
+          this.countryOf(d.savedAddressId),
+        ),
       );
     } finally {
       this.quoting.set(false);
     }
+  }
+
+  /** The country of a saved address, which decides the currency a schedule is priced in. */
+  private countryOf(savedAddressId: string | null | undefined): string | null {
+    if (!savedAddressId) return null;
+    return this.savedAddresses().find((a) => a.id === savedAddressId)?.countryId || null;
   }
 
   private async quote(
@@ -291,6 +304,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     packageIds: string[],
     rooms: number,
     bathrooms: number,
+    countryId: string | null,
   ): Promise<QuotedPrice | null> {
     if (serviceIds.length === 0 && packageIds.length === 0) return null;
     const command = new QuoteOrderCommand();
@@ -298,8 +312,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = packageIds;
     command.rooms = rooms;
     command.bathrooms = bathrooms;
-    // Left unset deliberately: the currency is the caller's, resolved server
-    // side, and a schedule has no express surcharge to date-shift.
+    // The country, never a currency: the server prices in the address country's currency, and
+    // on create derives it from the saved address itself. A schedule has no express surcharge to
+    // date-shift.
+    command.countryId = countryId ?? undefined;
     command.currencyId = undefined;
     command.selectedExtraSlugs = [];
     command.cleaningDate = undefined;

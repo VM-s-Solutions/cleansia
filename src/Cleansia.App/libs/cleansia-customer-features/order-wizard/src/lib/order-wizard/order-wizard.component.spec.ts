@@ -237,6 +237,29 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(card.getAttribute('aria-pressed')).toBe('true');
     });
 
+    // The catalogue is priced per market and every item says which currency it is in. A Slovak
+    // address reads a EUR catalogue while the wizard's own label is still the platform default —
+    // so the card prints the item's code, never the wizard's.
+    it("labels a service card with the item's own currency, not the wizard's", async () => {
+      await setup();
+      facade.currencyCode.set('CZK');
+      facade.services.set([
+        ServiceListItem.fromJS({ id: 's-1', name: 'Deep clean', basePrice: 40, currencyCode: 'EUR' }),
+      ]);
+      fixture.detectChanges();
+
+      const price = el.querySelector('.cl-wiz__svc-price')?.textContent ?? '';
+      expect(price).toContain('€');
+      expect(price).not.toContain('Kč');
+    });
+
+    it('falls back to the wizard label for an item that carries no code', async () => {
+      await setup();
+      facade.currencyCode.set('CZK');
+
+      expect(fixture.componentInstance.formatPrice(40, undefined)).toContain('Kč');
+    });
+
     it('renders package cards as focusable buttons with aria-pressed', async () => {
       await setup();
       facade.packages.set([makePackage('p-1', 'Bundle')]);

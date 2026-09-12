@@ -29,3 +29,16 @@ export function formatMoney(value: number, currencyCode: string | null | undefin
   const isWhole = Math.abs(amount - rounded) < 0.005;
   return formatterFor(locale, currencyCode, isWhole).format(isWhole ? rounded : amount);
 }
+
+const LOCALE_BY_LANGUAGE: Record<string, string> = {
+  en: 'en-US',
+  cs: 'cs-CZ',
+  sk: 'sk-SK',
+  uk: 'uk-UA',
+  ru: 'ru-RU',
+};
+
+/** The `Intl` locale an amount is formatted in for one of the five app languages. */
+export function localeFor(lang: string | undefined): string {
+  return (lang && LOCALE_BY_LANGUAGE[lang]) || 'en-US';
+}

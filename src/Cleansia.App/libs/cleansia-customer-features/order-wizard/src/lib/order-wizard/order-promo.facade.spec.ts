@@ -8,13 +8,22 @@ describe('OrderPromoFacade', () => {
   let facade: OrderPromoFacade;
   let promoCodeClient: { validate: jest.Mock };
   let preSurchargeSubtotal: ReturnType<typeof signal<number>>;
+  let currencyId: ReturnType<typeof signal<string | null>>;
   let persistPromoCode: jest.Mock;
+
+  /** `toObservable` delivers through an effect, and the validation settles a tick later. */
+  async function settle(): Promise<void> {
+    TestBed.flushEffects();
+    await Promise.resolve();
+    await Promise.resolve();
+  }
 
   function build(): void {
     promoCodeClient = {
       validate: jest.fn().mockReturnValue(of({ isValid: true, discountAmount: 100 })),
     };
     preSurchargeSubtotal = signal(1000);
+    currencyId = signal<string | null>('czk');
     persistPromoCode = jest.fn();
 
     TestBed.configureTestingModule({
@@ -25,7 +34,7 @@ describe('OrderPromoFacade', () => {
     });
 
     facade = TestBed.inject(OrderPromoFacade);
-    facade.connect({ preSurchargeSubtotal, persistPromoCode });
+    facade.connect({ preSurchargeSubtotal, currencyId, persistPromoCode });
   }
 
   beforeEach(build);
@@ -96,6 +105,63 @@ describe('OrderPromoFacade', () => {
       const state = await facade.validatePromoCodeNow('bad');
 
       expect(state).toEqual({ kind: 'invalid', error: null });
+    });
+  });
+
+  // A code with a minimum is bound to one currency, and the server answers `CurrencyMismatch` on
+  // any other. The preview has to ask in the currency the booking is priced in, which is the
+  // quote's — the address's country decides it, and the customer picks nothing.
+  describe('the currency the preview asks in', () => {
+    it("sends the quote's currency with the code", async () => {
+      currencyId.set('eur');
+
+      await facade.validatePromoCodeNow('save10');
+
+      expect(promoCodeClient.validate.mock.calls[0][0].currencyId).toBe('eur');
+    });
+
+    it('sends no currency before a quote exists, which the server reads as the default', async () => {
+      currencyId.set(null);
+
+      await facade.validatePromoCodeNow('save10');
+
+      expect(promoCodeClient.validate.mock.calls[0][0].currencyId).toBeUndefined();
+    });
+
+    it('re-validates an applied code when the quote moves to another currency', async () => {
+      await facade.validatePromoCodeNow('save10');
+      promoCodeClient.validate.mockReturnValue(
+        of({ isValid: false, errorCode: 'CurrencyMismatch' }),
+      );
+
+      currencyId.set('eur');
+      await settle();
+
+      expect(promoCodeClient.validate).toHaveBeenCalledTimes(2);
+      expect(promoCodeClient.validate.mock.calls[1][0]).toMatchObject({
+        code: 'SAVE10',
+        currencyId: 'eur',
+      });
+      expect(facade.promoCodeState()).toEqual({ kind: 'invalid', error: 'CurrencyMismatch' });
+      expect(facade.effectivePromoDiscount()).toBe(0);
+    });
+
+    it('leaves a code that was never applied alone when the currency moves', async () => {
+      currencyId.set('eur');
+      await settle();
+
+      expect(promoCodeClient.validate).not.toHaveBeenCalled();
+      expect(facade.promoCodeState()).toEqual({ kind: 'idle' });
+    });
+
+    it('does not re-validate a code the server already refused', async () => {
+      promoCodeClient.validate.mockReturnValue(of({ isValid: false, errorCode: 'Expired' }));
+      await facade.validatePromoCodeNow('old');
+
+      currencyId.set('eur');
+      await settle();
+
+      expect(promoCodeClient.validate).toHaveBeenCalledTimes(1);
     });
   });
 

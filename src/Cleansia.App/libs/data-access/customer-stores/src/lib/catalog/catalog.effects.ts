@@ -12,8 +12,8 @@ export class CustomerCatalogEffects {
   loadServices$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CatalogActions.loadCustomerServices),
-      switchMap(() =>
-        this.customerClient.serviceClient.getOverview().pipe(
+      switchMap(({ countryId }) =>
+        this.customerClient.serviceClient.getOverview(countryId ?? undefined).pipe(
           // `?? []` at the payload boundary, because the reducer stores what the action carries —
           // it spreads `services` straight into state with no default of its own. The generated
           // client answers a 200 whose body is not a JSON array (and a 204) with NULL rather than
@@ -24,6 +24,7 @@ export class CustomerCatalogEffects {
           map((services) =>
             CatalogActions.loadCustomerServicesSuccess({
               services: services ?? [],
+              countryId,
             })
           ),
           catchError((error) => of(CatalogActions.loadCustomerServicesFailure({ error })))
@@ -35,12 +36,13 @@ export class CustomerCatalogEffects {
   loadPackages$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CatalogActions.loadCustomerPackages),
-      switchMap(() =>
-        this.customerClient.packageClient.getOverview().pipe(
+      switchMap(({ countryId }) =>
+        this.customerClient.packageClient.getOverview(countryId ?? undefined).pipe(
           // Same null, same reason — see loadServices$ above.
           map((packages) =>
             CatalogActions.loadCustomerPackagesSuccess({
               packages: packages ?? [],
+              countryId,
             })
           ),
           catchError((error) => of(CatalogActions.loadCustomerPackagesFailure({ error })))

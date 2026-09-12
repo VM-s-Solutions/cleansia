@@ -42,7 +42,11 @@ interface QuoteInputs {
   selectedExtraSlugs: string[];
   rooms: number;
   bathrooms: number;
-  currencyId: string | null;
+  /**
+   * The service address's country. The server prices the booking in that country's currency —
+   * a property of the booking, never a choice — so the wizard names the country and no currency.
+   */
+  countryId: string | null;
   cleaningDate: string | null;
 }
 
@@ -212,7 +216,7 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
       selectedExtraSlugs,
       rooms: data.rooms,
       bathrooms: data.bathrooms,
-      currencyId: null,
+      countryId: data.address.countryId || null,
       cleaningDate: cleaningDateIso,
     };
   });
@@ -233,7 +237,7 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = inputs.selectedPackageIds;
     command.rooms = inputs.rooms;
     command.bathrooms = inputs.bathrooms;
-    command.currencyId = inputs.currencyId ?? undefined;
+    command.countryId = inputs.countryId ?? undefined;
     command.selectedExtraSlugs = inputs.selectedExtraSlugs;
     command.cleaningDate = inputs.cleaningDate
       ? new Date(inputs.cleaningDate)

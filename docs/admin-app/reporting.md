@@ -136,12 +136,26 @@ private formatAmount(value: number | undefined, currencyCode: string | undefined
 There is no fraction-digit override: the per-tender column reconciles against a Stripe statement to
 the cent, and rounding 45.10 € to 45 € is how lines stop summing.
 
+The same "one currency or grouped by it" rule holds on the two admin lists that carry money. The
+order list and the invoice list each take a `currencyId` filter, and a sort on their money column with
+no currency filter set runs within currency rather than across it — the server leads the sort with
+`CurrencyId` so the page is grouped, and the plain price order applies only once the filter pins the
+page to one currency. → [Order management](./order-management#money-across-currencies)
+
+The catalogue lists (Services, Packages, Extras) are a different case: they show a price per row, and
+a list is priced in the **platform default** currency (each `ServiceListItem` / `PackageListItem` /
+`ExtraListItem` carries its `currencyCode`, always the default's). The admin facades read the default
+once from the currency overview and label every price with its code, printing a bare number rather
+than a currency they cannot name — never a hard-coded "CZK". The per-currency rows themselves are
+authored on the entry's form.
+
 The partner side answers the same question the other way round. The partner dashboard earnings,
 earnings chart, personal bests, order-distribution money columns, available-jobs headline and My Pay
 are all scoped to the currency `ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync` returns
 for the cleaner — their work country's default currency when that names a real currency, otherwise
 the platform default — and that currency's code is what those screens print. Counts stay over all
-orders; only the money is scoped.
+orders; only the money is scoped. The cleaner's **board** is scoped the same way: an order in another
+currency is not listed, counted or takeable by them. → [Business rules](/product/business-rules#cleaner-currency)
 
 ## Percentage Formatting
 

@@ -58,10 +58,15 @@ The record is never `Include`d on the employee grid or any paged query.
 
 `MaskedPayoutDetails` carries `CurrencyId`: the currency the cleaner declares the account holds. It is
 nullable, written only by the cleaner's own `UpdateBankDetails` (never by an admin), and an undeclared
-account is read as the platform default. It is not a label — `ApproveInvoice` compares it with the invoice's
-currency and refuses `payroll.invoice.payout_currency_mismatch` when they differ, because approval is
-the last point where the platform can refuse a transfer that is then keyed by hand. The masked rows on
-the detail page do not render it. → [/flows/pay-and-payouts](/flows/pay-and-payouts),
+account is read as the currency of the cleaner's work country — CZ is CZK, SK is EUR, PL is PLN — never
+the platform default. It is not a label — `ApproveInvoice` compares it with the invoice's currency and
+refuses `payroll.invoice.payout_currency_mismatch` when they differ, because approval is the last point
+where the platform can refuse a transfer that is then keyed by hand. Before that comparison, approval
+refuses `payroll.invoice.payout_details_missing` when there is no usable record at all (absent, no
+scheme, or not `Provided`) — a cleaner with pay rows and no destination, reachable through an admin
+reassignment or an erasure, gets their invoice document on time and the admin cannot commit to a
+transfer to nowhere. The masked rows on the detail page do not render the currency.
+→ [/flows/pay-and-payouts](/flows/pay-and-payouts#approval-is-the-last-refusal),
 [/domain/roles/employee-payout-details](/domain/roles/employee-payout-details)
 
 ### Pay Configuration
@@ -267,11 +272,14 @@ Sets the employee's `ContractStatus` to `Approved` and `WorkCountryId` to the co
 full platform access. The country must exist and be serviced (`country.not_found`,
 `country.not_serviced`).
 
-The work country also decides the currency the cleaner will be paid in, and approval is refused when
-that currency is not covered. `ICurrencyResolutionService.ResolveCurrencyForWorkCountryAsync` takes the
-country's `CountryConfiguration.DefaultCurrencyCode` when it names a real currency and the platform
-default otherwise — the same chain that later labels the cleaner's earnings, entered at the country
-because this is the command that assigns it. Every active service and package must then have a pay
+The work country also decides the currency the cleaner will be paid in — and the currency of every
+order they will see on their board and be allowed to take (owner ruling 2026-09-12) — and approval is
+refused when that currency is not covered. `ICurrencyResolutionService.ResolveCurrencyForCountryAsync`
+takes the country's `CountryConfiguration.DefaultCurrencyCode` when it names a real currency and the
+platform default otherwise (logged as an error, because a working country without a currency is a
+configuration defect) — the same chain that later labels the cleaner's earnings, and the same one that
+prices a customer's booking from its address country, entered here at the work country because this
+is the command that assigns it. Every active service and package must then have a pay
 config in that currency, platform-wide or this cleaner's own (`PayCoverage.Applies`); an uncovered
 entry refuses `employee.pay_config_missing`, one failure per entry with the entry's name as the error
 code, so the refusal says what to configure. A rate in another currency does not count — a cleaner
@@ -396,6 +404,29 @@ A config in any other currency is not read at all. This means an employee can ha
 services and use global rates for others; it also means an override authored in CZK does nothing for a
 EUR order, which falls through to the EUR global rate.
 → [/product/business-rules#rates-per-currency](/product/business-rules#rates-per-currency)
+
+## Customer detail — credit is held per currency {#customer-credit}
+
+Route: `/customers/:id` (the `loyalty-user-detail` library; it kept its name when it grew a credit
+balance, a ledger and the two credit actions). A customer holds **one credit account per currency** —
+credit issued for a EUR booking is EUR and cannot be spent on a CZK one — so the page shows one
+balance block per account, each labelled with its currency code, and the two actions name a currency:
+
+| Action | Command | Currency |
+|---|---|---|
+| Issue credit | `IssueCustomerCredit` | Chosen by the admin in the dialog from the active currencies; must exist and be active (`currency.not_found`, `currency.invalid`). Capped by the unit-free sanity guard of 10 000 in whatever currency it names. |
+| Expire credit | `ExpireCustomerCredit` | The account the admin clicked **Expire** on — the dialog carries that account's `currencyId` and balance. Required on the wire; unknown is `currency.not_found`. |
+
+**A discharge takes one account's whole balance and leaves the others alone.** The reason the action
+exists is erasure: `GdprDeletionService` refuses to erase a customer while any balance is positive and
+there are no payouts, so the admin discharges each funded account in turn — one note per currency in
+the ledger — and the erasure proceeds. The command drains the named account to zero, writes one
+`Expired` ledger row on it, and answers `amountExpired` with the account's `currencyCode`; a discharge
+in a currency the customer holds nothing in is a no-op that answers zero, not an error. The old refusal
+for a customer funded in two currencies (`credit.held_in_multiple_currencies`) is gone — it had no
+admin action that could resolve it. `GetUserCredit` returns every account with its own `currencyId`,
+`currencyCode` and ledger, which is what the per-account blocks and the Expire dialog read.
+→ [Money constants](/product/business-rules#money-constants)
 
 ## Reject Dialog
 

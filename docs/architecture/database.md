@@ -251,12 +251,12 @@ The tables that denominate money carry the currency they are in:
 
 | Table | `CurrencyId` | On delete | What it means |
 |-------|--------------|-----------|---------------|
-| `Orders` | required | Restrict | Stamped from the caller's `CurrencyId` on quote/create (null = platform default); the address does not decide it |
+| `Orders` | required | Restrict | Stamped from the service address's country (`CountryConfiguration.DefaultCurrencyCode`); a `CurrencyId` the caller sends must equal it or create refuses `currency.invalid` |
 | `ServicePrices` / `PackagePrices` / `ExtraPrices` | required | Restrict | Half of the unique key — one price per entry per currency |
 | `EmployeePayConfigs` | required | Restrict | In the unique index — a rate is an amount in one currency, and the pay writer reads only rows in the order's currency |
 | `OrderEmployeePays` | required | Restrict | The currency the pay row was computed in |
 | `EmployeeInvoices` | required | Restrict | In the unique index `IX_EmployeeInvoices_EmployeeId_PayPeriodId_CurrencyId` — one invoice per currency a cleaner's pay spans in a period; derived from the pay rows, never supplied |
-| `EmployeePayoutDetails` | nullable | Restrict | The currency the cleaner declares their bank account holds; null = undeclared, which `ApproveInvoice` reads as the platform default |
+| `EmployeePayoutDetails` | nullable | Restrict | The currency the cleaner declares their bank account holds; null = undeclared, which `ApproveInvoice` reads as the work country's currency |
 | `CreditAccounts` | required | no FK | Unique `(UserId, CurrencyId)` — one balance per customer per currency, never converted at spend time |
 
 Because the FKs restrict, `DeleteCurrency` asks `ICurrencyRepository.IsInUseAsync` first and answers

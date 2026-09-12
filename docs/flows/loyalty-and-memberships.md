@@ -11,6 +11,15 @@ A completed order earns `floor(total / Currency.LoyaltyPointsDivisor)` in the or
 point per 10 CZK today — and a partial refund claws back the same fraction of the refund's net through
 the same divisor. The divisor is authored per currency on the admin currency form; a currency with no
 divisor earns nothing and logs. It is not scaled from another currency's rate.
+
+**A market cannot open without one.** An order completed while its currency has no divisor earns
+nothing, permanently: the earn returns before any ledger row is written and nothing re-fires it when
+the divisor is set later, so the only remedy is a manual grant per affected customer. That is why the
+platform refuses rather than warns: `ActivateCurrency` refuses a currency whose divisor is unset or not
+positive, and `UpdateCurrency` refuses to clear the divisor on a currency that is already active — both
+as `currency.loyalty_divisor_missing`. A currency that is still switched off may sit without a divisor,
+because nothing can be booked in it. The "earns nothing and logs" branch remains as the fail-closed
+answer for a row that reaches that state anyway.
 → [Money constants](/product/business-rules#money-constants)
 
 ## Cleansia Plus
@@ -78,5 +87,5 @@ alone. You cannot redeem your own code, and you cannot be referred twice.
 | Plan downgraded mid-month | The live count carries across, so a downgrade cannot grant a fourth waiver on a two-waiver plan. |
 | Re-subscribing | Quota does **not** reset — the key has no membership id in it. |
 | Points granted twice by a retry | Rejected by the idempotency index. |
-| Order in a currency with no points divisor | Earns nothing, and a warning is logged; nothing is borrowed from another currency's rate. |
+| Order in a currency with no points divisor | Unreachable through the admin surface — activation refuses without a divisor and an active currency cannot have it cleared (`currency.loyalty_divisor_missing`). A row that reaches the state anyway earns nothing and logs a warning; nothing is borrowed from another currency's rate. |
 | Self-referral | Refused. |

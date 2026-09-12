@@ -191,12 +191,20 @@ failure is reported:
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
 | A membership express waiver the client assumed is still available | `membership.express_waiver.no_longer_available` |
 | Server-recalculated price equals the submitted `totalPrice` | `order.total_price.not_match` |
+| The `promoCode`, if any, would be honoured — previewed again in the address currency on the pre-surcharge subtotal | the preview's own reason: `promo.currency_mismatch`, `promo.expired`, `promo.global_limit_reached`, `promo.per_user_limit_reached`, `promo.below_minimum_order_amount`, `promo.not_found`, `promo.inactive`, `promo.not_yet_valid` — error code `PromoCode` |
 
 The two currency rules head the chain, and sit in this chain rather than in a rule of their own,
 because the calculator throws on a currency it cannot price in: a separate rule would not stop the two
 price rules from running it, and a 400 would become a 500. Separately from this chain, a selected
 service or package with no price row in the address country's currency fails as
 `order.selected_services.invalid` / `order.selected_package.invalid`.
+
+The promo rule is last and it **refuses the booking** rather than silently dropping the code: a
+customer who applied a code and was shown a discounted price must not be charged the full price
+because the code bound to another currency, expired, or hit its cap between apply and submit. The
+rule skips when there is no code or no signed-in user (a promo needs a user to redeem against), and
+the handler applies the discount from the same preview the validator accepted, so the two cannot
+disagree.
 
 The waiver rule sits **before** the price rule deliberately: a Plus member who used up their last
 free express upgrade between quoting and submitting would otherwise get
@@ -244,7 +252,8 @@ POST /api/Order/Quote
   "rooms": 3,
   "bathrooms": 1,
   "selectedExtraSlugs": ["inside-oven"],
-  "currencyId": "currency-id",
+  "countryId": "country-id",
+  "currencyId": null,
   "cleaningDate": "2026-04-15T10:00:00Z"
 }
 ```
@@ -253,14 +262,18 @@ POST /api/Order/Quote
 express-surcharge check is skipped.
 
 `countryId` — optional; the service address's country once the wizard has one. The quote is priced
-in that country's currency (owner ruling 2026-09-12); a country the platform does not service is
-refused as `country.not_serviced`. `currencyId` — optional; an explicit currency, which wins over
-`countryId`. With neither the quote is in the platform default. Whichever way it resolves, the currency
-must be one the platform can quote in — switched on and carrying at least one catalogue price row — or
-the quote is refused as `currency.invalid`. The response's `currencyId` / `currencyCode` say which one
-was used. Prices are authored per currency and nothing converts, so a selected service or package with
-no price row in that currency is refused as `order.selected_services.invalid` /
-`order.selected_package.invalid`.
+in that country's currency (owner ruling 2026-09-12: the market is the booking's, not the customer's);
+a country the platform does not service is refused as `country.not_serviced`. `currencyId` — optional;
+an explicit currency, which wins over `countryId` — it exists so a client can re-quote in exactly the
+currency it was first quoted in, not so it can choose one, and on create it is checked against the
+address. With neither the quote is in the platform default, which is what the wizard's first step and
+the home page's quick quote get. Whichever way it resolves, the currency must be one the platform can
+quote in — switched on and carrying at least one catalogue price row — or the quote is refused as
+`currency.invalid`. The response's `currencyId` / `currencyCode` say which one was used. Prices are
+authored per currency and nothing converts, so a selected service or package with no price row in
+that currency is refused as `order.selected_services.invalid` / `order.selected_package.invalid`; an
+extra without one is dropped from the extras subtotal. `QuotePlusSavings` takes the same two fields
+and resolves them the same way.
 
 **Response:**
 
@@ -299,6 +312,96 @@ Promo codes are **not** priced here — they are entered at checkout and applied
 
 ---
 
+### Catalogue overviews <Badge type="info" text="Customer + Customer Mobile" />
+
+The three lists the booking wizard is built from. They live on their own controllers, not on
+`Order`, but they are documented here because they take the same `countryId` the quote does and
+answer in the same currency.
+
+```
+GET /api/Service/GetOverview?countryId=country-id
+GET /api/Package/GetOverview?countryId=country-id
+GET /api/Extra/GetOverview?countryId=country-id
+```
+
+**Auth:** Anonymous
+
+`countryId` — optional; the service address's country once the wizard has one. The overview is priced
+in that country's currency and **withholds** any entry that has no price row in it or no platform-wide
+pay config in it — the same two gates the quote enforces, applied before the customer can pick the
+entry. Without `countryId` the overview is in the platform default. An unknown or unconfigured country
+falls through to the platform default rather than refusing; the quote is where an unserviced country
+is refused. Each `ServiceListItem` / `PackageListItem` / `ExtraListItem` carries `currencyCode`, so a
+surface labels the prices it was sent rather than a currency it assumed.
+
+**Response** (service overview; the others are the same shape with one `price`):
+
+```json
+[
+  {
+    "id": "svc-1",
+    "name": "Standard clean",
+    "description": "...",
+    "category": { "id": "cat-1", "name": "Home" },
+    "basePrice": 900.00,
+    "perRoomPrice": 150.00,
+    "translations": { "cs": { "name": "Standardní úklid", "description": "..." } },
+    "currencyCode": "CZK"
+  }
+]
+```
+
+A wizard that learned the country at the address step, after the customer picked from the default
+catalogue, re-reads the overview with the country and prunes any selection that is no longer offered;
+otherwise the next quote refuses the selection as `order.selected_services.invalid`.
+
+The Partner host's `Service/GetOverview` and `Package/GetOverview` take no `countryId` and answer in
+the platform default. `GET /api/Currency/GetOverview` (anonymous, Customer + Customer Mobile) lists
+the currencies with `isDefault`, for a surface that has no country yet to learn what the default is.
+
+---
+
+### PromoCode/Validate <Badge type="info" text="Customer + Customer Mobile" />
+
+The checkout preview of a promo code. It answers the question `CreateOrder` will ask again, so it
+must be asked in the same currency.
+
+```
+POST /api/PromoCode/Validate
+```
+
+**Auth:** `CanRedeemPromoCode` (Customer)
+
+**Request body:**
+
+```json
+{
+  "code": "SAVE10",
+  "orderSubtotal": 1500.00,
+  "currencyId": "currency-id"
+}
+```
+
+`orderSubtotal` is the quote's **pre-surcharge** subtotal — the base a discount is judged on.
+`currencyId` — optional; the quote's `currencyId`, which is the address country's currency. Null
+resolves to the platform default, which is only right for a quote that had no country. A code with a
+minimum is bound to one currency (its own, or the platform default when it names none), and on a
+subtotal in any other it answers `CurrencyMismatch` before the minimum is compared.
+
+**Response:**
+
+```json
+{ "isValid": false, "discountAmount": null, "errorCode": "CurrencyMismatch" }
+```
+
+`errorCode` is the enum name (`NotFound`, `Inactive`, `Expired`, `NotYetValid`, `GlobalLimitReached`,
+`PerUserLimitReached`, `BelowMinimumOrderAmount`, `CurrencyMismatch`), null when valid. The same eight
+reasons refuse the booking on create as `promo.*` keys — a client that previewed in the wrong currency
+sees the mismatch at submit instead of a silently dropped discount.
+→ [Money constants](/product/business-rules#money-constants)
+
+---
+
 ### GetPaged
 
 Returns a paginated list of orders.
@@ -328,6 +431,14 @@ GET /api/Order/GetPaged?page=1&pageSize=10
   "pageSize": 10
 }
 ```
+
+**Currency.** `OrderFilter.CurrencyId` (query parameter `currencyId`) pins the page to one currency;
+no existence check, an unknown id is an empty page. Without it a sort on `totalPrice` is served
+*within* currency — the server leads the sort with `currencyId`, so rows arrive grouped by currency and
+ordered by price inside each group, because 150 EUR does not file below 3 000 CZK. `currencyId` is
+also accepted as a sort field. For a **non-admin caller** the list is additionally scoped to the
+currency the cleaner is paid in (their work country's): an order in another currency is not on their
+board at all, unless they are already assigned to it. → [Business rules](/product/business-rules#cleaner-currency)
 
 **`hasReview`** exists so a client can decide whether to ask for a review **without fetching the order
 detail**. The mobile apps raise the completion prompt off the list, and before this flag the only way to
@@ -414,7 +525,7 @@ first that fails. The order of the rules is deliberate: a cancelled order with a
 | # | Rule | Error key |
 |---|---|---|
 | 1 | `orderId` present | `common.required` |
-| 2 | Order exists **and is not held from this caller** (ADR-0036) | `order.not_found` |
+| 2 | Order exists, **is not held from this caller** (ADR-0036), **and is in the currency the caller is paid in** — or the caller is already on it (`OrderVisibility.OpenTo`) | `order.not_found` |
 | 3 | Not cancelled | `order.already_cancelled` |
 | 4 | Not completed | `order.already_completed` |
 | 5 | **Offerable** — the ADR-0037 rule, both axes | `order.not_takeable` |
@@ -426,12 +537,14 @@ first that fails. The order of the rules is deliberate: a cancelled order with a
 | 11 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
 | 12 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
 
-::: info The preferred-cleaner hold is folded into the existence check
+::: info The preferred-cleaner hold and the currency are folded into the existence check
 Rules 2 and 5 are separate questions. Until `preferredHoldUntilUtc`, the order's **first seat** is
 offered to `preferredEmployeeId` alone; a held order answers `order.not_found`, identical to a missing
 one, so the fact that some other cleaner was named cannot be inferred from the refusal. The hold
 releases when the deadline passes or as soon as any cleaner is assigned. `preferredEmployeeId` is
-never returned on a partner-facing DTO.
+never returned on a partner-facing DTO. The currency term answers the same way for the same reason: an
+order in a currency the caller is not paid in was never on their board, so from their side it does not
+exist (owner ruling 2026-09-12 — a cleaner is paid in the currency of the country they work in).
 :::
 
 The employee is always derived server-side from the caller, never taken from the request body. On

@@ -228,6 +228,33 @@ The pay a cleaner earns is therefore always in the order's currency, and an invo
 a cleaner who worked a CZK job and a EUR job in one period receives two invoices.
 → [Pay and payouts](/flows/pay-and-payouts)
 
+### A cleaner works in one currency {#cleaner-currency}
+
+**A cleaner is paid in the currency of the country they work in** — CZ is CZK, SK is EUR, PL is PLN
+(owner ruling 2026-09-12). `Employee.WorkCountryId` resolves through `CountryConfiguration
+.DefaultCurrencyCode` to a `Currency` row (`ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync`),
+and that one currency scopes everything the cleaner sees and does with money:
+
+- **The board is scoped to it.** An order priced in another currency is not listed, not counted, not
+  browsable and not takeable — `OrderVisibility.PayableTo` is conjoined with the preferred-cleaner
+  hold into one `OpenTo` predicate that the available-jobs list, the dashboard count, the browse gate
+  and `TakeOrder` all read. A take on a foreign-currency order answers `order.not_found`, the same as
+  a held one: from that cleaner's side the order does not exist. A null resolved currency fails
+  closed — an empty board, never every board.
+- **Pay follows the order, so it follows the board.** Because a cleaner can only take orders in their
+  currency, every pay row they earn is in it, and a period closes into one invoice in it. The
+  per-currency invoicing above still exists for the one path that can cross the line: **an admin
+  reassigning a cleaner onto an order is the deliberate override** (`AdminReassignOrder` is not
+  gated), and an order the cleaner is already on stays visible to them whatever its currency.
+- **My Pay and the dashboard label with it.** Every partner-facing money aggregate is filtered to the
+  resolved currency and printed with its code; counts stay over all orders.
+- **Approval checks the account against it.** An undeclared payout account is read as holding the
+  work country's currency, never the platform default — so the normal case needs no declaration.
+
+The resolution falls through to the platform default when a work country has no configured currency
+code or the code names no currency row; that fallback is logged as an error, because under this ruling
+it is a configuration defect rather than a choice. → [Pay and payouts](/flows/pay-and-payouts#approval-is-the-last-refusal)
+
 ## Charging a package and a service together
 
 Selecting a package **and** a service that the package already includes buys that service **twice** —
@@ -298,8 +325,8 @@ logged, the refund is unaffected, and the push sent is the plain cancellation ra
 promises the credit (owner ruling 2026-09-06). It is deliberately not a per-currency lookup: the figure
 is hand-written into the home page copy and both mobile pushes, five locales each — the lock-screen
 loc-arg allowlist cannot interpolate it — and `check-booking-policy-parity.mjs` reads the declaration to
-hold that copy to the number. A second number here would be a promise no surface makes until the
-customer surfaces know their market.
+hold that copy to the number. A second number here would be a promise no surface makes: the copy that
+states it is the same in every market, whichever currency the address put the booking in.
 
 **Loyalty earn — `Currency.LoyaltyPointsDivisor`.** A completed order earns
 `floor(total / divisor)` in the order's currency, and the partial-refund clawback removes the same
@@ -334,11 +361,13 @@ for a typo guard is worse than the typo, and an admin who genuinely owes more is
 rows in the ledger under their name.
 
 **Stripe fixed refund fee — `CountryConfiguration.RefundStripeFixedFee`.** A number in the country's
-`DefaultCurrencyCode` (6 on the CZE row means 6 CZK), deducted only from a refund in that same currency.
-The caller names the order's currency and the address names the country, and nothing ties the two, so
-on a CZ-address order priced in EUR the fixed part is absorbed by the platform; the percentage
-(`RefundStripeFeeRate`) is unit-free and still applies. Both figures are dormant: no production writer
-sets either today, and while either is null the whole fee — rate included — is 0.
+`DefaultCurrencyCode` (6 on the CZE row means 6 CZK), deducted only from a refund whose order is in that
+same currency. Since an order is priced in its address country's currency, the two agree by
+construction; the guard still exists for the one way they can differ — a country whose configured code
+names no currency row, whose orders fall through to the platform default — and there the fixed part is
+absorbed by the platform while the percentage (`RefundStripeFeeRate`), being unit-free, still applies.
+Both figures are dormant: no production writer sets either today, and while either is null the whole
+fee — rate included — is 0.
 
 **The standing risk.** Three of these numbers are bound to *whichever* currency is the platform
 default, not to CZK by name — the no-show credit, the tier floor, and every promo minimum on a code
@@ -349,16 +378,23 @@ three numbers are the checklist for it.
 ## What "price" means at each stage {#price-stages}
 
 **Order currency.** An order is priced, charged and stamped in the currency of the country its
-**service address** is in (owner ruling 2026-09-12: the market is a property of the booking, not of
-the customer, and there is no currency picker) — `CountryConfiguration.DefaultCurrencyCode` resolved
-through `ICurrencyResolutionService.ResolveCurrencyForCountryAsync`, the same chain that pays a cleaner
-in the currency of the country they work in; a `currencyId` the caller names must equal it, else
-`currency.invalid`. That currency must be one the platform can quote in: switched on and carrying at
-least one catalogue price row (`ICurrencyRepository.IsOfferableAsync`), else `currency.invalid`. Prices
-are authored per currency in `ServicePrices`, `PackagePrices` and `ExtraPrices`; nothing converts, and
-an entry with no price row in a currency is not offerable in it — the catalogue withholds it for that
-country and quote/create refuse it as an invalid selection. A recurring occurrence is priced in the
-currency of its saved address's country.
+**service address** is in (owner ruling 2026-09-12). The market is a property of the booking, not of
+the customer: a customer has no currency of their own, no preference to set and no picker on any
+surface — a Czech customer booking a Bratislava flat is quoted in EUR, and the same customer's next
+Prague booking is in CZK. The chain is `Address.CountryId` → `CountryConfiguration.DefaultCurrencyCode`
+→ `Currency`, through `ICurrencyResolutionService.ResolveCurrencyForCountryAsync`, the same chain that
+pays a cleaner in the currency of the country they work in. A `currencyId` the caller names is checked,
+not trusted: it must equal the address country's, else `currency.invalid` before anything is priced.
+That currency must also be one the platform can quote in — switched on and carrying at least one
+catalogue price row (`ICurrencyRepository.IsOfferableAsync`) — else `currency.invalid`; a country the
+platform does not service is `country.not_serviced`. Prices are authored per currency in
+`ServicePrices`, `PackagePrices` and `ExtraPrices`; nothing converts, and an entry with no price row in
+the order's currency is not offerable in it — the catalogue overviews withhold it for that country, and
+quote and create refuse a selected service or package without one as `order.selected_services.invalid`
+/ `order.selected_package.invalid` (an extra without one is dropped from the line items rather than
+refused, because no extras-level error key exists). A recurring occurrence is priced in the currency
+of its saved address's country. A quote that names no country yet — the wizard's first step, the home
+page's quick quote — is in the platform default until the address supplies one.
 
 The pricing calculator returns a **raw subtotal before any user-level discount** — tier, membership or
 promo. The **express surcharge is already folded in**, because the surcharge is a property of the

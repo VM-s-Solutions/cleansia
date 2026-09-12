@@ -20,14 +20,19 @@
 > populates it yet, and a full-replace save from a client that does not know the field must not revert
 > a declaration made from one that does. Shown on `MyPayoutDetails`, `MaskedPayoutDetails` and the GDPR export; not on the
 > reveal, because it is not an identifier.
+> **Amended 2026-09-12 — D7's issuance block sits at approval.** `ApproveInvoice` refuses
+> (`payroll.invoice.payout_details_missing`) when this record is absent, `Scheme` is null or
+> `Status != Provided`, before it compares currencies. ADR-0034 placed the block at invoice generation;
+> the ADR carries a dated correction banner recording the relocation and why (generation withholds a
+> tax document the cleaner needs; approval withholds only the transfer).
 
 ## Responsibility (one sentence)
 Hold **one cleaner's payout destination** as a *scheme-discriminated* set of identifiers — the scheme
 naming which subset is meaningful, `BankCountryId` naming the country whose banking practice governs the
 format, `CurrencyId` naming the currency the account holds, and `Status` naming whether the destination
 is usable for a payout — so the payment block on the cleaner's invoice can be rendered in every form that
-destination requires, and so an invoice in a currency the account does not hold is refused at
-*approval*, the last point before the transfer is keyed by hand.
+destination requires, and so an invoice with no usable destination, or in a currency the account does
+not hold, is refused at *approval*, the last point before the transfer is keyed by hand.
 
 ## Collaborators
 - **`Employee`** — its owner. `Employee.IsProfileComplete()` asks only *"does this record exist?"*
@@ -49,12 +54,15 @@ destination requires, and so an invoice in a currency the account does not hold 
   `BankCountryId != WorkCountryId` (D2).
 - **The payout-invoice renderer** (`PayPeriodBackgroundService`, `RegenerateInvoicePdf`) — reads the
   local pair, the IBAN and the SWIFT to build the supplier's payment block, and prints what it finds.
-  It does **not** refuse: nothing on the issuance path reads this record's presence or its `Status`,
-  so the issuance gate ADR-0034 D7 describes is not built.
-- **`ApproveInvoice`** — the one place on the money path that reads this record. It compares
-  `CurrencyId` (undeclared ⇒ the work country's currency) with the invoice's currency and refuses
-  `payroll.invoice.payout_currency_mismatch`; a missing record passes. Why approval and not generation
-  or payment is in [Pay and payouts](/flows/pay-and-payouts#approval-is-the-last-refusal).
+  It does **not** refuse: nothing on the generation path reads this record's presence or its `Status`.
+  The document is issued on time with an empty payment block, and the refusal is approval's.
+- **`ApproveInvoice`** — the one place on the money path that reads this record, with two rules in a
+  `Cascade.Stop` chain. **Presence** first: the record exists, `Scheme` is set and `Status` is
+  `Provided`, else `payroll.invoice.payout_details_missing` (ADR-0034 D7's block, at approval). Then
+  **currency**: `CurrencyId` (undeclared ⇒ the work country's currency) equals the invoice's, else
+  `payroll.invoice.payout_currency_mismatch`. Presence runs first so a missing record is reported as
+  missing, never as a currency mismatch. Why approval and not generation or payment is in
+  [Pay and payouts](/flows/pay-and-payouts#approval-is-the-last-refusal).
 - **`Currency`** (via `CurrencyId`) — the FK is `ON DELETE RESTRICT`, so `DeleteCurrency` answers
   `currency.in_use` while any record declares it.
 - **The backfill script (T-0518)** — exists only under D7.3 **Branch B**. It writes the parked legacy
@@ -76,9 +84,9 @@ destination requires, and so an invoice in a currency the account does not hold 
   never from this record, the employee or the work country. This record says what the account *holds*;
   the two are compared at approval, not reconciled.
 - **Whether a cleaner may take orders.** That is `Employee.IsProfileComplete()` reading
-  `Employee.HasPayoutDetails`; this record's `Status` was designed to gate payout issuance (D7) and
-  gates nothing today. **This record is never on the path that answers "may this person work" —
-  deliberately, so it cannot take the workforce off the job board by being unloaded.**
+  `Employee.HasPayoutDetails`; this record's `Status` gates invoice *approval* (D7, relocated), not
+  work. **This record is never on the path that answers "may this person work" — deliberately, so it
+  cannot take the workforce off the job board by being unloaded.**
 - **How it is displayed or masked.** Masking, the owner-or-admin read authorization and the audited
   admin **reveal command** are the read contract's job (D8), not the entity's. It does not know that
   `LastRevealedAt`/`RevealCount` exist to make the reveal auditable by `AdminMutationGate` — it just

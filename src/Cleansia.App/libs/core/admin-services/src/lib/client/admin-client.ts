@@ -2070,7 +2070,7 @@ export interface IAdminCurrencyClient {
     /**
      * @return OK
      */
-    details(currencyId: string): Observable<CurrencyDetailDto>;
+    details(currencyId: string): Observable<AdminCurrencyDetailDto>;
     /**
      * @param body (optional) 
      * @return OK
@@ -2085,6 +2085,14 @@ export interface IAdminCurrencyClient {
      * @return OK
      */
     setDefault(currencyId: string): Observable<SetDefaultCurrencyResponse>;
+    /**
+     * @return OK
+     */
+    deactivate(currencyId: string): Observable<DeactivateCurrencyResponse>;
+    /**
+     * @return OK
+     */
+    activate(currencyId: string): Observable<ActivateCurrencyResponse>;
     /**
      * @return OK
      */
@@ -2186,7 +2194,7 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
     /**
      * @return OK
      */
-    details(currencyId: string): Observable<CurrencyDetailDto> {
+    details(currencyId: string): Observable<AdminCurrencyDetailDto> {
         let url = this.baseUrl + "/api/AdminCurrency/details/{currencyId}";
         if (currencyId === undefined || currencyId === null)
             throw new globalThis.Error("The parameter 'currencyId' must be defined.");
@@ -2208,14 +2216,14 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
                 try {
                     return this.processDetails(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CurrencyDetailDto>;
+                    return ObservableThrow(e) as any as Observable<AdminCurrencyDetailDto>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<CurrencyDetailDto>;
+                return ObservableThrow(response) as any as Observable<AdminCurrencyDetailDto>;
         }));
     }
 
-    protected processDetails(response: HttpResponseBase): Observable<CurrencyDetailDto> {
+    protected processDetails(response: HttpResponseBase): Observable<AdminCurrencyDetailDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -2226,7 +2234,7 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = CurrencyDetailDto.fromJS(resultData200);
+            result200 = AdminCurrencyDetailDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -2473,6 +2481,170 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = SetDefaultCurrencyResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    deactivate(currencyId: string): Observable<DeactivateCurrencyResponse> {
+        let url = this.baseUrl + "/api/AdminCurrency/deactivate/{currencyId}";
+        if (currencyId === undefined || currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' must be defined.");
+        url = url.replace("{currencyId}", encodeURIComponent("" + currencyId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDeactivate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDeactivate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DeactivateCurrencyResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DeactivateCurrencyResponse>;
+        }));
+    }
+
+    protected processDeactivate(response: HttpResponseBase): Observable<DeactivateCurrencyResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeactivateCurrencyResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    activate(currencyId: string): Observable<ActivateCurrencyResponse> {
+        let url = this.baseUrl + "/api/AdminCurrency/activate/{currencyId}";
+        if (currencyId === undefined || currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' must be defined.");
+        url = url.replace("{currencyId}", encodeURIComponent("" + currencyId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processActivate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processActivate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ActivateCurrencyResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ActivateCurrencyResponse>;
+        }));
+    }
+
+    protected processActivate(response: HttpResponseBase): Observable<ActivateCurrencyResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ActivateCurrencyResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -5599,6 +5771,652 @@ export class DeletionRequestsClient implements IDeletionRequestsClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IAdminExtraClient {
+    /**
+     * @param searchTerm (optional) 
+     * @param isActive (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(searchTerm?: string | undefined, isActive?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfExtraListItem>;
+    /**
+     * @return OK
+     */
+    details(extraId: string): Observable<AdminExtraDetailDto>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    create(body?: CreateExtraCommand | undefined): Observable<CreateExtraResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    update(extraId: string, body?: UpdateExtraCommand | undefined): Observable<UpdateExtraResponse>;
+    /**
+     * @return OK
+     */
+    deactivate(extraId: string): Observable<DeactivateExtraResponse>;
+    /**
+     * @return OK
+     */
+    activate(extraId: string): Observable<ActivateExtraResponse>;
+    /**
+     * @return OK
+     */
+    delete(extraId: string): Observable<DeleteExtraResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminExtraClient implements IAdminExtraClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param searchTerm (optional) 
+     * @param isActive (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(searchTerm?: string | undefined, isActive?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfExtraListItem> {
+        let url = this.baseUrl + "/api/AdminExtra/get-paged?";
+        if (searchTerm === null)
+            throw new globalThis.Error("The parameter 'searchTerm' cannot be null.");
+        else if (searchTerm !== undefined)
+            url += "Filter.SearchTerm=" + encodeURIComponent("" + searchTerm) + "&";
+        if (isActive === null)
+            throw new globalThis.Error("The parameter 'isActive' cannot be null.");
+        else if (isActive !== undefined)
+            url += "Filter.IsActive=" + encodeURIComponent("" + isActive) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPaged(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<PagedDataOfExtraListItem>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<PagedDataOfExtraListItem>;
+        }));
+    }
+
+    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfExtraListItem> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = PagedDataOfExtraListItem.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    details(extraId: string): Observable<AdminExtraDetailDto> {
+        let url = this.baseUrl + "/api/AdminExtra/details/{extraId}";
+        if (extraId === undefined || extraId === null)
+            throw new globalThis.Error("The parameter 'extraId' must be defined.");
+        url = url.replace("{extraId}", encodeURIComponent("" + extraId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDetails(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDetails(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminExtraDetailDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminExtraDetailDto>;
+        }));
+    }
+
+    protected processDetails(response: HttpResponseBase): Observable<AdminExtraDetailDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminExtraDetailDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    create(body?: CreateExtraCommand | undefined): Observable<CreateExtraResponse> {
+        let url = this.baseUrl + "/api/AdminExtra/create";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCreate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCreate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CreateExtraResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CreateExtraResponse>;
+        }));
+    }
+
+    protected processCreate(response: HttpResponseBase): Observable<CreateExtraResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CreateExtraResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    update(extraId: string, body?: UpdateExtraCommand | undefined): Observable<UpdateExtraResponse> {
+        let url = this.baseUrl + "/api/AdminExtra/update/{extraId}";
+        if (extraId === undefined || extraId === null)
+            throw new globalThis.Error("The parameter 'extraId' must be defined.");
+        url = url.replace("{extraId}", encodeURIComponent("" + extraId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UpdateExtraResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UpdateExtraResponse>;
+        }));
+    }
+
+    protected processUpdate(response: HttpResponseBase): Observable<UpdateExtraResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UpdateExtraResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    deactivate(extraId: string): Observable<DeactivateExtraResponse> {
+        let url = this.baseUrl + "/api/AdminExtra/deactivate/{extraId}";
+        if (extraId === undefined || extraId === null)
+            throw new globalThis.Error("The parameter 'extraId' must be defined.");
+        url = url.replace("{extraId}", encodeURIComponent("" + extraId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDeactivate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDeactivate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DeactivateExtraResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DeactivateExtraResponse>;
+        }));
+    }
+
+    protected processDeactivate(response: HttpResponseBase): Observable<DeactivateExtraResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeactivateExtraResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    activate(extraId: string): Observable<ActivateExtraResponse> {
+        let url = this.baseUrl + "/api/AdminExtra/activate/{extraId}";
+        if (extraId === undefined || extraId === null)
+            throw new globalThis.Error("The parameter 'extraId' must be defined.");
+        url = url.replace("{extraId}", encodeURIComponent("" + extraId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processActivate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processActivate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ActivateExtraResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ActivateExtraResponse>;
+        }));
+    }
+
+    protected processActivate(response: HttpResponseBase): Observable<ActivateExtraResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ActivateExtraResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    delete(extraId: string): Observable<DeleteExtraResponse> {
+        let url = this.baseUrl + "/api/AdminExtra/delete/{extraId}";
+        if (extraId === undefined || extraId === null)
+            throw new globalThis.Error("The parameter 'extraId' must be defined.");
+        url = url.replace("{extraId}", encodeURIComponent("" + extraId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDelete(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDelete(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DeleteExtraResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DeleteExtraResponse>;
+        }));
+    }
+
+    protected processDelete(response: HttpResponseBase): Observable<DeleteExtraResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeleteExtraResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -13075,15 +13893,17 @@ export interface IAdminReportClient {
     /**
      * @param startDate (optional) 
      * @param endDate (optional) 
+     * @param currencyId (optional) 
      * @return OK
      */
-    revenue(startDate?: Date | undefined, endDate?: Date | undefined): Observable<RevenueReportDto>;
+    revenue(startDate?: Date | undefined, endDate?: Date | undefined, currencyId?: string | undefined): Observable<RevenueReportDto>;
     /**
      * @param startDate (optional) 
      * @param endDate (optional) 
+     * @param currencyId (optional) 
      * @return OK
      */
-    payroll(startDate?: Date | undefined, endDate?: Date | undefined): Observable<PayrollReportDto>;
+    payroll(startDate?: Date | undefined, endDate?: Date | undefined, currencyId?: string | undefined): Observable<PayrollReportDto>;
 }
 
 @Injectable({
@@ -13102,9 +13922,10 @@ export class AdminReportClient implements IAdminReportClient {
     /**
      * @param startDate (optional) 
      * @param endDate (optional) 
+     * @param currencyId (optional) 
      * @return OK
      */
-    revenue(startDate?: Date | undefined, endDate?: Date | undefined): Observable<RevenueReportDto> {
+    revenue(startDate?: Date | undefined, endDate?: Date | undefined, currencyId?: string | undefined): Observable<RevenueReportDto> {
         let url = this.baseUrl + "/api/AdminReport/revenue?";
         if (startDate === null)
             throw new globalThis.Error("The parameter 'startDate' cannot be null.");
@@ -13114,6 +13935,10 @@ export class AdminReportClient implements IAdminReportClient {
             throw new globalThis.Error("The parameter 'endDate' cannot be null.");
         else if (endDate !== undefined)
             url += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "currencyId=" + encodeURIComponent("" + currencyId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -13184,9 +14009,10 @@ export class AdminReportClient implements IAdminReportClient {
     /**
      * @param startDate (optional) 
      * @param endDate (optional) 
+     * @param currencyId (optional) 
      * @return OK
      */
-    payroll(startDate?: Date | undefined, endDate?: Date | undefined): Observable<PayrollReportDto> {
+    payroll(startDate?: Date | undefined, endDate?: Date | undefined, currencyId?: string | undefined): Observable<PayrollReportDto> {
         let url = this.baseUrl + "/api/AdminReport/payroll?";
         if (startDate === null)
             throw new globalThis.Error("The parameter 'startDate' cannot be null.");
@@ -13196,6 +14022,10 @@ export class AdminReportClient implements IAdminReportClient {
             throw new globalThis.Error("The parameter 'endDate' cannot be null.");
         else if (endDate !== undefined)
             url += "endDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "currencyId=" + encodeURIComponent("" + currencyId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -14582,6 +15412,78 @@ export interface IActivateAdminUserResponse {
     id: string | undefined;
 }
 
+export class ActivateCurrencyResponse implements IActivateCurrencyResponse {
+    currencyId!: string | undefined;
+
+    constructor(data?: IActivateCurrencyResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.currencyId = Data["currencyId"];
+        }
+    }
+
+    static fromJS(data: any): ActivateCurrencyResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ActivateCurrencyResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["currencyId"] = this.currencyId;
+        return data;
+    }
+}
+
+export interface IActivateCurrencyResponse {
+    currencyId: string | undefined;
+}
+
+export class ActivateExtraResponse implements IActivateExtraResponse {
+    extraId!: string | undefined;
+
+    constructor(data?: IActivateExtraResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.extraId = Data["extraId"];
+        }
+    }
+
+    static fromJS(data: any): ActivateExtraResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ActivateExtraResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["extraId"] = this.extraId;
+        return data;
+    }
+}
+
+export interface IActivateExtraResponse {
+    extraId: string | undefined;
+}
+
 export class ActivatePackageResponse implements IActivatePackageResponse {
     packageId!: string | undefined;
 
@@ -14990,6 +15892,66 @@ export interface IAdminCountryControllerSetCountryServicedRequest {
     isServiced: boolean;
 }
 
+export class AdminCurrencyDetailDto implements IAdminCurrencyDetailDto {
+    id!: string | undefined;
+    code!: string | undefined;
+    name!: string | undefined;
+    symbol!: string | undefined;
+    isDefault!: boolean;
+    isActive!: boolean;
+    loyaltyPointsDivisor!: number | undefined;
+
+    constructor(data?: IAdminCurrencyDetailDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.code = Data["code"];
+            this.name = Data["name"];
+            this.symbol = Data["symbol"];
+            this.isDefault = Data["isDefault"];
+            this.isActive = Data["isActive"];
+            this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
+        }
+    }
+
+    static fromJS(data: any): AdminCurrencyDetailDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminCurrencyDetailDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["code"] = this.code;
+        data["name"] = this.name;
+        data["symbol"] = this.symbol;
+        data["isDefault"] = this.isDefault;
+        data["isActive"] = this.isActive;
+        data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
+        return data;
+    }
+}
+
+export interface IAdminCurrencyDetailDto {
+    id: string | undefined;
+    code: string | undefined;
+    name: string | undefined;
+    symbol: string | undefined;
+    isDefault: boolean;
+    isActive: boolean;
+    loyaltyPointsDivisor: number | undefined;
+}
+
 export class AdminCurrencyListItem implements IAdminCurrencyListItem {
     id!: string | undefined;
     code!: string | undefined;
@@ -14997,6 +15959,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
     name!: string | undefined;
     isDefault!: boolean;
     isActive!: boolean;
+    loyaltyPointsDivisor!: number | undefined;
 
     constructor(data?: IAdminCurrencyListItem) {
         if (data) {
@@ -15015,6 +15978,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
             this.name = Data["name"];
             this.isDefault = Data["isDefault"];
             this.isActive = Data["isActive"];
+            this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
         }
     }
 
@@ -15033,6 +15997,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
         data["name"] = this.name;
         data["isDefault"] = this.isDefault;
         data["isActive"] = this.isActive;
+        data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
         return data;
     }
 }
@@ -15044,6 +16009,7 @@ export interface IAdminCurrencyListItem {
     name: string | undefined;
     isDefault: boolean;
     isActive: boolean;
+    loyaltyPointsDivisor: number | undefined;
 }
 
 export class AdminEmployeeDetail implements IAdminEmployeeDetail {
@@ -15312,6 +16278,98 @@ export interface IAdminEmployeeListItem {
     nationalityName: string | undefined;
     createdAt: Date;
     isProfileComplete: boolean;
+}
+
+export class AdminExtraDetailDto implements IAdminExtraDetailDto {
+    id!: string | undefined;
+    slug!: string | undefined;
+    name!: string | undefined;
+    description!: string | undefined;
+    displayOrder!: number;
+    prices!: { [key: string]: number; } | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
+    createdOn!: Date;
+    updatedOn!: Date | undefined;
+
+    constructor(data?: IAdminExtraDetailDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.slug = Data["slug"];
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.displayOrder = Data["displayOrder"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key];
+                }
+            }
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): AdminExtraDetailDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminExtraDetailDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["slug"] = this.slug;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["displayOrder"] = this.displayOrder;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = (this.prices as any)[key];
+            }
+        }
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IAdminExtraDetailDto {
+    id: string | undefined;
+    slug: string | undefined;
+    name: string | undefined;
+    description: string | undefined;
+    displayOrder: number;
+    prices: { [key: string]: number; } | undefined;
+    translations: { [key: string]: Translation; } | undefined;
+    createdOn: Date;
+    updatedOn: Date | undefined;
 }
 
 export class AdminLoginCommand implements IAdminLoginCommand {
@@ -17830,6 +18888,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
     code!: string | undefined;
     symbol!: string | undefined;
     name!: string | undefined;
+    loyaltyPointsDivisor!: number | undefined;
 
     constructor(data?: ICreateCurrencyCommand) {
         if (data) {
@@ -17845,6 +18904,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
             this.code = Data["code"];
             this.symbol = Data["symbol"];
             this.name = Data["name"];
+            this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
         }
     }
 
@@ -17860,6 +18920,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
         data["code"] = this.code;
         data["symbol"] = this.symbol;
         data["name"] = this.name;
+        data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
         return data;
     }
 }
@@ -17868,6 +18929,7 @@ export interface ICreateCurrencyCommand {
     code: string | undefined;
     symbol: string | undefined;
     name: string | undefined;
+    loyaltyPointsDivisor: number | undefined;
 }
 
 export class CreateCurrencyResponse implements ICreateCurrencyResponse {
@@ -17988,6 +19050,162 @@ export class CreateEmailTemplateTranslationResponse implements ICreateEmailTempl
 
 export interface ICreateEmailTemplateTranslationResponse {
     emailTemplateId: string | undefined;
+}
+
+export class CreateExtraCommand implements ICreateExtraCommand {
+    slug!: string | undefined;
+    name!: string | undefined;
+    description!: string | undefined;
+    displayOrder!: number;
+    prices!: { [key: string]: number; } | undefined;
+    translations!: { [key: string]: CreateExtraTranslationInput; } | undefined;
+
+    constructor(data?: ICreateExtraCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.slug = Data["slug"];
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.displayOrder = Data["displayOrder"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key];
+                }
+            }
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? CreateExtraTranslationInput.fromJS(Data["translations"][key]) : new CreateExtraTranslationInput();
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): CreateExtraCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateExtraCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["slug"] = this.slug;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["displayOrder"] = this.displayOrder;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = (this.prices as any)[key];
+            }
+        }
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        return data;
+    }
+}
+
+export interface ICreateExtraCommand {
+    slug: string | undefined;
+    name: string | undefined;
+    description: string | undefined;
+    displayOrder: number;
+    prices: { [key: string]: number; } | undefined;
+    translations: { [key: string]: CreateExtraTranslationInput; } | undefined;
+}
+
+export class CreateExtraResponse implements ICreateExtraResponse {
+    extraId!: string | undefined;
+
+    constructor(data?: ICreateExtraResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.extraId = Data["extraId"];
+        }
+    }
+
+    static fromJS(data: any): CreateExtraResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateExtraResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["extraId"] = this.extraId;
+        return data;
+    }
+}
+
+export interface ICreateExtraResponse {
+    extraId: string | undefined;
+}
+
+export class CreateExtraTranslationInput implements ICreateExtraTranslationInput {
+    name!: string | undefined;
+    description!: string | undefined;
+
+    constructor(data?: ICreateExtraTranslationInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.name = Data["name"];
+            this.description = Data["description"];
+        }
+    }
+
+    static fromJS(data: any): CreateExtraTranslationInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateExtraTranslationInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface ICreateExtraTranslationInput {
+    name: string | undefined;
+    description: string | undefined;
 }
 
 export class CreateLanguageCommand implements ICreateLanguageCommand {
@@ -19075,6 +20293,78 @@ export interface IDeactivateAdminUserResponse {
     id: string | undefined;
 }
 
+export class DeactivateCurrencyResponse implements IDeactivateCurrencyResponse {
+    currencyId!: string | undefined;
+
+    constructor(data?: IDeactivateCurrencyResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.currencyId = Data["currencyId"];
+        }
+    }
+
+    static fromJS(data: any): DeactivateCurrencyResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeactivateCurrencyResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["currencyId"] = this.currencyId;
+        return data;
+    }
+}
+
+export interface IDeactivateCurrencyResponse {
+    currencyId: string | undefined;
+}
+
+export class DeactivateExtraResponse implements IDeactivateExtraResponse {
+    extraId!: string | undefined;
+
+    constructor(data?: IDeactivateExtraResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.extraId = Data["extraId"];
+        }
+    }
+
+    static fromJS(data: any): DeactivateExtraResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeactivateExtraResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["extraId"] = this.extraId;
+        return data;
+    }
+}
+
+export interface IDeactivateExtraResponse {
+    extraId: string | undefined;
+}
+
 export class DeactivateMembershipPlanResponse implements IDeactivateMembershipPlanResponse {
     membershipPlanId!: string | undefined;
 
@@ -19397,6 +20687,42 @@ export class DeleteEmailTemplateTranslationResponse implements IDeleteEmailTempl
 
 export interface IDeleteEmailTemplateTranslationResponse {
     emailTemplateId: string | undefined;
+}
+
+export class DeleteExtraResponse implements IDeleteExtraResponse {
+    extraId!: string | undefined;
+
+    constructor(data?: IDeleteExtraResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.extraId = Data["extraId"];
+        }
+    }
+
+    static fromJS(data: any): DeleteExtraResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeleteExtraResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["extraId"] = this.extraId;
+        return data;
+    }
+}
+
+export interface IDeleteExtraResponse {
+    extraId: string | undefined;
 }
 
 export class DeleteLanguageResponse implements IDeleteLanguageResponse {
@@ -21441,6 +22767,78 @@ export interface IExpireCustomerCreditResponse {
     amountExpired: number;
 }
 
+export class ExtraListItem implements IExtraListItem {
+    id!: string | undefined;
+    slug!: string | undefined;
+    name!: string | undefined;
+    description!: string | undefined;
+    price!: number;
+    displayOrder!: number;
+    translations!: { [key: string]: Translation; } | undefined;
+
+    constructor(data?: IExtraListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.slug = Data["slug"];
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.price = Data["price"];
+            this.displayOrder = Data["displayOrder"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): ExtraListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new ExtraListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["slug"] = this.slug;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["price"] = this.price;
+        data["displayOrder"] = this.displayOrder;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        return data;
+    }
+}
+
+export interface IExtraListItem {
+    id: string | undefined;
+    slug: string | undefined;
+    name: string | undefined;
+    description: string | undefined;
+    price: number;
+    displayOrder: number;
+    translations: { [key: string]: Translation; } | undefined;
+}
+
 export enum FiscalErrorKind {
     None = 0,
     Transient = 1,
@@ -22113,6 +23511,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
     scheme!: PayoutScheme;
     status!: PayoutDetailsStatus;
     bankCountryId!: string | undefined;
+    currencyId!: string | undefined;
     accountPrefix!: string | undefined;
     accountNumber!: string | undefined;
     bankCode!: string | undefined;
@@ -22138,6 +23537,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
             this.scheme = Data["scheme"];
             this.status = Data["status"];
             this.bankCountryId = Data["bankCountryId"];
+            this.currencyId = Data["currencyId"];
             this.accountPrefix = Data["accountPrefix"];
             this.accountNumber = Data["accountNumber"];
             this.bankCode = Data["bankCode"];
@@ -22163,6 +23563,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
         data["scheme"] = this.scheme;
         data["status"] = this.status;
         data["bankCountryId"] = this.bankCountryId;
+        data["currencyId"] = this.currencyId;
         data["accountPrefix"] = this.accountPrefix;
         data["accountNumber"] = this.accountNumber;
         data["bankCode"] = this.bankCode;
@@ -22181,6 +23582,7 @@ export interface IGdprExportPayoutDetailsDto {
     scheme: PayoutScheme;
     status: PayoutDetailsStatus;
     bankCountryId: string | undefined;
+    currencyId: string | undefined;
     accountPrefix: string | undefined;
     accountNumber: string | undefined;
     bankCode: string | undefined;
@@ -22369,7 +23771,7 @@ export interface IGenerateInvoiceCommand {
 }
 
 export class GenerateInvoiceResponse implements IGenerateInvoiceResponse {
-    invoiceId!: string | undefined;
+    invoiceIds!: string[] | undefined;
 
     constructor(data?: IGenerateInvoiceResponse) {
         if (data) {
@@ -22382,7 +23784,11 @@ export class GenerateInvoiceResponse implements IGenerateInvoiceResponse {
 
     init(Data?: any) {
         if (Data) {
-            this.invoiceId = Data["invoiceId"];
+            if (Array.isArray(Data["invoiceIds"])) {
+                this.invoiceIds = [] as any;
+                for (let item of Data["invoiceIds"])
+                    this.invoiceIds!.push(item);
+            }
         }
     }
 
@@ -22395,13 +23801,17 @@ export class GenerateInvoiceResponse implements IGenerateInvoiceResponse {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["invoiceId"] = this.invoiceId;
+        if (Array.isArray(this.invoiceIds)) {
+            data["invoiceIds"] = [];
+            for (let item of this.invoiceIds)
+                data["invoiceIds"].push(item);
+        }
         return data;
     }
 }
 
 export interface IGenerateInvoiceResponse {
-    invoiceId: string | undefined;
+    invoiceIds: string[] | undefined;
 }
 
 export class GetAllTierConfigsResponse implements IGetAllTierConfigsResponse {
@@ -23271,6 +24681,7 @@ export interface IGrantPointsManuallyResponse {
 export class IssueCustomerCreditCommand implements IIssueCustomerCreditCommand {
     userId!: string | undefined;
     amount!: number;
+    currencyId!: string | undefined;
     reason!: CreditTransactionReason;
     note!: string | undefined;
     requestId!: string | undefined;
@@ -23290,6 +24701,7 @@ export class IssueCustomerCreditCommand implements IIssueCustomerCreditCommand {
         if (Data) {
             this.userId = Data["userId"];
             this.amount = Data["amount"];
+            this.currencyId = Data["currencyId"];
             this.reason = Data["reason"];
             this.note = Data["note"];
             this.requestId = Data["requestId"];
@@ -23309,6 +24721,7 @@ export class IssueCustomerCreditCommand implements IIssueCustomerCreditCommand {
         data = typeof data === 'object' ? data : {};
         data["userId"] = this.userId;
         data["amount"] = this.amount;
+        data["currencyId"] = this.currencyId;
         data["reason"] = this.reason;
         data["note"] = this.note;
         data["requestId"] = this.requestId;
@@ -23321,6 +24734,7 @@ export class IssueCustomerCreditCommand implements IIssueCustomerCreditCommand {
 export interface IIssueCustomerCreditCommand {
     userId: string | undefined;
     amount: number;
+    currencyId: string | undefined;
     reason: CreditTransactionReason;
     note: string | undefined;
     requestId: string | undefined;
@@ -23894,6 +25308,7 @@ export class MaskedPayoutDetails implements IMaskedPayoutDetails {
     scheme!: PayoutScheme;
     status!: PayoutDetailsStatus;
     bankCountryId!: string | undefined;
+    currencyId!: string | undefined;
     maskedAccount!: string | undefined;
     bankName!: string | undefined;
     confirmedAt!: Date | undefined;
@@ -23915,6 +25330,7 @@ export class MaskedPayoutDetails implements IMaskedPayoutDetails {
             this.scheme = Data["scheme"];
             this.status = Data["status"];
             this.bankCountryId = Data["bankCountryId"];
+            this.currencyId = Data["currencyId"];
             this.maskedAccount = Data["maskedAccount"];
             this.bankName = Data["bankName"];
             this.confirmedAt = Data["confirmedAt"] ? new Date(Data["confirmedAt"].toString()) : undefined as any;
@@ -23936,6 +25352,7 @@ export class MaskedPayoutDetails implements IMaskedPayoutDetails {
         data["scheme"] = this.scheme;
         data["status"] = this.status;
         data["bankCountryId"] = this.bankCountryId;
+        data["currencyId"] = this.currencyId;
         data["maskedAccount"] = this.maskedAccount;
         data["bankName"] = this.bankName;
         data["confirmedAt"] = this.confirmedAt ? this.confirmedAt.toISOString() : undefined as any;
@@ -23950,6 +25367,7 @@ export interface IMaskedPayoutDetails {
     scheme: PayoutScheme;
     status: PayoutDetailsStatus;
     bankCountryId: string | undefined;
+    currencyId: string | undefined;
     maskedAccount: string | undefined;
     bankName: string | undefined;
     confirmedAt: Date | undefined;
@@ -26167,6 +27585,62 @@ export interface IPagedDataOfEmployeePayConfigDto {
     data: EmployeePayConfigDto[] | undefined;
 }
 
+export class PagedDataOfExtraListItem implements IPagedDataOfExtraListItem {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: ExtraListItem[] | undefined;
+
+    constructor(data?: IPagedDataOfExtraListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(ExtraListItem.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): PagedDataOfExtraListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new PagedDataOfExtraListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IPagedDataOfExtraListItem {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: ExtraListItem[] | undefined;
+}
+
 export class PagedDataOfGdprRequestDto implements IPagedDataOfGdprRequestDto {
     pageNumber!: number;
     pageSize!: number;
@@ -26835,6 +28309,7 @@ export class PayrollReportDto implements IPayrollReportDto {
     employeeSummaries!: EmployeePayrollSummary[] | undefined;
     payrollByStatus!: PayrollByStatus[] | undefined;
     monthlyPayroll!: MonthlyPayroll[] | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IPayrollReportDto) {
         if (data) {
@@ -26871,6 +28346,7 @@ export class PayrollReportDto implements IPayrollReportDto {
                 for (let item of Data["monthlyPayroll"])
                     this.monthlyPayroll!.push(MonthlyPayroll.fromJS(item));
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -26907,6 +28383,7 @@ export class PayrollReportDto implements IPayrollReportDto {
             for (let item of this.monthlyPayroll)
                 data["monthlyPayroll"].push(item ? item.toJSON() : undefined as any);
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -26924,6 +28401,7 @@ export interface IPayrollReportDto {
     employeeSummaries: EmployeePayrollSummary[] | undefined;
     payrollByStatus: PayrollByStatus[] | undefined;
     monthlyPayroll: MonthlyPayroll[] | undefined;
+    currencyCode: string | undefined;
 }
 
 export enum PhotoType {
@@ -28330,6 +29808,7 @@ export class RevenueReportDto implements IRevenueReportDto {
     revenueByPaymentType!: RevenueByPaymentType[] | undefined;
     revenueByPaymentStatus!: RevenueByPaymentStatus[] | undefined;
     totalSettledFromCredit!: number;
+    currencyCode!: string | undefined;
 
     constructor(data?: IRevenueReportDto) {
         if (data) {
@@ -28374,6 +29853,7 @@ export class RevenueReportDto implements IRevenueReportDto {
                     this.revenueByPaymentStatus!.push(RevenueByPaymentStatus.fromJS(item));
             }
             this.totalSettledFromCredit = Data["totalSettledFromCredit"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -28418,6 +29898,7 @@ export class RevenueReportDto implements IRevenueReportDto {
                 data["revenueByPaymentStatus"].push(item ? item.toJSON() : undefined as any);
         }
         data["totalSettledFromCredit"] = this.totalSettledFromCredit;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -28435,6 +29916,7 @@ export interface IRevenueReportDto {
     revenueByPaymentType: RevenueByPaymentType[] | undefined;
     revenueByPaymentStatus: RevenueByPaymentStatus[] | undefined;
     totalSettledFromCredit: number;
+    currencyCode: string | undefined;
 }
 
 export class ReverseReferralCommand implements IReverseReferralCommand {
@@ -29773,6 +31255,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
     code!: string | undefined;
     symbol!: string | undefined;
     name!: string | undefined;
+    loyaltyPointsDivisor!: number | undefined;
 
     constructor(data?: IUpdateCurrencyCommand) {
         if (data) {
@@ -29789,6 +31272,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
             this.code = Data["code"];
             this.symbol = Data["symbol"];
             this.name = Data["name"];
+            this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
         }
     }
 
@@ -29805,6 +31289,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
         data["code"] = this.code;
         data["symbol"] = this.symbol;
         data["name"] = this.name;
+        data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
         return data;
     }
 }
@@ -29814,6 +31299,7 @@ export interface IUpdateCurrencyCommand {
     code: string | undefined;
     symbol: string | undefined;
     name: string | undefined;
+    loyaltyPointsDivisor: number | undefined;
 }
 
 export class UpdateCurrencyResponse implements IUpdateCurrencyResponse {
@@ -30006,6 +31492,122 @@ export class UpdateEmailTemplateResponse implements IUpdateEmailTemplateResponse
 
 export interface IUpdateEmailTemplateResponse {
     emailTemplateId: string | undefined;
+}
+
+export class UpdateExtraCommand implements IUpdateExtraCommand {
+    extraId!: string | undefined;
+    name!: string | undefined;
+    description!: string | undefined;
+    displayOrder!: number;
+    prices!: { [key: string]: number; } | undefined;
+    translations!: { [key: string]: CreateExtraTranslationInput; } | undefined;
+
+    constructor(data?: IUpdateExtraCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.extraId = Data["extraId"];
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.displayOrder = Data["displayOrder"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key];
+                }
+            }
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? CreateExtraTranslationInput.fromJS(Data["translations"][key]) : new CreateExtraTranslationInput();
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdateExtraCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateExtraCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["extraId"] = this.extraId;
+        data["name"] = this.name;
+        data["description"] = this.description;
+        data["displayOrder"] = this.displayOrder;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = (this.prices as any)[key];
+            }
+        }
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        return data;
+    }
+}
+
+export interface IUpdateExtraCommand {
+    extraId: string | undefined;
+    name: string | undefined;
+    description: string | undefined;
+    displayOrder: number;
+    prices: { [key: string]: number; } | undefined;
+    translations: { [key: string]: CreateExtraTranslationInput; } | undefined;
+}
+
+export class UpdateExtraResponse implements IUpdateExtraResponse {
+    extraId!: string | undefined;
+
+    constructor(data?: IUpdateExtraResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.extraId = Data["extraId"];
+        }
+    }
+
+    static fromJS(data: any): UpdateExtraResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateExtraResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["extraId"] = this.extraId;
+        return data;
+    }
+}
+
+export interface IUpdateExtraResponse {
+    extraId: string | undefined;
 }
 
 export class UpdateInvoiceAmountsCommand implements IUpdateInvoiceAmountsCommand {

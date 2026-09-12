@@ -9129,6 +9129,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
     scheme!: PayoutScheme;
     status!: PayoutDetailsStatus;
     bankCountryId!: string | undefined;
+    currencyId!: string | undefined;
     accountPrefix!: string | undefined;
     accountNumber!: string | undefined;
     bankCode!: string | undefined;
@@ -9154,6 +9155,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
             this.scheme = Data["scheme"];
             this.status = Data["status"];
             this.bankCountryId = Data["bankCountryId"];
+            this.currencyId = Data["currencyId"];
             this.accountPrefix = Data["accountPrefix"];
             this.accountNumber = Data["accountNumber"];
             this.bankCode = Data["bankCode"];
@@ -9179,6 +9181,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
         data["scheme"] = this.scheme;
         data["status"] = this.status;
         data["bankCountryId"] = this.bankCountryId;
+        data["currencyId"] = this.currencyId;
         data["accountPrefix"] = this.accountPrefix;
         data["accountNumber"] = this.accountNumber;
         data["bankCode"] = this.bankCode;
@@ -9197,6 +9200,7 @@ export interface IGdprExportPayoutDetailsDto {
     scheme: PayoutScheme;
     status: PayoutDetailsStatus;
     bankCountryId: string | undefined;
+    currencyId: string | undefined;
     accountPrefix: string | undefined;
     accountNumber: string | undefined;
     bankCode: string | undefined;
@@ -10237,6 +10241,7 @@ export class MyPayoutDetails implements IMyPayoutDetails {
     scheme!: PayoutScheme;
     status!: PayoutDetailsStatus;
     bankCountryId!: string | undefined;
+    currencyId!: string | undefined;
     accountPrefix!: string | undefined;
     accountNumber!: string | undefined;
     bankCode!: string | undefined;
@@ -10260,6 +10265,7 @@ export class MyPayoutDetails implements IMyPayoutDetails {
             this.scheme = Data["scheme"];
             this.status = Data["status"];
             this.bankCountryId = Data["bankCountryId"];
+            this.currencyId = Data["currencyId"];
             this.accountPrefix = Data["accountPrefix"];
             this.accountNumber = Data["accountNumber"];
             this.bankCode = Data["bankCode"];
@@ -10283,6 +10289,7 @@ export class MyPayoutDetails implements IMyPayoutDetails {
         data["scheme"] = this.scheme;
         data["status"] = this.status;
         data["bankCountryId"] = this.bankCountryId;
+        data["currencyId"] = this.currencyId;
         data["accountPrefix"] = this.accountPrefix;
         data["accountNumber"] = this.accountNumber;
         data["bankCode"] = this.bankCode;
@@ -10299,6 +10306,7 @@ export interface IMyPayoutDetails {
     scheme: PayoutScheme;
     status: PayoutDetailsStatus;
     bankCountryId: string | undefined;
+    currencyId: string | undefined;
     accountPrefix: string | undefined;
     accountNumber: string | undefined;
     bankCode: string | undefined;
@@ -14331,6 +14339,7 @@ export class UpdateBankDetailsCommand implements IUpdateBankDetailsCommand {
     swift!: string | undefined;
     bankName!: string | undefined;
     holderName!: string | undefined;
+    currencyId!: string | undefined;
 
     constructor(data?: IUpdateBankDetailsCommand) {
         if (data) {
@@ -14352,6 +14361,7 @@ export class UpdateBankDetailsCommand implements IUpdateBankDetailsCommand {
             this.swift = Data["swift"];
             this.bankName = Data["bankName"];
             this.holderName = Data["holderName"];
+            this.currencyId = Data["currencyId"];
         }
     }
 
@@ -14373,6 +14383,7 @@ export class UpdateBankDetailsCommand implements IUpdateBankDetailsCommand {
         data["swift"] = this.swift;
         data["bankName"] = this.bankName;
         data["holderName"] = this.holderName;
+        data["currencyId"] = this.currencyId;
         return data;
     }
 }
@@ -14387,6 +14398,7 @@ export interface IUpdateBankDetailsCommand {
     swift: string | undefined;
     bankName: string | undefined;
     holderName: string | undefined;
+    currencyId: string | undefined;
 }
 
 export class UpdateBankDetailsResponse implements IUpdateBankDetailsResponse {

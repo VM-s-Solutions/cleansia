@@ -856,6 +856,65 @@
         }
       }
     },
+    "/api/Currency/GetOverview": {
+      "get": {
+        "tags": [
+          "Currency"
+        ],
+        "operationId": "Currency_GetOverview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrencyListItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrencyListItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrencyListItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Device/Register": {
       "post": {
         "tags": [
@@ -8194,6 +8253,10 @@
             "type": "string",
             "nullable": true
           },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
+          },
           "accountPrefix": {
             "type": "string",
             "nullable": true
@@ -11396,6 +11459,9 @@
     },
     {
       "name": "Credit"
+    },
+    {
+      "name": "Currency"
     },
     {
       "name": "Device"

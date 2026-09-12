@@ -319,6 +319,8 @@ class EmployeeProfileWireTest {
             "scheme",
             "status",
             "bankCountryId",
+            // T-0708: the currency the cleaner declares the account holds; absent on the wire = unchanged.
+            "currencyId",
             "accountPrefix",
             "accountNumber",
             "bankCode",

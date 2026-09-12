@@ -8218,6 +8218,10 @@
             "type": "string",
             "nullable": true
           },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
+          },
           "accountPrefix": {
             "type": "string",
             "nullable": true
@@ -8756,6 +8760,10 @@
             "$ref": "#/components/schemas/PayoutDetailsStatus"
           },
           "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyId": {
             "type": "string",
             "nullable": true
           },
@@ -11007,6 +11015,10 @@
             "nullable": true
           },
           "holderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyId": {
             "type": "string",
             "nullable": true
           }

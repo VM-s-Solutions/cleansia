@@ -144,11 +144,13 @@ async function stubBackend(page: Page): Promise<void> {
   await page.route('**/api/**', (route) => json(route, {}));
 
   await page.route('**/api/AddressSearch/search**', (route) => json(route, addressSearchBody()));
-  await page.route('**/api/Service/GetOverview', (route) => json(route, SERVICES_FIXTURE));
-  await page.route('**/api/Package/GetOverview', (route) => json(route, []));
+  // The overviews are read once for the platform default and again with ?countryId= once the
+  // address's country is known; a glob has to match the whole URL, query string included.
+  await page.route('**/api/Service/GetOverview*', (route) => json(route, SERVICES_FIXTURE));
+  await page.route('**/api/Package/GetOverview*', (route) => json(route, []));
   await page.route('**/api/Country/GetServiced', (route) => json(route, SERVICED_COUNTRIES_FIXTURE));
   await page.route('**/api/Country/GetOverview', (route) => json(route, SERVICED_COUNTRIES_FIXTURE));
-  await page.route('**/api/Extra/GetOverview', (route) => json(route, []));
+  await page.route('**/api/Extra/GetOverview*', (route) => json(route, []));
   await page.route('**/api/ServiceCity**', (route) => json(route, SERVICE_CITIES_FIXTURE));
   await page.route('**/api/Order/Quote', (route) => json(route, QUOTE_FIXTURE));
   await page.route('**/api/Order/QuotePlusSavings', (route) => json(route, PLUS_SAVINGS_FIXTURE));
@@ -166,7 +168,7 @@ test.beforeEach(async ({ page, context }) => {
 
 test('room selectors stay beside the summary on desktop and lead the form on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.route('**/api/Service/GetOverview', (route) => json(route,
+  await page.route('**/api/Service/GetOverview*', (route) => json(route,
     Array.from({ length: 15 }, (_, index) => ({
       ...SERVICES_FIXTURE[0],
       id: `${SERVICE_ID.slice(0, -2)}${String(index).padStart(2, '0')}`,

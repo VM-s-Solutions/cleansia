@@ -216,7 +216,7 @@ final class PartnerWireContractTests: XCTestCase {
     @MainActor
     func testASummaryInAnotherCurrencyRelabelsTheScreenOverTheRouteArgument() async throws {
         let client = FakePayrollClient()
-        client.periodPaysResult = .success(try PeriodPaySummary(summaryPayload()))
+        client.periodPaysResult = try .success(PeriodPaySummary(summaryPayload()))
         let vm = PeriodPayViewModel(
             payPeriodId: "pp-1",
             currencyCode: "CZK",
@@ -232,7 +232,7 @@ final class PartnerWireContractTests: XCTestCase {
 
         var unlabelled = summaryPayload()
         unlabelled.currencyCode = nil
-        client.periodPaysResult = .success(try PeriodPaySummary(unlabelled))
+        client.periodPaysResult = try .success(PeriodPaySummary(unlabelled))
         await vm.load()
         XCTAssertEqual(vm.displayCurrencyCode, "CZK")
     }

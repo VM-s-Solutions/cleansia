@@ -1295,8 +1295,6 @@
       "tier_ladder_lead": "Podle bodů, které jste kdy získali. Sleva se odečte automaticky.",
       "your_tier": "Váš stupeň",
       "points_threshold": "{{count}} bodů",
-      "percent_off": "{{percent}} %",
-      "no_discount": "Bez slevy",
       "discount_min_order": "{{percent}} % sleva na objednávky nad {{minAmount}}",
       "discount_basic": "{{percent}} % sleva na každou objednávku",
       "no_discount_yet": "Zatím bez slevy",

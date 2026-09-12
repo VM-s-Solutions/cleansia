@@ -13,7 +13,7 @@ import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { GetMembershipPlansResponse, GetMyMembershipResponse } from '@cleansia/customer-services';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -93,18 +93,11 @@ export class MembershipManagementComponent implements OnInit {
   }
 
   formatPrice(amount: number): string {
-    return formatMoney(amount, this.facade.defaultCurrencyCode(), this.getLocale());
-  }
-
-  private getLocale(): string {
-    const localeMap: Record<string, string> = {
-      en: 'en-US',
-      cs: 'cs-CZ',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
+    return formatMoney(
+      amount,
+      this.facade.defaultCurrencyCode(),
+      localeFor(this.translate.currentLang),
+    );
   }
 
   /**
@@ -158,7 +151,7 @@ export class MembershipManagementComponent implements OnInit {
 
   formatDate(date: Date | undefined): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString(this.getLocale(), {
+    return new Date(date).toLocaleDateString(localeFor(this.translate.currentLang), {
       day: 'numeric',
       month: 'long',
       year: 'numeric',

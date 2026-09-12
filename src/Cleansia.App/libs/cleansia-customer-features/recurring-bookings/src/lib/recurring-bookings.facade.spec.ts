@@ -3,19 +3,26 @@ import { TestBed } from '@angular/core/testing';
 import {
   CustomerClient,
   DeleteRecurringBookingCommand,
+  PackageListItem,
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
   SavedAddressDto,
+  ServiceListItem,
   SetRecurringBookingActiveCommand,
 } from '@cleansia/customer-services';
 import {
   loadCustomerCurrencies,
+  loadCustomerPackages,
+  loadCustomerServices,
   SavedAddressStore,
   selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
+  selectCustomerPackagesCatalogue,
   selectCustomerServices,
+  selectCustomerServicesCatalogue,
 } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
+import { Action } from '@ngrx/store';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, of, throwError } from 'rxjs';
@@ -39,6 +46,7 @@ describe('RecurringBookingsFacade', () => {
   let snackbar: {
     showError: jest.Mock;
     showSuccess: jest.Mock;
+    showInfoTranslated: jest.Mock;
   };
 
   const template = (overrides?: Partial<RecurringBookingTemplateDto>): RecurringBookingTemplateDto =>
@@ -64,6 +72,7 @@ describe('RecurringBookingsFacade', () => {
     snackbar = {
       showError: jest.fn(),
       showSuccess: jest.fn(),
+      showInfoTranslated: jest.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -87,8 +96,119 @@ describe('RecurringBookingsFacade', () => {
     store = TestBed.inject(MockStore);
     store.overrideSelector(selectCustomerServices, []);
     store.overrideSelector(selectCustomerPackages, []);
+    store.overrideSelector(selectCustomerServicesCatalogue, { services: [], countryId: null });
+    store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
     store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
     facade = TestBed.inject(RecurringBookingsFacade);
+  });
+
+  // The catalogue is priced per market and the server withholds what has no price in the saved
+  // address's currency, so the form re-reads it for the country of the address chosen and trims
+  // the selection to what that list offers.
+  describe('the catalogue follows the saved address country', () => {
+    const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk' });
+    const otherSlovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk-2', countryId: 'svk' });
+
+    it('reads the catalogue for the platform default once before an address is chosen', async () => {
+      const dispatch = jest.spyOn(store, 'dispatch');
+
+      await facade.initialize();
+      TestBed.flushEffects();
+
+      expect(dispatch).toHaveBeenCalledWith(loadCustomerServices(null));
+      expect(dispatch).toHaveBeenCalledWith(loadCustomerPackages(null));
+      const dispatched = dispatch.mock.calls.map(([action]) => action as unknown as Action);
+      expect(dispatched.filter((action) => action.type === loadCustomerServices.type)).toHaveLength(1);
+    });
+
+    it("re-reads services and packages for the chosen address's country", async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      jest.spyOn(store, 'dispatch');
+
+      facade.updateFormData({ savedAddressId: 'addr-sk' });
+      TestBed.flushEffects();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('svk'));
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('svk'));
+    });
+
+    it('does not re-read when another address in the same country is chosen', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress, otherSlovakAddress]);
+      facade.updateFormData({ savedAddressId: 'addr-sk' });
+      TestBed.flushEffects();
+      jest.spyOn(store, 'dispatch');
+
+      facade.updateFormData({ savedAddressId: 'addr-sk-2' });
+      TestBed.flushEffects();
+
+      expect(store.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('drops a selected service the country does not offer and says so', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'], savedAddressId: 'addr-sk' });
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' })],
+        countryId: 'svk',
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+    });
+
+    it('drops a selected package the country does not offer and says so', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      facade.updateFormData({ selectedPackageIds: ['p1', 'p2'], savedAddressId: 'addr-sk' });
+
+      store.overrideSelector(selectCustomerPackagesCatalogue, {
+        packages: [PackageListItem.fromJS({ id: 'p2' })],
+        countryId: 'svk',
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedPackageIds).toEqual(['p2']);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+    });
+
+    it('keeps the selection while the list on screen is still the default-priced one', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'], savedAddressId: 'addr-sk' });
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' })],
+        countryId: null,
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1', 's2']);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('says nothing when every selection survives the new country', async () => {
+      await facade.initialize();
+      savedAddressStore.addresses.set([slovakAddress]);
+      facade.updateFormData({ selectedServiceIds: ['s1'], savedAddressId: 'addr-sk' });
+
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's1' }), ServiceListItem.fromJS({ id: 's2' })],
+        countryId: 'svk',
+      });
+      store.refreshState();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
   });
 
   describe('the currency a schedule is priced in', () => {

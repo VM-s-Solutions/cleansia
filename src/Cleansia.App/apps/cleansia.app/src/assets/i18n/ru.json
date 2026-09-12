@@ -1295,8 +1295,6 @@
       "tier_ladder_lead": "По баллам, которые вы набрали. Скидка применяется автоматически.",
       "your_tier": "Ваш уровень",
       "points_threshold": "{{count}} баллов",
-      "percent_off": "{{percent}} %",
-      "no_discount": "Без скидки",
       "discount_min_order": "{{percent}} % скидка на заказы от {{minAmount}}",
       "discount_basic": "{{percent}} % скидка на каждый заказ",
       "no_discount_yet": "Скидки пока нет",

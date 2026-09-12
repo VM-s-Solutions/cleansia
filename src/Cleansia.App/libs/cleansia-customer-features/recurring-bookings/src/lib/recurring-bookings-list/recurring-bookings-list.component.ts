@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { RecurringBookingTemplateDto } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
@@ -93,7 +93,7 @@ export class RecurringBookingsListComponent implements OnInit {
   private roomsLabel(count: number): string {
     let category = 'other';
     try {
-      category = new Intl.PluralRules(this.locale()).select(count);
+      category = new Intl.PluralRules(localeFor(this.translate.currentLang)).select(count);
     } catch {
       // A runtime without the locale data falls back to the plural form.
     }
@@ -111,14 +111,17 @@ export class RecurringBookingsListComponent implements OnInit {
     // A paused schedule has no next run to promise, whatever the maths says.
     if (!next || !template.isActive) return base;
     return `${base} · ${this.translate.instant('recurring_booking.next_on', {
-      date: next.toLocaleDateString(this.locale(), { day: 'numeric', month: 'long' }),
+      date: next.toLocaleDateString(localeFor(this.translate.currentLang), {
+        day: 'numeric',
+        month: 'long',
+      }),
     })}`;
   }
 
   priceFor(template: RecurringBookingTemplateDto): string | null {
     const quoted = template.id ? this.facade.templatePrices()[template.id] : undefined;
     if (!quoted) return null;
-    return formatMoney(quoted.amount, quoted.currency, this.locale());
+    return formatMoney(quoted.amount, quoted.currency, localeFor(this.translate.currentLang));
   }
 
   cadenceKey(frequency: number): string {
@@ -132,17 +135,6 @@ export class RecurringBookingsListComponent implements OnInit {
     }
   }
 
-  private locale(): string {
-    const map: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return map[this.translate.currentLang] || 'en-US';
-  }
-
   private dayName(dotNetDow: number): string {
     // .NET DayOfWeek: Sun=0 … Sat=6. Pick a known Sunday (2024-01-07) and
     // offset, so the name comes from the runtime's own locale data rather than
@@ -150,6 +142,6 @@ export class RecurringBookingsListComponent implements OnInit {
     const sunday = new Date('2024-01-07T12:00:00Z');
     const target = new Date(sunday);
     target.setUTCDate(sunday.getUTCDate() + dotNetDow);
-    return target.toLocaleDateString(this.locale(), { weekday: 'long' });
+    return target.toLocaleDateString(localeFor(this.translate.currentLang), { weekday: 'long' });
   }
 }

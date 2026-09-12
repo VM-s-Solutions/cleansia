@@ -20,7 +20,7 @@ import {
   CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { MapboxAddressSuggestion } from '@cleansia/services';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -209,25 +209,14 @@ export class CreateRecurringWizardComponent implements OnInit {
   // ─── The price ─────────────────────────────────────────────────────
   formPrice(): string | null {
     const quoted = this.facade.formPrice();
-    return quoted ? formatMoney(quoted.amount, quoted.currency, this.locale()) : null;
+    if (!quoted) return null;
+    return formatMoney(quoted.amount, quoted.currency, localeFor(this.translate.currentLang));
   }
 
-  /** A catalogue price, which is in the platform default currency. */
-  formatMoney(amount: number | undefined): string {
-    return amount === undefined
-      ? ''
-      : formatMoney(amount, this.facade.defaultCurrencyCode(), this.locale());
-  }
-
-  private locale(): string {
-    const map: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return map[this.translate.currentLang] || 'en-US';
+  /** A catalogue price, labelled with the currency the item itself arrived in. */
+  formatMoney(amount: number | undefined, currencyCode: string | undefined): string {
+    if (amount === undefined) return '';
+    return formatMoney(amount, currencyCode, localeFor(this.translate.currentLang));
   }
 
   // ─── Field handlers ────────────────────────────────────────────────

@@ -1295,8 +1295,6 @@
       "tier_ladder_lead": "За балами, які ви зібрали. Знижка застосовується автоматично.",
       "your_tier": "Ваш рівень",
       "points_threshold": "{{count}} балів",
-      "percent_off": "{{percent}} %",
-      "no_discount": "Без знижки",
       "discount_min_order": "{{percent}} % знижка на замовлення понад {{minAmount}}",
       "discount_basic": "{{percent}} % знижка на кожне замовлення",
       "no_discount_yet": "Знижки поки немає",

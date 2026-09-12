@@ -1295,8 +1295,6 @@
       "tier_ladder_lead": "By the points you have earned. The discount comes off automatically.",
       "your_tier": "Your tier",
       "points_threshold": "{{count}} points",
-      "percent_off": "{{percent}}%",
-      "no_discount": "No discount",
       "discount_min_order": "{{percent}}% off orders over {{minAmount}}",
       "discount_basic": "{{percent}}% off every order",
       "no_discount_yet": "No discount yet",

@@ -17,7 +17,7 @@ import {
   RecurringPrefillParams,
 } from '@cleansia-customer/recurring-bookings';
 import { CleansiaCustomerRoute } from '@cleansia/services';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
@@ -465,14 +465,7 @@ export class OrderDetailComponent implements OnInit {
   }
 
   protected getLocale(): string {
-    const localeMap: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
+    return localeFor(this.translate.currentLang);
   }
 
   formatDate(date: Date | undefined): string {

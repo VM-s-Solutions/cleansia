@@ -1295,8 +1295,6 @@
       "tier_ladder_lead": "Podľa bodov, ktoré ste kedy získali. Zľava sa odpočíta automaticky.",
       "your_tier": "Váš stupeň",
       "points_threshold": "{{count}} bodov",
-      "percent_off": "{{percent}} %",
-      "no_discount": "Bez zľavy",
       "discount_min_order": "{{percent}} % zľava na objednávky nad {{minAmount}}",
       "discount_basic": "{{percent}} % zľava na každú objednávku",
       "no_discount_yet": "Zatiaľ bez zľavy",

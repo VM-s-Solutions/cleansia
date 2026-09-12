@@ -35,8 +35,6 @@ describe('RewardsComponent — the discount a tier prints', () => {
   const DICTIONARY = {
     pages: {
       rewards: {
-        percent_off: '{{percent}}% off',
-        no_discount: 'No discount yet',
         discount_min_order: '{{percent}}% off orders over {{minAmount}}',
         discount_basic: '{{percent}}% off every order',
         no_discount_yet: 'No discount yet',

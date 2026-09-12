@@ -10,7 +10,7 @@ import {
   LoyaltyTransactionType,
 } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -149,7 +149,7 @@ export class RewardsComponent implements OnInit {
           minAmount: formatMoney(
             tier.minimumOrderAmountForDiscount,
             this.facade.defaultCurrencyCode(),
-            this.getLocale(),
+            localeFor(this.translate.currentLang),
           ),
         },
       };
@@ -214,26 +214,11 @@ export class RewardsComponent implements OnInit {
     return { key: 'pages.rewards.tx.completed', params: {} };
   }
 
-  /**
-   * Format the ledger timestamp using the active language. Falls back to en-US
-   * when the runtime locale isn't in our explicit map.
-   */
-  private getLocale(): string {
-    const localeMap: Record<string, string> = {
-      en: 'en-US',
-      cs: 'cs-CZ',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
-  }
-
   // The board's activity rows carry a date, not a timestamp: a points movement
   // is a thing that happened on a day, and the minute it landed says nothing.
   formatDate(date: Date | undefined | null): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString(this.getLocale(), {
+    return new Date(date).toLocaleDateString(localeFor(this.translate.currentLang), {
       day: 'numeric',
       month: 'numeric',
       year: 'numeric',

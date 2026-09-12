@@ -15,6 +15,7 @@ import {
 } from '@cleansia/customer-services';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { localeFor } from '@cleansia/utils';
 import { SkeletonModule } from 'primeng/skeleton';
 import { RewardsFacade } from './rewards.facade';
 
@@ -129,16 +130,8 @@ export class RewardsActivityComponent implements OnInit {
 
   formatDate(date: Date | undefined | null): string {
     if (!date) return '';
-    const localeMap: Record<string, string> = {
-      en: 'en-US',
-      cs: 'cs-CZ',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    const locale = localeMap[this.translate.currentLang] || 'en-US';
     // The year is the group heading, so the row does not repeat it.
-    return new Date(date).toLocaleDateString(locale, {
+    return new Date(date).toLocaleDateString(localeFor(this.translate.currentLang), {
       day: 'numeric',
       month: 'numeric',
     });

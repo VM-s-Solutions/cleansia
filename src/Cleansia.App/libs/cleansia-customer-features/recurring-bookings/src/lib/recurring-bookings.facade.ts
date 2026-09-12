@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, Injector, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
@@ -20,11 +20,13 @@ import {
   SavedAddressStore,
   selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
+  selectCustomerPackagesCatalogue,
   selectCustomerServices,
+  selectCustomerServicesCatalogue,
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom, takeUntil } from 'rxjs';
 import {
   RecurringPrefillParams,
@@ -69,6 +71,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly store = inject(Store);
+  private readonly injector = inject(Injector);
 
   // ─── List state ────────────────────────────────────────────────────
   readonly templates = signal<RecurringBookingTemplateDto[]>([]);
@@ -115,11 +118,22 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly packages = toSignal(this.store.select(selectCustomerPackages), {
     initialValue: [] as PackageListItem[],
   });
-  /** What the catalogue prices the form lists are in; a quoted price carries its own. */
+  /** The platform default, which a quote that names no currency of its own is labelled with. */
   readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
     initialValue: null,
   });
   readonly savedAddresses = this.savedAddressStore.addresses;
+
+  /**
+   * The chosen saved address's country, which decides the currency the schedule is priced in —
+   * and with it which catalogue entries can be offered at all.
+   */
+  private readonly addressCountryId = computed<string | null>(() =>
+    this.countryOf(this.formData().savedAddressId),
+  );
+  /** The country the catalogue was last read for, so a same-country address switch re-reads nothing. */
+  private catalogueCountryId: string | null = null;
+  private followingAddressCountry = false;
 
   // ─── Computed derivations for the template ─────────────────────────
   readonly canAdvance = computed(() => canAdvance(this.activeStep(), this.formData()));
@@ -147,10 +161,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     // picker "fixed" it, which is exactly what it looked like from outside.
     this.applyDefaultStartDate();
 
-    // Catalog dispatches are no-ops on already-loaded state. They flow into
-    // the customer-stores reducers, populating the signals above.
-    this.store.dispatch(loadCustomerServices());
-    this.store.dispatch(loadCustomerPackages());
+    this.followAddressCountry();
     this.store.dispatch(loadCustomerCurrencies());
 
     // First, because it decides which page the customer is even shown. A
@@ -297,6 +308,62 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private countryOf(savedAddressId: string | null | undefined): string | null {
     if (!savedAddressId) return null;
     return this.savedAddresses().find((a) => a.id === savedAddressId)?.countryId || null;
+  }
+
+  /**
+   * The catalogue is priced per market and the server withholds what has no price in the
+   * address country's currency, so it is read for the platform default first and again for every
+   * country the chosen saved address names. A selection the new list no longer offers would make
+   * the server refuse the quote outright, so it is trimmed to the new list — with a word to the
+   * customer — once that list has landed.
+   */
+  private followAddressCountry(): void {
+    if (this.followingAddressCountry) return;
+    this.followingAddressCountry = true;
+
+    toObservable(this.addressCountryId, { injector: this.injector })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((countryId) => {
+        if (countryId !== this.catalogueCountryId) this.loadCatalogue(countryId);
+      });
+    this.loadCatalogue(this.addressCountryId());
+
+    this.store
+      .select(selectCustomerServicesCatalogue)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(({ services, countryId }) => {
+        if (!this.pricedForAddress(countryId)) return;
+        this.keepSelected('selectedServiceIds', new Set(services.map((s) => s.id)));
+      });
+    this.store
+      .select(selectCustomerPackagesCatalogue)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(({ packages, countryId }) => {
+        if (!this.pricedForAddress(countryId)) return;
+        this.keepSelected('selectedPackageIds', new Set(packages.map((p) => p.id)));
+      });
+  }
+
+  private loadCatalogue(countryId: string | null): void {
+    this.catalogueCountryId = countryId;
+    this.store.dispatch(loadCustomerServices(countryId));
+    this.store.dispatch(loadCustomerPackages(countryId));
+  }
+
+  /** A list priced for the platform default never trims: nothing was ever picked outside it. */
+  private pricedForAddress(countryId: string | null): boolean {
+    return countryId !== null && countryId === this.addressCountryId();
+  }
+
+  private keepSelected(
+    field: 'selectedServiceIds' | 'selectedPackageIds',
+    offered: Set<string | undefined>,
+  ): void {
+    const selected = this.formData()[field];
+    const kept = selected.filter((id) => offered.has(id));
+    if (kept.length === selected.length) return;
+    this.updateFormData({ [field]: kept });
+    this.snackbar.showInfoTranslated('pages.order.wizard.catalogue_changed_for_country');
   }
 
   private async quote(

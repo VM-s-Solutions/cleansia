@@ -1,12 +1,19 @@
 package cz.cleansia.customer.features.recurring
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.catalog.CategoryDto
+import cz.cleansia.customer.core.catalog.PackageListItem
+import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.AddressRepository
+import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
@@ -14,6 +21,7 @@ import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
 import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.customer.ui.state.ActionState
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -43,8 +51,13 @@ class CreateRecurringViewModelTest {
     private lateinit var catalogRepo: CatalogRepository
     private lateinit var addressRepo: AddressRepository
     private lateinit var snackbar: SnackbarController
+    private lateinit var appContext: Context
 
     private lateinit var templatesFlow: MutableStateFlow<List<RecurringBookingTemplateDto>>
+    private lateinit var addressesFlow: MutableStateFlow<List<UserAddress>>
+    private lateinit var catalogServicesFlow: MutableStateFlow<List<ServiceListItem>>
+    private lateinit var catalogPackagesFlow: MutableStateFlow<List<PackageListItem>>
+    private lateinit var catalogCountryFlow: MutableStateFlow<String?>
 
     @Before
     fun setUp() {
@@ -53,10 +66,19 @@ class CreateRecurringViewModelTest {
         catalogRepo = mockk(relaxed = true)
         addressRepo = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
+        appContext = mockk(relaxed = true)
         templatesFlow = MutableStateFlow(emptyList())
+        addressesFlow = MutableStateFlow(emptyList())
+        catalogServicesFlow = MutableStateFlow(emptyList())
+        catalogPackagesFlow = MutableStateFlow(emptyList())
+        catalogCountryFlow = MutableStateFlow(null)
         coEvery { catalogRepo.refresh() } returns ApiResult.Success(Unit)
-        every { addressRepo.addresses } returns MutableStateFlow(emptyList())
+        every { catalogRepo.services } returns catalogServicesFlow
+        every { catalogRepo.packages } returns catalogPackagesFlow
+        every { catalogRepo.countryId } returns catalogCountryFlow
+        every { addressRepo.addresses } returns addressesFlow
         every { recurringRepo.templates } returns templatesFlow
+        every { appContext.getString(R.string.booking_market_items_unavailable) } returns marketNotice
     }
 
     private fun viewModel(orderId: String? = null, templateId: String? = null) =
@@ -69,7 +91,7 @@ class CreateRecurringViewModelTest {
             catalogRepo = catalogRepo,
             addressRepo = addressRepo,
             snackbar = snackbar,
-            appContext = mockk(relaxed = true),
+            appContext = appContext,
         )
 
     private fun fillValidForm(vm: CreateRecurringViewModel) {
@@ -79,6 +101,38 @@ class CreateRecurringViewModelTest {
     }
 
     private val plusRefusal = "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
+
+    private val marketNotice = "Some of your picks are not offered at this address and were removed."
+
+    private fun address(serverId: String, countryId: String?, isDefault: Boolean = false) = UserAddress(
+        id = serverId,
+        serverId = serverId,
+        label = serverId,
+        street = "Hlavná 1",
+        city = "Bratislava",
+        zipCode = "81101",
+        countryId = countryId,
+        isDefault = isDefault,
+    )
+
+    private fun service(id: String) = ServiceListItem(
+        id = id,
+        name = "Service $id",
+        basePrice = 10.0,
+        perRoomPrice = 1.0,
+        category = CategoryDto(id = "c-1", slug = "general", name = "General"),
+    )
+
+    private fun pkg(id: String) = PackageListItem(id = id, name = "Package $id", price = 20.0)
+
+    private fun slovakCatalogue(vararg services: ServiceListItem) {
+        coEvery { catalogRepo.refresh("svk-id") } coAnswers {
+            catalogServicesFlow.value = services.toList()
+            catalogPackagesFlow.value = emptyList()
+            catalogCountryFlow.value = "svk-id"
+            ApiResult.Success(Unit)
+        }
+    }
 
     private val template = RecurringBookingTemplateDto(
         id = "tpl-1",
@@ -330,6 +384,133 @@ class CreateRecurringViewModelTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
         assertTrue(vm.submitState.value is ActionState.Error)
+    }
+
+    // ── the market rule — the service address's country prices the template ──
+    //
+    // Owner ruling 2026-09-12: an order is priced in the currency of the service address's country.
+    // The wizard's picks are a saved address, so its country is the market: the catalogue is re-read
+    // for it and a pick the new market does not offer is dropped with a notice, not refused at submit.
+
+    @Test
+    fun `picking a saved address reloads the catalogue for that address's country`() = runTest {
+        addressesFlow.value = listOf(address("addr-legacy", countryId = null), address("addr-sk", "svk-id"))
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { catalogRepo.refresh("svk-id") }
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh("svk-id") }
+    }
+
+    @Test
+    fun `the default saved address sets the market on entry`() = runTest {
+        addressesFlow.value = listOf(address("addr-cz", countryId = null), address("addr-sk", "svk-id", isDefault = true))
+        slovakCatalogue(service("svc-1"))
+
+        viewModel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh("svk-id") }
+    }
+
+    @Test
+    fun `an address in the market the catalogue already answers for reloads nothing`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id"), address("addr-sk-2", "svk-id"))
+        catalogCountryFlow.value = "svk-id"
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.setSavedAddressId("addr-sk-2")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { catalogRepo.refresh("svk-id") }
+    }
+
+    @Test
+    fun `an address change prunes what the new market does not offer and says so`() = runTest {
+        addressesFlow.value = listOf(address("addr-legacy", countryId = null), address("addr-sk", "svk-id"))
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.toggleService("svc-1")
+        vm.toggleService("svc-2")
+        vm.togglePackage("pkg-1")
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+    }
+
+    @Test
+    fun `an address change that drops nothing stays quiet`() = runTest {
+        addressesFlow.value = listOf(address("addr-legacy", countryId = null), address("addr-sk", "svk-id"))
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.toggleService("svc-1")
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    /** A reload that failed says nothing about the market; pruning against it would empty the basket. */
+    @Test
+    fun `a failed reload keeps the picks and the old catalogue`() = runTest {
+        addressesFlow.value = listOf(address("addr-legacy", countryId = null), address("addr-sk", "svk-id"))
+        coEvery { catalogRepo.refresh("svk-id") } returns ApiResult.Error(ApiError.Network("boom"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.toggleService("svc-1")
+        vm.toggleService("svc-2")
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-1", "svc-2"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    /** The home carousel prices from this same repository; a Slovak template must not leave it in euros. */
+    @Test
+    fun `leaving the wizard after a foreign market returns the catalogue to the platform default`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        slovakCatalogue(service("svc-1"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals("svk-id", catalogCountryFlow.value)
+        clearMocks(catalogRepo, answers = false)
+
+        ViewModelStore().apply { put("wizard", vm) }.clear()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh(null) }
+    }
+
+    @Test
+    fun `leaving the wizard on the platform default reloads nothing`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        clearMocks(catalogRepo, answers = false)
+
+        ViewModelStore().apply { put("wizard", vm) }.clear()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { catalogRepo.refresh(any()) }
     }
 
     @Test

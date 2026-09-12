@@ -1256,6 +1256,7 @@
     <string name="error_promo_per_user_limit_reached">Вы уже использовали этот код</string>
     <string name="error_promo_below_minimum_order_amount">Заказ не соответствует минимальной сумме для этого кода</string>
     <string name="error_promo_currency_mismatch">Код не действует для этой валюты</string>
+    <string name="error_promo_requires_account">Войдите, чтобы использовать промокод.</string>
     <string name="error_device_invalid_platform">Неподдерживаемая платформа устройства.</string>
     <string name="error_dispute_already_exists">Спор для этого заказа уже существует</string>
     <string name="error_dispute_max_length_exceeded">Превышена максимальная длина</string>

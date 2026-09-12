@@ -1259,6 +1259,7 @@
     <string name="error_promo_per_user_limit_reached">Tento kód jste už použili</string>
     <string name="error_promo_below_minimum_order_amount">Objednávka nesplňuje minimální částku pro tento kód</string>
     <string name="error_promo_currency_mismatch">Kód neplatí pro tuto měnu</string>
+    <string name="error_promo_requires_account">Pro použití slevového kódu se přihlaste.</string>
     <string name="error_device_invalid_platform">Nepodporovaná platforma zařízení.</string>
     <string name="error_dispute_already_exists">Spor pro tuto objednávku již existuje</string>
     <string name="error_dispute_max_length_exceeded">Překročena maximální délka</string>

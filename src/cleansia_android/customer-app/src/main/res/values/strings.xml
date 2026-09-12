@@ -1285,6 +1285,7 @@
     <string name="error_promo_per_user_limit_reached">You\'ve already used this code</string>
     <string name="error_promo_below_minimum_order_amount">Order doesn\'t meet the minimum for this code</string>
     <string name="error_promo_currency_mismatch">Code doesn\'t apply to this currency</string>
+    <string name="error_promo_requires_account">Sign in to use a promo code.</string>
     <string name="error_device_invalid_platform">Unsupported device platform.</string>
     <string name="error_dispute_already_exists">Dispute already exists for this order</string>
     <string name="error_dispute_max_length_exceeded">Maximum length exceeded</string>

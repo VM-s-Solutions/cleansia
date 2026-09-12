@@ -1256,6 +1256,7 @@
     <string name="error_promo_per_user_limit_reached">Tento kód ste už použili</string>
     <string name="error_promo_below_minimum_order_amount">Objednávka nespĺňa minimálnu sumu pre tento kód</string>
     <string name="error_promo_currency_mismatch">Kód neplatí pre túto menu</string>
+    <string name="error_promo_requires_account">Na použitie zľavového kódu sa prihláste.</string>
     <string name="error_device_invalid_platform">Nepodporovaná platforma zariadenia.</string>
     <string name="error_dispute_already_exists">Reklamácia pre túto objednávku už existuje</string>
     <string name="error_dispute_max_length_exceeded">Bola prekročená maximálna dĺžka</string>

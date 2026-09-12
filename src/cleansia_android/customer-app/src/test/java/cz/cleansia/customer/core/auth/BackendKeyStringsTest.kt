@@ -60,6 +60,7 @@ class BackendKeyStringsTest {
         "promo.per_user_limit_reached",
         "promo.below_minimum_order_amount",
         "promo.currency_mismatch",
+        "promo.requires_account",
     )
 
     /**

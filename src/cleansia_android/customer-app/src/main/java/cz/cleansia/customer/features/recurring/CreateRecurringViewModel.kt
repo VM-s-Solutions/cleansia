@@ -20,6 +20,8 @@ import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,6 +29,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -75,12 +79,17 @@ class CreateRecurringViewModel @Inject constructor(
     val submitted: SharedFlow<Unit> = _submitted.asSharedFlow()
 
     init {
-        // Catalog + addresses are needed regardless of path. Refresh once on
-        // entry; safe no-op if already loaded.
+        // The market watcher starts only once the entry refresh has answered: the repository skips a
+        // refresh while one is in flight, so a concurrent reload for the address's country would be
+        // dropped and the picks pruned against the wrong catalogue.
         viewModelScope.launch {
             catalogRepo.refresh().onError { error ->
                 if (error !is ApiError.Network) snackbar.showError(error)
             }
+            _state
+                .map { it.savedAddressId }
+                .distinctUntilChanged()
+                .collectLatest { addressId -> followMarket(resolveCountryId(addressId)) }
         }
         if (editingTemplateId != null) {
             prefillFromTemplate(editingTemplateId)
@@ -204,6 +213,46 @@ class CreateRecurringViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private suspend fun resolveCountryId(savedAddressId: String): String? {
+        if (savedAddressId.isBlank()) return null
+        return addressRepo.addresses.first().firstOrNull { it.serverId == savedAddressId }?.countryId
+    }
+
+    /**
+     * Re-read the catalogue for the address's market and drop whatever it no longer offers. A pick
+     * with no price row in the new currency would be refused at submit, so it goes now, with a
+     * notice, while the customer can still re-pick. A failed reload proves nothing and prunes nothing.
+     */
+    private suspend fun followMarket(countryId: String?) {
+        if (catalogRepo.countryId.value == countryId) return
+        if (catalogRepo.refresh(countryId) !is ApiResult.Success) return
+
+        val services = catalogRepo.services.value.map { it.id }.toSet()
+        val packages = catalogRepo.packages.value.map { it.id }.toSet()
+        var dropped = false
+        _state.update { s ->
+            val kept = s.copy(
+                selectedServiceIds = s.selectedServiceIds.filterTo(mutableSetOf()) { it in services },
+                selectedPackageIds = s.selectedPackageIds.filterTo(mutableSetOf()) { it in packages },
+            )
+            dropped = kept != s
+            kept
+        }
+        if (dropped) snackbar.showInfo(appContext.getString(R.string.booking_market_items_unavailable))
+    }
+
+    /**
+     * The home carousel prices from the same repository, so a wizard left on a foreign market must
+     * hand the default back. `viewModelScope` is already closed here — the wizard is popped before
+     * this runs — so the reload rides on a scope of its own.
+     */
+    override fun onCleared() {
+        if (catalogRepo.countryId.value != null) {
+            CoroutineScope(Dispatchers.Main.immediate).launch { catalogRepo.refresh(null) }
+        }
+        super.onCleared()
     }
 
     // ─── Path C pre-fill ───

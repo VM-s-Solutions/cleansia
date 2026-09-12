@@ -149,7 +149,7 @@ public sealed class ReceiptService(
 
     // The provider key identifies the fiscal regime, which decides the counter's issuer scope and
     // year-reset rule. With no fiscal system (None) there is no provider, so the empty key resolves to
-    // the default annually-reset scope — matching CZ's current behaviour.
+    // FiscalSequenceScope.DefaultIssuerScope, which never resets annually (NoAnnualResetYear).
     private async Task<string> ResolveProviderKeyAsync(string? countryId, FiscalEnforcementMode enforcementMode, CancellationToken cancellationToken)
     {
         if (enforcementMode == FiscalEnforcementMode.None || countryId == null)

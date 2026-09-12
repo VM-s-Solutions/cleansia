@@ -17,12 +17,12 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// steps are invisible from the client: the 12% combined cap on membership + tier has no
 /// client-side representation, the tier amount the quote already reports arrives
 /// grossed-up by the express surcharge so a client would have to un-gross it, cap, and
-/// re-gross, and the express waiver a member gets is not granted during the Stripe trial
-/// a wizard subscriber would start in.
+/// re-gross, and the express waivers a member gets are metered per month, so whether one
+/// would apply to today's order is not knowable from the price alone.
 ///
 /// It quotes the DISCOUNT ONLY, deliberately. Adding the value of a waived express
-/// surcharge would produce a bigger number that is false for exactly the customer this
-/// screen is talking to — one subscribing today, and therefore trialing.
+/// surcharge would produce a bigger number that may be false for exactly the customer this
+/// screen is talking to — one who has not subscribed yet and holds no waiver.
 ///
 /// A separate query rather than a field on <see cref="QuoteOrder"/>: the wizard asks
 /// this once, on one step, for one plan, and every other quote consumer would pay for it

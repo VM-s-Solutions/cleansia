@@ -8,7 +8,8 @@ public static class PackageMappers
     /// <paramref name="price"/> is passed in rather than read off the entity — see
     /// <see cref="ServiceMappers"/> for the rule and why the DTO field name does not move.
     /// </summary>
-    public static PackageListItem MapToDto(this Domain.Packages.Package package, decimal price)
+    public static PackageListItem MapToDto(
+        this Domain.Packages.Package package, decimal price, string currencyCode)
     {
         return new PackageListItem(
             Id: package.Id,
@@ -21,7 +22,8 @@ public static class PackageMappers
             IncludedServices: package.IncludedServices.Select(ps => new PackageServiceSummary(
                 ps.ServiceId,
                 ps.Service.Name,
-                ps.Service.Translations.ToDictionary())));
+                ps.Service.Translations.ToDictionary())),
+            CurrencyCode: currencyCode);
     }
 
     public static PackageDetails MapToDetails(

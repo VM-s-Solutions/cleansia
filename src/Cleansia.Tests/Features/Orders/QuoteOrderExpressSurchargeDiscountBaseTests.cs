@@ -91,7 +91,8 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
             _session.Object,
             _loyaltyService.Object,
             _membershipRepository.Object,
-            _creditAccountRepository.Object);
+            _creditAccountRepository.Object,
+            new Mock<ICurrencyResolutionService>().Object);
 
     private static QuoteOrder.Command ExpressCommand() =>
         new([ "service-1" ], [], Rooms: 2, Bathrooms: 1, CurrencyId: null,

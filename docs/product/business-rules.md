@@ -343,13 +343,17 @@ three numbers are the checklist for it.
 
 ## What "price" means at each stage {#price-stages}
 
-**Order currency.** An order is priced and stamped in the currency the caller names on quote and on
-create (`currencyId`, null = platform default) — one the platform can quote in: switched on and carrying
-at least one catalogue price row (`ICurrencyRepository.IsOfferableAsync`), else `currency.invalid`.
-It is not derived from the address. Prices are authored per currency in `ServicePrices`,
-`PackagePrices` and `ExtraPrices`; nothing converts, and an entry with no price row in a currency is
-not offerable in it. A recurring occurrence is priced in the platform default, because a template
-carries no currency.
+**Order currency.** An order is priced, charged and stamped in the currency of the country its
+**service address** is in (owner ruling 2026-09-12: the market is a property of the booking, not of
+the customer, and there is no currency picker) — `CountryConfiguration.DefaultCurrencyCode` resolved
+through `ICurrencyResolutionService.ResolveCurrencyForCountryAsync`, the same chain that pays a cleaner
+in the currency of the country they work in; a `currencyId` the caller names must equal it, else
+`currency.invalid`. That currency must be one the platform can quote in: switched on and carrying at
+least one catalogue price row (`ICurrencyRepository.IsOfferableAsync`), else `currency.invalid`. Prices
+are authored per currency in `ServicePrices`, `PackagePrices` and `ExtraPrices`; nothing converts, and
+an entry with no price row in a currency is not offerable in it — the catalogue withholds it for that
+country and quote/create refuse it as an invalid selection. A recurring occurrence is priced in the
+currency of its saved address's country.
 
 The pricing calculator returns a **raw subtotal before any user-level discount** — tier, membership or
 promo. The **express surcharge is already folded in**, because the surcharge is a property of the

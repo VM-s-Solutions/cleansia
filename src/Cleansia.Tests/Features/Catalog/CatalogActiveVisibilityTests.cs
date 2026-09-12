@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
@@ -31,6 +32,9 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
     }
 
     public void Dispose() => _connection.Dispose();
+
+    private static CurrencyResolutionService Markets(CleansiaDbContext ctx) =>
+        new(new EmployeeRepository(ctx), new CountryConfigurationRepository(ctx), new CurrencyRepository(ctx));
 
     private CleansiaDbContext NewContext()
     {
@@ -98,7 +102,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         var overview = (await new GetServiceOverview.Handler(
                 new ServiceRepository(ctx),
                 new ServicePriceRepository(ctx),
-                new CurrencyRepository(ctx),
+                Markets(ctx),
                 new EmployeePayConfigRepository(ctx))
             .Handle(new GetServiceOverview.Request(), CancellationToken.None)).ToList();
 
@@ -116,7 +120,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         var overview = (await new GetPackageOverview.Handler(
                 new PackageRepository(ctx),
                 new PackagePriceRepository(ctx),
-                new CurrencyRepository(ctx),
+                Markets(ctx),
                 new EmployeePayConfigRepository(ctx))
             .Handle(new GetPackageOverview.Request(), CancellationToken.None)).ToList();
 

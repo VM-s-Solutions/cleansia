@@ -143,10 +143,11 @@ POST /api/Order/CreateOrder
 }
 ```
 
-`currencyId` — optional. Send back the `currencyId` the quote returned: the server re-prices in that
-currency and compares against `totalPrice`, so a different currency on create fails as
-`order.total_price.not_match`, and one the platform cannot quote in fails as `currency.invalid` before
-any pricing. Null means the platform default currency. The currency is never derived from the address.
+`currencyId` — optional. The order's currency is the **service address's country's** currency
+(owner ruling 2026-09-12); null lets the server derive it, and a value must equal it — send back the
+`currencyId` the quote returned for the same country — or create fails as `currency.invalid` before any
+pricing. The server re-prices in that currency and compares against `totalPrice`, so a total quoted
+in another market fails as `order.total_price.not_match`.
 
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
@@ -184,15 +185,18 @@ failure is reported:
 
 | Rule | Error key |
 |---|---|
-| A named `currencyId` is offerable — switched on AND priced (`ICurrencyRepository.IsOfferableAsync`); omitted/null = platform default | `currency.invalid` |
+| A named `currencyId` equals the service address's country's currency; omitted/null = that currency | `currency.invalid` |
+| The address country's currency is offerable — switched on AND priced (`ICurrencyRepository.IsOfferableAsync`) | `currency.invalid` |
 | At least one service or package | `order.empty` |
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
 | A membership express waiver the client assumed is still available | `membership.express_waiver.no_longer_available` |
 | Server-recalculated price equals the submitted `totalPrice` | `order.total_price.not_match` |
 
-The currency rule heads the chain, and sits in this chain rather than in a rule of its own, because
-the calculator throws on a currency it cannot price in: a separate rule would not stop the two price
-rules from running it, and a 400 would become a 500.
+The two currency rules head the chain, and sit in this chain rather than in a rule of their own,
+because the calculator throws on a currency it cannot price in: a separate rule would not stop the two
+price rules from running it, and a 400 would become a 500. Separately from this chain, a selected
+service or package with no price row in the address country's currency fails as
+`order.selected_services.invalid` / `order.selected_package.invalid`.
 
 The waiver rule sits **before** the price rule deliberately: a Plus member who used up their last
 free express upgrade between quoting and submitting would otherwise get
@@ -248,11 +252,15 @@ POST /api/Order/Quote
 `cleaningDate` is optional — omit it on the wizard's first step, before a slot is chosen, and the
 express-surcharge check is skipped.
 
-`currencyId` — optional; the currency to quote in. It must be one the platform can quote in — switched
-on and carrying at least one catalogue price row — or the quote is refused as `currency.invalid`; null
-means the platform default. The response's `currencyId` / `currencyCode` say which one was used.
-Prices are authored per currency and nothing converts, so a selection with no price row in the named
-currency is not offerable in it.
+`countryId` — optional; the service address's country once the wizard has one. The quote is priced
+in that country's currency (owner ruling 2026-09-12); a country the platform does not service is
+refused as `country.not_serviced`. `currencyId` — optional; an explicit currency, which wins over
+`countryId`. With neither the quote is in the platform default. Whichever way it resolves, the currency
+must be one the platform can quote in — switched on and carrying at least one catalogue price row — or
+the quote is refused as `currency.invalid`. The response's `currencyId` / `currencyCode` say which one
+was used. Prices are authored per currency and nothing converts, so a selected service or package with
+no price row in that currency is refused as `order.selected_services.invalid` /
+`order.selected_package.invalid`.
 
 **Response:**
 
@@ -285,7 +293,7 @@ currency is not offerable in it.
 | `expressSurchargeWaivedByMembership` | Disambiguates `expressSurchargeApplied: false`. Without it, "waived" and "not an express slot at all" look identical |
 | `expressUpgradesRemaining` | Waivers left **this calendar month, before this booking** — server-computed. Null when the caller has no membership. A client that counts its own orders disagrees with the server the first time a cancellation releases a slot |
 | `tierDiscountMinOrderAmount` | The tier-discount floor the quote judged the order against, so a client can state the same rule. Null when no floor applied — the floor is a platform-default-currency number and is enforced only on an order in that currency |
-| `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, or the platform default. There is no exchange rate on the wire; nothing converts |
+| `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, else the request's `countryId`'s, else the platform default. There is no exchange rate on the wire; nothing converts |
 
 Promo codes are **not** priced here — they are entered at checkout and applied at create time.
 

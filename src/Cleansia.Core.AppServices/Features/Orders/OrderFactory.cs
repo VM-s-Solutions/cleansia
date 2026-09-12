@@ -215,7 +215,9 @@ public sealed class OrderFactory(
         // is absent from the total AND from the order. The refund path used to read the same catalogue
         // WITHOUT that filter, so an extra deactivated after ordering was excluded from TotalPrice and
         // included in the refund denominator, inflating every other line's share. Rows the order owns
-        // settle it: there is only one list now.
+        // settle it: there is only one list now. An extra unpriced in the order's currency is dropped
+        // on the same terms, below -- the calculator priced without it, so the order carries it without
+        // it too.
         var selectedExtras = input.SelectedExtraSlugs.Count == 0
             ? []
             : await extraRepository.GetAll()
@@ -227,8 +229,8 @@ public sealed class OrderFactory(
         var extraPrices = await CataloguePriceLookup.ForExtrasAsync(
             extraPriceRepository, selectedExtras.Select(e => e.Id).ToList(), input.Currency.Id, cancellationToken);
         order.AddSelectedExtras(selectedExtras
-            .Select(e => OrderExtra.Create(
-                order, e, unitPrice: RequireAmount(extraPrices, e.Id, input.Currency.Code, "extra")))
+            .Where(e => extraPrices.ContainsKey(e.Id))
+            .Select(e => OrderExtra.Create(order, e, unitPrice: extraPrices[e.Id]))
             .ToList());
 
         var estimatedTime = OrderDuration.EstimateMinutes(

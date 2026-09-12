@@ -150,7 +150,7 @@ public class ApproveEmployee
                     // chain that labels their earnings, entered at the country because this very
                     // command is what assigns the employee's WorkCountryId. A rate in another currency
                     // is not a rate on their board.
-                    var payCurrency = await currencyResolutionService.ResolveCurrencyForWorkCountryAsync(
+                    var payCurrency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
                         command.WorkCountryId, cancellationToken);
 
                     var gaps = await PayCoverageLookup.FindActiveCatalogueGapsAsync(
@@ -224,7 +224,7 @@ public class ApproveEmployee
             }
 
             // Same currency the validator asked in -- see the rule above.
-            var payCurrency = await currencyResolutionService.ResolveCurrencyForWorkCountryAsync(
+            var payCurrency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
                 command.WorkCountryId, cancellationToken);
             var payCoverageGaps = await PayCoverageLookup.FindActiveCatalogueGapsAsync(
                 serviceRepository, packageRepository, payConfigRepository, employee.Id, payCurrency.Id,

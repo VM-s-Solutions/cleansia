@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -28,6 +29,10 @@ public class CreateOrder
         private readonly IUserSessionProvider _userSessionProvider;
         private readonly IEmployeePayConfigRepository _payConfigRepository;
         private readonly ICurrencyRepository _currencyRepository;
+        private readonly IOrderAddressResolver _orderAddressResolver;
+        private readonly ICurrencyResolutionService _currencyResolutionService;
+        private readonly IServicePriceRepository _servicePriceRepository;
+        private readonly IPackagePriceRepository _packagePriceRepository;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -37,12 +42,20 @@ public class CreateOrder
             IUserMembershipRepository userMembershipRepository,
             IUserSessionProvider userSessionProvider,
             IEmployeePayConfigRepository payConfigRepository,
-            ICurrencyRepository currencyRepository)
+            ICurrencyRepository currencyRepository,
+            IOrderAddressResolver orderAddressResolver,
+            ICurrencyResolutionService currencyResolutionService,
+            IServicePriceRepository servicePriceRepository,
+            IPackagePriceRepository packagePriceRepository)
         {
             _packageRepository = packageRepository;
             _serviceRepository = serviceRepository;
             _payConfigRepository = payConfigRepository;
             _currencyRepository = currencyRepository;
+            _orderAddressResolver = orderAddressResolver;
+            _currencyResolutionService = currencyResolutionService;
+            _servicePriceRepository = servicePriceRepository;
+            _packagePriceRepository = packagePriceRepository;
             _pricingCalculator = pricingCalculator;
             _orderRepository = orderRepository;
             _userMembershipRepository = userMembershipRepository;
@@ -124,20 +137,23 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.OrderAddressExactlyOneRequired)
                 .WithName(nameof(Command.CustomerAddress));
 
-            // The pay-coverage terms mirror OrderFactory's backstop so the customer gets a 400 instead
-            // of a 500. They reuse the existing selection codes deliberately: the booking wizard never
-            // offers an entry without a platform-wide pay config, so a caller that reaches this is
-            // submitting an id it was not shown, and a dedicated customer-visible key would describe an
-            // internal payroll condition to the wrong audience.
-            // The pay gate is asked IN THE ORDER'S CURRENCY -- the one the caller named, or the
-            // platform default -- because the pay writer reads only rates denominated in it. The
-            // resolution is the same the handler stamps the order with, so the gate asks about the
-            // rows the order will actually be paid from.
+            // The pay-coverage and price terms mirror OrderFactory's backstops so the customer gets a
+            // 400 instead of a 500. They reuse the existing selection codes deliberately: the booking
+            // wizard never offers an entry without a platform-wide pay config or a price row in the
+            // currency it is browsing in, so a caller that reaches this is submitting an id it was not
+            // shown -- typically one picked before the address moved the booking into another market --
+            // and a dedicated customer-visible key would describe an internal condition to the wrong
+            // audience.
+            // Both gates are asked IN THE ORDER'S CURRENCY -- the service address's country's -- because
+            // the pay writer reads only rates denominated in it and the calculator reads only price rows
+            // in it. The resolution is the same the handler stamps the order with.
             RuleFor(x => x.SelectedServiceIds)
                 .Cascade(CascadeMode.Stop)
                 .MustAsync(serviceRepository.ExistWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
                 .MustAsync(HavePayCoverageAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
+                .MustAsync(ArePricedInOrderCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
 
             RuleFor(x => x.SelectedPackageIds)
@@ -145,6 +161,8 @@ public class CreateOrder
                 .MustAsync(packageRepository.ExistWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)
                 .MustAsync(HavePackagePayCoverageAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)
+                .MustAsync(ArePackagesPricedInOrderCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
             // The two price rules are ORDERED and share one calculator run. The waiver rule goes first
@@ -153,13 +171,16 @@ public class CreateOrder
             // rendered by every client as a generic "the price changed", which is exactly the sentence
             // that cannot explain this.
             //
-            // The currency rule is FIRST, and in THIS chain rather than its own RuleFor: the class-level
-            // cascade is Continue, so a separate rule would not stop the two price rules below from
-            // running the calculator with the bad currency -- and the calculator throws on a currency it
-            // cannot price in, which would turn a 400 into a 500. WithErrorCode keys the failure to the
-            // field; the chain's other failures keep the root name.
+            // The two currency rules are FIRST, and in THIS chain rather than their own RuleFor: the
+            // class-level cascade is Continue, so a separate rule would not stop the two price rules
+            // below from running the calculator with the bad currency -- and the calculator throws on a
+            // currency it cannot price in, which would turn a 400 into a 500. WithErrorCode keys the
+            // failure to the field; the chain's other failures keep the root name.
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
+                .MustAsync(CurrencyMatchesAddressCountryAsync)
+                .WithMessage(BusinessErrorMessage.InvalidCurrency)
+                .WithErrorCode(nameof(Command.CurrencyId))
                 .MustAsync(CurrencyIsOfferableAsync)
                 .WithMessage(BusinessErrorMessage.InvalidCurrency)
                 .WithErrorCode(nameof(Command.CurrencyId))
@@ -247,37 +268,102 @@ public class CreateOrder
                 _userSessionProvider.GetUserId()!, command.PreferredEmployeeId!, cancellationToken);
 
         private async Task<bool> HavePayCoverageAsync(
-            Command command, IEnumerable<string> serviceIds, CancellationToken cancellationToken) =>
+            Command command,
+            IEnumerable<string> serviceIds,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken) =>
             (await PayCoverageLookup.FindSelectionGapsAsync(
                 _serviceRepository, _packageRepository, _payConfigRepository,
-                serviceIds, [], await ResolveOrderCurrencyIdAsync(command, cancellationToken),
+                serviceIds, [], await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
                 cancellationToken)).Count == 0;
 
         private async Task<bool> HavePackagePayCoverageAsync(
-            Command command, IEnumerable<string> packageIds, CancellationToken cancellationToken) =>
+            Command command,
+            IEnumerable<string> packageIds,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken) =>
             (await PayCoverageLookup.FindSelectionGapsAsync(
                 _serviceRepository, _packageRepository, _payConfigRepository,
-                [], packageIds, await ResolveOrderCurrencyIdAsync(command, cancellationToken),
+                [], packageIds, await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
                 cancellationToken)).Count == 0;
 
-        /// <summary>
-        /// The same resolution the handler stamps the order with: the caller's currency when named, the
-        /// platform default otherwise. A named-but-unknown id resolves to itself here and is refused by
-        /// the currency rule on the price chain; the pay rows it finds nothing for are moot by then.
-        /// </summary>
-        private async Task<string> ResolveOrderCurrencyIdAsync(Command command, CancellationToken cancellationToken)
-            => string.IsNullOrEmpty(command.CurrencyId)
-                ? (await _currencyRepository.GetDefaultAsync(cancellationToken)).Id
-                : command.CurrencyId;
+        private async Task<bool> ArePricedInOrderCurrencyAsync(
+            Command command,
+            IEnumerable<string> serviceIds,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var ids = serviceIds.Distinct().ToList();
+            var prices = await CataloguePriceLookup.ForServicesAsync(
+                _servicePriceRepository, ids,
+                await ResolveOrderCurrencyIdAsync(command, context, cancellationToken), cancellationToken);
+            return ids.All(prices.ContainsKey);
+        }
+
+        private async Task<bool> ArePackagesPricedInOrderCurrencyAsync(
+            Command command,
+            IEnumerable<string> packageIds,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var ids = packageIds.Distinct().ToList();
+            var prices = await CataloguePriceLookup.ForPackagesAsync(
+                _packagePriceRepository, ids,
+                await ResolveOrderCurrencyIdAsync(command, context, cancellationToken), cancellationToken);
+            return ids.All(prices.ContainsKey);
+        }
+
+        private const string OrderCurrencyIdKey = "createOrder.orderCurrencyId";
 
         /// <summary>
-        /// Null is the platform default and needs no lookup; a named currency must be one the platform
-        /// can quote in -- the same predicate QuoteOrder applies, so a currency that was quoted cannot be
-        /// refused here and one refused here was never quoted.
+        /// THE ORDER'S CURRENCY IS THE SERVICE ADDRESS'S COUNTRY'S (owner ruling 2026-09-12) -- the same
+        /// resolution the handler stamps the order with, cached on the validation context because six
+        /// rules ask for it and each resolution is two reads. A country the command does not determine
+        /// (a missing or foreign saved row, no country in a multi-country platform) resolves to the
+        /// platform default here; the handler's address resolver refuses those with their own codes.
         /// </summary>
-        private async Task<bool> CurrencyIsOfferableAsync(Command command, CancellationToken cancellationToken)
+        private async Task<string> ResolveOrderCurrencyIdAsync(
+            Command command, ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            if (context.RootContextData.TryGetValue(OrderCurrencyIdKey, out var cached) && cached is string id)
+            {
+                return id;
+            }
+
+            var countryId = await _orderAddressResolver.ResolveCountryIdAsync(
+                command, _userSessionProvider.GetUserId(), cancellationToken);
+            var currency = await _currencyResolutionService.ResolveCurrencyForCountryAsync(
+                countryId, cancellationToken);
+            context.RootContextData[OrderCurrencyIdKey] = currency.Id;
+            return currency.Id;
+        }
+
+        /// <summary>
+        /// Null is the address country's currency by definition. A named one has to BE that currency:
+        /// the market is a property of the booking, not a choice, so a client that was quoted in one
+        /// currency and then moved the address into another market must re-quote rather than book the
+        /// old price in the old currency.
+        /// </summary>
+        private async Task<bool> CurrencyMatchesAddressCountryAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
             => string.IsNullOrEmpty(command.CurrencyId)
-               || await _currencyRepository.IsOfferableAsync(command.CurrencyId, cancellationToken);
+               || command.CurrencyId == await ResolveOrderCurrencyIdAsync(command, context, cancellationToken);
+
+        /// <summary>
+        /// The address country's currency must be one the platform can quote in -- switched on AND
+        /// priced, the same predicate QuoteOrder applies -- so a country configured for a currency that
+        /// is not yet operated is refused here rather than in the calculator.
+        /// </summary>
+        private async Task<bool> CurrencyIsOfferableAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+            => await _currencyRepository.IsOfferableAsync(
+                await ResolveOrderCurrencyIdAsync(command, context, cancellationToken), cancellationToken);
 
         private static bool OrderMustNotBeEmpty(Command command) => command.SelectedPackageIds.Any() ||
                                                                     command.SelectedServiceIds.Any();
@@ -331,10 +417,10 @@ public class CreateOrder
                 selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
-                // The caller's currency -- already offerable, because this chain stops on the currency
-                // rule before it reaches here. The quote priced with the same field, so the price being
-                // compared was computed from the same rows.
-                command.CurrencyId,
+                // The address country's currency -- already offerable, because this chain stops on the
+                // currency rules before it reaches here. A quote taken with the same country priced from
+                // the same rows, so the price being compared was computed the same way.
+                await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
                 command.CleaningDate,
                 _userSessionProvider.GetUserId(),
                 DateTime.UtcNow,
@@ -419,7 +505,7 @@ public class CreateOrder
         string? StripeSessionId);
 
     public class Handler(
-        ICurrencyRepository currencyRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IUserSessionProvider userSessionProvider,
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
@@ -451,17 +537,12 @@ public class CreateOrder
             }
             var address = addressResult.Address!;
 
-            // THE ORDER IS STAMPED WITH THE CURRENCY IT WAS QUOTED IN. The validator has refused anything
-            // that is not offerable (switched on AND priced), so a named id resolves to a row the
-            // catalogue can price in; null is the platform default, exactly as the quote resolved it.
-            // Not the address's country: QuoteOrder carries no address, so a quote and a create that
-            // resolved from different inputs would disagree and the price re-check would refuse every
-            // booking. Safe to honour now because nothing converts -- the currency selects price ROWS.
-            var currency = string.IsNullOrEmpty(command.CurrencyId)
-                ? await currencyRepository.GetDefaultAsync(cancellationToken)
-                : await currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken)
-                  ?? throw new InvalidOperationException(
-                      $"Currency '{command.CurrencyId}' passed validation but no longer exists.");
+            // THE ORDER IS STAMPED WITH THE SERVICE ADDRESS'S COUNTRY'S CURRENCY (owner ruling
+            // 2026-09-12): the market is a property of the booking, and the validator has already
+            // refused a named CurrencyId that is not this one and a resolved one that is not offerable.
+            // The quote resolved the same way from the same country, so the two agree by construction.
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                address.CountryId, cancellationToken);
 
             // The calculator now surfaces the broken-out (raw + extras +
             // surcharge) shape, so OrderFactory can take a raw-pre-surcharge
@@ -476,8 +557,6 @@ public class CreateOrder
                 selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
-                // The resolved row's id, not command.CurrencyId, so the price and the stamp cannot
-                // name different currencies by construction.
                 currency.Id,
                 command.CleaningDate,
                 userId,

@@ -55,7 +55,8 @@ public class GetPagedServices
             var dtos = items
                 .Select(service => service.MapToDto(
                     prices.TryGetValue(service.Id, out var p) ? p.BasePrice : 0m,
-                    prices.TryGetValue(service.Id, out var q) ? q.PerRoomPrice : 0m))
+                    prices.TryGetValue(service.Id, out var q) ? q.PerRoomPrice : 0m,
+                    currency.Code))
                 .ToList();
 
             return dtos.MapToDto(totalItems, request);

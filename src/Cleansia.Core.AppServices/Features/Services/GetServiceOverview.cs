@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,12 +12,17 @@ namespace Cleansia.Core.AppServices.Features.Services;
 
 public class GetServiceOverview
 {
-    public record Request : IRequest<IEnumerable<ServiceListItem>>;
+    /// <param name="CountryId">
+    /// The country of the service address, once the wizard has one: the catalogue is priced and
+    /// filtered in that country's currency (owner ruling 2026-09-12). Null -- the wizard before the
+    /// address step, the home page, the partner app -- is the platform default.
+    /// </param>
+    public record Request(string? CountryId = null) : IRequest<IEnumerable<ServiceListItem>>;
 
     public class Handler(
         IServiceRepository serviceRepository,
         IServicePriceRepository servicePriceRepository,
-        ICurrencyRepository currencyRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IEmployeePayConfigRepository payConfigRepository)
         : IRequestHandler<Request, IEnumerable<ServiceListItem>>
     {
@@ -30,10 +36,11 @@ public class GetServiceOverview
                 .Include(s => s.Category)
                 .ToListAsync(cancellationToken);
 
-            // THE CURRENCY BEING BROWSED IN, resolved first because both filters below are asked in
-            // it. Today that is the platform default; the overview carries no caller currency yet. It is
-            // ONE variable feeding both the pay gate and the price lookup, so they cannot disagree.
-            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            // THE CURRENCY BEING BROWSED IN -- the requested country's, or the platform default --
+            // resolved first because both filters below are asked in it. It is ONE variable feeding
+            // both the pay gate and the price lookup, so they cannot disagree.
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                request.CountryId, cancellationToken);
 
             // Bookable is IsActive AND quotable IN THIS CURRENCY. Offering an entry with no platform-wide
             // pay config books an order that shows no pay on any cleaner's board, so the wizard
@@ -66,7 +73,7 @@ public class GetServiceOverview
             return services
                 .Where(service => !unquotable.Contains(service.Id) && prices.ContainsKey(service.Id))
                 .Select(service => service.MapToDto(
-                    prices[service.Id].BasePrice, prices[service.Id].PerRoomPrice))
+                    prices[service.Id].BasePrice, prices[service.Id].PerRoomPrice, currency.Code))
                 .ToList();
         }
     }

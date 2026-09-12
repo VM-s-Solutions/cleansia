@@ -72,7 +72,7 @@ public class MaterializeRecurringBookingTemplate
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
         IAddressRepository addressRepository,
-        ICurrencyRepository currencyRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IOrderRepository orderRepository,
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
@@ -197,21 +197,6 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
-            // THE PLATFORM DEFAULT, deliberately -- not a currency of the customer's. A template carries
-            // no currency and is not born from an order it could inherit one from: CreateRecurringBooking
-            // builds it straight from its command, which has no CurrencyId, so there is nothing here to
-            // honour the way QuoteOrder and CreateOrder honour the caller's. Giving the schedule a
-            // currency is a column on the template AND a field on both recurring-booking commands across
-            // web, Android and iOS -- T-0706's batch, not this one. Fail-closed pricing is the backstop
-            // meanwhile: a default the template's items are not priced in makes OrderFactory throw, and
-            // the per-template scope confines that failure to this template's tick.
-            //
-            // Resolved inside THIS scope on purpose: the Currency entity is handed to the order factory
-            // and ends up referenced by rows this scope's context tracks. A Currency loaded by the outer
-            // sweep's context would be a foreign tracked instance here.
-            var defaultCurrency = await currencyRepository.GetDefaultAsync(cancellationToken)
-                ?? throw new InvalidOperationException("No default currency configured");
-
             // Resolve the template's address, fail-soft.
             var saved = await savedAddressRepository.GetByIdAsync(template.SavedAddressId, cancellationToken);
             if (saved == null)
@@ -231,6 +216,17 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
+            // THE SERVICE ADDRESS'S COUNTRY'S CURRENCY, the same rule CreateOrder stamps a one-off
+            // booking with (owner ruling 2026-09-12). Fail-closed pricing is the backstop: a currency
+            // the template's items are not priced in makes OrderFactory throw, and the per-template
+            // scope confines that failure to this template's tick.
+            //
+            // Resolved inside THIS scope on purpose: the Currency entity is handed to the order factory
+            // and ends up referenced by rows this scope's context tracks. A Currency loaded by the outer
+            // sweep's context would be a foreign tracked instance here.
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                address.CountryId, cancellationToken);
+
             // Recurring orders are scheduled days/weeks in advance,
             // so the express surcharge never applies — pass null
             // CleaningDate to skip the surcharge check. Extras aren't
@@ -241,7 +237,7 @@ public class MaterializeRecurringBookingTemplate
                 Array.Empty<string>(),
                 template.Rooms,
                 template.Bathrooms,
-                defaultCurrency.Id,
+                currency.Id,
                 cleaningDateUtc: null,
                 // Priced as a guest — null user, null cleaning date — so this background job cannot
                 // spend the member's monthly express waivers on occurrences they never asked to be
@@ -270,7 +266,7 @@ public class MaterializeRecurringBookingTemplate
                     SelectedExtraSlugs: [],
                     CleaningDate: occurrence,
                     PaymentType: template.PaymentType,
-                    Currency: defaultCurrency,
+                    Currency: currency,
                     SelectedServiceIds: template.SelectedServiceIds,
                     SelectedPackageIds: template.SelectedPackageIds,
                     RawSubtotal: rawSubtotalResult.TotalPrice,

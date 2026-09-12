@@ -52,7 +52,7 @@ public class GetPagedPackages
             var prices = await CataloguePriceLookup.ForPackagesAsync(
                 packagePriceRepository, items.Select(p => p.Id).ToList(), currency.Id, cancellationToken);
             var dtos = items
-                .Select(package => package.MapToDto(prices.GetValueOrDefault(package.Id, 0m)))
+                .Select(package => package.MapToDto(prices.GetValueOrDefault(package.Id, 0m), currency.Code))
                 .ToList();
 
             return dtos.MapToDto(totalItems, request);

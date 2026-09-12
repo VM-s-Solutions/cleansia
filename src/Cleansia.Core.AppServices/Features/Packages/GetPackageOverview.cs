@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,12 +12,13 @@ namespace Cleansia.Core.AppServices.Features.Packages;
 
 public class GetPackageOverview
 {
-    public record Request : IRequest<IEnumerable<PackageListItem>>;
+    /// <param name="CountryId">See <see cref="Services.GetServiceOverview.Request"/>.</param>
+    public record Request(string? CountryId = null) : IRequest<IEnumerable<PackageListItem>>;
 
     public class Handler(
         IPackageRepository packageRepository,
         IPackagePriceRepository packagePriceRepository,
-        ICurrencyRepository currencyRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IEmployeePayConfigRepository payConfigRepository)
         : IRequestHandler<Request, IEnumerable<PackageListItem>>
     {
@@ -32,7 +34,8 @@ public class GetPackageOverview
                 .ToListAsync(cancellationToken);
 
             // The currency being browsed in, resolved first -- see GetServiceOverview for the reasoning.
-            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                request.CountryId, cancellationToken);
 
             // Bookable is IsActive AND quotable in this currency -- see GetServiceOverview.
             var unquotable = (await PayCoverageLookup.FindGapsAsync(
@@ -52,7 +55,7 @@ public class GetPackageOverview
 
             return packages
                 .Where(package => !unquotable.Contains(package.Id) && prices.ContainsKey(package.Id))
-                .Select(package => package.MapToDto(prices[package.Id]))
+                .Select(package => package.MapToDto(prices[package.Id], currency.Code))
                 .ToList();
         }
     }

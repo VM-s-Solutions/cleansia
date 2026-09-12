@@ -308,7 +308,7 @@ public sealed class EmployeeUserAuditCoverageTests
         czk.IsActive = true;
         var resolution = new Mock<ICurrencyResolutionService>();
         resolution
-            .Setup(s => s.ResolveCurrencyForWorkCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(czk);
         return resolution.Object;
     }

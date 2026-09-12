@@ -118,7 +118,7 @@ public class ApproveEmployeeDocumentGateTests
         // empty catalogue does not depend on which currency it is asked in.
         var currencyResolution = new Mock<ICurrencyResolutionService>();
         currencyResolution
-            .Setup(s => s.ResolveCurrencyForWorkCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Currency.Create("CZK", "Kč", "Czech koruna"));
 
         var validator = new ApproveEmployee.Validator(

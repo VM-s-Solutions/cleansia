@@ -1,6 +1,7 @@
 using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
@@ -219,6 +220,11 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
             sp => new AddressRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyRepository>(
             sp => new CurrencyRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<ICurrencyResolutionService>(
+            sp => new CurrencyResolutionService(
+                new EmployeeRepository(sp.GetRequiredService<CleansiaDbContext>()),
+                new CountryConfigurationRepository(sp.GetRequiredService<CleansiaDbContext>()),
+                sp.GetRequiredService<ICurrencyRepository>()));
         services.AddScoped<IOrderRepository>(
             sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());

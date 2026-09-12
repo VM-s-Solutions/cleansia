@@ -30,14 +30,14 @@ public interface ICurrencyResolutionService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// The same chain entered one step down — at the work country rather than the employee — for the
-    /// caller that has the country before the employee does: approval assigns <c>WorkCountryId</c> in
-    /// the same command that must already know which currency the cleaner's board will be paid in.
-    /// A null or unknown country, or a code naming no currency, resolves to the platform default,
-    /// exactly as above. Never null: the default currency is required to exist and the repository
-    /// throws when it does not.
+    /// The same chain entered one step down — at a country rather than the employee. A country is
+    /// the ONE market signal the platform has on either side: a cleaner is paid in the currency of the
+    /// country they work in, and a booking is priced and charged in the currency of the country its
+    /// service address is in (owner rulings 2026-09-12). A null or unknown country, or a code naming
+    /// no currency, resolves to the platform default, exactly as above. Never null: the default
+    /// currency is required to exist and the repository throws when it does not.
     /// </summary>
-    Task<Currency> ResolveCurrencyForWorkCountryAsync(
-        string? workCountryId,
+    Task<Currency> ResolveCurrencyForCountryAsync(
+        string? countryId,
         CancellationToken cancellationToken);
 }

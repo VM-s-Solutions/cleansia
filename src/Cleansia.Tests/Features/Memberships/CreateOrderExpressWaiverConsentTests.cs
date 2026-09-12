@@ -38,7 +38,6 @@ public class CreateOrderExpressWaiverConsentTests
 
     private readonly Mock<IAddressRepository> _addressRepository = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<ICountryRepository> _countryRepository = new();
     private readonly Mock<IServiceCityRepository> _serviceCityRepository = new();
     private readonly Mock<IStripeClientFactory> _stripeClientFactory = new();
@@ -58,13 +57,6 @@ public class CreateOrderExpressWaiverConsentTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
-        _currencyRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
         _countryRepository
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -96,7 +88,7 @@ public class CreateOrderExpressWaiverConsentTests
 
     private CreateOrder.Handler CreateHandler() =>
         new(
-            _currencyRepository.Object,
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,

@@ -153,6 +153,7 @@ public class QuotePlusSavingsTests
         session.Setup(s => s.GetUserId()).Returns("user-1");
 
         return new QuotePlusSavings.Handler(
-            pricing.Object, plans.Object, loyalty.Object, session.Object);
+            pricing.Object, plans.Object, loyalty.Object, session.Object,
+            new Mock<ICurrencyResolutionService>().Object);
     }
 }

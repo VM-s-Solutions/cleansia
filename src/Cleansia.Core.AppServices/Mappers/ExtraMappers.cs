@@ -9,7 +9,7 @@ public static class ExtraMappers
     /// <paramref name="price"/> is passed in rather than read off the entity — see
     /// <see cref="ServiceMappers"/> for the rule and why the DTO field name does not move.
     /// </summary>
-    public static ExtraListItem MapToDto(this Extra extra, decimal price)
+    public static ExtraListItem MapToDto(this Extra extra, decimal price, string currencyCode)
     {
         return new ExtraListItem(
             Id: extra.Id,
@@ -18,7 +18,8 @@ public static class ExtraMappers
             Description: extra.Description,
             Price: price,
             DisplayOrder: extra.DisplayOrder,
-            Translations: extra.Translations.ToDictionary());
+            Translations: extra.Translations.ToDictionary(),
+            CurrencyCode: currencyCode);
     }
 
     /// <summary>Every currency's row, keyed by code. See ServiceMappers.MapToAdminDetail.</summary>

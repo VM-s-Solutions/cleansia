@@ -36,7 +36,9 @@ public static class QuotePlusSavings
         string PlanCode,
         string? CurrencyId = null,
         IEnumerable<string>? SelectedExtraSlugs = null,
-        DateTime? CleaningDate = null) : IQuery<Response>;
+        DateTime? CleaningDate = null,
+        /// <summary>The service address's country -- see <see cref="QuoteOrder.Command.CountryId"/>.</summary>
+        string? CountryId = null) : IQuery<Response>;
 
     public record Response(
         /// <summary>What the plan's discount is worth on this basket, in the charge currency.</summary>
@@ -49,8 +51,19 @@ public static class QuotePlusSavings
 
     public class Validator : AbstractValidator<Query>
     {
-        public Validator(ICurrencyRepository currencyRepository)
+        private readonly ICurrencyRepository _currencyRepository;
+        private readonly ICountryRepository _countryRepository;
+        private readonly ICurrencyResolutionService _currencyResolutionService;
+
+        public Validator(
+            ICurrencyRepository currencyRepository,
+            ICountryRepository countryRepository,
+            ICurrencyResolutionService currencyResolutionService)
         {
+            _currencyRepository = currencyRepository;
+            _countryRepository = countryRepository;
+            _currencyResolutionService = currencyResolutionService;
+
             RuleFor(x => x.PlanCode)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required);
@@ -58,14 +71,28 @@ public static class QuotePlusSavings
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0);
             RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0);
 
-            // Same rule, same key as QuoteOrder: this query prices the basket too, and the calculator
-            // throws on a currency it cannot price in.
-            When(x => !string.IsNullOrEmpty(x.CurrencyId), () =>
-            {
-                RuleFor(x => x.CurrencyId!)
-                    .MustAsync(currencyRepository.IsOfferableAsync)
-                    .WithMessage(BusinessErrorMessage.InvalidCurrency);
-            });
+            // Same rules, same keys, same resolution as QuoteOrder: this query prices the basket too,
+            // and the calculator throws on a currency it cannot price in.
+            RuleFor(x => x)
+                .Cascade(CascadeMode.Stop)
+                .MustAsync(CountryIsServicedAsync)
+                .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                .WithErrorCode(nameof(Query.CountryId))
+                .MustAsync(CurrencyIsOfferableAsync)
+                .WithMessage(BusinessErrorMessage.InvalidCurrency)
+                .WithErrorCode(nameof(Query.CurrencyId));
+        }
+
+        private async Task<bool> CountryIsServicedAsync(Query query, CancellationToken cancellationToken)
+            => string.IsNullOrEmpty(query.CountryId)
+               || await _countryRepository.IsServicedAsync(query.CountryId, cancellationToken);
+
+        private async Task<bool> CurrencyIsOfferableAsync(Query query, CancellationToken cancellationToken)
+        {
+            var currencyId = await QuoteOrder.ResolveQuoteCurrencyId(
+                query.CurrencyId, query.CountryId, _currencyResolutionService, cancellationToken);
+            return currencyId is null
+                   || await _currencyRepository.IsOfferableAsync(currencyId, cancellationToken);
         }
     }
 
@@ -73,7 +100,8 @@ public static class QuotePlusSavings
         IOrderPricingCalculator pricingCalculator,
         IMembershipPlanRepository membershipPlanRepository,
         ILoyaltyService loyaltyService,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ICurrencyResolutionService currencyResolutionService)
         : IQueryHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
@@ -94,8 +122,9 @@ public static class QuotePlusSavings
                 query.SelectedExtraSlugs ?? [],
                 query.Rooms,
                 query.Bathrooms,
-                // The caller's currency, validated offerable; null is the platform default.
-                query.CurrencyId,
+                // The same resolution as QuoteOrder, validated offerable; null is the platform default.
+                await QuoteOrder.ResolveQuoteCurrencyId(
+                    query.CurrencyId, query.CountryId, currencyResolutionService, cancellationToken),
                 query.CleaningDate,
                 userId,
                 nowUtc,

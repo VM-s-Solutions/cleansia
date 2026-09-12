@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.Extras.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +15,13 @@ namespace Cleansia.Core.AppServices.Features.Extras;
 /// </summary>
 public class GetExtraOverview
 {
-    public record Request : IRequest<IEnumerable<ExtraListItem>>;
+    /// <param name="CountryId">See <see cref="Services.GetServiceOverview.Request"/>.</param>
+    public record Request(string? CountryId = null) : IRequest<IEnumerable<ExtraListItem>>;
 
     public class Handler(
         IExtraRepository extraRepository,
         IExtraPriceRepository extraPriceRepository,
-        ICurrencyRepository currencyRepository)
+        ICurrencyResolutionService currencyResolutionService)
         : IRequestHandler<Request, IEnumerable<ExtraListItem>>
     {
         public async Task<IEnumerable<ExtraListItem>> Handle(Request request, CancellationToken cancellationToken)
@@ -32,13 +34,14 @@ public class GetExtraOverview
                 .ToListAsync(cancellationToken);
 
             // And priced in the currency being quoted -- see GetServiceOverview for the reasoning.
-            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                request.CountryId, cancellationToken);
             var prices = await CataloguePriceLookup.ForExtrasAsync(
                 extraPriceRepository, extras.Select(e => e.Id).ToList(), currency.Id, cancellationToken);
 
             return extras
                 .Where(extra => prices.ContainsKey(extra.Id))
-                .Select(extra => extra.MapToDto(prices[extra.Id]))
+                .Select(extra => extra.MapToDto(prices[extra.Id], currency.Code))
                 .ToList();
         }
     }

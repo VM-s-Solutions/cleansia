@@ -234,7 +234,13 @@ public class CreateOrderPayCoverageValidatorTests
         _userMembershipRepository.Object,
         _session.Object,
         _payConfigRepository.Object,
-        _currencyRepository.Object);
+        _currencyRepository.Object,
+        OrderMarketDoubles.AddressIn("cz"),
+        OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
+        CataloguePriceDoubles.Services(
+            CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.ServiceId, 500m, 100m)),
+        CataloguePriceDoubles.Packages(
+            CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.PackageId, 1000m)));
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

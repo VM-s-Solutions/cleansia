@@ -35,7 +35,6 @@ public class CreateOrderHandlerCharacterizationTests
 
     private readonly Mock<IAddressRepository> _addressRepository = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<ICountryRepository> _countryRepository = new();
     private readonly Mock<IServiceCityRepository> _serviceCityRepository = new();
     private readonly Mock<IStripeClientFactory> _stripeClientFactory = new();
@@ -54,14 +53,6 @@ public class CreateOrderHandlerCharacterizationTests
     public CreateOrderHandlerCharacterizationTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
-
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
-        _currencyRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
 
         _countryRepository
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -109,9 +100,21 @@ public class CreateOrderHandlerCharacterizationTests
                 }));
     }
 
+    /// <summary>The fixture's "cz" trades in CZK, Slovakia in EUR; anything else is the platform default.</summary>
+    private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
+    private static readonly Currency Eur = Market(Currency.Create("EUR", "€", "Euro"), "currency-eur");
+    private const string Slovakia = "sk";
+
+    private static Currency Market(Currency currency, string id)
+    {
+        currency.Id = id;
+        currency.IsActive = true;
+        return currency;
+    }
+
     private CreateOrder.Handler CreateHandler(OrderChannel channel = OrderChannel.Web) =>
         new(
-            _currencyRepository.Object,
+            OrderMarketDoubles.Trading(Czk, ("cz", Czk), (Slovakia, Eur)),
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
@@ -407,19 +410,14 @@ public class CreateOrderHandlerCharacterizationTests
     // ---------------------------------------------------------------- the order's currency
 
     /// <summary>
-    /// THE ORDER IS STAMPED WITH THE CURRENCY IT WAS QUOTED IN, and priced with the resolved row's id
-    /// rather than the raw command field, so the price and the stamp cannot name different currencies.
-    /// Before this the handler resolved the platform default unconditionally, two statements after
-    /// resolving an address it then ignored — so two currencies could never be live at once.
+    /// THE ORDER IS STAMPED WITH THE SERVICE ADDRESS'S COUNTRY'S CURRENCY (owner ruling 2026-09-12),
+    /// and priced with that row's id, so the price and the stamp cannot name different currencies. A
+    /// Slovak address is a EUR order whatever the command says: the validator has already refused a
+    /// named currency that disagrees, so the handler reads the country and nothing else.
     /// </summary>
     [Fact]
-    public async Task The_Order_Is_Stamped_With_The_Currency_The_Caller_Named()
+    public async Task The_Order_Is_Stamped_With_The_Address_Countrys_Currency()
     {
-        var eur = Currency.Create("EUR", "€", "Euro");
-        eur.Id = "currency-eur";
-        _currencyRepository
-            .Setup(r => r.GetByIdAsync("currency-eur", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(eur);
         CreateOrderInput? captured = null;
         _orderFactory
             .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
@@ -430,20 +428,47 @@ public class CreateOrderHandlerCharacterizationTests
                 TenantId = "tenant-1",
             }));
 
-        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = "currency-eur" };
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia)) with { CurrencyId = null };
         await CreateHandler().Handle(command, CancellationToken.None);
 
-        Assert.Same(eur, captured!.Currency);
+        Assert.Same(Eur, captured!.Currency);
         _pricingCalculator.Verify(c => c.CalculateAsync(
             It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
             It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
-            "currency-eur", It.IsAny<DateTime?>(), It.IsAny<string?>(),
+            Eur.Id, It.IsAny<DateTime?>(), It.IsAny<string?>(),
             It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
-        _currencyRepository.Verify(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The saved-address path reads the same country: a saved Slovak address books a EUR order.
+    /// </summary>
+    [Fact]
+    public async Task A_Saved_Address_Is_Stamped_With_Its_Countrys_Currency()
+    {
+        ArrangeSavedAddress("saved-sk", ownerUserId: UserId,
+            resolved: AddressMockFactory.Generate(new AddressMockFactory.AddressPartial
+            {
+                CountryId = Slovakia, Latitude = 48.14, Longitude = 17.10,
+            }));
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand(savedAddressId: "saved-sk") with { CurrencyId = null };
+        await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.Same(Eur, captured!.Currency);
     }
 
     [Fact]
-    public async Task With_No_Currency_Named_The_Order_Takes_The_Platform_Default()
+    public async Task A_Czech_Address_Is_Stamped_With_The_Platform_Default()
     {
         CreateOrderInput? captured = null;
         _orderFactory
@@ -458,10 +483,7 @@ public class CreateOrderHandlerCharacterizationTests
         var command = CreateOrderTestData.ValidCommand() with { CurrencyId = null };
         await CreateHandler().Handle(command, CancellationToken.None);
 
-        Assert.Equal("CZK", captured!.Currency.Code);
-        _currencyRepository.Verify(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _currencyRepository.Verify(
-            r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Same(Czk, captured!.Currency);
     }
 
     [Fact]

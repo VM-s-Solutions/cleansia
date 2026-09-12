@@ -49,6 +49,31 @@ public sealed class OrderAddressResolver(
         return OrderAddressResolution.Ok(address);
     }
 
+    public async Task<string?> ResolveCountryIdAsync(
+        CreateOrder.Command command, string? userId, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(command.SavedAddressId))
+        {
+            var saved = await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken);
+            if (saved == null || (!string.IsNullOrEmpty(userId) && saved.UserId != userId))
+            {
+                return null;
+            }
+            var resolved = saved.Address
+                ?? await addressRepository.GetByIdAsync(saved.AddressId, cancellationToken);
+            return resolved?.CountryId;
+        }
+
+        var inlineCountryId = command.CustomerAddress?.CountryId;
+        if (!string.IsNullOrEmpty(inlineCountryId))
+        {
+            return inlineCountryId;
+        }
+
+        var servicedCountries = await countryRepository.GetServicedAsync(cancellationToken);
+        return servicedCountries.Count == 1 ? servicedCountries[0].Id : null;
+    }
+
     private async Task<OrderAddressResolution> ResolveAddressAsync(
         CreateOrder.Command command, string userId, CancellationToken cancellationToken)
     {

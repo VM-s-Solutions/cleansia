@@ -14,17 +14,17 @@ public sealed class CurrencyResolutionService(
         CancellationToken cancellationToken)
     {
         var employee = await employeeRepository.GetByIdAsync(employeeId, cancellationToken);
-        return await ResolveCurrencyForWorkCountryAsync(employee?.WorkCountryId, cancellationToken);
+        return await ResolveCurrencyForCountryAsync(employee?.WorkCountryId, cancellationToken);
     }
 
-    public async Task<Currency> ResolveCurrencyForWorkCountryAsync(
-        string? workCountryId,
+    public async Task<Currency> ResolveCurrencyForCountryAsync(
+        string? countryId,
         CancellationToken cancellationToken)
     {
-        if (workCountryId is not null)
+        if (countryId is not null)
         {
             var countryConfig = await countryConfigurationRepository
-                .GetByCountryIdAsync(workCountryId, cancellationToken);
+                .GetByCountryIdAsync(countryId, cancellationToken);
             // THE CODE HAS TO NAME A REAL CURRENCY. `CountryConfiguration.DefaultCurrencyCode` is
             // free text with no FK -- three characters an admin types -- and this is its only reader,
             // so an unrecognised value used to travel straight out to a DTO and label money in a

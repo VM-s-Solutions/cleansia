@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -169,8 +170,19 @@ public class QuoteOrderSpanCapTests
         return candidates.Where(c => requested.Contains(c.Id)).AsQueryable().BuildMock();
     }
 
+    // Any price at all, in the order's currency: this suite asserts on the SPAN, and an unpriced
+    // catalogue is not bookable.
+    private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
+
     private QuoteOrder.Validator QuoteValidator() =>
-        new(_serviceRepository.Object, _packageRepository.Object, _currencyRepository.Object);
+        new(
+            _serviceRepository.Object,
+            _packageRepository.Object,
+            _currencyRepository.Object,
+            OrderMarketDoubles.Servicing("cz"),
+            OrderMarketDoubles.Trading(Czk),
+            CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
+            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)));
 
     private CreateOrder.Validator CreateValidator() =>
         new(
@@ -181,7 +193,11 @@ public class QuoteOrderSpanCapTests
             _userMembershipRepository.Object,
             _session.Object,
             PayConfigRepositoryDouble.Covering(CreateOrderTestData.CurrencyId, [ServiceId], [PackageId]),
-            _currencyRepository.Object);
+            _currencyRepository.Object,
+            OrderMarketDoubles.AddressIn("cz"),
+            OrderMarketDoubles.Trading(Czk),
+            CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
+            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)));
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

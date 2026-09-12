@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
@@ -36,7 +37,7 @@ public class BookableCatalogueRequiresPayTests
     /// </summary>
     private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna");
 
-    private readonly ICurrencyRepository _currencies = CataloguePriceDoubles.DefaultCurrency(Czk);
+    private readonly ICurrencyResolutionService _currencies = Tests.Features.Orders.OrderMarketDoubles.Trading(Czk);
 
     private readonly IServicePriceRepository _servicePrices = CataloguePriceDoubles.Services(
         Czk, (ConfiguredServiceId, 500m, 100m), (UnconfiguredServiceId, 500m, 100m));

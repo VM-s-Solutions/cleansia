@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -176,7 +177,8 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
         var offered = await new GetServiceOverview.Handler(
                 new ServiceRepository(ctx),
                 new ServicePriceRepository(ctx),
-                new CurrencyRepository(ctx),
+                new CurrencyResolutionService(
+                    new EmployeeRepository(ctx), new CountryConfigurationRepository(ctx), new CurrencyRepository(ctx)),
                 new EmployeePayConfigRepository(ctx))
             .Handle(new GetServiceOverview.Request(), CancellationToken.None);
 

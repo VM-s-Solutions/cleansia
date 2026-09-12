@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -24,18 +25,21 @@ using Service = Cleansia.Core.Domain.Services.Service;
 namespace Cleansia.IntegrationTests.Features.Orders;
 
 /// <summary>
-/// TWO CURRENCIES LIVE AT ONCE, over real Postgres and through the real validator chain. This is the
-/// property the whole programme was building towards and the one nothing could prove until now: every
-/// quote and every order used to take the platform default, so a second market could only ever be
-/// swapped in for the first, never opened beside it.
+/// TWO MARKETS LIVE AT ONCE, over real Postgres and through the real validator chain. A booking is
+/// priced and charged in the currency of the country its service address is in (owner ruling
+/// 2026-09-12): a Czech address is a CZK order and a Slovak address is a EUR order, from the same
+/// catalogue, with no currency picked by anyone. This is the property the whole programme was building
+/// towards and the one nothing could prove until now.
 ///
-/// <para>Four currencies are seeded to draw the boundary exactly: CZK (default, priced), EUR (active,
-/// priced, not default), HUF (active, unpriced) and PLN (priced, switched off). Only the first two are
-/// offerable, and the cases below book in each of them and refuse each of the others.</para>
+/// <para>Four countries are seeded, each configured for its own currency, to draw the boundary
+/// exactly: Czechia/CZK (default, priced), Slovakia/EUR (active, priced, not default), Hungary/HUF
+/// (active, unpriced) and Poland/PLN (priced, switched off). Only the first two markets are bookable;
+/// the cases below book in each of them and refuse each of the others — and refuse a currency named
+/// against the address's country, which is what makes the ruling a rule rather than a default.</para>
 ///
 /// <para>Pay is seeded in BOTH live currencies, because the pay-coverage gate asks in the order's
-/// currency: a EUR order is admitted only on a EUR rate. The last case here removes the EUR rate and
-/// proves the gate refuses what the writer could not pay — the agreement the gate exists for.</para>
+/// currency: a EUR order is admitted only on a EUR rate. The last case removes the EUR rate and proves
+/// the gate refuses what the writer could not pay — the agreement the gate exists for.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
@@ -45,13 +49,15 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     private const string Eur = "currency-eur-caller";
     private const string Huf = "currency-huf-caller";
     private const string Pln = "currency-pln-caller";
-    private const string CountryId = "country-cz-caller";
+    private const string Czechia = "country-cz-caller";
+    private const string Slovakia = "country-sk-caller";
+    private const string Hungary = "country-hu-caller";
+    private const string Poland = "country-pl-caller";
     private const string CategoryId = "category-caller";
     private const string ServiceId = "service-caller";
     private const string PackageId = "package-caller";
     private const string CustomerUserId = "user-cust-caller";
     private const string CustomerEmail = "caller-currency@cleansia.test";
-    private const string City = "Praha";
 
     private const decimal CzkServicePrice = 1000m;
     private const decimal CzkPackagePrice = 500m;
@@ -59,13 +65,13 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     private const decimal EurPackagePrice = 20m;
 
     [Fact]
-    public async Task A_Booking_In_The_Default_Currency_Is_Stamped_With_It()
+    public async Task A_Booking_At_A_Czech_Address_Is_Stamped_With_The_Default_Currency()
     {
         await TestMethod(
             setup: ConfigureCustomerSession,
             arrange: SeedAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(BuildCommand(Czk, CzkServicePrice + CzkPackagePrice)),
+                .Send(BuildCommand(Czechia, Czk, CzkServicePrice + CzkPackagePrice)),
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
                 Assert.True(result.IsSuccess, $"CreateOrder failed with: {result.Error?.Message}");
@@ -77,17 +83,17 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     }
 
     /// <summary>
-    /// The one that matters. A second, non-default currency is booked in, priced from ITS rows, and
-    /// stamped with ITS id — while CZK stays the default and stays bookable (the case above).
+    /// THE RULING. A Slovak address with no currency named at all is a EUR order, priced from the EUR
+    /// rows and stamped with the EUR id — while CZK stays the default and a Czech address stays CZK.
     /// </summary>
     [Fact]
-    public async Task A_Booking_In_A_Second_Live_Currency_Is_Priced_From_Its_Own_Rows()
+    public async Task A_Booking_At_A_Slovak_Address_Is_Priced_And_Stamped_In_Euro_Without_Naming_It()
     {
         await TestMethod(
             setup: ConfigureCustomerSession,
             arrange: SeedAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(BuildCommand(Eur, EurServicePrice + EurPackagePrice)),
+                .Send(BuildCommand(Slovakia, currencyId: null, EurServicePrice + EurPackagePrice)),
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
                 Assert.True(result.IsSuccess, $"CreateOrder failed with: {result.Error?.Message}");
@@ -99,11 +105,11 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     }
 
     /// <summary>
-    /// The quote and the create agree by construction when the client sends the same currency to both,
-    /// which is what every client does: it echoes the quote's <c>currencyId</c> back on create.
+    /// The quote and the create agree by construction: the quote is asked with the address's country,
+    /// answers in that country's currency, and the client echoes both back on create.
     /// </summary>
     [Fact]
-    public async Task The_Quote_And_The_Create_Agree_In_A_Second_Currency()
+    public async Task The_Quote_With_The_Country_And_The_Create_At_Its_Address_Agree()
     {
         await TestMethod(
             setup: ConfigureCustomerSession,
@@ -112,10 +118,12 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
             {
                 var mediator = provider.GetRequiredService<IMediator>();
                 var quote = await mediator.Send(new QuoteOrder.Command(
-                    [ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: Eur));
+                    [ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: null, CountryId: Slovakia));
                 Assert.True(quote.IsSuccess, $"QuoteOrder failed with: {quote.Error?.Message}");
                 Assert.Equal(Eur, quote.Value.CurrencyId);
-                return await mediator.Send(BuildCommand(Eur, quote.Value.TotalPrice));
+                Assert.Equal("EUR", quote.Value.CurrencyCode);
+                Assert.Equal(EurServicePrice + EurPackagePrice, quote.Value.TotalPrice);
+                return await mediator.Send(BuildCommand(Slovakia, quote.Value.CurrencyId, quote.Value.TotalPrice));
             },
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
@@ -127,36 +135,18 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     }
 
     /// <summary>
-    /// Switched on, nothing priced in it. Refused at the door with the currency key, before the
-    /// calculator — which would otherwise throw — is reached, and nothing is written.
+    /// THE RULING, ENFORCED. The default currency named against a Slovak address is refused with the
+    /// currency key and nothing is written: the market is the address's, not the caller's, and a
+    /// client that was quoted in CZK before moving the address to Slovakia must re-quote.
     /// </summary>
     [Fact]
-    public async Task An_Active_But_Unpriced_Currency_Is_Refused_And_Writes_Nothing()
+    public async Task A_Currency_That_Is_Not_The_Address_Countrys_Is_Refused_And_Writes_Nothing()
     {
         await TestMethod(
             setup: ConfigureCustomerSession,
             arrange: SeedAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(BuildCommand(Huf, 1m)),
-            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
-            {
-                Assert.False(result.IsSuccess);
-                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
-                Assert.Contains(validation.Errors, e => e.Message == BusinessErrorMessage.InvalidCurrency);
-                Assert.Empty(await context.Orders.IgnoreQueryFilters().ToListAsync());
-            },
-            transactional: false);
-    }
-
-    /// <summary>Priced, but switched off. The switch wins.</summary>
-    [Fact]
-    public async Task A_Priced_But_Switched_Off_Currency_Is_Refused()
-    {
-        await TestMethod(
-            setup: ConfigureCustomerSession,
-            arrange: SeedAsync,
-            act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(BuildCommand(Pln, CzkServicePrice + CzkPackagePrice)),
+                .Send(BuildCommand(Slovakia, Czk, CzkServicePrice + CzkPackagePrice)),
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
                 Assert.False(result.IsSuccess);
@@ -168,17 +158,59 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     }
 
     /// <summary>
-    /// A CZK total sent with a EUR currency is not a currency error — EUR is offerable — it is a price
-    /// mismatch, because the server re-prices in the currency the caller named.
+    /// Hungary is configured for HUF, which is switched on but has nothing priced in it. Refused at
+    /// the door with the currency key, before the calculator — which would otherwise throw — is
+    /// reached, and nothing is written.
     /// </summary>
     [Fact]
-    public async Task A_Total_From_The_Wrong_Currency_Is_A_Price_Mismatch()
+    public async Task An_Address_In_A_Market_With_An_Unpriced_Currency_Is_Refused_And_Writes_Nothing()
     {
         await TestMethod(
             setup: ConfigureCustomerSession,
             arrange: SeedAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(BuildCommand(Eur, CzkServicePrice + CzkPackagePrice)),
+                .Send(BuildCommand(Hungary, currencyId: null, 1m)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.False(result.IsSuccess);
+                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
+                Assert.Contains(validation.Errors, e => e.Message == BusinessErrorMessage.InvalidCurrency);
+                Assert.Empty(await context.Orders.IgnoreQueryFilters().ToListAsync());
+            },
+            transactional: false);
+    }
+
+    /// <summary>Poland's PLN is priced, but switched off. The switch wins.</summary>
+    [Fact]
+    public async Task An_Address_In_A_Market_Whose_Currency_Is_Switched_Off_Is_Refused()
+    {
+        await TestMethod(
+            setup: ConfigureCustomerSession,
+            arrange: SeedAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(BuildCommand(Poland, currencyId: null, 230m)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.False(result.IsSuccess);
+                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
+                Assert.Contains(validation.Errors, e => e.Message == BusinessErrorMessage.InvalidCurrency);
+                Assert.Empty(await context.Orders.IgnoreQueryFilters().ToListAsync());
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// A CZK total sent to a Slovak address is not a currency error — EUR is the address's currency
+    /// and it is offerable — it is a price mismatch, because the server re-prices in EUR.
+    /// </summary>
+    [Fact]
+    public async Task A_Total_From_The_Wrong_Market_Is_A_Price_Mismatch()
+    {
+        await TestMethod(
+            setup: ConfigureCustomerSession,
+            arrange: SeedAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(BuildCommand(Slovakia, Eur, CzkServicePrice + CzkPackagePrice)),
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
                 Assert.False(result.IsSuccess);
@@ -190,14 +222,12 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     }
 
     /// <summary>
-    /// THE GATE AND THE WRITER AGREE. Every pay gate used to be currency-blind while the pay writer
-    /// reads only rows in the order's currency, so a EUR order was admitted on the strength of a CZK
-    /// rate and then silently never got a pay row. Now a EUR order with only CZK rates is refused at
-    /// the door -- the selection is "invalid" in EUR exactly as an unpriced one would be -- and nothing
-    /// is written.
+    /// THE GATE AND THE WRITER AGREE. The pay writer reads only rows in the order's currency, so a
+    /// EUR order with only CZK rates is refused at the door -- the selection is "invalid" in EUR
+    /// exactly as an unpriced one would be -- and nothing is written.
     /// </summary>
     [Fact]
-    public async Task A_Booking_In_A_Currency_With_No_Pay_Rate_Is_Refused_Rather_Than_Left_Unpayable()
+    public async Task A_Booking_In_A_Market_With_No_Pay_Rate_Is_Refused_Rather_Than_Left_Unpayable()
     {
         await TestMethod(
             setup: ConfigureCustomerSession,
@@ -209,7 +239,7 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
                 await context.CommitAsync(CancellationToken.None);
             },
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(BuildCommand(Eur, EurServicePrice + EurPackagePrice)),
+                .Send(BuildCommand(Slovakia, currencyId: null, EurServicePrice + EurPackagePrice)),
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
                 Assert.False(result.IsSuccess);
@@ -220,11 +250,19 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
             transactional: false);
     }
 
-    private static CreateOrder.Command BuildCommand(string currencyId, decimal totalPrice) => new(
+    private static readonly Dictionary<string, string> CityOf = new()
+    {
+        [Czechia] = "Praha",
+        [Slovakia] = "Bratislava",
+        [Hungary] = "Budapest",
+        [Poland] = "Warszawa",
+    };
+
+    private static CreateOrder.Command BuildCommand(string countryId, string? currencyId, decimal totalPrice) => new(
         CustomerName: "Caller Currency Customer",
         CustomerEmail: CustomerEmail,
         CustomerPhone: "+420777111555",
-        CustomerAddress: new AddressDto("Testovaci 12", City, "11000", CountryId, null),
+        CustomerAddress: new AddressDto("Testovaci 12", CityOf[countryId], "11000", countryId, null),
         SavedAddressId: null,
         SelectedPackageIds: [PackageId],
         SelectedServiceIds: [ServiceId],
@@ -253,10 +291,21 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
-        country.Id = CountryId;
-        context.Countries.Add(country);
-        context.Add(ServiceCity.Create(CountryId, City));
+        // Each country configured for its own currency -- the link the address-to-currency rule reads.
+        foreach (var (id, name, iso, code, lang) in new[]
+                 {
+                     (Czechia, "Czechia", "CZ", "CZK", "cs"),
+                     (Slovakia, "Slovakia", "SK", "EUR", "sk"),
+                     (Hungary, "Hungary", "HU", "HUF", "hu"),
+                     (Poland, "Poland", "PL", "PLN", "pl"),
+                 })
+        {
+            var country = Country.Create(name, iso, isServiced: true);
+            country.Id = id;
+            context.Countries.Add(country);
+            context.Add(ServiceCity.Create(id, CityOf[id]));
+            context.CountryConfigurations.Add(CountryConfiguration.Create(id, code, lang, 0.20m));
+        }
 
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");
         czk.Id = Czk;

@@ -1,6 +1,7 @@
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -24,7 +25,14 @@ public class QuoteOrder
         // Optional — when the user has picked a slot the surcharge is
         // included in the returned totals. Null skips the surcharge check
         // (initial wizard quote, no slot yet).
-        DateTime? CleaningDate = null) : ICommand<Response>;
+        DateTime? CleaningDate = null,
+        /// <summary>
+        /// The country of the service address, once the wizard has one. The quote is priced in that
+        /// country's currency (owner ruling 2026-09-12) unless <see cref="CurrencyId"/> names one
+        /// explicitly; null with no currency is the platform default, which is what a quote taken
+        /// before the address step gets.
+        /// </summary>
+        string? CountryId = null) : ICommand<Response>;
 
     /// <summary>
     /// Quote response. <see cref="TotalPrice"/> is the undiscounted total INCLUDING any express surcharge
@@ -122,14 +130,28 @@ public class QuoteOrder
     {
         private readonly IServiceRepository _serviceRepository;
         private readonly IPackageRepository _packageRepository;
+        private readonly ICurrencyRepository _currencyRepository;
+        private readonly ICountryRepository _countryRepository;
+        private readonly ICurrencyResolutionService _currencyResolutionService;
+        private readonly IServicePriceRepository _servicePriceRepository;
+        private readonly IPackagePriceRepository _packagePriceRepository;
 
         public Validator(
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
-            ICurrencyRepository currencyRepository)
+            ICurrencyRepository currencyRepository,
+            ICountryRepository countryRepository,
+            ICurrencyResolutionService currencyResolutionService,
+            IServicePriceRepository servicePriceRepository,
+            IPackagePriceRepository packagePriceRepository)
         {
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
+            _currencyRepository = currencyRepository;
+            _countryRepository = countryRepository;
+            _currencyResolutionService = currencyResolutionService;
+            _servicePriceRepository = servicePriceRepository;
+            _packagePriceRepository = packagePriceRepository;
 
             RuleFor(x => x.Rooms)
                 .GreaterThanOrEqualTo(0)
@@ -139,28 +161,113 @@ public class QuoteOrder
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
+            // Existence, then a price row in the currency being quoted in. The second term reuses the
+            // selection code deliberately -- see CreateOrder.Validator: an entry with no row in this
+            // currency is one the wizard never offered in this market, and the calculator throws on it.
             RuleFor(x => x.SelectedServiceIds)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(serviceRepository.ExistWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
+                .MustAsync(ArePricedInQuoteCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
 
             RuleFor(x => x.SelectedPackageIds)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(packageRepository.ExistWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)
+                .MustAsync(ArePackagesPricedInQuoteCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
-            // The caller may name the currency it wants to be quoted in, and it must be one the platform
-            // can quote in -- switched on AND priced (ICurrencyRepository.IsOfferableAsync). Null is the
-            // platform default, resolved by the calculator. "Exists" was the pre-Wave-A rule and was the
-            // hole: every seeded currency existed. Offerable is the property that was missing.
-            When(x => !string.IsNullOrEmpty(x.CurrencyId), () =>
-            {
-                RuleFor(x => x.CurrencyId!)
-                    .MustAsync(currencyRepository.IsOfferableAsync)
-                    .WithMessage(BusinessErrorMessage.InvalidCurrency);
-            });
-
+            // ONE ordered chain, the same discipline as CreateOrder's price chain: the class cascade is
+            // Continue, so the country and currency rules have to head the chain that ends in anything
+            // priced in that currency. The country must be one the platform operates in; the currency
+            // it resolves to -- the caller's when named, else the country's, else the platform default
+            // -- must be one the platform can quote in: switched on AND priced
+            // (ICurrencyRepository.IsOfferableAsync). "Exists" was the pre-Wave-A rule and was the hole:
+            // every seeded currency existed. Offerable is the property that was missing. The default is
+            // not looked up: a quote with neither field is what every wizard opens with.
             RuleFor(x => x)
+                .Cascade(CascadeMode.Stop)
+                .MustAsync(CountryIsServicedAsync)
+                .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                .WithErrorCode(nameof(Command.CountryId))
+                .MustAsync(CurrencyIsOfferableAsync)
+                .WithMessage(BusinessErrorMessage.InvalidCurrency)
+                .WithErrorCode(nameof(Command.CurrencyId))
                 .MustAsync(SpanWithinCapAsync)
                 .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum);
+        }
+
+        private async Task<bool> CountryIsServicedAsync(Command command, CancellationToken cancellationToken)
+            => string.IsNullOrEmpty(command.CountryId)
+               || await _countryRepository.IsServicedAsync(command.CountryId, cancellationToken);
+
+        private async Task<bool> CurrencyIsOfferableAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var currencyId = await ResolveQuoteCurrencyIdAsync(command, context, cancellationToken);
+            return currencyId is null
+                   || await _currencyRepository.IsOfferableAsync(currencyId, cancellationToken);
+        }
+
+        private async Task<bool> ArePricedInQuoteCurrencyAsync(
+            Command command,
+            IEnumerable<string> serviceIds,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var ids = serviceIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return true;
+            }
+            var currencyId = await ResolveQuoteCurrencyIdAsync(command, context, cancellationToken)
+                             ?? (await _currencyRepository.GetDefaultAsync(cancellationToken)).Id;
+            var prices = await CataloguePriceLookup.ForServicesAsync(
+                _servicePriceRepository, ids, currencyId, cancellationToken);
+            return ids.All(prices.ContainsKey);
+        }
+
+        private async Task<bool> ArePackagesPricedInQuoteCurrencyAsync(
+            Command command,
+            IEnumerable<string> packageIds,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var ids = packageIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return true;
+            }
+            var currencyId = await ResolveQuoteCurrencyIdAsync(command, context, cancellationToken)
+                             ?? (await _currencyRepository.GetDefaultAsync(cancellationToken)).Id;
+            var prices = await CataloguePriceLookup.ForPackagesAsync(
+                _packagePriceRepository, ids, currencyId, cancellationToken);
+            return ids.All(prices.ContainsKey);
+        }
+
+        private const string QuoteCurrencyIdKey = "quoteOrder.currencyId";
+
+        /// <summary>
+        /// The same resolution the handler prices with -- <see cref="ResolveQuoteCurrencyId"/> -- cached
+        /// on the validation context because three rules ask for it. Null means the platform default,
+        /// left to the calculator, exactly as the handler leaves it.
+        /// </summary>
+        private async Task<string?> ResolveQuoteCurrencyIdAsync(
+            Command command, ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            if (context.RootContextData.TryGetValue(QuoteCurrencyIdKey, out var cached))
+            {
+                return cached as string;
+            }
+
+            var currencyId = await ResolveQuoteCurrencyId(
+                command.CurrencyId, command.CountryId, _currencyResolutionService, cancellationToken);
+            context.RootContextData[QuoteCurrencyIdKey] = currencyId;
+            return currencyId;
         }
 
         /// <summary>
@@ -184,12 +291,38 @@ public class QuoteOrder
         }
     }
 
+    /// <summary>
+    /// THE CURRENCY A QUOTE IS PRICED IN: the caller's when named, else the country's (the service
+    /// address's, owner ruling 2026-09-12), else null for the platform default. One function because
+    /// the validator and the handler must resolve identically, and because <see cref="QuotePlusSavings"/>
+    /// asks the same question of the same two fields. A named currency wins so a client that echoes the
+    /// currency it was quoted in keeps agreeing with itself; the country decides only when the client
+    /// leaves the choice to the server, which every shipped client does.
+    /// </summary>
+    internal static async Task<string?> ResolveQuoteCurrencyId(
+        string? currencyId,
+        string? countryId,
+        ICurrencyResolutionService currencyResolutionService,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(currencyId))
+        {
+            return currencyId;
+        }
+        if (string.IsNullOrEmpty(countryId))
+        {
+            return null;
+        }
+        return (await currencyResolutionService.ResolveCurrencyForCountryAsync(countryId, cancellationToken)).Id;
+    }
+
     public class Handler(
         IOrderPricingCalculator pricingCalculator,
         IUserSessionProvider userSessionProvider,
         ILoyaltyService loyaltyService,
         IUserMembershipRepository userMembershipRepository,
-        ICreditAccountRepository creditAccountRepository)
+        ICreditAccountRepository creditAccountRepository,
+        ICurrencyResolutionService currencyResolutionService)
         : ICommandHandler<Command, Response>
     {
         /// <summary>
@@ -221,16 +354,18 @@ public class QuoteOrder
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var nowUtc = DateTime.UtcNow;
+            var currencyId = await ResolveQuoteCurrencyId(
+                command.CurrencyId, command.CountryId, currencyResolutionService, cancellationToken);
             var result = await pricingCalculator.CalculateAsync(
                 command.SelectedServiceIds,
                 command.SelectedPackageIds,
                 command.SelectedExtraSlugs ?? Array.Empty<string>(),
                 command.Rooms,
                 command.Bathrooms,
-                // The caller's currency, validated offerable above; null is the platform default. Safe
-                // to honour now because nothing converts -- a named currency selects which price ROWS
-                // are read, it no longer scales the CZK catalogue by a stored rate (the Wave A hole).
-                command.CurrencyId,
+                // Validated offerable above; null is the platform default. Safe to honour because
+                // nothing converts -- a currency selects which price ROWS are read, it no longer scales
+                // the CZK catalogue by a stored rate (the Wave A hole).
+                currencyId,
                 command.CleaningDate,
                 userSessionProvider.GetUserId(),
                 nowUtc,

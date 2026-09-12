@@ -45,7 +45,7 @@ public class GetPagedExtras
                 extraPriceRepository, items.Select(e => e.Id).ToList(), currency.Id, cancellationToken);
 
             return items
-                .Select(extra => extra.MapToDto(prices.GetValueOrDefault(extra.Id, 0m)))
+                .Select(extra => extra.MapToDto(prices.GetValueOrDefault(extra.Id, 0m), currency.Code))
                 .ToList()
                 .MapToDto(totalItems, request);
         }

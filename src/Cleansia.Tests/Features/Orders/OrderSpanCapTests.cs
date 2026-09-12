@@ -290,7 +290,12 @@ public class OrderSpanCapTests
             _userMembershipRepository.Object,
             _session.Object,
             PayConfigRepositoryDouble.Covering(CreateOrderTestData.CurrencyId, [ServiceId], [PackageId]),
-            _currencyRepository.Object);
+            _currencyRepository.Object,
+            OrderMarketDoubles.AddressIn("cz"),
+            OrderMarketDoubles.Trading(Czk),
+            // The validator prices what the COMMAND selects, which is the shared fixture's ids.
+            CataloguePriceDoubles.Services(Czk, (CreateOrderTestData.ServiceId, 500m, 100m)),
+            CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)));
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

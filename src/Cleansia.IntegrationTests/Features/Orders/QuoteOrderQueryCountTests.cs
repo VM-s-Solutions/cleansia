@@ -64,7 +64,8 @@ public class QuoteOrderQueryCountTests(PostgresContainerFixture fixture) : BaseI
             new CurrencyRepository(context), waiver.Object);
         var handler = new QuoteOrder.Handler(calculator,
             Mock.Of<IUserSessionProvider>(), Mock.Of<ILoyaltyService>(),
-            Mock.Of<IUserMembershipRepository>(), Mock.Of<ICreditAccountRepository>());
+            Mock.Of<IUserMembershipRepository>(), Mock.Of<ICreditAccountRepository>(),
+            Mock.Of<ICurrencyResolutionService>());
 
         counter.Count = 0;
         var result = await handler.Handle(new QuoteOrder.Command(

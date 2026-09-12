@@ -16,7 +16,8 @@ public static class ServiceMappers
     /// are being quoted in", which is exactly what a price row produces. Reading the live catalogue on
     /// an order surface is the defect the order-line snapshots exist to prevent.</para>
     /// </summary>
-    public static ServiceListItem MapToDto(this Service service, decimal basePrice, decimal perRoomPrice)
+    public static ServiceListItem MapToDto(
+        this Service service, decimal basePrice, decimal perRoomPrice, string currencyCode)
     {
         return new ServiceListItem(
             Id: service.Id,
@@ -25,7 +26,8 @@ public static class ServiceMappers
             Category: service.Category!.MapToDto(),
             BasePrice: basePrice,
             PerRoomPrice: perRoomPrice,
-            Translations: service.Translations.ToDictionary());
+            Translations: service.Translations.ToDictionary(),
+            CurrencyCode: currencyCode);
     }
 
     public static CategoryDto MapToDto(this ServiceCategory category)

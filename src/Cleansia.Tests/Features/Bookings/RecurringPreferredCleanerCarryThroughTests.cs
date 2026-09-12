@@ -44,7 +44,6 @@ public class RecurringPreferredCleanerCarryThroughTests
     private readonly Mock<IRecurringBookingTemplateRepository> _templateRepository = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
     private readonly Mock<IAddressRepository> _addressRepository = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderFactory> _orderFactory = new();
@@ -63,9 +62,6 @@ public class RecurringPreferredCleanerCarryThroughTests
             .ReturnsAsync((string userId, CancellationToken _) =>
                 UserMembershipMockFactory.Paid(userId));
 
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Currency.Create("CZK", "Kč", "Czech Koruna"));
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
@@ -244,7 +240,7 @@ public class RecurringPreferredCleanerCarryThroughTests
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _addressRepository.Object,
-            _currencyRepository.Object,
+            OrderMarketDoubles.Trading(Currency.Create("CZK", "Kč", "Czech Koruna")),
             _orderRepository.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,

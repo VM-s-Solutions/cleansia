@@ -199,4 +199,79 @@ public class OrderAddressResolverTests
             g => g.PopulateCoordinatesAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    // ---------------------------------------------------------------- ResolveCountryIdAsync
+
+    /// <summary>
+    /// The country read the validator takes BEFORE the handler runs, so the order's currency can be
+    /// resolved from it: the same saved-vs-inline reading as ResolveAsync, minus the gates. A command
+    /// that does not determine a country answers null and is left to ResolveAsync to refuse.
+    /// </summary>
+    [Fact]
+    public async Task CountryOf_SavedAddress_IsTheSavedRowsCountry()
+    {
+        ArrangeSavedAddress("saved-1", ownerUserId: UserId,
+            resolved: AddressMockFactory.Generate(new AddressMockFactory.AddressPartial { CountryId = "sk" }));
+        var command = CreateOrderTestData.ValidCommand(savedAddressId: "saved-1");
+
+        var countryId = await CreateResolver().ResolveCountryIdAsync(command, UserId, CancellationToken.None);
+
+        Assert.Equal("sk", countryId);
+    }
+
+    [Fact]
+    public async Task CountryOf_SavedAddress_OwnedByDifferentUser_IsNull()
+    {
+        ArrangeSavedAddress("saved-1", ownerUserId: "another-user",
+            resolved: AddressMockFactory.Generate(new AddressMockFactory.AddressPartial { CountryId = "sk" }));
+        var command = CreateOrderTestData.ValidCommand(savedAddressId: "saved-1");
+
+        var countryId = await CreateResolver().ResolveCountryIdAsync(command, UserId, CancellationToken.None);
+
+        Assert.Null(countryId);
+    }
+
+    [Fact]
+    public async Task CountryOf_InlineAddress_IsTheCountryGiven()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: "sk"));
+
+        var countryId = await CreateResolver().ResolveCountryIdAsync(command, UserId, CancellationToken.None);
+
+        Assert.Equal("sk", countryId);
+    }
+
+    [Fact]
+    public async Task CountryOf_InlineAddress_NoCountry_SingleServiced_IsThatCountry()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: null));
+        var only = Country.Create("Czechia", "CZ", isServiced: true);
+        _countryRepository
+            .Setup(r => r.GetServicedAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Country> { only });
+
+        var countryId = await CreateResolver().ResolveCountryIdAsync(command, UserId, CancellationToken.None);
+
+        Assert.Equal(only.Id, countryId);
+    }
+
+    [Fact]
+    public async Task CountryOf_InlineAddress_NoCountry_MultipleServiced_IsNull()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: null));
+        _countryRepository
+            .Setup(r => r.GetServicedAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Country>
+            {
+                Country.Create("Czechia", "CZ", isServiced: true),
+                Country.Create("Slovakia", "SK", isServiced: true),
+            });
+
+        var countryId = await CreateResolver().ResolveCountryIdAsync(command, UserId, CancellationToken.None);
+
+        Assert.Null(countryId);
+    }
 }

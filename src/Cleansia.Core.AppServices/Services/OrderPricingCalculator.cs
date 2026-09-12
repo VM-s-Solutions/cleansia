@@ -63,7 +63,11 @@ public sealed class OrderPricingCalculator(
         // (Service/Package only use Ids). Pull active extras by slug — inactive ones
         // are admin-hidden, so a stale client trying to re-quote with one silently
         // drops it instead of erroring (already committed orders preserve the
-        // historical slug via Order.Extras).
+        // historical slug via Order.Extras). An extra with no price row in this
+        // currency is dropped the same way, and OrderFactory drops it identically:
+        // it is not offered in this market, there is no order-level key to refuse
+        // it by, and the catalogue re-read in the address's currency is what stops
+        // it being selected again.
         var extraSlugList = selectedExtraSlugs?.Distinct().ToList() ?? new List<string>();
         var extraLines = new List<(string Slug, decimal Price)>();
         decimal extrasSubtotal = 0m;
@@ -79,7 +83,8 @@ public sealed class OrderPricingCalculator(
             var extraPrices = await CataloguePriceLookup.ForExtrasAsync(
                 extraPriceRepository, rows.Select(r => r.Id).ToList(), currency.Id, cancellationToken);
             extraLines = rows
-                .Select(r => (r.Slug, Price: PriceOf(extraPrices, r.Id, currency.Code, "extra")))
+                .Where(r => extraPrices.ContainsKey(r.Id))
+                .Select(r => (r.Slug, Price: extraPrices[r.Id]))
                 .ToList();
             extrasSubtotal = extraLines.Sum(e => e.Price);
         }

@@ -60,7 +60,11 @@ public class CreateOrderExpressWaiverValidatorTests
             _userMembershipRepository.Object,
             _session.Object,
             PayConfigRepositoryDouble.Holding(),
-            _currencyRepository.Object);
+            _currencyRepository.Object,
+            OrderMarketDoubles.AddressIn("cz"),
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
+            CataloguePriceDoubles.NoServices(),
+            CataloguePriceDoubles.NoPackages());
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

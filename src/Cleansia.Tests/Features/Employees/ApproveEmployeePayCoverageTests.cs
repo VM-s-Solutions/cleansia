@@ -144,7 +144,7 @@ public class ApproveEmployeePayCoverageTests
             .Setup(r => r.GetForCountryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
         _currencyResolution
-            .Setup(s => s.ResolveCurrencyForWorkCountryAsync(CountryId, It.IsAny<CancellationToken>()))
+            .Setup(s => s.ResolveCurrencyForCountryAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CurrencyWithId(CurrencyId));
 
         return new(
@@ -155,7 +155,7 @@ public class ApproveEmployeePayCoverageTests
     private ApproveEmployee.Handler CreateHandler()
     {
         _currencyResolution
-            .Setup(s => s.ResolveCurrencyForWorkCountryAsync(CountryId, It.IsAny<CancellationToken>()))
+            .Setup(s => s.ResolveCurrencyForCountryAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CurrencyWithId(CurrencyId));
 
         return new(

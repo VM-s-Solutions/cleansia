@@ -136,7 +136,8 @@ public static class OrderMappers
                 Translations: p.Translations.ToDictionary(),
                 // The list queries never load Package.IncludedServices, so the entity path
                 // always emitted an empty collection here — preserved for wire parity.
-                IncludedServices: Enumerable.Empty<PackageServiceSummary>())),
+                IncludedServices: Enumerable.Empty<PackageServiceSummary>(),
+                CurrencyCode: row.Currency.Code)),
             CurrencyId: row.CurrencyId,
             Currency: new CurrencyListItem(
                 Id: row.Currency.Id,
@@ -159,7 +160,8 @@ public static class OrderMappers
                     Translations: s.Category.Translations.ToDictionary()),
                 BasePrice: s.BasePrice,
                 PerRoomPrice: s.PerRoomPrice,
-                Translations: s.Translations.ToDictionary())),
+                Translations: s.Translations.ToDictionary(),
+                CurrencyCode: row.Currency.Code)),
             RequiredEmployees: row.RequiredEmployees,
             MaxEmployees: row.MaxEmployees,
             AvailableSpots: availableSpots,
@@ -201,12 +203,12 @@ public static class OrderMappers
             EstimatedTime: order.EstimatedTime,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
             ConfirmationCode: order.ConfirmationCode,
-            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDto(op.LineTotal)),
+            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDto(op.LineTotal, order.Currency.Code)),
             CurrencyId: order.CurrencyId,
             Currency: order.Currency.MapToDto(),
             AssignedEmployees: order.AssignedEmployees.Select(e => e.Id),
             SelectedServices: order.SelectedServices.Select(os =>
-                os.Service.MapToDto(os.UnitBasePrice, os.UnitPerRoomPrice)),
+                os.Service.MapToDto(os.UnitBasePrice, os.UnitPerRoomPrice, order.Currency.Code)),
             RequiredEmployees: order.RequiredEmployees,
             MaxEmployees: order.MaxEmployees,
             AvailableSpots: order.AvailableSpots,

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -25,6 +26,19 @@ public class CreateOrderValidatorCharacterizationTests
     private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
+    private const string Slovakia = "sk";
+    private const string Hungary = "hu";
+    private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
+    private static readonly Currency Eur = Market(Currency.Create("EUR", "€", "Euro"), "currency-eur");
+    private static readonly Currency Huf = Market(Currency.Create("HUF", "Ft", "Forint"), "currency-huf");
+
+    private static Currency Market(Currency currency, string id)
+    {
+        currency.Id = id;
+        currency.IsActive = true;
+        return currency;
+    }
+
     public CreateOrderValidatorCharacterizationTests()
     {
         _serviceRepository
@@ -44,10 +58,6 @@ public class CreateOrderValidatorCharacterizationTests
         _currencyRepository
             .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        // The pay gate asks in the order's currency, which with no CurrencyId named is the default.
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreateOrderTestData.DefaultCurrency());
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(),
@@ -63,7 +73,14 @@ public class CreateOrderValidatorCharacterizationTests
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
     }
 
-    private CreateOrder.Validator CreateValidator() =>
+    /// <summary>
+    /// The address country decides the currency: the fixture's "cz" trades in CZK, Slovakia in EUR,
+    /// Hungary in HUF; the selection is priced in CZK and EUR only, so a Hungarian address is a market
+    /// with no rows. Prices are keyed by currency id and the doubles hold one row per (entry, currency).
+    /// </summary>
+    private CreateOrder.Validator CreateValidator(
+        IServicePriceRepository? servicePrices = null,
+        IPackagePriceRepository? packagePrices = null) =>
         new(
             _packageRepository.Object,
             _serviceRepository.Object,
@@ -72,7 +89,44 @@ public class CreateOrderValidatorCharacterizationTests
             _userMembershipRepository.Object,
             _session.Object,
             PayConfigRepositoryDouble.Holding(),
-            _currencyRepository.Object);
+            _currencyRepository.Object,
+            OrderMarketDoubles.AddressAsGiven(),
+            OrderMarketDoubles.Trading(Czk, ("cz", Czk), (Slovakia, Eur), (Hungary, Huf)),
+            servicePrices ?? PricedServices(Czk, Eur),
+            packagePrices ?? PricedPackages(Czk, Eur));
+
+    private static IServicePriceRepository PricedServices(params Currency[] currencies)
+    {
+        var mock = new Mock<IServicePriceRepository>();
+        mock.Setup(r => r.GetAll()).Returns(currencies
+            .Select(c => ServicePrice.Create(CreateOrderTestData.ServiceId, c.Id, 500m, 100m))
+            .AsQueryable()
+            .BuildMock());
+        return mock.Object;
+    }
+
+    private static IPackagePriceRepository PricedPackages(params Currency[] currencies)
+    {
+        var mock = new Mock<IPackagePriceRepository>();
+        mock.Setup(r => r.GetAll()).Returns(currencies
+            .Select(c => PackagePrice.Create(CreateOrderTestData.PackageId, c.Id, 1000m))
+            .AsQueryable()
+            .BuildMock());
+        return mock.Object;
+    }
+
+    private void VerifyCalculatorTold(string? currencyId, Times times) =>
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            currencyId,
+            It.IsAny<DateTime?>(),
+            It.IsAny<string?>(),
+            It.IsAny<DateTime>(),
+            It.IsAny<CancellationToken>()), times);
 
     [Fact]
     public async Task AC1_HappyPath_Passes()
@@ -178,51 +232,76 @@ public class CreateOrderValidatorCharacterizationTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // ---------------------------------------------------------------- the caller's currency
+    // ---------------------------------------------------------------- the order's currency
 
     /// <summary>
-    /// THE CALLER NAMES THE CURRENCY, AND THE PLATFORM CHECKS IT CAN QUOTE IN IT. This inverts the test
-    /// that used to sit here, which asserted the caller's currency never reached the calculator. That
-    /// was the right guard against the Wave A hole — "exists" was the only check, every seeded currency
-    /// existed, and a named HUF multiplied the CZK catalogue by its stored rate. Nothing converts any
-    /// more: a currency selects which price ROWS are read, so honouring it is safe once the only
-    /// currencies honoured are OFFERABLE ones — switched on and priced. That predicate is the guard
-    /// now, and this pins that it is consulted and that its answer decides.
+    /// THE ORDER'S CURRENCY IS THE SERVICE ADDRESS'S COUNTRY'S (owner ruling 2026-09-12). With no
+    /// currency named, a Slovak address is priced in EUR: the price re-check runs the calculator in
+    /// EUR, and the offerable gate is asked about EUR. Nothing about the caller decides it.
     /// </summary>
     [Fact]
-    public async Task An_Offerable_Currency_Reaches_The_Calculator()
+    public async Task No_Currency_Named_Resolves_The_Address_Countrys_Currency()
     {
-        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = "currency-eur" };
-        _currencyRepository
-            .Setup(r => r.IsOfferableAsync("currency-eur", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia)) with { CurrencyId = null };
 
-        await CreateValidator().ValidateAsync(command);
+        var result = await CreateValidator().ValidateAsync(command);
 
-        _pricingCalculator.Verify(c => c.CalculateAsync(
-            It.IsAny<IEnumerable<string>>(),
-            It.IsAny<IEnumerable<string>>(),
-            It.IsAny<IEnumerable<string>>(),
-            It.IsAny<int>(),
-            It.IsAny<int>(),
-            "currency-eur",
-            It.IsAny<DateTime?>(),
-            It.IsAny<string?>(),
-            It.IsAny<DateTime>(),
-            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+        VerifyCalculatorTold(Eur.Id, Times.AtLeastOnce());
+        _currencyRepository.Verify(r => r.IsOfferableAsync(Eur.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
-    /// The refusal is keyed to the field, and the calculator is never run: it throws on a currency it
-    /// cannot price in, so reaching it with a bad one would turn a 400 into a 500. That is why the rule
-    /// heads the price chain rather than standing alone — the class cascade is Continue.
+    /// A named currency that IS the address country's passes — this is every shipped client, which
+    /// echoes the currency the quote answered with.
     /// </summary>
     [Fact]
-    public async Task A_Currency_The_Platform_Cannot_Quote_In_Is_Refused_Before_Pricing()
+    public async Task A_Named_Currency_Equal_To_The_Address_Countrys_Reaches_The_Calculator()
     {
-        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = "currency-huf" };
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia)) with { CurrencyId = Eur.Id };
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+        VerifyCalculatorTold(Eur.Id, Times.AtLeastOnce());
+    }
+
+    /// <summary>
+    /// THE RULING, ENFORCED. A CZK currency on a Slovak address is refused with the currency key
+    /// before anything is priced: the market is a property of the booking, and a client that moved the
+    /// address after being quoted must re-quote. The failure is keyed to the field, and the calculator
+    /// is never run.
+    /// </summary>
+    [Fact]
+    public async Task A_Named_Currency_That_Is_Not_The_Address_Countrys_Is_Refused_Before_Pricing()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia))
+            with { CurrencyId = CreateOrderTestData.CurrencyId };
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        var failure = Assert.Single(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidCurrency);
+        Assert.Equal(nameof(CreateOrder.Command.CurrencyId), failure.ErrorCode);
+        VerifyCalculatorTold(It.IsAny<string?>(), Times.Never());
+    }
+
+    /// <summary>
+    /// The offerable gate — switched on AND priced — runs on the RESOLVED currency: a country configured
+    /// for a currency the platform does not yet operate is refused here rather than in the calculator,
+    /// which throws on a currency it cannot price in and would turn the 400 into a 500. That is why
+    /// the rule heads the price chain rather than standing alone — the class cascade is Continue.
+    /// </summary>
+    [Fact]
+    public async Task A_Country_Currency_The_Platform_Cannot_Quote_In_Is_Refused_Before_Pricing()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Hungary)) with { CurrencyId = null };
         _currencyRepository
-            .Setup(r => r.IsOfferableAsync("currency-huf", It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(Huf.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await CreateValidator().ValidateAsync(command);
@@ -230,30 +309,76 @@ public class CreateOrderValidatorCharacterizationTests
         Assert.False(result.IsValid);
         var failure = Assert.Single(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidCurrency);
         Assert.Equal(nameof(CreateOrder.Command.CurrencyId), failure.ErrorCode);
-        _pricingCalculator.Verify(c => c.CalculateAsync(
-            It.IsAny<IEnumerable<string>>(),
-            It.IsAny<IEnumerable<string>>(),
-            It.IsAny<IEnumerable<string>>(),
-            It.IsAny<int>(),
-            It.IsAny<int>(),
-            It.IsAny<string?>(),
-            It.IsAny<DateTime?>(),
-            It.IsAny<string?>(),
-            It.IsAny<DateTime>(),
-            It.IsAny<CancellationToken>()), Times.Never);
+        VerifyCalculatorTold(It.IsAny<string?>(), Times.Never());
     }
 
-    /// <summary>Null is the platform default, and needs no lookup to be one.</summary>
+    /// <summary>
+    /// The price re-check runs in the ADDRESS's currency, so a total carried over from a CZK quote is a
+    /// price mismatch on a Slovak address, not a silently accepted CZK figure on a EUR order.
+    /// </summary>
     [Fact]
-    public async Task No_Currency_Named_Is_The_Platform_Default_And_Consults_Nothing()
+    public async Task The_Price_Re_Check_Runs_In_The_Address_Countrys_Currency()
     {
-        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = null };
+        _pricingCalculator
+            .Setup(c => c.CalculateAsync(
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                Eur.Id,
+                It.IsAny<DateTime?>(),
+                It.IsAny<string?>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.MatchingPricing(totalPrice: 60m) with
+            {
+                CurrencyId = Eur.Id, CurrencyCode = "EUR",
+            });
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia),
+            totalPrice: CreateOrderTestData.MatchingTotalPrice) with { CurrencyId = null };
 
         var result = await CreateValidator().ValidateAsync(command);
 
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.TotalPriceNotMatch);
         Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidCurrency);
-        _currencyRepository.Verify(
-            r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // ---------------------------------------------------------------- every entry priced in it
+
+    /// <summary>
+    /// A service picked from the CZK catalogue and then booked to a Slovak address has no EUR row. It
+    /// is refused with the selection key — a 400 the wizard renders — and never reaches the
+    /// calculator, which throws on exactly this and would surface as a 500.
+    /// </summary>
+    [Fact]
+    public async Task A_Service_With_No_Price_Row_In_The_Order_Currency_Is_Refused()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia)) with { CurrencyId = null };
+
+        var result = await CreateValidator(servicePrices: PricedServices(Czk)).ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateOrder.Command.SelectedServiceIds)
+            && e.ErrorMessage == BusinessErrorMessage.InvalidSelectedServices);
+    }
+
+    [Fact]
+    public async Task A_Package_With_No_Price_Row_In_The_Order_Currency_Is_Refused()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia)) with { CurrencyId = null };
+
+        var result = await CreateValidator(packagePrices: PricedPackages(Czk)).ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateOrder.Command.SelectedPackageIds)
+            && e.ErrorMessage == BusinessErrorMessage.InvalidSelectedPackage);
     }
 
     [Fact]

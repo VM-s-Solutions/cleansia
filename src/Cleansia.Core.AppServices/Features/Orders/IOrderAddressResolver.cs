@@ -17,6 +17,17 @@ public interface IOrderAddressResolver
 {
     Task<OrderAddressResolution> ResolveAsync(
         CreateOrder.Command command, string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The country the booking's address is in, read the same way <see cref="ResolveAsync"/> reads it
+    /// but without the serviced-area gates or the geocode: the validator needs it before the handler
+    /// runs, because the order's currency is that country's currency and every price and pay rule is
+    /// asked in it. Null when the command does not determine one — a missing or foreign saved row, or
+    /// an inline address with no country in a platform that services more than one — which
+    /// <see cref="ResolveAsync"/> then refuses with its own code.
+    /// </summary>
+    Task<string?> ResolveCountryIdAsync(
+        CreateOrder.Command command, string? userId, CancellationToken cancellationToken);
 }
 
 /// <summary>

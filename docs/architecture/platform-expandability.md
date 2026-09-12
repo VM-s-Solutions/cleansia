@@ -138,10 +138,13 @@ the guard that nothing scales.
   point; CZK is seeded at 10, a currency with no divisor earns nothing and logs). The admin form
   (`AdminCurrencyDetailDto`) authors the divisor and shows `IsActive`; the `CurrencyDetailDto` that rides
   orders and disputes on every host is `Id`/`Code`/`Name`/`Symbol`/`IsDefault` and nothing else.
-- Seeded with **two currencies**: CZK (`IsDefault`, active, divisor 10) and EUR (**inactive**, no
-  catalogue prices, no divisor). The other ten — USD, GBP, PLN, CHF, SEK, NOK, DKK, HUF, RON, BGN — were
-  removed on 2026-09-09: each was seeded active with a hand-typed rate nobody had reviewed, and until
-  the same change any authenticated caller could name one on the quote and create paths.
+- Seeded with **five currencies**: CZK (`IsDefault`, active, divisor 10) and EUR, PLN, GBP, USD (all
+  **inactive**, no catalogue prices, no divisor) — the four are there so that every code a seeded
+  `CountryConfiguration` names is a real row, which the resolver now insists on. The ten rate-carrying
+  rows (USD, GBP, PLN, CHF, SEK, NOK, DKK, HUF, RON, BGN) were removed on 2026-09-09: each was seeded
+  active with a hand-typed rate nobody had reviewed, and until the same change any authenticated caller
+  could name one on the quote and create paths; the three that came back on 2026-09-13 carry no rate
+  and stay off until an admin activates them.
 - **A currency is switched on deliberately, and not before it can earn.** `Currency.Create` makes a
   row inactive; `ActivateCurrency` / `DeactivateCurrency` (Admin → Currencies, `CanUpdateCurrency`,
   audited; `POST api/AdminCurrency/activate/{id}` and `deactivate/{id}`) flip it, and the default cannot
@@ -205,9 +208,11 @@ EUR and taken by a cleaner who is paid in EUR.
 - **Catalogue.** `GET api/Service|Package|Extra/GetOverview?countryId=` (Customer and Mobile.Customer
   hosts) prices the overview in that country's currency and withholds any entry without a price row or
   a pay config in it; the list items carry `currencyCode`, so a surface labels what it was sent. With
-  no `countryId` the overview is in the platform default; a named country the seed has not configured
-  throws rather than defaulting (the overview runs no serviced check of its own, so it is the resolver
-  that answers). The Partner host's overviews are untouched and stay in the default.
+  no `countryId` the overview is in the platform default; a named country the platform does not serve
+  (unknown, or not `IsServiced`) has no catalogue and the overview answers an empty list before the
+  resolver is asked — a client-supplied id can never turn the anonymous read into an error, and a
+  serviced country the seed has not configured throws by the resolver's rule. The Partner host's
+  overviews are untouched and stay in the default.
 - **Item level.** Prices are authored per currency and nothing converts, so a selected service or
   package with no price row in the resolved currency is refused on quote and create as
   `order.selected_services.invalid` / `order.selected_package.invalid` — a 400, never the calculator's

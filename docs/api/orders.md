@@ -395,9 +395,11 @@ GET /api/Extra/GetOverview?countryId=country-id
 
 **Auth:** Anonymous
 
-`countryId` — optional; the service address's country once the wizard has one. The overview is priced
-in that country's currency and **withholds** any entry that has no price row in it or no platform-wide
-pay config in it — the same two gates the quote enforces, applied before the customer can pick the
+`countryId` — optional; the service address's country once the wizard has one. A country the platform
+does not serve (unknown id, or `Country.IsServiced` false) has **no catalogue**: the overview answers an
+empty list, never the default catalogue and never an error, before any currency is resolved. A
+serviced country's overview is priced in that country's currency and **withholds** any entry that
+has no price row in it or no platform-wide pay config in it — the same two gates the quote enforces, applied before the customer can pick the
 entry. Without `countryId` the overview is in the platform default. A named country the seed has not
 configured with a real currency does **not** fall through to the default — the resolver throws (owner
 ruling 2026-09-12; a serviced country without a currency is a deploy defect, never a market), and the

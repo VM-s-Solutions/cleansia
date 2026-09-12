@@ -345,7 +345,8 @@ is read off `CountryConfiguration.DefaultCurrencyCode` for a named country — t
 the order side, the work country's on the cleaner side — and for a named country there is no
 fallback: a missing configuration row, a blank code or a code naming no `Currency` row throws
 (owner ruling 2026-09-12). Nothing in the platform writes that column; **the seed must configure a
-real currency for every serviced country** (CZE → CZK, SVK → EUR, POL → PLN are seeded), and a
+real currency for every serviced country** (CZE → CZK, SVK → EUR, POL → PLN, GBR → GBP, USA → USD
+are seeded, and every one of those codes is a seeded `Currency` row), and a
 deploy that services a country without one breaks that country's bookings, boards and approvals on
 first use rather than paying anyone in the platform default. → [Cleaner currency](#cleaner-currency)
 

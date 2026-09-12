@@ -13,12 +13,17 @@ struct SubscribePlusScreen: View {
 
     init(
         repository: MembershipRepository,
+        catalogSource: BookingViewModel,
         snackbar: SnackbarController,
         paymentSheet: PaymentSheetPresenting,
         onBack: @escaping () -> Void,
         onSubscribed: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: MembershipViewModel(repository: repository, snackbar: snackbar))
+        _vm = StateObject(wrappedValue: MembershipViewModel(
+            repository: repository,
+            catalogSource: catalogSource,
+            snackbar: snackbar
+        ))
         self.paymentSheet = paymentSheet
         self.onBack = onBack
         self.onSubscribed = onSubscribed
@@ -37,6 +42,7 @@ struct SubscribePlusScreen: View {
                             plans: vm.plans,
                             selectedPlanCode: selectedPlanCode,
                             selectedPlan: selectedPlan,
+                            currencyCode: vm.currencyCode,
                             topInset: proxy.safeAreaInsets.top,
                             onSelectPlan: { selectedPlanCode = $0 },
                             onBack: onBack
@@ -90,7 +96,7 @@ struct SubscribePlusScreen: View {
 
     private var disclosure: String {
         guard let plan = selectedPlan, plan.trialPeriodDays > 0 else { return L10n.Membership.disclosure }
-        let price = MembershipFormat.price(plan.price)
+        let price = MembershipFormat.price(plan.price, currencyCode: vm.currencyCode)
         return plan.isAnnual
             ? L10n.Membership.ctaDisclosureTrialYear(price)
             : L10n.Membership.ctaDisclosureTrial(price)
@@ -136,6 +142,7 @@ private struct HeroBlock: View {
     let plans: [MembershipPlan]
     let selectedPlanCode: String
     let selectedPlan: MembershipPlan?
+    let currencyCode: String?
     var topInset: CGFloat = 0
     let onSelectPlan: (String) -> Void
     let onBack: () -> Void
@@ -213,11 +220,11 @@ private struct HeroBlock: View {
     @ViewBuilder
     private var priceBlock: some View {
         let trialDays = selectedPlan?.trialPeriodDays ?? 0
-        let regularPrice = MembershipFormat.price(selectedPlan?.price ?? 0)
+        let regularPrice = MembershipFormat.price(selectedPlan?.price ?? 0, currencyCode: currencyCode)
         let isAnnual = selectedPlan?.isAnnual ?? false
         if trialDays > 0 {
             VStack(spacing: Spacing.xs) {
-                Text(L10n.Membership.heroTrialPrice(trialDays))
+                Text(L10n.Membership.heroTrialPrice(MembershipFormat.price(0, currencyCode: currencyCode), trialDays))
                     .cleansiaFont(CleansiaTypography.headlineLarge)
                     .foregroundColor(.white)
                     .lineLimit(1)
@@ -404,11 +411,8 @@ enum MembershipPalette {
 }
 
 enum MembershipFormat {
-    static func price(_ amount: Double) -> String {
-        let rounded = amount.truncatingRemainder(dividingBy: 1) == 0
-            ? String(Int(amount))
-            : String(format: "%.2f", amount)
-        return "\(rounded) Kč"
+    static func price(_ amount: Double, currencyCode: String?) -> String {
+        OrdersFormat.price(amount, currencyCode: currencyCode)
     }
 
     static func periodEnd(_ date: Date) -> String {

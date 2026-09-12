@@ -6,16 +6,33 @@ import XCTest
 final class RewardsViewModelTests: XCTestCase {
     private func makeVM(
         _ loyalty: FakeLoyaltyClient,
-        _ referral: FakeRewardsReferralClient
+        _ referral: FakeRewardsReferralClient,
+        catalogSource: BookingViewModel = BookingViewModel(catalogClient: FakeCatalogClient())
     ) -> (RewardsViewModel, LoyaltyRepository, RewardsReferralRepository) {
         let loyaltyRepo = LoyaltyRepository(client: loyalty)
         let referralRepo = RewardsReferralRepository(client: referral)
         let vm = RewardsViewModel(
             loyaltyRepository: loyaltyRepo,
             referralRepository: referralRepo,
+            catalogSource: catalogSource,
             snackbar: SnackbarController()
         )
         return (vm, loyaltyRepo, referralRepo)
+    }
+
+    /// The tier floor is a platform-default-currency figure, so the ladder labels it with the code the
+    /// catalogue overview names as the default — not the market the last booking was priced in.
+    func testTheTierFloorIsLabelledWithTheCataloguesDefaultCurrency() async {
+        let catalog = BookingViewModel(catalogClient: FakeCatalogClient(
+            result: .success(CatalogFixtures.catalog(currencyCode: "EUR", defaultCurrencyCode: "CZK"))
+        ))
+        let (vm, _, _) = makeVM(FakeLoyaltyClient(), FakeRewardsReferralClient(), catalogSource: catalog)
+        XCTAssertNil(vm.currencyCode)
+
+        await catalog.loadCatalog()
+
+        XCTAssertEqual(vm.currencyCode, "CZK")
+        XCTAssertTrue(OrdersFormat.price(1000, currencyCode: vm.currencyCode).hasSuffix(" Kč"))
     }
 
     func testLoadSurfacesLoadedWithTierProgressAndPerks() async {

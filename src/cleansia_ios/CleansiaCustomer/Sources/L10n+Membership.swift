@@ -10,8 +10,8 @@ extension L10n {
             localized("membership_hero_headline")
         }
 
-        static func heroTrialPrice(_ days: Int) -> String {
-            format("membership_hero_trial_price", days)
+        static func heroTrialPrice(_ price: String, _ days: Int) -> String {
+            format("membership_hero_trial_price", price, days)
         }
 
         static func heroThenPrice(_ price: String) -> String {

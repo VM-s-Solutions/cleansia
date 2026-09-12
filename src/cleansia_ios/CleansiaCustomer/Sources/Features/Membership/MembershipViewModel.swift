@@ -7,6 +7,10 @@ final class MembershipViewModel: ViewModel {
     @Published private(set) var current: MyMembership?
     @Published private(set) var plans: [MembershipPlan] = []
     @Published private(set) var submitState: ActionState = .idle
+    /// Neither the membership nor a plan arrives with a currency — `monthlyPriceCzk` is the wire name,
+    /// not a label — so every amount here is labelled with the platform default, which the catalogue
+    /// overview names. Nil until that overview has loaded, when the figure renders unlabelled.
+    @Published private(set) var currencyCode: String?
 
     private let repository: MembershipRepository
     private let snackbar: SnackbarController
@@ -16,6 +20,7 @@ final class MembershipViewModel: ViewModel {
 
     init(
         repository: MembershipRepository,
+        catalogSource: BookingViewModel,
         snackbar: SnackbarController,
         isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable
     ) {
@@ -25,6 +30,9 @@ final class MembershipViewModel: ViewModel {
         super.init()
         repository.$current.assign(to: &$current)
         repository.$plans.assign(to: &$plans)
+        catalogSource.$catalogState
+            .map { $0.loadedValue?.defaultCurrencyCode }
+            .assign(to: &$currencyCode)
     }
 
     /// Fail-closed gate: the Subscribe CTA is hidden AND the

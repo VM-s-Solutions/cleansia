@@ -16,6 +16,9 @@ struct RewardsContent: Equatable {
 @MainActor
 final class RewardsViewModel: ViewModel {
     @Published private(set) var state: UiState<RewardsContent> = .loading
+    /// The tier floor is a platform-default-currency figure (business rules, money constants), so it
+    /// is labelled with the code the catalogue overview names as the default.
+    @Published private(set) var currencyCode: String?
 
     private let loyaltyRepository: LoyaltyRepository
     private let referralRepository: RewardsReferralRepository
@@ -25,6 +28,7 @@ final class RewardsViewModel: ViewModel {
     init(
         loyaltyRepository: LoyaltyRepository,
         referralRepository: RewardsReferralRepository,
+        catalogSource: BookingViewModel,
         snackbar: SnackbarController,
         activityPreviewSize: Int = 5
     ) {
@@ -33,6 +37,9 @@ final class RewardsViewModel: ViewModel {
         self.snackbar = snackbar
         self.activityPreviewSize = activityPreviewSize
         super.init()
+        catalogSource.$catalogState
+            .map { $0.loadedValue?.defaultCurrencyCode }
+            .assign(to: &$currencyCode)
         if let content = currentContent() {
             state = .loaded(content)
         }

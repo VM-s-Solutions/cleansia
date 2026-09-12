@@ -2,6 +2,12 @@ import CleansiaCore
 import Combine
 import Foundation
 
+enum BookingEvent: Equatable {
+    /// The address moved the draft into a market where part of the selection is not offered; the
+    /// selection was cut down to what the reloaded catalogue still lists.
+    case selectionPrunedForMarket
+}
+
 @MainActor
 final class BookingViewModel: ViewModel {
     @Published private(set) var state = BookingState()
@@ -15,6 +21,8 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var expressWaiverStatus: ExpressWaiverStatus = .none
 
     @Published private(set) var currentStep = 1
+
+    let events = PassthroughSubject<BookingEvent, Never>()
 
     private let catalogClient: CatalogClient
     let quoteClient: QuoteClient
@@ -34,6 +42,8 @@ final class BookingViewModel: ViewModel {
     var lastQuoteRequest: QuoteRequest?
     private var quoteTask: Task<Void, Never>?
     private var catalogLoad: Task<Void, Never>?
+    private var marketReload: Task<Void, Never>?
+    private var countryLookup: Task<Void, Never>?
     private var membershipLoad: Task<MembershipSnapshot?, Never>?
     private var cancellables = Set<AnyCancellable>()
 
@@ -69,6 +79,7 @@ final class BookingViewModel: ViewModel {
         self.scheduler = scheduler
         super.init()
         startQuoteWatcher()
+        startMarketWatcher()
     }
 
     var isFirstStep: Bool {
@@ -103,6 +114,18 @@ final class BookingViewModel: ViewModel {
     var effectiveDiscount: Double {
         guard let quote = quoteState.quote else { return 0 }
         return max(quote.tierDiscountAmount + quote.membershipDiscountAmount, promoState.discount)
+    }
+
+    /// The tier floor this basket falls short of, shown only while no discount is winning — otherwise
+    /// the hint contradicts the line above it (`ConfirmStep.kt` parity).
+    var unmetTierDiscountFloor: Double? {
+        guard effectiveDiscount == 0,
+              let quote = quoteState.quote,
+              let floor = quote.tierDiscountMinOrderAmount,
+              floor > 0,
+              quote.preSurchargeSubtotal < floor
+        else { return nil }
+        return floor
     }
 
     func update(_ transform: (BookingState) -> BookingState) {
@@ -150,6 +173,7 @@ final class BookingViewModel: ViewModel {
         currentStep = 1
         lastQuoteRequest = nil
         quoteTask?.cancel()
+        countryLookup?.cancel()
     }
 
     /// Single-flight: the shell prefetch and Home's catalog task can race at
@@ -174,12 +198,57 @@ final class BookingViewModel: ViewModel {
 
     private func fetchCatalog() async {
         catalogState = .loading
-        switch await catalogClient.loadCatalog() {
+        let countryId = state.countryId
+        switch await catalogClient.loadCatalog(countryId: countryId) {
         case let .success(catalog):
             catalogState = .loaded(catalog)
+            if state.countryId != countryId {
+                reloadCatalogForMarket(state.countryId)
+            }
         case let .failure(error):
             catalogState = .error(error)
         }
+    }
+
+    /// The address step decides the market: the catalogue is re-read priced for that country and
+    /// the draft keeps only what it still lists. The catalogue on screen stays until the new one
+    /// lands (or the reload fails), the way a re-quote keeps the previous total.
+    private func startMarketWatcher() {
+        $state
+            .map(\.countryId)
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] countryId in
+                self?.reloadCatalogForMarket(countryId)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func reloadCatalogForMarket(_ countryId: String?) {
+        marketReload?.cancel()
+        guard case .loaded = catalogState else { return }
+        extrasState = .loading
+        marketReload = Task { [weak self] in
+            guard let self else { return }
+            let result = await catalogClient.loadCatalog(countryId: countryId)
+            if Task.isCancelled { return }
+            guard case let .success(catalog) = result else { return }
+            catalogState = .loaded(catalog)
+            pruneSelection(notListedIn: catalog)
+        }
+    }
+
+    private func pruneSelection(notListedIn catalog: Catalog) {
+        let services = state.selectedServiceIds.intersection(catalog.services.map(\.id))
+        let packages = state.selectedPackageIds.intersection(catalog.packages.map(\.id))
+        guard services != state.selectedServiceIds || packages != state.selectedPackageIds else { return }
+        update { current in
+            var next = current
+            next.selectedServiceIds = services
+            next.selectedPackageIds = packages
+            return next
+        }
+        events.send(.selectionPrunedForMarket)
     }
 
     /// The wizard's ONE read of the signed-in customer's membership — the slot grid's express-waiver
@@ -207,9 +276,17 @@ final class BookingViewModel: ViewModel {
 
     func loadExtras() async {
         if case .loaded = extrasState { return }
-        switch await extraClient.loadExtras() {
+        switch await extraClient.loadExtras(countryId: state.countryId) {
         case let .success(extras):
             extrasState = .loaded(extras.sorted { $0.displayOrder < $1.displayOrder })
+            let listed = Set(extras.map(\.slug))
+            if !state.selectedExtraSlugs.isSubset(of: listed) {
+                update { current in
+                    var next = current
+                    next.selectedExtraSlugs = current.selectedExtraSlugs.intersection(listed)
+                    return next
+                }
+            }
         case let .failure(error):
             extrasState = .error(error)
         }
@@ -237,6 +314,24 @@ final class BookingViewModel: ViewModel {
             next.savedAddressId = nil
             next.hydratedFromSavedId = nil
             return next
+        }
+        resolveCountry(isoCode: address.countryIsoCode)
+    }
+
+    /// The market is written only once the country is known, so a same-country re-pick never flaps
+    /// the catalogue through the default and back. A pick made in the meantime wins.
+    private func resolveCountry(isoCode: String) {
+        countryLookup?.cancel()
+        countryLookup = Task { [weak self, countryResolver] in
+            let resolved = await countryResolver.countryId(forIsoCode: isoCode)
+            guard let self, !Task.isCancelled,
+                  state.savedAddressId == nil, state.countryIsoCode == isoCode
+            else { return }
+            update { current in
+                var next = current
+                next.countryId = resolved
+                return next
+            }
         }
     }
 
@@ -284,7 +379,12 @@ final class BookingViewModel: ViewModel {
         promoState = .validating
         let quote = quoteState.quote
         let subtotal = quote?.preSurchargeSubtotal ?? 0
-        let resolved: PromoCodeState = switch await promoClient.validate(code: normalized, orderSubtotal: subtotal) {
+        let currencyId = quote.flatMap { $0.currencyId.isBlank ? nil : $0.currencyId }
+        let resolved: PromoCodeState = switch await promoClient.validate(
+            code: normalized,
+            orderSubtotal: subtotal,
+            currencyId: currencyId
+        ) {
         case let .success(validation):
             if validation.isValid, let discount = validation.discountAmount {
                 .valid(discountAmount: quote?.discountAsCharged(discount) ?? discount)
@@ -384,6 +484,9 @@ final class BookingViewModel: ViewModel {
             case let .success(quote):
                 lastQuoteRequest = request
                 quoteState = .quoted(quote)
+                if let previousQuote, previousQuote.currencyId != quote.currencyId, case .valid = promoState {
+                    clearPromoCode()
+                }
             case .failure:
                 quoteState = previousQuote.map(BookingQuoteState.quoted) ?? .idle
             }
@@ -399,7 +502,8 @@ extension BookingState {
             extraSlugs: selectedExtraSlugs.sorted(),
             rooms: rooms,
             bathrooms: bathrooms,
-            cleaningDate: selectedInstant
+            cleaningDate: selectedInstant,
+            countryId: countryId
         )
     }
 }

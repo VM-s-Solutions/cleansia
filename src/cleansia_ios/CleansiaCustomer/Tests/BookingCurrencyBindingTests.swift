@@ -9,7 +9,14 @@ import XCTest
 final class BookingCurrencyBindingTests: XCTestCase {
     private static let bookingDir = "CleansiaCustomer/Sources/Features/Booking"
     private static let catalogPath = "CleansiaCustomer/Resources/Localizable.xcstrings"
-    private static let priceKeys = ["booking_price_from", "booking_price_per_room"]
+    /// Every key that takes a formatted amount, with the positional slot the amount lands in.
+    private static let priceKeys = [
+        "booking_price_from": "%1$@",
+        "booking_price_per_room": "%1$@",
+        "booking_summary_tier_discount_min_not_met": "%1$@",
+        "membership_hero_trial_price": "%1$@",
+        "loyalty_discount_min_order": "%2$@"
+    ]
     private static let locales = ["en", "cs", "sk", "uk", "ru"]
 
     private static let literalCurrency = #"(currencyCode:|\?\?)\s*"[A-Z]{3}""#
@@ -43,13 +50,13 @@ final class BookingCurrencyBindingTests: XCTestCase {
         let data = try Data(contentsOf: url(Self.catalogPath))
         let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let strings = try XCTUnwrap(catalog["strings"] as? [String: Any])
-        for key in Self.priceKeys {
+        for (key, slot) in Self.priceKeys {
             let entry = try XCTUnwrap(strings[key] as? [String: Any], "\(key) missing from the catalog")
             let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any])
             for locale in Self.locales {
                 let unit = (localizations[locale] as? [String: Any])?["stringUnit"] as? [String: Any]
                 let value = try XCTUnwrap(unit?["value"] as? String, "\(locale) lost \(key)")
-                XCTAssertTrue(value.contains("%1$@"), "\(locale)/\(key) takes a formatted amount, not a bare number")
+                XCTAssertTrue(value.contains(slot), "\(locale)/\(key) takes a formatted amount, not a bare number")
                 XCTAssertFalse(
                     matches(Self.currencyLiteral, value),
                     "\(locale)/\(key) still names a currency: \(value)"

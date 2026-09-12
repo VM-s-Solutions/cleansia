@@ -37,7 +37,7 @@ struct PeriodPayView: View {
         case .error:
             PeriodPayErrorView { Task { await vm.load() } }
         case let .loaded(summary):
-            PeriodPayContent(summary: summary, currencyCode: vm.currencyCode)
+            PeriodPayContent(summary: summary, currencyCode: vm.displayCurrencyCode)
                 .background(CleansiaColors.background.ignoresSafeArea())
         }
     }
@@ -84,6 +84,7 @@ private struct PeriodPayErrorView: View {
                 totalBonusPay: 150,
                 totalDeductionPay: 50,
                 grandTotal: 4200,
+                currencyCode: "CZK",
                 orderPays: (1 ... 3).map { index in
                     OrderPayLine(
                         id: "line-\(index)",
@@ -105,6 +106,7 @@ private struct PeriodPayErrorView: View {
                 totalBonusPay: 0,
                 totalDeductionPay: 0,
                 grandTotal: 0,
+                currencyCode: "CZK",
                 orderPays: []
             )
         }

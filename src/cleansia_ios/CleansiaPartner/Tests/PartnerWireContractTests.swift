@@ -139,7 +139,8 @@ final class PartnerWireContractTests: XCTestCase {
             orderPays: [
                 OrderEmployeePayDto(id: "line-1", orderNumber: "ORD-1", totalPay: 2100, createdOn: Date()),
                 OrderEmployeePayDto(id: "line-2", orderNumber: "ORD-2", totalPay: 2100, createdOn: Date())
-            ]
+            ],
+            currencyCode: "EUR"
         )
     }
 
@@ -147,6 +148,34 @@ final class PartnerWireContractTests: XCTestCase {
         let summary = try PeriodPaySummary(summaryPayload())
         XCTAssertEqual(summary.grandTotal, 4200)
         XCTAssertEqual(summary.orderPays.count, 2)
+        XCTAssertEqual(summary.currencyCode, "EUR")
+    }
+
+    /// The route argument is the currency the screen was opened with; the summary's own code is the
+    /// currency its figures are actually in, and it wins the moment it lands. Before that the route
+    /// argument labels, and a summary that names none leaves it in place.
+    @MainActor
+    func testASummaryInAnotherCurrencyRelabelsTheScreenOverTheRouteArgument() async throws {
+        let client = FakePayrollClient()
+        client.periodPaysResult = .success(try PeriodPaySummary(summaryPayload()))
+        let vm = PeriodPayViewModel(
+            payPeriodId: "pp-1",
+            currencyCode: "CZK",
+            client: client,
+            snackbar: SnackbarController()
+        )
+        XCTAssertEqual(vm.displayCurrencyCode, "CZK")
+
+        await vm.load()
+
+        XCTAssertEqual(vm.state.loadedValue?.currencyCode, "EUR")
+        XCTAssertEqual(vm.displayCurrencyCode, "EUR")
+
+        var unlabelled = summaryPayload()
+        unlabelled.currencyCode = nil
+        client.periodPaysResult = .success(try PeriodPaySummary(unlabelled))
+        await vm.load()
+        XCTAssertEqual(vm.displayCurrencyCode, "CZK")
     }
 
     func testEveryNonNullableSummaryTotalIsRefused() {

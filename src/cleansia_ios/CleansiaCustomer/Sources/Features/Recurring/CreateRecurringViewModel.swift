@@ -117,7 +117,7 @@ final class CreateRecurringViewModel: ViewModel {
     }
 
     func load() async {
-        async let catalogResult = catalogClient.loadCatalog()
+        async let catalogResult = catalogClient.loadCatalog(countryId: nil)
         async let addressResult = addressClient.getMine()
 
         if case let .success(catalog) = await catalogResult {

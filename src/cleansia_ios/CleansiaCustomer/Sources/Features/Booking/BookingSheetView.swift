@@ -87,6 +87,12 @@ struct BookingSheetView: View {
                 message: L10n.Booking.busyBooking
             )
         }
+        .onReceive(vm.events) { event in
+            switch event {
+            case .selectionPrunedForMarket:
+                snackbar.showInfo(L10n.Booking.marketSelectionPruned)
+            }
+        }
         .snackbarHost(snackbar, bottomInset: Self.footerSnackbarInset)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)

@@ -52,6 +52,7 @@ extension PeriodPaySummary {
         totalBonusPay: Double = 0,
         totalDeductionPay: Double = 0,
         grandTotal: Double = 0,
+        currencyCode: String? = nil,
         orderPays: [OrderPayLine] = []
     ) -> PeriodPaySummary {
         PeriodPaySummary(
@@ -63,6 +64,7 @@ extension PeriodPaySummary {
             totalBonusPay: totalBonusPay,
             totalDeductionPay: totalDeductionPay,
             grandTotal: grandTotal,
+            currencyCode: currencyCode,
             orderPays: orderPays
         )
     }

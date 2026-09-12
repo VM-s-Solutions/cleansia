@@ -107,6 +107,10 @@ struct PeriodPaySummary: Equatable {
     let totalBonusPay: Double
     let totalDeductionPay: Double
     let grandTotal: Double
+    /// The one currency every figure above is in — the server's word, which the screen prefers over
+    /// the currency the route was opened with: when the period is invoiced only in another currency,
+    /// that invoice's own currency is what the summary carries.
+    let currencyCode: String?
     let orderPays: [OrderPayLine]
 }
 
@@ -120,6 +124,7 @@ extension PeriodPaySummary {
         totalBonusPay = try dto.totalBonusPay.require("totalBonusPay")
         totalDeductionPay = try dto.totalDeductionPay.require("totalDeductionPay")
         grandTotal = try dto.grandTotal.require("grandTotal")
+        currencyCode = dto.currencyCode
         orderPays = try (dto.orderPays ?? []).compactMap(OrderPayLine.init)
     }
 }

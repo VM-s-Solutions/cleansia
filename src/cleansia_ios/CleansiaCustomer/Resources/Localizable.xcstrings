@@ -2628,6 +2628,41 @@
         }
       }
     },
+    "booking_market_selection_pruned": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Část vašeho výběru není na této adrese v nabídce a byla odebrána."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some of your selection isn't offered at this address and was removed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часть вашего выбора по этому адресу не предлагается и была убрана."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Časť vášho výberu nie je na tejto adrese v ponuke a bola odobratá."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частину вашого вибору за цією адресою не пропонуємо, тож її прибрано."
+          }
+        }
+      }
+    },
     "booking_no_results": {
       "extractionState": "stale",
       "localizations": {
@@ -6033,31 +6068,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Věrnostní sleva platí pro objednávky nad %d CZK"
+            "value": "Věrnostní sleva platí pro objednávky nad %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Loyalty discount applies on orders above %d CZK"
+            "value": "Loyalty discount applies on orders above %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Скидка за лояльность действует для заказов от %d CZK"
+            "value": "Скидка за лояльность действует для заказов от %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vernostná zľava platí pre objednávky nad %d CZK"
+            "value": "Vernostná zľava platí pre objednávky nad %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Знижка за лояльність діє для замовлень понад %d CZK"
+            "value": "Знижка за лояльність діє для замовлень понад %1$@"
           }
         }
       }
@@ -12757,31 +12792,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d %% sleva na objednávky od %2$d Kč"
+            "value": "%1$d %% sleva na objednávky od %2$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d%% off orders ≥%2$d CZK"
+            "value": "%1$d%% off orders ≥%2$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d%% скидка на заказы ≥%2$d CZK"
+            "value": "%1$d%% скидка на заказы ≥%2$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d %% zľava na objednávky od %2$d Kč"
+            "value": "%1$d %% zľava na objednávky od %2$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d%% знижка на замовлення ≥%2$d CZK"
+            "value": "%1$d%% знижка на замовлення ≥%2$@"
           }
         }
       }
@@ -14754,31 +14789,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / prvních %1$d dní"
+            "value": "%1$@ / prvních %2$d dní"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / first %1$d days"
+            "value": "%1$@ / first %2$d days"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / первые %1$d дней"
+            "value": "%1$@ / первые %2$d дней"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / prvých %1$d dní"
+            "value": "%1$@ / prvých %2$d dní"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / перші %1$d днів"
+            "value": "%1$@ / перші %2$d днів"
           }
         }
       }

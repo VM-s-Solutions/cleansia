@@ -4,7 +4,7 @@ import UIKit
 
 struct CustomerShellView: View {
     @StateObject var model = CustomerShellModel()
-    @StateObject var bookingVM = BookingViewModel()
+    @StateObject var bookingVM: BookingViewModel
     @StateObject private var membershipVM: MembershipViewModel
     @StateObject private var profileVM: ProfileViewModel
     @ObservedObject private var preferences: CustomerPreferencesModel
@@ -24,8 +24,11 @@ struct CustomerShellView: View {
         self.preferences = preferences
         self.onSignedOut = onSignedOut
         self.onNeedsOnboarding = onNeedsOnboarding
+        let bookingVM = BookingViewModel()
+        _bookingVM = StateObject(wrappedValue: bookingVM)
         _membershipVM = StateObject(wrappedValue: MembershipViewModel(
             repository: container.membershipRepository,
+            catalogSource: bookingVM,
             snackbar: container.snackbar
         ))
         _profileVM = StateObject(wrappedValue: ProfileViewModel(
@@ -228,6 +231,7 @@ struct CustomerShellView: View {
             RewardsTab(
                 loyaltyRepository: container.loyaltyRepository,
                 referralRepository: container.referralRepository,
+                catalogSource: bookingVM,
                 snackbar: snackbar,
                 onOpenActivity: { model.path.append(ShellRoute.rewardsActivity) }
             )
@@ -423,6 +427,7 @@ extension CustomerShellView {
     private var subscribePlus: some View {
         SubscribePlusScreen(
             repository: container.membershipRepository,
+            catalogSource: bookingVM,
             snackbar: snackbar,
             paymentSheet: StripePaymentController(),
             onBack: { model.pop() },

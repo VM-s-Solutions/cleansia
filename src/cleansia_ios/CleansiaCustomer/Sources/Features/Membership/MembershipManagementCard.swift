@@ -59,7 +59,9 @@ struct MembershipManagementCard: View {
                 confirmLabel: L10n.Membership.switchDialogConfirm,
                 onConfirm: { confirmSwitch(yearlyPlan) },
                 onDismiss: { showSwitchDialog = false },
-                message: L10n.Membership.switchDialogMessage(MembershipFormat.price(yearlyPlan.price)),
+                message: L10n.Membership.switchDialogMessage(
+                    MembershipFormat.price(yearlyPlan.price, currencyCode: vm.currencyCode)
+                ),
                 dismissLabel: L10n.Membership.back
             )
         }

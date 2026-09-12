@@ -6,11 +6,13 @@ import XCTest
 final class MembershipViewModelTests: XCTestCase {
     private func makeVM(
         client: FakeMembershipManagementClient = FakeMembershipManagementClient(),
+        catalogSource: BookingViewModel = BookingViewModel(catalogClient: FakeCatalogClient()),
         cardAvailable: Bool = true
     ) -> (MembershipViewModel, MembershipRepository, FakeMembershipManagementClient) {
         let repo = MembershipRepository(client: client)
         let vm = MembershipViewModel(
             repository: repo,
+            catalogSource: catalogSource,
             snackbar: SnackbarController(),
             isCardPaymentAvailable: cardAvailable
         )
@@ -20,6 +22,21 @@ final class MembershipViewModelTests: XCTestCase {
     func testStartsIdle() {
         let (vm, _, _) = makeVM()
         XCTAssertEqual(vm.submitState, .idle)
+    }
+
+    /// A plan arrives with no currency of its own, so its price is labelled with the platform default
+    /// the catalogue overview names — never a literal.
+    func testThePriceLabelMirrorsTheCataloguesDefaultCurrency() async {
+        let catalog = BookingViewModel(catalogClient: FakeCatalogClient(
+            result: .success(CatalogFixtures.catalog(currencyCode: "CZK", defaultCurrencyCode: "EUR"))
+        ))
+        let (vm, _, _) = makeVM(catalogSource: catalog)
+        XCTAssertNil(vm.currencyCode)
+
+        await catalog.loadCatalog()
+
+        XCTAssertEqual(vm.currencyCode, "EUR")
+        XCTAssertEqual(MembershipFormat.price(199, currencyCode: vm.currencyCode), "199 €")
     }
 
     // MARK: Phase 1 — SetupIntent
@@ -222,6 +239,7 @@ final class MembershipViewModelTests: XCTestCase {
         func openAndLeaveTheScreen() async {
             let vm = MembershipViewModel(
                 repository: repository,
+                catalogSource: BookingViewModel(catalogClient: FakeCatalogClient()),
                 snackbar: SnackbarController(),
                 isCardPaymentAvailable: true
             )
@@ -247,6 +265,7 @@ final class MembershipViewModelTests: XCTestCase {
 
         let vm = MembershipViewModel(
             repository: repository,
+            catalogSource: BookingViewModel(catalogClient: FakeCatalogClient()),
             snackbar: SnackbarController(),
             isCardPaymentAvailable: true
         )

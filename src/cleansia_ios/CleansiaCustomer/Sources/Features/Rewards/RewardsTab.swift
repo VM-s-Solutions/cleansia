@@ -14,12 +14,14 @@ struct RewardsTab: View {
     init(
         loyaltyRepository: LoyaltyRepository,
         referralRepository: RewardsReferralRepository,
+        catalogSource: BookingViewModel,
         snackbar: SnackbarController,
         onOpenActivity: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: RewardsViewModel(
             loyaltyRepository: loyaltyRepository,
             referralRepository: referralRepository,
+            catalogSource: catalogSource,
             snackbar: snackbar
         ))
         self.onOpenActivity = onOpenActivity
@@ -90,7 +92,7 @@ struct RewardsContentView: View {
                 TierHeroCard(tier: currentTier, account: content.account)
                 ProgressCard(account: content.account)
                 CurrentPerksCard(perks: content.account.currentPerks)
-                TierLadderCard(tiers: content.tiers, current: currentTier)
+                TierLadderCard(tiers: content.tiers, current: currentTier, currencyCode: vm.currencyCode)
 
                 if let referral = content.referral, !referral.code.isEmpty {
                     InviteFriendsCard(referral: referral, onCopyCode: onCopyCode)

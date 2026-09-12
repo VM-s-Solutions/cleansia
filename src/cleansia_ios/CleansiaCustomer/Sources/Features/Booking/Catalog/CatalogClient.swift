@@ -3,16 +3,17 @@ import CleansiaCustomerApi
 import Foundation
 
 protocol CatalogClient {
-    func loadCatalog() async -> ApiResult<Catalog>
+    /// `countryId` is the market the rows are priced for; nil is the platform default.
+    func loadCatalog(countryId: String?) async -> ApiResult<Catalog>
 }
 
 struct LiveCatalogClient: CatalogClient {
-    func loadCatalog() async -> ApiResult<Catalog> {
+    func loadCatalog(countryId: String?) async -> ApiResult<Catalog> {
         async let servicesCall = apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerServiceAPI.serviceGetOverview()
+            try await CustomerServiceAPI.serviceGetOverview(countryId: countryId)
         }
         async let packagesCall = apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerPackageAPI.packageGetOverview()
+            try await CustomerPackageAPI.packageGetOverview(countryId: countryId)
         }
         async let currenciesCall = apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerCurrencyAPI.currencyGetOverview()
@@ -31,10 +32,15 @@ struct LiveCatalogClient: CatalogClient {
             return .failure(error)
         case let (.success(serviceItems), .success(packageItems), .success(currencyItems)):
             return await apiResult {
-                try Catalog(
+                let defaultCode = try CatalogCurrency.defaultRow(in: currencyItems).code
+                return try Catalog(
                     services: serviceItems.map(CatalogService.init),
                     packages: packageItems.map(CatalogPackage.init),
-                    currencyCode: CatalogCurrency.defaultRow(in: currencyItems).code
+                    currencyCode: Catalog.pricedInCode(
+                        rows: serviceItems.map(\.currencyCode) + packageItems.map(\.currencyCode),
+                        defaultCode: defaultCode
+                    ),
+                    defaultCurrencyCode: defaultCode
                 )
             }
         }
@@ -99,8 +105,18 @@ extension CatalogPackage {
     }
 }
 
-/// Refused like the services: the default row is the currency every catalogue figure is stated in,
-/// so a price list this cannot label is a price list the customer was never shown.
+extension Catalog {
+    /// Every row of one overview is priced in the one currency the server resolved for the market, and
+    /// each row says which. Only an overview with no row at all has nothing to read it from, and that
+    /// one is priced in the default by construction.
+    static func pricedInCode(rows: [String?], defaultCode: String) -> String {
+        rows.compactMap { $0 }.first { !$0.isBlank } ?? defaultCode
+    }
+}
+
+/// Refused like the services: the default row labels the membership figures, which arrive with no
+/// currency of their own, so a price list this cannot label is a price list the customer was never
+/// shown.
 extension CatalogCurrency {
     init(_ dto: CurrencyListItem) throws {
         id = try dto.id.requireNonBlank("id")

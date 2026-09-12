@@ -39,8 +39,26 @@ final class BookingCodesViewModelTests: XCTestCase {
             extraClient: extra,
             promoClient: promo,
             referralClient: referral,
+            countryResolver: FakeCountryResolver(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
+    }
+
+    /// The extras are priced for the draft's market like the rest of the catalogue, and a ticked extra
+    /// the market does not list is dropped rather than sent for the server to drop silently.
+    func testExtrasAreReadForTheDraftsMarketAndUnlistedTicksAreDropped() async {
+        let extra = FakeExtraClient(result: .success(CatalogFixtures.extras))
+        let vm = makeVM(extra: extra)
+        vm.update { var s = $0
+            s.countryId = "svk"
+            s.selectedExtraSlugs = ["windows", "balcony"]
+            return s
+        }
+
+        await vm.loadExtras()
+
+        XCTAssertEqual(extra.requestedCountryIds, ["svk"])
+        XCTAssertEqual(vm.state.selectedExtraSlugs, ["windows"])
     }
 
     func testExtrasStartLoadingThenLoadedSorted() async {
@@ -161,6 +179,111 @@ final class BookingCodesViewModelTests: XCTestCase {
         )
     }
 
+    /// The preview must ask the question the create asks: a code bound to one currency is refused on
+    /// an order in another, so the promo is validated in the quote's currency, never the default.
+    func testThePromoIsValidatedInTheQuotesCurrency() async {
+        let promo = FakePromoCodeClient()
+        let quoted = BookingQuote(totalPrice: 2400, currencyId: "cur-eur", currencyCode: "EUR")
+        let vm = await quotedVM(quoted, promo: promo)
+
+        _ = await vm.validatePromoCode("WELCOME20")
+
+        XCTAssertEqual(promo.lastCurrencyId, "cur-eur")
+    }
+
+    func testWithoutAQuoteThePromoNamesNoCurrency() async {
+        let promo = FakePromoCodeClient()
+        let vm = makeVM(promo: promo)
+
+        _ = await vm.validatePromoCode("WELCOME20")
+
+        XCTAssertNil(promo.lastCurrencyId)
+    }
+
+    /// A code validated in one currency says nothing about another: when the address moves the quote
+    /// into a new currency, the applied promo is dropped rather than carried as still valid.
+    func testAValidPromoIsDroppedWhenTheQuoteMovesToAnotherCurrency() async {
+        let promo = FakePromoCodeClient()
+        let quote = FakeQuoteClient(result: .success(BookingQuote(
+            totalPrice: 2400,
+            currencyId: "cur-czk",
+            currencyCode: "CZK"
+        )))
+        let scheduler = TestScheduler.dispatch
+        let vm = BookingViewModel(
+            catalogClient: FakeCatalogClient(),
+            quoteClient: quote,
+            extraClient: FakeExtraClient(),
+            promoClient: promo,
+            referralClient: FakeReferralClient(),
+            countryResolver: FakeCountryResolver(),
+            scheduler: scheduler.eraseToAnyScheduler()
+        )
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drain()
+        _ = await vm.validatePromoCode("WELCOME20")
+        XCTAssertEqual(vm.promoState, .valid(discountAmount: 100))
+
+        quote.result = .success(BookingQuote(totalPrice: 95, currencyId: "cur-eur", currencyCode: "EUR"))
+        vm.update { var s = $0
+            s.countryId = "svk"
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drain()
+
+        XCTAssertEqual(vm.quoteState.quote?.currencyCode, "EUR")
+        XCTAssertEqual(vm.promoState, .idle)
+        XCTAssertEqual(vm.state.promoCode, "")
+    }
+
+    func testAValidPromoSurvivesAReQuoteInTheSameCurrency() async {
+        let promo = FakePromoCodeClient()
+        let quote = FakeQuoteClient(result: .success(BookingQuote(
+            totalPrice: 2400,
+            currencyId: "cur-czk",
+            currencyCode: "CZK"
+        )))
+        let scheduler = TestScheduler.dispatch
+        let vm = BookingViewModel(
+            catalogClient: FakeCatalogClient(),
+            quoteClient: quote,
+            extraClient: FakeExtraClient(),
+            promoClient: promo,
+            referralClient: FakeReferralClient(),
+            countryResolver: FakeCountryResolver(),
+            scheduler: scheduler.eraseToAnyScheduler()
+        )
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drain()
+        _ = await vm.validatePromoCode("WELCOME20")
+
+        quote.result = .success(BookingQuote(totalPrice: 2600, currencyId: "cur-czk", currencyCode: "CZK"))
+        vm.update { var s = $0
+            s.rooms = 3
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drain()
+
+        XCTAssertEqual(vm.promoState, .valid(discountAmount: 100))
+        XCTAssertEqual(vm.state.promoCode, "WELCOME20")
+    }
+
+    private func drain() async {
+        for _ in 0 ..< 5 {
+            await Task.yield()
+        }
+    }
+
     /// `CreateOrder.Handler` previews the promo against `calc.TotalPrice - calc.ExpressSurchargeAmount`
     /// and applies the surcharge afterwards, so the gross is a base the submit never reproduces: a
     /// percentage previews a fifth too much and a minimum-order floor clears that the submit refuses.
@@ -234,6 +357,7 @@ final class BookingCodesViewModelTests: XCTestCase {
             extraClient: FakeExtraClient(),
             promoClient: promo,
             referralClient: FakeReferralClient(),
+            countryResolver: FakeCountryResolver(),
             scheduler: scheduler.eraseToAnyScheduler()
         )
         vm.update { var s = $0

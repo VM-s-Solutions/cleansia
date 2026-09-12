@@ -56,10 +56,27 @@ final class CatalogWireContractTests: XCTestCase {
         XCTAssertEqual(try CatalogCurrency(currencyPayload()).code, "EUR")
     }
 
-    func testTheCatalogueIsLabelledWithTheOverviewsDefaultRow() throws {
+    func testThePlatformDefaultIsTheOverviewsDefaultRow() throws {
         let rows = [currencyPayload(code: "CZK", isDefault: false), currencyPayload(code: "EUR", isDefault: true)]
 
         XCTAssertEqual(try CatalogCurrency.defaultRow(in: rows).code, "EUR")
+    }
+
+    /// The catalogue is priced for the address's market and each row says in what; the default row
+    /// labels only a catalogue with no row to read it from.
+    func testTheCatalogueIsLabelledFromItsRowsOwnCurrencyNotTheDefault() {
+        var service = servicePayload()
+        service.currencyCode = "EUR"
+        var package = packagePayload()
+        package.currencyCode = "EUR"
+
+        XCTAssertEqual(
+            Catalog.pricedInCode(rows: [service.currencyCode, package.currencyCode], defaultCode: "CZK"),
+            "EUR"
+        )
+        XCTAssertEqual(Catalog.pricedInCode(rows: [nil, " ", "EUR"], defaultCode: "CZK"), "EUR")
+        XCTAssertEqual(Catalog.pricedInCode(rows: [], defaultCode: "CZK"), "CZK")
+        XCTAssertEqual(Catalog.pricedInCode(rows: [nil], defaultCode: "CZK"), "CZK")
     }
 
     /// A price list whose currency is unknown is a price list the customer was never shown: the old

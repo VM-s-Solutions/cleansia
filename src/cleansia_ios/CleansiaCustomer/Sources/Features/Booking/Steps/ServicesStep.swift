@@ -277,7 +277,8 @@ private struct PropertyRow: View {
                     includedServices: []
                 )
             ],
-            currencyCode: "CZK"
+            currencyCode: "CZK",
+            defaultCurrencyCode: "CZK"
         )
         static let home = CatalogCategory(
             id: "c-home",

@@ -86,6 +86,7 @@ struct ConfirmStep: View {
             membershipDiscount: membershipDiscount,
             tierDiscount: tierDiscount,
             combinedServerDiscount: combinedServerDiscount,
+            unmetTierDiscountFloor: viewModel.unmetTierDiscountFloor,
             currencyCode: currencyCode
         )
     }

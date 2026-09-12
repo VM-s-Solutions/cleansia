@@ -20,10 +20,11 @@ final class PeriodPayViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeViewModel() -> PeriodPayViewModel {
+    private func makeViewModel(currencyId: String? = nil) -> PeriodPayViewModel {
         PeriodPayViewModel(
             payPeriodId: "pp-1",
             currencyCode: "CZK",
+            currencyId: currencyId,
             client: client,
             snackbar: snackbar
         )
@@ -45,6 +46,24 @@ final class PeriodPayViewModelTests: XCTestCase {
         XCTAssertEqual(client.periodPaysCallCount, 1)
         XCTAssertEqual(client.periodPaysEmployeeId, "emp-1")
         XCTAssertEqual(client.periodPaysPayPeriodId, "pp-1")
+    }
+
+    /// One invoice per (period, currency): a period the cleaner was paid in EUR and CZK holds two,
+    /// and the server answers the cleaner's resolved currency unless told which. Opened from an
+    /// invoice, My Pay asks for that invoice's currency view; from the Earnings tab it asks for none.
+    func testOpenedFromAnInvoiceMyPayAsksForThatInvoicesCurrencyView() async {
+        let vm = makeViewModel(currencyId: "cur-eur")
+        await vm.load()
+
+        XCTAssertEqual(client.periodPaysCurrencyId, "cur-eur")
+    }
+
+    func testOpenedFromTheEarningsTabMyPayNamesNoCurrencyView() async {
+        let vm = makeViewModel(currencyId: nil)
+        await vm.load()
+
+        XCTAssertEqual(client.periodPaysCallCount, 1)
+        XCTAssertNil(client.periodPaysCurrencyId)
     }
 
     func testAnUnresolvableEmployeeIdStopsBeforeTheNetworkCall() async {

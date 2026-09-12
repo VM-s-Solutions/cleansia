@@ -8,12 +8,14 @@ struct PeriodPayView: View {
     init(
         payPeriodId: String,
         currencyCode: String?,
+        currencyId: String?,
         client: PartnerPayrollClient,
         snackbar: SnackbarController
     ) {
         _vm = StateObject(wrappedValue: PeriodPayViewModel(
             payPeriodId: payPeriodId,
             currencyCode: currencyCode,
+            currencyId: currencyId,
             client: client,
             snackbar: snackbar
         ))

@@ -146,6 +146,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "promo.not_found": "CreateOrder",
         "promo.not_yet_valid": "CreateOrder",
         "promo.per_user_limit_reached": "CreateOrder",
+        "promo.requires_account": "CreateOrder",
         "receipt.not_found": "DownloadOrderReceipt",
         "recurring_booking.ends_on_before_start": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.membership_required": "CreateRecurringBooking, UpdateRecurringBooking",

@@ -5,11 +5,15 @@ import SwiftUI
     import UIKit
 #endif
 
+/// Opens My Pay for the invoice's period in the invoice's own currency view (`InvoiceDetailScreen.kt`
+/// parity: payPeriodId, currencyId, currencyCode).
+typealias OpenPeriodPay = (_ payPeriodId: String, _ currencyId: String?, _ currencyCode: String?) -> Void
+
 struct InvoiceDetailContent: View {
     let invoice: InvoiceDetail
     let canOpenPdf: Bool
     let isDownloading: Bool
-    let onOpenPeriodPay: ((String, String?) -> Void)?
+    let onOpenPeriodPay: OpenPeriodPay?
     let onOpenPdf: () -> Void
     let onCopy: (String) -> Void
 
@@ -97,12 +101,12 @@ private struct BreakdownCard: View {
 private struct PeriodCard: View {
     @Environment(\.locale) private var locale
     let invoice: InvoiceDetail
-    let onOpenPeriodPay: ((String, String?) -> Void)?
+    let onOpenPeriodPay: OpenPeriodPay?
 
     private var drill: (() -> Void)? {
         guard let open = onOpenPeriodPay,
               let periodId = invoice.payPeriodId, !periodId.isEmpty else { return nil }
-        return { open(periodId, invoice.currencyCode) }
+        return { open(periodId, invoice.currencyId, invoice.currencyCode) }
     }
 
     var body: some View {

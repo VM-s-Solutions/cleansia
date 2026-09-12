@@ -75,14 +75,19 @@ struct EarningsView: View {
                 invoiceId: id,
                 client: payrollClient,
                 snackbar: snackbar,
-                onOpenPeriodPay: { payPeriodId, currencyCode in
-                    path.append(EarningsRoute.periodPay(payPeriodId: payPeriodId, currencyCode: currencyCode))
+                onOpenPeriodPay: { payPeriodId, currencyId, currencyCode in
+                    path.append(EarningsRoute.periodPay(
+                        payPeriodId: payPeriodId,
+                        currencyId: currencyId,
+                        currencyCode: currencyCode
+                    ))
                 }
             )
-        case let .periodPay(payPeriodId, currencyCode):
+        case let .periodPay(payPeriodId, currencyId, currencyCode):
             PeriodPayView(
                 payPeriodId: payPeriodId,
                 currencyCode: currencyCode,
+                currencyId: currencyId,
                 client: payrollClient,
                 snackbar: snackbar
             )

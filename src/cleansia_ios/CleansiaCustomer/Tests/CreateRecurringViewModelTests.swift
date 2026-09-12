@@ -1,10 +1,13 @@
 import CleansiaCore
 import CleansiaCustomerApi
+import Combine
 import XCTest
 @testable import CleansiaCustomer
 
 @MainActor
 final class CreateRecurringViewModelTests: XCTestCase {
+    private var cancellables = Set<AnyCancellable>()
+
     private func makeVM(
         sourceOrderId: String? = nil,
         editing: RecurringTemplate? = nil,
@@ -85,7 +88,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
     func testPathADefaultsAddressToDefaultSaved() async {
         let addressClient = FakeRecurringSavedAddressClient()
         addressClient.result = .success([
-            RecurringSavedAddress(id: "addr-9", label: "Home", street: "Main 1", city: "Praha", isDefault: true)
+            RecurringFixtures.address(id: "addr-9", isDefault: true)
         ])
         let (vm, _) = makeVM(addressClient: addressClient)
 
@@ -138,8 +141,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
     func testLoadDoesNotOverwriteTheEditedTemplateAddressWithTheDefaultOne() async {
         let addressClient = FakeRecurringSavedAddressClient()
         addressClient.result = .success([
-            RecurringSavedAddress(id: "addr-9", label: "Home", street: "Main 1", city: "Praha", isDefault: true),
-            RecurringSavedAddress(id: "addr-1", label: "Flat", street: "Zenklova 6", city: "Praha", isDefault: false)
+            RecurringFixtures.address(id: "addr-9", isDefault: true),
+            RecurringFixtures.address(id: "addr-1")
         ])
         let (vm, _) = makeVM(editing: RecurringFixtures.template(), addressClient: addressClient)
 
@@ -281,7 +284,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertTrue(vm.savedAddresses.isEmpty)
 
         addressClient.result = .success([
-            RecurringSavedAddress(id: "addr-new", label: "Flat", street: "Zenklova 6", city: "Praha", isDefault: false)
+            RecurringFixtures.address(id: "addr-new")
         ])
         await vm.reloadAddresses()
 
@@ -293,8 +296,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
     func testReloadAddressesLeavesAHandPickedSelectionAlone() async {
         let addressClient = FakeRecurringSavedAddressClient()
         addressClient.result = .success([
-            RecurringSavedAddress(id: "addr-default", label: "Home", street: "Main 1", city: "Praha", isDefault: true),
-            RecurringSavedAddress(id: "addr-new", label: "Flat", street: "Zenklova 6", city: "Praha", isDefault: false)
+            RecurringFixtures.address(id: "addr-default", isDefault: true),
+            RecurringFixtures.address(id: "addr-new")
         ])
         let (vm, _) = makeVM(addressClient: addressClient)
         await vm.load()
@@ -313,5 +316,157 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
         XCTAssertEqual(client.createInputs.count, 1)
         XCTAssertTrue(client.updateInputs.isEmpty)
+    }
+
+    // MARK: - The market follows the picked address
+
+    /// A schedule is priced in the currency of its address's country, so the catalogue the form
+    /// offers is the one priced for the seeded address's market — read once, after the addresses.
+    func testTheCatalogueIsReadForTheSeededAddressesMarket() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let addressClient = FakeRecurringSavedAddressClient()
+        addressClient.result = .success([RecurringFixtures.address(id: "addr-cz", countryId: "cze", isDefault: true)])
+        let (vm, _) = makeVM(catalog: catalog, addressClient: addressClient)
+
+        await vm.load()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+        XCTAssertEqual(vm.selectedCountryId, "cze")
+    }
+
+    func testAnAddressWithoutACountryReadsThePlatformDefaultCatalogue() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let addressClient = FakeRecurringSavedAddressClient()
+        addressClient.result = .success([RecurringFixtures.address(id: "addr-9", isDefault: true)])
+        let (vm, _) = makeVM(catalog: catalog, addressClient: addressClient)
+
+        await vm.load()
+
+        XCTAssertEqual(catalog.requestedCountryIds, [nil])
+        XCTAssertNil(vm.selectedCountryId)
+    }
+
+    func testPickingAnAddressInAnotherCountryReloadsTheCatalogueForThatMarket() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let (vm, _) = makeVM(catalog: catalog, addressClient: twoMarkets())
+        await vm.load()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
+        XCTAssertEqual(vm.catalog, CatalogFixtures.slovak)
+        XCTAssertEqual(vm.catalog.currencyCode, "EUR")
+    }
+
+    func testASameCountryRepickDoesNotReloadTheCatalogue() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let addressClient = FakeRecurringSavedAddressClient()
+        addressClient.result = .success([
+            RecurringFixtures.address(id: "addr-cz", countryId: "cze", isDefault: true),
+            RecurringFixtures.address(id: "addr-cz-2", countryId: "cze")
+        ])
+        let (vm, _) = makeVM(catalog: catalog, addressClient: addressClient)
+        await vm.load()
+
+        vm.setSavedAddressId("addr-cz-2")
+        await drain()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+    }
+
+    /// What the new market does not price is not offered there: the schedule keeps only what the
+    /// reloaded catalogue lists, and the screen is told so it can say why the selection shrank.
+    func testSelectionsTheMarketDoesNotOfferArePrunedWithANotice() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let (vm, _) = makeVM(catalog: catalog, addressClient: twoMarkets())
+        await vm.load()
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+        vm.toggleService("s-1")
+        vm.toggleService("s-2")
+        vm.togglePackage("p-1")
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(vm.formState.selectedPackageIds, [])
+        XCTAssertEqual(events, [.selectionPrunedForMarket])
+    }
+
+    func testASelectionTheMarketStillOffersIsLeftAloneWithoutANotice() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let (vm, _) = makeVM(catalog: catalog, addressClient: twoMarkets())
+        await vm.load()
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+        vm.toggleService("s-1")
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(events, [])
+    }
+
+    /// A reload that fails keeps the catalogue on screen and touches nothing.
+    func testAFailedMarketReloadKeepsTheCatalogueAndTheSelection() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let (vm, _) = makeVM(catalog: catalog, addressClient: twoMarkets())
+        await vm.load()
+        vm.toggleService("s-2")
+
+        catalog.result = .failure(ApiError(code: "x"))
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
+        XCTAssertEqual(vm.catalog, CatalogFixtures.populated)
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-2"])
+    }
+
+    /// An address picked in the inline manager is not in the form's list until it is re-read; the
+    /// market waits for the list rather than flapping through the default and back.
+    func testAnAddressTheListDoesNotKnowYetLeavesTheMarketAloneUntilTheListLands() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let addressClient = FakeRecurringSavedAddressClient()
+        addressClient.result = .success([RecurringFixtures.address(id: "addr-cz", countryId: "cze", isDefault: true)])
+        let (vm, _) = makeVM(catalog: catalog, addressClient: addressClient)
+        await vm.load()
+
+        vm.setSavedAddressId("addr-new")
+        await drain()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        addressClient.result = .success([
+            RecurringFixtures.address(id: "addr-cz", countryId: "cze", isDefault: true),
+            RecurringFixtures.address(id: "addr-new", countryId: "svk")
+        ])
+        await vm.reloadAddresses()
+        await drain()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
+        XCTAssertEqual(vm.catalog, CatalogFixtures.slovak)
+    }
+
+    private func twoMarkets() -> FakeRecurringSavedAddressClient {
+        let addressClient = FakeRecurringSavedAddressClient()
+        addressClient.result = .success([
+            RecurringFixtures.address(id: "addr-cz", countryId: "cze", isDefault: true),
+            RecurringFixtures.address(id: "addr-sk", countryId: "svk")
+        ])
+        return addressClient
+    }
+
+    private func drain() async {
+        for _ in 0 ..< 5 {
+            await Task.yield()
+        }
     }
 }

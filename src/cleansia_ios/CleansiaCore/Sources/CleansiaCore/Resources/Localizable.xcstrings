@@ -1121,6 +1121,41 @@
         }
       }
     },
+    "error.currency.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Měna nebyla nalezena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currency not found"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Валюта не найдена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mena nebola nájdená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Валюту не знайдено"
+          }
+        }
+      }
+    },
     "error.device.invalid_platform": {
       "extractionState": "manual",
       "localizations": {
@@ -4895,6 +4930,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ви вже використали цей код"
+          }
+        }
+      }
+    },
+    "error.promo.requires_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro použití slevového kódu se přihlaste."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to use a promo code."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войдите в аккаунт, чтобы использовать промокод."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na použitie zľavového kódu sa prihláste."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увійдіть до облікового запису, щоб скористатися промокодом."
           }
         }
       }

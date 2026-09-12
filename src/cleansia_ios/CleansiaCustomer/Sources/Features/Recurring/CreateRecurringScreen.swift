@@ -97,6 +97,12 @@ struct CreateRecurringScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.load() }
+        .onReceive(vm.events) { event in
+            switch event {
+            case .selectionPrunedForMarket:
+                snackbar.showInfo(L10n.Booking.marketSelectionPruned)
+            }
+        }
         .sheet(
             isPresented: $showAddressManager,
             onDismiss: { Task { await vm.reloadAddresses() } },

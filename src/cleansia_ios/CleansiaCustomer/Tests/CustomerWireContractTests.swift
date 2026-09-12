@@ -340,6 +340,29 @@ final class CustomerWireContractTests: XCTestCase {
         assertRefused("isDefault") { try payload.toDomain() }
     }
 
+    /// The recurring form prices its catalogue for the picked address's country, so the row it picks
+    /// from has to carry it; a row without an id is dropped, one without a country reads the default.
+    func testARecurringAddressCarriesItsCountry() {
+        var payload = SavedAddressDto(
+            id: "addr-1",
+            label: "Home",
+            street: "Hlavná 1",
+            city: "Bratislava",
+            zipCode: "811 01",
+            countryId: "svk",
+            isDefault: true
+        )
+        XCTAssertEqual(payload.toRecurringAddress()?.countryId, "svk")
+        XCTAssertEqual(payload.toRecurringAddress()?.isDefault, true)
+
+        payload.countryId = nil
+        XCTAssertNil(payload.toRecurringAddress()?.countryId)
+        XCTAssertNotNil(payload.toRecurringAddress())
+
+        payload.id = nil
+        XCTAssertNil(payload.toRecurringAddress())
+    }
+
     private func assertRefused(
         _ field: String,
         file: StaticString = #filePath,

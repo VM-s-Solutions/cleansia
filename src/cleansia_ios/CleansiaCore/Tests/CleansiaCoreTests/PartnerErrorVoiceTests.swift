@@ -76,6 +76,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "company.not_found": "ReceiptService",
         "country.not_existing_id": "UpdateAddressInfo, UpdateEmployee, UpdateIdentificationInfo",
         "country.not_serviced": "UpdateAddressInfo, UpdateEmployee",
+        "currency.not_found": "GetPeriodPays",
         "device.invalid_platform": "RegisterDevice",
         "device.not_found": "RevokeDevice",
         "dispute.max_length_exceeded": "UpdateBankDetails, UpdateEmployee, UpdateIdentificationInfo",

@@ -56,6 +56,12 @@ extension UpdateRecurringInput {
     }
 }
 
+enum CreateRecurringEvent: Equatable {
+    /// The picked address moved the schedule into a market where part of the selection is not
+    /// offered; the selection was cut down to what the reloaded catalogue still lists.
+    case selectionPrunedForMarket
+}
+
 @MainActor
 final class CreateRecurringViewModel: ViewModel {
     @Published private(set) var formState = CreateRecurringFormState()
@@ -65,12 +71,17 @@ final class CreateRecurringViewModel: ViewModel {
 
     let sourceOrderId: String?
     let editing: RecurringTemplate?
+    let events = PassthroughSubject<CreateRecurringEvent, Never>()
 
     private let repository: RecurringBookingRepository
     private let catalogClient: CatalogClient
     private let addressClient: RecurringSavedAddressClient
     private let orderClient: OrderClient
     private let snackbar: SnackbarController
+    private var isCatalogLoaded = false
+    private var catalogCountryId: String?
+    private var marketReload: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
 
     init(
         sourceOrderId: String?,
@@ -92,6 +103,7 @@ final class CreateRecurringViewModel: ViewModel {
         if let editing {
             formState = CreateRecurringFormState(editing)
         }
+        startMarketWatcher()
     }
 
     var isEditing: Bool {
@@ -116,19 +128,70 @@ final class CreateRecurringViewModel: ViewModel {
         return min(startsOn, Date())
     }
 
-    func load() async {
-        async let catalogResult = catalogClient.loadCatalog(countryId: nil)
-        async let addressResult = addressClient.getMine()
+    /// The country of the picked saved address — the market the schedule is priced in.
+    var selectedCountryId: String? {
+        savedAddresses.first { $0.id == formState.savedAddressId }?.countryId
+    }
 
-        if case let .success(catalog) = await catalogResult {
-            self.catalog = catalog
-        }
-        if case let .success(addresses) = await addressResult {
+    /// The addresses come first so the catalogue is read once, priced for the seeded address's market.
+    func load() async {
+        if case let .success(addresses) = await addressClient.getMine() {
             apply(addresses)
         }
+        await fetchCatalog()
         if let sourceOrderId {
             await prefill(from: sourceOrderId)
         }
+    }
+
+    private func fetchCatalog() async {
+        let countryId = selectedCountryId
+        guard case let .success(catalog) = await catalogClient.loadCatalog(countryId: countryId) else { return }
+        self.catalog = catalog
+        isCatalogLoaded = true
+        catalogCountryId = countryId
+        if selectedCountryId != countryId {
+            reloadCatalogForMarket(selectedCountryId)
+        }
+    }
+
+    /// The picked address decides the market, the way the booking wizard's address step does: the
+    /// catalogue is re-read priced for that country and the selection keeps only what it still lists.
+    /// The catalogue on screen stays until the new one lands (or the reload fails). An id the list
+    /// does not know yet (one just created inline) is waited out rather than flapping the market
+    /// through the default and back.
+    private func startMarketWatcher() {
+        Publishers.CombineLatest($formState.map(\.savedAddressId), $savedAddresses)
+            .compactMap { savedAddressId, addresses in addresses.first { $0.id == savedAddressId } }
+            .map(\.countryId)
+            .removeDuplicates()
+            .sink { [weak self] countryId in
+                self?.reloadCatalogForMarket(countryId)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func reloadCatalogForMarket(_ countryId: String?) {
+        marketReload?.cancel()
+        guard isCatalogLoaded, countryId != catalogCountryId else { return }
+        marketReload = Task { [weak self] in
+            guard let self else { return }
+            let result = await catalogClient.loadCatalog(countryId: countryId)
+            if Task.isCancelled { return }
+            guard case let .success(catalog) = result else { return }
+            self.catalog = catalog
+            catalogCountryId = countryId
+            pruneSelection(notListedIn: catalog)
+        }
+    }
+
+    private func pruneSelection(notListedIn catalog: Catalog) {
+        let services = formState.selectedServiceIds.intersection(catalog.services.map(\.id))
+        let packages = formState.selectedPackageIds.intersection(catalog.packages.map(\.id))
+        guard services != formState.selectedServiceIds || packages != formState.selectedPackageIds else { return }
+        formState.selectedServiceIds = services
+        formState.selectedPackageIds = packages
+        events.send(.selectionPrunedForMarket)
     }
 
     /// Re-read the list after the inline address manager closes — an address

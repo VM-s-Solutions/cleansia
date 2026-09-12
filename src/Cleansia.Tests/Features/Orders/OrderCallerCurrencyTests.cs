@@ -269,7 +269,14 @@ public class OrderCallerCurrencyTests
         new(_pricingCalculator.Object, _membershipPlanRepository.Object, _loyaltyService.Object, _session.Object, _markets);
 
     private QuotePlusSavings.Validator PlusValidator() =>
-        new(_currencyRepository.Object, _countries, _markets);
+        new(
+            _serviceRepository.Object,
+            _packageRepository.Object,
+            _currencyRepository.Object,
+            _countries,
+            _markets,
+            CataloguePriceDoubles.Services(Czk, ("service-1", 500m, 100m)),
+            CataloguePriceDoubles.Packages(Czk, ("package-1", 1000m)));
 
     private static QuotePlusSavings.Query PlusQuery(string? currencyId, string? countryId = null) =>
         new(["service-1"], [], Rooms: 2, Bathrooms: 1, PlanCode: "plus-monthly",

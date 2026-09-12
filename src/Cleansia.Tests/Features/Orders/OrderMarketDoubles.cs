@@ -20,15 +20,29 @@ internal static class OrderMarketDoubles
 
     /// <summary>
     /// The named countries trade in their own currency; every other country, and no country, falls to
-    /// <paramref name="fallback"/> — the platform default, as the production chain falls.
+    /// <paramref name="fallback"/> — the platform default, as the production chain falls. Every cleaner
+    /// is paid in the fallback, so a suite that names a preferred cleaner keeps its single-market meaning.
     /// </summary>
     public static ICurrencyResolutionService Trading(
         Currency fallback, params (string CountryId, Currency Currency)[] markets)
+        => TradingAndPaying(fallback, markets);
+
+    /// <summary>
+    /// <see cref="Trading(Currency, ValueTuple{string, Currency}[])"/>, and the named cleaners are paid in
+    /// their own currency — the shape of a cleaner working in another market than the booking's.
+    /// </summary>
+    public static ICurrencyResolutionService TradingAndPaying(
+        Currency fallback,
+        (string CountryId, Currency Currency)[] markets,
+        params (string EmployeeId, Currency Currency)[] cleaners)
     {
         var mock = new Mock<ICurrencyResolutionService>();
         mock.Setup(s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string? countryId, CancellationToken _) =>
                 markets.FirstOrDefault(m => m.CountryId == countryId).Currency ?? fallback);
+        mock.Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string employeeId, CancellationToken _) =>
+                cleaners.FirstOrDefault(c => c.EmployeeId == employeeId).Currency ?? fallback);
         return mock.Object;
     }
 

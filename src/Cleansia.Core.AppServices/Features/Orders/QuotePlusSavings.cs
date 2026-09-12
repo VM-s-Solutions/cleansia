@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -54,15 +55,23 @@ public static class QuotePlusSavings
         private readonly ICurrencyRepository _currencyRepository;
         private readonly ICountryRepository _countryRepository;
         private readonly ICurrencyResolutionService _currencyResolutionService;
+        private readonly IServicePriceRepository _servicePriceRepository;
+        private readonly IPackagePriceRepository _packagePriceRepository;
 
         public Validator(
+            IServiceRepository serviceRepository,
+            IPackageRepository packageRepository,
             ICurrencyRepository currencyRepository,
             ICountryRepository countryRepository,
-            ICurrencyResolutionService currencyResolutionService)
+            ICurrencyResolutionService currencyResolutionService,
+            IServicePriceRepository servicePriceRepository,
+            IPackagePriceRepository packagePriceRepository)
         {
             _currencyRepository = currencyRepository;
             _countryRepository = countryRepository;
             _currencyResolutionService = currencyResolutionService;
+            _servicePriceRepository = servicePriceRepository;
+            _packagePriceRepository = packagePriceRepository;
 
             RuleFor(x => x.PlanCode)
                 .NotEmpty()
@@ -70,6 +79,23 @@ public static class QuotePlusSavings
 
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0);
             RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0);
+
+            // Existence, then a price row in the currency being quoted in -- the same two terms as
+            // QuoteOrder, because this query prices the same basket and the calculator throws on an
+            // entry with no row in the resolved currency.
+            RuleFor(x => x.SelectedServiceIds)
+                .Cascade(CascadeMode.Stop)
+                .MustAsync(serviceRepository.ExistWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
+                .MustAsync(ArePricedInQuoteCurrencyAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
+
+            RuleFor(x => x.SelectedPackageIds)
+                .Cascade(CascadeMode.Stop)
+                .MustAsync(packageRepository.ExistWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)
+                .MustAsync(ArePackagesPricedInQuoteCurrencyAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
             // Same rules, same keys, same resolution as QuoteOrder: this query prices the basket too,
             // and the calculator throws on a currency it cannot price in.
@@ -87,12 +113,67 @@ public static class QuotePlusSavings
             => string.IsNullOrEmpty(query.CountryId)
                || await _countryRepository.IsServicedAsync(query.CountryId, cancellationToken);
 
-        private async Task<bool> CurrencyIsOfferableAsync(Query query, CancellationToken cancellationToken)
+        private async Task<bool> CurrencyIsOfferableAsync(
+            Query query,
+            Query _,
+            ValidationContext<Query> context,
+            CancellationToken cancellationToken)
         {
-            var currencyId = await QuoteOrder.ResolveQuoteCurrencyId(
-                query.CurrencyId, query.CountryId, _currencyResolutionService, cancellationToken);
+            var currencyId = await ResolveQuoteCurrencyIdAsync(query, context, cancellationToken);
             return currencyId is null
                    || await _currencyRepository.IsOfferableAsync(currencyId, cancellationToken);
+        }
+
+        private async Task<bool> ArePricedInQuoteCurrencyAsync(
+            Query query,
+            IEnumerable<string> serviceIds,
+            ValidationContext<Query> context,
+            CancellationToken cancellationToken)
+        {
+            var ids = serviceIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return true;
+            }
+            var currencyId = await ResolveQuoteCurrencyIdAsync(query, context, cancellationToken)
+                             ?? (await _currencyRepository.GetDefaultAsync(cancellationToken)).Id;
+            var prices = await CataloguePriceLookup.ForServicesAsync(
+                _servicePriceRepository, ids, currencyId, cancellationToken);
+            return ids.All(prices.ContainsKey);
+        }
+
+        private async Task<bool> ArePackagesPricedInQuoteCurrencyAsync(
+            Query query,
+            IEnumerable<string> packageIds,
+            ValidationContext<Query> context,
+            CancellationToken cancellationToken)
+        {
+            var ids = packageIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return true;
+            }
+            var currencyId = await ResolveQuoteCurrencyIdAsync(query, context, cancellationToken)
+                             ?? (await _currencyRepository.GetDefaultAsync(cancellationToken)).Id;
+            var prices = await CataloguePriceLookup.ForPackagesAsync(
+                _packagePriceRepository, ids, currencyId, cancellationToken);
+            return ids.All(prices.ContainsKey);
+        }
+
+        private const string QuoteCurrencyIdKey = "quotePlusSavings.currencyId";
+
+        private async Task<string?> ResolveQuoteCurrencyIdAsync(
+            Query query, ValidationContext<Query> context, CancellationToken cancellationToken)
+        {
+            if (context.RootContextData.TryGetValue(QuoteCurrencyIdKey, out var cached))
+            {
+                return cached as string;
+            }
+
+            var currencyId = await QuoteOrder.ResolveQuoteCurrencyId(
+                query.CurrencyId, query.CountryId, _currencyResolutionService, cancellationToken);
+            context.RootContextData[QuoteCurrencyIdKey] = currencyId;
+            return currencyId;
         }
     }
 

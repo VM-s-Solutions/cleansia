@@ -397,7 +397,8 @@ public sealed class ReceiptService(
             // The sale above, how it was settled below. -> ReceiptPdfData.CreditApplied
             CreditApplied = order.CreditAppliedAmount,
             AmountDueOnCard = order.AmountDueOnCard,
-            Currency = order.Currency?.Symbol ?? "Kč",
+            // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
+            Currency = order.Currency?.Symbol ?? string.Empty,
             PaymentStatus = order.PaymentStatus.ToString(),
             PaymentType = order.ActualPaymentType.ToString(),
             CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm"),

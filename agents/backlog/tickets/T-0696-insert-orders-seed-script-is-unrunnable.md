@@ -1,11 +1,11 @@
 ---
 id: T-0696
 title: sql-scripts/seed/insert_orders.sql cannot run — wrong content and mismatched arity
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-12
 depends_on: []
 blocks: []
 stories: []
@@ -52,3 +52,6 @@ dropped freely, so nothing about this file is load-bearing for real data.
 ## Status log
 
 - 2026-09-08 — filed from the T-0691 out-of-scope list; re-verified by reading the file the same day.
+- 2026-09-12 — closed: the file was deleted in 4a6319a9 together with the seven other seed scripts that
+  cannot run against the current schema. AC1 is answered by the deletion; AC2 and AC3 applied only if
+  it was kept.

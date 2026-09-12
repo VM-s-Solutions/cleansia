@@ -523,7 +523,8 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.consent_not_found',
   'gdpr.consent_already_granted',
   // Promo — request a first-clean code, and CreateOrder refusing a promo the
-  // server will not honour (one key per PromoCodeError reason)
+  // server will not honour (one key per PromoCodeError reason, plus a code on
+  // an anonymous booking, which the applier would otherwise drop silently)
   'promo.already_sent',
   'promo.not_found',
   'promo.expired',
@@ -533,6 +534,7 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'promo.per_user_limit_reached',
   'promo.below_minimum_order_amount',
   'promo.currency_mismatch',
+  'promo.requires_account',
   // Referral — validate
   'referral.not_found',
   'referral.self_referral',

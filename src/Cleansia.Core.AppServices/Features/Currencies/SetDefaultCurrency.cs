@@ -97,9 +97,11 @@ public class SetDefaultCurrency
             // recover a database that has none. Clearing zero rows is a valid outcome.
             //
             // The transaction is what keeps the window between the two flushes unobservable:
-            // `GetDefaultAsync` throws when no default exists, and it has roughly fifteen production
-            // callers including the recurring materializer and the pay-period background service -- a
-            // durable zero-default gap would take order creation down, not just this screen. Both
+            // `GetDefaultAsync` throws when no default exists, and its production callers -- the pricing
+            // calculator, CurrencyResolutionService's fallback, the quote validators, the catalogue paging
+            // queries, promo validation, the credit queries, the two admin reports and CancelUnfilledOrders
+            // -- would all fail on a durable zero-default gap, taking quoting and order creation down, not
+            // just this screen. Both
             // flushes are ordinary `CommitAsync` calls, so both rows still get their audit stamp.
             //
             // WHAT THIS COSTS, stated because it is a real trade and not a free one. The pipeline

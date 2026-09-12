@@ -221,11 +221,13 @@ public class IssuePartialRefund
                 return 0m;
             }
 
-            // The FIXED part is a number in the COUNTRY's currency (6 on the CZE row means 6 CZK). The
-            // caller names the order's currency and the address names the country, and nothing ties the
-            // two — so on a CZ-address order priced in EUR it would be deducted as 6 EUR. The rate is
-            // unit-free and still applies; the fixed part is absorbed, the same fail-open direction a
-            // null figure already takes. → /product/business-rules#money-constants
+            // The FIXED part is a number in the COUNTRY's currency (6 on the CZE row means 6 CZK). CreateOrder
+            // derives the order's currency from the address's country and refuses a mismatch, so on every
+            // order created under that rule the two agree and the fee is deducted whole. The Equals guard
+            // is the defence for legacy rows from before it, where the caller named the currency and
+            // nothing tied it to the address: there the fixed part is absorbed rather than deducted in the
+            // wrong unit, the same fail-open direction a null figure already takes. The rate is unit-free
+            // and still applies. → /product/business-rules#money-constants
             var fixedPart = string.Equals(
                 order.Currency?.Code, config.DefaultCurrencyCode, StringComparison.OrdinalIgnoreCase)
                 ? fixedFee

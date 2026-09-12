@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Tests.Features.Orders;
 using Moq;
 
 namespace Cleansia.Tests.Features.Bookings;
@@ -177,7 +178,11 @@ public class CreateRecurringBookingPreferredCleanerTests
     }
 
     private CreateRecurringBooking.Validator CreateValidator() =>
-        new(_orderRepository.Object, _session.Object);
+        new(
+            _orderRepository.Object,
+            _session.Object,
+            _savedAddressRepository.Object,
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()));
 
     private CreateRecurringBooking.Handler CreateHandler() =>
         new(

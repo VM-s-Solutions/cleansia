@@ -391,9 +391,11 @@ public class Employee : Auditable, ITenantEntity
     /// <see cref="EmployeePayoutDetails"/> and there is no backfill: reading only
     /// <see cref="HasPayoutDetails"/> would mark every one of them incomplete on deploy day and 403 them
     /// off the whole partner surface, which is the outage D7 exists to prevent. The term retires when the
-    /// legacy column does.</para>
+    /// legacy column does. <see cref="Anonymize"/> overwrites the column with the marker rather than
+    /// clearing it, and a marker is not a destination.</para>
     /// </summary>
-    private bool HasPayoutDestination() => HasPayoutDetails || !string.IsNullOrEmpty(IBAN);
+    private bool HasPayoutDestination() =>
+        HasPayoutDetails || (!string.IsNullOrEmpty(IBAN) && IBAN != AnonymizationMarker.Value);
 
     public bool IsProfileComplete()
     {

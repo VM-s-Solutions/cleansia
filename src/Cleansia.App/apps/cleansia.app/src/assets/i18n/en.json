@@ -1937,7 +1937,8 @@
       "global_limit_reached": "This promo code has reached its usage limit.",
       "per_user_limit_reached": "You've already used this promo code.",
       "below_minimum_order_amount": "Your order doesn't meet the minimum amount for this promo code.",
-      "currency_mismatch": "This promo code can't be used in the currency this booking is priced in."
+      "currency_mismatch": "This promo code can't be used in the currency this booking is priced in.",
+      "requires_account": "Sign in to use a promo code."
     },
     "referral": {
       "not_found": "That referral code doesn't exist.",

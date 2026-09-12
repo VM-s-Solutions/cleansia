@@ -540,6 +540,9 @@ public static class BusinessErrorMessage
     public const string PromoPerUserLimitReached = "promo.per_user_limit_reached";
     public const string PromoBelowMinimumOrderAmount = "promo.below_minimum_order_amount";
     public const string PromoCurrencyMismatch = "promo.currency_mismatch";
+    /// <summary>A promo code on an anonymous booking: the applier keys every code to a customer, so with
+    /// no account it would be dropped and the order booked at full price against the total consented to.</summary>
+    public const string PromoRequiresAccount = "promo.requires_account";
 
     // Promo codes — public requests
     public const string PromoCodeAlreadySent = "promo.already_sent";

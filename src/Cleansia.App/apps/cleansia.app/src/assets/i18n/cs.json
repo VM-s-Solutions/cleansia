@@ -1937,7 +1937,8 @@
       "global_limit_reached": "Tento slevový kód dosáhl limitu použití.",
       "per_user_limit_reached": "Tento slevový kód jste už použili.",
       "below_minimum_order_amount": "Vaše objednávka nesplňuje minimální částku pro tento slevový kód.",
-      "currency_mismatch": "Tento slevový kód nelze použít v měně, ve které je tato objednávka naceněna."
+      "currency_mismatch": "Tento slevový kód nelze použít v měně, ve které je tato objednávka naceněna.",
+      "requires_account": "Pro použití slevového kódu se přihlaste."
     },
     "referral": {
       "not_found": "Tento doporučovací kód neexistuje.",

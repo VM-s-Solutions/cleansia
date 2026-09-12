@@ -480,18 +480,33 @@ public class CreateOrderValidatorCharacterizationTests
     }
 
     /// <summary>
-    /// The handler's applier ignores a code with no signed-in customer, so there is nothing here to
-    /// honour or refuse.
+    /// The handler's applier keys every code to a customer and ignores one with no signed-in customer,
+    /// which used to book the anonymous order at full price against the discounted total consented to.
+    /// The code is refused instead, under its own key and before the promo service is asked anything.
     /// </summary>
     [Fact]
-    public async Task A_Promo_With_No_Signed_In_Customer_Is_Not_Previewed()
+    public async Task A_Promo_With_No_Signed_In_Customer_Is_Refused_And_Never_Previewed()
     {
         _session.Setup(s => s.GetUserId()).Returns((string?)null);
 
         var result = await CreateValidator().ValidateAsync(CreateOrderTestData.ValidCommand(promoCode: PromoCode));
 
-        Assert.True(result.IsValid);
+        Assert.False(result.IsValid);
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.PromoRequiresAccount, failure.ErrorMessage);
+        Assert.Equal(nameof(CreateOrder.Command.PromoCode), failure.ErrorCode);
         VerifyPromoPreviewed(Times.Never());
+    }
+
+    /// <summary>Anti-vacuity for the rule above: no code, no account, nothing to refuse.</summary>
+    [Fact]
+    public async Task An_Anonymous_Booking_Without_A_Promo_Passes()
+    {
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+
+        var result = await CreateValidator().ValidateAsync(CreateOrderTestData.ValidCommand(promoCode: null));
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
     /// <summary>

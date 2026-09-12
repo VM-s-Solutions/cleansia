@@ -39,6 +39,7 @@ public class ReceiptServiceCurrencyFailClosedTests
     private readonly Mock<IBlobContainerClientFactory> _blobClientFactory = new();
     private readonly Mock<IFiscalServiceResolver> _fiscalServiceResolver = new();
     private readonly CapturingFiscalService _provider = new();
+    private readonly List<ReceiptPdfData> _renderedPdfs = [];
 
     public ReceiptServiceCurrencyFailClosedTests()
     {
@@ -70,6 +71,7 @@ public class ReceiptServiceCurrencyFailClosedTests
 
         _pdfService
             .Setup(p => p.GenerateReceiptPdf(It.IsAny<ReceiptPdfData>(), It.IsAny<string?>()))
+            .Callback((ReceiptPdfData data, string? _) => _renderedPdfs.Add(data))
             .Returns([1, 2, 3]);
         _blobClientFactory
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
@@ -145,6 +147,28 @@ public class ReceiptServiceCurrencyFailClosedTests
         Assert.Null(receipt.FiscalCode);
         Assert.True(receipt.FiscalRegistrationFailed);
         Assert.Contains(OrderId, receipt.FiscalError);
+    }
+
+    [Fact]
+    public async Task The_Receipt_Pdf_Carries_The_Orders_Own_Currency_Symbol()
+    {
+        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), BuildReceipt(), LanguageCode, CancellationToken.None);
+
+        Assert.Equal("€", Assert.Single(_renderedPdfs).Currency);
+    }
+
+    /// <summary>
+    /// The PDF still renders on a fiscal refusal, and it renders the total with NO unit: a guessed "Kč"
+    /// on a EUR order is a false receipt in the customer's hands.
+    /// </summary>
+    [Fact]
+    public async Task The_Receipt_Pdf_For_An_Order_Without_Its_Currency_Carries_No_Unit()
+    {
+        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(currency: null), BuildReceipt(), LanguageCode, CancellationToken.None);
+
+        var rendered = Assert.Single(_renderedPdfs);
+        Assert.Equal(string.Empty, rendered.Currency);
+        Assert.DoesNotContain("Kč", rendered.Currency, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -197,6 +197,9 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.ExpressWaiverNoLongerAvailable)
                 .MustAsync(PriceMatchesAsync)
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch)
+                .Must(PromoNamesASignedInCustomer)
+                .WithMessage(BusinessErrorMessage.PromoRequiresAccount)
+                .WithErrorCode(nameof(Command.PromoCode))
                 .MustAsync(PromoWouldBeHonouredAsync)
                 .WithMessage(PromoErrorTemplate)
                 .WithErrorCode(nameof(Command.PromoCode));
@@ -269,11 +272,23 @@ public class CreateOrder
                     .GetEntitledForUserNoTrackingAsync(userId, cancellationToken) is not null;
         }
 
+        /// <summary>
+        /// A completed order together, AND paid in the order's currency. A cleaner is paid in the
+        /// currency of the country they work in; the board hides and take refuses a job in any other, so
+        /// a hold granted across currencies could only lapse -- the push would be sent, the seat withheld
+        /// for the whole hold, and the cleaner unable to act on it. One rule, one key: which term failed
+        /// is not the customer's to learn.
+        /// </summary>
         private async Task<bool> PreferredEmployeeIsEligibleAsync(
             Command command,
+            Command _,
+            ValidationContext<Command> context,
             CancellationToken cancellationToken)
             => await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
-                _userSessionProvider.GetUserId()!, command.PreferredEmployeeId!, cancellationToken);
+                   _userSessionProvider.GetUserId()!, command.PreferredEmployeeId!, cancellationToken)
+               && (await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(
+                   command.PreferredEmployeeId!, cancellationToken)).Id
+                  == await ResolveOrderCurrencyIdAsync(command, context, cancellationToken);
 
         private async Task<bool> HavePayCoverageAsync(
             Command command,
@@ -464,8 +479,13 @@ public class CreateOrder
         /// re-runs: the same code, the same pre-surcharge subtotal from the cached calculator result,
         /// and the address country's currency -- so a code bound to another market's currency, or one
         /// that expired or hit its cap between apply and submit, is refused here rather than dropped.
-        /// No code, or no signed-in customer, is nothing to honour.
+        /// No code is nothing to honour; a code with no signed-in customer is refused by the rule before
+        /// this one, because the applier would silently drop it and book at full price.
         /// </summary>
+        private bool PromoNamesASignedInCustomer(Command command)
+            => string.IsNullOrEmpty(command.PromoCode)
+               || !string.IsNullOrEmpty(_userSessionProvider.GetUserId());
+
         private async Task<bool> PromoWouldBeHonouredAsync(
             Command command,
             Command _,

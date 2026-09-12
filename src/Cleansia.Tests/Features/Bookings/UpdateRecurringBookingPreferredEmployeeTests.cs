@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Tests.Features.Orders;
 using Moq;
 
 namespace Cleansia.Tests.Features.Bookings;
@@ -30,10 +31,14 @@ public class UpdateRecurringBookingPreferredEmployeeTests
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
 
     public UpdateRecurringBookingPreferredEmployeeTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
+        _savedAddressRepository
+            .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
         _templateRepository
             .Setup(r => r.ExistsAsync(TemplateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -83,7 +88,8 @@ public class UpdateRecurringBookingPreferredEmployeeTests
 
     private UpdateRecurringBooking.Validator CreateValidator() =>
         new(_templateRepository.Object, _membershipRepository.Object, _session.Object,
-            _orderRepository.Object);
+            _orderRepository.Object, _savedAddressRepository.Object,
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()));
 
     private static UpdateRecurringBooking.Command CommandWith(string? preferredEmployeeId) =>
         new(

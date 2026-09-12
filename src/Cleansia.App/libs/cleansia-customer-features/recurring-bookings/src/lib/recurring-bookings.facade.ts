@@ -14,11 +14,9 @@ import {
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import {
-  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
   SavedAddressStore,
-  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerPackagesCatalogue,
   selectCustomerServices,
@@ -49,10 +47,10 @@ export interface QuotedPrice {
  * wizard. Signal-only state — matches the order-wizard convention; no NgRx
  * slice unless cross-screen caching becomes valuable.
  *
- * Lifetime: provided at the *list* component scope so the templates cache
- * outlives the wizard navigation. The wizard itself doesn't re-provide it,
- * so tapping "Create" → submit → back-to-list reuses the same in-flight
- * cache without a re-fetch round trip.
+ * Lifetime: each screen provides its own instance (the list and the wizard
+ * both declare it in `providers`), so the templates cache is per screen and
+ * "Create" → submit → back-to-list re-fetches; the shared catalogue and
+ * addresses live in the stores, not here.
  */
 @Injectable()
 export class RecurringBookingsFacade extends UnsubscribeControlDirective {
@@ -118,10 +116,6 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly packages = toSignal(this.store.select(selectCustomerPackages), {
     initialValue: [] as PackageListItem[],
   });
-  /** The platform default, which a quote that names no currency of its own is labelled with. */
-  readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
-    initialValue: null,
-  });
   readonly savedAddresses = this.savedAddressStore.addresses;
 
   /**
@@ -162,7 +156,6 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.applyDefaultStartDate();
 
     this.followAddressCountry();
-    this.store.dispatch(loadCustomerCurrencies());
 
     // First, because it decides which page the customer is even shown. A
     // failure here reads as "not a member": the paywall is the safe wrong
@@ -393,7 +386,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       if (!quoted) return null;
       return {
         amount: quoted.finalPriceAfterDiscount ?? quoted.totalPrice,
-        currency: quoted.currencyCode || this.defaultCurrencyCode(),
+        // The quote names its currency; a blank one renders the bare number, never a guessed unit.
+        currency: quoted.currencyCode ?? '',
       };
     } catch {
       return null;

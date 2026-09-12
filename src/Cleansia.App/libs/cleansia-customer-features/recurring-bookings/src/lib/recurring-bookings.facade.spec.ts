@@ -11,11 +11,9 @@ import {
   SetRecurringBookingActiveCommand,
 } from '@cleansia/customer-services';
 import {
-  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
   SavedAddressStore,
-  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerPackagesCatalogue,
   selectCustomerServices,
@@ -98,7 +96,6 @@ describe('RecurringBookingsFacade', () => {
     store.overrideSelector(selectCustomerPackages, []);
     store.overrideSelector(selectCustomerServicesCatalogue, { services: [], countryId: null });
     store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
-    store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
     facade = TestBed.inject(RecurringBookingsFacade);
   });
 
@@ -212,19 +209,15 @@ describe('RecurringBookingsFacade', () => {
   });
 
   describe('the currency a schedule is priced in', () => {
-    it('asks the store for the platform currencies alongside the catalogue', async () => {
-      jest.spyOn(store, 'dispatch');
+    it('prices a quote that names no currency as a bare number, never in a guessed unit', async () => {
+      orderClient.quote.mockReturnValue(
+        of(QuoteOrderResponse.fromJS({ totalPrice: 1000, finalPriceAfterDiscount: 900 })),
+      );
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
 
-      await facade.initialize();
+      await facade.quoteForm();
 
-      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
-    });
-
-    it('re-exposes the platform default for the catalogue prices the form lists', () => {
-      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'EUR');
-      store.refreshState();
-
-      expect(facade.defaultCurrencyCode()).toBe('EUR');
+      expect(facade.formPrice()).toEqual({ amount: 900, currency: '' });
     });
 
     // The form's price threaded the quote's currency on one line and hardcoded CZK on the next.

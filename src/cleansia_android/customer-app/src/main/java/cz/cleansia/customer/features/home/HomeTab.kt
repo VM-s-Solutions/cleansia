@@ -152,12 +152,14 @@ fun HomeTab(
     val isPlus = membership?.hasMembership == true
     val hasAnyOrders = recentOrders.isNotEmpty()
 
-    // Catalog — used for the popular-packages quick-book strip. Refresh once
-    // on first composition; CatalogRepository.refresh is a no-op if cached.
+    // Catalog — used for the popular-packages quick-book strip. Refresh once on first
+    // composition when nothing is loaded, and whenever the repository still answers for
+    // another market: both wizards hand the default back on exit, but Home prices the
+    // platform default and must not depend on that.
     val catalogRepo = viewModel.catalogRepository
     val packages by catalogRepo.packages.collectAsState(initial = emptyList())
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        if (packages.isEmpty()) viewModel.refreshCatalog()
+        if (packages.isEmpty() || catalogRepo.countryId.value != null) viewModel.refreshCatalog()
     }
     // Top-3 packages by displayOrder (proxy for popularity) — falls back to
     // first 3 if displayOrder is null/uniform across the catalog.

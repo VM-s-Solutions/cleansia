@@ -91,23 +91,29 @@
         <cleansia-loader />
         } @else {
         <div class="user-loyalty-detail__credit">
+          <!--
+            EVERY balance, one per currency. Credit is spendable only on an order in the same currency,
+            and the discharge beside this refuses when more than one balance is funded — so a screen
+            that showed one balance could tell an admin erasure was blocked by money it never showed
+            them. The scalars on the response (balance, currencyCode, ledger) are accounts[0] and are
+            not rendered here; the Expire dialog still reads them, deliberately (see ExpireCustomerCredit).
+
+            "No account" and "a zero balance" mean different things to the person reading this, so the
+            never-credited state is its own block rather than an empty list.
+          -->
+          @if (facade.credit() && !facade.credit()!.hasAccount) {
           <div class="user-loyalty-detail__credit-balance">
             <span class="user-loyalty-detail__credit-balance-label">
               {{ 'pages.loyalty_user_detail.credit.balance' | translate }}
             </span>
             <span class="user-loyalty-detail__credit-balance-value">
-              {{ facade.credit()?.balance ?? 0 }} {{ facade.credit()?.currencyCode }}
+              0 {{ facade.credit()?.currencyCode }}
             </span>
-            <!--
-              "No account" and "a zero balance" mean different things to the person reading this, so
-              they are not collapsed into one.
-            -->
-            @if (facade.credit() && !facade.credit()!.hasAccount) {
             <span class="user-loyalty-detail__credit-none">
               {{ 'pages.loyalty_user_detail.credit.never_credited' | translate }}
             </span>
-            }
           </div>
+          }
 
           <div class="user-loyalty-detail__actions">
             <cleansia-button
@@ -120,7 +126,8 @@
             <!--
               Absent at a zero balance rather than disabled: there is nothing to discharge, and a
               greyed-out destructive button on a page an admin visits daily is an invitation to
-              find out what it does.
+              find out what it does. `balance` is the LARGEST account's, so "> 0" means "something is
+              funded".
             -->
             @if ((facade.credit()?.balance ?? 0) > 0) {
             <cleansia-button
@@ -135,11 +142,23 @@
           </div>
         </div>
 
-        <cleansia-table
-          [data]="facade.credit()?.ledger ?? []"
-          [columns]="creditColumns"
-          [config]="{ paginator: false, emptyMessage: 'pages.loyalty_user_detail.credit.empty' }"
-        />
+        @for (account of facade.credit()?.accounts ?? []; track account.accountId) {
+        <div class="user-loyalty-detail__credit-account">
+          <div class="user-loyalty-detail__credit-balance">
+            <span class="user-loyalty-detail__credit-balance-label">
+              {{ 'pages.loyalty_user_detail.credit.balance' | translate }}
+            </span>
+            <span class="user-loyalty-detail__credit-balance-value">
+              {{ account.balance }} {{ account.currencyCode }}
+            </span>
+          </div>
+          <cleansia-table
+            [data]="account.ledger ?? []"
+            [columns]="creditColumns"
+            [config]="{ paginator: false, emptyMessage: 'pages.loyalty_user_detail.credit.empty' }"
+          />
+        </div>
+        }
         }
       </cleansia-section>
 
@@ -219,7 +238,7 @@
   [visible]="creditDialogVisible()"
   (visibleChange)="onCreditDialogVisibleChange($event)"
   [submitting]="facade.creditSubmitting()"
-  [currencyCode]="facade.credit()?.currencyCode ?? ''"
+  [currencies]="facade.currencies()"
   (submitForm)="onIssueCredit($event)"
 />
 

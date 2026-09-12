@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminCurrencyListItem,
   AdminReferralListItem,
   CreditTransactionReason,
   GetUserCreditResponse,
@@ -24,8 +25,15 @@ export interface ManualPointsInput {
 
 export interface IssueCreditInput {
   amount: number;
+  currencyId: string;
   reason: CreditTransactionReason;
   note: string;
+}
+
+/** A currency the admin may issue credit in — id for the command, code for the screen. */
+export interface CreditCurrencyOption {
+  id: string;
+  code: string;
 }
 
 @Injectable()
@@ -59,6 +67,14 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly creditLoading = signal<boolean>(false);
   readonly creditSubmitting = signal<boolean>(false);
   readonly creditExpiring = signal<boolean>(false);
+
+  /**
+   * The currencies an admin may issue credit in: the ones the platform OPERATES in. Credit is spendable
+   * only on an order in the same currency, and an order can only be placed in an active one, so a
+   * grant in an inactive currency is money the customer could never spend. The server refuses it too
+   * (IssueCustomerCredit.Validator); this keeps the choice off the screen.
+   */
+  readonly currencies = signal<CreditCurrencyOption[]>([]);
 
   readonly submitting = signal<boolean>(false);
 
@@ -146,6 +162,27 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  loadCurrencies(): void {
+    this.adminClient.adminCurrencyClient
+      .getOverview()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as AdminCurrencyListItem[]))
+      )
+      .subscribe((currencies) => {
+        // `?? []`: the generated client returns null, not an empty list, for a 204 — reasoned out in
+        // service-management/service-form.facade.ts; the `.filter` below is this file's crash site.
+        this.currencies.set(
+          (currencies ?? [])
+            .filter(
+              (c): c is AdminCurrencyListItem & { id: string; code: string } =>
+                c.isActive && Boolean(c.id) && Boolean(c.code)
+            )
+            .map((c) => ({ id: c.id, code: c.code }))
+        );
+      });
+  }
+
   /**
    * Put money on the balance. The company owes it from the moment this succeeds, and there is no
    * "undo" endpoint — a mistake is corrected by spending it or by a payout, both of which involve a
@@ -158,6 +195,9 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
     const command = new IssueCustomerCreditCommand();
     command.userId = this.currentUserId;
     command.amount = input.amount;
+    // The unit of the amount, chosen by the admin. The server used to fill in the platform default
+    // while this screen labelled the field with the customer's largest balance's currency.
+    command.currencyId = input.currencyId;
     command.reason = input.reason;
     command.note = input.note;
     // S7a. One id per submission attempt: a network-layer retry reuses this command and the server's

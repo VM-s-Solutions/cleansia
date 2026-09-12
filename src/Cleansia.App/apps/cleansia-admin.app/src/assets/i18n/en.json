@@ -1923,12 +1923,14 @@
           "cancel": "Cancel",
           "submit": "Issue credit",
           "field": {
-            "amount": "Amount ({{currency}})",
+            "currency": "Currency",
+            "amount": "Amount",
             "reason": "Reason",
             "note": "What happened",
             "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."
           },
           "validation": {
+            "currency_required": "Choose a currency.",
             "amount_min": "Enter an amount above zero.",
             "amount_max": "That is above the limit for a single credit. Issue it in smaller amounts.",
             "note_required": "Say what happened.",

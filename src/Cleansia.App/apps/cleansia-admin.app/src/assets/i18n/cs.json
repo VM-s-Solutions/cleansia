@@ -1923,12 +1923,14 @@
           "cancel": "Zrušit",
           "submit": "Přidělit kredit",
           "field": {
-            "amount": "Částka ({{currency}})",
+            "currency": "Měna",
+            "amount": "Částka",
             "reason": "Důvod",
             "note": "Co se stalo",
             "note_help": "Zaznamenáno pod vaším jménem. Napište to, co byste sami chtěli číst, než tomuto zákazníkovi znovu něco přidělíte."
           },
           "validation": {
+            "currency_required": "Vyberte měnu.",
             "amount_min": "Zadejte částku větší než nula.",
             "amount_max": "To přesahuje limit pro jeden kredit. Vystavte jej po menších částkách.",
             "note_required": "Uveďte, co se stalo.",

@@ -165,6 +165,7 @@ export class UserLoyaltyDetailComponent
     this.facade.loadActivity(id, 0, 20);
     this.facade.loadReferrals(id);
     this.facade.loadCredit(id);
+    this.facade.loadCurrencies();
   }
 
   ngAfterViewInit(): void {

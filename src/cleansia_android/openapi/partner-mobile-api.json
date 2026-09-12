@@ -7700,6 +7700,10 @@
             "type": "string",
             "nullable": true
           },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
+          },
           "status": {
             "$ref": "#/components/schemas/EmployeeInvoiceStatus"
           },
@@ -7806,6 +7810,10 @@
             "format": "double"
           },
           "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyId": {
             "type": "string",
             "nullable": true
           },

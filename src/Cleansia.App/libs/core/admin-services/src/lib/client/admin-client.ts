@@ -22102,6 +22102,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     deductionAmount!: number;
     totalAmount!: number;
     currencyCode!: string | undefined;
+    currencyId!: string | undefined;
     status!: EmployeeInvoiceStatus;
     pdfBlobName!: string | undefined;
     pdfGenerationFailed!: boolean;
@@ -22140,6 +22141,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
             this.deductionAmount = Data["deductionAmount"];
             this.totalAmount = Data["totalAmount"];
             this.currencyCode = Data["currencyCode"];
+            this.currencyId = Data["currencyId"];
             this.status = Data["status"];
             this.pdfBlobName = Data["pdfBlobName"];
             this.pdfGenerationFailed = Data["pdfGenerationFailed"];
@@ -22182,6 +22184,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
         data["deductionAmount"] = this.deductionAmount;
         data["totalAmount"] = this.totalAmount;
         data["currencyCode"] = this.currencyCode;
+        data["currencyId"] = this.currencyId;
         data["status"] = this.status;
         data["pdfBlobName"] = this.pdfBlobName;
         data["pdfGenerationFailed"] = this.pdfGenerationFailed;
@@ -22217,6 +22220,7 @@ export interface IEmployeeInvoiceDetailDto {
     deductionAmount: number;
     totalAmount: number;
     currencyCode: string | undefined;
+    currencyId: string | undefined;
     status: EmployeeInvoiceStatus;
     pdfBlobName: string | undefined;
     pdfGenerationFailed: boolean;
@@ -22245,6 +22249,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
     deductionAmount!: number;
     totalAmount!: number;
     currencyCode!: string | undefined;
+    currencyId!: string | undefined;
     status!: EmployeeInvoiceStatus;
     pdfBlobName!: string | undefined;
     pdfGenerationFailed!: boolean;
@@ -22281,6 +22286,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
             this.deductionAmount = Data["deductionAmount"];
             this.totalAmount = Data["totalAmount"];
             this.currencyCode = Data["currencyCode"];
+            this.currencyId = Data["currencyId"];
             this.status = Data["status"];
             this.pdfBlobName = Data["pdfBlobName"];
             this.pdfGenerationFailed = Data["pdfGenerationFailed"];
@@ -22317,6 +22323,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
         data["deductionAmount"] = this.deductionAmount;
         data["totalAmount"] = this.totalAmount;
         data["currencyCode"] = this.currencyCode;
+        data["currencyId"] = this.currencyId;
         data["status"] = this.status;
         data["pdfBlobName"] = this.pdfBlobName;
         data["pdfGenerationFailed"] = this.pdfGenerationFailed;
@@ -22346,6 +22353,7 @@ export interface IEmployeeInvoiceDto {
     deductionAmount: number;
     totalAmount: number;
     currencyCode: string | undefined;
+    currencyId: string | undefined;
     status: EmployeeInvoiceStatus;
     pdfBlobName: string | undefined;
     pdfGenerationFailed: boolean;

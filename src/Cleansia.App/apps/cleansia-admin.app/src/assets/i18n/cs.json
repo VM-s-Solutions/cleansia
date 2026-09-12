@@ -2630,6 +2630,7 @@
         "invalid_status": "Neplatný stav faktury",
         "not_approved": "Fakturu je nutné nejprve schválit, teprve poté ji lze označit jako zaplacenou",
         "not_found": "Faktura nenalezena",
+        "payout_currency_mismatch": "Výplatní účet uklízeče není nastaven pro příjem měny této faktury. Požádejte ho, aby před schválením aktualizoval své výplatní údaje.",
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
         "reference_already_assigned": "Tato faktura již variabilní symbol má.",
         "reference_capacity_exhausted": "Variabilní symboly pro letošní rok jsou vyčerpány. Kontaktujte podporu.",

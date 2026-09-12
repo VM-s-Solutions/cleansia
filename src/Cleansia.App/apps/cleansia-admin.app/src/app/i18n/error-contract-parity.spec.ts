@@ -522,6 +522,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'payroll.invoice.invalid_status',
   'payroll.invoice.not_approved',
   'payroll.invoice.not_found',
+  // T-0708 — ApproveInvoice refuses when the cleaner's declared payout-account currency (or the
+  // platform default, when undeclared) is not the invoice's. AdminInvoiceController.ApproveInvoice.
+  'payroll.invoice.payout_currency_mismatch',
   // cdd3133b — RegenerateInvoicePdf now RECORDS a failed render on the row instead of
   // clearing the flag it never set, so this key became reachable rather than theoretical.
   'payroll.invoice.pdf_generation_failed',

@@ -274,6 +274,10 @@ public static class BusinessErrorMessage
     public const string InvoiceReferenceCapacityExhausted = "payroll.invoice.reference_capacity_exhausted";
     public const string InvoiceReferenceAlreadyAssigned = "payroll.invoice.reference_already_assigned";
 
+    // T-0708 -- the cleaner's payout account does not hold the invoice's currency; raised at approval,
+    // the last point before the owner keys a manual transfer.
+    public const string InvoicePayoutCurrencyMismatch = "payroll.invoice.payout_currency_mismatch";
+
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";
     public const string ReceiptGenerationFailed = "receipt.generation_failed";

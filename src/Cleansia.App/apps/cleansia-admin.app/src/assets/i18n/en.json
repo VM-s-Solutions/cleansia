@@ -2630,6 +2630,7 @@
         "invalid_status": "Invalid invoice status",
         "not_approved": "Invoice must be approved before it can be marked paid",
         "not_found": "Invoice not found",
+        "payout_currency_mismatch": "The cleaner's payout account is not set up to receive this invoice's currency. Ask them to update their payout details before approving.",
         "pdf_generation_failed": "Failed to generate PDF",
         "reference_already_assigned": "This invoice already has a payment reference.",
         "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",

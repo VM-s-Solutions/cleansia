@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260912102945_Initial")]
+    [Migration("20260912104435_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -5629,6 +5629,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset>("CreatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("CurrencyId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.Property<string>("DeactivatedBy")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -5688,6 +5692,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BankCountryId");
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("EmployeeId")
                         .IsUnique();
@@ -7140,6 +7146,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "BankCountry")
                         .WithMany()
                         .HasForeignKey("BankCountryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", null)
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")

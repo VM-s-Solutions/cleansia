@@ -58,6 +58,7 @@ public record GdprExportPayoutDetailsDto(
     PayoutScheme? Scheme,
     PayoutDetailsStatus Status,
     string? BankCountryId,
+    string? CurrencyId,
     string? AccountPrefix,
     string? AccountNumber,
     string? BankCode,

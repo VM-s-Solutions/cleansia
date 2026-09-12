@@ -1878,6 +1878,7 @@ namespace Cleansia.Infra.Database.Migrations
                     EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Scheme = table.Column<int>(type: "integer", nullable: true),
                     BankCountryId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     AccountPrefix = table.Column<string>(type: "character(6)", fixedLength: true, maxLength: 6, nullable: true),
                     AccountNumber = table.Column<string>(type: "character(10)", fixedLength: true, maxLength: 10, nullable: true),
                     BankCode = table.Column<string>(type: "character varying(4)", maxLength: 4, nullable: true),
@@ -1906,6 +1907,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_EmployeePayoutDetails_Countries_BankCountryId",
                         column: x => x.BankCountryId,
                         principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayoutDetails_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -3243,6 +3250,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_EmployeePayoutDetails_BankCountryId",
                 table: "EmployeePayoutDetails",
                 column: "BankCountryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayoutDetails_CurrencyId",
+                table: "EmployeePayoutDetails",
+                column: "CurrencyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeePayoutDetails_EmployeeId",

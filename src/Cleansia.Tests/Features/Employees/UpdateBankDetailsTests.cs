@@ -24,12 +24,14 @@ public class UpdateBankDetailsTests
     private const string CzCountryId = "country-cz";
     private const string OwnerAccount = "5885638003";
     private const string OwnerIban = "CZ3155000000005885638003";
+    private const string EurCurrencyId = "currency-eur";
 
     private readonly Mock<IEmployeeRepository> _employees = new();
     private readonly Mock<IEmployeePayoutDetailsRepository> _payoutDetails = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ICountryRepository> _countries = new();
     private readonly Mock<ICountryConfigurationRepository> _countryConfigurations = new();
+    private readonly Mock<ICurrencyRepository> _currencies = new();
     private readonly Employee _employee;
 
     public UpdateBankDetailsTests()
@@ -55,13 +57,15 @@ public class UpdateBankDetailsTests
         _countryConfigurations
             .Setup(r => r.GetByCountryIdAsync(CzCountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(configuration);
+
+        _currencies.Setup(r => r.ExistsAsync(EurCurrencyId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
     }
 
     private IPayoutDetailsValidator PayoutValidator() =>
         new PayoutDetailsValidator(_countries.Object, _countryConfigurations.Object);
 
     private UpdateBankDetails.Validator CreateValidator() =>
-        new(_employees.Object, _session.Object, PayoutValidator());
+        new(_employees.Object, _session.Object, PayoutValidator(), _currencies.Object);
 
     private UpdateBankDetails.Handler CreateHandler() => new(
         _employees.Object, _session.Object, _payoutDetails.Object, PayoutValidator(),
@@ -209,5 +213,75 @@ public class UpdateBankDetailsTests
         _payoutDetails.Verify(
             r => r.IsIbanUsedByAnotherEmployeeAsync(OwnerIban, EmployeeId, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    // ── the account's declared currency (T-0708) ─────────────────────
+
+    /// <summary>
+    /// Existence is the whole check -- a cleaner may hold an account in a currency the platform does not
+    /// operate yet -- but a name that is nothing, or whitespace, is refused here rather than as a 23503
+    /// at commit.
+    /// </summary>
+    [Theory]
+    [InlineData("nope")]
+    [InlineData("   ")]
+    public async Task A_Currency_That_Names_Nothing_Is_Refused_With_InvalidCurrency(string currencyId)
+    {
+        var result = await CreateValidator().ValidateAsync(Valid() with { CurrencyId = currencyId });
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidCurrency);
+    }
+
+    [Fact]
+    public async Task A_Declared_Currency_Is_Written_Onto_The_New_Row()
+    {
+        EmployeePayoutDetails? added = null;
+        _payoutDetails.Setup(r => r.Add(It.IsAny<EmployeePayoutDetails>()))
+            .Callback<EmployeePayoutDetails>(d => added = d);
+        var command = Valid() with { CurrencyId = EurCurrencyId };
+
+        var validation = await CreateValidator().ValidateAsync(command);
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(validation.IsValid);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EurCurrencyId, added!.CurrencyId);
+    }
+
+    /// <summary>
+    /// Absent means UNCHANGED, not cleared. Two shipped clients cannot send the field yet, and a
+    /// full-replace save from one of them must not silently revert a declaration made from another.
+    /// </summary>
+    [Fact]
+    public async Task An_Absent_Currency_Keeps_The_One_Already_Declared()
+    {
+        var existing = EmployeePayoutDetails.Create(
+            EmployeeId, PayoutScheme.CzskDomesticWithIban, CzCountryId, PayoutDetailsStatus.Provided,
+            currencyId: EurCurrencyId);
+        _payoutDetails
+            .Setup(r => r.GetByEmployeeIdAsync(EmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(Valid(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EurCurrencyId, existing.CurrencyId);
+        // The rest of the destination is still a full replace.
+        Assert.Equal(OwnerIban, existing.Iban);
+    }
+
+    /// <summary>Storage stays honest: no declaration is recorded as none, not as the platform default.</summary>
+    [Fact]
+    public async Task An_Absent_Currency_On_A_First_Write_Stays_Undeclared()
+    {
+        EmployeePayoutDetails? added = null;
+        _payoutDetails.Setup(r => r.Add(It.IsAny<EmployeePayoutDetails>()))
+            .Callback<EmployeePayoutDetails>(d => added = d);
+
+        var result = await CreateHandler().Handle(Valid(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(added!.CurrencyId);
     }
 }

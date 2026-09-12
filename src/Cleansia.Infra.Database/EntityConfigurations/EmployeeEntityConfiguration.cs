@@ -18,9 +18,6 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
         builder.Property(e => e.RegistrationNumber)
             .HasMaxLength(50);
 
-        builder.Property(e => e.VatNumber)
-            .HasMaxLength(50);
-
         builder.Property(e => e.LegalEntityName)
             .HasMaxLength(200);
 

@@ -246,9 +246,11 @@ Several keys exist as separate keys for reasons that are easy to undo by "simpli
 
 ### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
 
-`OrderConfirmed` is [overloaded](/domain/order-lifecycle#confirmed-is-deliberately-overloaded) — it
-means *money settled* **or** *cleaner assigned*. Two of its producers, the Stripe webhook and the
-recurring cash confirmation, have no cleaner at all.
+`OrderConfirmed` is a **money** event with a fulfilment-sounding name. Both of its producers — the
+Stripe webhook and the recurring cash confirmation — settle payment and have no cleaner at all; since
+[ADR-0057](/decisions/adr-0057) neither writes a fulfilment status either. The key keeps its name
+because renaming it costs ten locale files across two mobile platforms and the customer still needs
+telling their payment landed. → [the order lifecycle](/domain/order-lifecycle)
 
 Widening that key to carry "a cleaner is committed to your booking" would repeat the overloading one
 layer up, in the thing that writes to a customer's lock screen.

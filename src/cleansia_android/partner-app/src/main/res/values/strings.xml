@@ -490,8 +490,6 @@
     <string name="business_country">Business country</string>
     <string name="registration_number_label">Registration number</string>
     <string name="registration_number_helper">The format depends on the country you selected.</string>
-    <string name="vat_number_label">VAT number</string>
-    <string name="vat_number_helper">Optional — only if you\'re VAT-registered.</string>
     <string name="legal_entity_name_label">Legal entity name</string>
     <string name="street">Street</string>
     <string name="city">City</string>
@@ -1217,7 +1215,6 @@
     <string name="error_validation_invalid_iban">Please enter a valid IBAN.</string>
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>
     <string name="error_validation_registration_number_invalid_format">Please enter a valid company registration number for the selected country.</string>
-    <string name="error_validation_vat_number_invalid_format">Please enter a valid VAT number for the selected country.</string>
     <string name="error_validation_must_be_positive">Must be a positive number.</string>
     <string name="error_validation_invalid_availability_format">Availability format is invalid.</string>
 

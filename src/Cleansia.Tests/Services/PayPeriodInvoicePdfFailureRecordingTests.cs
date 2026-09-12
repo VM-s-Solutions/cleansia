@@ -100,6 +100,12 @@ public class PayPeriodInvoicePdfFailureRecordingTests
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
 
+        // Resolved BY ID now: the invoice's currency comes from the pay rows being invoiced rather
+        // than from the employee, so the sweep looks up the id those rows carry.
+        _currencyRepository
+            .Setup(r => r.GetByIdAsync(PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
@@ -281,7 +287,7 @@ public class PayPeriodInvoicePdfFailureRecordingTests
         var employee = Employee.CreateWithUser(user);
         employee.Id = PayrollMockFactory.EmployeeId;
         employee.UpdateAddress(address);
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null, null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
         return employee;
     }
 
@@ -294,7 +300,6 @@ public class PayPeriodInvoicePdfFailureRecordingTests
             city: "Praha",
             zipCode: "11000",
             countryId: "cz",
-            vatNumber: "CZ87654321",
             iban: "CZ1101000000001234567890",
             bankAccountNumber: "1234567890/0100",
             swift: "KOMBCZPP");

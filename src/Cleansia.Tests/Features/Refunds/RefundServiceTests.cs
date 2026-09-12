@@ -48,7 +48,7 @@ public class RefundServiceTests
 
     private static Order CreateCardPaidOrder(decimal totalPrice)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -56,7 +56,6 @@ public class RefundServiceTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
@@ -73,7 +72,7 @@ public class RefundServiceTests
     // capturable charge surface is the PaymentIntent (StripeSessionId is empty).
     private static Order CreateMobileCardPaidOrder(decimal totalPrice)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -81,7 +80,6 @@ public class RefundServiceTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

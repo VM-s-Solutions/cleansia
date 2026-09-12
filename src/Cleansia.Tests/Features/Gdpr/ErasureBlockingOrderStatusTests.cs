@@ -190,7 +190,6 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             customerAddress: Address.Create("Erasure St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(6),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,

@@ -17,6 +17,7 @@ import {
   RecurringPrefillParams,
 } from '@cleansia-customer/recurring-bookings';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
@@ -487,12 +488,7 @@ export class OrderDetailComponent implements OnInit {
 
   formatPrice(price: number | undefined): string {
     if (price == null) return '';
-    const code = this.order()?.currency?.code || 'CZK';
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, this.order()?.currency?.code, this.getLocale());
   }
 
   /**

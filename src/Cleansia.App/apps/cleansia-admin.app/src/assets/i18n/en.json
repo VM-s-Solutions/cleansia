@@ -50,6 +50,9 @@
       "packages": "Packages",
       "package_create": "Create Package",
       "package_edit": "Edit Package",
+      "extras": "Extras",
+      "extra_create": "Create Extra",
+      "extra_edit": "Edit Extra",
       "admin_users": "Admin Users",
       "admin_user_create": "Create Admin User",
       "admin_user_edit": "Edit Admin User",
@@ -219,6 +222,7 @@
     "reports": "Reports",
     "services": "Services",
     "packages": "Packages",
+    "extras": "Extras",
     "admin_users": "Admin Users",
     "languages": "Languages",
     "countries": "Countries",
@@ -334,7 +338,6 @@
       "entity_type_natural_person": "Self-employed individual",
       "entity_type_legal_entity": "Legal entity",
       "registration_number": "Registration Number",
-      "vat_number": "VAT Number",
       "legal_entity_name": "Legal Entity Name",
       "iban": "IBAN",
       "emergency_contact": "Emergency Contact",
@@ -910,8 +913,11 @@
       "name": "Name",
       "description": "Description",
       "category": "Category",
-      "base_price": "Base Price (CZK)",
-      "per_room_price": "Per Room Price (CZK)",
+      "base_price": "Base price",
+      "per_room_price": "Per-room price",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "price_required": "Required",
+      "price_optional": "Optional",
       "estimated_time": "Estimated Time (minutes)",
       "messages": {
         "load_error": "Failed to load service",
@@ -969,7 +975,11 @@
       "translations": "Translations",
       "name": "Name",
       "description": "Description",
-      "price": "Price (CZK)",
+      "price": "Price",
+      "pricing": "Pricing",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "price_required": "Required",
+      "price_optional": "Optional",
       "included_services": "Included Services",
       "select_services": "Select services to include",
       "weights_title": "Relative price weights",
@@ -984,6 +994,60 @@
       },
       "tagline": "Card tagline",
       "is_popular": "Most popular package"
+    },
+    "extra_management": {
+      "title": "Extras",
+      "description": "Booking add-ons and their price in each currency",
+      "create_extra": "Create Extra",
+      "edit_extra": "Edit",
+      "delete_extra": "Delete Extra",
+      "delete_confirm": "Delete this extra? Only an extra no order has ever bought can be deleted; otherwise deactivate it.",
+      "activate_extra": "Activate Extra",
+      "deactivate_extra": "Deactivate Extra",
+      "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the booking wizard; orders that bought it are kept.",
+      "no_extras": "No extras found",
+      "filters": {
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by slug, name or description",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All",
+        "status": "Status",
+        "status_all": "All",
+        "status_active": "Active",
+        "status_inactive": "Inactive"
+      },
+      "columns": {
+        "slug": "Slug",
+        "name": "Name",
+        "price": "Price",
+        "display_order": "Order"
+      },
+      "messages": {
+        "delete_success": "Extra deleted",
+        "activate_success": "Extra activated",
+        "deactivate_success": "Extra deactivated"
+      }
+    },
+    "extra_form": {
+      "create_title": "Create Extra",
+      "edit_title": "Edit Extra",
+      "basic_info": "Basic Information",
+      "pricing": "Pricing",
+      "translations": "Translations",
+      "slug": "Slug",
+      "slug_hint": "Lower-case words joined by hyphens, e.g. inside-oven. Cannot be changed later.",
+      "name": "Name",
+      "description": "Description",
+      "display_order": "Display order",
+      "price": "Price",
+      "price_required": "Required",
+      "price_optional": "Optional",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "messages": {
+        "create_success": "Extra created",
+        "update_success": "Extra updated"
+      }
     },
     "admin_user_management": {
       "title": "Admin User Management",
@@ -1177,18 +1241,26 @@
         "code": "Code",
         "symbol": "Symbol",
         "name": "Name",
-        "exchange_rate": "Exchange Rate",
+        "is_active": "Operated",
         "is_default": "Default",
         "actions": "Actions"
       },
+      "operated": "Yes",
+      "not_operated": "Not yet",
       "messages": {
         "load_error": "Failed to load currencies",
         "delete_success": "Currency deleted successfully",
         "delete_error": "Failed to delete currency",
-        "set_default_success": "Default currency updated"
+        "set_default_success": "Default currency updated",
+        "activate_success": "Currency switched on",
+        "deactivate_success": "Currency switched off"
       },
       "set_default": "Set as Default",
-      "set_default_confirm": "Set {{code}} as the default currency?"
+      "set_default_confirm": "Set {{code}} as the default currency?",
+      "activate": "Switch on",
+      "activate_confirm": "Switch on {{code}}? From now on every service and package must be priced in it before it can be saved.",
+      "deactivate": "Switch off",
+      "deactivate_confirm": "Switch off {{code}}? Customers will no longer be able to book in it. Existing orders, pay and invoices are not affected."
     },
     "currency_form": {
       "create_title": "Create Currency",
@@ -1200,8 +1272,9 @@
       "symbol_placeholder": "e.g., $, €, Kč",
       "name": "Currency Name",
       "name_placeholder": "e.g., US Dollar, Euro, Czech Koruna",
-      "exchange_rate": "Exchange Rate",
       "exchange_rate_placeholder": "e.g., 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Amount that earns one loyalty point",
+      "loyalty_points_divisor_placeholder": "e.g. 10 for CZK — leave empty and the currency earns no points",
       "messages": {
         "load_error": "Failed to load currency",
         "create_success": "Currency created successfully",
@@ -1211,10 +1284,25 @@
       }
     },
     "company_info": {
-      "title": "Company Information",
+      "bank_account_number": "Bank Account Number",
+      "bank_name": "Bank Name",
+      "city": "City",
+      "country": "Country",
       "create_title": "Create Company",
-      "edit_title": "Edit Company",
       "description": "Manage company details used in invoices and receipts",
+      "edit_title": "Edit Company",
+      "email": "Email",
+      "iban": "IBAN",
+      "is_vat_payer": "VAT payer",
+      "legal_name": "Legal Name",
+      "messages": {
+        "load_error": "Failed to load company information",
+        "save_success": "Company information saved successfully",
+        "save_error": "Failed to save company information",
+        "create_success": "Company information created successfully"
+      },
+      "phone": "Phone",
+      "registration_number": "Registration Number",
       "sections": {
         "legal_info": "Legal Information",
         "tax_info": "Tax Information",
@@ -1222,28 +1310,16 @@
         "contact": "Contact Information",
         "banking": "Banking Information"
       },
-      "legal_name": "Legal Name",
-      "trading_name": "Trading Name",
-      "tagline": "Tagline",
-      "registration_number": "Registration Number",
-      "vat_number": "VAT Number (DIC)",
       "street": "Street",
-      "city": "City",
-      "zip_code": "ZIP Code",
-      "country": "Country",
-      "phone": "Phone",
-      "email": "Email",
-      "website": "Website",
-      "bank_name": "Bank Name",
-      "bank_account_number": "Bank Account Number",
-      "iban": "IBAN",
       "swift": "SWIFT/BIC",
-      "messages": {
-        "load_error": "Failed to load company information",
-        "save_success": "Company information saved successfully",
-        "save_error": "Failed to save company information",
-        "create_success": "Company information created successfully"
-      }
+      "tagline": "Tagline",
+      "title": "Company Information",
+      "trading_name": "Trading Name",
+      "vat_number": "VAT Number (DIC)",
+      "vat_registered_from": "VAT registered from",
+      "vat_registered_from_hint": "The date registration took effect. Kept because it cannot be recovered once the status changes.",
+      "website": "Website",
+      "zip_code": "ZIP Code"
     },
     "template_management": {
       "title": "Template Management",
@@ -1497,7 +1573,8 @@
         "title": "Filters",
         "date_range": "Date Range",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "currency": "Currency"
       },
       "revenue_report": "Revenue Report",
       "payroll_report": "Payroll Report",
@@ -1904,12 +1981,14 @@
           "cancel": "Cancel",
           "submit": "Issue credit",
           "field": {
-            "amount": "Amount ({{currency}})",
+            "currency": "Currency",
+            "amount": "Amount",
             "reason": "Reason",
             "note": "What happened",
             "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."
           },
           "validation": {
+            "currency_required": "Choose a currency.",
             "amount_min": "Enter an amount above zero.",
             "amount_max": "That is above the limit for a single credit. Issue it in smaller amounts.",
             "note_required": "Say what happened.",
@@ -2433,15 +2512,18 @@
     "credit": {
       "amount_exceeds_sanity_cap": "That amount is above the limit for a single credit. Issue it in smaller amounts if it is correct.",
       "amount_not_whole_minor_units": "A credit amount cannot be smaller than one hundredth of the currency unit.",
+      "held_in_multiple_currencies": "This customer holds credit in more than one currency; discharge each balance from its own currency",
       "reason_not_issuable": "That reason describes credit being spent, not issued. Choose a dispute settlement, cleaner no-show or goodwill."
     },
     "currency": {
       "cannot_delete_default": "Cannot delete the default currency",
+      "cannot_deactivate_default": "The default currency cannot be switched off. Set another currency as the default first",
       "code_already_exists": "A currency with this code already exists",
-      "exchange_rate_must_be_positive": "Exchange rate must be a positive number",
+      "default_changed_concurrently": "The default currency was changed by someone else. Refresh and try again",
       "in_use": "Cannot delete currency because it is currently in use",
       "invalid": "Invalid currency",
-      "not_found": "Currency not found"
+      "not_found": "Currency not found",
+      "not_priced": "The catalogue has no prices in this currency yet. Price at least one service or package in it first"
     },
     "device": {
       "invalid_platform": "Platform must be 'android' or 'ios'"
@@ -2522,7 +2604,8 @@
         "action_failed": "The membership plan action failed. Try again.",
         "code_already_exists": "A plan with this code already exists.",
         "discount_out_of_range": "Discount must be between 0 and 100.",
-        "not_found": "Membership plan not found."
+        "not_found": "Membership plan not found.",
+        "trial_not_permitted": "Cleansia Plus benefits require an active subscription, so a free trial cannot be set. Leave the trial at 0 days."
       }
     },
     "order": {
@@ -2564,6 +2647,12 @@
         "not_match": "Total price doesn't match",
         "positive": "Total price must be positive"
       }
+    },
+    "extra": {
+      "in_use": "Cannot delete extra because an order references it. Deactivate it instead.",
+      "not_found": "Extra not found",
+      "slug_already_exists": "An extra with this slug already exists",
+      "slug_invalid": "Slug must be lower-case words joined by single hyphens, e.g. inside-oven"
     },
     "package": {
       "in_use": "Cannot delete package because it is currently in use",
@@ -2610,6 +2699,7 @@
         "invalid_status": "Invalid invoice status",
         "not_approved": "Invoice must be approved before it can be marked paid",
         "not_found": "Invoice not found",
+        "payout_currency_mismatch": "The cleaner's payout account is not set up to receive this invoice's currency. Ask them to update their payout details before approving.",
         "pdf_generation_failed": "Failed to generate PDF",
         "reference_already_assigned": "This invoice already has a payment reference.",
         "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
@@ -2662,7 +2752,9 @@
       "in_use": "Cannot delete service because it is currently in use",
       "missing_translation_for_language": "Missing translation for required language",
       "not_found": "Service not found",
-      "translations_required": "Translations are required for all supported languages"
+      "translations_required": "Translations are required for all supported languages",
+      "prices_required": "A price is required",
+      "missing_price_for_currency": "Missing a price for a currency the platform operates in"
     },
     "service_area": {
       "city_not_serviced": "We don't currently serve this city.",

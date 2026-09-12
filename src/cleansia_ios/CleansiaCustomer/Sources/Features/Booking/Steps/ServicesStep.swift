@@ -83,6 +83,7 @@ private struct CatalogContentView: View {
         .sheet(item: $detailPackage) { pkg in
             PackageDetailsSheet(
                 pkg: pkg,
+                currencyCode: catalog.currencyCode,
                 isSelected: state.selectedPackageIds.contains(pkg.id),
                 onToggle: { togglePackage(pkg.id) },
                 onDismiss: { detailPackage = nil }
@@ -99,6 +100,7 @@ private struct CatalogContentView: View {
                     ForEach(Array(catalog.packages.enumerated()), id: \.element.id) { index, pkg in
                         PackageCard(
                             pkg: pkg,
+                            currencyCode: catalog.currencyCode,
                             accent: PackageAccent.gradient(for: index),
                             selected: state.selectedPackageIds.contains(pkg.id),
                             onOpen: { detailPackage = pkg }
@@ -147,6 +149,7 @@ private struct CatalogContentView: View {
                 ForEach(filteredServices) { service in
                     ServiceRow(
                         service: service,
+                        currencyCode: catalog.currencyCode,
                         selected: state.selectedServiceIds.contains(service.id),
                         onToggle: { toggleService(service.id) }
                     )
@@ -273,7 +276,8 @@ private struct PropertyRow: View {
                     translations: [:],
                     includedServices: []
                 )
-            ]
+            ],
+            currencyCode: "CZK"
         )
         static let home = CatalogCategory(
             id: "c-home",

@@ -20,6 +20,8 @@ export interface CompanyInfoFormData {
   bankAccountNumber: string | null;
   iban: string | null;
   swift: string | null;
+  isVatPayer: boolean;
+  vatRegisteredFrom: Date | null;
 }
 
 export function buildCreateCompanyInfoCommand(
@@ -42,6 +44,8 @@ export function buildCreateCompanyInfoCommand(
   command.bankAccountNumber = data.bankAccountNumber ?? undefined;
   command.iban = data.iban ?? undefined;
   command.swift = data.swift ?? undefined;
+  command.isVatPayer = data.isVatPayer;
+  command.vatRegisteredFrom = data.vatRegisteredFrom ?? undefined;
   return command;
 }
 
@@ -67,5 +71,7 @@ export function buildUpdateCompanyInfoCommand(
   command.bankAccountNumber = data.bankAccountNumber ?? undefined;
   command.iban = data.iban ?? undefined;
   command.swift = data.swift ?? undefined;
+  command.isVatPayer = data.isVatPayer;
+  command.vatRegisteredFrom = data.vatRegisteredFrom ?? undefined;
   return command;
 }

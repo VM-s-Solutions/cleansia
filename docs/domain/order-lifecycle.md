@@ -41,26 +41,34 @@ axes move independently, and the combination is what any real question is actual
 | Situation | `CurrentStatus` | `PaymentType` | `PaymentStatus` |
 |---|---|---|---|
 | Card order awaiting the Stripe webhook | `New` | `Card` | `Pending` |
-| Card order paid | `Confirmed` | `Card` | `Paid` |
+| Card order paid, nobody has taken it | `New` | `Card` | `Paid` |
 | One-off cash order, nobody has taken it | `New` | `Cash` | `Pending` |
 | Cash order a cleaner has taken | `Confirmed` | `Cash` | `Pending` |
+| Card order a cleaner has taken | `Confirmed` | `Card` | `Paid` |
 
-Note the last two rows. A cash order reaches `Confirmed` **with no money having moved**, because on a
-cash job the cleaner accepting it *is* the confirmation.
+**The two axes are genuinely independent, and the table shows it.** Paying does not move the
+fulfilment axis; a cleaner accepting does not move the money axis. A cash order reaches `Confirmed`
+with no money having moved, and a card order reaches `Paid` with nobody assigned.
 
-## `Confirmed` is deliberately overloaded
+## `Confirmed` means one thing: a cleaner took the job
 
-`Confirmed` means *either* "money settled" **or** "a cleaner took it". Four paths write it:
+**Owner ruling 2026-09-08 → [ADR-0057](/decisions/adr-0057).** It used to mean *either* "money
+settled" *or* "a cleaner took it", and this page used to record that as deliberate. It is not any
+more. Two producers stopped writing it:
 
-| Writer | What actually happened |
-|---|---|
-| `TakeOrder` | a cleaner took the job |
-| `HandlePaymentNotification` | the Stripe webhook landed; also sets `PaymentStatus.Paid` |
-| `ConfirmRecurringOrder` | the customer confirmed a recurring cash occurrence |
-| `AdminOverrideOrderStatus` | an admin forced it |
+| Writer | What actually happened | Writes `Confirmed`? |
+|---|---|---|
+| `TakeOrder` | a cleaner took the job | **yes** |
+| `AdminReassignOrder` | an admin assigned a cleaner | **yes** — added with the split |
+| `HandlePaymentNotification` | the Stripe webhook landed | no — sets `PaymentStatus.Paid` only |
+| `ConfirmRecurringOrder` | the customer confirmed a recurring occurrence | no — money axis only |
+| `AdminOverrideOrderStatus` | an admin forced it | yes, by definition — it forces any status |
 
-> **Never read `Confirmed` as "a cleaner is on this job".** Read `AssignedEmployees` for that. A
-> card-paid order is `Confirmed` the moment Stripe says so, with nobody assigned to it at all.
+> **`Confirmed` still does not mean "a cleaner is on this job right now."** It means one took it. A
+> drop, a cover request or an admin rejection removes the assignment **without** walking the status
+> back, so an order can read `Confirmed` with zero assignees. Read `AssignedEmployees` when you need
+> to know who is actually on it — `CancellationAssessor` does exactly that, and did so even before the
+> split.
 
 ## `Pending (1)` is dead, and stays
 

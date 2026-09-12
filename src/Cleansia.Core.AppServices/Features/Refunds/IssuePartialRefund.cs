@@ -221,7 +221,17 @@ public class IssuePartialRefund
                 return 0m;
             }
 
-            return Math.Round(refundAmount * (rate / 100m) + fixedFee, 2, MidpointRounding.AwayFromZero);
+            // The FIXED part is a number in the COUNTRY's currency (6 on the CZE row means 6 CZK). The
+            // caller names the order's currency and the address names the country, and nothing ties the
+            // two — so on a CZ-address order priced in EUR it would be deducted as 6 EUR. The rate is
+            // unit-free and still applies; the fixed part is absorbed, the same fail-open direction a
+            // null figure already takes. → /product/business-rules#money-constants
+            var fixedPart = string.Equals(
+                order.Currency?.Code, config.DefaultCurrencyCode, StringComparison.OrdinalIgnoreCase)
+                ? fixedFee
+                : 0m;
+
+            return Math.Round(refundAmount * (rate / 100m) + fixedPart, 2, MidpointRounding.AwayFromZero);
         }
 
         private static decimal ApportionVat(decimal amount, decimal? appliedVatRate)
@@ -231,7 +241,11 @@ public class IssuePartialRefund
                 return 0m;
             }
 
-            return Math.Round(amount * rate / (100m + rate), 2, MidpointRounding.AwayFromZero);
+            // Fraction, not percent — Order.AppliedVatRate is copied from
+            // CountryConfiguration.StandardVatRate, a numeric(5,4) column that cannot hold 21.
+            // See VatCalculator for the full note; the two must agree or a credit note declares a
+            // different VAT than the invoice it reverses.
+            return Math.Round(amount * rate / (1m + rate), 2, MidpointRounding.AwayFromZero);
         }
     }
 
@@ -244,38 +258,41 @@ public class IssuePartialRefund
 
         foreach (var service in order.SelectedServices)
         {
-            // ADR-0009 D5.1 — the canonical quote basis (matches OrderPricingCalculator): a standalone
-            // service's ratio weight is BasePrice + PerRoomPrice × (rooms + bathrooms). This is a weight
-            // only; the allocator multiplies the line's share by frozen TotalPrice, so discount/surcharge
-            // stay embedded (D2 — never re-applied).
-            var gross = (service.Service?.BasePrice ?? 0m)
-                + (service.Service?.PerRoomPrice ?? 0m) * (order.Rooms + order.Bathrooms);
-            lines.Add(new LineGross($"svc:{service.ServiceId}", gross, service.ServiceId, PackageId: null));
+            // ADR-0009 D5.1 — the canonical quote basis: a standalone service's ratio weight is
+            // BasePrice + PerRoomPrice × (rooms + bathrooms). That arithmetic now happens ONCE, at order
+            // creation, and is frozen in LineTotal. This used to recompute it from the LIVE catalogue,
+            // so an admin price edit moved the denominator of a refund on an order placed months
+            // earlier. The `?? 0m` is gone with it: a fail-open zero silently shrank the denominator and
+            // over-paid every other line.
+            //
+            // It remains a weight only; the allocator multiplies the line's share by frozen TotalPrice,
+            // so discount and surcharge stay embedded (D2 — never re-applied).
+            lines.Add(new LineGross(
+                $"svc:{service.ServiceId}", service.LineTotal, service.ServiceId, PackageId: null));
         }
 
         foreach (var orderPackage in order.SelectedPackages)
         {
-            var package = orderPackage.Package;
-            if (package is null)
-            {
-                continue;
-            }
-
-            var included = package.IncludedServices.ToList();
+            // The order's own split, not a fresh one derived from live weights. Both the weights and
+            // the package's composition are editable through the admin package form, so re-deriving
+            // here moved a historical order's bundled shares whenever either changed.
+            var included = orderPackage.IncludedServiceLines.ToList();
             if (included.Count == 0)
             {
-                lines.Add(new LineGross($"pkg:{orderPackage.PackageId}", package.Price, ServiceId: string.Empty, orderPackage.PackageId));
+                lines.Add(new LineGross(
+                    $"pkg:{orderPackage.PackageId}",
+                    orderPackage.LineTotal,
+                    ServiceId: string.Empty,
+                    orderPackage.PackageId));
                 continue;
             }
 
-            var grosses = PackagePricing.DeriveIncludedServiceGrosses(
-                included.Select(s => s.PriceWeight).ToList(), package.Price);
-            for (var i = 0; i < included.Count; i++)
+            foreach (var line in included)
             {
                 lines.Add(new LineGross(
-                    $"pkg:{orderPackage.PackageId}:svc:{included[i].ServiceId}",
-                    grosses[i],
-                    included[i].ServiceId,
+                    $"pkg:{orderPackage.PackageId}:svc:{line.ServiceId}",
+                    line.LineGross,
+                    line.ServiceId,
                     orderPackage.PackageId));
             }
         }
@@ -294,20 +311,16 @@ public class IssuePartialRefund
         // PaymentStatus is computed from GetSucceededRefundTotalForOrderAsync, which is cumulative
         // across every refund path. So "refund everything" still works and still lands on Refunded.
         //
-        // Weights only, like the service lines above: the price is the catalogue's current one, read
-        // by slug exactly as OrderPricingCalculator reads it, and the ratio is what carries meaning.
-        var chosenSlugs = order.Extras.Where(e => e.Value).Select(e => e.Key).ToList();
-        if (chosenSlugs.Count > 0)
+        // Weights only, like the service lines above — but read from the ORDER'S OWN ROWS, not the live
+        // catalogue. This used to query Extras by slug at refund time, which meant an admin price edit
+        // moved the denominator of a refund on an order placed months earlier. It also queried WITHOUT
+        // an IsActive filter while the pricing calculator applied one, so an extra deactivated after
+        // ordering was excluded from TotalPrice and still counted here — inflating every other line's
+        // share on any order carrying one. Both are gone: there is one list, and the order owns it.
+        foreach (var extra in order.SelectedExtras)
         {
-            var extras = await extraRepository.GetAll()
-                .Where(e => chosenSlugs.Contains(e.Slug))
-                .Select(e => new { e.Slug, e.Price })
-                .ToListAsync(cancellationToken);
-
-            foreach (var extra in extras)
-            {
-                lines.Add(new LineGross($"extra:{extra.Slug}", extra.Price, ServiceId: string.Empty, PackageId: null));
-            }
+            lines.Add(new LineGross(
+                $"extra:{extra.Slug}", extra.UnitPrice, ServiceId: string.Empty, PackageId: null));
         }
 
         return lines;

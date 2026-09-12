@@ -84,10 +84,14 @@ public class DeletePayConfig
                 return null;
             }
 
+            // A sibling in ANOTHER currency keeps nothing quotable in this one: the estimator and the
+            // writer read only rows in the order's currency, so the last CZK row is the last row as far
+            // as every CZK board is concerned, however many EUR rows remain.
             var siblingRemains = await _payConfigRepository.GetAll()
                 .AnyAsync(other =>
                     other.Id != payConfigId
                     && other.EmployeeId == null
+                    && other.CurrencyId == config.CurrencyId
                     && (config.ServiceId != null
                         ? other.ServiceId == config.ServiceId
                         : other.PackageId == config.PackageId),
@@ -110,8 +114,12 @@ public class DeletePayConfig
                     return null;
                 }
 
+                // Only an order in THIS currency consults this row.
                 var carried = await _orderRepository.GetAll()
-                    .AnyAsync(o => o.SelectedServices.Any(s => s.ServiceId == config.ServiceId), cancellationToken);
+                    .AnyAsync(
+                        o => o.CurrencyId == config.CurrencyId
+                             && o.SelectedServices.Any(s => s.ServiceId == config.ServiceId),
+                        cancellationToken);
 
                 return service.IsActive || carried
                     ? new PayCoverageTarget(PayCoverageTargetKind.Service, service.Id, service.Name)
@@ -129,7 +137,10 @@ public class DeletePayConfig
             }
 
             var packageCarried = await _orderRepository.GetAll()
-                .AnyAsync(o => o.SelectedPackages.Any(p => p.PackageId == config.PackageId), cancellationToken);
+                .AnyAsync(
+                    o => o.CurrencyId == config.CurrencyId
+                         && o.SelectedPackages.Any(p => p.PackageId == config.PackageId),
+                    cancellationToken);
 
             return package.IsActive || packageCarried
                 ? new PayCoverageTarget(PayCoverageTargetKind.Package, package.Id, package.Name)

@@ -7,8 +7,10 @@ import {
   CleansiaCalendarComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
   TableColumn,
 } from '@cleansia/components';
 import {
@@ -45,6 +47,7 @@ import { ReportsFacade, ReportType } from './reports.facade';
     CleansiaCalendarComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaSelectComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
   ],
@@ -62,12 +65,22 @@ export class ReportsComponent implements OnInit {
   dateRangeForm = this.fb.group({
     startDate: [this.facade.dateRange().startDate],
     endDate: [this.facade.dateRange().endDate],
+    currencyId: [null as string | null],
   });
+
+  readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.facade.currencies().map((c) => ({ label: c.code, value: c.id }))
+  );
 
   // Filter drawer state
   isFilterDrawerOpen = signal(false);
-  activeFilterChips = computed(() => this.getActiveFilterChips());
+  private filterFormVersion = signal(0);
+  activeFilterChips = computed(() => {
+    this.filterFormVersion();
+    return this.getActiveFilterChips();
+  });
   hasActiveFilters = computed(() => {
+    this.filterFormVersion();
     // Check if current dates differ from default dates
     const values = this.dateRangeForm.value;
     const defaultRange = this.facade.defaultDateRange;
@@ -75,9 +88,10 @@ export class ReportsComponent implements OnInit {
 
     const startDiffers = values.startDate.toDateString() !== defaultRange.startDate.toDateString();
     const endDiffers = values.endDate.toDateString() !== defaultRange.endDate.toDateString();
-    return startDiffers || endDiffers;
+    const currencyDiffers = !!values.currencyId;
+    return startDiffers || endDiffers || currencyDiffers;
   });
-  activeFilterCount = computed(() => this.hasActiveFilters() ? 1 : 0);
+  activeFilterCount = computed(() => this.activeFilterChips().length);
 
   // Revenue Tables
   revenueByServiceColumns: TableColumn<RevenueByService>[] = [];
@@ -91,6 +105,7 @@ export class ReportsComponent implements OnInit {
 
   ngOnInit(): void {
     this.rebuildTableDefinitions();
+    this.facade.loadCurrencies();
     this.facade.loadRevenueReport();
     this.setupAutoFilter();
 
@@ -120,7 +135,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalRevenue',
         field: 'totalRevenue',
         header: this.translate.instant('pages.reports.total_revenue'),
-        getValue: (row) => this.facade.formatCurrency(row?.totalRevenue),
+        getValue: (row) => this.facade.formatRevenueAmount(row?.totalRevenue),
       },
     ];
 
@@ -139,7 +154,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalRevenue',
         field: 'totalRevenue',
         header: this.translate.instant('pages.reports.total_revenue'),
-        getValue: (row) => this.facade.formatCurrency(row?.totalRevenue),
+        getValue: (row) => this.facade.formatRevenueAmount(row?.totalRevenue),
       },
     ];
 
@@ -158,7 +173,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalRevenue',
         field: 'totalRevenue',
         header: this.translate.instant('pages.reports.total_revenue'),
-        getValue: (row) => this.facade.formatCurrency(row?.totalRevenue),
+        getValue: (row) => this.facade.formatRevenueAmount(row?.totalRevenue),
       },
       // Revenue is the SALE and stays as it is: credit is a tender, not a discount. These two say how
       // the sale was SETTLED, and the second is the one that reconciles against a Stripe statement —
@@ -169,13 +184,13 @@ export class ReportsComponent implements OnInit {
         id: 'settledFromCredit',
         field: 'settledFromCredit',
         header: this.translate.instant('pages.reports.settled_from_credit'),
-        getValue: (row) => this.facade.formatCurrency(row?.settledFromCredit),
+        getValue: (row) => this.facade.formatRevenueAmount(row?.settledFromCredit),
       },
       {
         id: 'settledOnTender',
         field: 'settledOnTender',
         header: this.translate.instant('pages.reports.settled_on_tender'),
-        getValue: (row) => this.facade.formatCurrency(row?.settledOnTender),
+        getValue: (row) => this.facade.formatRevenueAmount(row?.settledOnTender),
       },
     ];
 
@@ -200,25 +215,25 @@ export class ReportsComponent implements OnInit {
         id: 'subTotal',
         field: 'subTotal',
         header: this.translate.instant('pages.reports.subtotal'),
-        getValue: (row) => this.facade.formatCurrency(row?.subTotal),
+        getValue: (row) => this.facade.formatPayrollAmount(row?.subTotal),
       },
       {
         id: 'bonusAmount',
         field: 'bonusAmount',
         header: this.translate.instant('pages.reports.bonus'),
-        getValue: (row) => this.facade.formatCurrency(row?.bonusAmount),
+        getValue: (row) => this.facade.formatPayrollAmount(row?.bonusAmount),
       },
       {
         id: 'deductionAmount',
         field: 'deductionAmount',
         header: this.translate.instant('pages.reports.deductions'),
-        getValue: (row) => this.facade.formatCurrency(row?.deductionAmount),
+        getValue: (row) => this.facade.formatPayrollAmount(row?.deductionAmount),
       },
       {
         id: 'totalAmount',
         field: 'totalAmount',
         header: this.translate.instant('pages.reports.total_amount'),
-        getValue: (row) => this.facade.formatCurrency(row?.totalAmount),
+        getValue: (row) => this.facade.formatPayrollAmount(row?.totalAmount),
       },
     ];
 
@@ -237,7 +252,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalAmount',
         field: 'totalAmount',
         header: this.translate.instant('pages.reports.total_amount'),
-        getValue: (row) => this.facade.formatCurrency(row?.totalAmount),
+        getValue: (row) => this.facade.formatPayrollAmount(row?.totalAmount),
       },
     ];
 
@@ -257,25 +272,30 @@ export class ReportsComponent implements OnInit {
         id: 'totalAmount',
         field: 'totalAmount',
         header: this.translate.instant('pages.reports.total_amount'),
-        getValue: (row) => this.facade.formatCurrency(row?.totalAmount),
+        getValue: (row) => this.facade.formatPayrollAmount(row?.totalAmount),
       },
     ];
   }
 
   private setupAutoFilter(): void {
     this.dateRangeForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.filterFormVersion.update((v) => v + 1));
+
+    this.dateRangeForm.valueChanges
       .pipe(
         debounceTime(500),
         distinctUntilChanged(
           (prev, curr) =>
             prev.startDate?.getTime() === curr.startDate?.getTime() &&
-            prev.endDate?.getTime() === curr.endDate?.getTime()
+            prev.endDate?.getTime() === curr.endDate?.getTime() &&
+            prev.currencyId === curr.currencyId
         ),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((value) => {
         if (value.startDate && value.endDate) {
-          this.facade.setDateRange(value.startDate, value.endDate);
+          this.facade.setDateRange(value.startDate, value.endDate, value.currencyId ?? undefined);
         }
       });
   }
@@ -321,6 +341,14 @@ export class ReportsComponent implements OnInit {
       });
     }
 
+    if (values.currencyId) {
+      chips.push({
+        key: 'currency',
+        label: this.translate.instant('pages.reports.filters.currency'),
+        value: this.facade.currencies().find((c) => c.id === values.currencyId)?.code ?? '',
+      });
+    }
+
     return chips;
   }
 
@@ -333,6 +361,10 @@ export class ReportsComponent implements OnInit {
   }
 
   removeFilterChip(key: string): void {
+    if (key === 'currency') {
+      this.dateRangeForm.patchValue({ currencyId: null });
+      return;
+    }
     // For reports, removing the date range chip resets to defaults
     if (key === 'dateRange') {
       this.resetFilters();
@@ -351,6 +383,7 @@ export class ReportsComponent implements OnInit {
     this.dateRangeForm.patchValue({
       startDate: defaultStart,
       endDate: defaultEnd,
+      currencyId: null,
     });
     this.facade.resetToDefaultDateRange();
   }

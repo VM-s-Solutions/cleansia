@@ -1,5 +1,5 @@
 import { TemplateRef } from '@angular/core';
-import { CurrencyListItem } from '@cleansia/admin-services';
+import { AdminCurrencyListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -54,6 +54,9 @@ export const CURRENCY_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
   'currency.not_found': 'api.currency.not_found',
   'currency.in_use': 'api.currency.in_use',
   'currency.cannot_delete_default': 'api.currency.cannot_delete_default',
+  'currency.cannot_deactivate_default': 'api.currency.cannot_deactivate_default',
+  'currency.invalid': 'api.currency.invalid',
+  'currency.not_priced': 'api.currency.not_priced',
 };
 
 export const CURRENCY_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
@@ -85,13 +88,15 @@ export function resolveCurrencyErrorKey(error: unknown): string {
 
 export function getCurrencyTableDefinition(
   defs: {
-    onEdit: (row: CurrencyListItem) => void;
-    onDelete: (row: CurrencyListItem) => void;
-    onSetDefault: (row: CurrencyListItem) => void;
+    onEdit: (row: AdminCurrencyListItem) => void;
+    onDelete: (row: AdminCurrencyListItem) => void;
+    onSetDefault: (row: AdminCurrencyListItem) => void;
+    onDeactivate: (row: AdminCurrencyListItem) => void;
+    onActivate: (row: AdminCurrencyListItem) => void;
   },
   translate: TranslateService,
-  flagTemplate?: TemplateRef<CurrencyListItem>
-): { columns: TableColumn<CurrencyListItem>[]; actions: TableAction<CurrencyListItem>[] } {
+  flagTemplate?: TemplateRef<AdminCurrencyListItem>
+): { columns: TableColumn<AdminCurrencyListItem>[]; actions: TableAction<AdminCurrencyListItem>[] } {
   return {
     columns: [
       {
@@ -120,20 +125,26 @@ export function getCurrencyTableDefinition(
         field: 'name',
         header: translate.instant('pages.currency_management.columns.name'),
         sortable: true,
-        width: '30%',
+        width: '32%',
       },
       {
-        id: 'exchangeRate',
-        field: 'exchangeRate',
-        header: translate.instant('pages.currency_management.columns.exchange_rate'),
-        sortable: true,
-        width: '15%',
+        // WHETHER THE PLATFORM SELLS IN IT. Without this column an admin cannot tell why the star
+        // refuses a currency (SetDefaultCurrency will not promote an inactive one) or why the
+        // catalogue form insists on pricing some currencies and not others.
+        id: 'isActive',
+        field: 'isActive',
+        header: translate.instant('pages.currency_management.columns.is_active'),
+        getValue: (row: AdminCurrencyListItem) =>
+          row.isActive
+            ? translate.instant('pages.currency_management.operated')
+            : translate.instant('pages.currency_management.not_operated'),
+        width: '13%',
       },
       {
         id: 'isDefault',
         field: 'isDefault',
         header: translate.instant('pages.currency_management.columns.is_default'),
-        getValue: (row: CurrencyListItem) =>
+        getValue: (row: AdminCurrencyListItem) =>
           row.isDefault
             ? translate.instant('global.yes')
             : translate.instant('global.no'),
@@ -145,21 +156,39 @@ export function getCurrencyTableDefinition(
         icon: 'pi pi-pencil',
         tooltip: translate.instant('pages.currency_management.edit_currency'),
         color: 'warning',
-        onClick: (row: CurrencyListItem) => defs.onEdit(row),
+        onClick: (row: AdminCurrencyListItem) => defs.onEdit(row),
       },
       {
+        // Hidden on a row the server would refuse: SetDefaultCurrency will not promote a currency
+        // the platform does not sell in, so the star is offered only once the row is switched on.
         icon: 'pi pi-star',
         tooltip: translate.instant('pages.currency_management.set_default'),
         color: 'info',
-        onClick: (row: CurrencyListItem) => defs.onSetDefault(row),
-        visible: (row: CurrencyListItem) => !row.isDefault,
+        onClick: (row: AdminCurrencyListItem) => defs.onSetDefault(row),
+        visible: (row: AdminCurrencyListItem) => !row.isDefault && row.isActive,
+      },
+      {
+        // THE MARKET SWITCH. Off is hidden on the default row for the same reason delete is: the
+        // server refuses it, and an admin should not be offered a button that only ever says no.
+        icon: 'pi pi-ban',
+        tooltip: translate.instant('pages.currency_management.deactivate'),
+        color: 'danger',
+        visible: (row: AdminCurrencyListItem) => row.isActive && !row.isDefault,
+        onClick: (row: AdminCurrencyListItem) => defs.onDeactivate(row),
+      },
+      {
+        icon: 'pi pi-check-circle',
+        tooltip: translate.instant('pages.currency_management.activate'),
+        color: 'success',
+        visible: (row: AdminCurrencyListItem) => !row.isActive,
+        onClick: (row: AdminCurrencyListItem) => defs.onActivate(row),
       },
       {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.currency_management.delete_currency'),
         color: 'danger',
-        onClick: (row: CurrencyListItem) => defs.onDelete(row),
-        visible: (row: CurrencyListItem) => !row.isDefault,
+        onClick: (row: AdminCurrencyListItem) => defs.onDelete(row),
+        visible: (row: AdminCurrencyListItem) => !row.isDefault,
       },
     ],
   };

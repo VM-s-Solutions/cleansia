@@ -25,8 +25,6 @@ public class DeleteServiceHandlerTests
             categoryId: "cat-1",
             name: "Windows",
             description: "Window cleaning",
-            basePrice: 100m,
-            perRoomPrice: 10m,
             estimatedTime: 30);
         service.Id = ServiceId;
 

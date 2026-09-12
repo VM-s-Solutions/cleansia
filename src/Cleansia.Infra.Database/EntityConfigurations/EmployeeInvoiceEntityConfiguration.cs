@@ -120,7 +120,11 @@ public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<E
         builder.HasIndex(e => e.EmployeeId);
         builder.HasIndex(e => e.PayPeriodId);
         builder.HasIndex(e => e.Status);
-        builder.HasIndex(e => new { e.EmployeeId, e.PayPeriodId })
+        // ONE INVOICE PER (EMPLOYEE, PERIOD, CURRENCY). A cleaner who worked a CZK job and a EUR job
+        // in one period holds pay in two units and a tax document is in one, so the period yields one
+        // invoice per currency. All three columns are NOT NULL, so this needs no AreNullsDistinct;
+        // the (EmployeeId, PayPeriodId) lookups ride its leading columns.
+        builder.HasIndex(e => new { e.EmployeeId, e.PayPeriodId, e.CurrencyId })
             .IsUnique();
         builder.HasIndex(e => new { e.Status, e.GeneratedAt });
     }

@@ -88,6 +88,7 @@ export class AppComponent implements OnInit {
     { label: 'sidebar.reports', icon: 'pi pi-chart-bar', route: '/reports' },
     { label: 'sidebar.services', icon: 'pi pi-wrench', route: '/service-management' },
     { label: 'sidebar.packages', icon: 'pi pi-box', route: '/package-management' },
+    { label: 'sidebar.extras', icon: 'pi pi-plus-circle', route: '/extra-management' },
     { label: 'sidebar.global_rates', icon: 'pi pi-money-bill', route: '/pay-config-management' },
     { label: 'sidebar.admin_users', icon: 'pi pi-user-plus', route: '/admin-user-management' },
     { label: 'sidebar.languages', icon: 'pi pi-globe', route: '/language-management' },

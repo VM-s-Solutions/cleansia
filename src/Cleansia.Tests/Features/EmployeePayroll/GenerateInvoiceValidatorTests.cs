@@ -7,7 +7,7 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
 /// Every failure path of <see cref="GenerateInvoice.Validator"/> plus the clean pass:
-/// required-field guards, existence guards, the InvoiceAlreadyExists idempotency guard
+/// required-field guards, existence guards, the per-currency InvoiceAlreadyExists guard
 ///, the NoUnpaidOrderPays guard, and a fully valid command. Asserts on the
 /// BusinessErrorMessage constant, never a literal.
 /// </summary>
@@ -28,7 +28,7 @@ public class GenerateInvoiceValidatorTests
         _payPeriodRepository
             .Setup(r => r.ExistsAsync(PayPeriodId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _invoiceRepository
-            .Setup(r => r.ExistsForPayPeriodAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistsForUnassignedPayCurrencyAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _orderPayRepository
             .Setup(r => r.HasUnassignedForEmployeePeriodAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
@@ -102,10 +102,10 @@ public class GenerateInvoiceValidatorTests
     }
 
     [Fact]
-    public async Task Existing_Invoice_For_Period_Fails_InvoiceAlreadyExists()
+    public async Task An_Unassigned_Pay_In_An_Already_Invoiced_Currency_Fails_InvoiceAlreadyExists()
     {
         _invoiceRepository
-            .Setup(r => r.ExistsForPayPeriodAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistsForUnassignedPayCurrencyAsync(EmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await CreateValidator().ValidateAsync(Valid());

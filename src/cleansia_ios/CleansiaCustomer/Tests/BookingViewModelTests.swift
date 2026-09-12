@@ -193,6 +193,39 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertEqual(catalog.callCount, 1)
     }
 
+    /// The quote's own currency wins the moment it lands; until then the catalogue's default labels
+    /// the catalogue prices, which used to be a `"CZK"` literal.
+    func testDisplayCurrencyIsTheCatalogueDefaultBeforeTheFirstQuote() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.catalog(currencyCode: "EUR")))
+        let vm = makeVM(catalog: catalog, scheduler: .dispatch)
+        XCTAssertNil(vm.displayCurrencyCode)
+
+        await vm.loadCatalog()
+
+        XCTAssertEqual(vm.quoteState, .idle)
+        XCTAssertEqual(vm.displayCurrencyCode, "EUR")
+        XCTAssertEqual(BookingPricing.formatTotal(1500, currencyCode: vm.displayCurrencyCode ?? ""), "1500 €")
+    }
+
+    func testTheQuotesOwnCurrencyWinsOverTheCatalogueDefault() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.catalog(currencyCode: "CZK")))
+        let quote = FakeQuoteClient(result: .success(BookingQuote(totalPrice: 1000, currencyCode: "EUR")))
+        let scheduler = TestScheduler.dispatch
+        let vm = makeVM(catalog: catalog, quote: quote, scheduler: scheduler)
+        await vm.loadCatalog()
+        XCTAssertEqual(vm.displayCurrencyCode, "CZK")
+
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drainQuote()
+
+        XCTAssertEqual(vm.quoteState.quote?.currencyCode, "EUR")
+        XCTAssertEqual(vm.displayCurrencyCode, "EUR")
+    }
+
     func testQuoteStaysIdleWithNoSelection() async {
         let quote = FakeQuoteClient()
         let scheduler = TestScheduler.dispatch

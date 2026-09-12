@@ -155,6 +155,7 @@ fun ServicesStep(
     val packages by catalogRepo.packages.collectAsState()
     val loading by catalogRepo.loading.collectAsState()
     val loaded by catalogRepo.loaded.collectAsState()
+    val currencyCode by catalogRepo.currencyCode.collectAsState()
 
     // Distinct categories derived from the loaded services, sorted by backend
     // displayOrder. Only service categories — packages stay unfiltered.
@@ -187,6 +188,7 @@ fun ServicesStep(
             onUpdate = onUpdate,
             services = services,
             packages = packages,
+            currencyCode = currencyCode,
             categories = categories,
             activeCategorySlug = activeCategorySlug,
             onCategoryChange = { activeCategorySlug = it },
@@ -199,6 +201,7 @@ fun ServicesStep(
     detailService?.let { svc ->
         ServiceDetailsSheet(
             service = svc,
+            currencyCode = currencyCode,
             onDismiss = { detailService = null },
         )
     }
@@ -207,6 +210,7 @@ fun ServicesStep(
         val selected = state.selectedPackageIds.contains(pkg.id)
         PackageDetailsSheet(
             pkg = pkg,
+            currencyCode = currencyCode,
             isSelected = selected,
             onToggle = {
                 val updated = if (selected) state.selectedPackageIds - pkg.id
@@ -224,6 +228,7 @@ private fun CatalogContent(
     onUpdate: (BookingState) -> Unit,
     services: List<ServiceListItem>,
     packages: List<PackageListItem>,
+    currencyCode: String?,
     categories: List<CategoryDto>,
     activeCategorySlug: String?,
     onCategoryChange: (String?) -> Unit,
@@ -262,6 +267,7 @@ private fun CatalogContent(
                         val selected = state.selectedPackageIds.contains(pkg.id)
                         PackageCard(
                             pkg = pkg,
+                            currencyCode = currencyCode,
                             accent = accentForIndex(idx),
                             selected = selected,
                             onClick = { onPackageOpen(pkg) },
@@ -319,6 +325,7 @@ private fun CatalogContent(
                     val selected = state.selectedServiceIds.contains(service.id)
                     ServiceRow(
                         service = service,
+                        currencyCode = currencyCode,
                         selected = selected,
                         onInfoClick = { onServiceInfo(service) },
                     ) {
@@ -340,6 +347,7 @@ private fun CatalogContent(
 @Composable
 private fun PackageCard(
     pkg: PackageListItem,
+    currencyCode: String?,
     accent: PackageAccent,
     selected: Boolean,
     onClick: () -> Unit,
@@ -410,9 +418,7 @@ private fun PackageCard(
             Spacer(Modifier.weight(1f).heightIn(min = 4.dp))
 
             Text(
-                // Catalog browse has no quote yet, so no currency —
-                // formatOrderPrice defaults to CZK, matching what this literal assumed.
-                formatOrderPrice(pkg.price, null),
+                formatOrderPrice(pkg.price, currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.White,
             )
@@ -521,6 +527,7 @@ private fun CategoryChip(
 @Composable
 private fun ServiceRow(
     service: ServiceListItem,
+    currencyCode: String?,
     selected: Boolean,
     onInfoClick: () -> Unit,
     onClick: () -> Unit,
@@ -569,14 +576,14 @@ private fun ServiceRow(
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    stringResource(R.string.booking_price_from, service.basePrice.toInt()),
+                    stringResource(R.string.booking_price_from, formatOrderPrice(service.basePrice, currencyCode)),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.primary,
                 )
                 if (service.perRoomPrice > 0) {
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        stringResource(R.string.booking_price_per_room, service.perRoomPrice.toInt()),
+                        stringResource(R.string.booking_price_per_room, formatOrderPrice(service.perRoomPrice, currencyCode)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

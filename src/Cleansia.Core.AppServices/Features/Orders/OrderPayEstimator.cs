@@ -32,6 +32,7 @@ internal static class OrderPayEstimator
             order.Rooms,
             order.Bathrooms,
             order.TravelDistance,
+            order.CurrencyId,
             employeeId,
             serviceConfigs,
             packageConfigs);
@@ -51,6 +52,7 @@ internal static class OrderPayEstimator
             order.Rooms,
             order.Bathrooms,
             order.TravelDistance,
+            order.CurrencyId,
             employeeId,
             serviceConfigs,
             packageConfigs);
@@ -60,6 +62,12 @@ internal static class OrderPayEstimator
     /// projection has neither an <c>Order</c> nor an <c>OrderListRow</c> to hand — the dashboard's
     /// available-jobs preview selects six columns and would otherwise have to materialise an aggregate
     /// it does not want, or grow a second copy of this arithmetic. Same math, still one implementation.
+    ///
+    /// <para><paramref name="orderCurrencyId"/> is what keeps a pay estimate denominated. The configs
+    /// arrive from a read scoped to a SET of currencies — the paged list batches a whole page into one
+    /// query and a page can span them — so this is the only place that knows which of them belongs to
+    /// THIS order. Without it the group-by would fold a cleaner's CZK and EUR rates for one service
+    /// into a single group and pick between them with no ORDER BY.</para>
     ///
     /// <para><c>internal</c>, not <c>public</c>: the only caller outside this file is in the same
     /// assembly, and the enclosing type is internal anyway. It also keeps
@@ -72,17 +80,20 @@ internal static class OrderPayEstimator
         int rooms,
         int bathrooms,
         decimal? travelDistance,
+        string orderCurrencyId,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
         IReadOnlyList<EmployeePayConfig> packageConfigs)
     {
         var matchedServiceConfigs = serviceConfigs
             .Where(c => c.ServiceId != null && orderServiceIds.Contains(c.ServiceId))
+            .Where(c => c.CurrencyId == orderCurrencyId)
             .GroupBy(c => c.ServiceId)
             .Select(g => g.FirstOrDefault(c => c.EmployeeId == employeeId) ?? g.First());
 
         var matchedPackageConfigs = packageConfigs
             .Where(c => c.PackageId != null && orderPackageIds.Contains(c.PackageId))
+            .Where(c => c.CurrencyId == orderCurrencyId)
             .GroupBy(c => c.PackageId)
             .Select(g => g.FirstOrDefault(c => c.EmployeeId == employeeId) ?? g.First());
 

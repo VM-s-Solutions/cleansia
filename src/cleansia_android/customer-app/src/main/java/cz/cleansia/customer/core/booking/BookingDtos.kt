@@ -61,7 +61,6 @@ data class QuoteOrderResponse(
      * follow this verdict rather than re-deriving one from the clock.
      */
     val expressSurchargeWaivedByMembership: Boolean,
-    val exchangeRate: Double,
     /**
      * How long the selection is expected to take and how many cleaners that implies. Server-computed
      * from the SAME definitions the order uses, so a quote cannot promise a crew the booking will not

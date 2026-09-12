@@ -31,7 +31,11 @@ export function getOrderStatusLabel(
   order: OrderListItem,
   translate: TranslateService
 ): string {
-  if (!order.orderStatus?.value) return '';
+  // Test the OBJECT, not the number. OrderStatus.New is 0, so `!order.orderStatus?.value` was false
+  // for every freshly-booked order and the admin list rendered an empty pill where the word "New"
+  // belongs (T-0687). Every order starts New, so this was not an edge case — it was what the whole
+  // open pipeline looked like.
+  if (order.orderStatus?.value === undefined || order.orderStatus.value === null) return '';
   const key =
     ORDER_STATUS_TRANSLATION_MAP[order.orderStatus.value as OrderStatus];
   return key ? translate.instant(key) : order.orderStatus?.name || '';
@@ -41,7 +45,9 @@ export function getPaymentStatusLabel(
   order: OrderListItem,
   translate: TranslateService
 ): string {
-  if (!order.paymentStatus?.value) return '';
+  // Same shape as above. Latent today only because PaymentStatus starts at 1 — it would break the
+  // moment a zero-valued member is added, which is exactly how the order-status bug arrived.
+  if (order.paymentStatus?.value === undefined || order.paymentStatus.value === null) return '';
   const key =
     PAYMENT_STATUS_TRANSLATION_MAP[order.paymentStatus.value as PaymentStatus];
   return key ? translate.instant(key) : order.paymentStatus?.name || '';

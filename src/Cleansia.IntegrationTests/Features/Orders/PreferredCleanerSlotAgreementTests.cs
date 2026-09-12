@@ -148,7 +148,8 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -157,7 +158,7 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         category.Id = "cat-slot";
         context.Add(category);
 
-        var service = Service.Create(category.Id, "Deep clean", "Deep clean", 1500m, 200m, ServiceMinutes);
+        var service = Service.Create(category.Id, "Deep clean", "Deep clean", ServiceMinutes);
         service.Id = ServiceId;
         context.Add(service);
 
@@ -267,7 +268,6 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
             customerAddress: Address.Create("Slot St 3", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

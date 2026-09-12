@@ -67,6 +67,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun PromoCodeBottomSheet(
     initialCode: String,
+    currencyCode: String?,
     onDismiss: () -> Unit,
     onValidate: suspend (code: String) -> PromoCodeUiState,
     onApplied: (validatedCode: String, discountAmount: Double) -> Unit,
@@ -136,7 +137,7 @@ fun PromoCodeBottomSheet(
             Spacer(Modifier.height(10.dp))
 
             // Helper text OR result message — mutually exclusive.
-            ResultBlock(state = localState)
+            ResultBlock(state = localState, currencyCode = currencyCode)
 
             Spacer(Modifier.height(20.dp))
 
@@ -226,7 +227,7 @@ fun PromoCodeBottomSheet(
  * Invalid → red X + the localized error string.
  */
 @Composable
-private fun ResultBlock(state: PromoCodeUiState) {
+private fun ResultBlock(state: PromoCodeUiState, currencyCode: String?) {
     when (state) {
         PromoCodeUiState.Idle -> {
             Text(
@@ -261,7 +262,7 @@ private fun ResultBlock(state: PromoCodeUiState) {
                 Text(
                     text = stringResource(
                         R.string.booking_promo_code_dialog_success,
-                        formatOrderPrice(state.discountAmount, null),
+                        formatOrderPrice(state.discountAmount, currencyCode),
                     ),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = SuccessText,

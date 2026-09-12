@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -16,7 +17,7 @@ public class CreatePackage
         string Description,
         string? Tagline,
         bool IsPopular,
-        decimal Price,
+        Dictionary<string, decimal>? Prices,
         List<string>? ServiceIds,
         Dictionary<string, PackageTranslationInput>? Translations) : ICommand<Response>;
 
@@ -24,7 +25,10 @@ public class CreatePackage
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IServiceRepository serviceRepository, ILanguageRepository languageRepository)
+        public Validator(
+            IServiceRepository serviceRepository,
+            ILanguageRepository languageRepository,
+            ICurrencyRepository currencyRepository)
         {
             RuleFor(x => x.Name)
                 .Cascade(CascadeMode.Stop)
@@ -41,8 +45,10 @@ public class CreatePackage
                 .MaximumLength(60)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.Price)
-                .GreaterThanOrEqualTo(0)
+            // A price per currency, and never a negative one -- see CreateService.
+            RuleFor(x => x.Prices)
+                .MustCoverAllActiveCurrencies(currencyRepository)
+                .Must(prices => prices!.Values.All(p => p >= 0))
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
             RuleFor(x => x.ServiceIds)
@@ -79,6 +85,8 @@ public class CreatePackage
 
     internal class Handler(
         IPackageRepository packageRepository,
+        IPackagePriceRepository packagePriceRepository,
+        ICurrencyRepository currencyRepository,
         IServiceRepository serviceRepository)
         : ICommandHandler<Command, Response>
     {
@@ -87,7 +95,6 @@ public class CreatePackage
             var package = Package.Create(
                 command.Name,
                 command.Description,
-                command.Price,
                 command.Tagline,
                 command.IsPopular);
 
@@ -112,6 +119,33 @@ public class CreatePackage
             }
 
             packageRepository.Add(package);
+
+
+            // ONE ROW PER CURRENCY THE FORM SENT, upserted -- see CreateService for why rows the payload
+            // does not mention are left alone, and why this keys off every currency rather than the
+            // active ones.
+            var byCode = await currencyRepository.GetAll()
+                .ToDictionaryAsync(c => c.Code, c => c.Id, cancellationToken);
+
+            foreach (var (code, price) in command.Prices ?? [])
+            {
+                if (!byCode.TryGetValue(code, out var currencyId))
+                {
+                    continue;
+                }
+
+                var existingPrice = await packagePriceRepository.GetAll().FirstOrDefaultAsync(
+                    p => p.PackageId == package.Id && p.CurrencyId == currencyId, cancellationToken);
+
+                if (existingPrice is null)
+                {
+                    packagePriceRepository.Add(PackagePrice.Create(package.Id, currencyId, price));
+                }
+                else
+                {
+                    existingPrice.Update(price);
+                }
+            }
 
             return BusinessResult.Success(new Response(package.Id));
         }

@@ -383,8 +383,13 @@ if (!existsSync(TSCONFIG)) {
         if (!paths || typeof paths !== "object") {
             add(TSCONFIG, "P0", "compilerOptions.paths is absent — the alias parser is stale");
         } else {
+            // A SUBPATH ALIAS names a directory with a trailing wildcard --
+            // `"@cleansia/components/*": ["libs/shared/components/src/lib/*"]`. Testing that literally
+            // with existsSync always fails, so the one such alias in the workspace was reported as
+            // NX-4 dangling while five files import through it. The wildcard segment is stripped so the
+            // rules below test the directory the alias actually resolves into.
             const entries = Object.entries(paths).flatMap(([alias, targets]) =>
-                (Array.isArray(targets) ? targets : []).map((t) => [alias, t]),
+                (Array.isArray(targets) ? targets : []).map((t) => [alias, t.replace(/\/\*$/, "")]),
             );
             const intoLibs = entries.filter(([, t]) => t.startsWith("libs/"));
             aliases = intoLibs.length;

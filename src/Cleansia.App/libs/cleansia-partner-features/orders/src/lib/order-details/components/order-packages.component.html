@@ -6,7 +6,14 @@
   <div class="cleansia-order-details__package-item">
     <div class="cleansia-order-details__package-header">
       <h5>{{ pkg.name }}</h5>
-      <span class="package-price">{{ pkg.price | currency:currencyCode():'symbol':'1.2-2' }}</span>
+      <!-- No code, no label. An empty currencyCode through the currency pipe renders a bare
+           string where a symbol should be, which reads as a rendering fault rather than as
+           "this order's currency did not load". -->
+      <span class="package-price">{{
+        currencyCode()
+          ? (pkg.price | currency: currencyCode() : 'symbol' : '1.2-2')
+          : (pkg.price | number: '1.2-2')
+      }}</span>
     </div>
 
     @if (pkg.description) {

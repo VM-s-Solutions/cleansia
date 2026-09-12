@@ -3,12 +3,15 @@ import { TestBed } from '@angular/core/testing';
 import {
   CustomerClient,
   DeleteRecurringBookingCommand,
+  QuoteOrderResponse,
   RecurringBookingTemplateDto,
   SavedAddressDto,
   SetRecurringBookingActiveCommand,
 } from '@cleansia/customer-services';
 import {
+  loadCustomerCurrencies,
   SavedAddressStore,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
@@ -27,6 +30,7 @@ describe('RecurringBookingsFacade', () => {
     setActive: jest.Mock;
     delete: jest.Mock;
   };
+  let orderClient: { quote: jest.Mock };
   let savedAddressStore: {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
     loaded: ReturnType<typeof signal<boolean>>;
@@ -51,6 +55,7 @@ describe('RecurringBookingsFacade', () => {
       setActive: jest.fn().mockReturnValue(of(undefined)),
       delete: jest.fn().mockReturnValue(of(undefined)),
     };
+    orderClient = { quote: jest.fn() };
     savedAddressStore = {
       addresses: signal<SavedAddressDto[]>([]),
       loaded: signal(true),
@@ -65,7 +70,14 @@ describe('RecurringBookingsFacade', () => {
       providers: [
         RecurringBookingsFacade,
         provideMockStore(),
-        { provide: CustomerClient, useValue: { recurringBookingClient: client } },
+        {
+          provide: CustomerClient,
+          useValue: {
+            recurringBookingClient: client,
+            orderClient,
+            membershipClient: { getMine: jest.fn().mockReturnValue(of({ hasMembership: true })) },
+          },
+        },
         { provide: SavedAddressStore, useValue: savedAddressStore },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
@@ -75,7 +87,47 @@ describe('RecurringBookingsFacade', () => {
     store = TestBed.inject(MockStore);
     store.overrideSelector(selectCustomerServices, []);
     store.overrideSelector(selectCustomerPackages, []);
+    store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
     facade = TestBed.inject(RecurringBookingsFacade);
+  });
+
+  describe('the currency a schedule is priced in', () => {
+    it('asks the store for the platform currencies alongside the catalogue', async () => {
+      jest.spyOn(store, 'dispatch');
+
+      await facade.initialize();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+    });
+
+    it('re-exposes the platform default for the catalogue prices the form lists', () => {
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'EUR');
+      store.refreshState();
+
+      expect(facade.defaultCurrencyCode()).toBe('EUR');
+    });
+
+    // The form's price threaded the quote's currency on one line and hardcoded CZK on the next.
+    it("carries the quote's own currency onto the form price", async () => {
+      orderClient.quote.mockReturnValue(
+        of(QuoteOrderResponse.fromJS({ totalPrice: 1000, finalPriceAfterDiscount: 900, currencyCode: 'EUR' })),
+      );
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      await facade.quoteForm();
+
+      expect(facade.formPrice()).toEqual({ amount: 900, currency: 'EUR' });
+    });
+
+    it('prices a card in the currency its quote came back in', async () => {
+      orderClient.quote.mockReturnValue(
+        of(QuoteOrderResponse.fromJS({ totalPrice: 1000, finalPriceAfterDiscount: 1000, currencyCode: 'EUR' })),
+      );
+
+      await facade.quoteTemplate(template({ selectedServiceIds: ['s1'] }));
+
+      expect(facade.templatePrices()['t1']).toEqual({ amount: 1000, currency: 'EUR' });
+    });
   });
 
   describe('refreshList — the three data states', () => {

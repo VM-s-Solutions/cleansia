@@ -52,7 +52,8 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
     private async Task<(string UserId, string CurrencyId)> SeedCustomerAsync()
     {
         await using var ctx = NewContext();
-        var currency = Currency.Create("CZK", "Kc", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kc", "Czech koruna");
+        currency.IsActive = true;
         var user = User.CreateWithPassword(
             "credit-issue@cleansia.test", "Seed-Password-123", "Credit", "Tester");
         ctx.Languages.Add(Language.Create("en", "English"));

@@ -69,7 +69,6 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddMinutes(30),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

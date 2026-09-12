@@ -99,7 +99,6 @@ public class OrderSeatCapacityTests
             customerAddress: Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,

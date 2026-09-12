@@ -122,7 +122,7 @@ public class PayoutInvoiceRenderedSymbolTests
 
         var user = User.CreateWithPassword("cleaner@cleansia.test", "12345678Test!", "Jan", "Novák");
         var employee = Employee.CreateWithUser(user);
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
 
         return invoice.CreatePdfData(
             employee,
@@ -141,8 +141,7 @@ public class PayoutInvoiceRenderedSymbolTests
             street: "Testovací 1",
             city: "Praha",
             zipCode: "11000",
-            countryId: "cz",
-            vatNumber: "CZ87654321");
+            countryId: "cz");
 
     private sealed class ProbePayment : DefaultInvoiceLayoutBuilder
     {

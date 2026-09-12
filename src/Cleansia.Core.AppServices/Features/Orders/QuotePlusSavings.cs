@@ -49,7 +49,7 @@ public static class QuotePlusSavings
 
     public class Validator : AbstractValidator<Query>
     {
-        public Validator()
+        public Validator(ICurrencyRepository currencyRepository)
         {
             RuleFor(x => x.PlanCode)
                 .NotEmpty()
@@ -57,6 +57,15 @@ public static class QuotePlusSavings
 
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0);
             RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0);
+
+            // Same rule, same key as QuoteOrder: this query prices the basket too, and the calculator
+            // throws on a currency it cannot price in.
+            When(x => !string.IsNullOrEmpty(x.CurrencyId), () =>
+            {
+                RuleFor(x => x.CurrencyId!)
+                    .MustAsync(currencyRepository.IsOfferableAsync)
+                    .WithMessage(BusinessErrorMessage.InvalidCurrency);
+            });
         }
     }
 
@@ -85,6 +94,7 @@ public static class QuotePlusSavings
                 query.SelectedExtraSlugs ?? [],
                 query.Rooms,
                 query.Bathrooms,
+                // The caller's currency, validated offerable; null is the platform default.
                 query.CurrencyId,
                 query.CleaningDate,
                 userId,
@@ -103,7 +113,7 @@ public static class QuotePlusSavings
             if (!string.IsNullOrEmpty(userId))
             {
                 var tierResult = await loyaltyService.ResolveTierDiscountForOrderAsync(
-                    userId, rawSubtotal, cancellationToken);
+                    userId, rawSubtotal, result.CurrencyId, cancellationToken);
                 tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
             }
 

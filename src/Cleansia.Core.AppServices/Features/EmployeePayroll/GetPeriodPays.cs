@@ -62,12 +62,29 @@ public class GetPeriodPays
                 }
             }
 
-            var orderPays = await orderEmployeePayRepository
-                .GetByEmployeeAndPeriodAsync(query.EmployeeId, query.PayPeriodId, cancellationToken);
-
             var employee = await employeeRepository.GetByIdAsync(query.EmployeeId, cancellationToken);
             var payPeriod = await payPeriodRepository.GetByIdAsync(query.PayPeriodId, cancellationToken);
-            var invoice = await employeeInvoiceRepository.GetByEmployeeAndPayPeriodAsync(query.EmployeeId, query.PayPeriodId, cancellationToken);
+            var invoices = await employeeInvoiceRepository
+                .GetAllForEmployeeAndPayPeriodAsync(query.EmployeeId, query.PayPeriodId, cancellationToken);
+
+            // ONE currency, and everything on the DTO is in it -- the totals AND the rows, because the
+            // DTO promises "the currency every amount above is denominated in". The cleaner's resolved
+            // currency (the same one the partner dashboard labels with) is the view, and the invoice
+            // shown is the one in it; a period may hold one invoice per currency. When the period is
+            // invoiced but not in that currency, the invoice's own currency wins: the payout document
+            // is what the cleaner holds, and "My Pay" disagreeing with it is the whole defect this
+            // field exists to close. Pay in any other currency is not shown here; surfacing it needs a
+            // currency dimension on the wire (the per-row DTO carries none yet).
+            var resolved = await currencyResolutionService
+                .ResolveCurrencyForEmployeeAsync(query.EmployeeId, cancellationToken);
+            var invoice = invoices.FirstOrDefault(i => i.CurrencyId == resolved.Id) ?? invoices.FirstOrDefault();
+            var currencyId = invoice?.CurrencyId ?? resolved.Id;
+            var currencyCode = invoice is null ? resolved.Code : invoice.Currency?.Code ?? resolved.Code;
+
+            var orderPays = (await orderEmployeePayRepository
+                    .GetByEmployeeAndPeriodAsync(query.EmployeeId, query.PayPeriodId, cancellationToken))
+                .Where(p => p.CurrencyId == currencyId)
+                .ToList();
 
             var summary = new PeriodPaySummaryDto(
                 PayPeriodId: query.PayPeriodId,
@@ -84,13 +101,7 @@ public class GetPeriodPays
                 HasInvoice: invoice is not null,
                 InvoiceId: invoice?.Id,
                 OrderPays: orderPays.Select(p => p.MapToDto()),
-                // Prefer the invoice's own currency. Once a period is invoiced that row is what the
-                // cleaner's payout document says, and "My Pay" disagreeing with it is the whole defect
-                // this field exists to close. Only an un-invoiced period needs resolving, and it resolves
-                // the same way the partner dashboard does, so those two cannot drift either.
-                CurrencyCode: invoice?.Currency?.Code
-                    ?? await currencyResolutionService.ResolveCurrencyCodeForEmployeeAsync(
-                        query.EmployeeId, cancellationToken)
+                CurrencyCode: currencyCode
             );
 
             return BusinessResult.Success(summary);

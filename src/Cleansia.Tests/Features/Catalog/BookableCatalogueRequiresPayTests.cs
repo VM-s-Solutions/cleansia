@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -28,6 +29,21 @@ public class BookableCatalogueRequiresPayTests
     private readonly Mock<IPackageRepository> _packages = new();
     private readonly Mock<IEmployeePayConfigRepository> _payConfigs = new();
 
+    /// <summary>
+    /// EVERY entry is priced, both the configured and the unconfigured one. The catalogue now withholds
+    /// an unpriced entry as well as an unpaid one, and an unpriced fixture would make every assertion
+    /// below pass for the wrong reason — the pay filter has to be the only thing removing anything.
+    /// </summary>
+    private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna");
+
+    private readonly ICurrencyRepository _currencies = CataloguePriceDoubles.DefaultCurrency(Czk);
+
+    private readonly IServicePriceRepository _servicePrices = CataloguePriceDoubles.Services(
+        Czk, (ConfiguredServiceId, 500m, 100m), (UnconfiguredServiceId, 500m, 100m));
+
+    private readonly IPackagePriceRepository _packagePrices = CataloguePriceDoubles.Packages(
+        Czk, (ConfiguredPackageId, 1000m), (UnconfiguredPackageId, 1000m));
+
     public BookableCatalogueRequiresPayTests()
     {
         _services.Setup(r => r.GetAll()).Returns(new[]
@@ -44,14 +60,14 @@ public class BookableCatalogueRequiresPayTests
 
         _payConfigs.Setup(r => r.GetAll()).Returns(new[]
         {
-            EmployeePayConfig.CreateForService(ConfiguredServiceId, 250m, "czk"),
-            EmployeePayConfig.CreateForPackage(ConfiguredPackageId, 400m, "czk")
+            EmployeePayConfig.CreateForService(ConfiguredServiceId, 250m, Czk.Id),
+            EmployeePayConfig.CreateForPackage(ConfiguredPackageId, 400m, Czk.Id)
         }.AsQueryable().BuildMock());
     }
 
     private static Service ActiveService(string id, string name)
     {
-        var service = Service.Create("cat-1", name, "d", 500m, 150m);
+        var service = Service.Create("cat-1", name, "d");
         service.Id = id;
         typeof(Service).GetProperty(nameof(Service.Category))!
             .SetValue(service, ServiceCategory.Create("cat-1", "Home", "d"));
@@ -60,7 +76,7 @@ public class BookableCatalogueRequiresPayTests
 
     private static Package ActivePackage(string id, string name)
     {
-        var package = Package.Create(name, "d", 799m);
+        var package = Package.Create(name, "d");
         package.Id = id;
         return package;
     }
@@ -68,7 +84,8 @@ public class BookableCatalogueRequiresPayTests
     [Fact]
     public async Task The_Service_Overview_Withholds_An_Entry_With_No_Platform_Wide_Config()
     {
-        var handler = new GetServiceOverview.Handler(_services.Object, _payConfigs.Object);
+        var handler = new GetServiceOverview.Handler(
+            _services.Object, _servicePrices, _currencies, _payConfigs.Object);
 
         var items = (await handler.Handle(new GetServiceOverview.Request(), CancellationToken.None)).ToList();
 
@@ -78,7 +95,8 @@ public class BookableCatalogueRequiresPayTests
     [Fact]
     public async Task The_Package_Overview_Withholds_An_Entry_With_No_Platform_Wide_Config()
     {
-        var handler = new GetPackageOverview.Handler(_packages.Object, _payConfigs.Object);
+        var handler = new GetPackageOverview.Handler(
+            _packages.Object, _packagePrices, _currencies, _payConfigs.Object);
 
         var items = (await handler.Handle(new GetPackageOverview.Request(), CancellationToken.None)).ToList();
 
@@ -94,10 +112,11 @@ public class BookableCatalogueRequiresPayTests
     {
         _payConfigs.Setup(r => r.GetAll()).Returns(new[]
         {
-            EmployeePayConfig.CreateForService(UnconfiguredServiceId, 250m, "czk", employeeId: "emp-1")
+            EmployeePayConfig.CreateForService(UnconfiguredServiceId, 250m, Czk.Id, employeeId: "emp-1")
         }.AsQueryable().BuildMock());
 
-        var handler = new GetServiceOverview.Handler(_services.Object, _payConfigs.Object);
+        var handler = new GetServiceOverview.Handler(
+            _services.Object, _servicePrices, _currencies, _payConfigs.Object);
 
         var items = await handler.Handle(new GetServiceOverview.Request(), CancellationToken.None);
 
@@ -113,11 +132,12 @@ public class BookableCatalogueRequiresPayTests
     {
         _payConfigs.Setup(r => r.GetAll()).Returns(new[]
         {
-            EmployeePayConfig.CreateForService(ConfiguredServiceId, 250m, "czk"),
-            EmployeePayConfig.CreateForService(UnconfiguredServiceId, 250m, "czk")
+            EmployeePayConfig.CreateForService(ConfiguredServiceId, 250m, Czk.Id),
+            EmployeePayConfig.CreateForService(UnconfiguredServiceId, 250m, Czk.Id)
         }.AsQueryable().BuildMock());
 
-        var handler = new GetServiceOverview.Handler(_services.Object, _payConfigs.Object);
+        var handler = new GetServiceOverview.Handler(
+            _services.Object, _servicePrices, _currencies, _payConfigs.Object);
 
         var items = await handler.Handle(new GetServiceOverview.Request(), CancellationToken.None);
 

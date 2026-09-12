@@ -16,7 +16,7 @@
               'pages.home.plus.title'
                 | translate
                   : {
-                      price: formatCzk(facts.monthlyPlan()!.price),
+                      price: formatPrice(facts.monthlyPlan()!.price),
                       days: facts.trialDays()
                     }
             }}
@@ -50,7 +50,7 @@
                 'pages.home.plus.yearly'
                   | translate
                     : {
-                        price: formatCzk(yearly.price),
+                        price: formatPrice(yearly.price),
                         percent: facts.yearlySavingsPercent()
                       }
               }}

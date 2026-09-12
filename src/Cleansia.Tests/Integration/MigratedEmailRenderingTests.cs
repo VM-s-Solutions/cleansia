@@ -209,7 +209,6 @@ public class MigratedEmailRenderingTests
         customerAddress: Address.Create("Dlouha 12", "Praha", "11000", "cz"),
         rooms: 3,
         bathrooms: 1,
-        extras: new Dictionary<string, bool>(),
         cleaningDateTime: new DateTime(2026, 9, 5, 9, 0, 0, DateTimeKind.Utc),
         paymentType: PaymentType.Card,
         totalPrice: 1250.00m,

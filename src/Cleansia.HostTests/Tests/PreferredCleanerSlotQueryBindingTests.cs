@@ -65,7 +65,7 @@ public sealed class PreferredCleanerSlotQueryBindingTests(HostTestPostgresFixtur
 
             var category = ServiceCategory.Create("home-binding", "Home", "Home cleaning");
             ctx.Add(category);
-            var service = Service.Create(category.Id, "Deep clean", "Deep clean", 1500m, 200m, ServiceMinutes);
+            var service = Service.Create(category.Id, "Deep clean", "Deep clean", ServiceMinutes);
             service.Id = ServiceId;
             ctx.Add(service);
 

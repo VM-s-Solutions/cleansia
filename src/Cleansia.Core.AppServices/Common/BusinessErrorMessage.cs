@@ -41,9 +41,13 @@ public static class BusinessErrorMessage
     public const string InvalidCurrency = "currency.invalid";
     public const string CurrencyNotFound = "currency.not_found";
     public const string CurrencyCodeAlreadyExists = "currency.code_already_exists";
+    public const string CurrencyDefaultChangedConcurrently = "currency.default_changed_concurrently";
     public const string CurrencyInUse = "currency.in_use";
     public const string CannotDeleteDefaultCurrency = "currency.cannot_delete_default";
-    public const string ExchangeRateMustBePositive = "currency.exchange_rate_must_be_positive";
+    public const string CannotDeactivateDefaultCurrency = "currency.cannot_deactivate_default";
+    /// <summary>Promotion refused: the catalogue has no price rows in this currency, so making it the
+    /// default would withhold every entry from every customer.</summary>
+    public const string CurrencyNotPriced = "currency.not_priced";
     
     // Email
     public const string InvalidEmailFormat = "email.invalid_format";
@@ -147,6 +151,14 @@ public static class BusinessErrorMessage
     // Membership plans — admin back-office CRUD
     public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
     public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
+
+    /// <summary>
+    /// A free trial is benefits without payment, and the owner ruling of 2026-09-08 (T-0690) is that no
+    /// Cleansia Plus benefit is granted until the customer actually subscribes. The field stays on the
+    /// plan because Stripe subscriptions carry it and historical rows may hold a non-zero value; only
+    /// setting a new one is refused.
+    /// </summary>
+    public const string MembershipPlanTrialNotPermitted = "membership.plan.trial_not_permitted";
 
     // Recurring booking template errors. Backend rejects with these keys; the
     // customer UI maps to localized strings. NotOwnedByUser is the per-user
@@ -262,6 +274,10 @@ public static class BusinessErrorMessage
     public const string InvoiceReferenceCapacityExhausted = "payroll.invoice.reference_capacity_exhausted";
     public const string InvoiceReferenceAlreadyAssigned = "payroll.invoice.reference_already_assigned";
 
+    // T-0708 -- the cleaner's payout account does not hold the invoice's currency; raised at approval,
+    // the last point before the owner keys a manual transfer.
+    public const string InvoicePayoutCurrencyMismatch = "payroll.invoice.payout_currency_mismatch";
+
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";
     public const string ReceiptGenerationFailed = "receipt.generation_failed";
@@ -349,6 +365,8 @@ public static class BusinessErrorMessage
     /// <summary>A spend-side reason was used to ISSUE credit.</summary>
     public const string CreditReasonNotIssuable = "credit.reason_not_issuable";
 
+    public const string CreditHeldInMultipleCurrencies = "credit.held_in_multiple_currencies";
+
     /// <summary>Cash cannot settle an order part of which the customer already paid in credit.</summary>
     public const string CashNotCollectableOnCreditOrder = "credit.cash_not_collectable_on_credit_order";
 
@@ -382,7 +400,6 @@ public static class BusinessErrorMessage
     public const string InvalidZipCode = "validation.invalid_zip_code";
     // Country-scoped IČO/VAT format checks, driven by CountryConfiguration's regexes.
     public const string RegistrationNumberInvalidFormat = "validation.registration_number.invalid_format";
-    public const string VatNumberInvalidFormat = "validation.vat_number.invalid_format";
 
     // Payout details (ADR-0034 D4) — every key the payout validator can return, plus the feature's own.
     public const string PayoutCountryNotSupported = "validation.payout.country_not_supported";
@@ -406,10 +423,27 @@ public static class BusinessErrorMessage
     public const string TranslationsRequired = "service.translations_required";
     public const string MissingTranslationForLanguage = "service.missing_translation_for_language";
 
+    /// <summary>A catalogue entry saved with no price block at all. Shared with packages, like the
+    /// translation keys above.</summary>
+    public const string PricesRequired = "service.prices_required";
+
+    /// <summary>A catalogue entry saved without a price in some currency the platform operates in.
+    /// The entry would exist but be unbookable in that market, which is never what an admin means.
+    /// </summary>
+    public const string MissingPriceForCurrency = "service.missing_price_for_currency";
+
     // Package
     public const string PackageNotFound = "package.not_found";
     public const string PackageInUse = "package.in_use";
     public const string PackageInvalidWeight = "package.invalid_weight";
+
+    // Extra
+    public const string ExtraNotFound = "extra.not_found";
+    /// <summary>Referenced by an order line (OrderExtras.ExtraId is ON DELETE RESTRICT). Deactivate instead.</summary>
+    public const string ExtraInUse = "extra.in_use";
+    public const string ExtraSlugAlreadyExists = "extra.slug_already_exists";
+    /// <summary>Lower-case words joined by single hyphens, e.g. "inside-oven" — the alphabet the client-side icon maps and OrderExtra.Slug snapshots key by.</summary>
+    public const string ExtraSlugInvalid = "extra.slug_invalid";
 
     // Common Validation
     public const string MustBePositive = "validation.must_be_positive";

@@ -13,6 +13,7 @@ namespace Cleansia.Core.AppServices.Services;
 public sealed class PromoCodeService(
     IPromoCodeRepository promoCodeRepository,
     IPromoCodeRedemptionRepository redemptionRepository,
+    ICurrencyRepository currencyRepository,
     ILogger<PromoCodeService> logger) : IPromoCodeService
 {
     public async Task<PromoCodePreviewResult> PreviewAsync(
@@ -52,19 +53,17 @@ public sealed class PromoCodeService(
             }
         }
 
+        // Currency BEFORE minimum: a minimum is a number in the code's currency, so comparing it against
+        // a subtotal in another currency answers nothing — and the customer is told which rule refused.
+        var boundCurrencyId = await ResolveBoundCurrencyIdAsync(promoCode, cancellationToken);
+        if (CurrencyMismatches(boundCurrencyId, orderCurrencyId))
+        {
+            return new PromoCodePreviewResult(false, 0m, null, PromoCodeError.CurrencyMismatch);
+        }
+
         if (promoCode.MinimumOrderAmount.HasValue && orderSubtotal < promoCode.MinimumOrderAmount.Value)
         {
             return new PromoCodePreviewResult(false, 0m, null, PromoCodeError.BelowMinimumOrderAmount);
-        }
-
-        // Fixed-amount codes only apply when the currencies match. Percent
-        // codes are currency-agnostic.
-        if (promoCode.Type == PromoCodeType.FixedDiscount
-            && !string.IsNullOrEmpty(promoCode.CurrencyId)
-            && !string.IsNullOrEmpty(orderCurrencyId)
-            && !string.Equals(promoCode.CurrencyId, orderCurrencyId, StringComparison.Ordinal))
-        {
-            return new PromoCodePreviewResult(false, 0m, null, PromoCodeError.CurrencyMismatch);
         }
 
         var discount = ComputeDiscount(promoCode, orderSubtotal);
@@ -128,17 +127,16 @@ public sealed class PromoCodeService(
             return new PromoCodeApplyResult(false, 0m, null, PromoCodeError.PerUserLimitReached);
         }
 
+        // Currency before minimum, as in PreviewAsync.
+        var boundCurrencyId = await ResolveBoundCurrencyIdAsync(promoCode, cancellationToken);
+        if (CurrencyMismatches(boundCurrencyId, orderCurrencyId))
+        {
+            return new PromoCodeApplyResult(false, 0m, null, PromoCodeError.CurrencyMismatch);
+        }
+
         if (promoCode.MinimumOrderAmount.HasValue && orderSubtotal < promoCode.MinimumOrderAmount.Value)
         {
             return new PromoCodeApplyResult(false, 0m, null, PromoCodeError.BelowMinimumOrderAmount);
-        }
-
-        if (promoCode.Type == PromoCodeType.FixedDiscount
-            && !string.IsNullOrEmpty(promoCode.CurrencyId)
-            && !string.IsNullOrEmpty(orderCurrencyId)
-            && !string.Equals(promoCode.CurrencyId, orderCurrencyId, StringComparison.Ordinal))
-        {
-            return new PromoCodeApplyResult(false, 0m, null, PromoCodeError.CurrencyMismatch);
         }
 
         var discount = ComputeDiscount(promoCode, orderSubtotal);
@@ -214,6 +212,32 @@ public sealed class PromoCodeService(
                 promoCode.Code, promoCode.Id, userId, orderId);
         }
     }
+
+    /// <summary>
+    /// The currency this code's money fields are denominated in, or null for a code that has none. A
+    /// fixed discount always carries one; a percent code with a MinimumOrderAmount and no CurrencyId is
+    /// denominated in the platform default; a percent code with no minimum is global.
+    /// → /product/business-rules#money-constants
+    /// </summary>
+    private async Task<string?> ResolveBoundCurrencyIdAsync(PromoCode promoCode, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(promoCode.CurrencyId))
+        {
+            return promoCode.CurrencyId;
+        }
+
+        if (!promoCode.MinimumOrderAmount.HasValue)
+        {
+            return null;
+        }
+
+        return (await currencyRepository.GetDefaultAsync(cancellationToken))?.Id;
+    }
+
+    private static bool CurrencyMismatches(string? boundCurrencyId, string? orderCurrencyId) =>
+        !string.IsNullOrEmpty(boundCurrencyId)
+        && !string.IsNullOrEmpty(orderCurrencyId)
+        && !string.Equals(boundCurrencyId, orderCurrencyId, StringComparison.Ordinal);
 
     private static PromoCodeError? ValidateAvailability(PromoCode promoCode, DateTimeOffset now)
     {

@@ -2,8 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminCurrencyDetailDto,
   CreateCurrencyCommand,
-  CurrencyDetailDto,
   UpdateCurrencyCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -15,7 +15,7 @@ export interface CurrencyFormData {
   code: string;
   symbol: string;
   name: string;
-  exchangeRate: number;
+  loyaltyPointsDivisor: number | null;
 }
 
 @Injectable()
@@ -25,7 +25,7 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
-  readonly currency = signal<CurrencyDetailDto | null>(null);
+  readonly currency = signal<AdminCurrencyDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
 
@@ -56,7 +56,7 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
     command.code = data.code;
     command.symbol = data.symbol;
     command.name = data.name;
-    command.exchangeRate = data.exchangeRate;
+    command.loyaltyPointsDivisor = data.loyaltyPointsDivisor ?? undefined;
 
     this.adminClient.adminCurrencyClient
       .create(command)
@@ -83,7 +83,7 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
     command.code = data.code;
     command.symbol = data.symbol;
     command.name = data.name;
-    command.exchangeRate = data.exchangeRate;
+    command.loyaltyPointsDivisor = data.loyaltyPointsDivisor ?? undefined;
 
     this.adminClient.adminCurrencyClient
       .update(currencyId, command)

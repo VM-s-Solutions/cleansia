@@ -50,7 +50,7 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "cur-1";
         var country = Country.Create("Czechia", "CZE");
         country.Id = "country-1";
@@ -63,7 +63,6 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

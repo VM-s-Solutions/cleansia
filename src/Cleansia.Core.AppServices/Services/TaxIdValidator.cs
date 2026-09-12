@@ -31,26 +31,6 @@ public sealed class TaxIdValidator(ICountryConfigurationRepository countryConfig
             : TaxIdValidationResult.Invalid("validation.registration_number.invalid_format");
     }
 
-    public async Task<TaxIdValidationResult> ValidateVatNumberAsync(
-        string countryId,
-        string? value,
-        CancellationToken cancellationToken = default)
-    {
-        var config = await countryConfigRepository.GetByCountryIdAsync(countryId, cancellationToken);
-        var required = config?.VatNumberRequired ?? false;
-
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return required
-                ? TaxIdValidationResult.Invalid("validation.vat_number.required")
-                : TaxIdValidationResult.Valid();
-        }
-
-        return MatchesFormat(value.Trim(), config?.VatNumberFormat)
-            ? TaxIdValidationResult.Valid()
-            : TaxIdValidationResult.Invalid("validation.vat_number.invalid_format");
-    }
-
     private static bool MatchesFormat(string value, string? format)
     {
         if (string.IsNullOrWhiteSpace(format))

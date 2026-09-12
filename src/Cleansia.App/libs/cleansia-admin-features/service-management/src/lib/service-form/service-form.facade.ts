@@ -6,7 +6,9 @@ import {
   CategoryDto,
   CreateServiceCommand,
   CreateServiceResponse,
+  CreateServiceServicePriceInput,
   CreateServiceTranslationInput,
+  AdminCurrencyListItem,
   LanguageListItem,
   UpdateServiceCommand,
   UpdateServiceResponse,
@@ -21,11 +23,34 @@ export interface LanguageOption {
   name: string;
 }
 
+export interface CurrencyOption {
+  code: string;
+  symbol: string;
+  name: string;
+  /**
+   * Whether the platform OPERATES in this currency. The backend refuses a catalogue entry that is not
+   * priced in every active currency, and permits — deliberately — a price in an inactive one, because
+   * pricing a market before opening it is how a currency gets switched on at all. The form has to say
+   * which is which, or the admin learns it from a rejected save.
+   */
+  isActive: boolean;
+}
+
+/** A service's two money components in ONE currency. They are authored together. */
+export interface ServicePriceInput {
+  basePrice: number;
+  perRoomPrice: number;
+}
+
 export interface ServiceFormData {
   name: string;
   description: string;
-  basePrice: number;
-  perRoomPrice: number;
+  /**
+   * Price per currency CODE. A currency the admin left blank is absent from this map rather than
+   * present at zero — the backend upserts one row per key it receives, so sending a zero would
+   * price the service at nothing in that market instead of leaving it unpriced.
+   */
+  prices: { [key: string]: ServicePriceInput };
   estimatedTime: number;
   /** Category id from the picker — required by the backend validator. */
   categoryId: string;
@@ -48,6 +73,7 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
   readonly languages = signal<LanguageOption[]>([]);
+  readonly currencies = signal<CurrencyOption[]>([]);
   readonly categories = signal<CategoryOption[]>([]);
 
   loadService(serviceId: string): void {
@@ -96,6 +122,34 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
   }
 
   /**
+   * The currencies a price block is rendered for. The backend refuses a service that is not priced
+   * in every currency the platform operates in, so this list is what the admin has to fill in.
+   */
+  loadCurrencies(): void {
+    this.adminClient.adminCurrencyClient
+      .getOverview()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as AdminCurrencyListItem[]))
+      )
+      .subscribe((currencies: AdminCurrencyListItem[]) => {
+        // The same generated-client null as `loadLanguages` above.
+        this.currencies.set(
+          (currencies ?? [])
+            .filter(
+              (c): c is AdminCurrencyListItem & { code: string } => Boolean(c.code)
+            )
+            .map((c) => ({
+              code: c.code,
+              symbol: c.symbol ?? c.code,
+              name: c.name ?? c.code,
+              isActive: c.isActive,
+            }))
+        );
+      });
+  }
+
+  /**
    * Fetch service categories for the form's category picker. Required for
    * create — backend validator rejects services with a missing categoryId.
    * Falls back to empty list on failure (form will block save).
@@ -134,8 +188,7 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
     const command = new CreateServiceCommand();
     command.name = data.name;
     command.description = data.description;
-    command.basePrice = data.basePrice;
-    command.perRoomPrice = data.perRoomPrice;
+    command.prices = this.toPriceInputs(data.prices);
     command.estimatedTime = data.estimatedTime;
     command.translations = translations;
     command.categoryId = data.categoryId;
@@ -174,8 +227,7 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
     command.serviceId = serviceId;
     command.name = data.name;
     command.description = data.description;
-    command.basePrice = data.basePrice;
-    command.perRoomPrice = data.perRoomPrice;
+    command.prices = this.toPriceInputs(data.prices);
     command.estimatedTime = data.estimatedTime;
     command.translations = translations;
     command.categoryId = data.categoryId;
@@ -195,6 +247,19 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
           this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
         }
       });
+  }
+
+  private toPriceInputs(prices: {
+    [key: string]: ServicePriceInput;
+  }): { [key: string]: CreateServiceServicePriceInput } {
+    const inputs: { [key: string]: CreateServiceServicePriceInput } = {};
+    for (const [code, price] of Object.entries(prices)) {
+      const input = new CreateServiceServicePriceInput();
+      input.basePrice = price.basePrice;
+      input.perRoomPrice = price.perRoomPrice;
+      inputs[code] = input;
+    }
+    return inputs;
   }
 
   navigateBack(): void {

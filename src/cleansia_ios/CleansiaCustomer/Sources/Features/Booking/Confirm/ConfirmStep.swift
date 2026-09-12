@@ -32,7 +32,7 @@ struct ConfirmStep: View {
     }
 
     private var currencyCode: String {
-        quote?.currencyCode ?? "CZK"
+        viewModel.displayCurrencyCode ?? ""
     }
 
     var body: some View {

@@ -91,12 +91,17 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
             Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", "insert_seed_data.sql")));
     }
 
-    private Task<IReadOnlyList<PayCoverageTarget>> PlatformWideGapsAsync(CleansiaDbContext ctx) =>
-        PayCoverageLookup.FindActiveCatalogueGapsAsync(
+    /// <summary>The seed's one operated currency — the gate is asked in it, as every quote is.</summary>
+    private static Task<string> DefaultCurrencyIdAsync(CleansiaDbContext ctx) =>
+        ctx.Currencies.Where(c => c.IsDefault).Select(c => c.Id).SingleAsync();
+
+    private async Task<IReadOnlyList<PayCoverageTarget>> PlatformWideGapsAsync(CleansiaDbContext ctx) =>
+        await PayCoverageLookup.FindActiveCatalogueGapsAsync(
             new ServiceRepository(ctx),
             new PackageRepository(ctx),
             new EmployeePayConfigRepository(ctx),
             employeeId: null,
+            await DefaultCurrencyIdAsync(ctx),
             CancellationToken.None);
 
     /// <summary>
@@ -147,8 +152,17 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
         await using (var publishContext = NewContext())
         {
             var categoryId = await publishContext.ServiceCategories.Select(c => c.Id).FirstAsync();
-            var published = Service.Create(categoryId, "Brand New Service", "just published", 900m, 100m, 60);
+            var published = Service.Create(categoryId, "Brand New Service", "just published", 60);
             publishContext.Services.Add(published);
+
+            // Priced the way CreateService prices it, in the default currency. Without the row the
+            // overview would withhold it for being UNPRICED and the pay assertion below would hold
+            // whatever the pay gate did — the missing config has to be the only thing wrong with it.
+            var defaultCurrencyId = await publishContext.Currencies
+                .Where(c => c.IsDefault).Select(c => c.Id).SingleAsync();
+            publishContext.ServicePrices.Add(
+                ServicePrice.Create(published.Id, defaultCurrencyId, 500m, 150m));
+
             await publishContext.CommitAsync(CancellationToken.None);
             publishedId = published.Id;
         }
@@ -160,7 +174,10 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
         Assert.Equal("Brand New Service", gap.Name);
 
         var offered = await new GetServiceOverview.Handler(
-                new ServiceRepository(ctx), new EmployeePayConfigRepository(ctx))
+                new ServiceRepository(ctx),
+                new ServicePriceRepository(ctx),
+                new CurrencyRepository(ctx),
+                new EmployeePayConfigRepository(ctx))
             .Handle(new GetServiceOverview.Request(), CancellationToken.None);
 
         Assert.DoesNotContain(offered, item => item.Id == publishedId);
@@ -182,6 +199,7 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
             new PackageRepository(ctx),
             new EmployeePayConfigRepository(ctx),
             employeeId: "a-cleaner-with-nothing-of-their-own",
+            await DefaultCurrencyIdAsync(ctx),
             CancellationToken.None);
 
         Assert.Empty(gaps);

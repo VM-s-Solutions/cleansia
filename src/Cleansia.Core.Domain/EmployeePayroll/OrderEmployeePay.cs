@@ -21,6 +21,18 @@ public class OrderEmployeePay : Auditable, ITenantEntity
     public PayPeriod? PayPeriod { get; private set; }
 
     [Required]
+    /// <summary>
+    /// THE UNIT THE EIGHT MONEY COLUMNS ARE IN. The row recorded BasePay, ExtrasPay, ExpensesPay,
+    /// BonusPay, DeductionPay, TotalPay, MinPay and MaxPay with nothing saying what any of them were
+    /// denominated in — the amount was a number and the currency was inferred downstream, from the
+    /// EMPLOYEE, by two derivations that disagreed with each other and neither of which read these rows.
+    ///
+    /// <para>It comes from the ORDER, through the pay config that produced the amount: a rate is per
+    /// currency now, and CalculateOrderPay reads only rates in the order's own currency. So this is not
+    /// a label attached afterwards — it is the currency the arithmetic was done in.</para>
+    /// </summary>
+    public string CurrencyId { get; private set; }
+
     public decimal BasePay { get; private set; }
 
     public decimal ExtrasPay { get; private set; } = 0;
@@ -62,6 +74,7 @@ public class OrderEmployeePay : Auditable, ITenantEntity
         string orderId,
         string employeeId,
         string payPeriodId,
+        string currencyId,
         decimal basePay,
         decimal extrasPay = 0,
         decimal expensesPay = 0,
@@ -98,6 +111,7 @@ public class OrderEmployeePay : Auditable, ITenantEntity
             OrderId = orderId,
             EmployeeId = employeeId,
             PayPeriodId = payPeriodId,
+            CurrencyId = currencyId,
             BasePay = basePay,
             ExtrasPay = extrasPay,
             ExpensesPay = expensesPay,

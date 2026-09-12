@@ -142,12 +142,11 @@ public class QuotePlusSavingsTests
                 PackagesSubtotal: 0m,
                 ExtrasSubtotal: 0m,
                 ExpressSurchargeApplied: expressSurcharge > 0m,
-                ExpressSurchargeAmount: expressSurcharge,
-                ExchangeRate: 1m));
+                ExpressSurchargeAmount: expressSurcharge));
 
         var loyalty = new Mock<ILoyaltyService>();
         loyalty.Setup(l => l.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(tierDiscount, null));
 
         var session = new Mock<IUserSessionProvider>();

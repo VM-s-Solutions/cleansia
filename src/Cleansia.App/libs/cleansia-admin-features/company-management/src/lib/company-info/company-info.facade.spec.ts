@@ -30,6 +30,8 @@ describe('CompanyInfoFacade', () => {
     bankAccountNumber: null,
     iban: 'CZ6520100000002100123456',
     swift: null,
+    isVatPayer: false,
+    vatRegisteredFrom: null,
   };
 
   beforeEach(() => {
@@ -136,6 +138,8 @@ describe('CompanyInfoFacade', () => {
         bankAccountNumber: undefined,
         iban: 'CZ6520100000002100123456',
         swift: undefined,
+        isVatPayer: false,
+        vatRegisteredFrom: undefined,
       });
     });
   });

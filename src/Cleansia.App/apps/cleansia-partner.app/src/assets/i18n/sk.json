@@ -124,7 +124,6 @@
       "entity_type_natural_person": "Samostatne zárobkovo činná osoba (OSVČ)",
       "entity_type_legal_entity": "Právnická osoba (s.r.o., a.s., ...)",
       "registration_number": "Registračné číslo",
-      "vat_number": "IČ DPH",
       "legal_entity_name": "Názov firmy",
       "bank_details": "Bankové údaje pre výplatu",
       "iban": "IBAN",
@@ -1073,9 +1072,6 @@
       "registration_number": {
         "invalid_format": "Neplatný formát IČO pre vybranú krajinu"
       },
-      "vat_number": {
-        "invalid_format": "Neplatný formát IČ DPH pre vybranú krajinu"
-      },
       "must_be_positive": "Hodnota musí byť kladná",
       "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
       "page_must_be_positive": "Stránka musí byť väčšia ako 0",
@@ -1106,8 +1102,7 @@
       "not_found": "Mena nenájdená",
       "code_already_exists": "Mena s týmto kódom už existuje",
       "in_use": "Menu nie je možné vymazať, pretože sa aktuálne používa",
-      "cannot_delete_default": "Predvolenú menu nie je možné vymazať",
-      "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo"
+      "cannot_delete_default": "Predvolenú menu nie je možné vymazať"
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",
@@ -1202,6 +1197,7 @@
         "not_found": "Faktúra nenájdená",
         "invalid_status": "Neplatný stav faktúry",
         "already_exists": "Faktúra už existuje",
+        "already_paid": "Táto faktúra je už zaplatená a nedá sa znovu vygenerovať",
         "pdf_generation_failed": "Nepodarilo sa vygenerovať PDF",
         "template_not_found": "Šablóna faktúry nenájdená",
         "cannot_cancel_paid": "Nie je možné zrušiť zaplatenú faktúru",

@@ -103,7 +103,8 @@ public class SweepQueryTranslationPostgresTests(PostgresContainerFixture fixture
 
         var country = Country.Create("Czechia", "CZ", isServiced: true);
         country.Id = Ulid.NewUlid().ToString();
-        var currency = Currency.Create("CZK", "Kc", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kc", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = Ulid.NewUlid().ToString();
         context.Countries.Add(country);
         context.Currencies.Add(currency);
@@ -158,7 +159,6 @@ public class SweepQueryTranslationPostgresTests(PostgresContainerFixture fixture
             customerAddress: Address.Create("123 Main St", "Prague", "11000", countryId),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,

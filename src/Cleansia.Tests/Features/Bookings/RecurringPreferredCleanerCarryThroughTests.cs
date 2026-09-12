@@ -1,3 +1,4 @@
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -47,15 +48,24 @@ public class RecurringPreferredCleanerCarryThroughTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderFactory> _orderFactory = new();
+    private readonly Mock<IUserMembershipRepository> _memberships = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly List<CreateOrderInput> _inputs = [];
 
     public RecurringPreferredCleanerCarryThroughTests()
     {
+        // The sweep requires a PAID membership (T-0690). This class is about the preferred cleaner
+        // carrying through to each occurrence, so the owner is simply entitled.
+        _memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string userId, CancellationToken _) =>
+                UserMembershipMockFactory.Paid(userId));
+
         _currencyRepository
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+            .ReturnsAsync(Currency.Create("CZK", "Kč", "Czech Koruna"));
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
@@ -142,7 +152,7 @@ public class RecurringPreferredCleanerCarryThroughTests
 
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: UserId,
                 membershipPlanId: "plan-plus",
@@ -238,6 +248,7 @@ public class RecurringPreferredCleanerCarryThroughTests
             _orderRepository.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
+            _memberships.Object,
             _tenantProvider.Object,
             _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);

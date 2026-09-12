@@ -17,7 +17,7 @@ public class CreditRefundSplitTests
 {
     private static Order Order(decimal totalPrice, decimal creditApplied)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Cleansia.Core.Domain.Orders.Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -25,7 +25,6 @@ public class CreditRefundSplitTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

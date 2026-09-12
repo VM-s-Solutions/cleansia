@@ -211,7 +211,7 @@ public class PreferredOfferExitAgreementTests
 
     private void GiveTheCallerPlus() =>
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 CustomerUserId, "plan-plus", "sub_exit", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
@@ -221,7 +221,7 @@ public class PreferredOfferExitAgreementTests
         if (scenario == "no-plus-membership")
         {
             _userMembershipRepository
-                .Setup(r => r.GetActiveForUserNoTrackingAsync(
+                .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                     It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserMembership?)null);
         }
@@ -234,7 +234,6 @@ public class PreferredOfferExitAgreementTests
             customerAddress: Address.Create("Exit St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -246,7 +245,7 @@ public class PreferredOfferExitAgreementTests
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(2);
-        order.SetCurrency(Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        order.SetCurrency(Cleansia.Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech Koruna"));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
 
         // The money case stays at New + Card + Pending — the state a card booking sits in until the

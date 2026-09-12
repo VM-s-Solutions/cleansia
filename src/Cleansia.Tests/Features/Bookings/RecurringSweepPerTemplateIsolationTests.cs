@@ -1,3 +1,4 @@
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -223,6 +224,10 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
         services.AddSingleton(PricingCalculator());
         services.AddScoped<IOrderFactory>(sp =>
             new ThrowsForTemplate(RealOrderFactory(sp.GetRequiredService<IOrderRepository>()), Bad));
+        // The sweep requires a PAID membership (T-0690). These classes are about tenant stamping,
+        // dedupe and per-template isolation, so the owner is simply entitled — otherwise the sweep
+        // correctly generates nothing and their real subject never runs.
+        services.AddScoped(_ => EntitledMemberships());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         services.AddScoped<IMediator>(sp =>
@@ -269,7 +274,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
 
         var loyalty = new Mock<ILoyaltyService>();
         loyalty.Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
 
         var holdResolver = new Mock<IPreferredCleanerHoldResolver>();
@@ -282,12 +287,18 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
             orderRepository,
             services.Object,
             packages.Object,
+            ExtraRepositoryDouble.Empty(),
+            CataloguePriceDoubles.NoServices(),
+            CataloguePriceDoubles.NoPackages(),
+            CataloguePriceDoubles.NoExtras(),
             PayConfigRepositoryDouble.Holding(),
             new Mock<ICompanyInfoRepository>().Object,
             new Mock<ICountryConfigurationRepository>().Object,
             new Mock<IVatCalculator>().Object,
             loyalty.Object,
-            new Mock<IUserMembershipRepository>().Object,
+            // The sweep now requires a PAID membership (T-0690). This class is not about
+            // membership, so the owner is simply entitled and the real subject runs.
+            EntitledMemberships(),
             holdResolver.Object,
             new Mock<INotificationProducer>().Object);
     }
@@ -311,7 +322,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "currency-czk";
         currency.SetAsDefault(true);
         ctx.Set<Currency>().Add(currency);
@@ -359,5 +370,16 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;
+    }
+
+    private static IUserMembershipRepository EntitledMemberships()
+    {
+        var memberships = new Mock<IUserMembershipRepository>();
+        memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string userId, CancellationToken _) =>
+                UserMembershipMockFactory.Paid(userId));
+        return memberships.Object;
     }
 }

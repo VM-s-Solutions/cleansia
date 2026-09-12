@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -33,6 +34,7 @@ public class PartialRefundLoyaltyClawbackTests
     private readonly Mock<ILoyaltyTierConfigRepository> _tierConfigRepository = new();
     private readonly Mock<ILoyaltyTransactionRepository> _transactionRepository = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
 
     private LoyaltyService CreateService() =>
         new(
@@ -40,6 +42,7 @@ public class PartialRefundLoyaltyClawbackTests
             _accountRepository.Object,
             _tierConfigRepository.Object,
             _transactionRepository.Object,
+            _currencyRepository.Object,
             _producer.Object,
             NullLogger<LoyaltyService>.Instance);
 
@@ -63,7 +66,6 @@ public class PartialRefundLoyaltyClawbackTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
@@ -75,6 +77,19 @@ public class PartialRefundLoyaltyClawbackTests
         _orderRepository
             .Setup(r => r.GetQueryable())
             .Returns(new[] { order }.AsQueryable().BuildMock());
+
+        ArrangeDivisor(10m);
+    }
+
+    /// <summary>The order's currency and how much of it earns one point (T-0703).</summary>
+    private void ArrangeDivisor(decimal? divisor)
+    {
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
+        currency.Id = "currency-1";
+        currency.SetLoyaltyPointsDivisor(divisor);
+        _currencyRepository
+            .Setup(r => r.GetByIdAsync("currency-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
     }
 
     private void ArrangeOriginalEarn(int earn)
@@ -143,6 +158,47 @@ public class PartialRefundLoyaltyClawbackTests
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-9, revoke.Points);
         Assert.Equal(RefundKey, revoke.IdempotencyKey);
+    }
+
+    /// <summary>
+    /// The clawback reads the SAME divisor as the earn. A EUR order that earned 100 points on 40.00
+    /// (divisor 0.40) gives back 50 on a 20.00 refund — not 2, which is what the old hard-coded /10
+    /// would have taken and what T-0688 warned nobody would remember to change.
+    /// </summary>
+    [Fact]
+    public async Task PartialRevoke_UsesTheSameDivisorAsTheEarn()
+    {
+        var account = ArrangeAccount(originalEarn: 100);
+        ArrangeOrder(UserId);
+        ArrangeDivisor(0.40m);
+        ArrangeOriginalEarn(100);
+        ArrangeNoExistingKey();
+        ArrangeAlreadyRevoked(0);
+        ArrangeTierConfigs();
+        ArrangeCommit();
+
+        await CreateService().RevokeForPartialRefundAsync(OrderId, 20m, RefundKey, ActorId, CancellationToken.None);
+
+        var revoke = Assert.Single(PartialRevokes(account));
+        Assert.Equal(-50, revoke.Points);
+    }
+
+    /// <summary>A currency with no divisor claws nothing back, as it earned nothing.</summary>
+    [Fact]
+    public async Task PartialRevoke_SkipsWhenTheCurrencyHasNoDivisor()
+    {
+        var account = ArrangeAccount(originalEarn: 100);
+        ArrangeOrder(UserId);
+        ArrangeDivisor(null);
+        ArrangeOriginalEarn(100);
+        ArrangeNoExistingKey();
+        ArrangeAlreadyRevoked(0);
+        ArrangeTierConfigs();
+        ArrangeCommit();
+
+        await CreateService().RevokeForPartialRefundAsync(OrderId, 95m, RefundKey, ActorId, CancellationToken.None);
+
+        Assert.Empty(PartialRevokes(account));
     }
 
     [Fact]

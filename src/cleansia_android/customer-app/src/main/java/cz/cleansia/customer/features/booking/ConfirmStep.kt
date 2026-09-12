@@ -91,11 +91,10 @@ fun ConfirmStep(
     val quoteState by bookingVm.quoteState.collectAsStateWithLifecycle()
     val quote = (quoteState as? QuoteState.Quoted)?.response
     val promoState by bookingVm.promoCodeState.collectAsStateWithLifecycle()
-    // Every money row on this screen renders through [formatOrderPrice] with the
-    // quote's own currency, so the summary and the sheet footer can never disagree.
-    // Null before the first quote lands — formatOrderPrice falls back to CZK, which
-    // is what the hardcoded " CZK" suffix this replaced always assumed.
-    val currencyCode = quote?.currencyCode
+    // Every money row on this screen renders through [formatOrderPrice] with the one code the VM
+    // resolves — the quote's own once it lands, the catalogue's default before — so the summary,
+    // the sheet footer and the catalogue-sum fallback can never disagree.
+    val currencyCode by bookingVm.displayCurrencyCode.collectAsStateWithLifecycle()
     val effectiveDiscount by bookingVm.effectiveDiscount.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
@@ -409,6 +408,7 @@ fun ConfirmStep(
     if (promoSheetOpen) {
         PromoCodeBottomSheet(
             initialCode = state.promoCode,
+            currencyCode = currencyCode,
             onDismiss = { promoSheetOpen = false },
             onValidate = { code -> bookingVm.validatePromoCodeNow(code) },
             // VM persisted code + state; the sheet only signals so we can close it.

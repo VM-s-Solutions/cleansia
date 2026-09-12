@@ -34,8 +34,12 @@ public static class DomainSeed
 
         if (!await ctx.Currencies.IgnoreQueryFilters().AnyAsync(c => c.Id == CurrencyId))
         {
-            var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+            var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+            currency.IsActive = true;
             currency.Id = CurrencyId;
+            // The platform default, as the seed script's CZK is: every partner money aggregate resolves
+            // the cleaner's currency through it and the repository throws when none exists.
+            currency.SetAsDefault(true);
             ctx.Currencies.Add(currency);
         }
 
@@ -109,7 +113,6 @@ public static class DomainSeed
         employee.UpdateEmployeeDetails(
             entityType: EmployeeEntityType.NaturalPerson,
             registrationNumber: "REG-123456",
-            vatNumber: null,
             legalEntityName: null,
             nationalityId: CountryId,
             passportId: "P1234567",
@@ -187,7 +190,6 @@ public static class DomainSeed
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,

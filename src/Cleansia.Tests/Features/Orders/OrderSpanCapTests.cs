@@ -64,8 +64,12 @@ public class OrderSpanCapTests
             .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The pay gate asks in the order's currency, which with no CurrencyId named is the default.
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.DefaultCurrency());
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(),
@@ -232,14 +236,14 @@ public class OrderSpanCapTests
 
     private void SeedCatalog(int serviceMinutes, int packageServiceMinutes)
     {
-        var service = Service.Create(CategoryId, "Span Service", "Under test", 1000m, 0m, serviceMinutes);
+        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes);
         service.Id = ServiceId;
 
         var packagedService = Service.Create(
-            CategoryId, "Packaged Service", "Inside the bundle", 500m, 0m, packageServiceMinutes);
+            CategoryId, "Packaged Service", "Inside the bundle", packageServiceMinutes);
         packagedService.Id = $"{ServiceId}-packaged";
 
-        var package = Package.Create("Span Package", "Under test", 500m);
+        var package = Package.Create("Span Package", "Under test");
         package.Id = PackageId;
         package.AddService(packagedService);
 
@@ -251,12 +255,24 @@ public class OrderSpanCapTests
             .Returns(new[] { package }.AsQueryable().BuildMock());
     }
 
+    /// <summary>
+    /// ONE instance, shared by the price rows and the input: the price lookup filters on currency id,
+    /// so a second <c>Currency.Create</c> would be a different currency and find no rows.
+    /// </summary>
+    private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
+
     private OrderFactory CreateFactory() =>
         new(
             _orderRepository.Object,
             _serviceRepository.Object,
             _packageRepository.Object,
-            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]),
+            ExtraRepositoryDouble.Empty(),
+            // Any price at all — this suite asserts on the booked SPAN, not on money, and the amounts
+            // never reach an assertion. They are here because an unpriced catalogue is not bookable.
+            CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
+            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
+            CataloguePriceDoubles.NoExtras(),
+            PayConfigRepositoryDouble.Covering(CreateOrderTestData.CurrencyId, [ServiceId], [PackageId]),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
             _vatCalculator.Object,
@@ -269,12 +285,12 @@ public class OrderSpanCapTests
         new(
             _packageRepository.Object,
             _serviceRepository.Object,
-            _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
             _session.Object,
-            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]));
+            PayConfigRepositoryDouble.Covering(CreateOrderTestData.CurrencyId, [ServiceId], [PackageId]),
+            _currencyRepository.Object);
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>
@@ -286,10 +302,10 @@ public class OrderSpanCapTests
             Address: AddressMockFactory.Generate(),
             Rooms: 2,
             Bathrooms: 1,
-            Extras: new Dictionary<string, bool>(),
+            SelectedExtraSlugs: [],
             CleaningDate: DateTime.UtcNow.AddDays(3),
             PaymentType: PaymentType.Cash,
-            Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+            Currency: Czk,
             SelectedServiceIds: [ServiceId],
             SelectedPackageIds: [PackageId],
             RawSubtotal: 1500m,

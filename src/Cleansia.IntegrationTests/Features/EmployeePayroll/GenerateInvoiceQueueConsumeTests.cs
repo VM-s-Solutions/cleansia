@@ -100,7 +100,8 @@ public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) 
         country.Id = CountryId;
         country.TenantId = TenantId;
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         currency.TenantId = TenantId;
@@ -129,9 +130,9 @@ public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) 
 
         await context.CommitAsync(CancellationToken.None);
 
-        var payA = OrderEmployeePay.Create(orderA.Id, employee.Id, payPeriod.Id, basePay: 600m, totalPay: 600m);
+        var payA = OrderEmployeePay.Create(orderA.Id, employee.Id, payPeriod.Id, currency.Id, basePay: 600m, totalPay: 600m);
         payA.TenantId = TenantId;
-        var payB = OrderEmployeePay.Create(orderB.Id, employee.Id, payPeriod.Id, basePay: 400m, totalPay: 400m);
+        var payB = OrderEmployeePay.Create(orderB.Id, employee.Id, payPeriod.Id, currency.Id, basePay: 400m, totalPay: 400m);
         payB.TenantId = TenantId;
         context.Add(payA);
         context.Add(payB);
@@ -152,7 +153,6 @@ public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) 
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,

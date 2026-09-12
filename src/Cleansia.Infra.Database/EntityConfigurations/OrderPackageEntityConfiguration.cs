@@ -8,6 +8,8 @@ public class OrderPackageEntityConfiguration : IEntityTypeConfiguration<OrderPac
 {
     public void Configure(EntityTypeBuilder<OrderPackage> builder)
     {
+        builder.Property(op => op.LineTotal).IsRequired().HasPrecision(18, 2);
+
         // Restrict (not the convention Cascade) so deleting a Package that an order line references is
         // rejected at the database rather than silently stripping the line from a historical (possibly
         // invoiced/receipted) order. The admin in-use guard maps the resulting 23503 to package.in_use;

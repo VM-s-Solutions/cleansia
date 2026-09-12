@@ -46,6 +46,13 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
     private const string CountryId = "country-cz-order-webhook";
     private const string TenantId = "tenant-order-webhook";
 
+    /// <summary>
+    /// The fulfilment status this fixture arranges. Pending is the DEAD status (ADR-0037 D5, no
+    /// production writer) — this fixture has always used it and the webhook never depended on it. Named
+    /// so the assertions can say "unchanged" rather than repeat a literal nobody should copy.
+    /// </summary>
+    private const OrderStatus ArrangedStatus = OrderStatus.Pending;
+
     private static string _orderId = default!;
     private static string _userId = default!;
 
@@ -67,7 +74,13 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 
                 var order = await LoadOrderAsync(context);
                 Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-                Assert.Equal(OrderStatus.Confirmed, LatestStatus(order));
+                // T-0691: settlement moves the MONEY axis only, so the fulfilment axis is exactly where
+                // the arrangement left it and the webhook adds nothing. Confirmed means a cleaner took
+                // the job, and none has. What makes the order offerable now is OrderAvailability's money
+                // term, not a status the webhook wrote. Asserted as "unchanged" rather than as a literal,
+                // because the point is the ABSENCE of a write.
+                Assert.Equal(ArrangedStatus, LatestStatus(order));
+                Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Confirmed);
 
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_first"));
                 Assert.Equal(1, await ReceiptOutboxCountAsync(context));
@@ -98,7 +111,13 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 var order = await LoadOrderAsync(context);
                 Assert.Equal(TenantId, order.TenantId);
                 Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-                Assert.Equal(OrderStatus.Confirmed, LatestStatus(order));
+                // T-0691: settlement moves the MONEY axis only, so the fulfilment axis is exactly where
+                // the arrangement left it and the webhook adds nothing. Confirmed means a cleaner took
+                // the job, and none has. What makes the order offerable now is OrderAvailability's money
+                // term, not a status the webhook wrote. Asserted as "unchanged" rather than as a literal,
+                // because the point is the ABSENCE of a write.
+                Assert.Equal(ArrangedStatus, LatestStatus(order));
+                Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Confirmed);
 
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_tenant_scoped"));
                 Assert.Equal(1, await ReceiptOutboxCountAsync(context));
@@ -134,8 +153,11 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 
                 var order = await LoadOrderAsync(context);
                 Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-                // Exactly one Confirmed transition — the redelivery did not stack a second.
-                Assert.Equal(1, order.OrderStatusHistory.Count(s => s.Status == OrderStatus.Confirmed));
+                // The redelivery did not stack a fulfilment track. Post-T-0691 the webhook writes NO
+                // status at all, so the assertion inverts: zero Confirmed rather than exactly one, and
+                // the history is left with only the track this fixture arranged it with.
+                Assert.Equal(0, order.OrderStatusHistory.Count(s => s.Status == OrderStatus.Confirmed));
+                Assert.Single(order.OrderStatusHistory);
 
                 // The ProcessedStripeEvent stamp + each outbox effect survive both deliveries exactly once.
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_redeliver"));
@@ -302,7 +324,8 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -320,7 +343,6 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             customerAddress: Address.Create("Webhook St 1", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -328,7 +350,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             paymentStatus: PaymentStatus.Pending,
             userId: user.Id);
         order.AssignStripeSessionId("cs_test_session");
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Pending, order));
+        order.AddOrderStatus(OrderStatusTrack.Create(ArrangedStatus, order));
         order.TenantId = tenantId;
         context.Add(order);
 

@@ -1,5 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.Domain.Enums;
@@ -22,7 +24,8 @@ public class ApproveEmployee
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
             IEmployeePayConfigRepository payConfigRepository,
-            IEmployeeDocumentRequirementRepository documentRequirementRepository)
+            IEmployeeDocumentRequirementRepository documentRequirementRepository,
+            ICurrencyResolutionService currencyResolutionService)
         {
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -143,9 +146,16 @@ public class ApproveEmployee
                         return;
                     }
 
+                    // IN THE CURRENCY THE CLEANER WILL BE PAID IN -- the work country's, by the same
+                    // chain that labels their earnings, entered at the country because this very
+                    // command is what assigns the employee's WorkCountryId. A rate in another currency
+                    // is not a rate on their board.
+                    var payCurrency = await currencyResolutionService.ResolveCurrencyForWorkCountryAsync(
+                        command.WorkCountryId, cancellationToken);
+
                     var gaps = await PayCoverageLookup.FindActiveCatalogueGapsAsync(
                         serviceRepository, packageRepository, payConfigRepository,
-                        command.EmployeeId, cancellationToken);
+                        command.EmployeeId, payCurrency.Id, cancellationToken);
 
                     foreach (var gap in gaps)
                     {
@@ -177,7 +187,8 @@ public class ApproveEmployee
         IAuditContext auditContext,
         IServiceRepository serviceRepository,
         IPackageRepository packageRepository,
-        IEmployeePayConfigRepository payConfigRepository)
+        IEmployeePayConfigRepository payConfigRepository,
+        ICurrencyResolutionService currencyResolutionService)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -212,8 +223,12 @@ public class ApproveEmployee
                     BusinessErrorMessage.EmployeeProfileIncomplete));
             }
 
+            // Same currency the validator asked in -- see the rule above.
+            var payCurrency = await currencyResolutionService.ResolveCurrencyForWorkCountryAsync(
+                command.WorkCountryId, cancellationToken);
             var payCoverageGaps = await PayCoverageLookup.FindActiveCatalogueGapsAsync(
-                serviceRepository, packageRepository, payConfigRepository, employee.Id, cancellationToken);
+                serviceRepository, packageRepository, payConfigRepository, employee.Id, payCurrency.Id,
+                cancellationToken);
 
             if (payCoverageGaps.Count > 0)
             {

@@ -77,15 +77,58 @@ public class CatalogDeleteFkRestrictPostgresTests : IAsyncLifetime
             new TestUserSessionProvider("system", "system@cleansia.test"),
             new FixedTenantProvider(null));
 
-    private async Task<string> SeedServiceAsync()
+    private async Task<string> SeedServiceAsync(bool priced = false)
     {
         await using var ctx = NewContext();
         var category = ServiceCategory.Create("cat-1", "Category", "seeded");
-        var service = Service.Create(category.Id, "Lonely Service", "seeded", 1000m, 200m);
+        var service = Service.Create(category.Id, "Lonely Service", "seeded");
         ctx.ServiceCategories.Add(category);
         ctx.Services.Add(service);
+
+        if (priced)
+        {
+            var currency = Currency.Create("CZK", "Kc", "Czech Koruna");
+            currency.IsActive = true;
+            ctx.Currencies.Add(currency);
+            ctx.ServicePrices.Add(ServicePrice.Create(service.Id, currency.Id, 500m, 150m));
+        }
+
         await ctx.CommitAsync(CancellationToken.None);
         return service.Id;
+    }
+
+    /// <summary>
+    /// A PRICED service still hard-deletes, and its price rows go with it.
+    ///
+    /// <para>This is the normal case, not an edge one: <c>CreateService</c> writes a price row for the
+    /// platform default currency, so every service in the product has at least one. The FKs on
+    /// <c>ServicePrices</c> are deliberately split — <b>Cascade</b> from the service, because a price
+    /// with no service is meaningless, and <b>Restrict</b> from the currency, because deleting a
+    /// currency that anything is priced in must fail rather than silently unprice a catalogue. Getting
+    /// the first one wrong turns "delete this service" into a permanent <c>service.in_use</c> against a
+    /// row the admin cannot see, and the sibling cases above would all still pass.</para>
+    /// </summary>
+    [Fact]
+    public async Task DeleteService_WhenPricedButNotReferenced_HardDeletes_AndTakesItsPriceRowsWithIt()
+    {
+        var serviceId = await SeedServiceAsync(priced: true);
+
+        await using (var precondition = NewContext())
+        {
+            Assert.True(await precondition.ServicePrices.AnyAsync(p => p.ServiceId == serviceId));
+        }
+
+        await using var ctx = NewContext();
+        var result = await new DeleteService.Handler(new ServiceRepository(ctx)).Handle(
+            new DeleteService.Command(serviceId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, $"DeleteService failed with: {result.Error?.Message}");
+
+        await using var verifyCtx = NewContext();
+        Assert.Null(await verifyCtx.Services.FindAsync(serviceId));
+        Assert.False(await verifyCtx.ServicePrices.AnyAsync(p => p.ServiceId == serviceId));
+        // The currency is NOT collateral damage -- Restrict on that leg, Cascade on this one.
+        Assert.True(await verifyCtx.Currencies.AnyAsync());
     }
 
     [Fact]
@@ -97,7 +140,7 @@ public class CatalogDeleteFkRestrictPostgresTests : IAsyncLifetime
         // RaceBlind repository below), so only the FK can reject the delete.
         await using (var refCtx = NewContext())
         {
-            var package = Package.Create("Bundle", "seeded", 500m);
+            var package = Package.Create("Bundle", "seeded");
             refCtx.Packages.Add(package);
             var serviceRef = (await refCtx.Services.FindAsync(serviceId))!;
             package.AddService(serviceRef);
@@ -141,7 +184,7 @@ public class CatalogDeleteFkRestrictPostgresTests : IAsyncLifetime
         await using (var seedCtx = NewContext())
         {
             seedCtx.Add(Language.Create("en", "English"));
-            var package = Package.Create("Lonely Package", "seeded", 500m);
+            var package = Package.Create("Lonely Package", "seeded");
             seedCtx.Packages.Add(package);
             await seedCtx.CommitAsync(CancellationToken.None);
             packageId = package.Id;

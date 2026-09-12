@@ -64,7 +64,7 @@ public class PreferredOfferDisclosureTests
             .Setup(r => r.GetQueryable())
             .Returns(Array.Empty<Employee>().AsQueryable().BuildMock());
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 CustomerUserId, "plan-plus", "sub_disclosure", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
@@ -325,7 +325,6 @@ public class PreferredOfferDisclosureTests
             customerAddress: Address.Create("Disclosure St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: nowUtc.AddHours(48),
             paymentType: paymentType,
             totalPrice: 1500m,
@@ -336,7 +335,7 @@ public class PreferredOfferDisclosureTests
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(2);
-        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna"));
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
 
         // The hold must be granted before anybody is assigned — the aggregate refuses a reservation on

@@ -5,6 +5,7 @@ import {
   AdminPackageDetailDto,
   CreatePackageCommand,
   CreatePackageResponse,
+  AdminCurrencyListItem,
   PackageTranslationInput,
   LanguageListItem,
   ServiceListItem,
@@ -32,12 +33,26 @@ export interface LanguageOption {
   name: string;
 }
 
+export interface CurrencyOption {
+  code: string;
+  symbol: string;
+  name: string;
+  isDefault: boolean;
+  /** Whether the platform OPERATES in it — see the service form's twin for what that decides. */
+  isActive: boolean;
+}
+
 export interface PackageFormData {
   name: string;
   description: string;
   tagline: string;
   isPopular: boolean;
-  price: number;
+  /**
+   * Price per currency CODE. A currency the admin left blank is absent rather than present at zero
+   * — the backend upserts a row for every key it receives, so a zero would put the package on sale
+   * for nothing instead of leaving it unpriced in that market.
+   */
+  prices: { [key: string]: number };
   serviceIds: string[];
   translations: {
     [key: string]: { name: string; description: string; tagline: string };
@@ -58,7 +73,17 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
   readonly saving = signal<boolean>(false);
   readonly errorKey = signal<string | null>(null);
   readonly languages = signal<LanguageOption[]>([]);
+  readonly currencies = signal<CurrencyOption[]>([]);
   readonly availableServices = signal<ServiceListItem[]>([]);
+
+  /**
+   * Which currency the per-service gross preview is denominated in. The preview splits ONE number
+   * across the included services by weight, so it has to pick a currency, and the default is the
+   * only defensible pick: it is the one the platform is certainly selling in.
+   */
+  readonly defaultCurrencyCode = computed<string | null>(
+    () => this.currencies().find((c) => c.isDefault)?.code ?? null
+  );
 
   readonly weightRows = signal<PackageServiceWeightRow[]>([]);
   readonly price = signal<number>(0);
@@ -163,6 +188,35 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * The currencies a price block is rendered for -- see the service form's twin. The backend refuses
+   * a package that is not priced in every currency the platform operates in.
+   */
+  loadCurrencies(): void {
+    this.adminClient.adminCurrencyClient
+      .getOverview()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as AdminCurrencyListItem[]))
+      )
+      .subscribe((currencies: AdminCurrencyListItem[]) => {
+        // The same generated-client null as `loadLanguages` above.
+        this.currencies.set(
+          (currencies ?? [])
+            .filter(
+              (c): c is AdminCurrencyListItem & { code: string } => Boolean(c.code)
+            )
+            .map((c) => ({
+              code: c.code,
+              symbol: c.symbol ?? c.code,
+              name: c.name ?? c.code,
+              isDefault: c.isDefault,
+              isActive: c.isActive,
+            }))
+        );
+      });
+  }
+
   loadAvailableServices(): void {
     this.adminClient.adminServiceClient
       .getPaged(undefined, undefined, undefined, 0, 1000)
@@ -186,7 +240,7 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
     command.description = data.description;
     command.tagline = data.tagline || undefined;
     command.isPopular = data.isPopular;
-    command.price = data.price;
+    command.prices = data.prices;
     command.serviceIds = data.serviceIds;
     command.translations = this.buildTranslations(data.translations);
 
@@ -224,7 +278,7 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
     command.description = data.description;
     command.tagline = data.tagline || undefined;
     command.isPopular = data.isPopular;
-    command.price = data.price;
+    command.prices = data.prices;
     command.serviceIds = data.serviceIds;
     command.serviceWeights = this.buildServiceWeights();
     command.translations = this.buildTranslations(data.translations);

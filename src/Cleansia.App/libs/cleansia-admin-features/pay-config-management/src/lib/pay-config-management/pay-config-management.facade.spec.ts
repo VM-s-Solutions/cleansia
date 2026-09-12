@@ -149,4 +149,25 @@ describe('PayConfigManagementFacade', () => {
     expect(snackbar.showSuccess).not.toHaveBeenCalled();
     expect(getPagedMock).not.toHaveBeenCalled();
   });
+
+  // This list is deliberately NOT filtered by currency, so two rows in different currencies render
+  // together. The label has to follow the ROW; a fixed one prints a cleaner's EUR rate as crowns.
+  describe('the money label follows the row, not the platform', () => {
+    it('labels a row in its own currency', () => {
+      expect(facade.formatCurrency(1200, 'CZK')).toContain('CZK');
+      expect(facade.formatCurrency(48, 'EUR')).toContain('€');
+    });
+
+    it('prints a bare number rather than throwing when the row carries no currency', () => {
+      // EmployeePayrollMappers emits "" when the Currency nav failed to load, and Intl.NumberFormat
+      // raises a RangeError on an empty currency — which would take the whole table down.
+      expect(() => facade.formatCurrency(1200, '')).not.toThrow();
+      expect(facade.formatCurrency(1200, '')).toBe('1200');
+      expect(facade.formatCurrency(1200, undefined)).toBe('1200');
+    });
+
+    it('still renders nothing for an absent amount', () => {
+      expect(facade.formatCurrency(undefined, 'CZK')).toBe('');
+    });
+  });
 });

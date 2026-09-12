@@ -91,6 +91,13 @@ final class BookingViewModel: ViewModel {
         membership?.expressUpgradesRemaining ?? 0
     }
 
+    /// The currency every wizard amount is labelled with. The quote's own code the moment one lands;
+    /// until then the catalogue's default, which is what the pre-quote catalogue prices are stated in.
+    /// Nil only before the catalogue has loaded, when there is no figure on screen to label.
+    var displayCurrencyCode: String? {
+        quoteState.quote?.currencyCode ?? catalogState.loadedValue?.currencyCode
+    }
+
     /// Best of the server's own discounts and the promo code, the single input both the summary card
     /// and the sticky price bar subtract so they cannot show two different totals.
     var effectiveDiscount: Double {

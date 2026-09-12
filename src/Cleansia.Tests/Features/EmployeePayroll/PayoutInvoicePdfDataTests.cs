@@ -52,7 +52,7 @@ public class PayoutInvoicePdfDataTests
     public void Supplier_Name_Uses_The_Legal_Entity_Name_When_The_Cleaner_Trades_As_One()
     {
         var employee = Cleaner();
-        employee.UpdateBusinessIdentity(EmployeeEntityType.LegalEntity, "12345678", null, "Novák Cleaning s.r.o.");
+        employee.UpdateBusinessIdentity(EmployeeEntityType.LegalEntity, "12345678", "Novák Cleaning s.r.o.");
 
         var data = Map(employee);
 
@@ -185,7 +185,7 @@ public class PayoutInvoicePdfDataTests
     public void Line_Item_Total_Excludes_Bonus_And_Deduction_So_The_Lines_Sum_To_The_SubTotal()
     {
         var pays = new[] { PayrollMockFactory.OrderPay(basePay: 500m, bonusPay: 100m, deductionPay: 40m) };
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol);
 
         var data = Map(invoice: WithPeriod(invoice), orderPays: pays);
 
@@ -201,7 +201,7 @@ public class PayoutInvoicePdfDataTests
             PayrollMockFactory.OrderPay(basePay: 500m, bonusPay: 100m),
             PayrollMockFactory.OrderPay(basePay: 250m, deductionPay: 40m)
         };
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, "currency-1", PayrollMockFactory.TestVariableSymbol);
+        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol);
 
         var data = Map(invoice: WithPeriod(invoice), orderPays: pays);
 
@@ -219,20 +219,34 @@ public class PayoutInvoicePdfDataTests
         var data = Map();
 
         Assert.False(data.Supplier.IsVatPayer);
-        Assert.Null(data.Supplier.VatNumber);
         Assert.Equal(0m, data.VatAmount);
     }
 
+    /// <summary>
+    /// A CLEANER IS NEVER A VAT PAYER, even holding a VAT number. Owner ruling 2026-09-09: cleaners
+    /// contract as živnostníci on an IČO and do not register for VAT.
+    ///
+    /// <para>This test asserted the opposite until that ruling, and the behaviour it pinned was a live
+    /// hazard rather than a feature: the posture was derived from <c>employee.VatNumber</c>, a field the
+    /// CLEANER sets on themselves from the partner mobile app, and <c>RegenerateInvoicePdf</c> — which
+    /// has no status gate, so a PAID invoice qualifies — re-reads it and overwrites the issued PDF at
+    /// the same blob URL. A cleaner could change the tax treatment of a document already sent by editing
+    /// their own profile.</para>
+    ///
+    /// <para>The FIELD is gone as of chunk 4: a cleaner has no VAT number to hold, on the entity or on
+    /// any of the three write paths that used to set it. What survives is the identifier they do have —
+    /// the ICO — which the document prints as the supplier's registration number.</para>
+    /// </summary>
     [Fact]
-    public void Cleaner_With_A_Vat_Number_Is_A_Vat_Payer_And_The_Number_Reaches_The_Document()
+    public void A_Cleaner_Is_Never_A_Vat_Payer_And_The_Document_Carries_Their_Ico_Instead()
     {
         var employee = Cleaner();
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
 
         var data = Map(employee);
 
-        Assert.True(data.Supplier.IsVatPayer);
-        Assert.Equal("CZ12345678", data.Supplier.VatNumber);
+        Assert.False(data.Supplier.IsVatPayer);
+        Assert.Equal("12345678", data.Supplier.RegistrationNumber);
     }
 
     // The country's VAT setting is the CUSTOMER-order regime. A zero here has to follow from the
@@ -248,19 +262,26 @@ public class PayoutInvoicePdfDataTests
         Assert.Equal(invoice.TotalAmount, data.TotalAmount);
     }
 
-    // The pay is gross — the cleaner receives the stored total and settles their own taxes — so a
-    // registered supplier's VAT comes OUT of that total. Adding it would pay them more than was owed.
+    /// <summary>
+    /// NO VAT IS CARVED OUT, even for a cleaner holding a VAT number in a country that requires VAT —
+    /// the two conditions that used to produce a carve-out, together. The country's VAT setting is the
+    /// CUSTOMER-order regime and says nothing about what a self-billed payout owes.
+    ///
+    /// <para>This is the sharpest form of the ruling: the fixture is the one that previously produced
+    /// 173.55 out of a 1000 total, so a regression restoring the old derivation fails here with a
+    /// concrete number rather than a vague zero.</para>
+    /// </summary>
     [Fact]
-    public void Vat_Is_Carved_Out_Of_The_Stored_Total_When_The_Cleaner_Is_Registered()
+    public void No_Vat_Is_Carved_Out_For_A_Cleaner_Holding_A_Vat_Number()
     {
         var employee = Cleaner();
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
         var invoice = Invoice(subTotal: 1000m);
 
         var data = Map(employee, invoice, countryContext: CzechContext());
 
-        Assert.Equal(173.55m, data.VatAmount);
-        Assert.Equal(826.45m, data.TotalAmount - data.VatAmount);
+        Assert.Equal(0m, data.VatAmount);
+        Assert.Equal(invoice.TotalAmount, data.TotalAmount);
     }
 
     // AC7's identity, and the reason gross is the better answer: it now holds EXACTLY in both variants
@@ -269,7 +290,7 @@ public class PayoutInvoicePdfDataTests
     public void Printed_Total_Equals_The_Stored_Total_For_A_Vat_Payer_And_A_Non_Payer_Alike()
     {
         var registered = Cleaner();
-        registered.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        registered.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
 
         var nonPayerInvoice = Invoice(subTotal: 1000m);
         var payerInvoice = Invoice(subTotal: 1000m);
@@ -282,7 +303,7 @@ public class PayoutInvoicePdfDataTests
     public void A_Registered_Cleaner_In_A_Country_That_Requires_No_Vat_Is_Charged_None()
     {
         var employee = Cleaner();
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", "CZ12345678", null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
 
         var data = Map(employee, Invoice(subTotal: 1000m), countryContext: new CountryInvoiceContext { VatRequired = false, VatRate = 0.21m });
 
@@ -385,7 +406,7 @@ public class PayoutInvoicePdfDataTests
 
         var employee = Employee.CreateWithUser(user);
         employee.UpdateAddress(address);
-        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null, null);
+        employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, "12345678", null);
         employee.UpdateBankDetails("CZ3155000000005885638003");
         return employee;
     }

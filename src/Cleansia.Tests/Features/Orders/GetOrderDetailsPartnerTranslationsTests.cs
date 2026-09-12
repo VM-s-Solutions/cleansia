@@ -69,11 +69,13 @@ public class GetOrderDetailsPartnerTranslationsTests
             .ReturnsAsync((OrderEmployeePay?)null);
         _payConfigRepository
             .Setup(r => r.GetServiceConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), EmployeeId, It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), EmployeeId,
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
         _payConfigRepository
             .Setup(r => r.GetPackageConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), EmployeeId, It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), EmployeeId,
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
         _orderPhotoRepository
             .Setup(r => r.GetPhotoCountByOrderIdAndTypeAsync(OrderId, PhotoType.After, It.IsAny<CancellationToken>()))
@@ -83,8 +85,8 @@ public class GetOrderDetailsPartnerTranslationsTests
     private static Order BuildOrderWith(Service service, Package package)
     {
         var order = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = OrderId });
-        order.AddSelectedServices(new[] { OrderService.Create(order, service) });
-        order.AddSelectedPackages(new[] { OrderPackage.Create(order, package) });
+        order.AddSelectedServices(new[] { OrderLineMockFactory.ServiceLine(order, service) });
+        order.AddSelectedPackages(new[] { OrderLineMockFactory.PackageLine(order, package) });
         return order;
     }
 
@@ -94,8 +96,6 @@ public class GetOrderDetailsPartnerTranslationsTests
             categoryId: "cat-1",
             name: "Deep Clean",
             description: "Deep clean desc",
-            basePrice: 100m,
-            perRoomPrice: 10m,
             estimatedTime: 30);
         service.SetTranslation("ru", "Генеральная уборка", "Описание");
         service.SetTranslation("cs", "Generální úklid", "Popis");
@@ -104,7 +104,7 @@ public class GetOrderDetailsPartnerTranslationsTests
 
     private static Package BuildTranslatedPackage()
     {
-        var package = Package.Create("Deluxe", "Deluxe bundle", 500m);
+        var package = Package.Create("Deluxe", "Deluxe bundle");
         package.SetTranslation("ru", "Делюкс", "Описание пакета");
         package.SetTranslation("cs", "Deluxe balíček", "Popis");
         return package;
@@ -133,8 +133,8 @@ public class GetOrderDetailsPartnerTranslationsTests
     [Fact]
     public async Task EmployeeCaller_Untranslated_Lines_Keep_Snapshot_English_And_Empty_Translations()
     {
-        var service = Service.Create("cat-1", "Windows", "Windows desc", 100m, 10m, 30);
-        var package = Package.Create("Basic", "Basic bundle", 200m);
+        var service = Service.Create("cat-1", "Windows", "Windows desc", 30);
+        var package = Package.Create("Basic", "Basic bundle");
         var order = BuildOrderWith(service, package);
         ArrangeEmployeeCaller(order);
 

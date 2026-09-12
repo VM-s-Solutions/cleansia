@@ -374,11 +374,13 @@ public class OrderDetailBrowsingCleanerRedactionTests
             .ReturnsAsync((OrderEmployeePay?)null);
         _payConfigRepository
             .Setup(r => r.GetServiceConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
         _payConfigRepository
             .Setup(r => r.GetPackageConfigsForOrderAsync(
-                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<IEnumerable<string>>(), It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<EmployeePayConfig>());
     }
 
@@ -417,7 +419,6 @@ public class OrderDetailBrowsingCleanerRedactionTests
             customerAddress: address,
             rooms: 3,
             bathrooms: 2,
-            extras: new Dictionary<string, bool> { ["insideOven"] = true },
             cleaningDateTime: DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
@@ -428,7 +429,9 @@ public class OrderDetailBrowsingCleanerRedactionTests
             accessInstructions: AccessInstructions);
 
         order.Id = OrderId;
-        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna", 1m));
+        order.AddSelectedExtras(
+            [OrderExtra.Create(order, Extra.Create("insideOven", "insideOven", null), 250m)]);
+        order.SetCurrency(Currency.Create("CZK", "Kč", "Czech Koruna"));
         order.UpdateEstimatedTime(180);
 
         // Two required seats, no spare, one of them filled below — so none of the five seat members

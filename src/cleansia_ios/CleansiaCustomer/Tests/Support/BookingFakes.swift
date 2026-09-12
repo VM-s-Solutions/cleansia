@@ -248,10 +248,15 @@ enum CatalogFixtures {
         )
     }
 
-    static let populated = Catalog(
-        services: [service(id: "s-1"), service(id: "s-2", category: category(slug: "deep", order: 1))],
-        packages: [package(id: "p-1")]
-    )
+    static let populated = catalog(currencyCode: "CZK")
+
+    static func catalog(currencyCode: String) -> Catalog {
+        Catalog(
+            services: [service(id: "s-1"), service(id: "s-2", category: category(slug: "deep", order: 1))],
+            packages: [package(id: "p-1")],
+            currencyCode: currencyCode
+        )
+    }
 
     static func extra(slug: String, order: Int = 0) -> CatalogExtra {
         CatalogExtra(

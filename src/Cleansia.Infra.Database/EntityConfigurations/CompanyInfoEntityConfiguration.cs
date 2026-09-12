@@ -35,7 +35,23 @@ public class CompanyInfoEntityConfiguration : AuditableEntityConfiguration<Compa
             .HasForeignKey(c => c.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(c => c.RegistrationNumber).IsUnique().HasDatabaseName("IX_CompanyInfo_RegistrationNumber");
+        // (RegistrationNumber, CountryId), not RegistrationNumber alone.
+        //
+        // ONE LEGAL ENTITY MAY HOLD A ROW PER COUNTRY. Owner ruling 2026-09-08 is "one entity", with the
+        // caveat that it is hard to answer before the first one exists — and the composite accommodates
+        // both futures while the global unique accommodates neither:
+        //
+        //   one entity, several countries -> same registration number, different CountryId. Allowed
+        //     here; FORBIDDEN by the index this replaces, even though the read path
+        //     (OrderFactory, ReceiptService, RegenerateInvoicePdf) has always been per-country.
+        //   two entities, one country each -> different registration numbers. Allowed by both.
+        //
+        // So it is strictly more permissive and forecloses nothing, which is why it can land before the
+        // business answer does. A second ACTIVE company per country is still refused — by
+        // CreateCompanyInfo's validator, which is where that rule has always lived.
+        builder.HasIndex(c => new { c.RegistrationNumber, c.CountryId })
+            .IsUnique()
+            .HasDatabaseName("IX_CompanyInfo_RegistrationNumber_CountryId");
         builder.HasIndex(c => c.IsActive).HasDatabaseName("IX_CompanyInfo_IsActive");
 
         // Index on CountryId and IsActive for faster lookups (uniqueness enforced at application level)

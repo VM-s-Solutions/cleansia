@@ -90,6 +90,9 @@
       "@cleansia/admin-features/package-management": [
         "libs/cleansia-admin-features/package-management/src/index.ts"
       ],
+      "@cleansia/admin-features/extra-management": [
+        "libs/cleansia-admin-features/extra-management/src/index.ts"
+      ],
       "@cleansia/admin-features/reports": [
         "libs/cleansia-admin-features/reports/src/index.ts"
       ],

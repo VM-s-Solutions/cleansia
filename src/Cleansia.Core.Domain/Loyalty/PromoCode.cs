@@ -28,6 +28,13 @@ public class PromoCode : Auditable, ITenantEntity
     public string? CurrencyId { get; private set; }
     public Currency? Currency { get; private set; }
 
+    /// <summary>
+    /// Floor on the raw subtotal, denominated in <see cref="CurrencyId"/> when set — and in the platform
+    /// DEFAULT currency when it is not: every percent code with a minimum was authored that way (the seed
+    /// says "1500 CZK" beside a null currency). A code with a minimum is therefore bound to ONE currency
+    /// and is refused as a currency mismatch on an order in any other; a percent code with no minimum is
+    /// global. → /product/business-rules#money-constants
+    /// </summary>
     public decimal? MinimumOrderAmount { get; private set; }
 
     /// <summary>Per-user redemption cap. Default 1 (one-shot codes are the common case).</summary>

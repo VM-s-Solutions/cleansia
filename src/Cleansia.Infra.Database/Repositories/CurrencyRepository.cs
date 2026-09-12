@@ -7,10 +7,31 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Currency>(context), ICurrencyRepository
 {
-    public Task<Currency> GetDefaultAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// The platform's default currency. Throws when there is none — this sits on the most-travelled
+    /// path in the platform (every quote and every order resolves it), so a null here becomes an NRE
+    /// several frames away from the cause.
+    ///
+    /// <para>The previous form bound <c>??</c> to the <b>Task</b> rather than to its result. A Task
+    /// returned by <c>FirstOrDefaultAsync</c> is never null, so the throw was unreachable and the
+    /// <c>!</c> merely silenced the compiler while a null <c>Currency</c> escaped to the caller.</para>
+    /// </summary>
+    public async Task<Currency> GetDefaultAsync(CancellationToken cancellationToken)
     {
-        return (GetDbSet().FirstOrDefaultAsync(c => c.IsDefault, cancellationToken) ??
-                throw new EntityNotFoundException("Default Currency was not found"))!;
+        return await GetDbSet().FirstOrDefaultAsync(c => c.IsDefault, cancellationToken)
+               ?? throw new EntityNotFoundException("Default Currency was not found");
+    }
+
+    public async Task ClearDefaultAsync(CancellationToken cancellationToken)
+    {
+        var existingDefaults = await GetDbSet()
+            .Where(c => c.IsDefault)
+            .ToListAsync(cancellationToken);
+
+        foreach (var currency in existingDefaults)
+        {
+            currency.SetAsDefault(false);
+        }
     }
 
     public Task<Currency?> GetByCodeAsync(string code, CancellationToken cancellationToken)
@@ -34,6 +55,41 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
         if (await Context.EmployeeInvoices.AnyAsync(i => i.CurrencyId == currencyId, cancellationToken))
             return true;
 
+        // A cleaner's recorded pay is denominated too, and its FK restricts -- without this the friendly
+        // refusal is skipped and the delete raises a raw 23503 that nothing maps.
+        if (await Context.OrderEmployeePays.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        // A cleaner's declared payout-account currency restricts too (T-0708); same reason as the pay row.
+        if (await Context.EmployeePayoutDetails.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        // The catalogue price rows. Without these three, deleting a currency something is priced in
+        // raises a raw 23503 at pipeline commit -- DeleteCurrency has no FK-violation mapping and no
+        // early flush -- so the admin gets a 500 instead of currency.in_use.
+        if (await Context.ServicePrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        if (await Context.PackagePrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        if (await Context.ExtraPrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
         return false;
+    }
+
+    public async Task<bool> IsOfferableAsync(string currencyId, CancellationToken cancellationToken)
+    {
+        // The switch first: a switched-off currency is not offerable however many rows price it -- the
+        // seed prices EUR ahead of the flip on purpose (see MustCoverAllActiveCurrencies). One row in
+        // ANY of the three price tables satisfies the second half; the three reads mirror IsInUseAsync
+        // above rather than one correlated EXISTS, so the two stay readable side by side.
+        if (!await GetDbSet().AnyAsync(c => c.Id == currencyId && c.IsActive, cancellationToken))
+            return false;
+
+        return await Context.ServicePrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken)
+            || await Context.PackagePrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken)
+            || await Context.ExtraPrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken);
     }
 }

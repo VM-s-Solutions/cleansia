@@ -7449,7 +7449,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
     code!: string | undefined;
     name!: string | undefined;
     symbol!: string | undefined;
-    exchangeRate!: number;
     isDefault!: boolean;
 
     constructor(data?: ICurrencyDetailDto) {
@@ -7467,7 +7466,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
             this.code = Data["code"];
             this.name = Data["name"];
             this.symbol = Data["symbol"];
-            this.exchangeRate = Data["exchangeRate"];
             this.isDefault = Data["isDefault"];
         }
     }
@@ -7485,7 +7483,6 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
         data["code"] = this.code;
         data["name"] = this.name;
         data["symbol"] = this.symbol;
-        data["exchangeRate"] = this.exchangeRate;
         data["isDefault"] = this.isDefault;
         return data;
     }
@@ -7496,7 +7493,6 @@ export interface ICurrencyDetailDto {
     code: string | undefined;
     name: string | undefined;
     symbol: string | undefined;
-    exchangeRate: number;
     isDefault: boolean;
 }
 
@@ -7505,7 +7501,6 @@ export class CurrencyListItem implements ICurrencyListItem {
     code!: string | undefined;
     symbol!: string | undefined;
     name!: string | undefined;
-    exchangeRate!: number;
     isDefault!: boolean;
 
     constructor(data?: ICurrencyListItem) {
@@ -7523,7 +7518,6 @@ export class CurrencyListItem implements ICurrencyListItem {
             this.code = Data["code"];
             this.symbol = Data["symbol"];
             this.name = Data["name"];
-            this.exchangeRate = Data["exchangeRate"];
             this.isDefault = Data["isDefault"];
         }
     }
@@ -7541,7 +7535,6 @@ export class CurrencyListItem implements ICurrencyListItem {
         data["code"] = this.code;
         data["symbol"] = this.symbol;
         data["name"] = this.name;
-        data["exchangeRate"] = this.exchangeRate;
         data["isDefault"] = this.isDefault;
         return data;
     }
@@ -7552,7 +7545,6 @@ export interface ICurrencyListItem {
     code: string | undefined;
     symbol: string | undefined;
     name: string | undefined;
-    exchangeRate: number;
     isDefault: boolean;
 }
 
@@ -8417,7 +8409,6 @@ export class EmployeeItem implements IEmployeeItem {
     passportId!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
-    vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
@@ -8453,7 +8444,6 @@ export class EmployeeItem implements IEmployeeItem {
             this.passportId = Data["passportId"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
-            this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
@@ -8495,7 +8485,6 @@ export class EmployeeItem implements IEmployeeItem {
         data["passportId"] = this.passportId;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
-        data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
@@ -8530,7 +8519,6 @@ export interface IEmployeeItem {
     passportId: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;
-    vatNumber: string | undefined;
     legalEntityName: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
@@ -8897,7 +8885,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     id!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
-    vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
     iban!: string | undefined;
     passportId!: string | undefined;
@@ -8923,7 +8910,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
             this.id = Data["id"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
-            this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.passportId = Data["passportId"];
@@ -8949,7 +8935,6 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
         data["id"] = this.id;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
-        data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["passportId"] = this.passportId;
@@ -8968,7 +8953,6 @@ export interface IGdprExportEmployeeDto {
     id: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;
-    vatNumber: string | undefined;
     legalEntityName: string | undefined;
     iban: string | undefined;
     passportId: string | undefined;
@@ -9145,6 +9129,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
     scheme!: PayoutScheme;
     status!: PayoutDetailsStatus;
     bankCountryId!: string | undefined;
+    currencyId!: string | undefined;
     accountPrefix!: string | undefined;
     accountNumber!: string | undefined;
     bankCode!: string | undefined;
@@ -9170,6 +9155,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
             this.scheme = Data["scheme"];
             this.status = Data["status"];
             this.bankCountryId = Data["bankCountryId"];
+            this.currencyId = Data["currencyId"];
             this.accountPrefix = Data["accountPrefix"];
             this.accountNumber = Data["accountNumber"];
             this.bankCode = Data["bankCode"];
@@ -9195,6 +9181,7 @@ export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
         data["scheme"] = this.scheme;
         data["status"] = this.status;
         data["bankCountryId"] = this.bankCountryId;
+        data["currencyId"] = this.currencyId;
         data["accountPrefix"] = this.accountPrefix;
         data["accountNumber"] = this.accountNumber;
         data["bankCode"] = this.bankCode;
@@ -9213,6 +9200,7 @@ export interface IGdprExportPayoutDetailsDto {
     scheme: PayoutScheme;
     status: PayoutDetailsStatus;
     bankCountryId: string | undefined;
+    currencyId: string | undefined;
     accountPrefix: string | undefined;
     accountNumber: string | undefined;
     bankCode: string | undefined;
@@ -10253,6 +10241,7 @@ export class MyPayoutDetails implements IMyPayoutDetails {
     scheme!: PayoutScheme;
     status!: PayoutDetailsStatus;
     bankCountryId!: string | undefined;
+    currencyId!: string | undefined;
     accountPrefix!: string | undefined;
     accountNumber!: string | undefined;
     bankCode!: string | undefined;
@@ -10276,6 +10265,7 @@ export class MyPayoutDetails implements IMyPayoutDetails {
             this.scheme = Data["scheme"];
             this.status = Data["status"];
             this.bankCountryId = Data["bankCountryId"];
+            this.currencyId = Data["currencyId"];
             this.accountPrefix = Data["accountPrefix"];
             this.accountNumber = Data["accountNumber"];
             this.bankCode = Data["bankCode"];
@@ -10299,6 +10289,7 @@ export class MyPayoutDetails implements IMyPayoutDetails {
         data["scheme"] = this.scheme;
         data["status"] = this.status;
         data["bankCountryId"] = this.bankCountryId;
+        data["currencyId"] = this.currencyId;
         data["accountPrefix"] = this.accountPrefix;
         data["accountNumber"] = this.accountNumber;
         data["bankCode"] = this.bankCode;
@@ -10315,6 +10306,7 @@ export interface IMyPayoutDetails {
     scheme: PayoutScheme;
     status: PayoutDetailsStatus;
     bankCountryId: string | undefined;
+    currencyId: string | undefined;
     accountPrefix: string | undefined;
     accountNumber: string | undefined;
     bankCode: string | undefined;
@@ -14347,6 +14339,7 @@ export class UpdateBankDetailsCommand implements IUpdateBankDetailsCommand {
     swift!: string | undefined;
     bankName!: string | undefined;
     holderName!: string | undefined;
+    currencyId!: string | undefined;
 
     constructor(data?: IUpdateBankDetailsCommand) {
         if (data) {
@@ -14368,6 +14361,7 @@ export class UpdateBankDetailsCommand implements IUpdateBankDetailsCommand {
             this.swift = Data["swift"];
             this.bankName = Data["bankName"];
             this.holderName = Data["holderName"];
+            this.currencyId = Data["currencyId"];
         }
     }
 
@@ -14389,6 +14383,7 @@ export class UpdateBankDetailsCommand implements IUpdateBankDetailsCommand {
         data["swift"] = this.swift;
         data["bankName"] = this.bankName;
         data["holderName"] = this.holderName;
+        data["currencyId"] = this.currencyId;
         return data;
     }
 }
@@ -14403,6 +14398,7 @@ export interface IUpdateBankDetailsCommand {
     swift: string | undefined;
     bankName: string | undefined;
     holderName: string | undefined;
+    currencyId: string | undefined;
 }
 
 export class UpdateBankDetailsResponse implements IUpdateBankDetailsResponse {
@@ -14556,7 +14552,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
     passportId!: string | undefined;
     entityType!: EmployeeEntityType;
     registrationNumber!: string | undefined;
-    vatNumber!: string | undefined;
     legalEntityName!: string | undefined;
     emergencyName!: string | undefined;
     emergencyPhone!: string | undefined;
@@ -14589,7 +14584,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
             this.passportId = Data["passportId"];
             this.entityType = Data["entityType"];
             this.registrationNumber = Data["registrationNumber"];
-            this.vatNumber = Data["vatNumber"];
             this.legalEntityName = Data["legalEntityName"];
             this.emergencyName = Data["emergencyName"];
             this.emergencyPhone = Data["emergencyPhone"];
@@ -14632,7 +14626,6 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
         data["passportId"] = this.passportId;
         data["entityType"] = this.entityType;
         data["registrationNumber"] = this.registrationNumber;
-        data["vatNumber"] = this.vatNumber;
         data["legalEntityName"] = this.legalEntityName;
         data["emergencyName"] = this.emergencyName;
         data["emergencyPhone"] = this.emergencyPhone;
@@ -14668,7 +14661,6 @@ export interface IUpdateEmployeeCommand {
     passportId: string | undefined;
     entityType: EmployeeEntityType;
     registrationNumber: string | undefined;
-    vatNumber: string | undefined;
     legalEntityName: string | undefined;
     emergencyName: string | undefined;
     emergencyPhone: string | undefined;

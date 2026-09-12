@@ -25,7 +25,13 @@ public class CreateCompanyInfo
         string? BankName,
         string? BankAccountNumber,
         string? Iban,
-        string? Swift) : ICommand<Response>;
+        string? Swift,
+        // THE VAT LEVER. Absent from both commands until now, which is why SetVatPayerStatus had no
+        // production caller and every company row was permanently a neplatce -- turning VAT on meant a
+        // hand-written UPDATE against production, the one operation the owner has forbidden. The date
+        // rides alongside because it is unrecoverable once the flag has flipped.
+        bool IsVatPayer,
+        DateOnly? VatRegisteredFrom) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -149,6 +155,10 @@ public class CreateCompanyInfo
                 command.BankAccountNumber,
                 command.Iban,
                 command.Swift);
+
+            // AFTER Create, which took the VAT number: clearing the flag clears that number, so this
+            // ordering is what lets the entity's invariant win over whatever was typed into the form.
+            companyInfo.SetVatPayerStatus(command.IsVatPayer, command.VatRegisteredFrom);
 
             companyInfoRepository.Add(companyInfo);
 

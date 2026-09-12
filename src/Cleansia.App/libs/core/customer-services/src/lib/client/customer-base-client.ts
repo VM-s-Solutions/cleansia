@@ -13,6 +13,8 @@ import {
   ICountryClient,
   CreditClient,
   ICreditClient,
+  CurrencyClient,
+  ICurrencyClient,
   DisputeClient,
   IDisputeClient,
   ExtraClient,
@@ -57,6 +59,7 @@ interface ICustomerClient {
   userClient: IUserClient;
   orderClient: ICustomerOrderClient;
   countryClient: ICountryClient;
+  currencyClient: ICurrencyClient;
   languageClient: ILanguageClient;
   packageClient: IPackageClient;
   paymentClient: IPaymentClient;
@@ -105,6 +108,10 @@ export class CustomerClient implements ICustomerClient {
     this.apiBaseUrl
   );
   countryClient: ICountryClient = new CountryClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  currencyClient: ICurrencyClient = new CurrencyClient(
     this.httpClient,
     this.apiBaseUrl
   );

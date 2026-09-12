@@ -224,7 +224,6 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
             customerAddress: Address.Create("Overlap St 2", "Praha", "14000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

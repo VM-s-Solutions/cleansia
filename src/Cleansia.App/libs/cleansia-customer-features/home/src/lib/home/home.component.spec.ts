@@ -1,6 +1,10 @@
 import { ElementRef, PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { loadCustomerPackages, loadCustomerServices } from '@cleansia/customer-stores';
+import {
+  loadCustomerCurrencies,
+  loadCustomerPackages,
+  loadCustomerServices,
+} from '@cleansia/customer-stores';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { HomeComponent } from './home.component';
 
@@ -55,13 +59,14 @@ describe('HomeComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('asks the store for the catalog the landing page renders', () => {
+  it('asks the store for the catalog the landing page renders, and the currency it is priced in', () => {
     const component = build('browser');
 
     component.ngOnInit();
 
     expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices());
     expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages());
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
   });
 
   it('installs no observer during a server render', () => {

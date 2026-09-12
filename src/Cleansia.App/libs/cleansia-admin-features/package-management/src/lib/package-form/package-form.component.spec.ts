@@ -164,10 +164,29 @@ class FacadeStub {
   readonly languages = signal<{ code: string; name: string }[]>([
     { code: 'en', name: 'English' },
   ]);
+  readonly currencies = signal<
+    {
+      code: string;
+      symbol: string;
+      name: string;
+      isDefault: boolean;
+      isActive: boolean;
+    }[]
+  >([
+    {
+      code: 'CZK',
+      symbol: 'Kc',
+      name: 'Czech koruna',
+      isDefault: true,
+      isActive: true,
+    },
+  ]);
+  readonly defaultCurrencyCode = signal<string | null>('CZK');
   readonly availableServices = signal<unknown[]>([]);
   readonly weightRows = signal<PackageServiceWeightRow[]>([]);
   readonly derivedGrosses = signal<DerivedServiceGross[]>([]);
   loadLanguages = jest.fn();
+  loadCurrencies = jest.fn();
   loadAvailableServices = jest.fn();
   loadPackage = jest.fn();
   setPrice = jest.fn();

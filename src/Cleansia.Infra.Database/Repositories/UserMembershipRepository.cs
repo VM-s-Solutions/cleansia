@@ -17,6 +17,26 @@ public class UserMembershipRepository(CleansiaDbContext context)
         return ActiveForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<UserMembership?> GetEntitledForUserAsync(string userId, CancellationToken cancellationToken)
+    {
+        return EntitledForUserQuery(userId).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<UserMembership?> GetEntitledForUserNoTrackingAsync(string userId, CancellationToken cancellationToken)
+    {
+        return EntitledForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+    }
+
+    // Entitlement = a live enrolment that is also PAID. The trial conjunct is spelled out rather than
+    // calling UserMembership.IsInTrialAt, which is a computed property and would not translate — EF would
+    // either throw or, worse, evaluate it client-side after pulling the row.
+    private IQueryable<UserMembership> EntitledForUserQuery(string userId)
+    {
+        var now = DateTime.UtcNow;
+        return ActiveForUserQuery(userId)
+            .Where(m => m.TrialEndsAtUtc == null || m.TrialEndsAtUtc <= now);
+    }
+
     private IQueryable<UserMembership> ActiveForUserQuery(string userId)
     {
         return GetDbSet()

@@ -26,12 +26,34 @@ public class GetUserCredit
     /// False for a customer who has never been credited. Distinguished from a zero balance because
     /// the two mean different things to the person reading the screen.
     /// </param>
+    /// <param name="Accounts">
+    /// EVERY account the customer holds, largest balance first — one per currency, each with its own
+    /// ledger.
+    ///
+    /// <para>Credit is only spendable on an order in the SAME currency (owner ruling 2026-09-09), so
+    /// "this customer's balance" stopped being a single number. It matters most on the two admin
+    /// actions beside this screen: erasure is refused while ANY balance is positive, and the discharge
+    /// refuses outright when more than one is funded — so an admin looking at one balance could be told
+    /// erasure is blocked by money the screen never showed them.</para>
+    ///
+    /// <para><b>Added beside the scalars rather than replacing them.</b> HasAccount, Balance,
+    /// CurrencyCode and the flat Ledger are unchanged and still describe the largest account, and they
+    /// are DERIVED from this list in the handler, in one expression, so they cannot drift.</para>
+    /// </param>
     public record Response(
         string UserId,
         bool HasAccount,
         decimal Balance,
         string CurrencyCode,
-        IEnumerable<LedgerEntry> Ledger);
+        IEnumerable<LedgerEntry> Ledger,
+        IReadOnlyList<CurrencyAccount> Accounts);
+
+    /// <summary>One currency's account and its own ledger, capped the same way the flat one is.</summary>
+    public record CurrencyAccount(
+        string AccountId,
+        decimal Balance,
+        string CurrencyCode,
+        IReadOnlyList<LedgerEntry> Ledger);
 
     /// <param name="Amount">Signed: positive was given, negative was spent.</param>
     /// <param name="Note">
@@ -72,26 +94,13 @@ public class GetUserCredit
         /// </summary>
         private const int MaxLedgerEntries = 100;
 
-        public async Task<BusinessResult<Response>> Handle(
-            Query request, CancellationToken cancellationToken)
-        {
-            var account = await creditAccountRepository.GetByUserIdAsync(
-                request.UserId, cancellationToken);
-
-            if (account == null)
-            {
-                var platformCurrency = await currencyRepository.GetDefaultAsync(cancellationToken);
-                return BusinessResult.Success(new Response(
-                    UserId: request.UserId,
-                    HasAccount: false,
-                    Balance: 0m,
-                    CurrencyCode: platformCurrency?.Code ?? string.Empty,
-                    Ledger: []));
-            }
-
-            var currency = await currencyRepository.GetByIdAsync(account.CurrencyId, cancellationToken);
-
-            var ledger = account.Transactions
+        /// <summary>
+        /// One account's most recent movements. Extracted from the handler when the response gained a
+        /// ledger PER ACCOUNT: the cap has to apply to each of them separately, not to a merged list,
+        /// or a customer with two accounts would see one of them truncated away by the other's volume.
+        /// </summary>
+        private static IReadOnlyList<LedgerEntry> LedgerOf(Domain.Credit.CreditAccount account) =>
+            account.Transactions
                 .OrderByDescending(t => t.CreatedOn)
                 .ThenByDescending(t => t.Id)
                 .Take(MaxLedgerEntries)
@@ -105,12 +114,46 @@ public class GetUserCredit
                     CreatedOn: t.CreatedOn))
                 .ToList();
 
+        public async Task<BusinessResult<Response>> Handle(
+            Query request, CancellationToken cancellationToken)
+        {
+            // Largest balance first -- see GetMyCredit for why this is not pinned to the platform
+            // default. Same answer as before for any customer holding one account.
+            var accounts = await creditAccountRepository.GetAllForUserAsync(
+                request.UserId, cancellationToken);
+
+            var perCurrency = new List<CurrencyAccount>(accounts.Count);
+            foreach (var held in accounts)
+            {
+                var currencyOf = await currencyRepository.GetByIdAsync(held.CurrencyId, cancellationToken);
+                perCurrency.Add(new CurrencyAccount(
+                    held.Id, held.Balance, currencyOf?.Code ?? string.Empty, LedgerOf(held)));
+            }
+
+            var account = accounts.FirstOrDefault();
+
+            if (account == null)
+            {
+                var platformCurrency = await currencyRepository.GetDefaultAsync(cancellationToken);
+                return BusinessResult.Success(new Response(
+                    UserId: request.UserId,
+                    HasAccount: false,
+                    Balance: 0m,
+                    CurrencyCode: platformCurrency?.Code ?? string.Empty,
+                    Ledger: [],
+                    Accounts: []));
+            }
+
+            // THE SCALARS ARE THE FIRST ELEMENT, not a second derivation -- see GetMyCredit.
+            var primary = perCurrency[0];
+
             return BusinessResult.Success(new Response(
                 UserId: request.UserId,
                 HasAccount: true,
-                Balance: account.Balance,
-                CurrencyCode: currency?.Code ?? string.Empty,
-                Ledger: ledger));
+                Balance: primary.Balance,
+                CurrencyCode: primary.CurrencyCode,
+                Ledger: primary.Ledger,
+                Accounts: perCurrency));
         }
     }
 }

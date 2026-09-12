@@ -36,7 +36,10 @@ public static class PayrollMockFactory
         decimal deductionPay = 0m,
         string? orderId = null,
         string employeeId = EmployeeId,
-        string payPeriodId = PayPeriodId)
+        string payPeriodId = PayPeriodId,
+        // Defaulted, so all 23 existing call sites keep working while the ones that care about a
+        // second currency can name one.
+        string currencyId = CurrencyId)
     {
         var totalPay = basePay + extrasPay + expensesPay + bonusPay - deductionPay;
         if (totalPay < 0)
@@ -48,6 +51,7 @@ public static class PayrollMockFactory
             orderId: orderId ?? $"order-{Guid.NewGuid():N}",
             employeeId: employeeId,
             payPeriodId: payPeriodId,
+            currencyId: currencyId,
             basePay: basePay,
             extrasPay: extrasPay,
             expensesPay: expensesPay,

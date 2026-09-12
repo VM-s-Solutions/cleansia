@@ -16,6 +16,13 @@ manual_steps: []
 sprint: 16
 ---
 
+> **Researched 2026-09-08 — [`../T-0688-multicurrency-research.md`](../T-0688-multicurrency-research.md).**
+> A full read-only pass over the money path, fiscal/legal surface, data model and all five clients, with
+> an ordered work plan and eight open decisions. It found four things this ticket does not mention (the
+> VAT convention, the cleaner payout invoice, the receipt line items, the loyalty normalisation) and
+> confirms the INDEX row's warning about the size. **Re-scoping is the owner's call — this ticket is
+> unchanged apart from this pointer.**
+
 ## Context
 
 **In plain terms:** the platform was built to handle several currencies, and the machinery is really

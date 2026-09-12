@@ -404,8 +404,16 @@ public class Order : Auditable, ITenantEntity
     /// </summary>
     public DateTime? PreCleaningReminderSentAt { get; private set; }
 
-    public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
-    public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();
+    private ICollection<OrderExtra> _selectedExtras = [];
+
+    /// <summary>
+    /// The extras this order bought, each with the price it was bought at.
+    ///
+    /// <para>Replaced a <c>public IDictionary&lt;string, bool&gt; _extras</c> field — public, mutable,
+    /// persisted as a JSON column, carrying no price and no foreign key. A row here means the extra was
+    /// selected; there is no false. See <see cref="OrderExtra"/>.</para>
+    /// </summary>
+    public IReadOnlyCollection<OrderExtra> SelectedExtras => _selectedExtras.ToList().AsReadOnly();
 
     private ICollection<OrderService> _selectedServices = [];
     public IReadOnlyCollection<OrderService> SelectedServices => _selectedServices.ToList().AsReadOnly();
@@ -444,7 +452,7 @@ public class Order : Auditable, ITenantEntity
 
     public static Order Create(string customerName, string customerEmail, string customerPhone,
         Address customerAddress, int rooms, int bathrooms,
-        Dictionary<string, bool> extras, DateTime cleaningDateTime, PaymentType paymentType,
+        DateTime cleaningDateTime, PaymentType paymentType,
         decimal totalPrice, string currencyId, PaymentStatus paymentStatus,
         // Optional: when present, links the order to the booking user so
         // CancelOrder / SubmitReview / ReportIssue can enforce ownership.
@@ -499,7 +507,6 @@ public class Order : Auditable, ITenantEntity
             CustomerApartment = string.IsNullOrWhiteSpace(customerApartment) ? null : customerApartment.Trim(),
             Rooms = rooms,
             Bathrooms = bathrooms,
-            _extras = extras,
             CleaningDateTime = cleaningDateTime,
             PaymentType = paymentType,
             TotalPrice = totalPrice,
@@ -551,6 +558,12 @@ public class Order : Auditable, ITenantEntity
     public Order AddSelectedPackages(IEnumerable<OrderPackage> selectedPackages)
     {
         _selectedPackages = selectedPackages.ToList();
+        return this;
+    }
+
+    public Order AddSelectedExtras(IEnumerable<OrderExtra> selectedExtras)
+    {
+        _selectedExtras = selectedExtras.ToList();
         return this;
     }
 

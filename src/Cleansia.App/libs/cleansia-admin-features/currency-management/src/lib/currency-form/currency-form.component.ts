@@ -63,7 +63,9 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
     code: ['', [Validators.required, Validators.maxLength(3)]],
     symbol: ['', [Validators.required, Validators.maxLength(5)]],
     name: ['', [Validators.required, Validators.maxLength(50)]],
-    exchangeRate: [1, [Validators.required, Validators.min(0.000001)]],
+    loyaltyPointsDivisor: this.fb.control<number | null>(null, [
+      Validators.min(0.01),
+    ]),
   });
 
   private currencyLoadEffect = effect(() => {
@@ -97,13 +99,13 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
     code?: string;
     symbol?: string;
     name?: string;
-    exchangeRate?: number;
+    loyaltyPointsDivisor?: number;
   }): void {
     this.form.patchValue({
       code: currency.code ?? '',
       symbol: currency.symbol ?? '',
       name: currency.name ?? '',
-      exchangeRate: currency.exchangeRate ?? 1,
+      loyaltyPointsDivisor: currency.loyaltyPointsDivisor ?? null,
     });
   }
 
@@ -119,7 +121,7 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
       code: formValue.code,
       symbol: formValue.symbol,
       name: formValue.name,
-      exchangeRate: formValue.exchangeRate,
+      loyaltyPointsDivisor: this.divisorOrNull(formValue.loyaltyPointsDivisor),
     };
 
     if (this.isEditMode()) {
@@ -134,5 +136,15 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
 
   onCancel(): void {
     this.facade.navigateBack();
+  }
+
+  // A cleared numeric text input arrives as the empty string at runtime, which is neither
+  // null nor a number the server would parse.
+  private divisorOrNull(raw: number | null): number | null {
+    if (raw === null || (raw as unknown) === '') {
+      return null;
+    }
+    const parsed = Number(raw);
+    return Number.isNaN(parsed) ? null : parsed;
   }
 }

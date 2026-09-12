@@ -222,10 +222,13 @@ Four things that look like bugs, are not, and have each cost a session:
   rather than a missing key. Every key needs all five locales in every app that can reach the endpoint;
   the parity guards are `apps/<app>/src/app/i18n/error-contract-parity.spec.ts`.
 
-- **`Confirmed` does not mean a cleaner is assigned.** It is deliberately overloaded — "money settled"
-  OR "cleaner took it". Read `AssignedEmployees` for crew. And `OrderStatus.Pending` is dead with no
-  production writer; the state it used to describe lives on the payment axis.
-  → `/domain/order-lifecycle`
+- **`Confirmed` means a cleaner TOOK the job — not that one is on it now, and nothing about money.**
+  Until ADR-0057 (owner ruling 2026-09-08) it ALSO meant "money settled", and three separate comments
+  in the codebase existed to warn readers not to trust it. A paid card order now rests at `New`, like a
+  cash one. It still does not mean a cleaner is currently assigned — a drop, cover or rejection removes
+  the crew without walking the status back — so read `AssignedEmployees` when that is the question. And
+  `OrderStatus.Pending` is dead with no production writer; the state it used to describe lives on the
+  payment axis. → `/domain/order-lifecycle`, `/decisions/adr-0057`
 
 ## Agent operating system
 

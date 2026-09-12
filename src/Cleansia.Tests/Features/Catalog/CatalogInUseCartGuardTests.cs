@@ -49,10 +49,10 @@ public sealed class CatalogInUseCartGuardTests : IDisposable
         ctx.Add(Cleansia.Core.Domain.Internationalization.Language.Create("en", "English"));
 
         var category = ServiceCategory.Create("cat-1", "Category", "seeded");
-        var cartedService = Service.Create(category.Id, "Carted Service", "seeded", 1000m, 200m);
-        var freeService = Service.Create(category.Id, "Free Service", "seeded", 1000m, 200m);
-        var cartedPackage = Package.Create("Carted Package", "seeded", 500m);
-        var freePackage = Package.Create("Free Package", "seeded", 500m);
+        var cartedService = Service.Create(category.Id, "Carted Service", "seeded");
+        var freeService = Service.Create(category.Id, "Free Service", "seeded");
+        var cartedPackage = Package.Create("Carted Package", "seeded");
+        var freePackage = Package.Create("Free Package", "seeded");
 
         var user = User.CreateWithPassword("buyer@cleansia.test", "Passw0rd!", "Buyer", "User");
         user.Id = "user-1";

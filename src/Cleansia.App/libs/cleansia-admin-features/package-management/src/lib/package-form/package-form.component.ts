@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import {
   FormBuilder,
+  FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
@@ -117,9 +118,9 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     // name. Sixty characters is what fits that slot; the backend enforces it too.
     tagline: ['', [Validators.maxLength(60)]],
     isPopular: [false],
-    price: [0, [Validators.required, Validators.min(0)]],
     serviceIds: [[] as string[]],
     translations: this.fb.nonNullable.group({}),
+    prices: this.fb.nonNullable.group({}),
   });
 
   readonly selectedServices = signal<ServiceListItem[]>([]);
@@ -138,6 +139,20 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     }
   });
 
+  private currenciesLoadEffect = effect(() => {
+    const currencies = this.facade.currencies();
+    if (currencies.length > 0) {
+      this.buildPriceFormGroups(currencies);
+      // The package may have loaded before the currency list did, leaving populateForm with no
+      // blocks to write into. Replay it, and re-seed the gross preview from the default currency.
+      const pkg = this.facade.pkg();
+      if (pkg && this.isEditMode()) {
+        this.patchPrices(pkg.prices);
+      }
+      this.syncPreviewPrice();
+    }
+  });
+
   ngOnInit(): void {
     const routeMode = this.route.snapshot.data['mode'] as 'create' | 'edit';
     if (routeMode) {
@@ -145,12 +160,15 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     }
 
     this.facade.loadLanguages();
+    this.facade.loadCurrencies();
     this.facade.loadAvailableServices();
 
-    this.facade.setPrice(Number(this.form.controls.price.value));
-    this.form.controls.price.valueChanges
+    // The per-service gross preview splits ONE number by weight, so it follows the DEFAULT
+    // currency's block. Subscribed on the whole group rather than one control because the blocks do
+    // not exist yet -- they are added when the currency list lands.
+    this.form.controls.prices.valueChanges
       .pipe(takeUntil(this.facade.destroyed$))
-      .subscribe((price) => this.facade.setPrice(Number(price)));
+      .subscribe(() => this.syncPreviewPrice());
 
     if (this.isEditMode()) {
       const packageId = this.route.snapshot.paramMap.get('packageId');
@@ -164,6 +182,41 @@ export class PackageFormComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.ngOnDestroy();
+  }
+
+  /**
+   * One block per currency -- see the service form's twin for why they are blank, not zero.
+   */
+  private buildPriceFormGroups(currencies: { code: string }[]): void {
+    const pricesGroup = this.form.get('prices') as FormGroup;
+
+    for (const currency of currencies) {
+      if (!pricesGroup.contains(currency.code)) {
+        pricesGroup.addControl(
+          currency.code,
+          new FormControl<number | null>(null, [Validators.min(0)])
+        );
+      }
+    }
+  }
+
+  private patchPrices(prices?: { [key: string]: number }): void {
+    if (!prices) {
+      return;
+    }
+
+    const pricesGroup = this.form.get('prices') as FormGroup;
+    for (const [code, price] of Object.entries(prices)) {
+      pricesGroup.get(code)?.setValue(price ?? null);
+    }
+  }
+
+  private syncPreviewPrice(): void {
+    const code = this.facade.defaultCurrencyCode();
+    const value = code
+      ? (this.form.get('prices')?.get(code)?.value as number | null)
+      : null;
+    this.facade.setPrice(Number(value ?? 0));
   }
 
   private buildTranslationFormGroups(
@@ -188,7 +241,7 @@ export class PackageFormComponent implements OnInit, OnDestroy {
   private populateForm(pkg: {
     name?: string;
     description?: string;
-    price?: number;
+    prices?: { [key: string]: number };
     includedServices?: {
       id?: string;
       name?: string;
@@ -206,14 +259,14 @@ export class PackageFormComponent implements OnInit, OnDestroy {
       description: pkg.description ?? '',
       tagline: pkg.tagline ?? '',
       isPopular: pkg.isPopular ?? false,
-      price: pkg.price ?? 0,
       serviceIds:
         pkg.includedServices
           ?.map((s) => s.id)
           .filter((id): id is string => !!id) ?? [],
     });
 
-    this.facade.setPrice(pkg.price ?? 0);
+    this.patchPrices(pkg.prices);
+    this.syncPreviewPrice();
 
     // Set selected services for multiselect
     if (pkg.includedServices) {
@@ -288,12 +341,23 @@ export class PackageFormComponent implements OnInit, OnDestroy {
       };
     }
 
+    // ONLY THE CURRENCIES THE ADMIN ACTUALLY FILLED IN -- see the service form for why a blank
+    // block is omitted rather than sent as zero.
+    const pricesValue = formValue.prices as { [key: string]: number | null };
+    const prices: { [key: string]: number } = {};
+    for (const [code, price] of Object.entries(pricesValue)) {
+      if (price === null) {
+        continue;
+      }
+      prices[code] = price;
+    }
+
     const data: PackageFormData = {
       name: formValue.name,
       description: formValue.description,
       tagline: formValue.tagline,
       isPopular: formValue.isPopular,
-      price: formValue.price,
+      prices,
       serviceIds: formValue.serviceIds,
       translations,
     };

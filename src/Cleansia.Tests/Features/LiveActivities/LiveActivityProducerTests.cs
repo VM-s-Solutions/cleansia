@@ -43,7 +43,6 @@ public class LiveActivityProducerTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.SpecifyKind(new DateTime(2026, 7, 20, 9, 0, 0), DateTimeKind.Utc),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

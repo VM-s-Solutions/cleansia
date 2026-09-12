@@ -41,6 +41,15 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
     public string? BankCountryId { get; private set; }
     public Country? BankCountry { get; private set; }
 
+    /// <summary>
+    /// The currency the account HOLDS, by the cleaner's own statement. Declared, never derived: a bank's
+    /// country does not decide it (a Czech bank sells EUR accounts) and the platform has no other source.
+    /// Null ⇒ not declared, which the approval gate reads as the platform default — the assumption every
+    /// destination was collected under before this column existed (T-0708).
+    /// </summary>
+    [MaxLength(26)]
+    public string? CurrencyId { get; private set; }
+
     /// <summary>Zero-padded canonical CZ/SK account prefix. Leading zeros are canonicalization, not identity (D5.1).</summary>
     [MaxLength(6)]
     public string? AccountPrefix { get; private set; }
@@ -103,7 +112,8 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
         string? bankName = null,
         string? holderName = null,
         string? providerAccountRef = null,
-        DateTime? confirmedAt = null)
+        DateTime? confirmedAt = null,
+        string? currencyId = null)
     {
         if (string.IsNullOrWhiteSpace(employeeId))
         {
@@ -125,6 +135,7 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
             HolderName = holderName,
             ProviderAccountRef = providerAccountRef,
             ConfirmedAt = confirmedAt,
+            CurrencyId = currencyId,
         };
     }
 
@@ -144,7 +155,8 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
         string? bankName = null,
         string? holderName = null,
         string? providerAccountRef = null,
-        DateTime? confirmedAt = null)
+        DateTime? confirmedAt = null,
+        string? currencyId = null)
     {
         Scheme = scheme;
         BankCountryId = string.IsNullOrEmpty(bankCountryId) ? null : bankCountryId;
@@ -158,6 +170,7 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
         HolderName = holderName;
         ProviderAccountRef = providerAccountRef;
         ConfirmedAt = confirmedAt;
+        CurrencyId = currencyId;
         return this;
     }
 

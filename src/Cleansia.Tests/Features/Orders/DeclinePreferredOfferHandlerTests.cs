@@ -162,7 +162,6 @@ public class DeclinePreferredOfferHandlerTests
             customerAddress: Address.Create("Decline St 1", "Praha", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

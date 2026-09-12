@@ -490,8 +490,6 @@
     <string name="business_country">Країна реєстрації</string>
     <string name="registration_number_label">Реєстраційний номер</string>
     <string name="registration_number_helper">Формат залежить від обраної країни.</string>
-    <string name="vat_number_label">Номер платника ПДВ</string>
-    <string name="vat_number_helper">Необов\'язково — лише якщо ви платник ПДВ.</string>
     <string name="legal_entity_name_label">Назва юридичної особи</string>
     <string name="street">Вулиця</string>
     <string name="city">Місто</string>
@@ -1191,7 +1189,6 @@
     <string name="error_validation_invalid_iban">Введіть, будь ласка, дійсний IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введіть, будь ласка, дійсний поштовий індекс.</string>
     <string name="error_validation_registration_number_invalid_format">Введіть дійсний реєстраційний номер компанії для обраної країни.</string>
-    <string name="error_validation_vat_number_invalid_format">Введіть дійсний номер ПДВ для обраної країни.</string>
     <string name="error_validation_must_be_positive">Має бути додатне число.</string>
     <string name="error_validation_invalid_availability_format">Неправильний формат доступності.</string>
 

@@ -96,6 +96,10 @@ export const Policy = {
   CanCreatePackage: 'CanCreatePackage',
   CanUpdatePackage: 'CanUpdatePackage',
   CanDeletePackage: 'CanDeletePackage',
+  CanViewExtras: 'CanViewExtras',
+  CanCreateExtra: 'CanCreateExtra',
+  CanUpdateExtra: 'CanUpdateExtra',
+  CanDeleteExtra: 'CanDeleteExtra',
 
   // i18n
   CanViewLanguages: 'CanViewLanguages',
@@ -271,6 +275,10 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanCreatePackage: PhysicalPolicy.AdminOnly,
   CanUpdatePackage: PhysicalPolicy.AdminOnly,
   CanDeletePackage: PhysicalPolicy.AdminOnly,
+  CanViewExtras: PhysicalPolicy.AdminOnly,
+  CanCreateExtra: PhysicalPolicy.AdminOnly,
+  CanUpdateExtra: PhysicalPolicy.AdminOnly,
+  CanDeleteExtra: PhysicalPolicy.AdminOnly,
 
   CanViewLanguages: PhysicalPolicy.AdminOnly,
   CanCreateLanguage: PhysicalPolicy.AdminOnly,

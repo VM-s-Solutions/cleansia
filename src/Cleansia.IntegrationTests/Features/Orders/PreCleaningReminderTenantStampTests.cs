@@ -84,7 +84,8 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         country.Id = CountryId;
         ctx.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         ctx.Currencies.Add(currency);
 
@@ -135,7 +136,6 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
             customerAddress: Address.Create("Tenant St 1", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddMinutes(60),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,

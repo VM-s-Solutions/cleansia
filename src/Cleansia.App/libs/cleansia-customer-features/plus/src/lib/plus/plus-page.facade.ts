@@ -1,12 +1,18 @@
 import { inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
   CreateMembershipCheckoutSessionCommand,
   CustomerClient,
   GetMyMembershipResponse,
   MembershipPlanFactsService,
 } from '@cleansia/customer-services';
+import {
+  loadCustomerCurrencies,
+  selectCustomerDefaultCurrencyCode,
+} from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
+import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, of, take, takeUntil } from 'rxjs';
 
@@ -31,9 +37,17 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
   private readonly membershipClient = inject(CustomerClient).membershipClient;
   private readonly snackbar = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
+  private readonly store = inject(Store);
 
   readonly loading = this.facts.loading;
   readonly plans = this.facts.plans;
+  /**
+   * A plan's price arrives with no currency of its own — `GetMembershipPlansResponse` carries
+   * `price` alone — so it is labelled with the platform default.
+   */
+  readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
+  });
 
   readonly monthlyPlan = this.facts.monthlyPlan;
   readonly yearlyPlan = this.facts.yearlyPlan;
@@ -57,6 +71,7 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
 
   load(): void {
     this.facts.load();
+    this.store.dispatch(loadCustomerCurrencies());
   }
 
   refreshMembership(): void {

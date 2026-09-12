@@ -50,6 +50,9 @@
       "packages": "Balíčky",
       "package_create": "Vytvoriť balíček",
       "package_edit": "Upraviť balíček",
+      "extras": "Doplnky",
+      "extra_create": "Vytvoriť doplnok",
+      "extra_edit": "Upraviť doplnok",
       "admin_users": "Administrátori",
       "admin_user_create": "Vytvoriť administrátora",
       "admin_user_edit": "Upraviť administrátora",
@@ -219,6 +222,7 @@
     "reports": "Reporty",
     "services": "Služby",
     "packages": "Balíčky",
+    "extras": "Doplnky",
     "admin_users": "Administrátori",
     "languages": "Jazyky",
     "countries": "Krajiny",
@@ -334,7 +338,6 @@
       "entity_type_natural_person": "Samostatne zárobkovo činná osoba",
       "entity_type_legal_entity": "Právnická osoba",
       "registration_number": "Registračné číslo",
-      "vat_number": "IČ DPH",
       "legal_entity_name": "Názov firmy",
       "iban": "IBAN",
       "emergency_contact": "Núdzový kontakt",
@@ -910,8 +913,11 @@
       "name": "Názov",
       "description": "Popis",
       "category": "Kategória",
-      "base_price": "Základná cena (CZK)",
-      "per_room_price": "Cena za izbu (CZK)",
+      "base_price": "Základná cena",
+      "per_room_price": "Cena za izbu",
+      "no_currencies": "Nie sú nastavené žiadne meny, takže zatiaľ nie je možné určiť cenu.",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
       "estimated_time": "Odhadovaný čas (minúty)",
       "messages": {
         "load_error": "Nepodarilo sa načítať službu",
@@ -969,7 +975,11 @@
       "translations": "Preklady",
       "name": "Názov",
       "description": "Popis",
-      "price": "Cena (CZK)",
+      "price": "Cena",
+      "pricing": "Ceny",
+      "no_currencies": "Nie sú nastavené žiadne meny, takže zatiaľ nie je možné určiť cenu.",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
       "included_services": "Zahrnuté služby",
       "select_services": "Vyberte služby na zahrnutie",
       "weights_title": "Relatívne cenové váhy",
@@ -984,6 +994,60 @@
       },
       "tagline": "Krátky popisok na karte",
       "is_popular": "Najobľúbenejší balík"
+    },
+    "extra_management": {
+      "title": "Doplnky",
+      "description": "Doplnkové služby k rezervácii a ich cena v jednotlivých menách",
+      "create_extra": "Vytvoriť doplnok",
+      "edit_extra": "Upraviť",
+      "delete_extra": "Odstrániť doplnok",
+      "delete_confirm": "Odstrániť tento doplnok? Odstrániť je možné iba doplnok, ktorý si doteraz žiadna objednávka nekúpila; inak ho deaktivujte.",
+      "activate_extra": "Aktivovať doplnok",
+      "deactivate_extra": "Deaktivovať doplnok",
+      "deactivate_confirm": "Deaktivovať „{{name}}“? Doplnok sa skryje z rezervačného sprievodcu, objednávky, ktoré si ho kúpili, zostanú zachované.",
+      "no_extras": "Žiadne doplnky",
+      "filters": {
+        "title": "Filtre",
+        "search": "Hľadať",
+        "search_placeholder": "Hľadať podľa identifikátora, názvu alebo popisu",
+        "reset": "Obnoviť filtre",
+        "clear_all": "Vymazať všetko",
+        "status": "Stav",
+        "status_all": "Všetko",
+        "status_active": "Aktívne",
+        "status_inactive": "Neaktívne"
+      },
+      "columns": {
+        "slug": "Identifikátor",
+        "name": "Názov",
+        "price": "Cena",
+        "display_order": "Poradie"
+      },
+      "messages": {
+        "delete_success": "Doplnok bol odstránený",
+        "activate_success": "Doplnok bol aktivovaný",
+        "deactivate_success": "Doplnok bol deaktivovaný"
+      }
+    },
+    "extra_form": {
+      "create_title": "Vytvoriť doplnok",
+      "edit_title": "Upraviť doplnok",
+      "basic_info": "Základné informácie",
+      "pricing": "Ceny",
+      "translations": "Preklady",
+      "slug": "Identifikátor (slug)",
+      "slug_hint": "Malé písmená spojené pomlčkami, napr. inside-oven. Neskôr ho nie je možné zmeniť.",
+      "name": "Názov",
+      "description": "Popis",
+      "display_order": "Poradie zobrazenia",
+      "price": "Cena",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
+      "no_currencies": "Nie sú nastavené žiadne meny, takže zatiaľ nie je možné určiť cenu.",
+      "messages": {
+        "create_success": "Doplnok bol vytvorený",
+        "update_success": "Doplnok bol aktualizovaný"
+      }
     },
     "admin_user_management": {
       "title": "Správa administrátorov",
@@ -1177,18 +1241,26 @@
         "code": "Kód",
         "symbol": "Symbol",
         "name": "Názov",
-        "exchange_rate": "Výmenný kurz",
+        "is_active": "V prevádzke",
         "is_default": "Predvolená",
         "actions": "Akcie"
       },
+      "operated": "Áno",
+      "not_operated": "Zatiaľ nie",
       "messages": {
         "load_error": "Nepodarilo sa načítať meny",
         "delete_success": "Mena bola úspešne odstránená",
         "delete_error": "Nepodarilo sa odstrániť menu",
-        "set_default_success": "Predvolená mena bola zmenená"
+        "set_default_success": "Predvolená mena bola zmenená",
+        "activate_success": "Mena bola zapnutá",
+        "deactivate_success": "Mena bola vypnutá"
       },
       "set_default": "Nastaviť ako predvolenú",
-      "set_default_confirm": "Nastaviť {{code}} ako predvolenú menu?"
+      "set_default_confirm": "Nastaviť {{code}} ako predvolenú menu?",
+      "activate": "Zapnúť",
+      "activate_confirm": "Zapnúť {{code}}? Odteraz musí mať každá služba a balík cenu v tejto mene, aby sa dali uložiť.",
+      "deactivate": "Vypnúť",
+      "deactivate_confirm": "Vypnúť {{code}}? Zákazníci v nej už nebudú môcť objednávať. Existujúce objednávky, výplaty a faktúry zostávajú bez zmeny."
     },
     "currency_form": {
       "create_title": "Vytvoriť menu",
@@ -1200,8 +1272,9 @@
       "symbol_placeholder": "napr. $, €, Kč",
       "name": "Názov meny",
       "name_placeholder": "napr. Americký dolár, Euro, Česká koruna",
-      "exchange_rate": "Výmenný kurz",
       "exchange_rate_placeholder": "napr. 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Suma, za ktorú sa získa jeden vernostný bod",
+      "loyalty_points_divisor_placeholder": "napr. 10 pre CZK — ak pole necháte prázdne, mena žiadne body nezískava",
       "messages": {
         "load_error": "Nepodarilo sa načítať menu",
         "create_success": "Mena bola úspešne vytvorená",
@@ -1211,10 +1284,25 @@
       }
     },
     "company_info": {
-      "title": "Informácie o spoločnosti",
+      "bank_account_number": "Číslo bankového účtu",
+      "bank_name": "Názov banky",
+      "city": "Mesto",
+      "country": "Krajina",
       "create_title": "Vytvoriť spoločnosť",
-      "edit_title": "Upraviť spoločnosť",
       "description": "Spravujte údaje o spoločnosti používané vo faktúrach a účtenkách",
+      "edit_title": "Upraviť spoločnosť",
+      "email": "E-mail",
+      "iban": "IBAN",
+      "is_vat_payer": "Platiteľ DPH",
+      "legal_name": "Obchodný názov",
+      "messages": {
+        "load_error": "Nepodarilo sa načítať informácie o spoločnosti",
+        "save_success": "Informácie o spoločnosti boli úspešne uložené",
+        "save_error": "Nepodarilo sa uložiť informácie o spoločnosti",
+        "create_success": "Informácie o spoločnosti boli úspešne vytvorené"
+      },
+      "phone": "Telefón",
+      "registration_number": "Registračné číslo",
       "sections": {
         "legal_info": "Právne informácie",
         "tax_info": "Daňové informácie",
@@ -1222,28 +1310,16 @@
         "contact": "Kontaktné údaje",
         "banking": "Bankové údaje"
       },
-      "legal_name": "Obchodný názov",
-      "trading_name": "Prevádzkový názov",
-      "tagline": "Slogan",
-      "registration_number": "Registračné číslo",
-      "vat_number": "DIČ",
       "street": "Ulica",
-      "city": "Mesto",
-      "zip_code": "PSČ",
-      "country": "Krajina",
-      "phone": "Telefón",
-      "email": "E-mail",
-      "website": "Webová stránka",
-      "bank_name": "Názov banky",
-      "bank_account_number": "Číslo bankového účtu",
-      "iban": "IBAN",
       "swift": "SWIFT/BIC",
-      "messages": {
-        "load_error": "Nepodarilo sa načítať informácie o spoločnosti",
-        "save_success": "Informácie o spoločnosti boli úspešne uložené",
-        "save_error": "Nepodarilo sa uložiť informácie o spoločnosti",
-        "create_success": "Informácie o spoločnosti boli úspešne vytvorené"
-      }
+      "tagline": "Slogan",
+      "title": "Informácie o spoločnosti",
+      "trading_name": "Prevádzkový názov",
+      "vat_number": "DIČ",
+      "vat_registered_from": "Platiteľom DPH od",
+      "vat_registered_from_hint": "Dátum účinnosti registrácie. Uchovávame ho, pretože po zmene statusu ho už nemožno zistiť.",
+      "website": "Webová stránka",
+      "zip_code": "PSČ"
     },
     "template_management": {
       "title": "Správa šablón",
@@ -1497,7 +1573,8 @@
         "title": "Filtre",
         "date_range": "Časové obdobie",
         "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "clear_all": "Vymazať všetko",
+        "currency": "Mena"
       },
       "revenue_report": "Report príjmov",
       "payroll_report": "Report miezd",
@@ -1904,12 +1981,14 @@
           "cancel": "Zrušiť",
           "submit": "Prideľiť kredit",
           "field": {
-            "amount": "Suma ({{currency}})",
+            "currency": "Mena",
+            "amount": "Suma",
             "reason": "Dôvod",
             "note": "Čo sa stalo",
             "note_help": "Zaznamenané pod vaším menom. Napíšte to, čo by ste sami chceli čítať, než tomuto zákazníkovi znova niečo prideliťe."
           },
           "validation": {
+            "currency_required": "Vyberte menu.",
             "amount_min": "Zadajte sumu väčšiu ako nula.",
             "amount_max": "To presahuje limit pre jeden kredit. Vystavte ho po menších sumách.",
             "note_required": "Uveďte, čo sa stalo.",
@@ -2433,15 +2512,18 @@
     "credit": {
       "amount_exceeds_sanity_cap": "Táto suma presahuje limit pre jeden kredit. Ak je správna, vystavte ju po menších sumách.",
       "amount_not_whole_minor_units": "Suma kreditu nemôže byť menšia než stotina menovej jednotky.",
+      "held_in_multiple_currencies": "Tento zákazník má kredit vo viacerých menách; každý zostatok vyrovnajte v jeho vlastnej mene",
       "reason_not_issuable": "Tento dôvod popisuje čerpanie kreditu, nie jeho pridelenie. Zvoľte vybavenie reklamácie, nedostavenie sa upratovačky alebo ústretový krok."
     },
     "currency": {
       "cannot_delete_default": "Nie je možné odstrániť predvolenú menu",
+      "cannot_deactivate_default": "Predvolenú menu nie je možné vypnúť. Najprv nastavte ako predvolenú inú menu",
       "code_already_exists": "Mena s týmto kódom už existuje",
-      "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo",
+      "default_changed_concurrently": "Predvolenú menu medzitým zmenil niekto iný. Obnovte stránku a skúste to znova",
       "in_use": "Nie je možné odstrániť menu, pretože sa práve používa",
       "invalid": "Neplatná mena",
-      "not_found": "Mena nebola nájdená"
+      "not_found": "Mena nebola nájdená",
+      "not_priced": "Katalóg v tejto mene zatiaľ nemá žiadne ceny. Najprv v nej naceňte aspoň jednu službu alebo balík"
     },
     "device": {
       "invalid_platform": "Platforma musí byť 'android' alebo 'ios'"
@@ -2522,7 +2604,8 @@
         "action_failed": "Akcia s plánom členstva sa nepodarila. Skúste to znova.",
         "code_already_exists": "Plán s týmto kódom už existuje.",
         "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
-        "not_found": "Plán členstva sa nenašiel."
+        "not_found": "Plán členstva sa nenašiel.",
+        "trial_not_permitted": "Výhody Cleansia Plus vyžadujú aktívne predplatné, skúšobné obdobie preto nemožno nastaviť. Ponechajte 0 dní."
       }
     },
     "order": {
@@ -2564,6 +2647,12 @@
         "not_match": "Celková cena sa nezhoduje",
         "positive": "Celková cena musí byť kladná"
       }
+    },
+    "extra": {
+      "in_use": "Doplnok nie je možné odstrániť, pretože naň odkazuje objednávka. Namiesto toho ho deaktivujte.",
+      "not_found": "Doplnok nebol nájdený",
+      "slug_already_exists": "Doplnok s týmto identifikátorom (slug) už existuje",
+      "slug_invalid": "Identifikátor (slug) musia byť malé písmená spojené jednotlivými pomlčkami, napr. inside-oven"
     },
     "package": {
       "in_use": "Nie je možné odstrániť balíček, pretože sa práve používa",
@@ -2610,6 +2699,7 @@
         "invalid_status": "Neplatný stav faktúry",
         "not_approved": "Faktúru je potrebné najskôr schváliť, až potom ju možno označiť ako zaplatenú",
         "not_found": "Faktúra nebola nájdená",
+        "payout_currency_mismatch": "Výplatný účet upratovača nie je nastavený na príjem meny tejto faktúry. Požiadajte ho, aby pred schválením aktualizoval svoje výplatné údaje.",
         "pdf_generation_failed": "Nepodarilo sa vygenerovať PDF",
         "reference_already_assigned": "Táto faktúra už variabilný symbol má.",
         "reference_capacity_exhausted": "Variabilné symboly pre tento rok sú vyčerpané. Kontaktujte podporu.",
@@ -2662,7 +2752,9 @@
       "in_use": "Nie je možné odstrániť službu, pretože sa práve používa",
       "missing_translation_for_language": "Chýba preklad pre požadovaný jazyk",
       "not_found": "Služba nebola nájdená",
-      "translations_required": "Preklady sú vyžadované pre všetky podporované jazyky"
+      "translations_required": "Preklady sú vyžadované pre všetky podporované jazyky",
+      "prices_required": "Cena je povinná",
+      "missing_price_for_currency": "Chýba cena pre menu, v ktorej platforma predáva"
     },
     "service_area": {
       "city_not_serviced": "V tomto meste zatiaľ nepôsobíme.",

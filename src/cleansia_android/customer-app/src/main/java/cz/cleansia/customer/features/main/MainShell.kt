@@ -70,6 +70,13 @@ enum class MainTab { Home, Orders, Rewards, Profile }
 
 @Composable
 fun MainShell(
+    /**
+     * Which tab to open on, by [MainTab] name. Null — every ordinary navigation — opens on Home, which
+     * is what this shell has always done. Set only by a notification deep link that is addressed to a
+     * particular tab. An unrecognised name falls back to Home rather than crashing: it arrives from an
+     * Intent extra that survived a process boundary, so it is untrusted input.
+     */
+    initialTabName: String? = null,
     onOrderClick: (orderId: String) -> Unit = {},
     onPromptOrderReview: (orderId: String) -> Unit = {},
     onLogout: () -> Unit = {},
@@ -96,7 +103,9 @@ fun MainShell(
     // Pager-driven tab state — `selected` is derived from `pagerState.currentPage`
     // and changing it animates the pager. rememberSaveable on the initial-page
     // index so the tab survives process death + nav-back recompositions.
-    val initialTabOrdinal = rememberSaveable { MainTab.Home.ordinal }
+    val initialTabOrdinal = rememberSaveable {
+        MainTab.entries.firstOrNull { it.name == initialTabName }?.ordinal ?: MainTab.Home.ordinal
+    }
     val pagerState = rememberPagerState(initialPage = initialTabOrdinal) { MainTab.entries.size }
     val selected = MainTab.entries[pagerState.currentPage]
     val tabScope = rememberCoroutineScope()

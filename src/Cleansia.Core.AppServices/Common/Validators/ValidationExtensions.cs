@@ -72,6 +72,51 @@ public static class ValidationExtensions
             .WithMessage(BusinessErrorMessage.MissingTranslationForLanguage);
     }
 
+    /// <summary>
+    /// A catalogue entry is priced per currency, and this is what stops one being saved half-priced.
+    ///
+    /// <para><b>Every ACTIVE currency must be present.</b> An entry with no price row in a currency is
+    /// not offerable in it, so a save covering only some of the operated currencies quietly takes the
+    /// entry off sale in the rest. The admin form renders a block per active currency, which makes a
+    /// missing key a client bug rather than a choice.</para>
+    ///
+    /// <para><b>An INACTIVE currency may be present, and is not required.</b> On a Currency,
+    /// <c>IsActive</c> is not the soft-delete flag it is elsewhere — <c>DeleteCurrency</c> hard-deletes.
+    /// It is the market switch: <c>Currency.Create</c> makes a row switched off,
+    /// <c>ActivateCurrency</c> and <c>DeactivateCurrency</c> flip it, and <c>SetDefaultCurrency</c>
+    /// refuses to promote an inactive or unpriced one so the CZK catalogue can never be charged under
+    /// another code. Pricing a currency BEFORE switching it on is exactly the intended path and must be
+    /// allowed; requiring it before then would be the opposite of the rule above.</para>
+    ///
+    /// <para>Codes that name no currency at all are refused rather than dropped -- the handlers key
+    /// their upsert by code, so an unrecognised one would otherwise vanish behind a 200.</para>
+    /// </summary>
+    public static IRuleBuilderOptions<T, Dictionary<string, TPrice>?> MustCoverAllActiveCurrencies<T, TPrice>(
+        this IRuleBuilderInitial<T, Dictionary<string, TPrice>?> ruleBuilder,
+        ICurrencyRepository currencyRepository)
+    {
+        return ruleBuilder
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .WithMessage(BusinessErrorMessage.PricesRequired)
+            .NotEmpty()
+            .WithMessage(BusinessErrorMessage.PricesRequired)
+            .MustAsync(async (prices, cancellationToken) =>
+            {
+                var currencies = await currencyRepository.GetAll().ToListAsync(cancellationToken);
+                return currencies.All(c => !c.IsActive || prices!.ContainsKey(c.Code));
+            })
+            .WithMessage(BusinessErrorMessage.MissingPriceForCurrency)
+            .MustAsync(async (prices, cancellationToken) =>
+            {
+                var known = (await currencyRepository.GetAll().ToListAsync(cancellationToken))
+                    .Select(c => c.Code)
+                    .ToHashSet();
+                return prices!.Keys.All(known.Contains);
+            })
+            .WithMessage(BusinessErrorMessage.CurrencyNotFound);
+    }
+
     public static IRuleBuilderOptions<T, string> ValidateStreetAddress<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
     {
         return ruleBuilder

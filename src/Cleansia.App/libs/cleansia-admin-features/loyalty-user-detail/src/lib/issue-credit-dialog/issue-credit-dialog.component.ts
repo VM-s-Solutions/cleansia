@@ -16,11 +16,13 @@ import {
 } from '@cleansia/components';
 import { CreditTransactionReason } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
+import type { CreditCurrencyOption } from '../user-loyalty-detail/user-loyalty-detail.facade';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 
 export interface IssueCreditDialogSubmit {
   amount: number;
+  currencyId: string;
   reason: CreditTransactionReason;
   note: string;
 }
@@ -64,7 +66,16 @@ export class IssueCreditDialogComponent {
   readonly visibleChange = output<boolean>();
 
   readonly submitting = input<boolean>(false);
-  readonly currencyCode = input<string>('');
+  /**
+   * The currencies on offer — the platform's ACTIVE ones, loaded by the facade. Deliberately NOT
+   * preselected: the defect this closes was a grant whose label said one currency while the server
+   * wrote another, and a pre-filled value is exactly the thing that goes unread on a money-out form.
+   */
+  readonly currencies = input<CreditCurrencyOption[]>([]);
+
+  readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.currencies().map((c) => ({ label: c.code, value: c.id })),
+  );
 
   readonly submitForm = output<IssueCreditDialogSubmit>();
 
@@ -96,6 +107,9 @@ export class IssueCreditDialogComponent {
   ]);
 
   readonly form = this.fb.group({
+    currencyId: this.fb.control<string | null>(null, {
+      validators: [Validators.required],
+    }),
     amount: this.fb.control<number | null>(null, {
       validators: [
         Validators.required,
@@ -117,6 +131,7 @@ export class IssueCreditDialogComponent {
 
   reset(): void {
     this.form.reset({
+      currencyId: null,
       amount: null,
       reason: CreditTransactionReason.Goodwill,
       note: '',
@@ -135,15 +150,16 @@ export class IssueCreditDialogComponent {
   }
 
   submit(): void {
-    if (this.form.invalid) {
+    const v = this.form.getRawValue();
+    if (this.form.invalid || !v.currencyId) {
       this.form.markAllAsTouched();
       return;
     }
-    const v = this.form.getRawValue();
     this.submitForm.emit({
       // Rounded here as well as validated: a browser number input will hand back 10.005 quite
       // happily, and the server refuses anything finer than a minor unit.
       amount: Math.round(Number(v.amount) * 100) / 100,
+      currencyId: v.currencyId,
       reason: v.reason,
       note: v.note.trim(),
     });

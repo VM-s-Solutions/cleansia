@@ -211,7 +211,8 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -253,7 +254,6 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
             customerAddress: Address.Create("Held St 7", "Brno", "60200", CountryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

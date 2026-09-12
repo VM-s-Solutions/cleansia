@@ -71,7 +71,6 @@ public class RejectEmployeeReleasesSeatsTests
             customerAddress: Address.Create("Main 1", "Prague", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

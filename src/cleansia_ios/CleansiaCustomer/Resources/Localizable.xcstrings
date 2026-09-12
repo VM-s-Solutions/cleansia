@@ -3266,31 +3266,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "od %1$d Kč"
+            "value": "od %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "from %1$d CZK"
+            "value": "from %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "от %1$d CZK"
+            "value": "от %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "od %1$d Kč"
+            "value": "od %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "від %1$d CZK"
+            "value": "від %1$@"
           }
         }
       }
@@ -3301,31 +3301,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d Kč/pokoj"
+            "value": "+ %1$@/pokoj"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d CZK/room"
+            "value": "+ %1$@/room"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d CZK/комната"
+            "value": "+ %1$@/комната"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d Kč/izba"
+            "value": "+ %1$@/izba"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d CZK/кімната"
+            "value": "+ %1$@/кімната"
           }
         }
       }

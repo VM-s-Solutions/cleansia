@@ -142,7 +142,7 @@ fun CleansiaNavHost(
                     // Resume the session if the refresh token is still valid.
                     // The access token may have expired — the 401 Authenticator will refresh it.
                     val hasValidSession = tokenStore.current()?.let { !it.isRefreshExpired() } == true
-                    val destination: Any = if (hasValidSession) Routes.Home else Routes.SignIn
+                    val destination: Any = if (hasValidSession) Routes.Home() else Routes.SignIn
                     navController.navigate(destination) {
                         popUpTo(Routes.Splash) { inclusive = true }
                     }
@@ -163,7 +163,7 @@ fun CleansiaNavHost(
             LaunchedEffect(state.outcome) {
                 when (val outcome = state.outcome) {
                     AuthOutcome.SignedIn -> {
-                        navController.navigate(Routes.Home) {
+                        navController.navigate(Routes.Home()) {
                             popUpTo(Routes.SignIn) { inclusive = true }
                         }
                         vm.clearState()
@@ -204,7 +204,7 @@ fun CleansiaNavHost(
                     // Home if the account already exists (email is auto-
                     // confirmed by Google). Treat it the same as a SignIn.
                     AuthOutcome.SignedIn -> {
-                        navController.navigate(Routes.Home) {
+                        navController.navigate(Routes.Home()) {
                             popUpTo(Routes.SignIn) { inclusive = true }
                         }
                         vm.clearState()
@@ -276,7 +276,7 @@ fun CleansiaNavHost(
 
             LaunchedEffect(state.outcome) {
                 if (state.outcome is AuthOutcome.SignedIn) {
-                    navController.navigate(Routes.Home) {
+                    navController.navigate(Routes.Home()) {
                         popUpTo(Routes.SignIn) { inclusive = true }
                     }
                     vm.clearState()
@@ -305,12 +305,12 @@ fun CleansiaNavHost(
                 // the detail returns the user to the Home tab, not to success.
                 onViewOrders = {
                     navController.navigate(Routes.OrderDetail(args.orderId)) {
-                        popUpTo(Routes.Home) { inclusive = false }
+                        popUpTo<Routes.Home> { inclusive = false }
                     }
                 },
                 onGoHome = {
-                    navController.navigate(Routes.Home) {
-                        popUpTo(Routes.Home) { inclusive = true }
+                    navController.navigate(Routes.Home()) {
+                        popUpTo<Routes.Home> { inclusive = true }
                     }
                 },
             )
@@ -320,8 +320,10 @@ fun CleansiaNavHost(
             exitTransition = { fadeOut(tween(PUSH_DUR)) },
             popEnterTransition = { fadeIn(tween(PUSH_DUR)) },
             popExitTransition = { fadeOut(tween(PUSH_DUR)) },
-        ) {
+        ) { backStackEntry ->
+            val landingTab = backStackEntry.toRoute<Routes.Home>().tab
             MainShell(
+                initialTabName = landingTab,
                 onPromptOrderReview = { orderId ->
                     navController.navigate(Routes.OrderDetail(orderId, openReview = true))
                 },
@@ -591,7 +593,7 @@ fun CleansiaNavHost(
                 onPrimary = {
                     // "Back home" — clear the success screen off the back stack
                     // so back-press from the next screen lands on Home, not here.
-                    navController.popBackStack(Routes.Home, inclusive = false)
+                    navController.popBackStack<Routes.Home>(inclusive = false)
                 },
                 onSecondary = {
                     // Set up recurring — replace Success with the create wizard

@@ -20,9 +20,11 @@ import {
   QuotePlusSavingsQuery,
 } from '@cleansia/customer-services';
 import {
+  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
   SavedAddressStore,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
@@ -89,6 +91,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   packages = toSignal(this.store.select(selectCustomerPackages), {
     initialValue: [] as PackageListItem[],
   });
+  private readonly defaultCurrencyCode = toSignal(
+    this.store.select(selectCustomerDefaultCurrencyCode),
+    { initialValue: null },
+  );
   countries = signal<CountryListItem[]>([]);
   // Anonymous catalog of bookable extras. Loaded once when the facade
   // initialises; rendered as a toggle list on the summary step. Best-effort:
@@ -168,6 +174,14 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   // facade on the component. We re-expose its surface so the template/
   // summary-step keep reading the wizard facade.
   readonly quote = this.pricing.quote;
+  /**
+   * The currency every figure on the wizard is printed in: the quote's own once there is one, and
+   * the platform default before that, because the catalogue is priced in the default and carries
+   * no code of its own. Null until either is known, which prints a bare number rather than a guess.
+   */
+  readonly currencyCode = computed<string | null>(
+    () => this.quote()?.currencyCode || this.defaultCurrencyCode(),
+  );
   readonly quoting = this.pricing.quoting;
   readonly totalPrice = this.pricing.totalPrice;
   readonly preSurchargeSubtotal = this.pricing.preSurchargeSubtotal;
@@ -314,6 +328,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   initialize(): void {
     this.store.dispatch(loadCustomerServices());
     this.store.dispatch(loadCustomerPackages());
+    this.store.dispatch(loadCustomerCurrencies());
     // `getServiced` returns only countries the company operates in. The old
     // `getOverview` call alphabetically returned the full catalog, so the
     // auto-select-first-country fallback silently picked Argentina for

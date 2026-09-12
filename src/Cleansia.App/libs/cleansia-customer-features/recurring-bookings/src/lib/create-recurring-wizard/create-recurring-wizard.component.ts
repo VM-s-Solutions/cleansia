@@ -20,6 +20,7 @@ import {
   CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { MapboxAddressSuggestion } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -206,19 +207,14 @@ export class CreateRecurringWizardComponent implements OnInit {
   // ─── The price ─────────────────────────────────────────────────────
   formPrice(): string | null {
     const quoted = this.facade.formPrice();
-    return quoted ? this.money(quoted.amount, quoted.currency) : null;
+    return quoted ? formatMoney(quoted.amount, quoted.currency, this.locale()) : null;
   }
 
+  /** A catalogue price, which is in the platform default currency. */
   formatMoney(amount: number | undefined): string {
-    return amount === undefined ? '' : this.money(amount, 'CZK');
-  }
-
-  private money(amount: number, currency: string): string {
-    return new Intl.NumberFormat(this.locale(), {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-    }).format(amount);
+    return amount === undefined
+      ? ''
+      : formatMoney(amount, this.facade.defaultCurrencyCode(), this.locale());
   }
 
   private locale(): string {

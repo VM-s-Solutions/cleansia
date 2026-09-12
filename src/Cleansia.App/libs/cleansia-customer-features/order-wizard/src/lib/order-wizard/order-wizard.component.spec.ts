@@ -74,6 +74,7 @@ class FakeOrderWizardFacade {
   totalPrice = signal(0);
   preSurchargeSubtotal = signal(0);
   displayedTotalPrice = signal(0);
+  currencyCode = signal<string | null>('CZK');
   // Credit lines in the summary panel. Zero by default: the overwhelming majority of these
   // cases are about a customer who has never been credited, and that is what zero renders as.
   creditBalance = signal(0);
@@ -569,6 +570,22 @@ describe('OrderWizardComponent (a11y)', () => {
       fixture.detectChanges();
 
       expect(fixture.componentInstance.hasSaving()).toBe(false);
+    });
+
+    // Every figure used to go through two module-level CZK formatters, whatever the quote said it
+    // was priced in. The label is the quote's own currency now, and a EUR quote must never print Kč.
+    it("prints every figure in the quote's own currency, not in crowns", async () => {
+      await setup();
+      facade.currencyCode.set('EUR');
+      facade.totalPrice.set(2000);
+      facade.displayedTotalPrice.set(1700);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.priceBeforeDiscount()).toContain('€');
+      expect(fixture.componentInstance.priceBeforeDiscount()).not.toContain('Kč');
+      expect(fixture.componentInstance.savingAmount()).toContain('€');
+      expect(fixture.componentInstance.formatPrice(12.5)).toMatch(/12[.,]50/);
+      expect(el.querySelector('.cl-wiz__total')?.textContent).toContain('€');
     });
 
     /**

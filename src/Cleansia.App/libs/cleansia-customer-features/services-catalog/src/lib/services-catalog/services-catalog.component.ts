@@ -4,14 +4,17 @@ import { Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaScrollTopComponent } from '@cleansia/components';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import {
+  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
   selectCustomerCatalogLoading,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -44,6 +47,10 @@ export class ServicesCatalogComponent implements OnInit {
   services = toSignal(this.store.select(selectCustomerServices), { initialValue: [] });
   packages = toSignal(this.store.select(selectCustomerPackages), { initialValue: [] });
   loading = toSignal(this.store.select(selectCustomerCatalogLoading), { initialValue: false });
+  /** The catalogue is priced in the platform default currency; its DTOs carry no code of their own. */
+  private readonly currencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
+  });
 
   /**
    * Sorting is offered over the services and NOT over the packages, which is
@@ -125,6 +132,7 @@ export class ServicesCatalogComponent implements OnInit {
   ngOnInit(): void {
     this.store.dispatch(loadCustomerServices());
     this.store.dispatch(loadCustomerPackages());
+    this.store.dispatch(loadCustomerCurrencies());
   }
 
   serviceMascot(index: number): string {
@@ -146,11 +154,7 @@ export class ServicesCatalogComponent implements OnInit {
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('cs-CZ', {
-      style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, this.currencyCode(), 'cs-CZ');
   }
 
   /**

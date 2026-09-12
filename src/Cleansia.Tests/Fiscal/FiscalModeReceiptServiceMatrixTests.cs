@@ -62,8 +62,7 @@ public class FiscalModeReceiptServiceMatrixTests
             street: "Hauptstr. 1",
             city: "Berlin",
             zipCode: "10115",
-            countryId: DeId,
-            vatNumber: "DE123456789");
+            countryId: DeId);
         _companyInfoRepository
             .Setup(r => r.GetActiveByCountryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
@@ -116,7 +115,6 @@ public class FiscalModeReceiptServiceMatrixTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
@@ -136,7 +134,6 @@ public class FiscalModeReceiptServiceMatrixTests
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,

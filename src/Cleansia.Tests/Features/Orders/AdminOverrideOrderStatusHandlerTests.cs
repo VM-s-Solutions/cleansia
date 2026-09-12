@@ -39,7 +39,7 @@ public class AdminOverrideOrderStatusHandlerTests
 
     private Order ArrangeOrder(params OrderStatus[] history)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -47,7 +47,6 @@ public class AdminOverrideOrderStatusHandlerTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(5),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

@@ -49,7 +49,7 @@ public class CancellationFeePreviewAgreementTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
@@ -87,7 +87,7 @@ public class CancellationFeePreviewAgreementTests
         decimal totalPrice = 1000m,
         int bookedMinutesAgo = 120)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -95,7 +95,6 @@ public class CancellationFeePreviewAgreementTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
@@ -145,7 +144,7 @@ public class CancellationFeePreviewAgreementTests
             .Invoke(membership, [plan]);
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 

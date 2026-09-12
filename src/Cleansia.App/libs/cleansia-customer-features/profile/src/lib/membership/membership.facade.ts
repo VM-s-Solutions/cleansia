@@ -1,4 +1,9 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  loadCustomerCurrencies,
+  selectCustomerDefaultCurrencyCode,
+} from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
@@ -9,6 +14,7 @@ import {
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
+import { Store } from '@ngrx/store';
 import { catchError, of, takeUntil } from 'rxjs';
 
 /**
@@ -33,6 +39,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
   private readonly client = this.customerClient.membershipClient;
   private readonly snackbar = inject(SnackbarService);
+  private readonly store = inject(Store);
 
   // Management state
   loading = signal(true);
@@ -40,6 +47,13 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   switching = signal(false);
   membership = signal<GetMyMembershipResponse | null>(null);
   plans = signal<GetMembershipPlansResponse[]>([]);
+  /**
+   * Neither the membership nor a plan arrives with a currency — `monthlyPriceCzk` is the wire
+   * name, not a label — so every amount here is labelled with the platform default.
+   */
+  readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
+  });
 
   // Subscribe state
   submitting = signal(false);
@@ -89,6 +103,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
    * bearer if present. Failing silently is fine; the switch CTA just won't show.
    */
   loadPlans(onLoaded?: (plans: GetMembershipPlansResponse[]) => void): void {
+    this.store.dispatch(loadCustomerCurrencies());
     this.client
       .getPlans()
       .pipe(

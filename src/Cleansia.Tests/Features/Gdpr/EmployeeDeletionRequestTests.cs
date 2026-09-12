@@ -276,7 +276,6 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
                 customerAddress: Address.Create("Seat St 1", "Praha", "11000", "cz"),
                 rooms: 2,
                 bathrooms: 1,
-                extras: new Dictionary<string, bool>(),
                 cleaningDateTime: DateTime.UtcNow.AddHours(6),
                 paymentType: PaymentType.Cash,
                 totalPrice: 1500m,
@@ -302,6 +301,7 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
                 orderId: "order-pay-del-1",
                 employeeId: EmployeeId,
                 payPeriodId: period.Id,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m);
             pay.Id = "order-employee-pay-del-1";

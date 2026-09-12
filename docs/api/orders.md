@@ -143,6 +143,11 @@ POST /api/Order/CreateOrder
 }
 ```
 
+`currencyId` — optional. Send back the `currencyId` the quote returned: the server re-prices in that
+currency and compares against `totalPrice`, so a different currency on create fails as
+`order.total_price.not_match`, and one the platform cannot quote in fails as `currency.invalid` before
+any pricing. Null means the platform default currency. The currency is never derived from the address.
+
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
 | `Cash` | `1` | Receipt queued. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
@@ -179,10 +184,15 @@ failure is reported:
 
 | Rule | Error key |
 |---|---|
+| A named `currencyId` is offerable — switched on AND priced (`ICurrencyRepository.IsOfferableAsync`); omitted/null = platform default | `currency.invalid` |
 | At least one service or package | `order.empty` |
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |
 | A membership express waiver the client assumed is still available | `membership.express_waiver.no_longer_available` |
 | Server-recalculated price equals the submitted `totalPrice` | `order.total_price.not_match` |
+
+The currency rule heads the chain, and sits in this chain rather than in a rule of its own, because
+the calculator throws on a currency it cannot price in: a separate rule would not stop the two price
+rules from running it, and a 400 would become a 500.
 
 The waiver rule sits **before** the price rule deliberately: a Plus member who used up their last
 free express upgrade between quoting and submitting would otherwise get
@@ -238,6 +248,12 @@ POST /api/Order/Quote
 `cleaningDate` is optional — omit it on the wizard's first step, before a slot is chosen, and the
 express-surcharge check is skipped.
 
+`currencyId` — optional; the currency to quote in. It must be one the platform can quote in — switched
+on and carrying at least one catalogue price row — or the quote is refused as `currency.invalid`; null
+means the platform default. The response's `currencyId` / `currencyCode` say which one was used.
+Prices are authored per currency and nothing converts, so a selection with no price row in the named
+currency is not offerable in it.
+
 **Response:**
 
 ```json
@@ -247,6 +263,7 @@ express-surcharge check is skipped.
   "originalSubtotal": 1500.00,
   "appliedDiscountSource": "Membership",
   "tierDiscountAmount": null,
+  "tierDiscountMinOrderAmount": null,
   "membershipDiscountAmount": 150.00,
   "servicesSubtotal": 1200.00,
   "packagesSubtotal": 0.00,
@@ -256,8 +273,7 @@ express-surcharge check is skipped.
   "expressSurchargeWaivedByMembership": true,
   "expressUpgradesRemaining": 1,
   "currencyId": "currency-id",
-  "currencyCode": "CZK",
-  "exchangeRate": 1.0
+  "currencyCode": "CZK"
 }
 ```
 
@@ -268,6 +284,8 @@ express-surcharge check is skipped.
 | `appliedDiscountSource` | `None` (0), `Tier` (1), `Membership` (2), `Promo` (3), `Combined` (4). Plus and tier are additive, so `Combined` is reachable; `Promo` is not produced by this endpoint |
 | `expressSurchargeWaivedByMembership` | Disambiguates `expressSurchargeApplied: false`. Without it, "waived" and "not an express slot at all" look identical |
 | `expressUpgradesRemaining` | Waivers left **this calendar month, before this booking** — server-computed. Null when the caller has no membership. A client that counts its own orders disagrees with the server the first time a cancellation releases a slot |
+| `tierDiscountMinOrderAmount` | The tier-discount floor the quote judged the order against, so a client can state the same rule. Null when no floor applied — the floor is a platform-default-currency number and is enforced only on an order in that currency |
+| `currencyId` / `currencyCode` | The currency the quote was priced in — the one named on the request, or the platform default. There is no exchange rate on the wire; nothing converts |
 
 Promo codes are **not** priced here — they are entered at checkout and applied at create time.
 

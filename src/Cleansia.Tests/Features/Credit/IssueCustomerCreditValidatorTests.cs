@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Credit.Admin;
 using Cleansia.Core.Domain.Credit;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using FluentValidation.TestHelper;
 using Moq;
@@ -14,22 +15,69 @@ namespace Cleansia.Tests.Features.Credit;
 public class IssueCustomerCreditValidatorTests
 {
     private const string UserId = "01USERCREDIT00000000000001";
+    private const string CurrencyId = "01CURRENCYCZK0000000000001";
 
-    private static IssueCustomerCredit.Validator ValidatorFor(bool userExists = true)
+    private static IssueCustomerCredit.Validator ValidatorFor(
+        bool userExists = true, bool currencyExists = true, bool currencyActive = true)
     {
         var users = new Mock<IUserRepository>();
         users
             .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(userExists);
-        return new IssueCustomerCredit.Validator(users.Object);
+
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.Id = CurrencyId;
+        currency.IsActive = currencyActive;
+        var currencies = new Mock<ICurrencyRepository>();
+        currencies
+            .Setup(r => r.ExistsAsync(CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currencyExists);
+        currencies
+            .Setup(r => r.GetByIdAsync(CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currencyExists ? currency : null);
+
+        return new IssueCustomerCredit.Validator(users.Object, currencies.Object);
     }
 
     private static IssueCustomerCredit.Command Valid(
         decimal amount = 500m,
         CreditTransactionReason reason = CreditTransactionReason.Goodwill,
         string note = "Second clean in a row went wrong.",
-        string requestId = "req-1") =>
-        new(UserId, amount, reason, note, requestId);
+        string requestId = "req-1",
+        string currencyId = CurrencyId) =>
+        new(UserId, amount, currencyId, reason, note, requestId);
+
+    // ---------------------------------------------------------------- the unit of the amount
+
+    /// <summary>
+    /// The admin names the currency, and the platform checks it is one credit can be spent in. It used
+    /// to be resolved to the platform default inside the handler while the dialog labelled the amount
+    /// with the customer's largest balance's currency — so "50 EUR" could land as 50 CZK.
+    /// </summary>
+    [Fact]
+    public async Task AGrantWithoutACurrencyIsRefused()
+    {
+        var result = await ValidatorFor().TestValidateAsync(Valid(currencyId: ""));
+        result.ShouldHaveValidationErrorFor(x => x.CurrencyId)
+            .WithErrorMessage(BusinessErrorMessage.Required);
+    }
+
+    [Fact]
+    public async Task AGrantInAnUnknownCurrencyIsRefused()
+    {
+        var result = await ValidatorFor(currencyExists: false).TestValidateAsync(Valid());
+        result.ShouldHaveValidationErrorFor(x => x.CurrencyId)
+            .WithErrorMessage(BusinessErrorMessage.CurrencyNotFound);
+    }
+
+    /// <summary>Money the customer could never spend: an order can only be placed in an operated currency.</summary>
+    [Fact]
+    public async Task AGrantInASwitchedOffCurrencyIsRefused()
+    {
+        var result = await ValidatorFor(currencyActive: false).TestValidateAsync(Valid());
+        result.ShouldHaveValidationErrorFor(x => x.CurrencyId)
+            .WithErrorMessage(BusinessErrorMessage.InvalidCurrency);
+    }
 
     [Fact]
     public async Task AWellFormedGrantPasses()

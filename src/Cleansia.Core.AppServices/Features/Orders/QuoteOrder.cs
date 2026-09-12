@@ -49,7 +49,6 @@ public class QuoteOrder
         decimal ExtrasSubtotal,
         bool ExpressSurchargeApplied,
         decimal ExpressSurchargeAmount,
-        decimal ExchangeRate,
         /// <summary>
         /// The slot IS express and the surcharge was nevertheless not charged, because the member has a
         /// free express upgrade left. Without this field <c>ExpressSurchargeApplied: false</c> is
@@ -148,10 +147,14 @@ public class QuoteOrder
                 .MustAsync(packageRepository.ExistWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
+            // The caller may name the currency it wants to be quoted in, and it must be one the platform
+            // can quote in -- switched on AND priced (ICurrencyRepository.IsOfferableAsync). Null is the
+            // platform default, resolved by the calculator. "Exists" was the pre-Wave-A rule and was the
+            // hole: every seeded currency existed. Offerable is the property that was missing.
             When(x => !string.IsNullOrEmpty(x.CurrencyId), () =>
             {
                 RuleFor(x => x.CurrencyId!)
-                    .MustAsync(currencyRepository.ExistsAsync)
+                    .MustAsync(currencyRepository.IsOfferableAsync)
                     .WithMessage(BusinessErrorMessage.InvalidCurrency);
             });
 
@@ -185,7 +188,6 @@ public class QuoteOrder
         IOrderPricingCalculator pricingCalculator,
         IUserSessionProvider userSessionProvider,
         ILoyaltyService loyaltyService,
-        ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
         IUserMembershipRepository userMembershipRepository,
         ICreditAccountRepository creditAccountRepository)
         : ICommandHandler<Command, Response>
@@ -209,7 +211,10 @@ public class QuoteOrder
                 return 0m;
             }
 
-            var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
+            // The quote must show the balance the CHECKOUT will actually spend, so it asks the same
+            // question CreateOrder does, keyed the same way.
+            var spendable = await creditAccountRepository.GetSpendableAsync(
+                userId, currencyId, cancellationToken);
             return spendable != null && spendable.CurrencyId == currencyId ? spendable.Balance : 0m;
         }
 
@@ -222,6 +227,9 @@ public class QuoteOrder
                 command.SelectedExtraSlugs ?? Array.Empty<string>(),
                 command.Rooms,
                 command.Bathrooms,
+                // The caller's currency, validated offerable above; null is the platform default. Safe
+                // to honour now because nothing converts -- a named currency selects which price ROWS
+                // are read, it no longer scales the CZK catalogue by a stored rate (the Wave A hole).
                 command.CurrencyId,
                 command.CleaningDate,
                 userSessionProvider.GetUserId(),
@@ -249,17 +257,14 @@ public class QuoteOrder
             if (!string.IsNullOrEmpty(userId))
             {
                 var tierResult = await loyaltyService.ResolveTierDiscountForOrderAsync(
-                    userId, rawSubtotal, cancellationToken);
+                    userId, rawSubtotal, result.CurrencyId, cancellationToken);
                 tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
-                if (tierResult.TierAtPurchase.HasValue)
-                {
-                    var tierConfig = await loyaltyTierConfigRepository.GetByTierAsync(
-                        tierResult.TierAtPurchase.Value, cancellationToken);
-                    tierMinOrderAmount = tierConfig?.MinimumOrderAmountForDiscount;
-                }
+                // The floor the ORDER will judge, in the order's currency — null when none applies, so
+                // the wizard never states a 1000 CZK floor over a EUR price.
+                tierMinOrderAmount = tierResult.MinimumOrderAmount;
 
                 var activeMembership = await userMembershipRepository
-                    .GetActiveForUserAsync(userId, cancellationToken);
+                    .GetEntitledForUserAsync(userId, cancellationToken);
                 if (activeMembership != null)
                 {
                     membershipDiscount = rawSubtotal
@@ -314,7 +319,6 @@ public class QuoteOrder
                 ExtrasSubtotal: result.ExtrasSubtotal,
                 ExpressSurchargeApplied: result.ExpressSurchargeApplied,
                 ExpressSurchargeAmount: result.ExpressSurchargeAmount,
-                ExchangeRate: result.ExchangeRate,
                 EstimatedDurationMinutes: estimatedMinutes,
                 RequiredEmployees: requiredEmployees,
                 Lines: (result.Lines ?? [])

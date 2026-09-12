@@ -15,6 +15,7 @@ import {
   LookupOrderResponse,
 } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of } from 'rxjs';
@@ -172,11 +173,7 @@ export class CheckoutSuccessComponent implements OnInit {
   });
 
   formatPrice(order: LookupOrderResponse): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: order.currency?.code || 'CZK',
-      minimumFractionDigits: 0,
-    }).format(order.totalPrice ?? 0);
+    return formatMoney(order.totalPrice ?? 0, order.currency?.code, this.getLocale());
   }
 
 }

@@ -65,9 +65,14 @@ public class ExpressWaiverResolverTests
             .GetSetMethod(nonPublic: true)!
             .Invoke(membership, [plan]);
 
+        // The ENTITLEMENT read excludes a trialing enrolment — that conjunct lives in the repository
+        // query now (T-0690), not in the resolver. Mirroring it here is what keeps this a test of the
+        // resolver rather than a test of a mock that answers more generously than the database would.
+        var entitled = membership.IsInTrialAt(NowUtc) ? null : membership;
+
         _memberships
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(membership);
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(entitled);
     }
 
     [Fact]
@@ -146,7 +151,7 @@ public class ExpressWaiverResolverTests
         Assert.False(waiver.Waived);
         Assert.Equal(0, waiver.Quota);
         _memberships.Verify(
-            r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _usage.Verify(
             u => u.CountLiveInPeriodAsync(
@@ -181,12 +186,19 @@ public class ExpressWaiverResolverTests
     }
 
     /// <summary>
-    /// Owner ruling 2026-08-03: metered waivers begin at first payment. Without this a customer who
-    /// subscribes on the 28th draws four waivers for 0 Kč across two calendar keys and cancels before the
-    /// trial converts.
+    /// Owner ruling 2026-08-03 withheld the METERED waiver during a trial; owner ruling 2026-09-08
+    /// (T-0690) withholds EVERY Plus benefit until the customer pays, and removes the trial outright.
+    /// So a trialing enrolment is no longer entitled at all.
+    ///
+    /// <para><b>The assertion changed with the ruling.</b> This used to expect <c>Quota = 2</c> — the
+    /// resolver reported the plan's number so a client could say "your waivers start on DATE" rather
+    /// than render a bare zero. That three-way state has no producer now: the entitlement read returns
+    /// nothing for a trialing member, so the answer is the same one a non-member gets. The case is kept
+    /// rather than deleted because <c>TrialEndsAtUtc</c> is never cleared once set and historical rows
+    /// may still carry one.</para>
     /// </summary>
     [Fact]
-    public async Task TrialingMember_GetsNoWaiver()
+    public async Task TrialingMember_GetsNothingAtAll()
     {
         ArrangeMembership(trialEndsAtUtc: NowUtc.AddDays(5));
 
@@ -195,9 +207,7 @@ public class ExpressWaiverResolverTests
 
         Assert.False(waiver.Waived);
         Assert.Equal(0, waiver.RemainingBeforeThisBooking);
-        // The quota is still reported so the client can say when waivers start rather than rendering a
-        // bare zero that reads as "you used them up".
-        Assert.Equal(2, waiver.Quota);
+        Assert.Equal(0, waiver.Quota);
         _usage.Verify(
             u => u.CountLiveInPeriodAsync(
                 It.IsAny<string>(), It.IsAny<MembershipBenefitKind>(), It.IsAny<string>(),
@@ -242,7 +252,7 @@ public class ExpressWaiverResolverTests
     public async Task NoMembership_WaivesNothing()
     {
         _memberships
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var waiver = await CreateResolver()

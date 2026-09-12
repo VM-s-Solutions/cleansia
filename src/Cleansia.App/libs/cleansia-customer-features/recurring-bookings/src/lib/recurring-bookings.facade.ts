@@ -14,9 +14,11 @@ import {
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import {
+  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
   SavedAddressStore,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
@@ -33,6 +35,12 @@ import {
   missingFields,
   nextOccurrenceUtc,
 } from './recurring-bookings.models';
+
+/** A server-quoted figure with the currency the server priced it in. */
+export interface QuotedPrice {
+  amount: number;
+  currency: string | null;
+}
 
 /**
  * Single facade for both the recurring-bookings list view and the create
@@ -85,9 +93,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
   // ─── Prices ────────────────────────────────────────────────────────
   /** templateId → quoted price per clean. Absent until the quote lands. */
-  readonly templatePrices = signal<Record<string, { amount: number; currency: string }>>({});
+  readonly templatePrices = signal<Record<string, QuotedPrice>>({});
   /** The price of whatever the form currently describes. */
-  readonly formPrice = signal<{ amount: number; currency: string } | null>(null);
+  readonly formPrice = signal<QuotedPrice | null>(null);
   readonly quoting = signal(false);
 
   /** Drives the address field's own spinner — see `ensureAddresses`. */
@@ -106,6 +114,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   });
   readonly packages = toSignal(this.store.select(selectCustomerPackages), {
     initialValue: [] as PackageListItem[],
+  });
+  /** What the catalogue prices the form lists are in; a quoted price carries its own. */
+  readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
   });
   readonly savedAddresses = this.savedAddressStore.addresses;
 
@@ -139,6 +151,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     // the customer-stores reducers, populating the signals above.
     this.store.dispatch(loadCustomerServices());
     this.store.dispatch(loadCustomerPackages());
+    this.store.dispatch(loadCustomerCurrencies());
 
     // First, because it decides which page the customer is even shown. A
     // failure here reads as "not a member": the paywall is the safe wrong
@@ -278,7 +291,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     packageIds: string[],
     rooms: number,
     bathrooms: number,
-  ): Promise<{ amount: number; currency: string } | null> {
+  ): Promise<QuotedPrice | null> {
     if (serviceIds.length === 0 && packageIds.length === 0) return null;
     const command = new QuoteOrderCommand();
     command.selectedServiceIds = serviceIds;
@@ -297,7 +310,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       if (!quoted) return null;
       return {
         amount: quoted.finalPriceAfterDiscount ?? quoted.totalPrice,
-        currency: quoted.currencyCode || 'CZK',
+        currency: quoted.currencyCode || this.defaultCurrencyCode(),
       };
     } catch {
       return null;

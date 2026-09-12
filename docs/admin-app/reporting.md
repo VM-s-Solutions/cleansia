@@ -35,14 +35,16 @@ setActiveTab(tab: ReportType): void {
 
 ## Date Range Selection
 
-All reports are filtered by a date range:
+All reports are filtered by a date range and a currency (see [Currency](#currency)):
 
 - **Default range**: Last 30 days (1 month ago to today)
-- Admins can adjust the range using a date picker
-- Changing the date range clears cached report data and reloads the active tab
+- **Default currency**: the platform default (`currencyId` unset)
+- Admins adjust both in the filter drawer
+- Changing the filter clears cached report data and reloads the active tab
 
 ```typescript
-setDateRange(startDate: Date, endDate: Date): void {
+setDateRange(startDate: Date, endDate: Date, currencyId?: string): void {
+  this.selectedCurrencyId.set(currencyId);
   this.dateRange.set({ startDate, endDate });
   this.revenueReport.set(null);
   this.payrollReport.set(null);
@@ -50,7 +52,7 @@ setDateRange(startDate: Date, endDate: Date): void {
 }
 ```
 
-The "Reset" button returns to the default date range.
+The "Reset" button returns to the default date range and the default currency.
 
 ## Revenue Report
 
@@ -99,20 +101,47 @@ The payroll report helps administrators:
 - Review bonus and deduction distribution
 - Plan payroll budgets
 
-## Currency Formatting
+## Currency
 
-All monetary values are formatted in CZK:
+A report is **one currency**. There is no "all currencies" report, because a sum across two currencies
+is not a number. The admin picks the currency in the filter drawer next to the date range
+(`currencyId`; leaving it unset means the platform default currency), the server filters the rows in
+SQL to that currency, and a named currency that does not exist is refused as `currency.not_found`.
+Both `RevenueReportDto` and `PayrollReportDto` carry `currencyCode` — the currency every amount on
+that report is in.
+
+The facade formats every amount with the code its own report names, never with a currency it assumed:
 
 ```typescript
-formatCurrency(value: number): string {
-  return new Intl.NumberFormat('cs-CZ', {
+/** The revenue report's amounts, in the currency THAT report names. */
+formatRevenueAmount(value: number | undefined): string {
+  return this.formatAmount(value, this.revenueReport()?.currencyCode);
+}
+
+/** The payroll report's amounts, in the currency THAT report names. */
+formatPayrollAmount(value: number | undefined): string {
+  return this.formatAmount(value, this.payrollReport()?.currencyCode);
+}
+
+private formatAmount(value: number | undefined, currencyCode: string | undefined): string {
+  if (value === undefined || value === null) return '';
+  if (!currencyCode) return String(value);
+  return new Intl.NumberFormat(this.translate.currentLang || 'en-GB', {
     style: 'currency',
-    currency: 'CZK',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    currency: currencyCode,
   }).format(value);
 }
 ```
+
+There is no fraction-digit override: the per-tender column reconciles against a Stripe statement to
+the cent, and rounding 45.10 € to 45 € is how lines stop summing.
+
+The partner side answers the same question the other way round. The partner dashboard earnings,
+earnings chart, personal bests, order-distribution money columns, available-jobs headline and My Pay
+are all scoped to the currency `ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync` returns
+for the cleaner — their work country's default currency when that names a real currency, otherwise
+the platform default — and that currency's code is what those screens print. Counts stay over all
+orders; only the money is scoped.
 
 ## Percentage Formatting
 
@@ -185,5 +214,7 @@ The multiplier is applied to the base pay rate for each service to determine the
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `adminReportClient.revenue(startDate, endDate)` | `GET /api/admin/reports/revenue` | Fetch revenue report |
-| `adminReportClient.payroll(startDate, endDate)` | `GET /api/admin/reports/payroll` | Fetch payroll report |
+| `adminReportClient.revenue(startDate, endDate, currencyId?)` | `GET /api/AdminReport/revenue` | Fetch revenue report in one currency |
+| `adminReportClient.payroll(startDate, endDate, currencyId?)` | `GET /api/AdminReport/payroll` | Fetch payroll report in one currency |
+
+`currencyId` is optional on both; omitted means the platform default currency.

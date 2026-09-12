@@ -30,7 +30,6 @@ import {
   createAddressDto,
   filterTimeOptionsForToday,
   composeSlotMoment,
-  formatPrice,
   generateTimeOptions,
   PROMO_ERROR_FALLBACK,
   PROMO_ERROR_KEYS,
@@ -45,6 +44,7 @@ import {
   LAST_WINDOW_HOUR,
   STANDARD_LEAD_TIME_HOURS,
 } from '@cleansia/models';
+import { formatMoney } from '@cleansia/utils';
 
 /** Midnight of a date, so two dates compare as days and not as instants. */
 function startOfDay(date: Date): Date {
@@ -472,7 +472,7 @@ export class OrderWizardComponent implements OnInit {
   }
 
   formatPrice(price: number): string {
-    return formatPrice(price);
+    return formatMoney(price, this.facade.currencyCode(), this.localeTag());
   }
 
   // Same icon rotation as the services-catalog page so both card sets read
@@ -932,10 +932,10 @@ export class OrderWizardComponent implements OnInit {
     () => this.facade.totalPrice() - this.facade.displayedTotalPrice() > 0.005,
   );
 
-  readonly priceBeforeDiscount = computed(() => formatPrice(this.facade.totalPrice()));
+  readonly priceBeforeDiscount = computed(() => this.formatPrice(this.facade.totalPrice()));
 
   readonly savingAmount = computed(() =>
-    formatPrice(this.facade.totalPrice() - this.facade.displayedTotalPrice()),
+    this.formatPrice(this.facade.totalPrice() - this.facade.displayedTotalPrice()),
   );
 
   /**
@@ -955,7 +955,7 @@ export class OrderWizardComponent implements OnInit {
 
   /** The money a winning code takes off, ready to print. */
   readonly promoSavings = computed(() =>
-    formatPrice(this.facade.effectivePromoDiscount()),
+    this.formatPrice(this.facade.effectivePromoDiscount()),
   );
 
   /** Drop the code and go back to whatever the order was worth without it. */
@@ -1128,9 +1128,12 @@ export class OrderWizardComponent implements OnInit {
     const minutes = this.facade.quote()?.estimatedDurationMinutes ?? 0;
     if (!minutes) return null;
     const hours = Math.round((minutes / 60) * 2) / 2;
-    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
-    return new Intl.NumberFormat(tag, { maximumFractionDigits: 1 }).format(hours);
+    return new Intl.NumberFormat(this.localeTag(), { maximumFractionDigits: 1 }).format(hours);
   });
+
+  private localeTag(): string {
+    return this.lang() || this.translate.getDefaultLang() || 'cs';
+  }
 
   setRooms(rooms: number): void {
     this.facade.updateFormData({ rooms });

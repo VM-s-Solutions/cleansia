@@ -45,10 +45,42 @@ final class CatalogWireContractTests: XCTestCase {
         )
     }
 
+    private func currencyPayload(code: String = "EUR", isDefault: Bool = true) -> CurrencyListItem {
+        CurrencyListItem(id: "cur-\(code)", code: code, symbol: code, name: code, isDefault: isDefault)
+    }
+
     func testFullyPopulatedCatalogRowsMap() throws {
         XCTAssertEqual(try CatalogService(servicePayload()).basePrice, 500)
         XCTAssertEqual(try CatalogPackage(packagePayload()).price, 900)
         XCTAssertEqual(try CatalogExtra(extraPayload()).price, 250)
+        XCTAssertEqual(try CatalogCurrency(currencyPayload()).code, "EUR")
+    }
+
+    func testTheCatalogueIsLabelledWithTheOverviewsDefaultRow() throws {
+        let rows = [currencyPayload(code: "CZK", isDefault: false), currencyPayload(code: "EUR", isDefault: true)]
+
+        XCTAssertEqual(try CatalogCurrency.defaultRow(in: rows).code, "EUR")
+    }
+
+    /// A price list whose currency is unknown is a price list the customer was never shown: the old
+    /// `"CZK"` literal labelled it by construction, which is the defect this closes.
+    func testAnOverviewWithNoDefaultRefusesRatherThanLabellingTheCatalogueByGuess() {
+        assertRefused("CurrencyListItem[isDefault]") {
+            try CatalogCurrency.defaultRow(in: [currencyPayload(code: "CZK", isDefault: false)])
+        }
+        assertRefused("CurrencyListItem[isDefault]") { try CatalogCurrency.defaultRow(in: []) }
+    }
+
+    func testACurrencyRowWithNoCodeRefusesTheCatalogue() {
+        for (field, break_) in [
+            ("code", { (dto: inout CurrencyListItem) in dto.code = " " }),
+            ("id", { dto in dto.id = nil }),
+            ("isDefault", { dto in dto.isDefault = nil })
+        ] {
+            var payload = currencyPayload()
+            break_(&payload)
+            assertRefused(field) { try CatalogCurrency.defaultRow(in: [payload]) }
+        }
     }
 
     func testAServiceWithNoPriceRefusesRatherThanQuotingFree() {

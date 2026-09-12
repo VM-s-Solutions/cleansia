@@ -17,8 +17,27 @@ export const selectCustomerPackages = createSelector(
   (state: CustomerCatalogState) => state.packages
 );
 
+export const selectCustomerCurrencies = createSelector(
+  selectCustomerCatalogState,
+  (state: CustomerCatalogState) => state.currencies
+);
+
+/**
+ * The code every catalogue price is in. `ServiceListItem`, `PackageListItem` and `ExtraListItem`
+ * carry a price and no currency because the catalogue is priced in the platform default, and the
+ * default is a flag on the currency list rather than a position in it. Null until the list arrives.
+ */
+export const selectCustomerDefaultCurrencyCode = createSelector(
+  selectCustomerCatalogState,
+  (state: CustomerCatalogState) =>
+    state.currencies.find((currency) => currency.isDefault)?.code ?? null
+);
+
 export const selectCustomerCatalogLoading = createSelector(
   selectCustomerCatalogState,
   (state: CustomerCatalogState) =>
-    state.loading['services'] || state.loading['packages'] || false
+    state.loading['services'] ||
+    state.loading['packages'] ||
+    state.loading['currencies'] ||
+    false
 );

@@ -64,7 +64,7 @@ public interface IOrderRepository : IRepository<Order, string>
     /// All orders within a date range. Used by the admin revenue report.
     /// </summary>
     Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
-        DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
+        DateTime startDate, DateTime endDate, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Counts the number of orders assigned to an employee in the current week (Monday to Sunday).

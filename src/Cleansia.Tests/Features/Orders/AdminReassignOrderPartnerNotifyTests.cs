@@ -207,7 +207,6 @@ public class AdminReassignOrderPartnerNotifyTests
             customerAddress: Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(5),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

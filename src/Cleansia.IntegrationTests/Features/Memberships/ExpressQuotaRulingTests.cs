@@ -321,7 +321,8 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -331,9 +332,15 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
         context.Add(category);
 
         var service = Service.Create(
-            CategoryId, "Express Quota Service", "Service under test", ServiceBasePrice, 0m, 60);
+            CategoryId, "Express Quota Service", "Service under test", 60);
         service.Id = ServiceId;
         context.Add(service);
+
+        // ...and its PRICE in the currency the order is placed in. A catalogue entry has no price of
+        // its own any more, and an entry with no row is not offerable — so this is the same class of
+        // arrangement as the pay config above it, not decoration.
+        context.ServicePrices.Add(
+            ServicePrice.Create(ServiceId, CurrencyId, ServiceBasePrice, 0m));
 
         context.Add(CreatePlan(OneWaiverPlanId, "PLUS_MONTHLY", "price_one", 1));
         context.Add(CreatePlan(TwoWaiverPlanId, "PLUS_YEARLY", "price_two", 2));

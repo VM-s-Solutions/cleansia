@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import {
   FormBuilder,
+  FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
@@ -29,7 +30,11 @@ import {
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
-import { ServiceFormData, ServiceFormFacade } from './service-form.facade';
+import {
+  ServiceFormData,
+  ServiceFormFacade,
+  ServicePriceInput,
+} from './service-form.facade';
 
 @Component({
   selector: 'cleansia-admin-service-form',
@@ -113,11 +118,10 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(100)]],
     description: ['', [Validators.maxLength(500)]],
-    basePrice: [0, [Validators.required, Validators.min(0)]],
-    perRoomPrice: [0, [Validators.required, Validators.min(0)]],
     estimatedTime: [0, [Validators.required, Validators.min(0)]],
     categoryId: ['', [Validators.required]],
     translations: this.fb.nonNullable.group({}),
+    prices: this.fb.nonNullable.group({}),
   });
 
   private serviceLoadEffect = effect(() => {
@@ -134,6 +138,19 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     }
   });
 
+  private currenciesLoadEffect = effect(() => {
+    const currencies = this.facade.currencies();
+    if (currencies.length > 0) {
+      this.buildPriceFormGroups(currencies);
+      // The service may have loaded before the currency list did, in which case populateForm had
+      // no blocks to write into. Replay it now rather than leaving the amounts blank.
+      const service = this.facade.service();
+      if (service && this.isEditMode()) {
+        this.patchPrices(service.prices);
+      }
+    }
+  });
+
   ngOnInit(): void {
     const routeMode = this.route.snapshot.data['mode'] as 'create' | 'edit';
     if (routeMode) {
@@ -141,6 +158,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     }
 
     this.facade.loadLanguages();
+    this.facade.loadCurrencies();
     this.facade.loadCategories();
 
     if (this.isEditMode()) {
@@ -175,21 +193,60 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * One block per currency, built once the list arrives. Blank rather than zero: a service that has
+   * never been priced in a currency is not the same as one priced at nothing, and onSave leans on
+   * exactly that distinction to decide which keys to send.
+   */
+  private buildPriceFormGroups(currencies: { code: string }[]): void {
+    const pricesGroup = this.form.get('prices') as FormGroup;
+
+    for (const currency of currencies) {
+      if (!pricesGroup.contains(currency.code)) {
+        pricesGroup.addControl(
+          currency.code,
+          this.fb.nonNullable.group({
+            // Explicit FormControls, not raw values: `nonNullable` would coerce a raw `null` seed
+            // back to a non-null default and take the blank-versus-zero distinction with it. An
+            // instance passes through the builder untouched.
+            basePrice: new FormControl<number | null>(null, [Validators.min(0)]),
+            perRoomPrice: new FormControl<number | null>(null, [Validators.min(0)]),
+          })
+        );
+      }
+    }
+  }
+
+  private patchPrices(
+    prices?: { [key: string]: { basePrice?: number; perRoomPrice?: number } }
+  ): void {
+    if (!prices) {
+      return;
+    }
+
+    const pricesGroup = this.form.get('prices') as FormGroup;
+    for (const [code, price] of Object.entries(prices)) {
+      pricesGroup.get(code)?.patchValue({
+        basePrice: price.basePrice ?? null,
+        perRoomPrice: price.perRoomPrice ?? null,
+      });
+    }
+  }
+
   private populateForm(service: {
     name?: string;
     description?: string;
-    basePrice?: number;
-    perRoomPrice?: number;
+    prices?: { [key: string]: { basePrice?: number; perRoomPrice?: number } };
     estimatedTime?: number;
     translations?: { [key: string]: { name?: string; description?: string } };
   }): void {
     this.form.patchValue({
       name: service.name ?? '',
       description: service.description ?? '',
-      basePrice: service.basePrice ?? 0,
-      perRoomPrice: service.perRoomPrice ?? 0,
       estimatedTime: service.estimatedTime ?? 0,
     });
+
+    this.patchPrices(service.prices);
 
     if (service.translations) {
       const translationsGroup = this.form.get('translations') as FormGroup;
@@ -229,11 +286,27 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
       };
     }
 
+    // ONLY THE CURRENCIES THE ADMIN ACTUALLY FILLED IN. A blank block means "not priced in this
+    // currency", and the backend upserts a row for every key it receives -- so sending a blank one
+    // as 0 would put the service on sale for nothing rather than leaving it off sale.
+    const pricesValue = formValue.prices as {
+      [key: string]: { basePrice: number | null; perRoomPrice: number | null };
+    };
+    const prices: { [key: string]: ServicePriceInput } = {};
+    for (const [code, price] of Object.entries(pricesValue)) {
+      if (price.basePrice === null && price.perRoomPrice === null) {
+        continue;
+      }
+      prices[code] = {
+        basePrice: price.basePrice ?? 0,
+        perRoomPrice: price.perRoomPrice ?? 0,
+      };
+    }
+
     const data: ServiceFormData = {
       name: formValue.name,
       description: formValue.description,
-      basePrice: formValue.basePrice,
-      perRoomPrice: formValue.perRoomPrice,
+      prices,
       estimatedTime: formValue.estimatedTime,
       categoryId: formValue.categoryId,
       translations,

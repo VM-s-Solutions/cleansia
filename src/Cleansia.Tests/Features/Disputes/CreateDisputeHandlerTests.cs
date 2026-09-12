@@ -1,3 +1,4 @@
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.Domain.Disputes;
@@ -66,7 +67,6 @@ public class CreateDisputeHandlerTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
@@ -134,7 +134,7 @@ public class CreateDisputeHandlerTests
 
     private static Service Svc(string id, string name)
     {
-        var s = Service.Create("cat-1", name, "", 100m, 0m);
+        var s = Service.Create("cat-1", name, "");
         s.Id = id;
         return s;
     }
@@ -143,7 +143,8 @@ public class CreateDisputeHandlerTests
     public async Task ADisputeCanNameTheItemsThatWereNotDoneProperly()
     {
         var order = ArrangeOrder(OwnedOrderId, CallerUserId);
-        order.AddSelectedServices([OrderService.Create(order, Svc("svc-oven", "Oven cleaning"))]);
+        var svcOrder = Svc("svc-oven", "Oven cleaning");
+        order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, svcOrder)]);
 
         Dispute? saved = null;
         _disputeRepository.Setup(r => r.Add(It.IsAny<Dispute>())).Callback<Dispute>(d => saved = d);
@@ -170,7 +171,8 @@ public class CreateDisputeHandlerTests
     public async Task AnItemThatIsNotOnTheOrder_IsRefused()
     {
         var order = ArrangeOrder(OwnedOrderId, CallerUserId);
-        order.AddSelectedServices([OrderService.Create(order, Svc("svc-oven", "Oven cleaning"))]);
+        var svcOrder = Svc("svc-oven", "Oven cleaning");
+        order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, svcOrder)]);
 
         var result = await CreateHandler().Handle(
             ValidCommand(OwnedOrderId) with
@@ -194,7 +196,8 @@ public class CreateDisputeHandlerTests
     public async Task ALineOnSomebodyElsesOrder_IsIndistinguishableFromAMissingOrder()
     {
         var other = ArrangeOrder(OtherOrderId, OtherUserId);
-        other.AddSelectedServices([OrderService.Create(other, Svc("svc-oven", "Oven cleaning"))]);
+        var svcOther = Svc("svc-oven", "Oven cleaning");
+        other.AddSelectedServices([OrderLineMockFactory.ServiceLine(other, svcOther)]);
 
         var withRealLine = await CreateHandler().Handle(
             ValidCommand(OtherOrderId) with

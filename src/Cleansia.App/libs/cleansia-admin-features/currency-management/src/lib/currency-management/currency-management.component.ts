@@ -9,7 +9,7 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { CurrencyListItem } from '@cleansia/admin-services';
+import { AdminCurrencyListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -58,8 +58,8 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
 
   flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
 
-  currencyColumns!: TableColumn<CurrencyListItem>[];
-  currencyActions!: TableAction<CurrencyListItem>[];
+  currencyColumns!: TableColumn<AdminCurrencyListItem>[];
+  currencyActions!: TableAction<AdminCurrencyListItem>[];
 
   // Expose helper function to template
   getCurrencyFlagCode = getCurrencyFlagCode;
@@ -87,6 +87,8 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
         onEdit: this.editCurrency.bind(this),
         onDelete: this.confirmDeleteCurrency.bind(this),
         onSetDefault: this.confirmSetDefaultCurrency.bind(this),
+        onDeactivate: this.confirmDeactivateCurrency.bind(this),
+        onActivate: this.confirmActivateCurrency.bind(this),
       },
       this.translate,
       this.flagTemplate()
@@ -104,11 +106,11 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.navigateToCreateCurrency();
   }
 
-  editCurrency(currency: CurrencyListItem): void {
+  editCurrency(currency: AdminCurrencyListItem): void {
     this.facade.navigateToEditCurrency(currency);
   }
 
-  confirmSetDefaultCurrency(currency: CurrencyListItem): void {
+  confirmSetDefaultCurrency(currency: AdminCurrencyListItem): void {
     this.confirmationService.confirm({
       message: this.translate.instant(
         'pages.currency_management.set_default_confirm',
@@ -122,7 +124,35 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  confirmDeleteCurrency(currency: CurrencyListItem): void {
+  confirmActivateCurrency(currency: AdminCurrencyListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.currency_management.activate_confirm',
+        { code: currency.code }
+      ),
+      header: this.translate.instant('pages.currency_management.activate'),
+      icon: 'pi pi-check-circle',
+      accept: () => {
+        this.facade.activateCurrency(currency);
+      },
+    });
+  }
+
+  confirmDeactivateCurrency(currency: AdminCurrencyListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.currency_management.deactivate_confirm',
+        { code: currency.code }
+      ),
+      header: this.translate.instant('pages.currency_management.deactivate'),
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.facade.deactivateCurrency(currency);
+      },
+    });
+  }
+
+  confirmDeleteCurrency(currency: AdminCurrencyListItem): void {
     if (currency.isDefault) {
       this.confirmationService.confirm({
         message: this.translate.instant('pages.currency_management.cannot_delete_default'),

@@ -38,11 +38,11 @@ public sealed class ExpressWaiverResolver(
         }
 
         var membership = await userMembershipRepository
-            .GetActiveForUserNoTrackingAsync(userId, cancellationToken);
+            .GetEntitledForUserNoTrackingAsync(userId, cancellationToken);
 
-        // PastDue and expired enrolments are excluded by that ONE predicate, shared with every other
-        // benefit. No second membership predicate is invented here (owner ruling: PastDue keeps nothing,
-        // cut on first payment failure).
+        // PastDue, expired AND trialing enrolments are all excluded by that one ENTITLEMENT predicate,
+        // shared with every other benefit. No second membership predicate is invented here (owner rulings:
+        // PastDue keeps nothing, cut on first payment failure; and 2026-09-08, no benefit before payment).
         if (membership == null)
         {
             return noWaiver;
@@ -54,17 +54,13 @@ public sealed class ExpressWaiverResolver(
             return noWaiver;
         }
 
-        // A benefit-specific narrowing layered OVER the shared predicate, and deliberately not folded
-        // into it: the shared predicate answers "is there a live membership", this conjunct answers "has
-        // it been paid for yet". A trialing member IS active and keeps the discount and the cancellation
-        // window — harmonizing IsInTrialAt into ActiveForUserQuery would silently strip both.
-        // The quota still reports the plan's number so the client can say when waivers start, rather
-        // than rendering a bare zero that reads as "you used them up".
-        if (membership.IsInTrialAt(nowUtc))
-        {
-            return noWaiver with { Quota = plan.ExpressUpgradesPerMonth };
-        }
-
+        // The trial narrowing that used to live HERE has moved into the shared entitlement predicate
+        // (T-0690, owner ruling 2026-09-08). It was benefit-specific because a trialing member kept the
+        // discount and the cancellation window and lost only the metered waiver; under the new ruling a
+        // trialing member is entitled to nothing, so the narrowing belongs to every benefit at once and
+        // this branch became unreachable. It is deleted rather than left dead: the three-way client state
+        // it produced (available / exhausted / waivers-start-on-DATE) has no producer any more, because
+        // both admin plan commands now refuse a non-zero trial period.
         var used = await benefitUsageRepository.CountLiveInPeriodAsync(
             userId, MembershipBenefitKind.ExpressUpgrade, periodKey, cancellationToken);
 

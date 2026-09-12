@@ -16361,41 +16361,6 @@
         }
       }
     },
-    "profile_vat_number": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DIČ (nepovinné)"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "VAT number (optional)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Номер НДС (необязательно)"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IČ DPH (nepovinné)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Номер ПДВ (необов'язково)"
-          }
-        }
-      }
-    },
     "profile_zip_code": {
       "extractionState": "stale",
       "localizations": {

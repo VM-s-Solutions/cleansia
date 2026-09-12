@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -16,6 +17,22 @@ internal static class CreateOrderTestData
     public const string ServiceId = "service-1";
     public const string PackageId = "package-1";
     public const string CurrencyId = "czk";
+
+    /// <summary>
+    /// The platform default currency with <see cref="CurrencyId"/> as its id, so a command that names
+    /// no currency, a pay config created with <see cref="CurrencyId"/>, and a price row keyed on this
+    /// instance all agree on ONE id. The pay gate and the price lookup both filter on it now; two
+    /// <c>Currency.Create</c> calls are two different currencies and would find each other's rows
+    /// missing.
+    /// </summary>
+    public static Currency DefaultCurrency()
+    {
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
+        currency.Id = CurrencyId;
+        currency.IsActive = true;
+        currency.SetAsDefault(true);
+        return currency;
+    }
     public const decimal MatchingTotalPrice = 1500m;
 
     public static AddressDto InlineAddress(string? countryId = "cz") =>
@@ -74,6 +91,5 @@ internal static class CreateOrderTestData
             PackagesSubtotal: 500m,
             ExtrasSubtotal: 0m,
             ExpressSurchargeApplied: false,
-            ExpressSurchargeAmount: 0m,
-            ExchangeRate: 1m);
+            ExpressSurchargeAmount: 0m);
 }

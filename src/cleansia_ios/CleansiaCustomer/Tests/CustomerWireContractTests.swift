@@ -27,7 +27,6 @@ final class CustomerWireContractTests: XCTestCase {
             extrasSubtotal: 0,
             expressSurchargeApplied: true,
             expressSurchargeAmount: 400,
-            exchangeRate: 1,
             expressSurchargeWaivedByMembership: false
         )
     }

@@ -232,7 +232,8 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -289,7 +290,6 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

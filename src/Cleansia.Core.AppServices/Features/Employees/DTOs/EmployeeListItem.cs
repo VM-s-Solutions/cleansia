@@ -47,7 +47,6 @@ public record AdminEmployeeDetail(
     string? PassportId,
     EmployeeEntityType EntityType,
     string? RegistrationNumber,
-    string? VatNumber,
     string? LegalEntityName,
     string? EmergencyContactName,
     string? EmergencyContactPhone,

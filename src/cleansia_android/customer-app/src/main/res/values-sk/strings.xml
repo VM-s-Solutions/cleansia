@@ -605,8 +605,8 @@
     <string name="booking_packages_featured">Odporúčané balíčky</string>
     <string name="booking_package_includes">OBSAHUJE</string>
     <string name="booking_package_includes_prefix">Obsahuje:</string>
-    <string name="booking_price_from">od %1$d Kč</string>
-    <string name="booking_price_per_room">+ %1$d Kč/izba</string>
+    <string name="booking_price_from">od %1$s</string>
+    <string name="booking_price_per_room">+ %1$s/izba</string>
     <string name="details_base_price">Základná cena</string>
     <string name="details_per_room">Za izbu</string>
     <string name="details_add_to_booking">Pridať do rezervácie</string>

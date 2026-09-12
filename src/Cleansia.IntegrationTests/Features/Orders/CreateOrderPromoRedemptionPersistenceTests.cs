@@ -147,7 +147,8 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
 
         // Exchange rate 1.0 keeps the quoted total equal to the catalog price, so the validator's
         // price-match check is exact and the promo discount is a clean 20% of 1000.
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -157,7 +158,7 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
         context.Add(category);
 
         var service = Service.Create(
-            CategoryId, "Promo Redeem Service", "Service under test", ServiceBasePrice, 0m, 60);
+            CategoryId, "Promo Redeem Service", "Service under test", 60);
         service.Id = ServiceId;
         context.Add(service);
 
@@ -165,6 +166,12 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
         // refuses a selection that would quote nothing on a cleaner's board.
         context.EmployeePayConfigs.Add(
             EmployeePayConfig.CreateForService(ServiceId, 100m, CurrencyId));
+
+        // ...and its PRICE in the currency the order is placed in. A catalogue entry has no price of
+        // its own any more, and an entry with no row is not offerable — so this is the same class of
+        // arrangement as the pay config above it, not decoration.
+        context.ServicePrices.Add(
+            ServicePrice.Create(ServiceId, CurrencyId, ServiceBasePrice, 0m));
 
         var user = User.CreateWithPassword(
             CustomerEmail,

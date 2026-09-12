@@ -46,7 +46,7 @@ public class CancelUnfilledOrdersTests
 
     public CancelUnfilledOrdersTests()
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = DefaultCurrencyId;
         _currencies.Setup(c => c.GetDefaultAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
@@ -94,7 +94,6 @@ public class CancelUnfilledOrdersTests
             customerAddress: Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: paymentType,
             totalPrice: 1000m,

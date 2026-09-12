@@ -43,8 +43,12 @@ public class QuoteOrderSpanCapTests
             .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The pay gate asks in the order's currency, which with no CurrencyId named is the default.
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.DefaultCurrency());
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(),
@@ -137,14 +141,14 @@ public class QuoteOrderSpanCapTests
     /// <summary>Both validators are handed the same catalog under the ids both commands select.</summary>
     private void SeedCatalog(int serviceMinutes, int packageServiceMinutes)
     {
-        var service = Service.Create(CategoryId, "Span Service", "Under test", 1000m, 0m, serviceMinutes);
+        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes);
         service.Id = ServiceId;
 
         var packagedService = Service.Create(
-            CategoryId, "Packaged Service", "Inside the bundle", 500m, 0m, packageServiceMinutes);
+            CategoryId, "Packaged Service", "Inside the bundle", packageServiceMinutes);
         packagedService.Id = $"{ServiceId}-packaged";
 
-        var package = Package.Create("Span Package", "Under test", 500m);
+        var package = Package.Create("Span Package", "Under test");
         package.Id = PackageId;
         package.AddService(packagedService);
 
@@ -172,12 +176,12 @@ public class QuoteOrderSpanCapTests
         new(
             _packageRepository.Object,
             _serviceRepository.Object,
-            _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
             _session.Object,
-            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]));
+            PayConfigRepositoryDouble.Covering(CreateOrderTestData.CurrencyId, [ServiceId], [PackageId]),
+            _currencyRepository.Object);
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

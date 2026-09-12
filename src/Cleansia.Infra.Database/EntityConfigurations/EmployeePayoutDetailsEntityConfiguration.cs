@@ -51,6 +51,18 @@ public class EmployeePayoutDetailsEntityConfiguration : AuditableEntityConfigura
         builder.Property(p => p.ProviderAccountRef)
             .HasMaxLength(100);
 
+        builder.Property(p => p.CurrencyId)
+            .HasMaxLength(26);
+
+        // Restrict, like every other CurrencyId in the model (OrderEmployeePay is the template and
+        // CurrencyReferenceDeleteBehaviorModelTests walks for exactly this): a currency a cleaner has
+        // declared their account in is not deletable out from under that declaration. No navigation --
+        // nothing reads one; the id is the comparison.
+        builder.HasOne<Currency>()
+            .WithMany()
+            .HasForeignKey(p => p.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(p => p.Status)
             .IsRequired()
             .HasConversion<int>();

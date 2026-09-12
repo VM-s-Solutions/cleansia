@@ -76,16 +76,40 @@ public class ExpireCustomerCredit
         {
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
 
-            var account = await creditAccountRepository.GetByUserIdAsync(
+            // EVERY account, because a customer's credit is now per currency and this command's job is
+            // to leave nothing owed. Reading one account meant discharging an arbitrary one — and since
+            // the GDPR erasure gate refuses while ANY balance is positive, discharging the wrong one
+            // would leave erasure permanently blocked with nothing on the admin's screen to act on.
+            var accounts = await creditAccountRepository.GetAllForUserAsync(
                 command.UserId, cancellationToken);
+            var funded = accounts.Where(a => a.Balance > 0m).ToList();
 
-            // No account, or nothing on it. Both are SUCCESS with zero: the admin's intent — "make
-            // this balance not block anything" — is already true, and an error here would send them
-            // hunting for a problem that does not exist.
-            if (account == null || account.Balance <= 0m)
+            // No account, or nothing on any of them. Both are SUCCESS with zero: the admin's intent —
+            // "make this balance not block anything" — is already true, and an error here would send
+            // them hunting for a problem that does not exist.
+            if (funded.Count == 0)
             {
                 return BusinessResult.Success(new Response(command.UserId, 0m));
             }
+
+            // MORE THAN ONE FUNDED BALANCE MEANS MORE THAN ONE CURRENCY — the unique index allows only
+            // one account per currency — and this command cannot express that outcome. Response carries
+            // a single unlabelled decimal, so draining both would report 200 CZK + 50 EUR as "250", in
+            // the admin's confirmation AND in the audit record of money being destroyed. A number with
+            // no unit is not a number.
+            //
+            // So it REFUSES rather than guesses. Reachable from the admin screen since IssueCustomerCredit
+            // names its currency: an admin can fund a second account beside the first. The refusal is
+            // what makes that a visible gap rather than a silent miscount; a per-currency discharge --
+            // a CurrencyId on this command -- is the follow-up, and until it lands a customer holding
+            // two funded balances cannot be discharged from here.
+            if (funded.Count > 1)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.UserId), BusinessErrorMessage.CreditHeldInMultipleCurrencies));
+            }
+
+            var account = funded[0];
 
             var balanceBefore = account.Balance;
             var taken = account.Drain(actorId, DateTimeOffset.UtcNow);

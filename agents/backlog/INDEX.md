@@ -117,9 +117,46 @@
 | T-0684 | CreateDispute with no id: empty string on Android, a refusal on iOS | S | `done` | — | settled on the refusal; Android moved to meet iOS, via wireResult so it refuses instead of crashing |
 | T-0685 | GDPR retention sweep never ran - an absent feature flag read as disabled | S | `done` | — | switch moved to config (`DataRetention:Enabled`, default true). Merged in #253. Note: production has never been deployed, so nothing was ever harmed |
 | T-0686 | Nothing records that a customer accepted the terms, or which version | S | `todo` | — | Register persists nothing; Google/Apple validate a TermsAccepted bool and discard it; no TermsVersion field exists |
-| T-0687 | Admin order list renders a blank status pill for every New order | S | `todo` | — | OrderStatus.New is 0 and the guard is `if (!value)`; this is what makes card-vs-cash look broken |
-| T-0688 | Multicurrency has never run at a rate other than 1, and CreateOrder accepts any currency id | M | `todo` | — | decide single-currency-at-launch first; that decision changes the size by an order of magnitude |
+| T-0687 | Admin order list renders a blank status pill for every New order | S | `done` | — | guard tested the number not the object; also added the missing New/OnTheWay class cases and their styles |
+| T-0688 | Multicurrency has never run at a rate other than 1, and CreateOrder accepts any currency id | L | `todo` | — | **PLAN OF RECORD → [`final`](T-0688-multicurrency-plan-final.md)**; background in [`research`](T-0688-multicurrency-research.md), [`design`](T-0688-multicurrency-design.md), [`cz-only`](T-0688-multicurrency-plan-cz-only.md) §§1–2. Option B ordered, CZK-only ops, extensibility contract. **Split into tickets before starting.** VAT fix shipped (56ad4d45) |
 | T-0689 | The feature-flag mechanism gated nothing and has been removed | S | `done` | — | headline was WRONG: no admin UI ever existed, so no switch could be flipped. Real defect was worse — after T-0685 the table gated nothing at all. Whole mechanism deleted |
-| T-0690 | Remove the 14-day membership free trial | M | `todo` | — | the 5% discount is the THIRD-largest giveaway; recurring schedules created in a trial keep running forever |
+| T-0690 | Remove the free trial; every Plus benefit now requires a PAID subscription | M | `done` | — | trial removed AND made unsettable (admin validators refuse it); entitlement split from lifecycle across 10 benefit sites; web stopped advertising it; a lapsed membership now stops the recurring schedule |
+| T-0691 | Confirmed meant two things — money settled OR a cleaner took the job | L | `done` | — | ADR-0057 supersedes ADR-0037 D1s status term. Webhook + recurring confirm write money only; a paid card order rests at New. Mobile timelines needed no change — they were already right |
 
-*Next id: **T-0683**.*
+| T-0692 | A lapsed Plus member is never told their recurring schedule stopped | S | `todo` | — | T-0690 withheld the benefit as ruled; nobody tells the customer. `membership.expiring_soon` warns about the membership, not the schedule. The hard part is notifying once per lapse, not once per sweep |
+| T-0693 | Confirmed can be true with zero assignees — a drop or cover never walks it back | M | `todo` | — | pre-existing, recorded as a known consequence of ADR-0057. **Decision ticket before it is a code ticket**: `AdminOverrideOrderStatus` forbids backward moves, and ~8 test files build exactly this fixture |
+| T-0694 | The order.confirmed push key has a fulfilment name and a money meaning | M | `todo` | — | after ADR-0057 the name points at the opposite axis from the event. Notification itself is correct and stays. Cost is 10 locale files across 2 mobile platforms + the feed catalogue |
+| T-0695 | ADR-0045 and ADR-0055 still describe the Confirmed overload that ADR-0057 removed | S | `todo` | — | 4 stale claims re-verified 2026-09-08, incl. adr-0045:352 'New → Confirmed on the card webhook, as today' which is now false. Dated correction banners, not rewrites — accepted ADRs are immutable |
+| T-0696 | sql-scripts/seed/insert_orders.sql cannot run — wrong content and mismatched arity | S | `todo` | — | inserts PackageServices, not orders; names 10 columns and supplies 2, so Postgres rejects it outright. Deletion is probably the right answer |
+| T-0697 | src/Cleansia.App/CLAUDE.md still says NSwag regeneration is owner-only | S | `todo` | — | contradicts the 2026-09-07 ruling and the ban on `manual_step:`. Root CLAUDE.md overrides it, so nothing is broken — the hazard is an agent reading the nearest file first. AC3 covers the 6 other pages with the same text |
+
+| T-0698 | Extras have no admin CRUD — an extra can only be priced by editing the seed | M | `done` | — | shipped 2026-09-12 (c0c11bb4 + e61ebe48 + 91812fce), branch fix/remove-membership-free-trial, not yet merged; owner asked for this during the multicurrency decisions and it was never reached. Split out of chunk 4 by ruling 2026-09-09 rather than growing the batch that needs NSwag + two mobile specs + a Mac session |
+
+> **T-0692–T-0697 filed 2026-09-08** from the out-of-scope findings of T-0690/T-0691, each re-verified
+> against the tree on the day it was filed. A seventh finding — claimed drift between the committed
+> partner mobile spec and the `Order/RequestCover` / `Order/DropOrder` routes — was **re-checked and not
+> substantiated**: both schemas in `src/cleansia_android/openapi/partner-mobile-api.json` match the
+> current commands exactly. It is not filed.
+
+| T-0699 | Nothing resolves a booking currency — every order is stamped with the platform default | L | `done` | — | shipped 2026-09-12 (52b5c939), branch fix/remove-membership-free-trial, not yet merged; Two currencies can never be live at once. The only "switch" is promoting a new default, which swaps the whole platform in one click. |
+| T-0700 | A currency cannot be switched on, and a new one is on by default with no prices | M | `done` | — | shipped 2026-09-12 (54409fc6 + 0e74cab6), branch fix/remove-membership-free-trial, not yet merged; The market switch has no writer, and the gate that guards promotion is vacuous for every currency an admin can create. |
+| T-0701 | The pay-coverage gates are currency-blind while the pay writer is currency-strict | M | `done` | — | shipped 2026-09-12 (70e1c7be), branch fix/remove-membership-free-trial, not yet merged; An order in a currency no cleaner has a rate in passes every gate, and then silently never gets a pay row. |
+| T-0702 | Reports and roll-ups add amounts in different currencies into one number | M | `done` | — | shipped 2026-09-12 (1b518be8 + c8f77b3d), branch fix/remove-membership-free-trial, not yet merged; Every total on the admin revenue report, the payroll report, partner earnings and pay-period aggregation is a sum over mixed units the moment a second currency exists. |
+| T-0703 | Money constants and thresholds are bare decimals with no currency | M | `done` | — | shipped 2026-09-12 (cdc8a204 + e333fc54), branch fix/remove-membership-free-trial, not yet merged; Six business rules are expressed as numbers that only mean anything in crowns. |
+| T-0704 | A pay period holding two currencies can never be invoiced, and the period can still close | M | `done` | — | shipped 2026-09-12 (c69bb275), branch fix/remove-membership-free-trial, not yet merged; The payout-invoice currency is derived from the pay rows being invoiced and fails if they disagree — with no recovery path. |
+| T-0705 | Admin goodwill credit lands in the default currency, and the admin sees only one balance | S | `done` | — | shipped 2026-09-12 (899acad1 + 3b2c184e), branch fix/remove-membership-free-trial, not yet merged; The issue command carries no currency and the admin screen renders accounts[0]. |
+| T-0706 | The customer surfaces format everything as CZK and offer no way to choose a currency | M | `done` | — | shipped 2026-09-12 (eb92f345 + eb25f93b), branch fix/remove-membership-free-trial, not yet merged; The booking wizard has its own module-level CZK formatters, bound about twenty times, and the catalogue DTOs carry no currency at all. |
+| T-0707 | FK_Orders_Currencies_CurrencyId is Cascade — deleting a currency would delete its orders | S | `done` | — | shipped 2026-09-12 (52b5c939), branch fix/remove-membership-free-trial, not yet merged; Every sibling money table is Restrict. Orders is not. |
+| T-0708 | A payout can be issued in any currency to any bank account | M | `done` | — | shipped 2026-09-12 (206df58b), branch fix/remove-membership-free-trial, not yet merged; The payout-details model has no currency, and nothing checks that the account can receive what is being sent. |
+| T-0709 | docs/ still describes ExchangeRate conversion as the live multicurrency mechanism | S | `done` | — | shipped 2026-09-12, branch fix/remove-membership-free-trial, not yet merged; The architecture pages describe a column that no longer exists and a conversion that no longer happens. |
+
+> **T-0699–T-0709 filed 2026-09-10**, split out of T-0688 by a readiness audit of the multicurrency
+> programme. Every claim was re-verified against the tree that day and the ones that did not survive
+> were not filed — three audit claims were refuted outright, and two more were narrowed. Two defects
+> the audit turned up were fixed rather than filed, because one destroyed data and both were reachable
+> with EUR still switched off: `CreatePayConfig`'s duplicate probes ignored the currency, so a second
+> currency's rate could never be created; and `BulkCreateEmployeePayConfigs` deleted rates it could
+> not replace. Both are in `b269efe4`.
+
+
+*Next id: **T-0710**.*

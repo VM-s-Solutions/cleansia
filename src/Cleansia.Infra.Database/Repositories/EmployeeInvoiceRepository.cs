@@ -37,20 +37,32 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
             .ToListAsync(cancellationToken);
     }
 
-    public Task<EmployeeInvoice?> GetByEmployeeAndPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<EmployeeInvoice>> GetAllForEmployeeAndPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        return await GetDbSet()
             .Include(i => i.Employee)
             .Include(i => i.PayPeriod)
             .Include(i => i.Currency)
             .Include(i => i.OrderPays)
-            .FirstOrDefaultAsync(i => i.EmployeeId == employeeId && i.PayPeriodId == payPeriodId, cancellationToken);
+            .Where(i => i.EmployeeId == employeeId && i.PayPeriodId == payPeriodId)
+            .OrderBy(i => i.CurrencyId)
+            .ToListAsync(cancellationToken);
     }
 
-    public Task<bool> ExistsForPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken)
+    public Task<bool> ExistsForUnassignedPayCurrencyAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
-            .AnyAsync(i => i.EmployeeId == employeeId && i.PayPeriodId == payPeriodId, cancellationToken);
+        // Per CURRENCY, not per pair: the pay rows still to invoice are correlated with the invoices
+        // the pair already holds on CurrencyId. Both sets read under the ambient tenant filter -- the
+        // queue consumer sets the override before the command runs, the admin path has a JWT.
+        var invoices = GetDbSet();
+
+        return Context.Set<OrderEmployeePay>()
+            .AnyAsync(p => p.EmployeeId == employeeId
+                && p.PayPeriodId == payPeriodId
+                && p.EmployeeInvoiceId == null
+                && invoices.Any(i => i.EmployeeId == employeeId
+                    && i.PayPeriodId == payPeriodId
+                    && i.CurrencyId == p.CurrencyId), cancellationToken);
     }
 
     public Task<EmployeeInvoice?> GetLatestInvoiceAsync(string employeeId, CancellationToken cancellationToken)
@@ -86,14 +98,15 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
     }
 
     public async Task<IReadOnlyList<EmployeeInvoice>> GetAllByDateRangeAsync(
-        DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
+        DateTime startDate, DateTime endDate, string currencyId, CancellationToken cancellationToken)
     {
         return await GetDbSet()
             .Include(i => i.Employee)
                 .ThenInclude(e => e.User)
             .Include(i => i.PayPeriod)
             .Include(i => i.Currency)
-            .Where(i => i.GeneratedAt >= startDate &&
+            .Where(i => i.CurrencyId == currencyId &&
+                       i.GeneratedAt >= startDate &&
                        i.GeneratedAt <= endDate)
             .OrderBy(i => i.GeneratedAt)
             .ToListAsync(cancellationToken);

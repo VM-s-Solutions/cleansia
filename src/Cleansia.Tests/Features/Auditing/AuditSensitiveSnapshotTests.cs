@@ -1,3 +1,4 @@
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Gdpr;
@@ -130,10 +131,10 @@ public sealed class AuditSensitiveSnapshotTests
     public async Task PartialRefund_Emits_Amount_Consumed_And_No_Pii()
     {
         var auditContext = new AuditContext();
-        var service = Service.Create("cat-1", "Deep clean", "", 1000m, 0m);
+        var service = Service.Create("cat-1", "Deep clean", "");
         service.Id = "svc-a";
         var order = BuildOrder("order-prt", OrderStatus.Completed, totalPrice: 1000m, completed: true);
-        order.AddSelectedServices([OrderService.Create(order, service)]);
+        order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, service)]);
 
         var orderRepository = new Mock<IOrderRepository>();
         orderRepository.Setup(r => r.GetByIdAsync("order-prt", It.IsAny<CancellationToken>())).ReturnsAsync(order);
@@ -330,7 +331,7 @@ public sealed class AuditSensitiveSnapshotTests
         decimal totalPrice = 1000m,
         bool completed = false)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var address = Address.Create("Street 1", "Prague", "11000", "cz");
         var order = Order.Create(
             customerName: CustomerName,
@@ -339,7 +340,6 @@ public sealed class AuditSensitiveSnapshotTests
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

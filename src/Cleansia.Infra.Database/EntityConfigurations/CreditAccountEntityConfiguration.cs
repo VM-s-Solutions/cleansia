@@ -32,16 +32,29 @@ public class CreditAccountEntityConfiguration : AuditableEntityConfiguration<Cre
         builder.HasIndex(a => a.ExpiresOn)
             .HasFilter("\"ExpiresOn\" IS NOT NULL");
 
-        // 1:1 with User, unique on UserId ALONE — matching LoyaltyAccount, and deliberately not
-        // (TenantId, UserId). TenantId is nullable and Postgres treats NULLs as distinct, so a
-        // composite index containing it admits unlimited duplicates while it is null, which is
-        // production today. User is already tenant-scoped, so this one is the real constraint.
-        builder.HasIndex(a => a.UserId)
+        // ONE ACCOUNT PER CUSTOMER PER CURRENCY. Unique on (UserId, CurrencyId), and deliberately not
+        // (TenantId, UserId, CurrencyId): TenantId is nullable and Postgres treats NULLs as distinct,
+        // so a composite index containing it admits unlimited duplicates while it is null, which is
+        // production today. Both columns here are NOT NULL, so this is a real constraint with nothing
+        // to fold — no .AreNullsDistinct(false) needed. User is already tenant-scoped.
+        //
+        // UserId leads so the same index also serves the currency-BLIND reads: "every account this
+        // customer holds", which is what the GDPR erasure gate and the admin discharge must ask.
+        //
+        // The 1:1 it replaces was not merely restrictive, it was wrong: a balance is denominated, and
+        // one row per customer forced every currency's money into whichever one the customer's first
+        // credit happened to open. The repository's own doc already promised the opposite — "an
+        // existing account keeps the currency it was opened in" — while the query behind it matched on
+        // UserId alone and handed back an account in a different currency for the caller to add to.
+        builder.HasIndex(a => new { a.UserId, a.CurrencyId })
             .IsUnique();
 
+        // 1:MANY, with no collection navigation on User: nothing walks the graph from a user to their
+        // accounts — every such question is a repository query — and an unnamed .WithMany() onto a
+        // navigation that does not exist is how a duplicate shadow FK gets invented.
         builder.HasOne(a => a.User)
-            .WithOne()
-            .HasForeignKey<CreditAccount>(a => a.UserId)
+            .WithMany()
+            .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(a => a.Transactions)

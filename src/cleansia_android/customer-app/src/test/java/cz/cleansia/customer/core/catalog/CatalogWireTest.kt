@@ -23,9 +23,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import cz.cleansia.customer.api.client.CurrencyApi as GenCurrencyApi
 import cz.cleansia.customer.api.client.ExtraApi as GenExtraApi
 import cz.cleansia.customer.api.client.PackageApi as GenPackageApi
 import cz.cleansia.customer.api.client.ServiceApi as GenServiceApi
+import cz.cleansia.customer.api.model.CurrencyListItem as GenCurrencyListItem
 import cz.cleansia.customer.api.model.ExtraListItem as GenExtraListItem
 import cz.cleansia.customer.api.model.PackageListItem as GenPackageListItem
 import cz.cleansia.customer.api.model.ServiceListItem as GenServiceListItem
@@ -72,6 +74,7 @@ class CatalogWireTest {
                 retrofit.create(GenServiceApi::class.java),
                 retrofit.create(GenPackageApi::class.java),
                 retrofit.create(GenExtraApi::class.java),
+                retrofit.create(GenCurrencyApi::class.java),
             )
             call(api).also { onRequest(server.takeRequest()) }
         } finally {
@@ -87,6 +90,9 @@ class CatalogWireTest {
 
     private suspend fun extras(body: String, code: Int = 200) =
         serving(body, code) { it.getExtras() }.body()
+
+    private suspend fun currencies(body: String, code: Int = 200) =
+        serving(body, code) { it.getCurrencies() }.body()
 
     /**
      * Services and packages refuse by throwing now, so the assertion is on the field the refusal
@@ -130,6 +136,11 @@ class CatalogWireTest {
     }
 
     @Test
+    fun currencyDtoSerialNamesAreExactlyTheSpecProperties() {
+        assertEquals(CURRENCY_SPEC_PROPERTIES, serialNames(GenCurrencyListItem.serializer().descriptor))
+    }
+
+    @Test
     fun theRequestsKeepThePathsTheServerBinds() = runTest {
         var path: String? = null
         serving(CAPTURED_SERVICES, onRequest = { path = it.path }) { it.getServices() }
@@ -140,6 +151,9 @@ class CatalogWireTest {
 
         serving(CAPTURED_EXTRAS, onRequest = { path = it.path }) { it.getExtras() }
         assertEquals("/api/Extra/GetOverview", path)
+
+        serving(CAPTURED_CURRENCIES, onRequest = { path = it.path }) { it.getCurrencies() }
+        assertEquals("/api/Currency/GetOverview", path)
     }
 
     // --- rule 1: money is never coerced -----------------------------------------
@@ -176,10 +190,49 @@ class CatalogWireTest {
         refuses("basePrice") { services(servicesWithFirstRow { it + ("basePrice" to JsonNull) }) }
     }
 
-    // --- rule 2: booleans follow the money rule ---------------------------------
+    // --- the currency the whole price list is stated in ---------------------------
     //
-    // No catalog schema carries a `nullable: false` boolean; the rule is exercised on the quote and
-    // order wires (BookingQuoteWireTest, OrderWireTest).
+    // The catalogue rows carry no currency of their own; this overview's `isDefault` row is the one
+    // fact that turns every figure above into a price. A wrong label here mislabels the whole list.
+
+    @Test
+    fun everyCurrencyArrivesWithItsLiteralValue() = runTest {
+        val list = currencies(CAPTURED_CURRENCIES)
+
+        assertEquals(listOf("cur-czk", "cur-eur"), list?.map { it.id })
+        assertEquals(listOf("CZK", "EUR"), list?.map { it.code })
+        assertEquals(listOf("Kč", "€"), list?.map { it.symbol })
+        assertEquals(listOf("Czech koruna", "Euro"), list?.map { it.name })
+        assertEquals(listOf(true, false), list?.map { it.isDefault })
+    }
+
+    @Test
+    fun aCurrencyWithoutItsCodeRefusesThePageBecauseTheCodeIsTheLabel() = runTest {
+        refuses("code") { currencies(currenciesWithFirstRow { it - "code" }) }
+    }
+
+    // --- rule 2: booleans follow the money rule ---------------------------------
+
+    /** `false` is a real state — a non-default currency — so a missing flag is never read as one. */
+    @Test
+    fun aCurrencyWithoutItsDefaultFlagRefusesThePage() = runTest {
+        refuses("isDefault") { currencies(currenciesWithFirstRow { it - "isDefault" }) }
+    }
+
+    @Test
+    fun aCurrencyWithoutAnIdRefusesThePage() = runTest {
+        refuses("id") { currencies(currenciesWithFirstRow { it - "id" }) }
+    }
+
+    @Test
+    fun aBodylessCurrencyOverviewRefuses() = runTest {
+        refuses("CurrencyListItem[]") { currencies("", code = 204) }
+    }
+
+    @Test
+    fun anEmptyCurrencyOverviewIsAnAnswerTheRepositoryDecidesOn() = runTest {
+        assertEquals(emptyList<CurrencyListItem>(), currencies("[]"))
+    }
 
     // --- rule 3: identity is refused, never synthesized --------------------------
 
@@ -290,6 +343,9 @@ class CatalogWireTest {
     private fun extrasWithFirstRow(transform: (JsonObject) -> JsonObject) =
         rowsWithFirst(CAPTURED_EXTRAS, transform)
 
+    private fun currenciesWithFirstRow(transform: (JsonObject) -> JsonObject) =
+        rowsWithFirst(CAPTURED_CURRENCIES, transform)
+
     private operator fun JsonObject.minus(key: String) =
         JsonObject(toMutableMap().apply { remove(key) })
 
@@ -390,6 +446,14 @@ class CatalogWireTest {
             ]
         """.trimIndent()
 
+        /** Both members non-default; the default flag differs between the rows so neither is a guess. */
+        val CAPTURED_CURRENCIES = """
+            [
+              { "id": "cur-czk", "code": "CZK", "symbol": "Kč", "name": "Czech koruna", "isDefault": true },
+              { "id": "cur-eur", "code": "EUR", "symbol": "€", "name": "Euro", "isDefault": false }
+            ]
+        """.trimIndent()
+
         val SERVICE_SPEC_PROPERTIES =
             setOf("id", "name", "description", "category", "basePrice", "perRoomPrice", "translations")
 
@@ -401,5 +465,7 @@ class CatalogWireTest {
 
         val EXTRA_SPEC_PROPERTIES =
             setOf("id", "slug", "name", "description", "price", "displayOrder", "translations")
+
+        val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")
     }
 }

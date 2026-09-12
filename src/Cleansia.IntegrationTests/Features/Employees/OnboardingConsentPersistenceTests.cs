@@ -149,7 +149,6 @@ public class OnboardingConsentPersistenceTests(PostgresContainerFixture fixture)
         PassportId: "AB12345",
         EntityType: EmployeeEntityType.NaturalPerson,
         RegistrationNumber: "12345678",
-        VatNumber: null,
         LegalEntityName: null,
         EmergencyName: null,
         EmergencyPhone: null,

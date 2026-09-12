@@ -2,9 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 import {
+  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
   selectCustomerCatalogLoading,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
@@ -46,7 +48,11 @@ describe('ServicesCatalogComponent', () => {
     pkg('p5', 'Ultimate', 700),
   ];
 
-  function build(packages: PackageListItem[] = [], services: ServiceListItem[] = []): void {
+  function build(
+    packages: PackageListItem[] = [],
+    services: ServiceListItem[] = [],
+    defaultCurrencyCode: string | null = 'CZK',
+  ): void {
     currentLang = 'en';
     router = { navigate: jest.fn() };
 
@@ -58,6 +64,7 @@ describe('ServicesCatalogComponent', () => {
             { selector: selectCustomerPackages, value: packages },
             { selector: selectCustomerServices, value: services },
             { selector: selectCustomerCatalogLoading, value: false },
+            { selector: selectCustomerDefaultCurrencyCode, value: defaultCurrencyCode },
           ],
         }),
         { provide: Router, useValue: router },
@@ -82,13 +89,14 @@ describe('ServicesCatalogComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('asks the store for both catalogs on init', () => {
+  it('asks the store for both catalogs and the currency they are priced in on init', () => {
     build();
 
     component.ngOnInit();
 
     expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices());
     expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages());
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
   });
 
   describe('sorting the services', () => {
@@ -312,10 +320,24 @@ describe('ServicesCatalogComponent', () => {
       expect(component.formatPrice(1200).replace(/\D/g, '')).toBe('1200');
     });
 
-    it('renders in crowns', () => {
-      build();
+    it('renders in the platform default currency, which is what the catalogue is priced in', () => {
+      build([], [], 'CZK');
 
       expect(component.formatPrice(1200)).toContain('Kč');
+    });
+
+    it('follows the default currency rather than assuming crowns', () => {
+      build([], [], 'EUR');
+
+      expect(component.formatPrice(1200)).toContain('€');
+      expect(component.formatPrice(1200)).not.toContain('Kč');
+    });
+
+    it('prints a bare figure until the default currency is known', () => {
+      build([], [], null);
+
+      expect(component.formatPrice(1200).replace(/\D/g, '')).toBe('1200');
+      expect(component.formatPrice(1200)).not.toContain('Kč');
     });
   });
 });

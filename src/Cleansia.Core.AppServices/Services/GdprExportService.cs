@@ -35,7 +35,7 @@ public class GdprExportService(
         if (user.Employee is { } emp)
             employee = new GdprExportEmployeeDto(
                 emp.Id,
-                emp.EntityType, emp.RegistrationNumber, emp.VatNumber, emp.LegalEntityName,
+                emp.EntityType, emp.RegistrationNumber, emp.LegalEntityName,
                 emp.IBAN, emp.PassportId, emp.NationalityId,
                 emp.EmergencyContactName, emp.EmergencyContactPhone,
                 emp.PreferredCurrencyCode, emp.AverageRating, emp.ContractStatus, emp.CreatedOn);
@@ -46,7 +46,7 @@ public class GdprExportService(
             var payout = await employeePayoutDetailsRepository.GetByEmployeeIdAsync(user.Employee.Id, cancellationToken);
             if (payout is not null)
                 payoutDetails = new GdprExportPayoutDetailsDto(
-                    payout.Scheme, payout.Status, payout.BankCountryId,
+                    payout.Scheme, payout.Status, payout.BankCountryId, payout.CurrencyId,
                     payout.AccountPrefix, payout.AccountNumber, payout.BankCode, payout.Iban,
                     payout.Swift, payout.BankName, payout.HolderName,
                     payout.ConfirmedAt, payout.LastRevealedAt, payout.RevealCount);

@@ -144,6 +144,12 @@ public class Policy
     public const string CanUpdatePackage = nameof(CanUpdatePackage); // Admin
     public const string CanDeletePackage = nameof(CanDeletePackage); // Admin
 
+    // Extras
+    public const string CanViewExtras = nameof(CanViewExtras); // Admin
+    public const string CanCreateExtra = nameof(CanCreateExtra); // Admin
+    public const string CanUpdateExtra = nameof(CanUpdateExtra); // Admin
+    public const string CanDeleteExtra = nameof(CanDeleteExtra); // Admin
+
     // Languages
     public const string CanViewLanguages = nameof(CanViewLanguages); // Admin
     public const string CanCreateLanguage = nameof(CanCreateLanguage); // Admin

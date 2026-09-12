@@ -64,3 +64,17 @@ data class ExtraListItem(
     val displayOrder: Int = 0,
     val translations: Map<String, TranslationDto>? = null,
 )
+
+/**
+ * One row of the platform's currency overview. The catalogue rows above carry no currency of their
+ * own — they are priced in the row flagged [isDefault], which is how every catalogue figure gets its
+ * label.
+ */
+@Serializable
+data class CurrencyListItem(
+    val id: String,
+    val code: String,
+    val symbol: String,
+    val name: String,
+    val isDefault: Boolean,
+)

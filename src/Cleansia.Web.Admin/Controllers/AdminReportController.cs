@@ -19,9 +19,9 @@ public class AdminReportController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetRevenueReport([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetRevenueReport([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string? currencyId, CancellationToken cancellationToken)
     {
-        var filter = new ReportFilter(startDate, endDate);
+        var filter = new ReportFilter(startDate, endDate, currencyId);
         var result = await Mediator.Send(new GetRevenueReport.Query(filter), cancellationToken);
         return HandleResult<RevenueReportDto>(result);
     }
@@ -32,9 +32,9 @@ public class AdminReportController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetPayrollReport([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPayrollReport([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string? currencyId, CancellationToken cancellationToken)
     {
-        var filter = new ReportFilter(startDate, endDate);
+        var filter = new ReportFilter(startDate, endDate, currencyId);
         var result = await Mediator.Send(new GetPayrollReport.Query(filter), cancellationToken);
         return HandleResult<PayrollReportDto>(result);
     }

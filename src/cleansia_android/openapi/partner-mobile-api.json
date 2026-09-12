@@ -7260,10 +7260,6 @@
             "type": "string",
             "nullable": true
           },
-          "exchangeRate": {
-            "type": "number",
-            "format": "double"
-          },
           "isDefault": {
             "type": "boolean"
           }
@@ -7288,10 +7284,6 @@
           "name": {
             "type": "string",
             "nullable": true
-          },
-          "exchangeRate": {
-            "type": "number",
-            "format": "double"
           },
           "isDefault": {
             "type": "boolean"
@@ -7915,10 +7907,6 @@
             "type": "string",
             "nullable": true
           },
-          "vatNumber": {
-            "type": "string",
-            "nullable": true
-          },
           "legalEntityName": {
             "type": "string",
             "nullable": true
@@ -8095,10 +8083,6 @@
             "type": "string",
             "nullable": true
           },
-          "vatNumber": {
-            "type": "string",
-            "nullable": true
-          },
           "legalEntityName": {
             "type": "string",
             "nullable": true
@@ -8231,6 +8215,10 @@
             "$ref": "#/components/schemas/PayoutDetailsStatus"
           },
           "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyId": {
             "type": "string",
             "nullable": true
           },
@@ -8772,6 +8760,10 @@
             "$ref": "#/components/schemas/PayoutDetailsStatus"
           },
           "bankCountryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyId": {
             "type": "string",
             "nullable": true
           },
@@ -11025,6 +11017,10 @@
           "holderName": {
             "type": "string",
             "nullable": true
+          },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11172,10 +11168,6 @@
             "type": "string",
             "nullable": true
           },
-          "vatNumber": {
-            "type": "string",
-            "nullable": true
-          },
           "legalEntityName": {
             "type": "string",
             "nullable": true
@@ -11258,10 +11250,6 @@
             "nullable": true
           },
           "registrationNumber": {
-            "type": "string",
-            "nullable": true
-          },
-          "vatNumber": {
             "type": "string",
             "nullable": true
           },

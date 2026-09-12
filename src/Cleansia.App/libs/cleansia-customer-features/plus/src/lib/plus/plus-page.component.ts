@@ -11,7 +11,7 @@ import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { MembershipManagementComponent } from '@cleansia-customer/profile';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import { EXPRESS_SURCHARGE_RATE } from '@cleansia/models';
-import { clearOnBackForwardRestore } from '@cleansia/utils';
+import { clearOnBackForwardRestore, formatMoney } from '@cleansia/utils';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PlusPageFacade } from './plus-page.facade';
@@ -103,18 +103,7 @@ export class PlusPageComponent implements OnInit {
     }
   }
 
-  /**
-   * Whole korunas. Both seeded plans are whole numbers and a "199,00 Kč" on a
-   * price card reads as a form field rather than a price; the fractional case
-   * is kept because an admin can price a plan to the halér.
-   */
-  formatCzk(amount: number): string {
-    const fractionDigits = amount % 1 === 0 ? 0 : 2;
-    return new Intl.NumberFormat('cs-CZ', {
-      style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    }).format(amount);
+  formatPrice(amount: number): string {
+    return formatMoney(amount, this.facade.defaultCurrencyCode(), 'cs-CZ');
   }
 }

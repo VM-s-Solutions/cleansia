@@ -102,12 +102,12 @@ public class GetOrderDetails
                         if (serviceIds.Count > 0)
                         {
                             serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
-                                serviceIds, callerEmployeeId, cancellationToken);
+                                serviceIds, callerEmployeeId, [order.CurrencyId], cancellationToken);
                         }
                         if (packageIds.Count > 0)
                         {
                             packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
-                                packageIds, callerEmployeeId, cancellationToken);
+                                packageIds, callerEmployeeId, [order.CurrencyId], cancellationToken);
                         }
 
                         estimatedCleanerPay = OrderPayEstimator.Estimate(

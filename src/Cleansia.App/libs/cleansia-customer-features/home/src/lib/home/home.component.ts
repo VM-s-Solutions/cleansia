@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
+  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
 } from '@cleansia/customer-stores';
@@ -44,6 +45,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.store.dispatch(loadCustomerServices());
     this.store.dispatch(loadCustomerPackages());
+    this.store.dispatch(loadCustomerCurrencies());
   }
 
   ngAfterViewInit(): void {

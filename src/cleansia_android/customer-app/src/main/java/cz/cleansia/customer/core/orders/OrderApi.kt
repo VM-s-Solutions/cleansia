@@ -329,15 +329,19 @@ private fun GenPackageDetails.toAppDto(): OrderPackageDetailsDto = OrderPackageD
 )
 
 /**
- * A zeroed `exchangeRate` is not a neutral fallback but a claim that every converted figure on the
- * screen is nothing; parity (`1.0`) would be equally invented, off by 24.75× on a CZK order.
+ * `exchangeRate` is GONE from the contract -- prices are authored per currency now rather than
+ * converted at a rate. It used to be `.required` here because neither available fallback was
+ * honest: zero claims every converted figure on the screen is nothing, and parity is off by 24.75x
+ * on a CZK order. With no rate on the wire there is nothing left to get wrong.
+ *
+ * `isDefault` stays required for the original reason: a defaulted `false` on every row is a claim
+ * the platform has no default currency.
  */
 private fun GenCurrencyListItem.toAppDto(): OrderCurrencyListItemDto = OrderCurrencyListItemDto(
     id = id,
     code = code,
     symbol = symbol,
     name = name,
-    exchangeRate = exchangeRate.required("exchangeRate"),
     isDefault = isDefault.required("isDefault"),
 )
 
@@ -346,7 +350,6 @@ private fun GenCurrencyDetailDto.toAppDto(): OrderCurrencyDetailDto = OrderCurre
     code = code,
     name = name,
     symbol = symbol,
-    exchangeRate = exchangeRate.required("exchangeRate"),
     isDefault = isDefault.required("isDefault"),
 )
 

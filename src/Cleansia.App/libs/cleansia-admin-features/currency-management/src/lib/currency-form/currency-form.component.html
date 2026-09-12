@@ -47,10 +47,12 @@
 
           <div class="form-field">
             <cleansia-text-input
-              [label]="'pages.currency_form.exchange_rate' | translate"
-              formControlName="exchangeRate"
-              [required]="true"
+              [label]="'pages.currency_form.loyalty_points_divisor' | translate"
+              formControlName="loyaltyPointsDivisor"
               dataType="number"
+              [placeholder]="
+                'pages.currency_form.loyalty_points_divisor_placeholder' | translate
+              "
             />
           </div>
         </div>

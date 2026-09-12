@@ -52,7 +52,7 @@ public class CancelOrderStandardTierFeeTests
         // No active membership → the resolver returns the standard absolute 24h window, the value the
         // handler passes as freeCancellationHoursOverride for every non-member.
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
@@ -75,7 +75,7 @@ public class CancelOrderStandardTierFeeTests
 
     private Order ArrangeAcceptedCardPaidOrder(DateTime cleaningUtc, decimal totalPrice)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -83,7 +83,6 @@ public class CancelOrderStandardTierFeeTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningUtc,
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

@@ -3,10 +3,11 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import {
-  loadCustomerServices,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
+import { formatMoney } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -40,6 +41,10 @@ export class ServicesComponent {
 
   services = toSignal(this.store.select(selectCustomerServices), {
     initialValue: [] as ServiceListItem[],
+  });
+  /** The catalogue is priced in the platform default currency; its DTOs carry no code of their own. */
+  private readonly currencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
   });
 
   /**
@@ -77,11 +82,7 @@ export class ServicesComponent {
 
   formatPrice(price: number | undefined): string {
     if (price == null) return '';
-    return new Intl.NumberFormat('cs-CZ', {
-      style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, this.currencyCode(), 'cs-CZ');
   }
 
   /**

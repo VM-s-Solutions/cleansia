@@ -25,13 +25,7 @@ public class ServiceEntityConfiguration : AuditableEntityConfiguration<Service, 
             .IsRequired()
             .HasMaxLength(500);
 
-        builder.Property(s => s.BasePrice)
-            .IsRequired()
-            .HasPrecision(18, 2);
 
-        builder.Property(s => s.PerRoomPrice)
-            .IsRequired()
-            .HasPrecision(18, 2);
 
         builder.Property(s => s.CategoryId)
             .IsRequired();

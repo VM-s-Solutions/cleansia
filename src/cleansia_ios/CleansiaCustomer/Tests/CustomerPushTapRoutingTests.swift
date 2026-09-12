@@ -19,10 +19,13 @@ final class CustomerPushTapRoutingTests: XCTestCase {
         )
     }
 
-    func testSubscribePlusDestinationLandsOnProfileTab() {
-        let plan = CustomerPushTapRouting.plan(for: .subscribePlus)
+    /// The profile tab with an EMPTY path. MembershipManagementCard lives on that tab and already
+    /// renders both states, so pushing the sales route on top of it — which is what this used to
+    /// assert — buried the management card under an upsell for an existing subscriber.
+    func testMembershipManagementLandsOnProfileTabWithNothingPushed() {
+        let plan = CustomerPushTapRouting.plan(for: .membershipManagement)
         XCTAssertEqual(plan.tab, .profile)
-        XCTAssertEqual(plan.routes, [.subscribePlus])
+        XCTAssertEqual(plan.routes, [])
     }
 
     func testRewardsActivityDestinationLandsOnRewardsTab() {

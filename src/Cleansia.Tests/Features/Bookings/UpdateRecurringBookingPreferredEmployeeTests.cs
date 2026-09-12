@@ -41,7 +41,7 @@ public class UpdateRecurringBookingPreferredEmployeeTests
             .Setup(r => r.GetByIdAsync(TemplateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(BuildTemplate());
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(BuildActiveMembership());
     }
 

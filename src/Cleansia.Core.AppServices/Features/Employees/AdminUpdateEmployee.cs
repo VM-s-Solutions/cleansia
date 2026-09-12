@@ -62,10 +62,6 @@ public class AdminUpdateEmployee
                 .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
                 .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
 
-            RuleFor(c => c.VatNumber)
-                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
             RuleFor(c => c.LegalEntityName)
                 .MaximumLength(200).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
                 .When(c => !string.IsNullOrWhiteSpace(c.LegalEntityName));
@@ -89,7 +85,6 @@ public class AdminUpdateEmployee
         string? PassportId,
         EmployeeEntityType? EntityType,
         string? RegistrationNumber,
-        string? VatNumber,
         string? LegalEntityName,
         string? EmergencyName,
         string? EmergencyPhone) : ICommand<Response>;
@@ -149,7 +144,6 @@ public class AdminUpdateEmployee
             employee.UpdateEmployeeDetails(
                 command.EntityType ?? employee.EntityType,
                 command.RegistrationNumber ?? employee.RegistrationNumber,
-                command.VatNumber ?? employee.VatNumber,
                 command.LegalEntityName ?? employee.LegalEntityName,
                 command.NationalityId ?? employee.NationalityId ?? "",
                 command.PassportId ?? employee.PassportId ?? "",

@@ -8,6 +8,7 @@ import SwiftUI
 struct PackageDetailsSheet: View {
     @Environment(\.locale) private var locale
     let pkg: CatalogPackage
+    let currencyCode: String
     let isSelected: Bool
     let onToggle: () -> Void
     let onDismiss: () -> Void
@@ -35,7 +36,7 @@ struct PackageDetailsSheet: View {
                 Text(pkg.localizedName(for: locale))
                     .cleansiaFont(CleansiaTypography.headlineSmall)
                     .foregroundColor(CleansiaColors.onSurface)
-                Text(BookingPricing.formatTotal(pkg.price, currencyCode: "CZK"))
+                Text(BookingPricing.formatTotal(pkg.price, currencyCode: currencyCode))
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.primary)
             }
@@ -118,6 +119,7 @@ private struct PackageSheetHeightKey: PreferenceKey {
                         CatalogPackageServiceSummary(name: "Windows", translations: [:])
                     ]
                 ),
+                currencyCode: "CZK",
                 isSelected: false,
                 onToggle: {},
                 onDismiss: {}

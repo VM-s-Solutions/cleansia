@@ -123,10 +123,16 @@ public class GetPagedOrders
                 new Dictionary<string, decimal>(0);
             if (!isAdmin && !string.IsNullOrEmpty(callerEmployeeId) && (serviceIdsAcrossPage.Count > 0 || packageIdsAcrossPage.Count > 0))
             {
+                // EVERY currency on the page, in one read. Narrowing to a single currency here would
+                // mean a query per currency and reintroduce the N+1 that batching removed; narrowing
+                // per ORDER happens downstream, in OrderPayEstimator, which is the only place that
+                // knows which of the page's orders a row is being estimated for.
+                var currencyIdsAcrossPage = orders.Select(o => o.CurrencyId).Distinct().ToList();
+
                 serviceConfigsForCaller = await payConfigRepository.GetServiceConfigsForOrderAsync(
-                    serviceIdsAcrossPage, callerEmployeeId, cancellationToken);
+                    serviceIdsAcrossPage, callerEmployeeId, currencyIdsAcrossPage, cancellationToken);
                 packageConfigsForCaller = await payConfigRepository.GetPackageConfigsForOrderAsync(
-                    packageIdsAcrossPage, callerEmployeeId, cancellationToken);
+                    packageIdsAcrossPage, callerEmployeeId, currencyIdsAcrossPage, cancellationToken);
                 // Batched per-row pay lookup. One query for the whole
                 // page, two columns, no eager-loaded nav graphs —
                 // replaces the N+1 GetByOrderAndEmployeeAsync loop

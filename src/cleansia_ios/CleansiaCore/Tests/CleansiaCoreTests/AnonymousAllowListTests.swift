@@ -20,6 +20,7 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/Service/GetOverview",
         "/api/Package/GetOverview",
         "/api/Extra/GetOverview",
+        "/api/Currency/GetOverview",
         "/api/Membership/GetPlans",
         "/api/Order/Quote",
         "/api/Order/CreateOrder",

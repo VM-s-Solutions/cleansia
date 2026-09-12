@@ -105,7 +105,7 @@ public sealed class CustomerProfileStatsQueryTests : IDisposable
 
     private static Currency NewCurrency(string id, string code)
     {
-        var currency = Currency.Create(code, code == "EUR" ? "€" : "Kč", code, 1m);
+        var currency = Currency.Create(code, code == "EUR" ? "€" : "Kč", code);
         currency.Id = id;
         currency.Created("system", DateTimeOffset.UtcNow.AddDays(-30));
         return currency;
@@ -129,7 +129,6 @@ public sealed class CustomerProfileStatsQueryTests : IDisposable
             customerAddress: Address.Create("Stat St 1", "Praha", "14000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

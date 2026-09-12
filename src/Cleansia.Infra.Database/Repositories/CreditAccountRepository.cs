@@ -7,11 +7,18 @@ namespace Cleansia.Infra.Database.Repositories;
 public class CreditAccountRepository(CleansiaDbContext context)
     : BaseRepository<CreditAccount>(context), ICreditAccountRepository
 {
-    public Task<CreditAccount?> GetByUserIdAsync(string userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CreditAccount>> GetAllForUserAsync(
+        string userId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        // Ordered so the two callers render and drain deterministically rather than in whatever order
+        // Postgres returns. Largest balance first, then by currency, so the account the admin sees on a
+        // one-balance screen is the one that matters most and does not move between page loads.
+        return await GetDbSet()
             .Include(a => a.Transactions)
-            .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.Balance)
+            .ThenBy(a => a.CurrencyId)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<CreditAccount> EnsureForUserAsync(
@@ -20,8 +27,12 @@ public class CreditAccountRepository(CleansiaDbContext context)
         // No Include(Transactions). Issue() only APPENDS, and EF tracks an appended child without the
         // collection pre-loaded - same reasoning as LoyaltyAccountRepository, and it matters more here
         // because a long-lived customer's ledger is unbounded.
+        // BOTH COLUMNS. Matching on UserId alone returned an account in whatever currency the
+        // customer's first credit happened to open, and every caller then added its own currency's
+        // number to that balance -- a CZK refund landing on a EUR account, with no error and no clue.
         var existing = await GetDbSet()
-            .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(
+                a => a.UserId == userId && a.CurrencyId == currencyId, cancellationToken);
 
         if (existing != null)
         {
@@ -136,16 +147,26 @@ public class CreditAccountRepository(CleansiaDbContext context)
             .SumAsync(t => t.Amount, cancellationToken);
     }
 
-    public async Task<CreditSpendable?> GetSpendableAsync(
-        string userId, CancellationToken cancellationToken)
+    public Task<CreditSpendable?> GetSpendableAsync(
+        string userId, string currencyId, CancellationToken cancellationToken)
     {
-        var row = await GetDbSet()
+        return GetDbSet()
             .AsNoTracking()
-            .Where(a => a.UserId == userId)
+            .Where(a => a.UserId == userId && a.CurrencyId == currencyId)
             .Select(a => new CreditSpendable(a.Id, a.Balance, a.CurrencyId, a.ExpiresOn))
             .FirstOrDefaultAsync(cancellationToken);
+    }
 
-        return row;
+    public async Task<IReadOnlyList<CreditSpendable>> GetSpendablesForUserAsync(
+        string userId, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .AsNoTracking()
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.Balance)
+            .ThenBy(a => a.CurrencyId)
+            .Select(a => new CreditSpendable(a.Id, a.Balance, a.CurrencyId, a.ExpiresOn))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<bool> TryDebitAsync(

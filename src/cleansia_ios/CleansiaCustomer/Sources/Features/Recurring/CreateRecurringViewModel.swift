@@ -67,7 +67,7 @@ enum CreateRecurringEvent: Equatable {
 final class CreateRecurringViewModel: ViewModel {
     @Published private(set) var formState = CreateRecurringFormState()
     @Published private(set) var submitState: ActionState = .idle
-    @Published private(set) var catalog: Catalog = .empty
+    @Published private(set) var catalogState: UiState<Catalog> = .loading
     @Published private(set) var savedAddresses: [RecurringSavedAddress] = []
 
     let sourceOrderId: String?
@@ -79,7 +79,6 @@ final class CreateRecurringViewModel: ViewModel {
     private let addressClient: RecurringSavedAddressClient
     private let orderClient: OrderClient
     private let snackbar: SnackbarController
-    private var isCatalogLoaded = false
     private var catalogCountryId: String?
     private var marketReload: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
@@ -111,8 +110,14 @@ final class CreateRecurringViewModel: ViewModel {
         editing != nil
     }
 
+    /// A schedule is only ever submitted against a catalogue the customer could see: a prefilled
+    /// selection that no market has vetted yet is not a booking.
     var isValid: Bool {
-        formState.isValid
+        formState.isValid && isCatalogLoaded
+    }
+
+    private var isCatalogLoaded: Bool {
+        catalogState.loadedValue != nil
     }
 
     /// `UpdateSchedule` rewrites the template and clears the materialisation watermark, so the new
@@ -146,14 +151,27 @@ final class CreateRecurringViewModel: ViewModel {
         }
     }
 
+    /// A retry lands the first catalogue the selection has ever been checked against: the market
+    /// watcher was idle while there was nothing to reload, and the prefill could not prune.
+    func retryCatalog() async {
+        await fetchCatalog()
+        if isCatalogForSelectedMarket, let catalog = catalogState.loadedValue {
+            pruneSelection(notListedIn: catalog)
+        }
+    }
+
     private func fetchCatalog() async {
+        catalogState = .loading
         let countryId = selectedCountryId
-        guard case let .success(catalog) = await catalogClient.loadCatalog(countryId: countryId) else { return }
-        self.catalog = catalog
-        isCatalogLoaded = true
-        catalogCountryId = countryId
-        if selectedCountryId != countryId {
-            reloadCatalogForMarket(selectedCountryId)
+        switch await catalogClient.loadCatalog(countryId: countryId) {
+        case let .success(catalog):
+            catalogState = .loaded(catalog)
+            catalogCountryId = countryId
+            if selectedCountryId != countryId {
+                reloadCatalogForMarket(selectedCountryId)
+            }
+        case let .failure(error):
+            catalogState = .error(error)
         }
     }
 
@@ -181,7 +199,7 @@ final class CreateRecurringViewModel: ViewModel {
             let result = await catalogClient.loadCatalog(countryId: countryId)
             if Task.isCancelled { return }
             guard case let .success(catalog) = result else { return }
-            self.catalog = catalog
+            catalogState = .loaded(catalog)
             catalogCountryId = countryId
             pruneSelection(notListedIn: catalog)
         }
@@ -274,7 +292,7 @@ final class CreateRecurringViewModel: ViewModel {
     // MARK: - Submit
 
     func submit() async -> Bool {
-        guard !submitState.isSubmitting else { return false }
+        guard !submitState.isSubmitting, isCatalogLoaded else { return false }
         guard let input = buildInput() else { return false }
         submitState = .submitting
         let result: ApiResult<RecurringTemplate> = if let editing {
@@ -330,7 +348,7 @@ final class CreateRecurringViewModel: ViewModel {
             state.dayOfWeek = RecurringTime.dotNetDayOfWeek(cleaningDate)
         }
         formState = state
-        if isCatalogForSelectedMarket {
+        if isCatalogForSelectedMarket, let catalog = catalogState.loadedValue {
             pruneSelection(notListedIn: catalog)
         }
     }

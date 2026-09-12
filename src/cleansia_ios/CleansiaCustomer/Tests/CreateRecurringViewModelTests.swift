@@ -41,8 +41,9 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isValid)
     }
 
-    func testIsValidRequiresAddressServiceAndStart() {
+    func testIsValidRequiresAddressServiceAndStart() async {
         let (vm, _) = makeVM()
+        await vm.load()
         vm.setSavedAddressId("addr-1")
         XCTAssertFalse(vm.isValid)
         vm.toggleService("s-1")
@@ -53,6 +54,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
     func testSubmitSuccessReturnsTrueAndCallsCreateOnce() async {
         let (vm, client) = makeVM()
+        await vm.load()
         fillValid(vm)
 
         let ok = await vm.submit()
@@ -68,6 +70,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         let client = FakeRecurringBookingClient()
         client.createResult = .failure(ApiError(httpStatus: 500))
         let (vm, _) = makeVM(recurringClient: client)
+        await vm.load()
         fillValid(vm)
 
         let ok = await vm.submit()
@@ -78,11 +81,92 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
     func testIncompleteFormDoesNotSubmit() async {
         let (vm, client) = makeVM()
+        await vm.load()
 
         let ok = await vm.submit()
 
         XCTAssertFalse(ok)
         XCTAssertTrue(client.createInputs.isEmpty)
+    }
+
+    // MARK: - The catalogue must have landed before anything is submitted
+
+    /// The form fills in without a catalogue (an address, a prefilled pick, a date), so a load that
+    /// failed once would otherwise let a selection nobody could see go out unpruned.
+    func testAFailedCatalogueLoadIsAnErrorStateThatHoldsSubmit() async {
+        let (vm, client) = makeVM(catalog: FakeCatalogClient(result: .failure(ApiError(code: "x"))))
+        await vm.load()
+        fillValid(vm)
+
+        if case .error = vm.catalogState {} else { XCTFail("expected a catalogue error state") }
+        XCTAssertTrue(vm.formState.isValid)
+        XCTAssertFalse(vm.isValid)
+        let ok = await vm.submit()
+        XCTAssertFalse(ok)
+        XCTAssertTrue(client.createInputs.isEmpty)
+        XCTAssertEqual(vm.submitState, .idle)
+    }
+
+    func testRetryAfterAFailedLoadLandsTheCatalogueForTheSelectedMarketAndPrunesThePrefill() async {
+        let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
+        let vm = prefilledFromOrder(
+            catalog: catalog,
+            services: [OrderFixtures.service(id: "s-1"), OrderFixtures.service(id: "s-2")],
+            packages: [OrderFixtures.package(id: "p-1")]
+        )
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+        await vm.load()
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1", "s-2"])
+        XCTAssertEqual(vm.formState.selectedPackageIds, ["p-1"])
+        XCTAssertEqual(events, [])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        await vm.retryCatalog()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["svk", "svk"])
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(vm.formState.selectedPackageIds, [])
+        XCTAssertEqual(events, [.selectionPrunedForMarket])
+        vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        XCTAssertTrue(vm.isValid)
+    }
+
+    /// While the load is in error there is nothing to re-read for a new market; the first catalogue
+    /// the retry lands is the selected market's, and from then on the address drives the market.
+    func testTheMarketFollowsTheAddressAgainOnceARetriedCatalogueLands() async {
+        let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
+        let (vm, _) = makeVM(catalog: catalog, addressClient: twoMarkets())
+        await vm.load()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        await vm.retryCatalog()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
+
+        catalog.result = .success(CatalogFixtures.populated)
+        vm.setSavedAddressId("addr-cz")
+        await drain()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk", "cze"])
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.populated)
+    }
+
+    func testARetryThatFailsAgainStaysInError() async {
+        let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
+        let (vm, _) = makeVM(catalog: catalog)
+        await vm.load()
+
+        await vm.retryCatalog()
+
+        XCTAssertEqual(catalog.callCount, 2)
+        if case .error = vm.catalogState {} else { XCTFail("expected a catalogue error state") }
+        XCTAssertFalse(vm.isValid)
     }
 
     func testPathADefaultsAddressToDefaultSaved() async {
@@ -117,6 +201,37 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.formState.bathrooms, 2)
         XCTAssertEqual(vm.formState.paymentType, 2)
         XCTAssertTrue(vm.formState.selectedServiceIds.contains("s-1"))
+    }
+
+    /// The default address decides the market the repeated order is priced in: a Slovak address reads
+    /// the Slovak catalogue (EUR), and the order's picks land on top of that address, not the reverse.
+    func testPathBWithASlovakSavedAddressPrefillsOntoTheSlovakMarket() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.slovak))
+        let addressClient = FakeRecurringSavedAddressClient()
+        addressClient.result = .success([
+            RecurringFixtures.address(id: "addr-cz", countryId: "cze"),
+            RecurringFixtures.address(id: "addr-sk", countryId: "svk", isDefault: true)
+        ])
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "ord-7",
+            rooms: 3,
+            bathrooms: 2,
+            services: [OrderFixtures.service(id: "s-1")],
+            paymentType: Code(type: "PaymentType", name: nil, value: 2)
+        ))]
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", catalog: catalog, addressClient: addressClient, orderClient: orderClient)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.savedAddressId, "addr-sk")
+        XCTAssertEqual(vm.selectedCountryId, "svk")
+        XCTAssertEqual(catalog.requestedCountryIds, ["svk"])
+        XCTAssertEqual(vm.catalogState.loadedValue?.currencyCode, "EUR")
+        XCTAssertEqual(vm.formState.rooms, 3)
+        XCTAssertEqual(vm.formState.bathrooms, 2)
+        XCTAssertEqual(vm.formState.paymentType, 2)
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
     }
 
     // MARK: - A prefilled selection is priced in the address's market, not the source order's
@@ -185,9 +300,10 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
     // MARK: - Edit mode
 
-    func testEditingSeedsTheFormFromTheTemplate() {
+    func testEditingSeedsTheFormFromTheTemplate() async {
         let template = RecurringFixtures.template(frequency: 2)
         let (vm, _) = makeVM(editing: template)
+        await vm.load()
 
         XCTAssertTrue(vm.isEditing)
         XCTAssertTrue(vm.isValid)
@@ -218,6 +334,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
     func testSubmitInEditModeUpdatesInsteadOfCreating() async {
         let template = RecurringFixtures.template()
         let (vm, client) = makeVM(editing: template)
+        await vm.load()
         vm.setRooms(5)
 
         let ok = await vm.submit()
@@ -235,6 +352,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         let endsOn = Date(timeIntervalSince1970: 1_800_000_000)
         let template = RecurringFixtures.template(endsOn: endsOn)
         let (vm, client) = makeVM(editing: template)
+        await vm.load()
 
         _ = await vm.submit()
 
@@ -245,6 +363,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         let client = FakeRecurringBookingClient()
         client.updateResult = .failure(ApiError(httpStatus: 500))
         let (vm, _) = makeVM(editing: RecurringFixtures.template(), recurringClient: client)
+        await vm.load()
 
         let ok = await vm.submit()
 
@@ -316,6 +435,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
     /// form that never reaches these setters books the wrong flat.
     func testPropertySizeReachesTheSubmittedCommand() async {
         let (vm, client) = makeVM()
+        await vm.load()
         fillValid(vm)
         vm.setRooms(4)
         vm.setBathrooms(2)
@@ -374,6 +494,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
     func testCreateModeStillCreates() async {
         let (vm, client) = makeVM()
+        await vm.load()
         fillValid(vm)
 
         _ = await vm.submit()
@@ -421,8 +542,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         await drain()
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
-        XCTAssertEqual(vm.catalog, CatalogFixtures.slovak)
-        XCTAssertEqual(vm.catalog.currencyCode, "EUR")
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
+        XCTAssertEqual(vm.catalogState.loadedValue?.currencyCode, "EUR")
     }
 
     func testASameCountryRepickDoesNotReloadTheCatalogue() async {
@@ -490,7 +611,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         await drain()
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
-        XCTAssertEqual(vm.catalog, CatalogFixtures.populated)
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.populated)
         XCTAssertEqual(vm.formState.selectedServiceIds, ["s-2"])
     }
 
@@ -516,7 +637,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         await drain()
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
-        XCTAssertEqual(vm.catalog, CatalogFixtures.slovak)
+        XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
     }
 
     private func twoMarkets() -> FakeRecurringSavedAddressClient {

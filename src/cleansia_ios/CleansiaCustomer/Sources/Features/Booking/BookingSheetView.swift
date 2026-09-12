@@ -96,6 +96,7 @@ struct BookingSheetView: View {
         .snackbarHost(snackbar, bottomInset: Self.footerSnackbarInset)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .interactiveDismissDisabled(vm.canStepBack)
     }
 
     private func submit() async {

@@ -86,6 +86,13 @@ final class BookingViewModel: ViewModel {
         currentStep <= 1
     }
 
+    /// Past the first step the sheet's leading control steps back instead of closing, and the
+    /// swipe-down gesture is held so a half-built draft is not thrown away by a flick (Android
+    /// intercepts the system back gesture the same way).
+    var canStepBack: Bool {
+        currentStep > 1
+    }
+
     var isLastStep: Bool {
         currentStep >= BookingStepGate.totalSteps
     }
@@ -157,7 +164,7 @@ final class BookingViewModel: ViewModel {
 
     @discardableResult
     func back() -> Bool {
-        guard currentStep > 1 else { return false }
+        guard canStepBack else { return false }
         currentStep -= 1
         return true
     }

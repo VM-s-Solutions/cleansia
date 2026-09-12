@@ -42,7 +42,7 @@ public class CreateOrderValidatorCharacterizationTests
             .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
@@ -67,7 +67,8 @@ public class CreateOrderValidatorCharacterizationTests
             _orderRepository.Object,
             _userMembershipRepository.Object,
             _session.Object,
-            PayConfigRepositoryDouble.Holding());
+            PayConfigRepositoryDouble.Holding(),
+            _currencyRepository.Object);
 
     [Fact]
     public async Task AC1_HappyPath_Passes()
@@ -165,27 +166,32 @@ public class CreateOrderValidatorCharacterizationTests
             It.IsAny<IEnumerable<string>>(),
             It.IsAny<int>(),
             It.IsAny<int>(),
-            // Never command.CurrencyId — see NoCallerSuppliedCurrency_EverReachesTheCalculator below.
-            null,
+            // The caller's currency — the same field the quote priced with.
+            command.CurrencyId,
             command.CleaningDate,
             It.IsAny<string?>(),
             It.IsAny<DateTime>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    // ---------------------------------------------------------------- the caller's currency
+
     /// <summary>
-    /// The currency is a SERVER fact. The validator used to forward <c>command.CurrencyId</c> straight
-    /// into the pricing calculator, and guarded it only with "does this currency exist" — which every
-    /// seeded currency did, so the guard stopped nothing. Naming HUF (stored rate 16.2) against a Prague
-    /// address multiplied the whole CZK catalogue by it.
-    ///
-    /// <para>The field stays on the wire, so this test supplies one and proves it is ignored. Asserting
-    /// on a command whose currency is null would pass against the defect.</para>
+    /// THE CALLER NAMES THE CURRENCY, AND THE PLATFORM CHECKS IT CAN QUOTE IN IT. This inverts the test
+    /// that used to sit here, which asserted the caller's currency never reached the calculator. That
+    /// was the right guard against the Wave A hole — "exists" was the only check, every seeded currency
+    /// existed, and a named HUF multiplied the CZK catalogue by its stored rate. Nothing converts any
+    /// more: a currency selects which price ROWS are read, so honouring it is safe once the only
+    /// currencies honoured are OFFERABLE ones — switched on and priced. That predicate is the guard
+    /// now, and this pins that it is consulted and that its answer decides.
     /// </summary>
     [Fact]
-    public async Task NoCallerSuppliedCurrency_EverReachesTheCalculator()
+    public async Task An_Offerable_Currency_Reaches_The_Calculator()
     {
-        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = "currency-huf" };
+        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = "currency-eur" };
+        _currencyRepository
+            .Setup(r => r.IsOfferableAsync("currency-eur", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
         await CreateValidator().ValidateAsync(command);
 
@@ -195,11 +201,55 @@ public class CreateOrderValidatorCharacterizationTests
             It.IsAny<IEnumerable<string>>(),
             It.IsAny<int>(),
             It.IsAny<int>(),
-            It.Is<string?>(id => id != null),
+            "currency-eur",
+            It.IsAny<DateTime?>(),
+            It.IsAny<string?>(),
+            It.IsAny<DateTime>(),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    /// <summary>
+    /// The refusal is keyed to the field, and the calculator is never run: it throws on a currency it
+    /// cannot price in, so reaching it with a bad one would turn a 400 into a 500. That is why the rule
+    /// heads the price chain rather than standing alone — the class cascade is Continue.
+    /// </summary>
+    [Fact]
+    public async Task A_Currency_The_Platform_Cannot_Quote_In_Is_Refused_Before_Pricing()
+    {
+        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = "currency-huf" };
+        _currencyRepository
+            .Setup(r => r.IsOfferableAsync("currency-huf", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        var failure = Assert.Single(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidCurrency);
+        Assert.Equal(nameof(CreateOrder.Command.CurrencyId), failure.ErrorCode);
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            It.IsAny<string?>(),
             It.IsAny<DateTime?>(),
             It.IsAny<string?>(),
             It.IsAny<DateTime>(),
             It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>Null is the platform default, and needs no lookup to be one.</summary>
+    [Fact]
+    public async Task No_Currency_Named_Is_The_Platform_Default_And_Consults_Nothing()
+    {
+        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = null };
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidCurrency);
+        _currencyRepository.Verify(
+            r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -43,7 +43,7 @@ public class CreateOrderExpressWaiverValidatorTests
             .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
     }
 
@@ -55,7 +55,8 @@ public class CreateOrderExpressWaiverValidatorTests
             _orderRepository.Object,
             _userMembershipRepository.Object,
             _session.Object,
-            PayConfigRepositoryDouble.Holding());
+            PayConfigRepositoryDouble.Holding(),
+            _currencyRepository.Object);
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

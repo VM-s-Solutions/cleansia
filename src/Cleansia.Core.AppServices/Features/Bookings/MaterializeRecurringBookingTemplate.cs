@@ -197,6 +197,15 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
+            // THE PLATFORM DEFAULT, deliberately -- not a currency of the customer's. A template carries
+            // no currency and is not born from an order it could inherit one from: CreateRecurringBooking
+            // builds it straight from its command, which has no CurrencyId, so there is nothing here to
+            // honour the way QuoteOrder and CreateOrder honour the caller's. Giving the schedule a
+            // currency is a column on the template AND a field on both recurring-booking commands across
+            // web, Android and iOS -- T-0706's batch, not this one. Fail-closed pricing is the backstop
+            // meanwhile: a default the template's items are not priced in makes OrderFactory throw, and
+            // the per-template scope confines that failure to this template's tick.
+            //
             // Resolved inside THIS scope on purpose: the Currency entity is handed to the order factory
             // and ends up referenced by rows this scope's context tracks. A Currency loaded by the outer
             // sweep's context would be a foreign tracked instance here.

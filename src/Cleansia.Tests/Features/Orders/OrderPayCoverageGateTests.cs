@@ -207,7 +207,7 @@ public class CreateOrderPayCoverageValidatorTests
         _packageRepository.Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(new[] { package }.AsQueryable().BuildMock());
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
@@ -229,7 +229,8 @@ public class CreateOrderPayCoverageValidatorTests
         _orderRepository.Object,
         _userMembershipRepository.Object,
         _session.Object,
-        _payConfigRepository.Object);
+        _payConfigRepository.Object,
+        _currencyRepository.Object);
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

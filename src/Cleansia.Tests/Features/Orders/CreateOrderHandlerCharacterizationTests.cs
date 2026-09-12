@@ -404,6 +404,66 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Null(captured!.AccessInstructions);
     }
 
+    // ---------------------------------------------------------------- the order's currency
+
+    /// <summary>
+    /// THE ORDER IS STAMPED WITH THE CURRENCY IT WAS QUOTED IN, and priced with the resolved row's id
+    /// rather than the raw command field, so the price and the stamp cannot name different currencies.
+    /// Before this the handler resolved the platform default unconditionally, two statements after
+    /// resolving an address it then ignored — so two currencies could never be live at once.
+    /// </summary>
+    [Fact]
+    public async Task The_Order_Is_Stamped_With_The_Currency_The_Caller_Named()
+    {
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "currency-eur";
+        _currencyRepository
+            .Setup(r => r.GetByIdAsync("currency-eur", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eur);
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = "currency-eur" };
+        await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.Same(eur, captured!.Currency);
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+            "currency-eur", It.IsAny<DateTime?>(), It.IsAny<string?>(),
+            It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _currencyRepository.Verify(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task With_No_Currency_Named_The_Order_Takes_The_Platform_Default()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = null };
+        await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.Equal("CZK", captured!.Currency.Code);
+        _currencyRepository.Verify(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _currencyRepository.Verify(
+            r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact]
     public async Task AC10_CardPath_NonStripeException_IsNotCaught_Bubbles()
     {

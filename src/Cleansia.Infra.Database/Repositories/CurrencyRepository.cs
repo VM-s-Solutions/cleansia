@@ -74,4 +74,18 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
 
         return false;
     }
+
+    public async Task<bool> IsOfferableAsync(string currencyId, CancellationToken cancellationToken)
+    {
+        // The switch first: a switched-off currency is not offerable however many rows price it -- the
+        // seed prices EUR ahead of the flip on purpose (see MustCoverAllActiveCurrencies). One row in
+        // ANY of the three price tables satisfies the second half; the three reads mirror IsInUseAsync
+        // above rather than one correlated EXISTS, so the two stay readable side by side.
+        if (!await GetDbSet().AnyAsync(c => c.Id == currencyId && c.IsActive, cancellationToken))
+            return false;
+
+        return await Context.ServicePrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken)
+            || await Context.PackagePrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken)
+            || await Context.ExtraPrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken);
+    }
 }

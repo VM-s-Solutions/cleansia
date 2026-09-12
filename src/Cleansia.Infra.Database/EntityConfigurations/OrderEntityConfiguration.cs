@@ -46,6 +46,30 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .IsRequired()
             .HasPrecision(18, 2);
 
+        // CURRENCY -> ORDER IS RESTRICT, the same leg ServicePrices, PackagePrices, ExtraPrices,
+        // EmployeePayConfigs, EmployeeInvoices and OrderEmployeePays already declare. This one was
+        // left to convention, and convention chose the opposite: Order.Currency is a REQUIRED
+        // navigation and EF Core's default for a required relationship is Cascade, so
+        // `DELETE FROM "Currencies"` took the orders denominated in it -- and with them the nine child
+        // tables that cascade from an order.
+        //
+        // The damage was PARTIAL, which is worse than total. An order that had earned a receipt, a
+        // dispute, a refund, a loyalty transaction, a promo redemption or a pay row was protected by
+        // THOSE tables' Restrict legs and raised a confusing 23503 naming FK_OrderReceipts; a young
+        // order had none of them and simply disappeared.
+        //
+        // DeleteCurrency's IsInUseAsync is not an arbiter in front of this: it is a check-then-act with
+        // no lock and no flush, and it reads Orders through the TENANT query filter while Currencies
+        // is platform-wide. Restrict makes the database the arbiter -- the delete fails loudly instead
+        // of succeeding quietly on a paid booking.
+        //
+        // Currency carries no collection back to Order, so the unnamed WithMany() maps THIS key rather
+        // than inventing a second shadow one beside it.
+        builder.HasOne(o => o.Currency)
+            .WithMany()
+            .HasForeignKey(o => o.CurrencyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // THE VAT SPLIT OF THIS ORDER, AND THE RATE THAT PRODUCED IT. All three landed as bare
         // `numeric` -- unconstrained -- while every money column around them was already (18,2). Not a
         // tidiness point for the rate: ReceiptService makes `AppliedVatRate is not null` the fiscal

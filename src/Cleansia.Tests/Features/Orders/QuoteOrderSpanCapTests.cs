@@ -43,7 +43,7 @@ public class QuoteOrderSpanCapTests
             .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
@@ -166,7 +166,7 @@ public class QuoteOrderSpanCapTests
     }
 
     private QuoteOrder.Validator QuoteValidator() =>
-        new(_serviceRepository.Object, _packageRepository.Object);
+        new(_serviceRepository.Object, _packageRepository.Object, _currencyRepository.Object);
 
     private CreateOrder.Validator CreateValidator() =>
         new(
@@ -176,7 +176,8 @@ public class QuoteOrderSpanCapTests
             _orderRepository.Object,
             _userMembershipRepository.Object,
             _session.Object,
-            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]));
+            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]),
+            _currencyRepository.Object);
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

@@ -125,7 +125,8 @@ public class QuoteOrder
 
         public Validator(
             IServiceRepository serviceRepository,
-            IPackageRepository packageRepository)
+            IPackageRepository packageRepository,
+            ICurrencyRepository currencyRepository)
         {
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
@@ -146,11 +147,16 @@ public class QuoteOrder
                 .MustAsync(packageRepository.ExistWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
-            // No currency rule. The field stays on the wire (removing it costs an NSwag run on three
-            // clients and a mobile spec re-dump for no behaviour change) but the server ignores it
-            // entirely, so there is nothing left to validate. Validating that a caller-named currency
-            // EXISTS was never the safety property anyway -- every seeded currency existed, and that
-            // was exactly the hole.
+            // The caller may name the currency it wants to be quoted in, and it must be one the platform
+            // can quote in -- switched on AND priced (ICurrencyRepository.IsOfferableAsync). Null is the
+            // platform default, resolved by the calculator. "Exists" was the pre-Wave-A rule and was the
+            // hole: every seeded currency existed. Offerable is the property that was missing.
+            When(x => !string.IsNullOrEmpty(x.CurrencyId), () =>
+            {
+                RuleFor(x => x.CurrencyId!)
+                    .MustAsync(currencyRepository.IsOfferableAsync)
+                    .WithMessage(BusinessErrorMessage.InvalidCurrency);
+            });
 
             RuleFor(x => x)
                 .MustAsync(SpanWithinCapAsync)
@@ -224,10 +230,10 @@ public class QuoteOrder
                 command.SelectedExtraSlugs ?? Array.Empty<string>(),
                 command.Rooms,
                 command.Bathrooms,
-                // currencyId: null -- the server resolves it, never the caller. Accepting one let any
-                // authenticated caller name a currency and have the whole CZK catalogue multiplied by
-                // its stored rate. Wave B replaces this with resolution from the address country.
-                null,
+                // The caller's currency, validated offerable above; null is the platform default. Safe
+                // to honour now because nothing converts -- a named currency selects which price ROWS
+                // are read, it no longer scales the CZK catalogue by a stored rate (the Wave A hole).
+                command.CurrencyId,
                 command.CleaningDate,
                 userSessionProvider.GetUserId(),
                 nowUtc,

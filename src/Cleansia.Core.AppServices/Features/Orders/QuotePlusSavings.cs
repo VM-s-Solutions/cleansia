@@ -49,7 +49,7 @@ public static class QuotePlusSavings
 
     public class Validator : AbstractValidator<Query>
     {
-        public Validator()
+        public Validator(ICurrencyRepository currencyRepository)
         {
             RuleFor(x => x.PlanCode)
                 .NotEmpty()
@@ -57,6 +57,15 @@ public static class QuotePlusSavings
 
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0);
             RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0);
+
+            // Same rule, same key as QuoteOrder: this query prices the basket too, and the calculator
+            // throws on a currency it cannot price in.
+            When(x => !string.IsNullOrEmpty(x.CurrencyId), () =>
+            {
+                RuleFor(x => x.CurrencyId!)
+                    .MustAsync(currencyRepository.IsOfferableAsync)
+                    .WithMessage(BusinessErrorMessage.InvalidCurrency);
+            });
         }
     }
 
@@ -85,10 +94,8 @@ public static class QuotePlusSavings
                 query.SelectedExtraSlugs ?? [],
                 query.Rooms,
                 query.Bathrooms,
-                // currencyId: null -- the server resolves it, never the caller. Accepting one let any
-                // authenticated caller name a currency and have the whole CZK catalogue multiplied by
-                // its stored rate. Wave B replaces this with resolution from the address country.
-                null,
+                // The caller's currency, validated offerable; null is the platform default.
+                query.CurrencyId,
                 query.CleaningDate,
                 userId,
                 nowUtc,

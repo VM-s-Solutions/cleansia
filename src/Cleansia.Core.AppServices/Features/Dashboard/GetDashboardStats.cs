@@ -54,6 +54,13 @@ public class GetDashboardStats
                     BusinessErrorMessage.EmployeeNotFound));
             }
 
+            // THE ONE CURRENCY EVERY MONEY FIGURE BELOW IS IN. Resolved first because the earnings sums
+            // are scoped to it: a cleaner's completed orders and pay rows can be in more than one
+            // currency, and this DTO carries one code, so anything in another currency is not on
+            // this screen. Counts are not scoped — a count has no unit.
+            var currency = await currencyResolutionService
+                .ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
+
             // Resolve the caller's timezone from the X-Time-Zone
             // request header (set by every mobile + web client).
             // Falls back to UTC if the client didn't send one or sent
@@ -111,8 +118,10 @@ public class GetDashboardStats
             // Without the fallback the dashboard showed "0 Kc earned" while the orders list showed the
             // real figure for the same job, because payroll had not run.
             // -> /flows/pay-and-payouts
-            var fetchedCompletedOrders = await orderRepository.GetCompletedOrdersInEitherRangeAsync(
-                employeeId, weekStart, weekEnd, previousMonthStart, previousMonthEnd, cancellationToken);
+            var fetchedCompletedOrders = (await orderRepository.GetCompletedOrdersInEitherRangeAsync(
+                    employeeId, weekStart, weekEnd, previousMonthStart, previousMonthEnd, cancellationToken))
+                .Where(o => o.CurrencyId == currency.Id)
+                .ToList();
 
             List<Cleansia.Core.Domain.Orders.Order> InWindow(DateTime start, DateTime end) =>
                 fetchedCompletedOrders.Where(o => o.CompletedAt >= start && o.CompletedAt <= end).ToList();
@@ -139,9 +148,8 @@ public class GetDashboardStats
                 new Dictionary<string, decimal>(0);
             if (allCompletedOrders.Count > 0)
             {
-                // Every currency across the window -- these stats aggregate many orders, so the read
-                // spans what they span and the estimator narrows per order.
-                var currencyIds = allCompletedOrders.Select(o => o.CurrencyId).Distinct().ToList();
+                // Every order left is in the display currency, so only its rates are needed.
+                IReadOnlyCollection<string> currencyIds = [currency.Id];
 
                 if (allServiceIds.Count > 0)
                 {
@@ -170,7 +178,7 @@ public class GetDashboardStats
             var latestInvoice = await employeeInvoiceRepository.GetLatestInvoiceAsync(
                 employeeId, cancellationToken);
 
-            var pendingEarnings = await orderEmployeePayRepository.SumPendingEarningsAsync(employeeId, cancellationToken);
+            var pendingEarnings = await orderEmployeePayRepository.SumPendingEarningsAsync(employeeId, currency.Id, cancellationToken);
 
             // Pay-period context. Active period drives the progress bar; the
             // payout date is derived from EndDate + offset (since PayPeriod
@@ -188,16 +196,6 @@ public class GetDashboardStats
             var (avgRating, ratingCount) = await orderRepository.GetAverageRatingForEmployeeAsync(
                 employeeId, cancellationToken);
 
-            // Display currency derives from the employee's approved
-            // work country (Employee.WorkCountryId -> CountryConfiguration
-            // .DefaultCurrencyCode), with the platform global default as
-            // a safety net for unapproved cleaners. Without a sensible
-            // server-side value the mobile dashboard fell back to the
-            // device locale — a Prague cleaner on a US-locale emulator
-            // saw "$" instead of "Kč".
-            var currencyCode = await currencyResolutionService
-                .ResolveCurrencyCodeForEmployeeAsync(employeeId, cancellationToken);
-
             return new DashboardStatsDto(
                 AvailableOrdersCount: availableOrdersCount,
                 MyActiveOrdersCount: activeOrdersCount,
@@ -208,14 +206,18 @@ public class GetDashboardStats
                 WeekEarnings: weekEarnings,
                 WeekCompletedCount: completedCounts.Week,
                 LastMonthEarnings: lastMonthEarnings,
-                CurrentPeriodEarnings: pendingEarnings > 0 ? pendingEarnings : latestInvoice?.TotalAmount ?? 0,
+                // The latest invoice stands in only when it is in the display currency; an EUR invoice
+                // under a CZK label is the exact mislabel this scoping exists to prevent.
+                CurrentPeriodEarnings: pendingEarnings > 0
+                    ? pendingEarnings
+                    : latestInvoice?.CurrencyId == currency.Id ? latestInvoice.TotalAmount : 0m,
                 CurrentPayPeriodStart: periodStart,
                 CurrentPayPeriodEnd: periodEnd,
                 NextPayoutDate: nextPayoutDate,
                 AverageRating: avgRating,
                 RatingCount: ratingCount,
                 LatestInvoiceStatus: latestInvoice?.Status.ToString(),
-                CurrencyCode: currencyCode
+                CurrencyCode: currency.Code
             );
         }
 

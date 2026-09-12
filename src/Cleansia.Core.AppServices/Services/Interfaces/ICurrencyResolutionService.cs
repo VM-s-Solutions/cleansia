@@ -3,7 +3,8 @@ using Cleansia.Core.Domain.Internationalization;
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
-/// Resolves the currency an employee should be paid / quoted in.
+/// Resolves THE currency an employee is paid, quoted and reported in — every partner-facing money
+/// aggregate is scoped to it, and every partner screen labels its figures with its code.
 ///
 /// Source of truth chain:
 ///   Employee.WorkCountryId
@@ -16,16 +17,15 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 /// currency still resolves: EUR is seeded real-but-not-yet-operated, and a country configured for it
 /// should answer EUR the day it is switched on.
 ///
-/// An unapproved employee (no WorkCountryId) falls back to the
-/// platform's global default currency. Callers should treat a null
-/// return as "use the global default" — the implementation already
-/// applies that fallback internally but the contract stays nullable
-/// so a missing global default doesn't silently mask configuration
-/// bugs upstream.
+/// Returns the ENTITY, not a code: callers filter rows on Currency.Id and label with Currency.Code,
+/// and handing out only the code forced every caller to look the row up again. Never null — the
+/// global default is the last link, and <c>ICurrencyRepository.GetDefaultAsync</c> throws rather than
+/// returning nothing, so a platform with no default fails loudly here instead of labelling money
+/// with an empty string. An unapproved employee (no WorkCountryId) resolves to that default.
 /// </summary>
 public interface ICurrencyResolutionService
 {
-    Task<string?> ResolveCurrencyCodeForEmployeeAsync(
+    Task<Currency> ResolveCurrencyForEmployeeAsync(
         string employeeId,
         CancellationToken cancellationToken);
 

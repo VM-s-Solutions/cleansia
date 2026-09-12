@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -32,7 +33,8 @@ public class GetOrderAnalytics
     public class Handler(
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ICurrencyResolutionService currencyResolutionService)
         : IRequestHandler<Query, BusinessResult<OrderAnalyticsDto>>
     {
         public async Task<BusinessResult<OrderAnalyticsDto>> Handle(Query request, CancellationToken cancellationToken)
@@ -62,13 +64,18 @@ public class GetOrderAnalytics
             var orders = await orderRepository
                 .GetEmployeeOrdersByDateRangeAsync(employeeId, request.StartDate, request.EndDate, cancellationToken);
 
+            // The money columns (weekly TotalRevenue, per-service TotalRevenue/AveragePrice) are scoped
+            // to the currency the dashboard labels them with; every count stays over all orders.
+            var currency = await currencyResolutionService
+                .ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
+
             var statusDistribution = orders
                 .GroupBy(o => o.GetCurrentOrderStatus().ToString())
                 .ToDictionary(g => g.Key, g => g.Count());
 
             var weeklyTrends = orders
                 .GroupBy(o => (Year: ISOWeek.GetYear(o.CleaningDateTime), Week: ISOWeek.GetWeekOfYear(o.CleaningDateTime)))
-                .Select(g => g.MapToWeeklyOrderCount())
+                .Select(g => g.MapToWeeklyOrderCount(currency.Id))
                 .OrderBy(w => w.Year)
                 .ThenBy(w => w.WeekNumber)
                 .ToList();
@@ -76,10 +83,11 @@ public class GetOrderAnalytics
             var serviceDistribution = orders
                 .SelectMany(o => o.SelectedServices.Select(s => (
                     ServiceName: s.Service?.Name ?? "Unknown",
+                    CurrencyId: o.CurrencyId,
                     Price: o.TotalPrice
                 )))
                 .GroupBy(s => s.ServiceName)
-                .Select(g => g.MapToServiceTypeCount())
+                .Select(g => g.MapToServiceTypeCount(currency.Id))
                 .OrderByDescending(s => s.OrderCount)
                 .ToList();
 

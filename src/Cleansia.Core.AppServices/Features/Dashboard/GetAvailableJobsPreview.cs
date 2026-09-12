@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,8 @@ public class GetAvailableJobsPreview
     internal class Handler(
         IOrderRepository orderRepository,
         IEmployeePayConfigRepository payConfigRepository,
-        IOrderAccessService orderAccessService)
+        IOrderAccessService orderAccessService,
+        ICurrencyResolutionService currencyResolutionService)
         : IQueryHandler<Query, AvailableJobsPreviewResponse>
     {
         public async Task<BusinessResult<AvailableJobsPreviewResponse>> Handle(Query query, CancellationToken cancellationToken)
@@ -51,6 +53,8 @@ public class GetAvailableJobsPreview
                     "Employee",
                     BusinessErrorMessage.EmployeeNotFound));
             }
+
+            var currency = await currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
 
             // Sorted by TotalPrice DESC so the cleaner sees the highest-value jobs first.
             var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, DateTime.UtcNow);
@@ -114,7 +118,10 @@ public class GetAvailableJobsPreview
             // 3 731 on the dashboard and 1 275 on the list, which is the number the cleaner is actually
             // offered. Unquotable rows contribute 0, matching how the orders list sums the same phrase
             // (`filtered.sumOf { it.estimatedCleanerPay ?: 0.0 }`), so one definition serves both.
-            var potentialEarnings = orders.Sum(o => OrderPayEstimator.Estimate(
+            // Scoped to the currency the dashboard prints beside this headline (DashboardStatsDto
+            // .CurrencyCode); a EUR job on a CZK board is still listed and counted, it just is not
+            // added into a figure labelled Kč.
+            var potentialEarnings = orders.Where(o => o.CurrencyId == currency.Id).Sum(o => OrderPayEstimator.Estimate(
                 o.ServiceIds.ToHashSet(),
                 o.PackageIds.ToHashSet(),
                 o.Rooms,

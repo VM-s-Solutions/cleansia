@@ -240,7 +240,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     }
 
     public async Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
-        DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
+        DateTime startDate, DateTime endDate, string currencyId, CancellationToken cancellationToken)
     {
         return await GetDbSet()
             .Include(o => o.OrderStatusHistory)
@@ -248,7 +248,9 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(s => s.Service)
             .Include(o => o.SelectedPackages)
                 .ThenInclude(op => op.Package)
-            .Where(o => o.CleaningDateTime >= startDate &&
+            // One currency per report: a sum across two is not a number, so the filter is in SQL.
+            .Where(o => o.CurrencyId == currencyId &&
+                       o.CleaningDateTime >= startDate &&
                        o.CleaningDateTime <= endDate)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);

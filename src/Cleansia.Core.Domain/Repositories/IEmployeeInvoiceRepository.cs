@@ -14,7 +14,11 @@ public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, strin
     /// </summary>
     Task<IReadOnlyList<EmployeeInvoice>> GetByEmployeeIdAsync(string employeeId, CancellationToken cancellationToken);
 
-    Task<EmployeeInvoice?> GetByEmployeeAndPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken);
+    /// <summary>
+    /// Every invoice the pair holds -- one per currency the period's pay was in -- ordered by currency
+    /// id so a caller that must pick one picks the same one every time.
+    /// </summary>
+    Task<IReadOnlyList<EmployeeInvoice>> GetAllForEmployeeAndPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken);
 
     /// <summary>
     /// True when any of the employee's NOT-YET-INVOICED pay rows in the period is in a currency this
@@ -46,5 +50,5 @@ public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, strin
     /// Used by admin payroll report.
     /// </summary>
     Task<IReadOnlyList<EmployeeInvoice>> GetAllByDateRangeAsync(
-        DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
+        DateTime startDate, DateTime endDate, string currencyId, CancellationToken cancellationToken);
 }

@@ -35,9 +35,6 @@ public class GenerateInvoiceCommandHandlerTests
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
-        _currencyResolution
-            .Setup(s => s.ResolveCurrencyCodeForEmployeeAsync(EmployeeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
         _currencyRepository
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(_currency);

@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -32,7 +33,8 @@ public class GetProductivityMetrics
         IOrderRepository orderRepository,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
         IOrderAccessService orderAccessService,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ICurrencyResolutionService currencyResolutionService)
         : IRequestHandler<Query, BusinessResult<ProductivityMetricsDto>>
     {
         public async Task<BusinessResult<ProductivityMetricsDto>> Handle(Query request, CancellationToken cancellationToken)
@@ -75,7 +77,8 @@ public class GetProductivityMetrics
             var onTimeCompletionRate = CalculateOnTimeCompletionRate(completedOrders);
             var completionPercentage = CalculateCompletionPercentage(ordersCompleted, DashboardConstants.DefaultMonthlyOrdersTarget);
             var efficiencyScore = CalculateEfficiencyScore(completionPercentage, onTimeCompletionRate);
-            var personalBests = await CalculatePersonalBestsAsync(employeeId, cancellationToken);
+            var currency = await currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
+            var personalBests = await CalculatePersonalBestsAsync(employeeId, currency.Id, cancellationToken);
 
             return new ProductivityMetricsDto(
                 OrdersCompleted: ordersCompleted,
@@ -137,7 +140,7 @@ public class GetProductivityMetrics
                    (onTimeRate * DashboardConstants.OnTimeCompletionWeight);
         }
 
-        private async Task<PersonalBests> CalculatePersonalBestsAsync(string employeeId, CancellationToken cancellationToken)
+        private async Task<PersonalBests> CalculatePersonalBestsAsync(string employeeId, string currencyId, CancellationToken cancellationToken)
         {
             var allTimeEnd = DateTime.UtcNow;
             var allOrders = await orderRepository
@@ -146,7 +149,10 @@ public class GetProductivityMetrics
             var invoices = await employeeInvoiceRepository
                 .GetByEmployeeAndDateRangeAsync(employeeId, DashboardConstants.AllTimeStartDate, allTimeEnd, cancellationToken);
 
+            // HighestEarningMonth is rendered with the dashboard's currency code; a month that was
+            // "highest" only because it mixed units is not a personal best.
             var highestEarningMonth = invoices
+                .Where(i => i.CurrencyId == currencyId)
                 .GroupBy(i => (i.GeneratedAt.Year, i.GeneratedAt.Month))
                 .Select(g => g.MapToMonthlyEarning())
                 .OrderByDescending(m => m.Amount)

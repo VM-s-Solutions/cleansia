@@ -15,6 +15,7 @@ using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -35,6 +36,7 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
     private const string CurrencyId = "currency-czk-preview";
+    private const string EurCurrencyId = "currency-eur-preview";
     private const string CountryId = "country-cz-preview";
     private const string CallerEmployeeId = "employee-preview-caller";
     private const string CallerUserId = "user-preview-caller";
@@ -195,6 +197,49 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
     }
 
     /// <summary>
+    /// The headline is a sum in the currency the dashboard prints beside it (the cleaner's resolved
+    /// currency -- CZK here, no country configuration is seeded). A EUR job on the board is listed and
+    /// counted, but its pay is not added into a figure labelled Kč (T-0702).
+    /// </summary>
+    [Fact]
+    public async Task The_Headline_Sums_Only_Jobs_In_The_Cleaners_Currency()
+    {
+        await TestMethod(
+            setup: ReplaceWithCallerSession,
+            arrange: async (CleansiaDbContext context) =>
+            {
+                await SeedTwoPayableJobs(context);
+
+                var eur = Currency.Create("EUR", "€", "Euro");
+                eur.IsActive = true;
+                eur.Id = EurCurrencyId;
+                context.Currencies.Add(eur);
+                context.Add(EmployeePayConfig.CreateForService(PayableServiceId, 13m, EurCurrencyId));
+
+                var service = await context.Services.SingleAsync(s => s.Id == PayableServiceId);
+                var eurOrder = NewOfferableOrder(2, EurCurrencyId);
+                eurOrder.AddSelectedServices([OrderLineMockFactory.ServiceLine(eurOrder, service)]);
+                context.Add(eurOrder);
+
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider => await provider
+                .GetRequiredService<IMediator>()
+                .Send(new GetAvailableJobsPreview.Query(Limit: 5)),
+            assert: (CleansiaDbContext _, BusinessResult<AvailableJobsPreviewResponse> result) =>
+            {
+                Assert.True(result.IsSuccess);
+                var response = result.Value!;
+
+                Assert.Equal(3, response.Jobs.Count);
+                Assert.Equal(3, response.TotalAvailableCount);
+                Assert.Equal(PayPerJob * 2, response.TotalPotentialEarnings);
+
+                return Task.CompletedTask;
+            });
+    }
+
+    /// <summary>
     /// A board whose orders can actually be priced FOR A CLEANER — the other fixture seeds no services,
     /// so the estimator has no config to match and every row is unquotable. That is a legitimate state
     /// (it contributes zero), but it cannot tell price from pay, which is why this fixture exists.
@@ -261,7 +306,7 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
         await context.CommitAsync(CancellationToken.None);
     }
 
-    private static Order NewOfferableOrder(int index)
+    private static Order NewOfferableOrder(int index, string currencyId = CurrencyId)
     {
         var order = Order.Create(
             customerName: "Preview Customer",
@@ -273,7 +318,7 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
             cleaningDateTime: DateTime.UtcNow.AddDays(2).AddMinutes(index * 30),
             paymentType: PaymentType.Card,
             totalPrice: 1000m + index,
-            currencyId: CurrencyId,
+            currencyId: currencyId,
             paymentStatus: PaymentStatus.Paid);
         order.Id = $"order-preview-{index:D3}";
         order.UpdateEstimatedTime(120);

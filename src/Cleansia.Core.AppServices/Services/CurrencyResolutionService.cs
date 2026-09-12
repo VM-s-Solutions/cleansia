@@ -9,13 +9,12 @@ public sealed class CurrencyResolutionService(
     ICountryConfigurationRepository countryConfigurationRepository,
     ICurrencyRepository currencyRepository) : ICurrencyResolutionService
 {
-    public async Task<string?> ResolveCurrencyCodeForEmployeeAsync(
+    public async Task<Currency> ResolveCurrencyForEmployeeAsync(
         string employeeId,
         CancellationToken cancellationToken)
     {
         var employee = await employeeRepository.GetByIdAsync(employeeId, cancellationToken);
-        var currency = await ResolveCurrencyForWorkCountryAsync(employee?.WorkCountryId, cancellationToken);
-        return currency.Code;
+        return await ResolveCurrencyForWorkCountryAsync(employee?.WorkCountryId, cancellationToken);
     }
 
     public async Task<Currency> ResolveCurrencyForWorkCountryAsync(

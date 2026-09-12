@@ -1,11 +1,13 @@
 #nullable enable
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Reports.DTOs;
 using Cleansia.Core.AppServices.Features.Reports.Filters;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,13 +17,37 @@ public class GetRevenueReport
 {
     public record Query(ReportFilter Filter) : IQuery<RevenueReportDto>;
 
-    internal class Handler(IOrderRepository orderRepository)
+    public class Validator : AbstractValidator<Query>
+    {
+        public Validator(ICurrencyRepository currencyRepository)
+        {
+            // Optional: null is the platform default. A NAMED currency has to exist, or a typo would
+            // answer an all-zero report that reads as "no revenue".
+            RuleFor(x => x.Filter.CurrencyId)
+                .MustAsync(async (id, ct) => await currencyRepository.ExistsAsync(id!, ct))
+                .WithMessage(BusinessErrorMessage.CurrencyNotFound)
+                .When(x => !string.IsNullOrWhiteSpace(x.Filter.CurrencyId));
+        }
+    }
+
+    internal class Handler(IOrderRepository orderRepository, ICurrencyRepository currencyRepository)
         : IRequestHandler<Query, BusinessResult<RevenueReportDto>>
     {
         public async Task<BusinessResult<RevenueReportDto>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var orders = await orderRepository
-                .GetOrdersByDateRangeAsync(request.Filter.StartDate, request.Filter.EndDate, cancellationToken);
+            // ONE currency per report. Every figure below is a sum, and a sum across currencies is
+            // not a number — so the admin picks one (or takes the default) and the query filters on it.
+            var currency = string.IsNullOrWhiteSpace(request.Filter.CurrencyId)
+                ? await currencyRepository.GetDefaultAsync(cancellationToken)
+                : await currencyRepository.GetByIdAsync(request.Filter.CurrencyId, cancellationToken);
+            if (currency is null)
+            {
+                return BusinessResult.Failure<RevenueReportDto>(new Error(
+                    nameof(request.Filter.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
+            }
+
+            var orders = await orderRepository.GetOrdersByDateRangeAsync(
+                request.Filter.StartDate, request.Filter.EndDate, currency.Id, cancellationToken);
 
             var totalRevenue = orders.Sum(o => o.TotalPrice);
             var totalOrders = orders.Count;
@@ -107,7 +133,8 @@ public class GetRevenueReport
                 RevenueByPackage: revenueByPackage,
                 RevenueByPaymentType: revenueByPaymentType,
                 RevenueByPaymentStatus: revenueByPaymentStatus,
-                TotalSettledFromCredit: orders.Sum(o => o.CreditAppliedAmount));
+                TotalSettledFromCredit: orders.Sum(o => o.CreditAppliedAmount),
+                CurrencyCode: currency.Code);
         }
 
         private static decimal CalculateGrowthPercentage(List<DailyRevenue> dailyRevenues)

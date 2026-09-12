@@ -37,6 +37,9 @@ public static class DomainSeed
             var currency = Currency.Create("CZK", "Kč", "Czech koruna");
             currency.IsActive = true;
             currency.Id = CurrencyId;
+            // The platform default, as the seed script's CZK is: every partner money aggregate resolves
+            // the cleaner's currency through it and the repository throws when none exists.
+            currency.SetAsDefault(true);
             ctx.Currencies.Add(currency);
         }
 

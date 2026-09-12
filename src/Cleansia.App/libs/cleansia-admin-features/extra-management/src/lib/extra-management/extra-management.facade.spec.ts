@@ -224,7 +224,7 @@ describe('ExtraManagementFacade', () => {
       facade.loadExtras();
 
       expect(facade.defaultCurrencyCode()).toBeNull();
-      expect(facade.formatCurrency(45.1)).toBe('45.1');
+      expect(facade.formatCurrency(45.1)).toBe('45.10');
     });
   });
 });

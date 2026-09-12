@@ -75,7 +75,7 @@ describe('the total price column names the order currency', () => {
   it('labels the total with the code the order carries', () => {
     const order = OrderListItem.fromJS({ totalPrice: 1200, currency: { code: 'EUR' } });
     for (const column of priceColumns()) {
-      expect(column.getValue!(order)).toBe('€1,200');
+      expect(column.getValue!(order)).toBe('€1,200.00');
     }
   });
 
@@ -84,7 +84,7 @@ describe('the total price column names the order currency', () => {
   it('prints a bare number rather than a currency the order does not name', () => {
     const order = OrderListItem.fromJS({ totalPrice: 1200 });
     for (const column of priceColumns()) {
-      expect(column.getValue!(order)).toBe('1,200');
+      expect(column.getValue!(order)).toBe('1,200.00');
     }
   });
 });

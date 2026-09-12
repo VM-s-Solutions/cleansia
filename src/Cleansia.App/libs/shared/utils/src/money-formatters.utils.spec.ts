@@ -39,6 +39,24 @@ describe('formatMoney', () => {
     expect(formatMoney(1234.5, 'EUR', 'de-DE')).toBe('1.234,50 €');
     expect(formatMoney(1234.5, 'EUR', 'en-GB')).toBe('€1,234.50');
   });
+
+  describe('with fractionDigits pinned', () => {
+    it('prints a whole amount with the fraction the caller asked for', () => {
+      expect(formatMoney(1200, 'EUR', 'en-GB', { fractionDigits: 2 })).toBe('€1,200.00');
+      expect(formatMoney(1200, 'CZK', 'cs-CZ', { fractionDigits: 2 })).toBe('1 200,00 Kč');
+    });
+
+    it('pins a fractional amount and a bare number to the same width', () => {
+      expect(formatMoney(45.1, 'EUR', 'en-GB', { fractionDigits: 2 })).toBe('€45.10');
+      expect(formatMoney(45.1, null, 'en-GB', { fractionDigits: 2 })).toBe('45.10');
+      expect(formatMoney(0, 'EUR', 'en-GB', { fractionDigits: 2 })).toBe('€0.00');
+    });
+
+    it('does not change what the same amount prints without the option', () => {
+      expect(formatMoney(1200, 'EUR', 'en-GB')).toBe('€1,200');
+      expect(formatMoney(1200, 'EUR', 'en-GB', {})).toBe('€1,200');
+    });
+  });
 });
 
 describe('localeFor', () => {

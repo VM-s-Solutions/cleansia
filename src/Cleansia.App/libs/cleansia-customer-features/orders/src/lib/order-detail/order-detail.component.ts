@@ -453,13 +453,12 @@ export class OrderDetailComponent implements OnInit {
     // Only rows the customer actually scored. An unscored row is not a zero — the server would reject
     // a rating outside 1..5, and "not scored" is a real answer that simply carries no line.
     const scores = this.reviewLineScores();
-    const lines = this.reviewLineOptions()
-      .filter((option) => scores.has(option.key))
-      .map((option) => ({
-        serviceId: option.serviceId,
-        packageId: option.packageId,
-        rating: scores.get(option.key)!,
-      }));
+    const lines = this.reviewLineOptions().flatMap((option) => {
+      const rating = scores.get(option.key);
+      return rating === undefined
+        ? []
+        : [{ serviceId: option.serviceId, packageId: option.packageId, rating }];
+    });
 
     this.facade.submitReview(this.reviewRating(), this.reviewComment(), lines);
   }

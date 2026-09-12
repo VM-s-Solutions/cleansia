@@ -21,7 +21,7 @@ export interface GalleryPhoto {
 }
 
 @Component({
-  selector: 'photo-gallery',
+  selector: 'cleansia-partner-photo-gallery',
   standalone: true,
   imports: [CommonModule, TranslatePipe, CleansiaButtonComponent],
   templateUrl: './photo-gallery.component.html',
@@ -83,7 +83,7 @@ export class PhotoGalleryComponent {
     });
   }
 
-  open(index: number = 0): void {
+  open(index = 0): void {
     this.currentIndex.set(index);
     this.isOpen.set(true);
     document.body.style.overflow = 'hidden';
@@ -111,7 +111,7 @@ export class PhotoGalleryComponent {
     this.currentIndex.set(index);
   }
 
-  onBackdropClick(event: MouseEvent): void {
+  onBackdropClick(event: Event): void {
     if ((event.target as HTMLElement).classList.contains('photo-gallery')) {
       this.close();
     }

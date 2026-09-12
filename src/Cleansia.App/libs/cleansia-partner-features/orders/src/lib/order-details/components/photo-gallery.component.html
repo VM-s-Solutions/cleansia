@@ -1,5 +1,12 @@
 @if (isOpen()) {
-<div class="photo-gallery" (click)="onBackdropClick($event)">
+<div
+  class="photo-gallery"
+  role="button"
+  tabindex="0"
+  (click)="onBackdropClick($event)"
+  (keydown.enter)="onBackdropClick($event)"
+  [attr.aria-label]="'global.actions.close' | translate"
+>
   <div class="photo-gallery__container">
     <!-- Header -->
     <div class="photo-gallery__header">
@@ -44,7 +51,6 @@
           [src]="currentPhoto().url"
           [alt]="currentPhoto().fileName || ('global.alt.photo' | translate)"
           class="photo-gallery__image"
-          (click)="$event.stopPropagation()"
         />
       </div>
 
@@ -105,7 +111,10 @@
         class="photo-gallery__thumbnail"
         [class.photo-gallery__thumbnail--active]="$index === currentIndex()"
         [class.photo-gallery__thumbnail--staged]="photo.isStaged"
+        role="button"
+        tabindex="0"
         (click)="navigateToIndex($index); $event.stopPropagation()"
+        (keydown.enter)="navigateToIndex($index)"
       >
         <img [src]="photo.url" [alt]="photo.fileName || 'Thumbnail'" />
         @if (photo.isStaged) {

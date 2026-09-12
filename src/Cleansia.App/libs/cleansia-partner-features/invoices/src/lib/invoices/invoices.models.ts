@@ -46,7 +46,7 @@ export function getInvoicesTableDefinition(
         field: 'totalAmount',
         header: 'pages.invoices.total_amount',
         getValue: (invoice?: EmployeeInvoice) =>
-          invoice ? formatMoney(invoice.totalAmount, invoice.currencyCode, 'en-GB') : '',
+          invoice ? formatMoney(invoice.totalAmount, invoice.currencyCode, 'en-GB', { fractionDigits: 2 }) : '',
         sortable: true,
         align: 'right',
       },

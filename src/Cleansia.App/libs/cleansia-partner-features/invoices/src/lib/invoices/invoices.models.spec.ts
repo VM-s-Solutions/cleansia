@@ -27,12 +27,12 @@ describe('getInvoicesTableDefinition — total amount', () => {
     getInvoicesTableDefinition({ onDownload: jest.fn() }).columns.find((c) => c.id === 'totalAmount')!;
 
   it('labels the total with the code the invoice carries', () => {
-    expect(totalColumn().getValue!(invoice({ currencyCode: 'EUR' }))).toBe('€1,200');
+    expect(totalColumn().getValue!(invoice({ currencyCode: 'EUR' }))).toBe('€1,200.00');
   });
 
   // One invoice per currency and the server names it; a missing code is a bug upstream, and
   // printing crowns for it would relabel a EUR invoice on screen.
   it('prints a bare number rather than a currency the invoice does not name', () => {
-    expect(totalColumn().getValue!(invoice({ currencyCode: '' }))).toBe('1,200');
+    expect(totalColumn().getValue!(invoice({ currencyCode: '' }))).toBe('1,200.00');
   });
 });

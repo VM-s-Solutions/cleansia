@@ -81,7 +81,7 @@ export class AdminPhotoGalleryComponent {
     });
   }
 
-  open(index: number = 0): void {
+  open(index = 0): void {
     this.currentIndex.set(index);
     this.isOpen.set(true);
     document.body.style.overflow = 'hidden';
@@ -109,7 +109,7 @@ export class AdminPhotoGalleryComponent {
     this.currentIndex.set(index);
   }
 
-  onBackdropClick(event: MouseEvent): void {
+  onBackdropClick(event: Event): void {
     if ((event.target as HTMLElement).classList.contains('photo-gallery')) {
       this.close();
     }

@@ -250,14 +250,14 @@ describe('OrderWizardComponent (a11y)', () => {
 
       const price = el.querySelector('.cl-wiz__svc-price')?.textContent ?? '';
       expect(price).toContain('€');
-      expect(price).not.toContain('Kč');
+      expect(price).not.toContain('CZK');
     });
 
     it('falls back to the wizard label for an item that carries no code', async () => {
       await setup();
       facade.currencyCode.set('CZK');
 
-      expect(fixture.componentInstance.formatPrice(40, undefined)).toContain('Kč');
+      expect(fixture.componentInstance.formatPrice(40, undefined)).toContain('CZK');
     });
 
     it('renders package cards as focusable buttons with aria-pressed', async () => {
@@ -605,7 +605,7 @@ describe('OrderWizardComponent (a11y)', () => {
       fixture.detectChanges();
 
       expect(fixture.componentInstance.priceBeforeDiscount()).toContain('€');
-      expect(fixture.componentInstance.priceBeforeDiscount()).not.toContain('Kč');
+      expect(fixture.componentInstance.priceBeforeDiscount()).not.toContain('CZK');
       expect(fixture.componentInstance.savingAmount()).toContain('€');
       expect(fixture.componentInstance.formatPrice(12.5)).toMatch(/12[.,]50/);
       expect(el.querySelector('.cl-wiz__total')?.textContent).toContain('€');

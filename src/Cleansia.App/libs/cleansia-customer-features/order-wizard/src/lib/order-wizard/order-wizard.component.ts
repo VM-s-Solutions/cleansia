@@ -44,7 +44,7 @@ import {
   LAST_WINDOW_HOUR,
   STANDARD_LEAD_TIME_HOURS,
 } from '@cleansia/models';
-import { formatMoney } from '@cleansia/utils';
+import { formatMoney, localeFor } from '@cleansia/utils';
 
 /** Midnight of a date, so two dates compare as days and not as instants. */
 function startOfDay(date: Date): Date {
@@ -476,7 +476,7 @@ export class OrderWizardComponent implements OnInit {
    * (a quote line, a plan price) with the wizard's.
    */
   formatPrice(price: number, currencyCode?: string | null): string {
-    return formatMoney(price, currencyCode || this.facade.currencyCode(), this.localeTag());
+    return formatMoney(price, currencyCode || this.facade.currencyCode(), localeFor(this.lang()));
   }
 
   // Same icon rotation as the services-catalog page so both card sets read
@@ -1135,12 +1135,8 @@ export class OrderWizardComponent implements OnInit {
     const minutes = this.facade.quote()?.estimatedDurationMinutes ?? 0;
     if (!minutes) return null;
     const hours = Math.round((minutes / 60) * 2) / 2;
-    return new Intl.NumberFormat(this.localeTag(), { maximumFractionDigits: 1 }).format(hours);
+    return new Intl.NumberFormat(localeFor(this.lang()), { maximumFractionDigits: 1 }).format(hours);
   });
-
-  private localeTag(): string {
-    return this.lang() || this.translate.getDefaultLang() || 'cs';
-  }
 
   setRooms(rooms: number): void {
     this.facade.updateFormData({ rooms });

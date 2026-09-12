@@ -110,7 +110,7 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
 
   formatCurrency(value: number | undefined): string {
     if (value === undefined || value === null) return '';
-    return formatMoney(value, this.defaultCurrencyCode(), 'en-GB');
+    return formatMoney(value, this.defaultCurrencyCode(), 'en-GB', { fractionDigits: 2 });
   }
 
   navigateToCreateService(): void {

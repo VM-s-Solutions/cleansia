@@ -18,7 +18,7 @@ import {
   RejectDialogComponent,
   RejectDialogData,
   RejectDialogResult,
-} from '../../../../employee-management/src/lib/components';
+} from '@cleansia/admin-features/employee-management';
 
 @Injectable()
 export class InvoiceDetailFacade extends UnsubscribeControlDirective {
@@ -51,11 +51,12 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   approveInvoice(): void {
     const inv = this.invoice();
     if (!inv?.id) return;
+    const invoiceId = inv.id;
 
     this.actionLoading.set(true);
 
     const command = new ApproveInvoiceCommand();
-    command.invoiceId = inv.id;
+    command.invoiceId = invoiceId;
     command.adminNotes = undefined;
 
     this.adminClient.adminInvoiceClient
@@ -72,7 +73,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
               'pages.invoice_detail.messages.approve_success'
             )
           );
-          this.loadInvoiceDetail(inv.id!);
+          this.loadInvoiceDetail(invoiceId);
         }
       });
   }
@@ -80,11 +81,12 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   markAsPaid(bankTransferNote?: string): void {
     const inv = this.invoice();
     if (!inv?.id) return;
+    const invoiceId = inv.id;
 
     this.actionLoading.set(true);
 
     const command = new MarkInvoicePaidCommand();
-    command.invoiceId = inv.id;
+    command.invoiceId = invoiceId;
     command.bankTransferNote = bankTransferNote;
     command.adminNotes = undefined;
 
@@ -102,7 +104,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
               'pages.invoice_detail.messages.mark_paid_success'
             )
           );
-          this.loadInvoiceDetail(inv.id!);
+          this.loadInvoiceDetail(invoiceId);
         }
       });
   }
@@ -110,11 +112,12 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   assignVariableSymbol(): void {
     const inv = this.invoice();
     if (!inv?.id) return;
+    const invoiceId = inv.id;
 
     this.actionLoading.set(true);
 
     const command = new AssignInvoiceVariableSymbolCommand();
-    command.invoiceId = inv.id;
+    command.invoiceId = invoiceId;
     command.languageCode = this.translate.currentLang || 'en';
 
     this.adminClient.adminPayrollClient
@@ -148,7 +151,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
           );
         }
 
-        this.loadInvoiceDetail(inv.id!);
+        this.loadInvoiceDetail(invoiceId);
       });
   }
 
@@ -185,11 +188,12 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   cancelInvoice(reason: string): void {
     const inv = this.invoice();
     if (!inv?.id) return;
+    const invoiceId = inv.id;
 
     this.actionLoading.set(true);
 
     const command = new CancelInvoiceCommand();
-    command.invoiceId = inv.id;
+    command.invoiceId = invoiceId;
     command.reason = reason;
 
     this.adminClient.adminInvoiceClient
@@ -206,7 +210,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
               'pages.invoice_detail.messages.cancel_success'
             )
           );
-          this.loadInvoiceDetail(inv.id!);
+          this.loadInvoiceDetail(invoiceId);
         }
       });
   }
@@ -238,11 +242,12 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   regeneratePdf(): void {
     const inv = this.invoice();
     if (!inv?.id) return;
+    const invoiceId = inv.id;
 
     this.actionLoading.set(true);
 
     const command = new RegenerateInvoicePdfCommand();
-    command.invoiceId = inv.id;
+    command.invoiceId = invoiceId;
     command.languageCode = this.translate.currentLang || 'en';
 
     this.adminClient.adminInvoiceClient
@@ -259,7 +264,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
               'pages.invoice_detail.messages.regenerate_success'
             )
           );
-          this.loadInvoiceDetail(inv.id!);
+          this.loadInvoiceDetail(invoiceId);
         }
       });
   }

@@ -125,7 +125,10 @@
             [src]="photo.blobUrl"
             [alt]="photo.originalFileName || photo.fileName"
             class="order-photos__image"
+            role="button"
+            tabindex="0"
             (click)="openGallery($index)"
+            (keydown.enter)="openGallery($index)"
           />
           <div class="order-photos__item-info">
             <span class="order-photos__item-name">{{
@@ -168,7 +171,10 @@
             [src]="staged.preview"
             [alt]="staged.file.fileName"
             class="order-photos__image"
+            role="button"
+            tabindex="0"
             (click)="openGallery(beforePhotos().length + $index)"
+            (keydown.enter)="openGallery(beforePhotos().length + $index)"
           />
           <div class="order-photos__item-info">
             <span class="order-photos__item-name">{{
@@ -207,7 +213,14 @@
             [src]="photo.blobUrl"
             [alt]="photo.originalFileName || photo.fileName"
             class="order-photos__image"
+            role="button"
+            tabindex="0"
             (click)="
+              openGallery(
+                beforePhotos().length + stagedBeforePhotos().length + $index
+              )
+            "
+            (keydown.enter)="
               openGallery(
                 beforePhotos().length + stagedBeforePhotos().length + $index
               )
@@ -254,7 +267,17 @@
             [src]="staged.preview"
             [alt]="staged.file.fileName"
             class="order-photos__image"
+            role="button"
+            tabindex="0"
             (click)="
+              openGallery(
+                beforePhotos().length +
+                  stagedBeforePhotos().length +
+                  afterPhotos().length +
+                  $index
+              )
+            "
+            (keydown.enter)="
               openGallery(
                 beforePhotos().length +
                   stagedBeforePhotos().length +
@@ -309,7 +332,7 @@
 </cleansia-section>
 
 <!-- Photo Gallery -->
-<photo-gallery
+<cleansia-partner-photo-gallery
   #gallery
   [photos]="galleryPhotos()"
   [canDelete]="canDelete()"

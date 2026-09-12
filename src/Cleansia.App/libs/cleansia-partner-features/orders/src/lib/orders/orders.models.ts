@@ -127,7 +127,7 @@ export function getAvailableOrdersTableDefinition(
         field: 'totalPrice',
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
-          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB') : '',
+          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB', { fractionDigits: 2 }) : '',
         sortable: true,
         width: '12%',
         align: 'right',
@@ -235,7 +235,7 @@ export function getMyOrdersTableDefinition(
         field: 'totalPrice',
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
-          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB') : '',
+          row?.totalPrice ? formatMoney(row.totalPrice, row.currency?.code, 'en-GB', { fractionDigits: 2 }) : '',
         sortable: true,
         width: '12%',
         align: 'right',

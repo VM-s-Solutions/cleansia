@@ -24,8 +24,10 @@ import {
   CleansiaCheckboxComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
   TableColumn,
   TableAction,
   PaginationState,
@@ -53,6 +55,7 @@ import {
     CommonModule,
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
+    CleansiaSelectComponent,
     TranslatePipe,
     CleansiaTableComponent,
     CleansiaTitleComponent,
@@ -88,7 +91,12 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
 
   filterForm = this.fb.group({
     status: [[] as EmployeeInvoiceStatus[]],
+    currencyId: [null as string | null],
   });
+
+  readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.facade.currencies().map((c) => ({ label: c.code, value: c.id }))
+  );
 
   // Invoice status options - will be rebuilt on language change
   invoiceStatusMultiOptions: { label: string; value: EmployeeInvoiceStatus }[] = [];
@@ -130,6 +138,7 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
         this.cd.detectChanges();
       });
 
+    this.facade.loadCurrencies();
     this.facade.loadInvoices();
   }
 
@@ -220,12 +229,14 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
         formValues.status && formValues.status.length > 0
           ? formValues.status
           : undefined,
+      currencyId: formValues.currencyId || undefined,
     });
   }
 
   resetFilters(): void {
     this.filterForm.reset({
       status: [],
+      currencyId: null,
     });
     this.facade.resetFilter();
   }
@@ -283,12 +294,23 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
       });
     }
 
+    if (values.currencyId) {
+      chips.push({
+        key: 'currency',
+        label: this.translate.instant('pages.invoice_management.filters.currency'),
+        value: this.facade.currencies().find((c) => c.id === values.currencyId)?.code ?? '',
+      });
+    }
+
     return chips;
   }
 
   removeFilterChip(key: string): void {
     if (key === 'status') {
       this.filterForm.patchValue({ status: [] });
+    }
+    if (key === 'currency') {
+      this.filterForm.patchValue({ currencyId: null });
     }
     this.applyFilters();
   }

@@ -561,7 +561,8 @@
         "date_from": "Dátum od",
         "date_to": "Dátum do",
         "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "clear_all": "Vymazať všetko",
+        "currency": "Mena"
       },
       "order_status": {
         "pending": "Čakajúca",
@@ -726,7 +727,8 @@
         "search_placeholder": "Hľadať podľa čísla faktúry alebo zamestnanca",
         "status": "Stav faktúry",
         "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "clear_all": "Vymazať všetko",
+        "currency": "Mena"
       },
       "invoice_status": {
         "pending": "Čakajúca",
@@ -1230,7 +1232,7 @@
     },
     "currency_management": {
       "title": "Správa mien",
-      "description": "Spravujte meny a výmenné kurzy",
+      "description": "Spravujte meny, v ktorých platforma pôsobí, predvolenú menu a sumu, za ktorú sa získa vernostný bod",
       "create_currency": "Vytvoriť menu",
       "edit_currency": "Upraviť menu",
       "delete_currency": "Odstrániť menu",
@@ -1267,12 +1269,8 @@
       "edit_title": "Upraviť menu",
       "basic_info": "Základné informácie",
       "code": "Kód meny",
-      "code_placeholder": "napr. USD, EUR, CZK",
       "symbol": "Symbol",
-      "symbol_placeholder": "napr. $, €, Kč",
       "name": "Názov meny",
-      "name_placeholder": "napr. Americký dolár, Euro, Česká koruna",
-      "exchange_rate_placeholder": "napr. 1.0, 0.92, 24.50",
       "loyalty_points_divisor": "Suma, za ktorú sa získa jeden vernostný bod",
       "loyalty_points_divisor_placeholder": "napr. 10 pre CZK — ak pole necháte prázdne, mena žiadne body nezískava",
       "messages": {
@@ -2001,7 +1999,7 @@
           "reason": "Dôvod",
           "note": "Čo sa stalo"
         },
-        "expire_success": "Odpísané {{amount}}.",
+        "expire_success": "Odpísané {{amount}} {{currency}}.",
         "expire_error": "Zostatok sa nepodarilo odpísať.",
         "expire_dialog": {
           "title": "Odpísať zostatok kreditu",

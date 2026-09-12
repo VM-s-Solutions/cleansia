@@ -561,7 +561,8 @@
         "date_from": "Date From",
         "date_to": "Date To",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "currency": "Currency"
       },
       "order_status": {
         "pending": "Pending",
@@ -726,7 +727,8 @@
         "search_placeholder": "Search by invoice number or employee",
         "status": "Invoice Status",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "currency": "Currency"
       },
       "invoice_status": {
         "pending": "Pending",
@@ -1230,7 +1232,7 @@
     },
     "currency_management": {
       "title": "Currency Management",
-      "description": "Manage currencies and exchange rates",
+      "description": "Manage the currencies the platform operates in, the default currency and the amount that earns a loyalty point",
       "create_currency": "Create Currency",
       "edit_currency": "Edit Currency",
       "delete_currency": "Delete Currency",
@@ -1267,12 +1269,8 @@
       "edit_title": "Edit Currency",
       "basic_info": "Basic Information",
       "code": "Currency Code",
-      "code_placeholder": "e.g., USD, EUR, CZK",
       "symbol": "Symbol",
-      "symbol_placeholder": "e.g., $, €, Kč",
       "name": "Currency Name",
-      "name_placeholder": "e.g., US Dollar, Euro, Czech Koruna",
-      "exchange_rate_placeholder": "e.g., 1.0, 0.92, 24.50",
       "loyalty_points_divisor": "Amount that earns one loyalty point",
       "loyalty_points_divisor_placeholder": "e.g. 10 for CZK — leave empty and the currency earns no points",
       "messages": {
@@ -2001,7 +1999,7 @@
           "reason": "Reason",
           "note": "What happened"
         },
-        "expire_success": "Discharged {{amount}}.",
+        "expire_success": "Discharged {{amount}} {{currency}}.",
         "expire_error": "The balance could not be discharged.",
         "expire_dialog": {
           "title": "Discharge credit balance",

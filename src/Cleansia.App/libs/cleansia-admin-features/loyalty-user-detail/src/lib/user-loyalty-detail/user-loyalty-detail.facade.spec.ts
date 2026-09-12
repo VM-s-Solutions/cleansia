@@ -5,6 +5,8 @@ import {
   AdminCurrencyListItem,
   AdminReferralListItem,
   CreditTransactionReason,
+  ExpireCustomerCreditCommand,
+  ExpireCustomerCreditResponse,
   GetReferralsByUserResponse,
   GrantPointsManuallyCommand,
   IssueCustomerCreditCommand,
@@ -265,5 +267,42 @@ describe('UserLoyaltyDetailFacade — credit', () => {
       note: 'Late crew',
       requestId: 'request-1',
     });
+  });
+
+  // The discharge names ONE account. A customer holding CZK and EUR credit has two, and the server
+  // drains only the currency it is told — dropping this assignment is a 400 (required), not a guess.
+  it('serializes a discharge with the currency of the account the admin chose', () => {
+    creditClient.expire.mockReturnValue(
+      of(ExpireCustomerCreditResponse.fromJS({ userId: 'user-1', amountExpired: 50, currencyCode: 'EUR' }))
+    );
+
+    facade.expireCredit({ currencyId: 'cur-eur', note: 'Leaving' });
+
+    const command: ExpireCustomerCreditCommand = creditClient.expire.mock.calls[0][0];
+    expect(command).toBeInstanceOf(ExpireCustomerCreditCommand);
+    expect(command.toJSON()).toEqual({
+      userId: 'user-1',
+      currencyId: 'cur-eur',
+      note: 'Leaving',
+      requestId: 'request-1',
+    });
+  });
+
+  it('confirms the discharge in the currency the server drained', () => {
+    const snackbar = TestBed.inject(SnackbarService);
+    const translate = TestBed.inject(TranslateService);
+    const instant = jest.spyOn(translate, 'instant');
+    creditClient.expire.mockReturnValue(
+      of(ExpireCustomerCreditResponse.fromJS({ userId: 'user-1', amountExpired: 50, currencyCode: 'EUR' }))
+    );
+
+    facade.expireCredit({ currencyId: 'cur-eur', note: 'Leaving' });
+
+    expect(instant).toHaveBeenCalledWith('pages.loyalty_user_detail.credit.expire_success', {
+      amount: 50,
+      currency: 'EUR',
+    });
+    expect(snackbar.showSuccess).toHaveBeenCalled();
+    expect(creditClient.user).toHaveBeenCalledTimes(2);
   });
 });

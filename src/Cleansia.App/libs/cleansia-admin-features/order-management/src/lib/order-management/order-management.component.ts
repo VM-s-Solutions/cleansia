@@ -26,9 +26,11 @@ import {
   CleansiaCheckboxComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
   TableColumn,
   TableAction,
   PaginationState,
@@ -64,6 +66,7 @@ import {
     CleansiaButtonComponent,
     CleansiaCalendarComponent,
     CleansiaCheckboxComponent,
+    CleansiaSelectComponent,
     CleansiaTextInputComponent,
     TranslatePipe,
     CleansiaTableComponent,
@@ -105,7 +108,12 @@ export class OrderManagementComponent implements AfterViewInit, OnDestroy {
     searchTerm: [''],
     cleaningDateFrom: [null as Date | null],
     cleaningDateTo: [null as Date | null],
+    currencyId: [null as string | null],
   });
+
+  readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.facade.currencies().map((c) => ({ label: c.code, value: c.id }))
+  );
 
   orderStatusMultiOptions: { label: string; value: OrderStatus }[] = [];
   paymentStatusMultiOptions: { label: string; value: PaymentStatus }[] = [];
@@ -119,6 +127,7 @@ export class OrderManagementComponent implements AfterViewInit, OnDestroy {
       this.filterForm.value,
       this.orderStatusMultiOptions,
       this.paymentStatusMultiOptions,
+      this.facade.currencies(),
       this.translate
     );
   });
@@ -150,6 +159,7 @@ export class OrderManagementComponent implements AfterViewInit, OnDestroy {
         this.cd.detectChanges();
       });
 
+    this.facade.loadCurrencies();
     this.facade.loadOrders();
   }
 

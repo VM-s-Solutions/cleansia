@@ -126,6 +126,7 @@ export class MembershipPlanListComponent implements AfterViewInit, OnDestroy {
         onDeactivate: (row) => this.confirmDeactivate(row),
       },
       this.translate,
+      this.facade.formatPrice.bind(this.facade),
       this.statusTemplate()
     );
     this.planColumns = tableDef.columns;

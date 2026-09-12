@@ -108,6 +108,21 @@
           }
         </div>
       </div>
+
+      <!-- Currency Section -->
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.invoice_management.filters.currency' | translate }}
+        </h3>
+        <cleansia-select
+          [options]="currencyOptions()"
+          [label]="'pages.invoice_management.filters.currency' | translate"
+          [floatVariant]="'on'"
+          [showClear]="true"
+          formControlName="currencyId"
+          appendTo="body"
+        />
+      </div>
     </form>
   </div>
 

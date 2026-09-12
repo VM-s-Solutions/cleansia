@@ -561,7 +561,8 @@
         "date_from": "Datum od",
         "date_to": "Datum do",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "order_status": {
         "pending": "Čekající",
@@ -726,7 +727,8 @@
         "search_placeholder": "Hledat dle čísla faktury nebo zaměstnance",
         "status": "Stav faktury",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "invoice_status": {
         "pending": "Čekající",
@@ -1340,7 +1342,7 @@
     },
     "currency_management": {
       "title": "Správa měn",
-      "description": "Spravujte měny a směnné kurzy",
+      "description": "Spravujte měny, ve kterých platforma působí, výchozí měnu a částku, za kterou se získá věrnostní bod",
       "create_currency": "Vytvořit měnu",
       "edit_currency": "Upravit měnu",
       "delete_currency": "Smazat měnu",
@@ -1377,12 +1379,8 @@
       "edit_title": "Upravit měnu",
       "basic_info": "Základní informace",
       "code": "Kód měny",
-      "code_placeholder": "např. USD, EUR, CZK",
       "symbol": "Symbol",
-      "symbol_placeholder": "např. $, €, Kč",
       "name": "Název měny",
-      "name_placeholder": "např. Americký dolar, Euro, Česká koruna",
-      "exchange_rate_placeholder": "např. 1.0, 0.92, 24.50",
       "loyalty_points_divisor": "Částka, za kterou se získá jeden věrnostní bod",
       "loyalty_points_divisor_placeholder": "např. 10 pro CZK — pokud pole necháte prázdné, měna žádné body nezískává",
       "messages": {
@@ -2001,7 +1999,7 @@
           "reason": "Důvod",
           "note": "Co se stalo"
         },
-        "expire_success": "Odepsáno {{amount}}.",
+        "expire_success": "Odepsáno {{amount}} {{currency}}.",
         "expire_error": "Zůstatek se nepodařilo odepsat.",
         "expire_dialog": {
           "title": "Odepsat zůstatek kreditu",

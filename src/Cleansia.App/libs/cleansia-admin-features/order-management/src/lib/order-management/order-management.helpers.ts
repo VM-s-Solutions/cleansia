@@ -88,9 +88,11 @@ export function buildFilterChips(
     paymentStatus?: PaymentStatus[] | null;
     cleaningDateFrom?: Date | null;
     cleaningDateTo?: Date | null;
+    currencyId?: string | null;
   },
   orderStatusOptions: { label: string; value: OrderStatus }[],
   paymentStatusOptions: { label: string; value: PaymentStatus }[],
+  currencies: { id: string; code: string }[],
   translate: TranslateService
 ): FilterChip[] {
   const chips: FilterChip[] = [];
@@ -143,6 +145,14 @@ export function buildFilterChips(
     });
   }
 
+  if (formValues.currencyId) {
+    chips.push({
+      key: 'currency',
+      label: translate.instant('pages.order_management.filters.currency'),
+      value: currencies.find((c) => c.id === formValues.currencyId)?.code ?? '',
+    });
+  }
+
   return chips;
 }
 
@@ -175,12 +185,14 @@ export function buildFilterPayload(formValues: {
   searchTerm?: string | null;
   cleaningDateFrom?: Date | null;
   cleaningDateTo?: Date | null;
+  currencyId?: string | null;
 }): {
   orderStatuses?: OrderStatus[];
   paymentStatuses?: PaymentStatus[];
   searchTerm?: string;
   cleaningDateFrom?: Date;
   cleaningDateTo?: Date;
+  currencyId?: string;
 } {
   return {
     orderStatuses:
@@ -194,6 +206,7 @@ export function buildFilterPayload(formValues: {
     searchTerm: formValues.searchTerm?.trim() || undefined,
     cleaningDateFrom: formValues.cleaningDateFrom ?? undefined,
     cleaningDateTo: formValues.cleaningDateTo ?? undefined,
+    currencyId: formValues.currencyId || undefined,
   };
 }
 
@@ -203,6 +216,7 @@ export const FILTER_FORM_DEFAULTS = {
   searchTerm: '',
   cleaningDateFrom: null as Date | null,
   cleaningDateTo: null as Date | null,
+  currencyId: null as string | null,
 };
 
 // --- Filter chip removal helper ---
@@ -217,6 +231,8 @@ export function getFilterPatchForChipRemoval(key: string): Record<string, any> {
       return { cleaningDateFrom: null };
     case 'cleaningDateTo':
       return { cleaningDateTo: null };
+    case 'currency':
+      return { currencyId: null };
     default:
       return { [key]: '' };
   }

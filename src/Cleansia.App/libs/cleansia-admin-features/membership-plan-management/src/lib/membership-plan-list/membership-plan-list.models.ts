@@ -36,6 +36,7 @@ export function getMembershipPlanTableDefinition(
     onDeactivate: (row: MembershipPlanListItem) => void;
   },
   translate: TranslateService,
+  formatPrice: (value: number | undefined | null) => string,
   statusTemplate?: TemplateRef<MembershipPlanListItem>
 ): {
   columns: TableColumn<MembershipPlanListItem>[];
@@ -69,7 +70,7 @@ export function getMembershipPlanTableDefinition(
         id: 'monthlyPriceCzk',
         field: 'monthlyPriceCzk',
         header: translate.instant('pages.membership_plans.columns.price'),
-        getValue: (row) => formatCzk(row.monthlyPriceCzk),
+        getValue: (row) => formatPrice(row.monthlyPriceCzk),
         width: '10%',
       },
       {
@@ -78,7 +79,7 @@ export function getMembershipPlanTableDefinition(
         header: translate.instant(
           'pages.membership_plans.columns.monthly_equivalent'
         ),
-        getValue: (row) => formatCzk(row.monthlyEquivalentPriceCzk),
+        getValue: (row) => formatPrice(row.monthlyEquivalentPriceCzk),
         width: '11%',
       },
       {
@@ -137,11 +138,6 @@ export function getMembershipPlanTableDefinition(
       },
     ],
   };
-}
-
-function formatCzk(value: number | undefined | null): string {
-  if (value == null) return '—';
-  return `${value.toFixed(2)} CZK`;
 }
 
 /**

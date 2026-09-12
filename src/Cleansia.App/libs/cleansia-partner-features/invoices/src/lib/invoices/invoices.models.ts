@@ -1,5 +1,6 @@
 import { TemplateRef } from '@angular/core';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { formatMoney } from '@cleansia/utils';
 import { EmployeeInvoice } from './invoices.facade';
 
 export interface InvoicesActions {
@@ -45,12 +46,7 @@ export function getInvoicesTableDefinition(
         field: 'totalAmount',
         header: 'pages.invoices.total_amount',
         getValue: (invoice?: EmployeeInvoice) =>
-          invoice
-            ? new Intl.NumberFormat('en-GB', {
-                style: 'currency',
-                currency: invoice.currencyCode || 'CZK',
-              }).format(invoice.totalAmount)
-            : '',
+          invoice ? formatMoney(invoice.totalAmount, invoice.currencyCode, 'en-GB') : '',
         sortable: true,
         align: 'right',
       },

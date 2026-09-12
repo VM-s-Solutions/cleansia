@@ -4,6 +4,7 @@
 /* eslint-disable @angular-eslint/component-class-suffix */
 import { Component, input, output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   AdminClient,
@@ -43,9 +44,10 @@ class ExpireCreditDialogStub {
   visible = input(false);
   submitting = input(false);
   balance = input(0);
+  currencyId = input('');
   currencyCode = input('');
   visibleChange = output<boolean>();
-  submitForm = output<string>();
+  submitForm = output<unknown>();
 }
 
 describe('UserLoyaltyDetailComponent — credit section', () => {
@@ -105,13 +107,56 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
       .compileComponents();
   });
 
-  function render(credit: GetUserCreditResponse): HTMLElement {
+  function renderFixture(credit: GetUserCreditResponse): ComponentFixture<UserLoyaltyDetailComponent> {
     creditClient.user.mockReturnValue(of(credit));
     const fixture: ComponentFixture<UserLoyaltyDetailComponent> =
       TestBed.createComponent(UserLoyaltyDetailComponent);
     fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
+    return fixture;
   }
+
+  function render(credit: GetUserCreditResponse): HTMLElement {
+    return renderFixture(credit).nativeElement as HTMLElement;
+  }
+
+  // One discharge per FUNDED account, and the dialog is told which one: the server drains the
+  // currency it is named and nothing else, so a single button over two balances would have to guess.
+  it('offers a discharge beside each funded balance and hands the dialog that account', () => {
+    const fixture = renderFixture(
+      GetUserCreditResponse.fromJS({
+        userId: 'user-1',
+        hasAccount: true,
+        balance: 400,
+        currencyCode: 'CZK',
+        ledger: [],
+        accounts: [
+          { accountId: 'acc-czk', balance: 400, currencyCode: 'CZK', currencyId: 'cur-czk', ledger: [] },
+          { accountId: 'acc-eur', balance: 25, currencyCode: 'EUR', currencyId: 'cur-eur', ledger: [] },
+          { accountId: 'acc-pln', balance: 0, currencyCode: 'PLN', currencyId: 'cur-pln', ledger: [] },
+        ],
+      })
+    );
+    const el = fixture.nativeElement as HTMLElement;
+
+    const blocks = el.querySelectorAll('.user-loyalty-detail__credit-account');
+    expect(blocks.length).toBe(3);
+    expect(blocks[0].querySelector('cleansia-button')).toBeTruthy();
+    expect(blocks[1].querySelector('cleansia-button')).toBeTruthy();
+    expect(blocks[2].querySelector('cleansia-button')).toBeNull();
+
+    const eurAccount = fixture.componentInstance['facade'].credit()!.accounts![1];
+    fixture.componentInstance.openExpireCredit(eurAccount);
+    fixture.detectChanges();
+
+    const dialog = fixture.debugElement.query(By.directive(ExpireCreditDialogStub))
+      .componentInstance as ExpireCreditDialogStub;
+    expect(dialog.currencyId()).toBe('cur-eur');
+    expect(dialog.currencyCode()).toBe('EUR');
+    expect(dialog.balance()).toBe(25);
+
+    fixture.componentInstance.onExpireCreditDialogVisibleChange(false);
+    expect(fixture.componentInstance.expireCreditAccount()).toBeNull();
+  });
 
   it('renders one balance and one ledger per currency the customer holds', () => {
     const el = render(

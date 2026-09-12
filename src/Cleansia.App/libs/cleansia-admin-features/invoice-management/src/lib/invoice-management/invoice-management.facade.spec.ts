@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
+  AdminCurrencyListItem,
   EmployeeInvoiceDto,
   PagedDataOfEmployeeInvoiceDto,
   RegenerateInvoicePdfCommand,
@@ -18,7 +19,10 @@ describe('InvoiceManagementFacade', () => {
     download: jest.Mock;
     regeneratePdf: jest.Mock;
   };
+  let getOverviewMock: jest.Mock;
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+
+  const CURRENCY_SLOT = 8;
 
   const emptyPage = PagedDataOfEmployeeInvoiceDto.fromJS({
     data: [],
@@ -38,6 +42,7 @@ describe('InvoiceManagementFacade', () => {
       download: jest.fn(),
       regeneratePdf: jest.fn(),
     };
+    getOverviewMock = jest.fn().mockReturnValue(of([]));
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
 
     TestBed.configureTestingModule({
@@ -45,7 +50,10 @@ describe('InvoiceManagementFacade', () => {
         InvoiceManagementFacade,
         {
           provide: AdminClient,
-          useValue: { adminInvoiceClient: invoiceClient },
+          useValue: {
+            adminInvoiceClient: invoiceClient,
+            adminCurrencyClient: { getOverview: getOverviewMock },
+          },
         },
         { provide: SnackbarService, useValue: snackbar },
         {
@@ -162,5 +170,40 @@ describe('InvoiceManagementFacade', () => {
     expect(snackbar.showError).toHaveBeenCalledWith(
       'api.common.error_occurred'
     );
+  });
+
+  it('passes the chosen currency to the list in its own slot, and clears it on reset', () => {
+    facade.applyFilter({ currencyId: 'cur-eur' });
+
+    expect(invoiceClient.getPaged.mock.lastCall?.[CURRENCY_SLOT]).toBe('cur-eur');
+
+    facade.resetFilter();
+
+    expect(invoiceClient.getPaged).toHaveBeenCalledTimes(2);
+    expect(invoiceClient.getPaged.mock.lastCall?.[CURRENCY_SLOT]).toBeUndefined();
+  });
+
+  it('sends no currency when the filter names none', () => {
+    facade.loadInvoices();
+
+    expect(invoiceClient.getPaged.mock.lastCall?.[CURRENCY_SLOT]).toBeUndefined();
+  });
+
+  it('keeps only currencies that carry an id and a code', () => {
+    getOverviewMock.mockReturnValue(
+      of([
+        AdminCurrencyListItem.fromJS({ id: 'cur-czk', code: 'CZK', isDefault: true }),
+        AdminCurrencyListItem.fromJS({ id: 'cur-eur', code: 'EUR', isDefault: false }),
+        AdminCurrencyListItem.fromJS({ id: undefined, code: 'XXX' }),
+        AdminCurrencyListItem.fromJS({ id: 'cur-blank', code: undefined }),
+      ])
+    );
+
+    facade.loadCurrencies();
+
+    expect(facade.currencies()).toEqual([
+      { id: 'cur-czk', code: 'CZK', isDefault: true },
+      { id: 'cur-eur', code: 'EUR', isDefault: false },
+    ]);
   });
 });

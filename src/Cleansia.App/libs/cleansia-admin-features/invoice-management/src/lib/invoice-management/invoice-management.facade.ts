@@ -19,6 +19,7 @@ export interface InvoiceFilterParams {
   statuses?: EmployeeInvoiceStatus[];
   employeeId?: string;
   payPeriodId?: string;
+  currencyId?: string;
 }
 
 @Injectable()
@@ -37,6 +38,21 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
   private currentOffset = signal<number>(0);
   private currentLimit = signal<number>(20);
   private currentSort = signal<SortDefinition[] | undefined>(undefined);
+
+  readonly currencies = signal<{ id: string; code: string; isDefault: boolean }[]>([]);
+
+  loadCurrencies(): void {
+    this.adminClient.adminCurrencyClient
+      .getOverview()
+      .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
+      .subscribe((currencies) => {
+        this.currencies.set(
+          (currencies ?? [])
+            .filter((c) => c.id && c.code)
+            .map((c) => ({ id: c.id!, code: c.code!, isDefault: !!c.isDefault }))
+        );
+      });
+  }
 
   readonly invoiceStatusOptions = [
     {
@@ -91,7 +107,7 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
         undefined, // maxAmount
         undefined, // dateFrom
         undefined, // dateTo
-        undefined, // currencyId (the currency filter lands with the list's drawer)
+        filterParams?.currencyId, // currencyId
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()

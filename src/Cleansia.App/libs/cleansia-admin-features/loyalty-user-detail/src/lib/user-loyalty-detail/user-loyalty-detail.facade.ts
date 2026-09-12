@@ -30,6 +30,11 @@ export interface IssueCreditInput {
   note: string;
 }
 
+export interface ExpireCreditInput {
+  currencyId: string;
+  note: string;
+}
+
 /** A currency the admin may issue credit in — id for the command, code for the screen. */
 export interface CreditCurrencyOption {
   id: string;
@@ -231,22 +236,24 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * Take the whole balance off the books.
+   * Take one currency's whole balance off the books.
    *
    * <p>The reason this exists is erasure: GdprDeletionService refuses to erase a customer while a
    * balance is positive, and there are no Stripe payouts, so a leaving customer with credit was
    * previously stuck. The admin discharges it, the erasure proceeds. → ExpireCustomerCredit</p>
    *
-   * <p>No amount — the server only ever takes the lot. The note is required and is the only record
-   * of why money the company owed stopped being owed.</p>
+   * <p>No amount — the server only ever takes the lot, in the ONE currency named: a customer holds
+   * one account per currency, and a discharge that picked for itself could not say what it took.
+   * The note is required and is the only record of why money the company owed stopped being owed.</p>
    */
-  expireCredit(note: string, onSuccess?: () => void): void {
+  expireCredit(input: ExpireCreditInput, onSuccess?: () => void): void {
     if (!this.currentUserId) return;
     this.creditExpiring.set(true);
 
     const command = new ExpireCustomerCreditCommand();
     command.userId = this.currentUserId;
-    command.note = note;
+    command.currencyId = input.currencyId;
+    command.note = input.note;
     // S7a, same shape as the issue path: a transport retry replays this id and the ledger's unique
     // index collapses it, while a second deliberate click is a new id. Less load-bearing here —
     // draining an already-empty balance is a no-op — but the two paths stay the same shape.
@@ -269,6 +276,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.loyalty_user_detail.credit.expire_success', {
               amount: response.amountExpired,
+              currency: response.currencyCode,
             })
           );
           if (this.currentUserId) {

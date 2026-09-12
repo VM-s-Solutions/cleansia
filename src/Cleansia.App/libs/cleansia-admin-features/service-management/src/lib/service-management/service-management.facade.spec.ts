@@ -16,6 +16,7 @@ describe('ServiceManagementFacade', () => {
   let deactivateMock: jest.Mock;
   let activateMock: jest.Mock;
   let deleteMock: jest.Mock;
+  let getOverviewMock: jest.Mock;
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
 
   const page = PagedDataOfServiceListItem.fromJS({
@@ -28,6 +29,9 @@ describe('ServiceManagementFacade', () => {
     deactivateMock = jest.fn();
     activateMock = jest.fn();
     deleteMock = jest.fn();
+    getOverviewMock = jest.fn().mockReturnValue(
+      of([{ id: 'cur-eur', code: 'EUR', isDefault: true }, { id: 'cur-czk', code: 'CZK', isDefault: false }])
+    );
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
 
     TestBed.configureTestingModule({
@@ -41,6 +45,9 @@ describe('ServiceManagementFacade', () => {
               deactivate: deactivateMock,
               activate: activateMock,
               delete: deleteMock,
+            },
+            adminCurrencyClient: {
+              getOverview: getOverviewMock,
             },
           },
         },
@@ -168,5 +175,39 @@ describe('ServiceManagementFacade', () => {
     facade.deleteService(ServiceListItem.fromJS({ id: 'svc-1' }));
 
     expect(snackbar.showError).toHaveBeenCalledWith('api.service.in_use');
+  });
+
+  describe('the price columns name their currency', () => {
+    it('formats the list price in the platform default currency, not in crowns', () => {
+      getPagedMock.mockReturnValue(of(page));
+
+      facade.loadServices();
+
+      expect(getOverviewMock).toHaveBeenCalledTimes(1);
+      expect(facade.defaultCurrencyCode()).toBe('EUR');
+      expect(facade.formatCurrency(45.1)).toContain('€');
+      expect(facade.formatCurrency(45.1)).not.toContain('CZK');
+    });
+
+    it('reads the currency before the page and once across reloads', () => {
+      getPagedMock.mockReturnValue(of(page));
+
+      facade.loadServices();
+      facade.loadServices();
+
+      expect(getOverviewMock).toHaveBeenCalledTimes(1);
+      expect(getPagedMock).toHaveBeenCalledTimes(2);
+      expect(getOverviewMock.mock.invocationCallOrder[0]).toBeLessThan(getPagedMock.mock.invocationCallOrder[0]);
+    });
+
+    it('prints a bare number rather than a currency it cannot name', () => {
+      getOverviewMock.mockReturnValueOnce(of([]));
+      getPagedMock.mockReturnValue(of(page));
+
+      facade.loadServices();
+
+      expect(facade.defaultCurrencyCode()).toBeNull();
+      expect(facade.formatCurrency(45.1)).toBe('45.1');
+    });
   });
 });

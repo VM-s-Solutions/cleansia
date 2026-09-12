@@ -561,7 +561,8 @@
         "date_from": "Дата з",
         "date_to": "Дата по",
         "reset": "Скинути фільтри",
-        "clear_all": "Очистити все"
+        "clear_all": "Очистити все",
+        "currency": "Валюта"
       },
       "order_status": {
         "pending": "Очікує",
@@ -726,7 +727,8 @@
         "search_placeholder": "Шукати за номером рахунку або працівником",
         "status": "Статус рахунку",
         "reset": "Скинути фільтри",
-        "clear_all": "Очистити все"
+        "clear_all": "Очистити все",
+        "currency": "Валюта"
       },
       "invoice_status": {
         "pending": "Очікує",
@@ -1230,7 +1232,7 @@
     },
     "currency_management": {
       "title": "Управління валютами",
-      "description": "Керуйте валютами та обмінними курсами",
+      "description": "Керуйте валютами, у яких працює платформа, валютою за замовчуванням і сумою, за яку нараховується бал лояльності",
       "create_currency": "Створити валюту",
       "edit_currency": "Редагувати валюту",
       "delete_currency": "Видалити валюту",
@@ -1267,12 +1269,8 @@
       "edit_title": "Редагувати валюту",
       "basic_info": "Основна інформація",
       "code": "Код валюти",
-      "code_placeholder": "напр. USD, EUR, CZK",
       "symbol": "Символ",
-      "symbol_placeholder": "напр. $, €, Kč",
       "name": "Назва валюти",
-      "name_placeholder": "напр. Долар США, Євро, Чеська крона",
-      "exchange_rate_placeholder": "напр. 1.0, 0.92, 24.50",
       "loyalty_points_divisor": "Сума, за яку нараховується один бал лояльності",
       "loyalty_points_divisor_placeholder": "напр. 10 для CZK — якщо залишити порожнім, валюта не нараховує балів",
       "messages": {
@@ -2001,7 +1999,7 @@
           "reason": "Підстава",
           "note": "Що сталося"
         },
-        "expire_success": "Списано {{amount}}.",
+        "expire_success": "Списано {{amount}} {{currency}}.",
         "expire_error": "Не вдалося списати баланс.",
         "expire_dialog": {
           "title": "Списати баланс бонусів",

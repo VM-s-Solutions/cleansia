@@ -8,6 +8,7 @@ import {
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, finalize, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { resolveExtraErrorKey } from './extra-management.models';
@@ -109,12 +110,7 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
 
   formatCurrency(value: number | undefined): string {
     if (value === undefined || value === null) return '';
-    const currencyCode = this.defaultCurrencyCode();
-    if (!currencyCode) return String(value);
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: currencyCode,
-    }).format(value);
+    return formatMoney(value, this.defaultCurrencyCode(), 'en-GB');
   }
 
   navigateToCreateExtra(): void {

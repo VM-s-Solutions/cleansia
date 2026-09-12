@@ -94,8 +94,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
   formatPrice(price: number | null | undefined): string {
     if (price === null || price === undefined) return '-';
-    const currency = this.order()?.currency?.symbol || 'Kc';
-    return `${price.toFixed(2)} ${currency}`;
+    return `${price.toFixed(2)} ${this.order()?.currency?.symbol ?? ''}`.trimEnd();
   }
 
   formatDuration(minutes: number | null | undefined): string {

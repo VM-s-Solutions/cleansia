@@ -38,8 +38,7 @@ export class InvoiceDetailComponent implements OnInit {
   protected readonly error = this.facade.error;
 
   protected readonly orderPaysColumns = computed(() => {
-    const currencyCode = this.invoiceDetail()?.currencyCode || 'CZK';
-    return getOrderPaysTableDefinition(currencyCode).columns;
+    return getOrderPaysTableDefinition(this.invoiceDetail()?.currencyCode).columns;
   });
 
   ngOnInit(): void {

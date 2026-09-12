@@ -13,6 +13,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   AdminReferralListItem,
   CreditTransactionReason,
+  GetUserCreditCurrencyAccount,
   GetUserCreditLedgerEntry,
   GetUserLoyaltyActivityActivityItem,
   LoyaltyEarnSource,
@@ -42,7 +43,10 @@ import {
   IssueCreditDialogComponent,
   IssueCreditDialogSubmit,
 } from '../issue-credit-dialog/issue-credit-dialog.component';
-import { ExpireCreditDialogComponent } from '../expire-credit-dialog/expire-credit-dialog.component';
+import {
+  ExpireCreditDialogComponent,
+  ExpireCreditDialogSubmit,
+} from '../expire-credit-dialog/expire-credit-dialog.component';
 import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
 
 @Component({
@@ -87,6 +91,8 @@ export class UserLoyaltyDetailComponent
   // the two forms have nothing in common beyond a free-text reason.
   readonly creditDialogVisible = signal<boolean>(false);
   readonly expireCreditDialogVisible = signal<boolean>(false);
+  /** The one account the open discharge dialog is about; null while it is closed. */
+  readonly expireCreditAccount = signal<GetUserCreditCurrencyAccount | null>(null);
 
   activityColumns!: TableColumn<GetUserLoyaltyActivityActivityItem>[];
   creditColumns!: TableColumn<GetUserCreditLedgerEntry>[];
@@ -478,16 +484,20 @@ export class UserLoyaltyDetailComponent
     this.facade.issueCredit(payload, () => this.creditDialogVisible.set(false));
   }
 
-  openExpireCredit(): void {
+  openExpireCredit(account: GetUserCreditCurrencyAccount): void {
+    this.expireCreditAccount.set(account);
     this.expireCreditDialogVisible.set(true);
   }
 
   onExpireCreditDialogVisibleChange(value: boolean): void {
     this.expireCreditDialogVisible.set(value);
+    if (!value) {
+      this.expireCreditAccount.set(null);
+    }
   }
 
-  onExpireCredit(note: string): void {
-    this.facade.expireCredit(note, () => this.expireCreditDialogVisible.set(false));
+  onExpireCredit(payload: ExpireCreditDialogSubmit): void {
+    this.facade.expireCredit(payload, () => this.onExpireCreditDialogVisibleChange(false));
   }
 
   /** Signed, so the ledger reads as a statement: a spend is negative, a grant is positive. */

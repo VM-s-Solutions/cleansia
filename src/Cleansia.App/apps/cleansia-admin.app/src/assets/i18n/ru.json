@@ -561,7 +561,8 @@
         "date_from": "Дата с",
         "date_to": "Дата по",
         "reset": "Сбросить фильтры",
-        "clear_all": "Очистить все"
+        "clear_all": "Очистить все",
+        "currency": "Валюта"
       },
       "order_status": {
         "pending": "Ожидает",
@@ -726,7 +727,8 @@
         "search_placeholder": "Искать по номеру счёта или сотруднику",
         "status": "Статус счёта",
         "reset": "Сбросить фильтры",
-        "clear_all": "Очистить все"
+        "clear_all": "Очистить все",
+        "currency": "Валюта"
       },
       "invoice_status": {
         "pending": "Ожидает",
@@ -1230,7 +1232,7 @@
     },
     "currency_management": {
       "title": "Управление валютами",
-      "description": "Управляйте валютами и обменными курсами",
+      "description": "Управляйте валютами, в которых работает платформа, валютой по умолчанию и суммой, за которую начисляется балл лояльности",
       "create_currency": "Создать валюту",
       "edit_currency": "Редактировать валюту",
       "delete_currency": "Удалить валюту",
@@ -1267,12 +1269,8 @@
       "edit_title": "Редактировать валюту",
       "basic_info": "Основная информация",
       "code": "Код валюты",
-      "code_placeholder": "напр. USD, EUR, CZK",
       "symbol": "Символ",
-      "symbol_placeholder": "напр. $, €, Kč",
       "name": "Название валюты",
-      "name_placeholder": "напр. Доллар США, Евро, Чешская крона",
-      "exchange_rate_placeholder": "напр. 1.0, 0.92, 24.50",
       "loyalty_points_divisor": "Сумма, за которую начисляется один балл лояльности",
       "loyalty_points_divisor_placeholder": "напр. 10 для CZK — если оставить пустым, валюта не начисляет баллы",
       "messages": {
@@ -2001,7 +1999,7 @@
           "reason": "Основание",
           "note": "Что произошло"
         },
-        "expire_success": "Списано {{amount}}.",
+        "expire_success": "Списано {{amount}} {{currency}}.",
         "expire_error": "Не удалось списать баланс.",
         "expire_dialog": {
           "title": "Списать баланс бонусов",

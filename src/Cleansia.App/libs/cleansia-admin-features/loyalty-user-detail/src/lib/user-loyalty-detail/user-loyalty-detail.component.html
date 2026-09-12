@@ -92,11 +92,11 @@
         } @else {
         <div class="user-loyalty-detail__credit">
           <!--
-            EVERY balance, one per currency. Credit is spendable only on an order in the same currency,
-            and the discharge beside this refuses when more than one balance is funded — so a screen
-            that showed one balance could tell an admin erasure was blocked by money it never showed
-            them. The scalars on the response (balance, currencyCode, ledger) are accounts[0] and are
-            not rendered here; the Expire dialog still reads them, deliberately (see ExpireCustomerCredit).
+            EVERY balance, one per currency, each with its own discharge. Credit is spendable only on
+            an order in the same currency and erasure is refused while any balance is funded — so a
+            screen that showed one balance could tell an admin erasure was blocked by money it never
+            showed them. The scalars on the response (balance, currencyCode, ledger) are accounts[0]
+            and are not rendered here.
 
             "No account" and "a zero balance" mean different things to the person reading this, so the
             never-credited state is its own block rather than an empty list.
@@ -123,22 +123,6 @@
               severity="success"
               (onClick)="openIssueCredit()"
             />
-            <!--
-              Absent at a zero balance rather than disabled: there is nothing to discharge, and a
-              greyed-out destructive button on a page an admin visits daily is an invitation to
-              find out what it does. `balance` is the LARGEST account's, so "> 0" means "something is
-              funded".
-            -->
-            @if ((facade.credit()?.balance ?? 0) > 0) {
-            <cleansia-button
-              *cleansiaPermission="Policy.CanExpireCustomerCredit"
-              [label]="'pages.loyalty_user_detail.credit.actions.expire' | translate"
-              icon="pi pi-times-circle"
-              severity="danger"
-              [outlined]="true"
-              (onClick)="openExpireCredit()"
-            />
-            }
           </div>
         </div>
 
@@ -151,6 +135,22 @@
             <span class="user-loyalty-detail__credit-balance-value">
               {{ account.balance }} {{ account.currencyCode }}
             </span>
+            <!--
+              One discharge per funded account: the server drains one currency and names it, so
+              the button sits beside the balance it takes. Absent at a zero balance rather than
+              disabled: there is nothing to discharge, and a greyed-out destructive button on a page
+              an admin visits daily is an invitation to find out what it does.
+            -->
+            @if (account.balance > 0) {
+            <cleansia-button
+              *cleansiaPermission="Policy.CanExpireCustomerCredit"
+              [label]="'pages.loyalty_user_detail.credit.actions.expire' | translate"
+              icon="pi pi-times-circle"
+              severity="danger"
+              [outlined]="true"
+              (onClick)="openExpireCredit(account)"
+            />
+            }
           </div>
           <cleansia-table
             [data]="account.ledger ?? []"
@@ -250,7 +250,8 @@
   [visible]="expireCreditDialogVisible()"
   (visibleChange)="onExpireCreditDialogVisibleChange($event)"
   [submitting]="facade.creditExpiring()"
-  [balance]="facade.credit()?.balance ?? 0"
-  [currencyCode]="facade.credit()?.currencyCode ?? ''"
+  [balance]="expireCreditAccount()?.balance ?? 0"
+  [currencyId]="expireCreditAccount()?.currencyId ?? ''"
+  [currencyCode]="expireCreditAccount()?.currencyCode ?? ''"
   (submitForm)="onExpireCredit($event)"
 />

@@ -378,7 +378,14 @@
 
 <!-- Filter Drawer Backdrop -->
 @if (isFilterDrawerOpen()) {
-<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+<div
+  class="filter-drawer-backdrop"
+  role="button"
+  tabindex="0"
+  (click)="closeFilterDrawer()"
+  (keydown.escape)="closeFilterDrawer()"
+  [attr.aria-label]="'global.close' | translate"
+></div>
 }
 
 <!-- Filter Drawer -->
@@ -402,9 +409,9 @@
         </h3>
         <div class="filter-date-range">
           <div class="filter-date-field">
-            <label>{{ 'pages.reports.start_date' | translate }}</label>
             <cleansia-calendar
               [formControl]="$any(dateRangeForm.get('startDate'))"
+              [label]="'pages.reports.start_date' | translate"
               [showErrors]="false"
               floatVariant="on"
               dateFormat="dd.mm.yy"
@@ -412,9 +419,9 @@
             />
           </div>
           <div class="filter-date-field">
-            <label>{{ 'pages.reports.end_date' | translate }}</label>
             <cleansia-calendar
               [formControl]="$any(dateRangeForm.get('endDate'))"
+              [label]="'pages.reports.end_date' | translate"
               [showErrors]="false"
               floatVariant="on"
               dateFormat="dd.mm.yy"

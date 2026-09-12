@@ -313,8 +313,7 @@ export class InvoiceDetailFacade extends UnsubscribeControlDirective {
     currencyCode?: string
   ): string {
     if (amount === null || amount === undefined) return '-';
-    const currency = currencyCode || 'CZK';
-    return `${amount.toFixed(2)} ${currency}`;
+    return `${amount.toFixed(2)} ${currencyCode ?? ''}`.trimEnd();
   }
 
   canApprove(): boolean {

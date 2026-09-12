@@ -45,6 +45,7 @@ export class OrderEffects {
             req.filter?.hasAvailableSpots,
             req.filter?.isUnassigned,
             req.filter?.excludeEmployeeId,
+            undefined, // currencyId: the board is scoped server-side to the cleaner's currency
             req.sort,
             req.offset,
             req.limit

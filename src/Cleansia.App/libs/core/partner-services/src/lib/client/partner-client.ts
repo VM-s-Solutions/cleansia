@@ -1010,12 +1010,13 @@ export interface IDashboardClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
      * @param employeeId (optional) 
      * @param startDate (optional) 
@@ -1148,12 +1149,13 @@ export class DashboardClient implements IDashboardClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
         let url = this.baseUrl + "/api/Dashboard/GetUpcomingOrders?";
         if (id === null)
             throw new globalThis.Error("The parameter 'id' cannot be null.");
@@ -1223,6 +1225,10 @@ export class DashboardClient implements IDashboardClient {
             throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
         else if (excludeEmployeeId !== undefined)
             url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -2545,12 +2551,13 @@ export interface IEmployeePayrollClient {
      * @param maxAmount (optional) 
      * @param dateFrom (optional) 
      * @param dateTo (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeeInvoiceDto>;
+    getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeeInvoiceDto>;
     /**
      * @return OK
      */
@@ -2558,9 +2565,10 @@ export interface IEmployeePayrollClient {
     /**
      * @param employeeId (optional) 
      * @param payPeriodId (optional) 
+     * @param currencyId (optional) 
      * @return OK
      */
-    getPeriodPays(employeeId?: string | undefined, payPeriodId?: string | undefined): Observable<PeriodPaySummaryDto>;
+    getPeriodPays(employeeId?: string | undefined, payPeriodId?: string | undefined, currencyId?: string | undefined): Observable<PeriodPaySummaryDto>;
     /**
      * @param body (optional) 
      * @return OK
@@ -2599,12 +2607,13 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
      * @param maxAmount (optional) 
      * @param dateFrom (optional) 
      * @param dateTo (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeeInvoiceDto> {
+    getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeeInvoiceDto> {
         let url = this.baseUrl + "/api/EmployeePayroll/GetPagedInvoices?";
         if (employeeId === null)
             throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
@@ -2638,6 +2647,10 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             throw new globalThis.Error("The parameter 'dateTo' cannot be null.");
         else if (dateTo !== undefined)
             url += "Filter.DateTo=" + encodeURIComponent(dateTo ? "" + dateTo.toISOString() : "") + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -2800,9 +2813,10 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
     /**
      * @param employeeId (optional) 
      * @param payPeriodId (optional) 
+     * @param currencyId (optional) 
      * @return OK
      */
-    getPeriodPays(employeeId?: string | undefined, payPeriodId?: string | undefined): Observable<PeriodPaySummaryDto> {
+    getPeriodPays(employeeId?: string | undefined, payPeriodId?: string | undefined, currencyId?: string | undefined): Observable<PeriodPaySummaryDto> {
         let url = this.baseUrl + "/api/EmployeePayroll/GetPeriodPays?";
         if (employeeId === null)
             throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
@@ -2812,6 +2826,10 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             throw new globalThis.Error("The parameter 'payPeriodId' cannot be null.");
         else if (payPeriodId !== undefined)
             url += "PayPeriodId=" + encodeURIComponent("" + payPeriodId) + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -3613,12 +3631,13 @@ export interface IOrderClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
      * @param orderId (optional) 
      * @return OK
@@ -3736,12 +3755,13 @@ export class OrderClient implements IOrderClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
         let url = this.baseUrl + "/api/Order/GetPaged?";
         if (id === null)
             throw new globalThis.Error("The parameter 'id' cannot be null.");
@@ -3811,6 +3831,10 @@ export class OrderClient implements IOrderClient {
             throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
         else if (excludeEmployeeId !== undefined)
             url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -10642,6 +10666,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
     payBreakdown!: string | undefined;
     isApproved!: boolean;
     createdOn!: Date;
+    currencyCode!: string | undefined;
 
     constructor(data?: IOrderEmployeePayDto) {
         if (data) {
@@ -10670,6 +10695,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
             this.payBreakdown = Data["payBreakdown"];
             this.isApproved = Data["isApproved"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -10698,6 +10724,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
         data["payBreakdown"] = this.payBreakdown;
         data["isApproved"] = this.isApproved;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -10719,6 +10746,7 @@ export interface IOrderEmployeePayDto {
     payBreakdown: string | undefined;
     isApproved: boolean;
     createdOn: Date;
+    currencyCode: string | undefined;
 }
 
 export class OrderIssueDto implements IOrderIssueDto {
@@ -11652,6 +11680,7 @@ export class PackageListItem implements IPackageListItem {
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceSummary[] | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IPackageListItem) {
         if (data) {
@@ -11682,6 +11711,7 @@ export class PackageListItem implements IPackageListItem {
                 for (let item of Data["includedServices"])
                     this.includedServices!.push(PackageServiceSummary.fromJS(item));
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -11712,6 +11742,7 @@ export class PackageListItem implements IPackageListItem {
             for (let item of this.includedServices)
                 data["includedServices"].push(item ? item.toJSON() : undefined as any);
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -11725,6 +11756,7 @@ export interface IPackageListItem {
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceSummary[] | undefined;
+    currencyCode: string | undefined;
 }
 
 export class PackageServiceRef implements IPackageServiceRef {
@@ -13804,6 +13836,7 @@ export class ServiceListItem implements IServiceListItem {
     basePrice!: number;
     perRoomPrice!: number;
     translations!: { [key: string]: Translation; } | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IServiceListItem) {
         if (data) {
@@ -13829,6 +13862,7 @@ export class ServiceListItem implements IServiceListItem {
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -13854,6 +13888,7 @@ export class ServiceListItem implements IServiceListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -13866,6 +13901,7 @@ export interface IServiceListItem {
     basePrice: number;
     perRoomPrice: number;
     translations: { [key: string]: Translation; } | undefined;
+    currencyCode: string | undefined;
 }
 
 export class ServiceTimeBreakdown implements IServiceTimeBreakdown {

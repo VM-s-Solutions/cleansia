@@ -130,6 +130,7 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
         filterParams?.hasAvailableSpots, // hasAvailableSpots
         filterParams?.isUnassigned, // isUnassigned
         undefined, // excludeEmployeeId
+        undefined, // currencyId (the currency filter lands with the list's drawer)
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()

@@ -91,6 +91,7 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
         undefined, // maxAmount
         undefined, // dateFrom
         undefined, // dateTo
+        undefined, // currencyId (the currency filter lands with the list's drawer)
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()

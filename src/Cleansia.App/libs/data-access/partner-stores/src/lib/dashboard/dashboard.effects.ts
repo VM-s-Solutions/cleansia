@@ -60,6 +60,7 @@ export class DashboardEffects {
             filter?.hasAvailableSpots,
             filter?.isUnassigned,
             filter?.excludeEmployeeId,
+            undefined, // currencyId: the board is scoped server-side to the cleaner's currency
             sort,
             offset,
             limit

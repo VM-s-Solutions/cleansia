@@ -154,6 +154,7 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
         filter?.maxAmount,
         filter?.dateFrom,
         filter?.dateTo,
+        undefined, // currencyId: one invoice per currency, listed together
         this.currentSort(),
         offset,
         limit

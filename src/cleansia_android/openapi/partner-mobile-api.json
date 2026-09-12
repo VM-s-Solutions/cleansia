@@ -1148,6 +1148,13 @@
             }
           },
           {
+            "name": "Filter.CurrencyId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "Sort",
             "in": "query",
             "schema": {
@@ -3373,6 +3380,13 @@
             }
           },
           {
+            "name": "Filter.CurrencyId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "Sort",
             "in": "query",
             "schema": {
@@ -3603,6 +3617,13 @@
           },
           {
             "name": "PayPeriodId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "CurrencyId",
             "in": "query",
             "schema": {
               "type": "string"
@@ -4430,6 +4451,13 @@
           },
           {
             "name": "Filter.ExcludeEmployeeId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filter.CurrencyId",
             "in": "query",
             "schema": {
               "type": "string"
@@ -9038,6 +9066,10 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9708,6 +9740,10 @@
             "items": {
               "$ref": "#/components/schemas/PackageServiceSummary"
             },
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -10670,6 +10706,10 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/Translation"
             },
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
             "nullable": true
           }
         },

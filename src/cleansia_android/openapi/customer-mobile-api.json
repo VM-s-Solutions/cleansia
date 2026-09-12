@@ -1874,6 +1874,15 @@
           "Extra"
         ],
         "operationId": "Extra_GetOverview",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -3847,6 +3856,13 @@
             }
           },
           {
+            "name": "Filter.CurrencyId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "Sort",
             "in": "query",
             "schema": {
@@ -4095,6 +4111,13 @@
           },
           {
             "name": "Filter.ExcludeEmployeeId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Filter.CurrencyId",
             "in": "query",
             "schema": {
               "type": "string"
@@ -5165,6 +5188,15 @@
           "Package"
         ],
         "operationId": "Package_GetOverview",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -6463,6 +6495,15 @@
           "Service"
         ],
         "operationId": "Service_GetOverview",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -7976,6 +8017,10 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/Translation"
             },
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -10026,6 +10071,10 @@
               "$ref": "#/components/schemas/PackageServiceSummary"
             },
             "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10363,6 +10412,10 @@
           "cleaningDate": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          },
+          "countryId": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -10937,6 +10990,10 @@
               "$ref": "#/components/schemas/Translation"
             },
             "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11390,6 +11447,10 @@
           "orderSubtotal": {
             "type": "number",
             "format": "double"
+          },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

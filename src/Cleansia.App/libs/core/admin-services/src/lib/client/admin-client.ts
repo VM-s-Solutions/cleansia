@@ -7255,12 +7255,13 @@ export interface IAdminInvoiceClient {
      * @param maxAmount (optional) 
      * @param dateFrom (optional) 
      * @param dateTo (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeeInvoiceDto>;
+    getPaged(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeeInvoiceDto>;
     /**
      * @return OK
      */
@@ -7313,12 +7314,13 @@ export class AdminInvoiceClient implements IAdminInvoiceClient {
      * @param maxAmount (optional) 
      * @param dateFrom (optional) 
      * @param dateTo (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeeInvoiceDto> {
+    getPaged(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeeInvoiceDto> {
         let url = this.baseUrl + "/api/AdminInvoice/get-paged?";
         if (employeeId === null)
             throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
@@ -7352,6 +7354,10 @@ export class AdminInvoiceClient implements IAdminInvoiceClient {
             throw new globalThis.Error("The parameter 'dateTo' cannot be null.");
         else if (dateTo !== undefined)
             url += "Filter.DateTo=" + encodeURIComponent(dateTo ? "" + dateTo.toISOString() : "") + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -9551,12 +9557,13 @@ export interface IAdminOrderClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
      * @return OK
      */
@@ -9618,12 +9625,13 @@ export class AdminOrderClient implements IAdminOrderClient {
      * @param hasAvailableSpots (optional) 
      * @param isUnassigned (optional) 
      * @param excludeEmployeeId (optional) 
+     * @param currencyId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
         let url = this.baseUrl + "/api/AdminOrder/get-paged?";
         if (id === null)
             throw new globalThis.Error("The parameter 'id' cannot be null.");
@@ -9693,6 +9701,10 @@ export class AdminOrderClient implements IAdminOrderClient {
             throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
         else if (excludeEmployeeId !== undefined)
             url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -22685,6 +22697,7 @@ export interface IEmployeePayrollSummary {
 
 export class ExpireCustomerCreditCommand implements IExpireCustomerCreditCommand {
     userId!: string | undefined;
+    currencyId!: string | undefined;
     note!: string | undefined;
     requestId!: string | undefined;
 
@@ -22700,6 +22713,7 @@ export class ExpireCustomerCreditCommand implements IExpireCustomerCreditCommand
     init(Data?: any) {
         if (Data) {
             this.userId = Data["userId"];
+            this.currencyId = Data["currencyId"];
             this.note = Data["note"];
             this.requestId = Data["requestId"];
         }
@@ -22715,6 +22729,7 @@ export class ExpireCustomerCreditCommand implements IExpireCustomerCreditCommand
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["userId"] = this.userId;
+        data["currencyId"] = this.currencyId;
         data["note"] = this.note;
         data["requestId"] = this.requestId;
         return data;
@@ -22723,6 +22738,7 @@ export class ExpireCustomerCreditCommand implements IExpireCustomerCreditCommand
 
 export interface IExpireCustomerCreditCommand {
     userId: string | undefined;
+    currencyId: string | undefined;
     note: string | undefined;
     requestId: string | undefined;
 }
@@ -22730,6 +22746,7 @@ export interface IExpireCustomerCreditCommand {
 export class ExpireCustomerCreditResponse implements IExpireCustomerCreditResponse {
     userId!: string | undefined;
     amountExpired!: number;
+    currencyCode!: string | undefined;
 
     constructor(data?: IExpireCustomerCreditResponse) {
         if (data) {
@@ -22744,6 +22761,7 @@ export class ExpireCustomerCreditResponse implements IExpireCustomerCreditRespon
         if (Data) {
             this.userId = Data["userId"];
             this.amountExpired = Data["amountExpired"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -22758,6 +22776,7 @@ export class ExpireCustomerCreditResponse implements IExpireCustomerCreditRespon
         data = typeof data === 'object' ? data : {};
         data["userId"] = this.userId;
         data["amountExpired"] = this.amountExpired;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -22765,6 +22784,7 @@ export class ExpireCustomerCreditResponse implements IExpireCustomerCreditRespon
 export interface IExpireCustomerCreditResponse {
     userId: string | undefined;
     amountExpired: number;
+    currencyCode: string | undefined;
 }
 
 export class ExtraListItem implements IExtraListItem {
@@ -22775,6 +22795,7 @@ export class ExtraListItem implements IExtraListItem {
     price!: number;
     displayOrder!: number;
     translations!: { [key: string]: Translation; } | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IExtraListItem) {
         if (data) {
@@ -22800,6 +22821,7 @@ export class ExtraListItem implements IExtraListItem {
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -22825,6 +22847,7 @@ export class ExtraListItem implements IExtraListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -22837,6 +22860,7 @@ export interface IExtraListItem {
     price: number;
     displayOrder: number;
     translations: { [key: string]: Translation; } | undefined;
+    currencyCode: string | undefined;
 }
 
 export enum FiscalErrorKind {
@@ -24223,6 +24247,7 @@ export class GetUserCreditCurrencyAccount implements IGetUserCreditCurrencyAccou
     balance!: number;
     currencyCode!: string | undefined;
     ledger!: GetUserCreditLedgerEntry[] | undefined;
+    currencyId!: string | undefined;
 
     constructor(data?: IGetUserCreditCurrencyAccount) {
         if (data) {
@@ -24243,6 +24268,7 @@ export class GetUserCreditCurrencyAccount implements IGetUserCreditCurrencyAccou
                 for (let item of Data["ledger"])
                     this.ledger!.push(GetUserCreditLedgerEntry.fromJS(item));
             }
+            this.currencyId = Data["currencyId"];
         }
     }
 
@@ -24263,6 +24289,7 @@ export class GetUserCreditCurrencyAccount implements IGetUserCreditCurrencyAccou
             for (let item of this.ledger)
                 data["ledger"].push(item ? item.toJSON() : undefined as any);
         }
+        data["currencyId"] = this.currencyId;
         return data;
     }
 }
@@ -24272,6 +24299,7 @@ export interface IGetUserCreditCurrencyAccount {
     balance: number;
     currencyCode: string | undefined;
     ledger: GetUserCreditLedgerEntry[] | undefined;
+    currencyId: string | undefined;
 }
 
 export class GetUserCreditLedgerEntry implements IGetUserCreditLedgerEntry {
@@ -25752,6 +25780,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
     payBreakdown!: string | undefined;
     isApproved!: boolean;
     createdOn!: Date;
+    currencyCode!: string | undefined;
 
     constructor(data?: IOrderEmployeePayDto) {
         if (data) {
@@ -25780,6 +25809,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
             this.payBreakdown = Data["payBreakdown"];
             this.isApproved = Data["isApproved"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -25808,6 +25838,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
         data["payBreakdown"] = this.payBreakdown;
         data["isApproved"] = this.isApproved;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -25829,6 +25860,7 @@ export interface IOrderEmployeePayDto {
     payBreakdown: string | undefined;
     isApproved: boolean;
     createdOn: Date;
+    currencyCode: string | undefined;
 }
 
 export class OrderIssueDto implements IOrderIssueDto {
@@ -26762,6 +26794,7 @@ export class PackageListItem implements IPackageListItem {
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
     includedServices!: PackageServiceSummary[] | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IPackageListItem) {
         if (data) {
@@ -26792,6 +26825,7 @@ export class PackageListItem implements IPackageListItem {
                 for (let item of Data["includedServices"])
                     this.includedServices!.push(PackageServiceSummary.fromJS(item));
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -26822,6 +26856,7 @@ export class PackageListItem implements IPackageListItem {
             for (let item of this.includedServices)
                 data["includedServices"].push(item ? item.toJSON() : undefined as any);
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -26835,6 +26870,7 @@ export interface IPackageListItem {
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceSummary[] | undefined;
+    currencyCode: string | undefined;
 }
 
 export class PackageServiceDto implements IPackageServiceDto {
@@ -30605,6 +30641,7 @@ export class ServiceListItem implements IServiceListItem {
     basePrice!: number;
     perRoomPrice!: number;
     translations!: { [key: string]: Translation; } | undefined;
+    currencyCode!: string | undefined;
 
     constructor(data?: IServiceListItem) {
         if (data) {
@@ -30630,6 +30667,7 @@ export class ServiceListItem implements IServiceListItem {
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -30655,6 +30693,7 @@ export class ServiceListItem implements IServiceListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -30667,6 +30706,7 @@ export interface IServiceListItem {
     basePrice: number;
     perRoomPrice: number;
     translations: { [key: string]: Translation; } | undefined;
+    currencyCode: string | undefined;
 }
 
 export class SetCountryServicedResponse implements ISetCountryServicedResponse {

@@ -1515,7 +1515,8 @@
         "title": "Filtre",
         "date_range": "Časové obdobie",
         "reset": "Obnoviť filtre",
-        "clear_all": "Vymazať všetko"
+        "clear_all": "Vymazať všetko",
+        "currency": "Mena"
       },
       "revenue_report": "Report príjmov",
       "payroll_report": "Report miezd",

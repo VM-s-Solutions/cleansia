@@ -1515,7 +1515,8 @@
         "title": "Filters",
         "date_range": "Date Range",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "currency": "Currency"
       },
       "revenue_report": "Revenue Report",
       "payroll_report": "Payroll Report",

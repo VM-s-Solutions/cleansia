@@ -70,7 +70,7 @@
                       'pages.reports.total_revenue' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatRevenueAmount(
                         facade.revenueReport()?.totalRevenue
                       )
                     }}</span>
@@ -86,7 +86,7 @@
                       'pages.reports.avg_order_value' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatRevenueAmount(
                         facade.revenueReport()?.averageOrderValue
                       )
                     }}</span>
@@ -238,7 +238,7 @@
                       'pages.reports.total_payroll' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatPayrollAmount(
                         facade.payrollReport()?.totalPayroll
                       )
                     }}</span>
@@ -254,7 +254,7 @@
                       'pages.reports.avg_pay_per_employee' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatPayrollAmount(
                         facade.payrollReport()?.averagePayPerEmployee
                       )
                     }}</span>
@@ -312,7 +312,7 @@
                       'pages.reports.total_bonuses' | translate
                     }}</span>
                     <span class="summary-card__value">{{
-                      facade.formatCurrency(
+                      facade.formatPayrollAmount(
                         facade.payrollReport()?.totalBonuses
                       )
                     }}</span>
@@ -422,6 +422,20 @@
             />
           </div>
         </div>
+      </div>
+
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.reports.filters.currency' | translate }}
+        </h3>
+        <cleansia-select
+          [options]="currencyOptions()"
+          [label]="'pages.reports.filters.currency' | translate"
+          [floatVariant]="'on'"
+          [showClear]="true"
+          formControlName="currencyId"
+          appendTo="body"
+        />
       </div>
     </form>
   </div>

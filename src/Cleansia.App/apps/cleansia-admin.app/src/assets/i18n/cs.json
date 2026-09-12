@@ -1625,7 +1625,8 @@
         "title": "Filtry",
         "date_range": "Časové období",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "revenue_report": "Přehled tržeb",
       "payroll_report": "Přehled mezd",

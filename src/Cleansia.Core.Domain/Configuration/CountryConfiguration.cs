@@ -98,6 +98,14 @@ public class CountryConfiguration : Auditable
     /// </summary>
     public decimal? RefundStripeFixedFee { get; private set; }
 
+    /// <summary>
+    /// The insurance ceiling per booking that customer copy states for this country, a number in
+    /// <see cref="DefaultCurrencyCode"/> (the <see cref="RefundStripeFixedFee"/> shape). Per country,
+    /// not per currency: a policy is written per jurisdiction, so two EUR countries need not share one.
+    /// Null → the clients render the copy variant that names no figure.
+    /// </summary>
+    public decimal? InsuranceCoverageAmount { get; private set; }
+
     public static CountryConfiguration Create(
         string countryId,
         string defaultCurrencyCode,
@@ -199,6 +207,12 @@ public class CountryConfiguration : Auditable
     public CountryConfiguration UpdateFiscalEnforcementMode(FiscalEnforcementMode mode)
     {
         FiscalEnforcementMode = mode;
+        return this;
+    }
+
+    public CountryConfiguration UpdateMarketContent(decimal? insuranceCoverageAmount)
+    {
+        InsuranceCoverageAmount = insuranceCoverageAmount;
         return this;
     }
 }

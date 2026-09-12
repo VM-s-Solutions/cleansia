@@ -37,7 +37,7 @@ public class PayoutDetailsValidatorTests
 
     private void Register(string countryId, string isoCode, PayoutScheme? configuredScheme)
     {
-        var country = Country.Create(isoCode, isoCode);
+        var country = Country.Create(isoCode, isoCode, isoCode[..2]);
         country.Id = countryId;
 
         _countries.Setup(r => r.GetByIdAsync(countryId, It.IsAny<CancellationToken>())).ReturnsAsync(country);
@@ -211,7 +211,7 @@ public class PayoutDetailsValidatorTests
     {
         _countries
             .Setup(r => r.GetByIdAsync("country-zz", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Atlantis", "ZZZ"));
+            .ReturnsAsync(Country.Create("Atlantis", "ZZZ", "ZZ"));
 
         var result = await CreateValidator().ValidateAsync(new PayoutDetailsInput(
             "country-zz", null, null, "5885638003", "5500", null, null, null, null));

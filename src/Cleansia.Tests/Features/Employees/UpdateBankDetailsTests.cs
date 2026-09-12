@@ -45,7 +45,7 @@ public class UpdateBankDetailsTests
         _employees.Setup(r => r.GetByIdAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(_employee);
         _employees.Setup(r => r.ExistsAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var country = Country.Create("Czechia", "CZE");
+        var country = Country.Create("Czechia", "CZE", "CZ");
         country.Id = CzCountryId;
         _countries.Setup(r => r.GetByIdAsync(CzCountryId, It.IsAny<CancellationToken>())).ReturnsAsync(country);
         _countries.Setup(r => r.GetByIsoCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(country);

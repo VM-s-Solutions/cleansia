@@ -174,7 +174,7 @@ public class MixedCurrencyPeriodInvoicingTests(PostgresContainerFixture fixture)
 
     private static async Task SeedAsync(CleansiaDbContext context)
     {
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
 
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");

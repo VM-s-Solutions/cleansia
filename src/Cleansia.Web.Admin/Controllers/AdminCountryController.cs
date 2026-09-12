@@ -114,6 +114,31 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
     }
 
     /// <summary>
+    /// The per-country figures customer copy interpolates (ADR-0060 D2). Needs an existing
+    /// configuration row; the country update does not create one.
+    /// </summary>
+    [HttpPut("{countryId}/market-content")]
+    [Permission(Policy.CanUpdateCountry)]
+    [ProducesResponseType(typeof(UpdateCountryMarketContent.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> UpdateMarketContent(
+        string countryId,
+        [FromBody] UpdateCountryMarketContent.Command command,
+        CancellationToken cancellationToken)
+    {
+        if (command.CountryId != countryId)
+        {
+            return BadRequest("Country ID in route does not match command");
+        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UpdateCountryMarketContent.Response>(result);
+    }
+
+    /// <summary>
     /// What this country calls its business identifiers, and whether it demands them.
     ///
     /// <para>CountryConfiguration has carried these since it was seeded, and no endpoint on THIS host

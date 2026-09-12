@@ -357,7 +357,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
 
         // The service address's country must resolve to a real currency: a named country with no
         // configuration throws rather than falling back to the default.
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = "country-cz";
         ctx.Set<Country>().Add(country);
         ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create("country-cz", "CZK", "cs", 0.21m));

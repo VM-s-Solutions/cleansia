@@ -72,7 +72,7 @@ public class SetDefaultSavedAddressTests(PostgresContainerFixture fixture) : Bas
 
         ctx.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         ctx.Countries.Add(country);
 
         var user = User.CreateWithPassword(

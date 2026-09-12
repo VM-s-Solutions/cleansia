@@ -126,8 +126,8 @@ public class OrderAddressResolverTests
             .Setup(r => r.GetServicedAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Country>
             {
-                Country.Create("Czechia", "CZ", isServiced: true),
-                Country.Create("Slovakia", "SK", isServiced: true),
+                Country.Create("Czechia", "CZ", "CZ", isServiced: true),
+                Country.Create("Slovakia", "SK", "SK", isServiced: true),
             });
 
         var result = await CreateResolver().ResolveAsync(command, UserId, CancellationToken.None);
@@ -141,7 +141,7 @@ public class OrderAddressResolverTests
     {
         var command = CreateOrderTestData.ValidCommand(
             customerAddress: CreateOrderTestData.InlineAddress(countryId: null));
-        var only = Country.Create("Czechia", "CZ", isServiced: true);
+        var only = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         _countryRepository
             .Setup(r => r.GetServicedAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Country> { only });
@@ -281,7 +281,7 @@ public class OrderAddressResolverTests
     {
         var command = CreateOrderTestData.ValidCommand(
             customerAddress: CreateOrderTestData.InlineAddress(countryId: null));
-        var only = Country.Create("Czechia", "CZ", isServiced: true);
+        var only = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         _countryRepository
             .Setup(r => r.GetServicedAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Country> { only });
@@ -300,8 +300,8 @@ public class OrderAddressResolverTests
             .Setup(r => r.GetServicedAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Country>
             {
-                Country.Create("Czechia", "CZ", isServiced: true),
-                Country.Create("Slovakia", "SK", isServiced: true),
+                Country.Create("Czechia", "CZ", "CZ", isServiced: true),
+                Country.Create("Slovakia", "SK", "SK", isServiced: true),
             });
 
         var countryId = await CreateResolver().ResolveCountryIdAsync(command, UserId, CancellationToken.None);

@@ -72,7 +72,7 @@ public class OrderOwnerAndCurrencyProjectionTests(PostgresContainerFixture fixtu
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = Ulid.NewUlid().ToString();
         context.Countries.Add(country);
 

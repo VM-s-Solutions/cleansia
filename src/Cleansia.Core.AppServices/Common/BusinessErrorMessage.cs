@@ -338,6 +338,12 @@ public static class BusinessErrorMessage
     public const string CountryInUse = "country.in_use";
     public const string CountryNotServiced = "country.not_serviced";
     public const string CountryRequired = "country.required";
+    /// <summary>Two upper-case letters (ISO 3166-1 alpha-2), the form the market chip prints.</summary>
+    public const string CountryIsoAlpha2Invalid = "country.iso_alpha2_invalid";
+    /// <summary>Servicing a country needs a configuration whose default currency is switched on (ADR-0058 D7 gate 2).</summary>
+    public const string CountryMarketNotReady = "country.market_not_ready";
+    /// <summary>Market content hangs off the configuration row; a country without one has nowhere to hold it.</summary>
+    public const string CountryConfigurationMissing = "country.configuration_missing";
 
     // Service areas
     public const string ServiceCityNotFound = "service_city.not_found";

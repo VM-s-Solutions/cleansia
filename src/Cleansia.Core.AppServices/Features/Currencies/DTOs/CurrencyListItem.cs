@@ -29,4 +29,5 @@ public record AdminCurrencyListItem(
     string Name,
     bool IsDefault,
     bool IsActive,
-    decimal? LoyaltyPointsDivisor);
+    decimal? LoyaltyPointsDivisor,
+    decimal? NoShowCredit);

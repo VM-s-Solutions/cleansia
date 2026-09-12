@@ -96,7 +96,7 @@ public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) 
 
     private static async Task SeedEmployeeWithUnpaidPays(CleansiaDbContext context)
     {
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         country.TenantId = TenantId;
 

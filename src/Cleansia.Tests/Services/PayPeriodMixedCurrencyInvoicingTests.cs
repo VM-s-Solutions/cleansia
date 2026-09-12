@@ -301,7 +301,7 @@ public class PayPeriodMixedCurrencyInvoicingTests
         var address = Address.Create("Dlouhá 12", "Praha", "11000", "cz");
         typeof(Address)
             .GetProperty(nameof(Address.Country))!
-            .SetValue(address, Country.Create("Czechia", "CZE"));
+            .SetValue(address, Country.Create("Czechia", "CZE", "CZ"));
 
         var employee = Employee.CreateWithUser(user);
         employee.Id = PayrollMockFactory.EmployeeId;

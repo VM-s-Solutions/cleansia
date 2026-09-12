@@ -206,16 +206,16 @@ public static class NotificationEventCatalog
     /// money back plus credit towards the next one" are different news, and the second read as the
     /// first is the platform quietly under-selling the one apology it makes.</para>
     ///
-    /// <para><b>The amount is in the COPY, not in an arg.</b> The lock-screen allowlist is a closed
-    /// <c>{orderNumber, count}</c> set (ADR-0025 D3) and <c>count</c> does not honestly mean an amount
-    /// of money. So the number is written into the five locales — which is a drift risk, and is why
-    /// <c>BookingPolicy.NoShowCreditCzk</c> joined <c>check-booking-policy-parity.mjs</c> in the same
-    /// change. Move the constant and the checker fails until the copy follows.</para>
+    /// <para><b>The amount is not an arg, and the copy states none.</b> The lock-screen allowlist is
+    /// a closed <c>{orderNumber, count}</c> set (ADR-0025 D3), and the figure is authored per currency
+    /// (<c>Currency.NoShowCredit</c>, ADR-0060 D1) so no single number is true in every market; the
+    /// push announces the credit and the credit screen shows the amount with its unit.
+    /// <c>check-booking-policy-parity.mjs</c> pins the copy.</para>
     ///
-    /// <para>Sent only when the credit was actually issued. A guest has no account to hold it and a
-    /// non-default-currency order is refused the grant, and both of those get the plain
-    /// <see cref="OrderCancelled"/> instead — promising credit nobody received would be worse than
-    /// saying less.</para>
+    /// <para>Sent only when the credit was actually issued. A guest has no account to hold it and an
+    /// order in a currency with no authored credit is refused the grant, and both of those get the
+    /// plain <see cref="OrderCancelled"/> instead — promising credit nobody received would be worse
+    /// than saying less.</para>
     /// </summary>
     public const string OrderNoCleanerRefunded = "order.no_cleaner_refunded";
 

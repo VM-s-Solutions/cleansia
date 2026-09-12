@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260912110108_Initial")]
+    [Migration("20260912232006_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -441,6 +441,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
+
+                    b.Property<decimal?>("InsuranceCoverageAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -2153,6 +2157,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsServiced")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("IsoAlpha2")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
                     b.Property<string>("IsoCode")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -2225,6 +2234,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("citext");
+
+                    b.Property<decimal?>("NoShowCredit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Symbol")
                         .IsRequired()
@@ -6469,7 +6482,7 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.OrderEmployeePay", b =>
                 {
-                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", null)
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
                         .WithMany()
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -6497,6 +6510,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasForeignKey("PayPeriodId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Currency");
 
                     b.Navigation("Employee");
 

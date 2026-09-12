@@ -52,7 +52,7 @@ public class AddSavedAddressHandlerTests
 
     private static Country CountryWith(string id, string name, string isoCode)
     {
-        var country = Country.Create(name, isoCode);
+        var country = Country.Create(name, isoCode, isoCode[..2]);
         country.Id = id;
         return country;
     }

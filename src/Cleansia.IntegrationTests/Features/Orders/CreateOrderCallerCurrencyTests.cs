@@ -300,7 +300,7 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
                      (Poland, "Poland", "PL", "PLN", "pl"),
                  })
         {
-            var country = Country.Create(name, iso, isServiced: true);
+            var country = Country.Create(name, iso, iso, isServiced: true);
             country.Id = id;
             context.Countries.Add(country);
             context.Add(ServiceCity.Create(id, CityOf[id]));

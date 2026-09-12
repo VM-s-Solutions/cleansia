@@ -233,7 +233,7 @@ public class InvoiceDocumentLanguageTests
         var address = Address.Create("Dlouhá 12", "Praha", "11000", "cz");
         typeof(Address)
             .GetProperty(nameof(Address.Country))!
-            .SetValue(address, Country.Create("Czechia", CleanerCountryIsoCode));
+            .SetValue(address, Country.Create("Czechia", CleanerCountryIsoCode, "CZ"));
 
         var employee = Employee.CreateWithUser(user);
         employee.Id = PayrollMockFactory.EmployeeId;

@@ -34,6 +34,20 @@ public class Currency : Auditable
         LoyaltyPointsDivisor = divisor;
     }
 
+    /// <summary>
+    /// The apology credit <c>CancelUnfilledOrders</c> issues on an order priced in THIS currency when
+    /// its slot arrives with no cleaner. AUTHORED per currency like the divisor — never scaled from
+    /// another currency's figure. Null means no apology credit in this currency: the sweep still
+    /// refunds in full and sends the plain cancellation push (fail closed, owner ruling 2026-09-06).
+    /// CZK is seeded at 250. → /product/business-rules#money-constants
+    /// </summary>
+    public decimal? NoShowCredit { get; private set; }
+
+    public void SetNoShowCredit(decimal? amount)
+    {
+        NoShowCredit = amount;
+    }
+
     public static Currency Create(string code, string symbol, string name) => new()
     {
         Code = Canonical(code),

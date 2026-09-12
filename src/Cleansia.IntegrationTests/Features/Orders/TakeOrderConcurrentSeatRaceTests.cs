@@ -121,7 +121,7 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
             context.Languages.Add(Language.Create("en", "English"));
         }
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = Ulid.NewUlid().ToString();
 
         // Same reason as the language above, and now enforced rather than merely untidy: `Code` is

@@ -52,7 +52,7 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
 
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "cur-1";
-        var country = Country.Create("Czechia", "CZE");
+        var country = Country.Create("Czechia", "CZE", "CZ");
         country.Id = "country-1";
         var address = Address.Create("Main Street 1", "Prague", "11000", country.Id);
         address.Id = "addr-1";

@@ -50,8 +50,8 @@ public class CompanyInfoCountryScopeTests(PostgresContainerFixture fixture) : Ba
     private async Task<(string Cz, string Sk)> SeedCountriesAsync()
     {
         await using var ctx = NewContext();
-        var cz = Country.Create("Czechia", "CZ", isServiced: true);
-        var sk = Country.Create("Slovakia", "SK", isServiced: false);
+        var cz = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
+        var sk = Country.Create("Slovakia", "SK", "SK", isServiced: false);
         ctx.Countries.AddRange(cz, sk);
         await ctx.CommitAsync(CancellationToken.None);
         return (cz.Id, sk.Id);

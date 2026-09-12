@@ -157,7 +157,7 @@ public class RequestLogCredentialShapeGuardTests
             .Select(m => m.Name)
             .ToList();
 
-        Assert.InRange(routes.Count, 400, 1000);
+        Assert.InRange(routes.Count, 400, 1500);
         Assert.InRange(credentialShaped.Count, 20, 500);
         Assert.Contains("EphemeralKey", credentialShaped);
         Assert.Contains("SetupIntentClientSecret", credentialShaped);

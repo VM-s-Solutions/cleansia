@@ -5,5 +5,6 @@ namespace Cleansia.Core.AppServices.Features.Countries.DTOs;
 public record CountryListItem(
     string Id,
     string IsoCode,
+    string IsoAlpha2,
     string Name,
     Dictionary<string, Translation> Translations);

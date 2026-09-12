@@ -92,5 +92,8 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
 
         builder.Property(e => e.RefundStripeFixedFee)
             .HasPrecision(18, 2);
+
+        builder.Property(e => e.InsuranceCoverageAmount)
+            .HasPrecision(18, 2);
     }
 }

@@ -433,7 +433,7 @@ public class PayoutInvoicePdfDataTests
         var address = Address.Create("Dlouhá 12", "Praha", "11000", "cz");
         typeof(Address)
             .GetProperty(nameof(Address.Country))!
-            .SetValue(address, Country.Create("Czechia", "CZ"));
+            .SetValue(address, Country.Create("Czechia", "CZ", "CZ"));
 
         var employee = Employee.CreateWithUser(user);
         employee.UpdateAddress(address);

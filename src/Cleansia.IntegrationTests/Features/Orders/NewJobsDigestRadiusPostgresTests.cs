@@ -143,11 +143,11 @@ public class NewJobsDigestRadiusPostgresTests(PostgresContainerFixture fixture) 
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZE", isServiced: true);
+        var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
 
-        var foreignCountry = Country.Create("Germany", "DEU", isServiced: true);
+        var foreignCountry = Country.Create("Germany", "DEU", "DE", isServiced: true);
         foreignCountry.Id = ForeignCountryId;
         context.Countries.Add(foreignCountry);
 

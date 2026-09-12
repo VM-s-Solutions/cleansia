@@ -19,6 +19,10 @@ public class CountryEntityConfiguration : AuditableEntityConfiguration<Country, 
             .IsRequired()
             .HasMaxLength(3);
 
+        builder.Property(c => c.IsoAlpha2)
+            .IsRequired()
+            .HasMaxLength(2);
+
         builder.Property(s => s.Translations)
             .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, Translation>>())
             .Metadata

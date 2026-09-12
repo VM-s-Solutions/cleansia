@@ -101,7 +101,7 @@ public class SweepQueryTranslationPostgresTests(PostgresContainerFixture fixture
         // Users carry a PreferredLanguageCode FK, so the row has to exist before any user does.
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = Ulid.NewUlid().ToString();
         var currency = Currency.Create("CZK", "Kc", "Czech koruna");
         currency.IsActive = true;

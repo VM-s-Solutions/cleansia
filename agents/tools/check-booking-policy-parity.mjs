@@ -123,7 +123,6 @@ const policy = {
   StandardLeadTimeHours: readCsConst(policySource, 'StandardLeadTimeHours'),
   ExpressSurchargeRate: readCsConst(policySource, 'ExpressSurchargeRate'),
   FirstWindowHour: readCsConst(policySource, 'FirstWindowHour'),
-  NoShowCreditCzk: readCsConst(policySource, 'NoShowCreditCzk'),
   LastWindowHour: readCsConst(policySource, 'LastWindowHour'),
 };
 
@@ -244,12 +243,16 @@ for (const locale of LOCALES) {
   }
 }
 
-// ─── 3. The no-show apology, which is quoted as a NUMBER in copy ────────────
-// The home page promises it and the push announces it, and neither can pass it as an argument: the
-// lock-screen loc-arg allowlist is a closed {orderNumber, count} set, so the amount is written into
-// every locale by hand. That is exactly the shape this tool exists for — it was added the day the
-// push started stating the figure.
-const noShow = policy.NoShowCreditCzk;
+// ─── 3. The no-show apology, which is still quoted as a NUMBER in copy ──────
+// The figure is DATA now — `Currency.NoShowCredit`, authored per currency (ADR-0060 D1) — so there is
+// no C# constant to pin the copy to. The three surfaces still state the CZK number by hand, and until
+// each is flipped to a placeholder / no-figure form the only property worth guarding is that they
+// still agree with each other. A checker-local constant does that; it is deliberately NOT a read of
+// the seed SQL (a multi-row VALUES list, a fragile regex, and a workflow trigger added and removed
+// within three tickets). Each of T-0715 (web), T-0717 (Android) and T-0719 (iOS) flips its own pin
+// to "placeholder present, no integer"; the last one deletes this constant.
+const INTERIM_NO_SHOW_CREDIT_CZK = 250;
+const noShow = INTERIM_NO_SHOW_CREDIT_CZK;
 
 for (const locale of LOCALES) {
   const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));

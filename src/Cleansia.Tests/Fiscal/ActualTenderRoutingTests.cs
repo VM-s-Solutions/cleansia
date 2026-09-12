@@ -66,7 +66,7 @@ public class ActualTenderRoutingTests
 
         _countryRepository
             .Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Country.Create("Germany", "DE"));
+            .ReturnsAsync(Country.Create("Germany", "DE", "DE"));
 
         _countryConfigurationRepository
             .Setup(r => r.GetByCountryIdAsync(CountryId, It.IsAny<CancellationToken>()))

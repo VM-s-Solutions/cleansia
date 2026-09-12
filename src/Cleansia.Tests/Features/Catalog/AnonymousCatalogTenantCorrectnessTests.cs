@@ -65,7 +65,7 @@ public sealed class AnonymousCatalogTenantCorrectnessTests : IDisposable
 
         if (!await ctx.Countries.IgnoreQueryFilters().AnyAsync(c => c.Id == CountryId))
         {
-            var country = Country.Create("Czechia", "CZE", isServiced: true);
+            var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
             country.Id = CountryId;
             ctx.Countries.Add(country);
         }

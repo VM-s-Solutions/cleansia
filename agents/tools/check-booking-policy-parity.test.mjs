@@ -66,7 +66,6 @@ function buildFixture(overrides = {}) {
     androidTier3: '50% charge',
     iosTier2: '25% charge',
     iosTier3: '50% charge',
-    noShowCredit: '250m',
     webWeCancelValue: 'Everything back + 250 CZK credit',
     androidNoShowBody: 'Nobody could take booking #%1$s, so we refunded it and added 250 Kč credit.',
     iosNoShowBody: 'Nobody could take booking #%1$@, so we refunded it and added 250 Kč credit.',
@@ -85,7 +84,6 @@ public static class BookingPolicy
     public const decimal PartialCancellationFeeRate = ${o.partialRate};
     public const decimal LastMinuteCancellationFeeRate = ${o.lastMinuteRate};
     public const int PartialCancellationHours = 4;
-    public const decimal NoShowCreditCzk = ${o.noShowCredit};
 }
 `);
 
@@ -211,13 +209,13 @@ scenario('a tree whose four surfaces agree passes', {}, { code: 0 });
 }
 
 // ─── 2b. The no-show apology, which is quoted as an AMOUNT rather than a percentage ─────
-// Added the day the push started stating the figure. The 250 cannot be a loc arg — the lock-screen
-// allowlist is a closed {orderNumber, count} set — so it is written into fifteen strings by hand,
-// and this is the half of the gate that holds them to the constant.
+// The figure is authored per currency now (Currency.NoShowCredit), so the fixture's BookingPolicy
+// carries no scalar and the three surfaces are held to the checker's interim constant instead —
+// until each copy lane flips its pin to a placeholder form and the last one deletes the constant.
 scenario(
-  'catches a home page still quoting the old apology amount',
-  { noShowCredit: '300m' },
-  { code: 1, mentions: ['web/en', 'does not state 300'] },
+  'catches a home page quoting a different apology amount from the pushes',
+  { webWeCancelValue: 'Everything back + 500 CZK credit' },
+  { code: 1, mentions: ['web/en', 'does not state 250'] },
 );
 scenario(
   'catches an Android push still quoting the old apology amount',

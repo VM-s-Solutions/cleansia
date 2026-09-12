@@ -80,7 +80,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         _tenantProvider.ClearTenantOverride();
         await using var ctx = NewContext();
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         ctx.Countries.Add(country);
 

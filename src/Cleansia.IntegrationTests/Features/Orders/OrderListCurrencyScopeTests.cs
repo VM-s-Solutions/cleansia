@@ -136,7 +136,7 @@ public class OrderListCurrencyScopeTests(PostgresContainerFixture fixture) : Bas
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
 

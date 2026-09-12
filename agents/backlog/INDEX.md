@@ -149,6 +149,7 @@
 | T-0707 | FK_Orders_Currencies_CurrencyId is Cascade — deleting a currency would delete its orders | S | `done` | — | shipped 2026-09-12 (52b5c939), branch fix/remove-membership-free-trial, not yet merged; Every sibling money table is Restrict. Orders is not. |
 | T-0708 | A payout can be issued in any currency to any bank account | M | `done` | — | shipped 2026-09-12 (206df58b), branch fix/remove-membership-free-trial, not yet merged; The payout-details model has no currency, and nothing checks that the account can receive what is being sent. |
 | T-0709 | docs/ still describes ExchangeRate conversion as the live multicurrency mechanism | S | `done` | — | shipped 2026-09-12, branch fix/remove-membership-free-trial, not yet merged; The architecture pages describe a column that no longer exists and a conversion that no longer happens. |
+| T-0711 | The market directory and the per-market copy figures (ADR-0058 D1–D2, ADR-0060 D1–D2) | M | `done` | — | shipped 2026-09-13, branch fix/remove-membership-free-trial, not yet merged; `Market/GetOverview` on both customer hosts, the no-show credit authored per currency, the insurance ceiling per country, the servicing gate, `Country.IsoAlpha2`; clients/spec regen is the orchestrator's after T-0710. |
 
 > **T-0699–T-0709 filed 2026-09-10**, split out of T-0688 by a readiness audit of the multicurrency
 > programme. Every claim was re-verified against the tree that day and the ones that did not survive
@@ -159,4 +160,4 @@
 > not replace. Both are in `b269efe4`.
 
 
-*Next id: **T-0710**.*
+*Next id: **T-0712** (T-0710 is the parallel Plus-per-market backend lane of the same programme).*

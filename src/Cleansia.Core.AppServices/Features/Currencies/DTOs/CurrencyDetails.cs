@@ -19,4 +19,5 @@ public record AdminCurrencyDetailDto(
     string Symbol,
     bool IsDefault,
     bool IsActive,
-    decimal? LoyaltyPointsDivisor);
+    decimal? LoyaltyPointsDivisor,
+    decimal? NoShowCredit);

@@ -209,7 +209,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
     {
         EmployeeIds.Clear();
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");

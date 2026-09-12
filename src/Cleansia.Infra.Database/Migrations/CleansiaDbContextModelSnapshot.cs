@@ -439,6 +439,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<decimal?>("InsuranceCoverageAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -2150,6 +2154,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsServiced")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("IsoAlpha2")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
                     b.Property<string>("IsoCode")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -2222,6 +2231,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("citext");
+
+                    b.Property<decimal?>("NoShowCredit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Symbol")
                         .IsRequired()
@@ -6466,7 +6479,7 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.OrderEmployeePay", b =>
                 {
-                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", null)
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
                         .WithMany()
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -6494,6 +6507,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasForeignKey("PayPeriodId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Currency");
 
                     b.Navigation("Employee");
 

@@ -28,7 +28,7 @@ public static class DomainSeed
     {
         if (!await ctx.Countries.IgnoreQueryFilters().AnyAsync(c => c.Id == CountryId))
         {
-            var country = Country.Create("Czechia", "CZ", isServiced: true);
+            var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
             country.Id = CountryId;
             ctx.Countries.Add(country);
         }

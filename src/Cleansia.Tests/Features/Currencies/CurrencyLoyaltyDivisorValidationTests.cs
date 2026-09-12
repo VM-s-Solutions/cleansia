@@ -107,6 +107,42 @@ public class CurrencyLoyaltyDivisorValidationTests
         Assert.Equal(valid, result.IsValid);
     }
 
+    /// <summary>
+    /// The apology credit is authored beside the divisor (ADR-0060 D1). Null is "no credit in this
+    /// currency" and is legal on an active market — the copy has a refund-only variant for it — so
+    /// only a non-positive figure is refused.
+    /// </summary>
+    [Theory]
+    [InlineData(-1.0, false)]
+    [InlineData(0.0, false)]
+    [InlineData(null, true)]
+    [InlineData(250.0, true)]
+    public async Task Update_No_Show_Credit_Must_Be_Positive_When_Set(double? credit, bool valid)
+    {
+        ArrangeStored(isActive: true, divisor: 10m);
+        var command = new UpdateCurrency.Command(CurrencyId, "EUR", "€", "Euro", 10m, (decimal?)credit);
+
+        var result = await new UpdateCurrency.Validator(_currencies.Object).ValidateAsync(command);
+
+        Assert.Equal(valid, result.IsValid);
+        Assert.Equal(!valid, result.Errors.Any(e =>
+            e.PropertyName == nameof(UpdateCurrency.Command.NoShowCredit)
+            && e.ErrorMessage == BusinessErrorMessage.MustBePositive));
+    }
+
+    [Theory]
+    [InlineData(-1.0, false)]
+    [InlineData(null, true)]
+    [InlineData(250.0, true)]
+    public async Task Create_No_Show_Credit_Must_Be_Positive_When_Set(double? credit, bool valid)
+    {
+        var command = new CreateCurrency.Command("EUR", "€", "Euro", 10m, (decimal?)credit);
+
+        var result = await new CreateCurrency.Validator(_currencies.Object).ValidateAsync(command);
+
+        Assert.Equal(valid, result.IsValid);
+    }
+
     private void ArrangeStored(bool isActive, decimal? divisor)
     {
         var currency = Currency.Create("EUR", "€", "Euro");

@@ -14,7 +14,8 @@ public class UpdateCurrency
         string Code,
         string Symbol,
         string Name,
-        decimal? LoyaltyPointsDivisor = null) : ICommand<Response>;
+        decimal? LoyaltyPointsDivisor = null,
+        decimal? NoShowCredit = null) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -76,6 +77,13 @@ public class UpdateCurrency
                     return currency is null || !currency.IsActive;
                 })
                 .WithMessage(BusinessErrorMessage.CurrencyLoyaltyDivisorMissing);
+
+            // Null is "no apology credit in this currency" and is legal on an active market; only a
+            // non-positive figure is refused.
+            RuleFor(x => x.NoShowCredit)
+                .GreaterThan(0m)
+                .When(x => x.NoShowCredit.HasValue)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
         }
     }
 
@@ -93,6 +101,7 @@ public class UpdateCurrency
 
             currency.Update(command.Code, command.Symbol, command.Name);
             currency.SetLoyaltyPointsDivisor(command.LoyaltyPointsDivisor);
+            currency.SetNoShowCredit(command.NoShowCredit);
 
             // Renaming a code races the same way a create does -- see CreateCurrency.
             try

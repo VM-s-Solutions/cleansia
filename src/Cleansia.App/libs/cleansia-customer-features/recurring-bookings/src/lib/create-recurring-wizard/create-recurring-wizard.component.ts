@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
   CleansiaAddressAutocompleteComponent,
@@ -71,7 +71,6 @@ export class CreateRecurringWizardComponent implements OnInit {
   protected readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly snackbar = inject(SnackbarService);
   private readonly confirmService = inject(ConfirmationService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -137,37 +136,6 @@ export class CreateRecurringWizardComponent implements OnInit {
   });
 
   /**
-   * Path B prefill — set when the user arrives via "Make this recurring" on an
-   * order detail page. Consumed once the catalogue is loaded so the
-   * cross-check against live services/packages is meaningful.
-   */
-  private pendingPrefill = signal<RecurringPrefillParams | null>(null);
-
-  private prefillEffect = effect(() => {
-    const params = this.pendingPrefill();
-    if (!params) return;
-
-    const services = this.facade.services();
-    const packages = this.facade.packages();
-    const needsServices = params.selectedServiceIds.length > 0;
-    const needsPackages = params.selectedPackageIds.length > 0;
-    if ((needsServices && services.length === 0) || (needsPackages && packages.length === 0)) {
-      return;
-    }
-
-    const missing = this.facade.prefillFromOrder(params);
-    if (missing.length > 0) {
-      // The prefill DID succeed — this says what was dropped, not that it failed.
-      this.snackbar.showSuccess(
-        this.translate.instant('recurring_booking.prefill_dropped_items', {
-          items: missing.join(', '),
-        }),
-      );
-    }
-    this.pendingPrefill.set(null);
-  });
-
-  /**
    * Load the template being edited once the list is in memory. A deep link
    * lands here with nothing loaded, so this waits for `initialize()` rather
    * than reading the list in `ngOnInit`.
@@ -198,7 +166,7 @@ export class CreateRecurringWizardComponent implements OnInit {
       if (raw) {
         sessionStorage.removeItem(RECURRING_PREFILL_STORAGE_KEY);
         try {
-          this.pendingPrefill.set(JSON.parse(raw) as RecurringPrefillParams);
+          this.facade.prefill(JSON.parse(raw) as RecurringPrefillParams);
         } catch {
           // Corrupt payload — the user falls into the blank-slate flow.
         }

@@ -47,9 +47,9 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
       .subscribe((currencies) => {
         this.currencies.set(
-          (currencies ?? [])
-            .filter((c) => c.id && c.code)
-            .map((c) => ({ id: c.id!, code: c.code!, isDefault: !!c.isDefault }))
+          (currencies ?? []).flatMap((c) =>
+            c.id && c.code ? [{ id: c.id, code: c.code, isDefault: !!c.isDefault }] : []
+          )
         );
       });
   }

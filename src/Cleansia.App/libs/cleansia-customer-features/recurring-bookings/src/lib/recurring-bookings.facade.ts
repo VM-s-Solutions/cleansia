@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, Injector, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, Injector, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
@@ -117,6 +117,12 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     initialValue: [] as PackageListItem[],
   });
   readonly savedAddresses = this.savedAddressStore.addresses;
+  private readonly servicesCatalogue = toSignal(this.store.select(selectCustomerServicesCatalogue), {
+    initialValue: { services: [] as ServiceListItem[], countryId: null as string | null },
+  });
+  private readonly packagesCatalogue = toSignal(this.store.select(selectCustomerPackagesCatalogue), {
+    initialValue: { packages: [] as PackageListItem[], countryId: null as string | null },
+  });
 
   /**
    * The chosen saved address's country, which decides the currency the schedule is priced in —
@@ -125,6 +131,41 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private readonly addressCountryId = computed<string | null>(() =>
     this.countryOf(this.formData().savedAddressId),
   );
+  /**
+   * Whether the lists on screen are the ones priced for the address — the only lists a selection
+   * can honestly be checked against. False while the addresses are still loading, since they
+   * decide the market.
+   */
+  private readonly cataloguePricedForAddress = computed(() => {
+    const countryId = this.addressCountryId();
+    return (
+      !this.addressesLoading() &&
+      this.servicesCatalogue().countryId === countryId &&
+      this.packagesCatalogue().countryId === countryId
+    );
+  });
+
+  /** An order's selection waiting for the list it can be checked against. */
+  private readonly pendingPrefill = signal<RecurringPrefillParams | null>(null);
+  private readonly prefillEffect = effect(() => {
+    const params = this.pendingPrefill();
+    if (!params || !this.cataloguePricedForAddress()) return;
+    const needsServices = params.selectedServiceIds.length > 0;
+    const needsPackages = params.selectedPackageIds.length > 0;
+    if ((needsServices && this.services().length === 0) || (needsPackages && this.packages().length === 0)) {
+      return;
+    }
+
+    this.pendingPrefill.set(null);
+    const missing = this.prefillFromOrder(params);
+    if (missing.length > 0) {
+      this.snackbar.showSuccess(
+        this.translate.instant('recurring_booking.prefill_dropped_items', {
+          items: missing.join(', '),
+        }),
+      );
+    }
+  });
   /** The country the catalogue was last read for, so a same-country address switch re-reads nothing. */
   private catalogueCountryId: string | null = null;
   private followingAddressCountry = false;
@@ -500,6 +541,15 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.formPrice.set(null);
     this.submitAttempted.set(false);
     this.formData.set({ ...RECURRING_WIZARD_INITIAL_DATA });
+  }
+
+  /**
+   * Prefill the wizard from a past order once the catalogue priced for the address is on screen,
+   * telling the customer what that list no longer offers. The prefill DID succeed then — the word
+   * says what was dropped, not that it failed.
+   */
+  prefill(params: RecurringPrefillParams): void {
+    this.pendingPrefill.set(params);
   }
 
   /**

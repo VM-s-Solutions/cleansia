@@ -2,7 +2,6 @@ import { PLATFORM_ID, signal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
-  AddressDto,
   CustomerAuthService,
   CustomerClient,
   ExtraListItem,

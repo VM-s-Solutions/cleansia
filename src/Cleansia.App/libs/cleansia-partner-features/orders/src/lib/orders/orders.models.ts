@@ -9,6 +9,16 @@ export interface FilterChip {
   value: string;
 }
 
+export interface OrderFilterFormValue {
+  customerName?: string | null;
+  customerEmail?: string | null;
+  displayOrderNumber?: string | null;
+  orderStatuses?: number[] | null;
+  paymentStatuses?: number[] | null;
+  cleaningDateFrom?: Date | null;
+  cleaningDateTo?: Date | null;
+}
+
 export const ORDERS_HELP_STEPS: HelpStep[] = [
   {
     icon: 'pi pi-search',

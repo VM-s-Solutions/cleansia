@@ -221,7 +221,7 @@ export const FILTER_FORM_DEFAULTS = {
 
 // --- Filter chip removal helper ---
 
-export function getFilterPatchForChipRemoval(key: string): Record<string, any> {
+export function getFilterPatchForChipRemoval(key: string): Partial<typeof FILTER_FORM_DEFAULTS> {
   switch (key) {
     case 'orderStatus':
       return { orderStatus: [] };
@@ -234,6 +234,6 @@ export function getFilterPatchForChipRemoval(key: string): Record<string, any> {
     case 'currency':
       return { currencyId: null };
     default:
-      return { [key]: '' };
+      return { searchTerm: '' };
   }
 }

@@ -34,27 +34,30 @@
         </span>
         }
       </div>
-      <button
-        type="button"
+      <cleansia-button
         class="photo-gallery__close"
-        (click)="close()"
-        [title]="'global.actions.close' | translate"
-      >
-        <i class="pi pi-times"></i>
-      </button>
+        [icon]="'pi pi-times'"
+        [text]="true"
+        [rounded]="true"
+        [size]="'xx-small-width'"
+        [tooltip]="'global.actions.close' | translate"
+        [ariaLabel]="'global.actions.close' | translate"
+        (onClick)="close()"
+      />
     </div>
 
     <!-- Main Image -->
     <div class="photo-gallery__content">
-      <button
-        type="button"
+      <cleansia-button
         class="photo-gallery__nav photo-gallery__nav--prev"
+        [icon]="'pi pi-chevron-left'"
+        [text]="true"
+        [size]="'xx-small-width'"
         [disabled]="!canNavigatePrev()"
-        (click)="navigatePrev(); $event.stopPropagation()"
-        [title]="'global.actions.previous' | translate"
-      >
-        <i class="pi pi-chevron-left"></i>
-      </button>
+        [tooltip]="'global.actions.previous' | translate"
+        [ariaLabel]="'global.actions.previous' | translate"
+        (onClick)="navigatePrev(); $event.stopPropagation()"
+      />
 
       <div class="photo-gallery__image-container">
         <img
@@ -64,15 +67,16 @@
         />
       </div>
 
-      <button
-        type="button"
+      <cleansia-button
         class="photo-gallery__nav photo-gallery__nav--next"
+        [icon]="'pi pi-chevron-right'"
+        [text]="true"
+        [size]="'xx-small-width'"
         [disabled]="!canNavigateNext()"
-        (click)="navigateNext(); $event.stopPropagation()"
-        [title]="'global.actions.next' | translate"
-      >
-        <i class="pi pi-chevron-right"></i>
-      </button>
+        [tooltip]="'global.actions.next' | translate"
+        [ariaLabel]="'global.actions.next' | translate"
+        (onClick)="navigateNext(); $event.stopPropagation()"
+      />
     </div>
 
     <!-- Photo Info -->

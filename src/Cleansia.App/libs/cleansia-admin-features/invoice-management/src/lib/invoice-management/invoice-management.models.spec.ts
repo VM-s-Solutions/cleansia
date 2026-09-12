@@ -4,13 +4,13 @@ import { getInvoiceTableColumns } from './invoice-management.models';
 
 describe('invoice-management table columns', () => {
   const translate = { instant: (k: string) => k } as unknown as TranslateService;
-  const amountColumn = () =>
-    getInvoiceTableColumns(translate).find((c) => c.id === 'totalAmount')!;
+  const amountValue = (row: EmployeeInvoiceDto) =>
+    getInvoiceTableColumns(translate).find((c) => c.id === 'totalAmount')?.getValue?.(row);
 
   it('labels the total with the code the invoice carries', () => {
     const row = EmployeeInvoiceDto.fromJS({ totalAmount: 1200, currencyCode: 'EUR' });
 
-    expect(amountColumn().getValue!(row)).toBe('1200.00 EUR');
+    expect(amountValue(row)).toBe('1200.00 EUR');
   });
 
   // One invoice per currency and the server names it; a missing code is a bug upstream, and
@@ -18,6 +18,6 @@ describe('invoice-management table columns', () => {
   it('prints a bare number rather than a currency the invoice does not name', () => {
     const row = EmployeeInvoiceDto.fromJS({ totalAmount: 1200 });
 
-    expect(amountColumn().getValue!(row)).toBe('1200.00');
+    expect(amountValue(row)).toBe('1200.00');
   });
 });

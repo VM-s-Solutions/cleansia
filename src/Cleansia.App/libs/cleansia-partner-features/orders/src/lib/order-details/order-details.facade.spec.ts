@@ -307,6 +307,19 @@ describe('OrderDetailsFacade', () => {
         'pages.order_details.mark_cash_collected_gating_error'
       );
     });
+
+    it('never opens the dialog for an order without an id', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(OrderItem.fromJS({ ...buildOrder().toJSON(), id: undefined }));
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+
+      facade.openMarkCashCollectedDialog();
+
+      expect(dialogService.open).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'global.messages.orders.invalid_request'
+      );
+    });
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.

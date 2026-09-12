@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { AddressDto, CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem, SignupConsentService } from '@cleansia/customer-services';
+import { CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem, SignupConsentService } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -600,7 +600,7 @@ export class OrderWizardComponent implements OnInit {
   private readonly visibleMonth = signal(startOfMonth(new Date()));
 
   readonly visibleMonthLabel = computed(() => {
-    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const tag = localeFor(this.lang());
     const label = new Intl.DateTimeFormat(tag, { month: 'long', year: 'numeric' })
       .format(this.visibleMonth());
     return label.charAt(0).toUpperCase() + label.slice(1);
@@ -613,7 +613,7 @@ export class OrderWizardComponent implements OnInit {
    * silently if they disagree.
    */
   readonly weekdayNames = computed(() => {
-    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const tag = localeFor(this.lang());
     const format = new Intl.DateTimeFormat(tag, { weekday: 'short' });
     // 2026-01-05 is a Monday.
     return Array.from({ length: 7 }, (_, i) => {
@@ -845,7 +845,7 @@ export class OrderWizardComponent implements OnInit {
 
     const when: string[] = [];
     if (data.cleaningDate) {
-      const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+      const tag = localeFor(this.lang());
       when.push(
         `${new Intl.DateTimeFormat(tag, { dateStyle: 'long' }).format(data.cleaningDate)}, ${data.cleaningTime}`
       );
@@ -1041,7 +1041,7 @@ export class OrderWizardComponent implements OnInit {
    * A single `{{rooms}} pokoje` read "1 pokoje" for the default one-room flat.
    */
   private pluralKey(base: string, count: number): string {
-    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const tag = localeFor(this.lang());
     const cat = new Intl.PluralRules(tag).select(count);
     return `pages.order.${base}_${cat}`;
   }

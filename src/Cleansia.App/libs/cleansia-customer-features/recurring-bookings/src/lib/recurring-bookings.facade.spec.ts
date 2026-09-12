@@ -25,6 +25,7 @@ import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, of, throwError } from 'rxjs';
 import { RecurringBookingsFacade } from './recurring-bookings.facade';
+import { RecurringPrefillParams } from './recurring-bookings.models';
 
 describe('RecurringBookingsFacade', () => {
   let facade: RecurringBookingsFacade;
@@ -205,6 +206,113 @@ describe('RecurringBookingsFacade', () => {
 
       expect(facade.formData().selectedServiceIds).toEqual(['s1']);
       expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+  });
+
+  // "Make this recurring" arrives with the order's services before the customer has touched the
+  // address, and the default-priced list lands before the one priced for their address. Checking
+  // the prefill against the first list and again against the second told the customer twice.
+  describe('a prefill from an order is checked once, against the list priced for the address', () => {
+    const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk', isDefault: true });
+    const prefill = (overrides?: Partial<RecurringPrefillParams>): RecurringPrefillParams => ({
+      selectedServiceIds: ['s1', 's2'],
+      selectedPackageIds: [],
+      selectedServiceNames: ['Basic', 'Windows'],
+      selectedPackageNames: [],
+      rooms: 3,
+      bathrooms: 1,
+      paymentType: 2,
+      timeOfDay: '09:00',
+      ...overrides,
+    });
+    const listLands = (services: string[], countryId: string | null) => {
+      store.overrideSelector(selectCustomerServices, services.map((id) => ServiceListItem.fromJS({ id })));
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: services.map((id) => ServiceListItem.fromJS({ id })),
+        countryId,
+      });
+      store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId });
+      store.refreshState();
+      TestBed.flushEffects();
+    };
+
+    it('holds the prefill while the list on screen is priced for another market than the address', async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      await facade.initialize();
+      facade.prefill(prefill());
+
+      listLands(['s1'], null);
+
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('trims once against the address list and says so once', async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      await facade.initialize();
+      facade.prefill(prefill());
+      listLands(['s1'], null);
+
+      listLands(['s1'], 'svk');
+
+      expect(facade.formData()).toMatchObject({
+        selectedServiceIds: ['s1'],
+        rooms: 3,
+        bathrooms: 1,
+        paymentType: 2,
+        timeOfDay: '09:00',
+      });
+      expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
+      expect(snackbar.showSuccess).toHaveBeenCalledWith('recurring_booking.prefill_dropped_items');
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('applies once and never again when the list is re-read later', async () => {
+      savedAddressStore.addresses.set([slovakAddress]);
+      await facade.initialize();
+      facade.prefill(prefill());
+      listLands(['s1', 's2'], 'svk');
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      listLands(['s1', 's2'], 'svk');
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    });
+
+    it('checks against the default-priced list when the customer has no saved address', async () => {
+      await facade.initialize();
+      facade.prefill(prefill());
+
+      listLands(['s2'], null);
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s2']);
+      expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('holds the prefill until the addresses have loaded, since they decide the market', async () => {
+      savedAddressStore.loaded.set(false);
+      let finishLoading: (value: boolean) => void = () => undefined;
+      savedAddressStore.refresh.mockReturnValue(
+        new Promise<boolean>((resolve) => {
+          finishLoading = resolve;
+        }),
+      );
+      const loading = facade.ensureAddresses();
+      facade.prefill(prefill());
+
+      listLands(['s1'], null);
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+
+      savedAddressStore.addresses.set([slovakAddress]);
+      finishLoading(true);
+      await loading;
+      TestBed.flushEffects();
+      listLands(['s1'], 'svk');
+
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
     });
   });
 

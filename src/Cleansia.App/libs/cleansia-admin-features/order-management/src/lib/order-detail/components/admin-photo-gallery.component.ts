@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { PhotoType } from '@cleansia/admin-services';
+import { CleansiaButtonComponent } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 
 export interface GalleryPhoto {
@@ -23,7 +24,7 @@ export interface GalleryPhoto {
 @Component({
   selector: 'cleansia-admin-photo-gallery',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, CleansiaButtonComponent],
   templateUrl: './admin-photo-gallery.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

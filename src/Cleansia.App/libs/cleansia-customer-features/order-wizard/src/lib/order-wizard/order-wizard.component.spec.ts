@@ -5,7 +5,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { SnackbarService } from '@cleansia/services';
 import {
-  AddressDto,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
   PackageListItem,
@@ -220,6 +219,22 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
+  describe('the calendar locale', () => {
+    it('draws the weekday initials in the active language', async () => {
+      await setup();
+      fixture.componentInstance.lang.set('cs');
+
+      expect(fixture.componentInstance.weekdayNames()[0]).toBe('Po');
+    });
+
+    it('falls back to English like every other customer page when no language is active', async () => {
+      await setup();
+      fixture.componentInstance.lang.set('');
+
+      expect(fixture.componentInstance.weekdayNames()[0]).toBe('Mon');
+    });
+  });
+
   describe('selection cards (AC1, AC2)', () => {
     it('renders service cards as focusable buttons with aria-pressed reflecting selection', async () => {
       await setup();
@@ -295,7 +310,7 @@ describe('OrderWizardComponent (a11y)', () => {
       // which of the two valid mechanisms gives it one.
       const firstNameInput = el.querySelector<HTMLInputElement>('#wizard-first-name');
       expect(firstNameInput).toBeTruthy();
-      expect(firstNameInput!.labels?.length).toBeGreaterThan(0);
+      expect(firstNameInput?.labels?.length).toBeGreaterThan(0);
     });
 
     it('sets aria-invalid + aria-describedby when a contact field has a touched error', async () => {
@@ -443,7 +458,9 @@ describe('OrderWizardComponent (a11y)', () => {
       const summary = el.querySelector('.cl-wiz__summary');
       expect(summary).toBeTruthy();
       expect(el.querySelector('.order-wizard__mobile-price')).toBeNull();
-      expect(panel!.compareDocumentPosition(summary!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        panel && summary && panel.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
     });
   });
 

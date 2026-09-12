@@ -89,8 +89,8 @@ export class OrderManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(OrderManagementFacade);
   private readonly translate = inject(TranslateService);
 
-  orderStatusTemplate = viewChild<TemplateRef<any>>('orderStatusTemplate');
-  paymentStatusTemplate = viewChild<TemplateRef<any>>('paymentStatusTemplate');
+  orderStatusTemplate = viewChild<TemplateRef<OrderListItem>>('orderStatusTemplate');
+  paymentStatusTemplate = viewChild<TemplateRef<OrderListItem>>('paymentStatusTemplate');
 
   orderColumns!: TableColumn<OrderListItem>[];
   orderActions!: TableAction<OrderListItem>[];

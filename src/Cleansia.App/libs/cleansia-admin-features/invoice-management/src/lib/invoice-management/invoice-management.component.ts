@@ -77,8 +77,8 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(InvoiceManagementFacade);
   private readonly translate = inject(TranslateService);
 
-  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
-  pdfStatusTemplate = viewChild<TemplateRef<any>>('pdfStatusTemplate');
+  statusTemplate = viewChild<TemplateRef<EmployeeInvoiceDto>>('statusTemplate');
+  pdfStatusTemplate = viewChild<TemplateRef<EmployeeInvoiceDto>>('pdfStatusTemplate');
 
   invoiceTableColumns!: TableColumn<EmployeeInvoiceDto>[];
   invoiceTableActions!: TableAction<EmployeeInvoiceDto>[];

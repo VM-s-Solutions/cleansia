@@ -50,6 +50,9 @@
       "packages": "Packages",
       "package_create": "Create Package",
       "package_edit": "Edit Package",
+      "extras": "Extras",
+      "extra_create": "Create Extra",
+      "extra_edit": "Edit Extra",
       "admin_users": "Admin Users",
       "admin_user_create": "Create Admin User",
       "admin_user_edit": "Edit Admin User",
@@ -219,6 +222,7 @@
     "reports": "Reports",
     "services": "Services",
     "packages": "Packages",
+    "extras": "Extras",
     "admin_users": "Admin Users",
     "languages": "Languages",
     "countries": "Countries",
@@ -990,6 +994,60 @@
       },
       "tagline": "Card tagline",
       "is_popular": "Most popular package"
+    },
+    "extra_management": {
+      "title": "Extras",
+      "description": "Booking add-ons and their price in each currency",
+      "create_extra": "Create Extra",
+      "edit_extra": "Edit",
+      "delete_extra": "Delete Extra",
+      "delete_confirm": "Delete this extra? Only an extra no order has ever bought can be deleted; otherwise deactivate it.",
+      "activate_extra": "Activate Extra",
+      "deactivate_extra": "Deactivate Extra",
+      "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the booking wizard; orders that bought it are kept.",
+      "no_extras": "No extras found",
+      "filters": {
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by slug, name or description",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All",
+        "status": "Status",
+        "status_all": "All",
+        "status_active": "Active",
+        "status_inactive": "Inactive"
+      },
+      "columns": {
+        "slug": "Slug",
+        "name": "Name",
+        "price": "Price",
+        "display_order": "Order"
+      },
+      "messages": {
+        "delete_success": "Extra deleted",
+        "activate_success": "Extra activated",
+        "deactivate_success": "Extra deactivated"
+      }
+    },
+    "extra_form": {
+      "create_title": "Create Extra",
+      "edit_title": "Edit Extra",
+      "basic_info": "Basic Information",
+      "pricing": "Pricing",
+      "translations": "Translations",
+      "slug": "Slug",
+      "slug_hint": "Lower-case words joined by hyphens, e.g. inside-oven. Cannot be changed later.",
+      "name": "Name",
+      "description": "Description",
+      "display_order": "Display order",
+      "price": "Price",
+      "price_required": "Required",
+      "price_optional": "Optional",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "messages": {
+        "create_success": "Extra created",
+        "update_success": "Extra updated"
+      }
     },
     "admin_user_management": {
       "title": "Admin User Management",

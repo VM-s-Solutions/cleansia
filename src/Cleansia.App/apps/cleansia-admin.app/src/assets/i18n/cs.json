@@ -50,6 +50,9 @@
       "packages": "Balíčky",
       "package_create": "Vytvořit balíček",
       "package_edit": "Upravit balíček",
+      "extras": "Doplňky",
+      "extra_create": "Vytvořit doplněk",
+      "extra_edit": "Upravit doplněk",
       "admin_users": "Administrátoři",
       "admin_user_create": "Vytvořit administrátora",
       "admin_user_edit": "Upravit administrátora",
@@ -219,6 +222,7 @@
     "reports": "Přehledy",
     "services": "Služby",
     "packages": "Balíčky",
+    "extras": "Doplňky",
     "admin_users": "Administrátoři",
     "languages": "Jazyky",
     "countries": "Země",
@@ -1100,6 +1104,60 @@
       },
       "tagline": "Krátký popisek na kartě",
       "is_popular": "Nejoblíbenější balíček"
+    },
+    "extra_management": {
+      "title": "Doplňky",
+      "description": "Doplňkové služby k rezervaci a jejich cena v jednotlivých měnách",
+      "create_extra": "Vytvořit doplněk",
+      "edit_extra": "Upravit",
+      "delete_extra": "Smazat doplněk",
+      "delete_confirm": "Smazat tento doplněk? Smazat lze pouze doplněk, který si dosud žádná objednávka nekoupila; jinak jej deaktivujte.",
+      "activate_extra": "Aktivovat doplněk",
+      "deactivate_extra": "Deaktivovat doplněk",
+      "deactivate_confirm": "Deaktivovat „{{name}}“? Doplněk se skryje z rezervačního průvodce, objednávky, které si jej koupily, zůstanou zachovány.",
+      "no_extras": "Nebyly nalezeny žádné doplňky",
+      "filters": {
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle identifikátoru, názvu nebo popisu",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše",
+        "status": "Stav",
+        "status_all": "Vše",
+        "status_active": "Aktivní",
+        "status_inactive": "Neaktivní"
+      },
+      "columns": {
+        "slug": "Identifikátor",
+        "name": "Název",
+        "price": "Cena",
+        "display_order": "Pořadí"
+      },
+      "messages": {
+        "delete_success": "Doplněk byl smazán",
+        "activate_success": "Doplněk byl aktivován",
+        "deactivate_success": "Doplněk byl deaktivován"
+      }
+    },
+    "extra_form": {
+      "create_title": "Vytvořit doplněk",
+      "edit_title": "Upravit doplněk",
+      "basic_info": "Základní informace",
+      "pricing": "Ceník",
+      "translations": "Překlady",
+      "slug": "Identifikátor (slug)",
+      "slug_hint": "Malá písmena spojená pomlčkami, např. inside-oven. Později jej nelze změnit.",
+      "name": "Název",
+      "description": "Popis",
+      "display_order": "Pořadí zobrazení",
+      "price": "Cena",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "messages": {
+        "create_success": "Doplněk byl vytvořen",
+        "update_success": "Doplněk byl aktualizován"
+      }
     },
     "admin_user_management": {
       "title": "Správa administrátorů",

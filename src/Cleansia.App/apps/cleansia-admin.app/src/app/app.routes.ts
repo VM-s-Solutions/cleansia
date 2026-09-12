@@ -78,6 +78,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'extra-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/extra-management').then(
+        (m) => m.extraManagementRoutes
+      ),
+  },
+  {
     path: 'admin-user-management',
     canActivate: [adminGuard],
     loadChildren: () =>

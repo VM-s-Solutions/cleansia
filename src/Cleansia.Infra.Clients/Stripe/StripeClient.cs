@@ -57,7 +57,10 @@ public class StripeClient : IStripeClient
                 {
                     PriceData = new SessionLineItemPriceDataOptions
                     {
-                        Currency = order.Currency!.Code.ToLower(),
+                        Currency = (order.Currency?.Code
+                                    ?? throw new InvalidOperationException(
+                                        $"Order {order.Id} has no resolved currency; a checkout session cannot be denominated."))
+                            .ToLower(),
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
                             Name = $"Cleaning Order #{order.Id}"

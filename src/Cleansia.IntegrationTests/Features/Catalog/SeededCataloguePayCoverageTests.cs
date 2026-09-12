@@ -181,7 +181,8 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
                     new EmployeeRepository(ctx),
                     new CountryConfigurationRepository(ctx),
                     new CurrencyRepository(ctx)),
-                new EmployeePayConfigRepository(ctx))
+                new EmployeePayConfigRepository(ctx),
+                new CountryRepository(ctx))
             .Handle(new GetServiceOverview.Request(), CancellationToken.None);
 
         Assert.DoesNotContain(offered, item => item.Id == publishedId);

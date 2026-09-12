@@ -24,10 +24,15 @@ namespace Cleansia.Tests.Features.Catalog;
 /// <para>Every entry here is priced in CZK and only the "both" entry in EUR too, so with a Slovak
 /// country the filter is provably removing something rather than the query returning nothing for an
 /// unrelated reason.</para>
+///
+/// <para>A country the platform does not serve has NO catalogue: the answer is empty, never the default
+/// market's prices under a foreign address, and the resolver -- which throws for a country it cannot
+/// resolve -- is never asked, so a client-typed country id cannot turn into a 500.</para>
 /// </summary>
 public class CatalogueOverviewMarketTests
 {
     private const string Slovakia = "country-svk";
+    private const string Mongolia = "country-mng";
     private const string BothServiceId = "svc-both";
     private const string CzkOnlyServiceId = "svc-czk";
     private const string BothPackageId = "pkg-both";
@@ -42,6 +47,7 @@ public class CatalogueOverviewMarketTests
     private readonly Mock<IPackageRepository> _packages = new();
     private readonly Mock<IExtraRepository> _extras = new();
     private readonly ICurrencyResolutionService _markets = OrderMarketDoubles.Trading(Czk, (Slovakia, Eur));
+    private readonly ICountryRepository _countries = OrderMarketDoubles.Servicing(Slovakia);
 
     private readonly IServicePriceRepository _servicePrices = PricedServices();
     private readonly IPackagePriceRepository _packagePrices = PricedPackages();
@@ -145,13 +151,18 @@ public class CatalogueOverviewMarketTests
     }
 
     private GetServiceOverview.Handler ServiceOverview() =>
-        new(_services.Object, _servicePrices, _markets, _payConfigs);
+        new(_services.Object, _servicePrices, _markets, _payConfigs, _countries);
 
     private GetPackageOverview.Handler PackageOverview() =>
-        new(_packages.Object, _packagePrices, _markets, _payConfigs);
+        new(_packages.Object, _packagePrices, _markets, _payConfigs, _countries);
 
     private GetExtraOverview.Handler ExtraOverview() =>
-        new(_extras.Object, _extraPrices, _markets);
+        new(_extras.Object, _extraPrices, _markets, _countries);
+
+    private void AssertResolverNeverAsked() =>
+        Mock.Get(_markets).Verify(
+            m => m.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
 
     // ---------------------------------------------------------------- services
 
@@ -179,6 +190,16 @@ public class CatalogueOverviewMarketTests
         Assert.Equal(500m, items.Single(i => i.Id == BothServiceId).BasePrice);
     }
 
+    [Fact]
+    public async Task Services_With_An_Unserviced_Country_Are_Empty_And_The_Resolver_Is_Never_Asked()
+    {
+        var items = await ServiceOverview().Handle(
+            new GetServiceOverview.Request(Mongolia), CancellationToken.None);
+
+        Assert.Empty(items);
+        AssertResolverNeverAsked();
+    }
+
     // ---------------------------------------------------------------- packages
 
     [Fact]
@@ -203,6 +224,16 @@ public class CatalogueOverviewMarketTests
         Assert.All(items, item => Assert.Equal("CZK", item.CurrencyCode));
     }
 
+    [Fact]
+    public async Task Packages_With_An_Unserviced_Country_Are_Empty_And_The_Resolver_Is_Never_Asked()
+    {
+        var items = await PackageOverview().Handle(
+            new GetPackageOverview.Request(Mongolia), CancellationToken.None);
+
+        Assert.Empty(items);
+        AssertResolverNeverAsked();
+    }
+
     // ---------------------------------------------------------------- extras
 
     [Fact]
@@ -225,5 +256,15 @@ public class CatalogueOverviewMarketTests
 
         Assert.Equal(2, items.Count);
         Assert.All(items, item => Assert.Equal("CZK", item.CurrencyCode));
+    }
+
+    [Fact]
+    public async Task Extras_With_An_Unserviced_Country_Are_Empty_And_The_Resolver_Is_Never_Asked()
+    {
+        var items = await ExtraOverview().Handle(
+            new GetExtraOverview.Request(Mongolia), CancellationToken.None);
+
+        Assert.Empty(items);
+        AssertResolverNeverAsked();
     }
 }

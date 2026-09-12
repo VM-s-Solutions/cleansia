@@ -103,7 +103,8 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
                 new ServiceRepository(ctx),
                 new ServicePriceRepository(ctx),
                 Markets(ctx),
-                new EmployeePayConfigRepository(ctx))
+                new EmployeePayConfigRepository(ctx),
+                new CountryRepository(ctx))
             .Handle(new GetServiceOverview.Request(), CancellationToken.None)).ToList();
 
         Assert.Contains(overview, s => s.Id == activeServiceId);
@@ -121,7 +122,8 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
                 new PackageRepository(ctx),
                 new PackagePriceRepository(ctx),
                 Markets(ctx),
-                new EmployeePayConfigRepository(ctx))
+                new EmployeePayConfigRepository(ctx),
+                new CountryRepository(ctx))
             .Handle(new GetPackageOverview.Request(), CancellationToken.None)).ToList();
 
         Assert.Contains(overview, p => p.Id == activePackageId);

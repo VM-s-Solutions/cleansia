@@ -92,6 +92,27 @@ public class RefundServiceTests
         return order;
     }
 
+    /// <summary>A card-paid order loaded without its currency navigation -- what a projection that forgot the Include hands over.</summary>
+    private static Order CreateCardPaidOrderWithoutCurrencyNavigation(decimal totalPrice)
+    {
+        var order = Order.Create(
+            customerName: "Cust",
+            customerEmail: "c@x.test",
+            customerPhone: "+420123456789",
+            customerAddress: null!,
+            rooms: 2,
+            bathrooms: 1,
+            cleaningDateTime: DateTime.UtcNow.AddDays(1),
+            paymentType: PaymentType.Card,
+            totalPrice: totalPrice,
+            currencyId: "currency-czk",
+            paymentStatus: PaymentStatus.Paid,
+            userId: "user-1");
+        order.Id = OrderId;
+        order.AssignStripeSessionId(StripeSessionId);
+        return order;
+    }
+
     private void ArrangeOrder(Order order)
     {
         _orderRepository
@@ -123,6 +144,23 @@ public class RefundServiceTests
         _refundRepository
             .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+    }
+
+    [Fact]
+    public async Task IssueRefund_OrderWithoutCurrencyNavigation_ThrowsNamingTheOrder_BeforeAnyRowOrStripeCall()
+    {
+        var order = CreateCardPaidOrderWithoutCurrencyNavigation(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None));
+
+        Assert.Contains(OrderId, ex.Message);
+        Assert.Empty(added);
+        Assert.Equal(0, _stripe.RefundCallCount);
     }
 
     [Fact]

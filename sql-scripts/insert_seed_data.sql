@@ -536,9 +536,17 @@ INSERT INTO public."Currencies" (
 --
 -- LoyaltyPointsDivisor: the amount that earns one point. CZK keeps the historical 10; EUR stays NULL
 -- (earns nothing) until the owner rules its rate at activation.
+--
+-- PLN, GBP and USD exist because the country configurations below name them: a named country resolves
+-- to its currency or THROWS, so flagging Poland, the UK or the US serviced with no Currency row behind
+-- its code would 500 every quote there. They are INACTIVE with no divisor -- the activation gate keeps
+-- them off the market until the owner prices a catalogue in them.
 VALUES
   (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 10.00),
-  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', NULL);
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', NULL),
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'PLN', 'zł', 'Polish Zloty', NULL),
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'GBP', '£', 'Pound Sterling', NULL),
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'USD', '$', 'US Dollar', NULL);
 
 -- 6. SERVICE CATEGORIES
 -- Slugs are the client-facing stable identifier (mobile maps them to icons/colors).

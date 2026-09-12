@@ -38,6 +38,7 @@ public class BookableCatalogueRequiresPayTests
     private static readonly Currency Czk = Currency.Create("CZK", "Kč", "Czech Koruna");
 
     private readonly ICurrencyResolutionService _currencies = Tests.Features.Orders.OrderMarketDoubles.Trading(Czk);
+    private readonly ICountryRepository _countries = Tests.Features.Orders.OrderMarketDoubles.Servicing();
 
     private readonly IServicePriceRepository _servicePrices = CataloguePriceDoubles.Services(
         Czk, (ConfiguredServiceId, 500m, 100m), (UnconfiguredServiceId, 500m, 100m));
@@ -86,7 +87,7 @@ public class BookableCatalogueRequiresPayTests
     public async Task The_Service_Overview_Withholds_An_Entry_With_No_Platform_Wide_Config()
     {
         var handler = new GetServiceOverview.Handler(
-            _services.Object, _servicePrices, _currencies, _payConfigs.Object);
+            _services.Object, _servicePrices, _currencies, _payConfigs.Object, _countries);
 
         var items = (await handler.Handle(new GetServiceOverview.Request(), CancellationToken.None)).ToList();
 
@@ -97,7 +98,7 @@ public class BookableCatalogueRequiresPayTests
     public async Task The_Package_Overview_Withholds_An_Entry_With_No_Platform_Wide_Config()
     {
         var handler = new GetPackageOverview.Handler(
-            _packages.Object, _packagePrices, _currencies, _payConfigs.Object);
+            _packages.Object, _packagePrices, _currencies, _payConfigs.Object, _countries);
 
         var items = (await handler.Handle(new GetPackageOverview.Request(), CancellationToken.None)).ToList();
 
@@ -117,7 +118,7 @@ public class BookableCatalogueRequiresPayTests
         }.AsQueryable().BuildMock());
 
         var handler = new GetServiceOverview.Handler(
-            _services.Object, _servicePrices, _currencies, _payConfigs.Object);
+            _services.Object, _servicePrices, _currencies, _payConfigs.Object, _countries);
 
         var items = await handler.Handle(new GetServiceOverview.Request(), CancellationToken.None);
 
@@ -138,7 +139,7 @@ public class BookableCatalogueRequiresPayTests
         }.AsQueryable().BuildMock());
 
         var handler = new GetServiceOverview.Handler(
-            _services.Object, _servicePrices, _currencies, _payConfigs.Object);
+            _services.Object, _servicePrices, _currencies, _payConfigs.Object, _countries);
 
         var items = await handler.Handle(new GetServiceOverview.Request(), CancellationToken.None);
 

@@ -219,6 +219,30 @@ public class SeededCataloguePricingTests : IAsyncLifetime
         Assert.Null(await ctx.Currencies.Where(c => c.Code == "EUR").Select(c => c.LoyaltyPointsDivisor).SingleAsync());
     }
 
+    /// <summary>
+    /// A named country resolves to its currency or THROWS, so every code a country configuration names
+    /// must be a seeded Currency row -- otherwise flagging that country serviced would 500 every quote
+    /// in it. The rows behind the not-yet-operated countries are inactive with no divisor: present so
+    /// the resolver can answer, gated by activation so nothing is priced or earned in them.
+    /// </summary>
+    [Fact]
+    public async Task Every_Configured_Country_Names_A_Seeded_Currency_And_Only_The_Default_Is_Active()
+    {
+        await using var ctx = NewContext();
+
+        var configuredCodes = await ctx.CountryConfigurations
+            .Select(c => c.DefaultCurrencyCode)
+            .Distinct()
+            .OrderBy(code => code)
+            .ToListAsync();
+        var seeded = await ctx.Currencies.ToListAsync();
+
+        Assert.Equal(["CZK", "EUR", "GBP", "PLN", "USD"], configuredCodes);
+        Assert.Equal(configuredCodes, seeded.Select(c => c.Code).Order());
+        Assert.Equal("CZK", Assert.Single(seeded, c => c.IsActive).Code);
+        Assert.All(seeded.Where(c => !c.IsDefault), c => Assert.Null(c.LoyaltyPointsDivisor));
+    }
+
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
         private string? _tenantId = tenantId;

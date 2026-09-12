@@ -21,11 +21,20 @@ public class GetExtraOverview
     public class Handler(
         IExtraRepository extraRepository,
         IExtraPriceRepository extraPriceRepository,
-        ICurrencyResolutionService currencyResolutionService)
+        ICurrencyResolutionService currencyResolutionService,
+        ICountryRepository countryRepository)
         : IRequestHandler<Request, IEnumerable<ExtraListItem>>
     {
         public async Task<IEnumerable<ExtraListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
+            // An unserviced or unknown country has no catalogue: an empty answer, never the default
+            // market's prices under a foreign address and never the resolver's throw as a 500.
+            if (request.CountryId is not null
+                && !await countryRepository.IsServicedAsync(request.CountryId, cancellationToken))
+            {
+                return [];
+            }
+
             // Soft-deleted extras (IsActive=false) stay referenceable by
             // historical orders but never surface in the catalog.
             var extras = await extraRepository.GetAll()

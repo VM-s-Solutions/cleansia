@@ -278,7 +278,9 @@ public class ConfirmRecurringOrder
             // charge surface is not the one that quietly charges the card twice.
             var intent = await stripeClient.CreatePaymentIntentAsync(
                 amount: order.AmountDueOnCard,
-                currency: order.Currency!.Code,
+                currency: order.Currency?.Code
+                          ?? throw new InvalidOperationException(
+                              $"Order {order.Id} has no resolved currency; a payment intent cannot be denominated."),
                 stripeCustomerId: stripeCustomerId,
                 orderId: order.Id,
                 displayOrderNumber: order.DisplayOrderNumber,

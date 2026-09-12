@@ -186,8 +186,6 @@ public class QuoteOrder
 
     public class Handler(
         IOrderPricingCalculator pricingCalculator,
-        IServiceRepository serviceRepository,
-        IPackageRepository packageRepository,
         IUserSessionProvider userSessionProvider,
         ILoyaltyService loyaltyService,
         IUserMembershipRepository userMembershipRepository,
@@ -297,19 +295,7 @@ public class QuoteOrder
                 _ => AppliedDiscountSource.None,
             };
 
-            // The same two definitions the order uses. Loaded here rather than
-            // derived on the client, so the number under the price on the home page
-            // and the crew the booking actually sends cannot disagree.
-            var services = await serviceRepository
-                .GetByIds(command.SelectedServiceIds)
-                .ToListAsync(cancellationToken);
-            var packages = await packageRepository
-                .GetByIds(command.SelectedPackageIds)
-                .Include(p => p.IncludedServices)
-                .ThenInclude(i => i.Service)
-                .ToListAsync(cancellationToken);
-
-            var estimatedMinutes = OrderDuration.EstimateMinutes(services, packages);
+            var estimatedMinutes = result.EstimatedDurationMinutes;
             var requiredEmployees = estimatedMinutes <= 0
                 ? 1
                 : (int)Math.Ceiling(estimatedMinutes / (double)OrderDuration.MinutesPerEmployee);

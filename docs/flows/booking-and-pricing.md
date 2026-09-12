@@ -40,6 +40,28 @@ re-prices the whole selection server-side and refuses on disagreement. The amoun
 is `ToMinorUnits(order.TotalPrice)` read from the persisted, server-computed value — the client cannot
 influence it at any point, which is why the payment webhook does not need to reconcile the amount.
 
+## Responsive quote previews
+
+The home calculator requests its quote immediately. Booking groups rapid selection changes into a
+200 ms pause before requesting the latest price. A changed selection cancels the previous pending
+request immediately; clearing the selection clears the quote. An identical quote already in flight
+is shared with checkout rather than requested again. The previous price stays visible while an
+updated quote loads, and checkout uses a quote matching the current selection.
+
+`OrderPricingCalculator` returns the estimated duration with its pricing snapshot, using the same
+selected services and package contents. `QuoteOrder` reuses that duration instead of loading the
+catalogue a second time. Pricing, discounts, currency conversion, and create-time validation retain
+their existing rules.
+
+## Room selection and start times
+
+While selecting services, room and bathroom counts are editable above the sticky desktop summary.
+On smaller screens those controls appear before the packages and services, so they are visible
+without scrolling through the catalogue. Both layouts edit the same selection.
+
+Web, Android, and iOS offer starts every 15 minutes from 08:00 through 19:45. The two-hour minimum
+lead time and the express window still apply to the exact selected instant, including its minutes.
+
 ## Edge cases
 
 | Case | What happens |

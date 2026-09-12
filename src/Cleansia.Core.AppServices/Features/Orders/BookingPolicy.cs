@@ -32,12 +32,12 @@ public static class BookingPolicy
     public const decimal ExpressSurchargeRate = 0.20m;
 
     /// <summary>
-    /// Minutes in each customer-facing booking window (display only; internal scheduling grid stays 30-min).
+    /// Arrival-window duration; clients offer start times every 15 minutes.
     /// </summary>
     public const int WindowDurationMinutes = 60;
 
     /// <summary>
-    /// Earliest and latest hour (inclusive) for bookable windows. 08:00–20:00 → 12 one-hour windows.
+    /// Daily client booking range: 08:00 inclusive to 20:00 exclusive.
     /// </summary>
     public const int FirstWindowHour = 8;
     public const int LastWindowHour = 20;

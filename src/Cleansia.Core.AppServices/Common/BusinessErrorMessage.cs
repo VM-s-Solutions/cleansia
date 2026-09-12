@@ -537,6 +537,9 @@ public static class BusinessErrorMessage
     public const string PromoBelowMinimumOrderAmount = "promo.below_minimum_order_amount";
     public const string PromoCurrencyMismatch = "promo.currency_mismatch";
 
+    // Promo codes — public requests
+    public const string PromoCodeAlreadySent = "promo.already_sent";
+
     // Promo codes — admin
     public const string PromoCodeAlreadyExists = "promo.code_already_exists";
     public const string PromoCodeInvalidFormat = "promo.code_invalid_format";

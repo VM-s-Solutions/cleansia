@@ -201,6 +201,25 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
+  describe('last quarter-hour booking cutoff', () => {
+    afterEach(() => jest.useRealTimers());
+
+    it.each([
+      { second: 0, firstBookableDay: 10, todayAvailable: true },
+      { second: 1, firstBookableDay: 11, todayAvailable: false },
+    ])('keeps the calendar and slot list aligned at 17:45:$second', async ({ second, firstBookableDay, todayAvailable }) => {
+      await setup(() => {
+        const now = new Date(2026, 8, 10, 17, 45, second);
+        jest.useFakeTimers().setSystemTime(now);
+        facade.formData.update((data) => ({ ...data, cleaningDate: now }));
+      });
+
+      expect(fixture.componentInstance.minDate().getDate()).toBe(firstBookableDay);
+      expect(fixture.componentInstance.timeOptions().some((option) => option.availability !== 'unavailable'))
+        .toBe(todayAvailable);
+    });
+  });
+
   describe('selection cards (AC1, AC2)', () => {
     it('renders service cards as focusable buttons with aria-pressed reflecting selection', async () => {
       await setup();

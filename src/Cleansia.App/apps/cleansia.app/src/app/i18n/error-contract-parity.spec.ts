@@ -522,7 +522,8 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.consent_not_found',
   'gdpr.consent_already_granted',
-  // Promo — checkout promo apply
+  // Promo — request a first-clean code and checkout promo apply
+  'promo.already_sent',
   'promo.not_found',
   'promo.expired',
   'promo.not_yet_valid',

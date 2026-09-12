@@ -717,6 +717,64 @@ GSI fails with an "origin not allowed" 403. API hostnames are not needed there.
       lands, and subsequent API calls send it (DevTools → the API request → Cookies) — 200s, no 401.
 - [ ] A password-reset email links to the custom customer domain (proves `customerWebBaseUrl` flipped).
 
+### 12.6 — Customer SSR runtime configuration
+
+For the existing DEV domains, keep `customDomains = {}`: their bindings and certificates are managed
+outside Bicep. Authorize `customer.dev.cleansia.cz` in `extraSsrAllowedHosts` in
+[`weu.dev.bicepparam`](bicep/weu.dev.bicepparam). This parameter only configures Angular's host
+allowlist; it creates no domain or certificate resources. It is public configuration and needs no
+GitHub secret. `extraCorsOrigins` and `customerWebBaseUrlOverride` still configure CORS and links
+separately.
+
+The SSR App Service receives these settings from `main.bicep`:
+
+| Setting | DEV value |
+|---|---|
+| `NG_ALLOWED_HOSTS` | `*.azurewebsites.net,customer.dev.cleansia.cz` |
+| `NG_TRUST_PROXY_HEADERS` | `x-forwarded-for,x-forwarded-host,x-forwarded-proto,x-forwarded-tlsversion` |
+| `WEBSITE_WARMUP_PATH` | `/health` |
+| `WEBSITE_WARMUP_STATUSES` | `200` |
+
+The allowlist also includes `customDomains.ssr` and `customDomains['ssr-www']` when those bindings
+are managed by Bicep. The Azure wildcard covers default and staging-slot hostnames. Do not add an
+ephemeral Azure worker IP to the allowlist: startup probes use the Express `/health` endpoint ahead
+of Angular's renderer.
+
+Angular SSR 20.3.35 returns HTTP 400 for an unlisted host when an allowlist is configured. An
+untrusted `x-forwarded-tlsversion` header instead forces a client-rendered fallback, even for an
+allowed host. The explicit header list retains SSR behind App Service without trusting arbitrary
+forwarded headers.
+
+The DEV deploy checks both the Azure default URL and `customerWebBaseUrlOverride`. Each SSR probe
+sends a harmless cookie to bypass the anonymous homepage cache and requires the rendered
+`app-root` to carry `ng-server-context="ssr"`; a 200 client shell does not pass. `/health` remains
+a process liveness check, separate from these render checks.
+
+Run **Deploy to DEV** in `deploy` mode after merging the fix. The changed Bicep files invalidate the
+infrastructure fingerprint, so the next deployment updates these settings automatically. A portal-only
+setting change is overwritten by later Bicep provisioning. Mapbox and other integration credentials
+continue through the existing GitHub Environment secrets → Key Vault flow (§6).
+
+---
+
+## Customer address search (Mapbox)
+
+The customer browser calls `/api/AddressSearch/search` on the Customer API. The API holds the
+Mapbox credential; the customer SSR server does not perform the lookup. GitHub Environment
+`dev-weu` secret `MAPBOX_TOKEN` is copied to Key Vault secret `Mapbox--GeocodingAccessToken`
+and referenced by the API's `Mapbox__GeocodingAccessToken` app setting (§6).
+
+The browser only needs `addressSearchEnabled: true` in the customer app's
+`environment.staging.ts`. DEV deployment uses the `staging` Angular build. A disabled setting
+hides the search field even when the API token works. This is a public UI setting, not a secret;
+never paste a Mapbox token into an Angular environment file. After changing the setting, rebuild
+and deploy the customer frontend. Local development is also enabled; production remains disabled
+until its provider is provisioned and the production build setting is enabled.
+
+To distinguish a frontend setting problem from a provider problem, request
+`https://customer-api.dev.cleansia.cz/api/AddressSearch/search?q=Vaclavske%20namesti%201&country=cz&limit=3`.
+A successful response with suggestions confirms the API can use its server-side credential.
+
 ---
 
 ## Related owner steps (separate from this runbook, do when convenient)

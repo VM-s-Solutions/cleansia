@@ -1,0 +1,31 @@
+# Functions builds need both src/ and the repository-owned email templates.
+# Keep the root build context limited to those inputs.
+**
+!src/
+!src/**
+!email-templates/
+!email-templates/*.html
+
+# These projects are not dependencies of the Functions host.
+src/Cleansia.App/
+src/cleansia_android/
+src/cleansia_ios/
+src/Cleansia.Tests/
+src/Cleansia.HostTests/
+src/Cleansia.IntegrationTests/
+src/Cleansia.TestUtilities/
+
+# Local outputs, settings, and credentials must not enter the build context.
+**/bin/
+**/obj/
+**/publish/
+**/node_modules/
+**/.git/
+**/.vs/
+**/.vscode/
+**/.env
+**/.env.*
+**/local.settings.json
+**/*.*proj.user
+**/*.slnLaunch.user
+**/secrets.dev.yaml

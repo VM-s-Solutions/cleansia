@@ -73,7 +73,7 @@
         role="status"
       >
         @if (promo.isSending()) { {{ 'pages.home.cta.promo_sending' | translate }} } @else if (promo.isSent()) {
-        {{ 'pages.home.cta.promo_sent' | translate }} } @else { {{ 'pages.home.cta.promo_failed' | translate }} }
+        {{ 'pages.home.cta.promo_sent' | translate }} } @else { {{ promo.failureMessageKey() | translate }} }
       </p>
       }
     </div>

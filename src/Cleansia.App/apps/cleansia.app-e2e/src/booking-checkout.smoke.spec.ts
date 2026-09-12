@@ -164,6 +164,55 @@ test.beforeEach(async ({ page, context }) => {
   await stubBackend(page);
 });
 
+test('room selectors stay beside the summary on desktop and lead the form on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.route('**/api/Service/GetOverview', (route) => json(route,
+    Array.from({ length: 15 }, (_, index) => ({
+      ...SERVICES_FIXTURE[0],
+      id: `${SERVICE_ID.slice(0, -2)}${String(index).padStart(2, '0')}`,
+      name: `Cleaning service ${index + 1}`,
+    })),
+  ));
+  await page.goto('/order');
+
+  const rooms = page.getByRole('group', { name: 'Number of rooms', exact: true });
+  const bathrooms = page.getByRole('group', { name: 'Number of bathrooms', exact: true });
+  const setRooms = page.getByRole('button', { name: 'Set number of rooms: 4', exact: true });
+  const setBathrooms = page.getByRole('button', { name: 'Set number of bathrooms: 2', exact: true });
+
+  await expect(rooms).toHaveCount(1);
+  await expect(bathrooms).toHaveCount(1);
+  await expect(rooms).toBeInViewport({ ratio: 1 });
+  await expect(bathrooms).toBeInViewport({ ratio: 1 });
+  await setRooms.click();
+  await setBathrooms.click();
+  await expect(setRooms).toHaveAttribute('aria-pressed', 'true');
+  await expect(setBathrooms).toHaveAttribute('aria-pressed', 'true');
+
+  await page.evaluate(() => window.scrollTo(0, 700));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(600);
+  await expect(rooms).toBeInViewport({ ratio: 1 });
+  await expect(bathrooms).toBeInViewport({ ratio: 1 });
+  const summary = page.locator('.cl-wiz__summary');
+  expect(await summary.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
+  await page.getByRole('button', { name: 'Continue', exact: true }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeInViewport();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(rooms).toHaveCount(1);
+  await expect(bathrooms).toHaveCount(1);
+  await expect(rooms).toBeInViewport({ ratio: 1 });
+  await expect(bathrooms).toBeInViewport({ ratio: 1 });
+  await expect(setRooms).toHaveAttribute('aria-pressed', 'true');
+  await expect(setBathrooms).toHaveAttribute('aria-pressed', 'true');
+  const countsBottom = await bathrooms.evaluate((element) => element.getBoundingClientRect().bottom);
+  const firstServiceTop = await page.locator('.cl-wiz__svc').first().evaluate((element) => element.getBoundingClientRect().top);
+  expect(countsBottom).toBeLessThan(firstServiceTop);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
 test('customer can drive the booking wizard to the checkout handoff', async ({ page }) => {
   // ── Land on the customer app and start a booking from the real CTA ──
   await page.goto('/');
@@ -232,9 +281,9 @@ test('customer can drive the booking wizard to the checkout handoff', async ({ p
   // The slot is chosen explicitly rather than left to the component's snap:
   // `hasValidTime()` gates this step, and an unavailable slot is disabled here,
   // so picking an enabled chip is the same thing the customer does.
-  const firstBookableTime = page.locator('button.cl-wiz__time:not([disabled])').first();
-  await firstBookableTime.click();
-  await expect(firstBookableTime).toHaveAttribute('aria-pressed', 'true');
+  const quarterHourTime = page.locator('button.cl-wiz__time:not([disabled])').filter({ hasText: '10:15' });
+  await quarterHourTime.click();
+  await expect(quarterHourTime).toHaveAttribute('aria-pressed', 'true');
   await continueButton.click();
 
   // ── Step 3 — payment (Card is the default selection) ──
@@ -276,8 +325,9 @@ test('customer can drive the booking wizard to the checkout handoff', async ({ p
 
   const request = await createOrderRequest;
   expect(request.method()).toBe('POST');
-  const payload = request.postDataJSON() as { selectedServiceIds: string[] };
+  const payload = request.postDataJSON() as { selectedServiceIds: string[]; cleaningDate: string };
   expect(payload.selectedServiceIds).toContain(SERVICE_ID);
+  expect(new Date(payload.cleaningDate).getMinutes()).toBe(15);
 
   // The handoff navigation reaches the (stubbed) checkout session URL — proving
   // the wizard created the checkout intent and handed off, without a card charge.

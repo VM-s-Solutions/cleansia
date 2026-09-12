@@ -161,12 +161,21 @@ Built as a Docker image, pushed to ACR, and deployed:
 ```bash
 az acr build --registry $ACR_NAME \
   --image cleansia-functions:$GITHUB_SHA \
-  --file src/Cleansia.Functions/Dockerfile src/
+  --file src/Cleansia.Functions/Dockerfile .
 
 az functionapp config container set \
   --name func-cleansia-dev \
   --image "$ACR_NAME.azurecr.io/cleansia-functions:$GITHUB_SHA"
 ```
+
+The Functions build context must be the repository root: `Cleansia.Core.AppServices` embeds HTML
+from the root-level `email-templates/` directory. The Dockerfile copies both `src/` and those
+templates, and the project fails its build if a required template is missing. A `src/`-only context
+previously produced an image without templates, causing email rendering to fail before sending.
+
+The request API accepting an email means it was queued, not delivered. After deploying a delivery
+fix, messages that have already exhausted the five queue attempts remain in `DeadLetters` and
+need controlled replay; submitting the public promo form again does not resend them.
 
 #### 6. Customer SSR
 

@@ -14,24 +14,10 @@ using FluentValidation;
 namespace Cleansia.Core.AppServices.Features.PromoCodes;
 
 /// <summary>
-/// Issues a first-order discount code to an address that has no account yet, and
-/// queues the e-mail carrying it.
+/// Issues a first-order discount code once per address and queues the e-mail carrying it.
 /// </summary>
 /// <remarks>
-/// Anonymous and therefore abusable in two directions, both closed here:
-///
-/// <para><b>Flooding the table.</b> The code is derived from the address rather
-/// than random, so asking twice returns the same code instead of minting a
-/// second row. A visitor who lost the e-mail gets the same code back.</para>
-///
-/// <para><b>Mailing somebody else repeatedly.</b> Because the code is stable, the
-/// queue key <c>MessageKeys.Email(PromoCode, code, hash(code))</c> is stable too,
-/// so the consumer's idempotency claim lets exactly one promo e-mail reach an
-/// address ever. Rate limiting bounds the request rate on top of that.</para>
-///
-/// The derivation is one-way: a code cannot be turned back into the address, so
-/// nothing here puts an e-mail into a queue key or a log line (S6).
-/// → /architecture/security-rules
+/// → /flows/loyalty-and-memberships#public-promo-code-requests
 /// </remarks>
 public class RequestPromoCode
 {
@@ -83,43 +69,23 @@ public class RequestPromoCode
 
             var existing = await promoCodeRepository.GetByCodeAsync(code, cancellationToken);
 
-            if (existing is null)
+            if (existing is not null)
             {
-                var promo = PromoCode.CreatePercent(
-                    code,
-                    FirstOrderDiscountPercent,
-                    maxRedemptionsPerUser: 1,
-                    globalMaxRedemptions: 1,
-                    validFrom: DateTimeOffset.UtcNow,
-                    validUntil: DateTimeOffset.UtcNow.AddDays(ValidForDays),
-                    description: "First-order code issued on request from the public site");
-
-                promoCodeRepository.Add(promo);
-
-                // The code is derived from the e-mail, so two simultaneous requests for one address
-                // both read null and both insert the SAME code. (TenantId, Code) UNIQUE arbitrates
-                // that — and only started doing so once it was declared NULLS NOT DISTINCT.
-                //
-                // The loser does not get an error, because the loser's desired outcome ALREADY
-                // HAPPENED: the winner created exactly the code this request would have created.
-                // Detaching the duplicate (Remove on an Added entity untracks it) lets the pipeline
-                // commit carry the e-mail through, so the visitor gets their code either way. The
-                // alternative — flushing and failing — would answer a public form with an error for
-                // a race the visitor cannot see and did not cause.
-                try
-                {
-                    await promoCodeRepository.CommitAsync(cancellationToken);
-                }
-                catch (DbUpdateException ex)
-                    when (DbConstraintViolation.IsUniqueViolation(ex))
-                {
-                    promoCodeRepository.Remove(promo);
-                }
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.Email), BusinessErrorMessage.PromoCodeAlreadySent));
             }
 
-            // Post-commit: the row and the message are written in one transaction by
-            // the UnitOfWork behaviour, so an e-mail can never advertise a code that
-            // failed to save. → /flows/cross-cutting
+            var promo = PromoCode.CreatePercent(
+                code,
+                FirstOrderDiscountPercent,
+                maxRedemptionsPerUser: 1,
+                globalMaxRedemptions: 1,
+                validFrom: DateTimeOffset.UtcNow,
+                validUntil: DateTimeOffset.UtcNow.AddDays(ValidForDays),
+                description: "First-order code issued on request from the public site");
+
+            promoCodeRepository.Add(promo);
+
             pendingDispatch.Enqueue(
                 QueueNames.SendEmail,
                 new QueueEnvelope<SendEmailMessage>(
@@ -133,6 +99,18 @@ public class RequestPromoCode
                         LanguageCode: command.LanguageCode,
                         UserId: code)),
                 MessageKeys.Email(EmailType.PromoCode, code, MessageKeys.HashCode(code)));
+
+            // Flush both rows together so a concurrent duplicate is mapped before the pipeline returns.
+            // → /flows/loyalty-and-memberships#public-promo-code-requests
+            try
+            {
+                await promoCodeRepository.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (DbConstraintViolation.IsUniqueViolation(ex))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.Email), BusinessErrorMessage.PromoCodeAlreadySent));
+            }
 
             return BusinessResult.Success(new Response(true));
         }

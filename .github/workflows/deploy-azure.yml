@@ -1111,7 +1111,7 @@ jobs:
             --image cleansia-functions:${{ github.sha }} \
             --image cleansia-functions:latest \
             --file src/Cleansia.Functions/Dockerfile \
-            src/
+            .
 
       - name: Deploy to Azure Functions
         run: |
@@ -1314,24 +1314,45 @@ jobs:
         region: ["${{ inputs.region }}"]
     environment: ${{ inputs.githubEnvironment }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       # Sequential on purpose. Warming all six at once would re-create in miniature the contention
       # this job exists to step out of — and the point is to give each site the plan's attention for
       # as long as it needs it, not to finish quickly.
       - name: Warm every dev site
+        env:
+          BICEP_PARAMETERS: ${{ inputs.bicepparamFile }}
         run: |
           set -u
           REGION="${{ matrix.region }}"
           ENVN="${{ inputs.env }}"
           FAILED=""
 
+          # The customer-facing URL is already configured here for email and Stripe return links.
+          # Fail if the expected literal changes shape: silently skipping this host hid the SSR bug.
+          CUSTOMER_URL="$(sed -nE "s|^param customerWebBaseUrlOverride = '([^']+)'[[:space:]]*$|\1|p" "$BICEP_PARAMETERS")"
+          if [[ ! "$CUSTOMER_URL" =~ ^https://[^/[:space:]]+/?$ ]]; then
+            echo "::error::cannot read customerWebBaseUrlOverride HTTPS origin from $BICEP_PARAMETERS"
+            exit 1
+          fi
+
           warm() {
-            local name="$1" url="$2"
+            local name="$1" url="$2" require_ssr="${3:-false}"
             local body="${RUNNER_TEMP:-/tmp}/warm-${name}.txt"
+            local -a curl_args=()
+            if [ "$require_ssr" = "true" ]; then
+              # server.ts skips its landing-page micro-cache when any cookie is present.
+              curl_args+=(--cookie 'cleansia_ssr_probe=1')
+            fi
             for attempt in $(seq 1 30); do
-              code="$(curl -sS -o "$body" -w '%{http_code}' --max-time 15 "$url" || true)"
+              code="$(curl -sS "${curl_args[@]}" -o "$body" -w '%{http_code}' --max-time 15 "$url" || true)"
               if [ "$code" = "200" ]; then
-                echo "::notice::$name warm after ${attempt} attempt(s)"
-                return 0
+                if [ "$require_ssr" != "true" ] || grep -Eq '<app-root[^>]*ng-server-context="ssr"[^>]*>' "$body"; then
+                  echo "::notice::$name warm after ${attempt} attempt(s)"
+                  return 0
+                fi
+                echo "::warning::$name returned HTTP 200 without a server-rendered app-root at $url"
               fi
               case "$code" in
                 000|408|429|502|503|504)
@@ -1365,10 +1386,11 @@ jobs:
               "https://api-cleansia-${host}-${REGION}-${ENVN}.azurewebsites.net/health" || true
           done
 
-          # '/' rather than a health path: it forces a real SSR render, so this gates the render path
-          # itself and not just the process being alive.
+          # Exercise both public hostnames without the micro-cache, and require Angular's SSR marker:
+          # a 200 client shell is not a successful render, and the Azure hostname alone misses CNAMEs.
           warm "web-cleansia-customer" \
-            "https://web-cleansia-customer-${REGION}-${ENVN}.azurewebsites.net/" || true
+            "https://web-cleansia-customer-${REGION}-${ENVN}.azurewebsites.net/" true || true
+          warm "web-cleansia-customer-custom" "${CUSTOMER_URL%/}/" true || true
 
           if [ -n "$FAILED" ]; then
             echo "::error::sites never went healthy:$FAILED"

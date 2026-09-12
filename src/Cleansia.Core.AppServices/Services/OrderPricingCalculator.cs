@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,6 +42,8 @@ public sealed class OrderPricingCalculator(
         }
 
         var packages = await packageRepository.GetByIds(selectedPackageIds)
+            .Include(p => p.IncludedServices)
+            .ThenInclude(p => p.Service)
             .ToListAsync(cancellationToken);
         var packagePrices = await CataloguePriceLookup.ForPackagesAsync(
             packagePriceRepository, packages.Select(p => p.Id).ToList(), currency.Id, cancellationToken);
@@ -172,7 +175,8 @@ public sealed class OrderPricingCalculator(
             ExpressSurchargeAmount: expressSurchargeAmount,
             ExpressSurchargeWaivedByMembership: waiver.Waived,
             ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null,
-            Lines: lines);
+            Lines: lines,
+            EstimatedDurationMinutes: OrderDuration.EstimateMinutes(services, packages));
     }
 
     /// <summary>

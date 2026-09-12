@@ -134,13 +134,8 @@ export class OrderWizardComponent implements OnInit {
    * cannot pair with a time.
    */
   private todayHasSlots(): boolean {
-    const now = new Date();
-    const earliestMinutes =
-      now.getHours() * 60 + now.getMinutes() + EXPRESS_LEAD_TIME_HOURS * 60;
-    return this.allTimeOptions.some((opt) => {
-      const [h, m] = opt.value.split(':').map(Number);
-      return h * 60 + m >= earliestMinutes;
-    });
+    return filterTimeOptionsForToday(this.allTimeOptions, new Date())
+      .some((option) => option.availability !== 'unavailable');
   }
 
   minDate = computed(() => {

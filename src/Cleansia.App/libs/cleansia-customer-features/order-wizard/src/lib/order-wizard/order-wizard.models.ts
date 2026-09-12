@@ -214,10 +214,7 @@ export function getFieldError(
 
 // ── Time helpers ────────────────────────────────────────────
 //
-// Time slots are 1-hour arrival windows (e.g., 10:00–11:00). Customer picks a
-// window; internally we still schedule on the 30-min grid (target start is the
-// window's start). See Cleansia.Core.AppServices.Features.Orders.BookingPolicy
-// on the backend for the authoritative numbers — keep these in sync.
+// Arrival times are shared with the home calculator. See /customer-app/ordering-flow#step-2-date-time.
 
 /** Window duration shown to the customer. Keep in sync with backend BookingPolicy. */
 export const WINDOW_DURATION_MINUTES = 60;

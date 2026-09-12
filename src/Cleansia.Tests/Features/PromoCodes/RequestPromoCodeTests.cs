@@ -8,25 +8,14 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Azure.Storage.Queues;
 using FluentValidation.TestHelper;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace Cleansia.Tests.Features.PromoCodes;
 
 /// <summary>
-/// The public site's "send me a discount code" box is reachable without an account,
-/// which is the whole point of it and also the whole risk: anybody can type anybody
-/// else's address into it. Two properties keep that from being a mailing weapon, and
-/// they are what these tests pin.
-///
-/// <para><b>The code is derived from the address, never random.</b> Asking twice
-/// returns the same code, so a script cannot grow the PromoCodes table one row per
-/// request.</para>
-///
-/// <para><b>The queue key is therefore stable too.</b> The consumer's idempotency
-/// claim is what actually bounds delivery — one promo e-mail per address, ever — and
-/// it can only do that if the producer keys every request for an address identically.
-/// A random code would silently turn each retry into a new e-mail, which is exactly
-/// the bug worth a test.</para>
+/// Covers one-code-per-address issuance and duplicate request rejection.
+/// → /flows/loyalty-and-memberships#public-promo-code-requests
 /// </summary>
 public class RequestPromoCodeTests
 {
@@ -68,10 +57,8 @@ public class RequestPromoCodeTests
     }
 
     [Fact]
-    public async Task Asking_twice_does_not_mint_a_second_code()
+    public async Task An_existing_code_rejects_the_request_without_queuing_another_email()
     {
-        // The visitor who lost the e-mail and clicks again gets the code they already
-        // have, not a fresh row. Without the derivation this is how the table fills.
         _promoCodes
             .Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(PromoCode.CreatePercent(
@@ -83,9 +70,43 @@ public class RequestPromoCodeTests
 
         var result = await CreateHandler().Handle(new RequestPromoCode.Command(Email), CancellationToken.None);
 
-        Assert.True(result.IsSuccess);
+        Assert.True(result.IsFailure);
+        Assert.Equal("promo.already_sent", result.Error?.Message);
         _promoCodes.Verify(r => r.Add(It.IsAny<PromoCode>()), Times.Never);
-        Assert.Single(_pending.Drain());
+        _promoCodes.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Empty(_pending.Drain());
+    }
+
+    [Fact]
+    public async Task The_email_intent_is_recorded_before_the_code_is_committed()
+    {
+        _promoCodes
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => Assert.Single(_pending.Drain()))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateHandler().Handle(new RequestPromoCode.Command(Email), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _promoCodes.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_concurrent_duplicate_returns_the_already_sent_error()
+    {
+        _promoCodes
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateException("Duplicate promo request", new UniqueConstraintException()));
+
+        var result = await CreateHandler().Handle(new RequestPromoCode.Command(Email), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("promo.already_sent", result.Error?.Message);
+    }
+
+    private sealed class UniqueConstraintException : Exception
+    {
+        public string SqlState => "23505";
     }
 
     [Fact]

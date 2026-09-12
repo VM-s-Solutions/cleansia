@@ -251,22 +251,8 @@ public class ExpressSurchargeDiscountCompositionTests
             .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ActiveMembership(plusPercentage));
 
-        // Local, because this helper is static and cannot reach the class
-        // fixtures. Empty but ASYNC: the handler materialises both with
-        // ToListAsync to estimate the duration and the crew.
-        var serviceRepository = new Mock<IServiceRepository>();
-        serviceRepository
-            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
-            .Returns(Array.Empty<Service>().AsQueryable().BuildMock());
-        var packageRepository = new Mock<IPackageRepository>();
-        packageRepository
-            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
-            .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
-
         var handler = new QuoteOrder.Handler(
             pricingCalculator.Object,
-            serviceRepository.Object,
-            packageRepository.Object,
             session.Object,
             loyaltyService.Object,
             membershipRepository.Object,

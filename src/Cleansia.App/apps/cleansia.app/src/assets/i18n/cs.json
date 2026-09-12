@@ -1926,6 +1926,7 @@
       "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří."
     },
     "promo": {
+      "already_sent": "Na tuto e-mailovou adresu už byl promo kód odeslán. Zkontrolujte doručenou poštu i složku se spamem.",
       "not_found": "Tento slevový kód neexistuje.",
       "expired": "Platnost tohoto slevového kódu vypršela.",
       "not_yet_valid": "Tento slevový kód ještě není aktivní.",

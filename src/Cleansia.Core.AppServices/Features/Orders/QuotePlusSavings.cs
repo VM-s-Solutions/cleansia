@@ -113,7 +113,7 @@ public static class QuotePlusSavings
             if (!string.IsNullOrEmpty(userId))
             {
                 var tierResult = await loyaltyService.ResolveTierDiscountForOrderAsync(
-                    userId, rawSubtotal, cancellationToken);
+                    userId, rawSubtotal, result.CurrencyId, cancellationToken);
                 tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
             }
 

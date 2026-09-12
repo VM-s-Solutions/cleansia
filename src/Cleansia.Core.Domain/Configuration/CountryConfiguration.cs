@@ -90,8 +90,11 @@ public class CountryConfiguration : Auditable
     public decimal? RefundStripeFeeRate { get; private set; }
 
     /// <summary>
-    /// Per-country fixed Stripe refund fee in currency units (e.g. 6 means 6 CZK). Null → fee 0, same as
-    /// <see cref="RefundStripeFeeRate"/>.
+    /// Per-country fixed Stripe refund fee, a number in the country's <see cref="DefaultCurrencyCode"/>
+    /// (6 means 6 CZK on the CZE row). Null → fee 0, same as <see cref="RefundStripeFeeRate"/>. Deducted
+    /// only from a refund in that same currency; an order priced in any other currency has the fixed part
+    /// absorbed by the platform (→ /product/business-rules#money-constants). No production writer sets
+    /// either figure today — the seed leaves both null — so the fee is 0 everywhere until one does.
     /// </summary>
     public decimal? RefundStripeFixedFee { get; private set; }
 

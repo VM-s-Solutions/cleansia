@@ -85,10 +85,19 @@ public static class BookingPolicy
     /// Refund + credit issued when a cleaner cancels or no-shows. Owner ruling 2026-09-05: 250, down
     /// from 500.
     ///
-    /// <para><b>Still read by nothing.</b> No production code writes <c>CancelledBy.Cleaner</c>, so
-    /// neither the refund nor the credit half of the home page's "Everything back + 250 CZK" happens
-    /// today — the path is scheduled behind customer credit, which does not exist yet either. The
-    /// number lives here so the copy and the eventual implementation cannot disagree about it.</para>
+    /// <para><b>Read by <c>CancelUnfilledOrders</c></b> — the one no-show the platform can prove — and
+    /// paid ONLY on an order in the platform default currency. A credit account keeps the currency it
+    /// was opened in and converts nothing, so on a EUR order this would be 250 EUR; owner ruling
+    /// 2026-09-06: fail closed and log, the refund is unaffected, and the push sent is the plain
+    /// cancellation rather than the one that promises the credit.</para>
+    ///
+    /// <para><b>Deliberately a CZK scalar, not a per-currency lookup.</b> The figure is written by hand
+    /// into the home page copy and both mobile pushes, five locales each — the lock-screen loc-arg
+    /// allowlist cannot interpolate it — and <c>agents/tools/check-booking-policy-parity.mjs</c> reads
+    /// THIS declaration with a scalar-const regex to hold that copy to it. A per-currency amount needs
+    /// per-market copy first, which does not exist until the customer surfaces know their market
+    /// (T-0706); until then a second number here would be a promise no surface makes. Do not reflow
+    /// the declaration line. → /product/business-rules#money-constants</para>
     /// </summary>
     public const decimal NoShowCreditCzk = 250m;
 

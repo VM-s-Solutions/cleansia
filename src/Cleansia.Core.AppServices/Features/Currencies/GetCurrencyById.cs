@@ -10,7 +10,7 @@ namespace Cleansia.Core.AppServices.Features.Currencies;
 
 public class GetCurrencyById
 {
-    public record Query(string CurrencyId) : IQuery<CurrencyDetailDto>;
+    public record Query(string CurrencyId) : IQuery<AdminCurrencyDetailDto>;
 
     public class Validator : AbstractValidator<Query>
     {
@@ -27,18 +27,18 @@ public class GetCurrencyById
     }
 
     internal class Handler(ICurrencyRepository currencyRepository)
-        : IQueryHandler<Query, CurrencyDetailDto>
+        : IQueryHandler<Query, AdminCurrencyDetailDto>
     {
-        public async Task<BusinessResult<CurrencyDetailDto>> Handle(Query query, CancellationToken cancellationToken)
+        public async Task<BusinessResult<AdminCurrencyDetailDto>> Handle(Query query, CancellationToken cancellationToken)
         {
             var currency = await currencyRepository.GetByIdAsync(query.CurrencyId, cancellationToken);
 
             if (currency is null)
             {
-                return BusinessResult.Failure<CurrencyDetailDto>(new Error(nameof(query.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
+                return BusinessResult.Failure<AdminCurrencyDetailDto>(new Error(nameof(query.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
             }
 
-            return BusinessResult.Success(currency.MapToDetailDto());
+            return BusinessResult.Success(currency.MapToAdminDetailDto());
         }
     }
 }

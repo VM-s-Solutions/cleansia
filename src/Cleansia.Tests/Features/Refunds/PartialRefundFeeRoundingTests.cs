@@ -69,9 +69,9 @@ public class PartialRefundFeeRoundingTests
             .ReturnsAsync(config);
     }
 
-    private static Order SingleServiceOrder(decimal totalPrice, decimal? appliedVatRate = null)
+    private static Order SingleServiceOrder(decimal totalPrice, decimal? appliedVatRate = null, string currencyCode = "CZK")
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
+        var currency = Currency.Create(currencyCode, "Kč", "Czech Koruna");
         var address = Address.Create("Street 1", "Prague", "11000", CountryId);
         var order = Order.Create(
             customerName: "Cust",
@@ -117,6 +117,39 @@ public class PartialRefundFeeRoundingTests
             [new IssuePartialRefund.RefundLineSelection("svc-a", null)],
             RefundReason.AdminDiscretion,
             OverrideReason: null);
+
+    /// <summary>
+    /// The FIXED part of the fee is a number in the COUNTRY's currency (6 on the CZE row is 6 CZK). On
+    /// a CZ-address order priced in EUR it must not be taken as 6 EUR: the rate still applies, the
+    /// fixed part is absorbed (T-0703).
+    /// </summary>
+    [Fact]
+    public async Task Fee_FixedPart_NotDeducted_WhenOrderCurrencyIsNotTheCountrys()
+    {
+        var order = SingleServiceOrder(totalPrice: 1000m, currencyCode: "EUR");
+        Arrange(order);
+        ArrangeCountryFee(rate: 1.4m, fixedFee: 6m);
+
+        var result = await CreateHandler().Handle(AdminDiscretionWholeOrder(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        // fee = 1000 × 1.4% = 14.00, and NOT + 6 → sent 986.00.
+        Assert.Equal(986.00m, _refundService.LastRequest!.Amount);
+    }
+
+    [Fact]
+    public async Task Fee_FixedPart_Deducted_WhenOrderCurrencyMatchesTheCountrys()
+    {
+        var order = SingleServiceOrder(totalPrice: 1000m, currencyCode: "CZK");
+        Arrange(order);
+        ArrangeCountryFee(rate: 1.4m, fixedFee: 6m);
+
+        var result = await CreateHandler().Handle(AdminDiscretionWholeOrder(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        // fee = 14.00 + 6.00 = 20.00 → sent 980.00.
+        Assert.Equal(980.00m, _refundService.LastRequest!.Amount);
+    }
 
     [Fact]
     public async Task Fee_AtHalfCent_RoundsAwayFromZero_NotBankers()
@@ -227,7 +260,7 @@ public class PartialRefundFeeRoundingTests
 
         public Task GrantForCompletedOrderAsync(string orderId, CancellationToken cancellationToken) => Task.CompletedTask;
         public Task RevokeForCancelledOrderAsync(string orderId, CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(string userId, decimal orderTotal, CancellationToken cancellationToken)
+        public Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(string userId, decimal orderTotal, string currencyId, CancellationToken cancellationToken)
             => Task.FromResult(new TierDiscountResult(0m, null));
         public Task GrantPointsManuallyAsync(string userId, int points, Cleansia.Core.Domain.Loyalty.LoyaltyEarnSource source, string? orderId, string actorId, string? reason, string? requestId, CancellationToken cancellationToken)
             => Task.CompletedTask;

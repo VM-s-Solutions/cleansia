@@ -13,7 +13,8 @@ public class UpdateCurrency
         string CurrencyId,
         string Code,
         string Symbol,
-        string Name) : ICommand<Response>;
+        string Name,
+        decimal? LoyaltyPointsDivisor = null) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -56,6 +57,11 @@ public class UpdateCurrency
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
+            // Zero is a division by zero and a negative is a negative earn; null is "earns nothing yet".
+            RuleFor(x => x.LoyaltyPointsDivisor)
+                .GreaterThan(0m)
+                .When(x => x.LoyaltyPointsDivisor.HasValue)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
         }
     }
 
@@ -72,6 +78,7 @@ public class UpdateCurrency
             }
 
             currency.Update(command.Code, command.Symbol, command.Name);
+            currency.SetLoyaltyPointsDivisor(command.LoyaltyPointsDivisor);
 
             // Renaming a code races the same way a create does -- see CreateCurrency.
             try

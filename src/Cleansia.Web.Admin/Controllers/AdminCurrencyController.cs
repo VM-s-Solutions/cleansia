@@ -26,7 +26,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
 
     [HttpGet("details/{currencyId}")]
     [Permission(Policy.CanViewCurrencies)]
-    [ProducesResponseType(typeof(CurrencyDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AdminCurrencyDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -36,7 +36,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new GetCurrencyById.Query(currencyId), cancellationToken);
-        return HandleResult<CurrencyDetailDto>(result);
+        return HandleResult<AdminCurrencyDetailDto>(result);
     }
 
     [HttpPost("create")]

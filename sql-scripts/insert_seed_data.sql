@@ -518,7 +518,7 @@ VALUES
 INSERT INTO public."Currencies" (
   "Id", "IsActive", "IsDefault", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "Code", "Symbol", "Name"
+  "DeactivatedOn", "Code", "Symbol", "Name", "LoyaltyPointsDivisor"
 )
 -- ONLY THE CURRENCIES THE PLATFORM ACTUALLY OPERATES IN. Twelve were seeded active with hand-typed
 -- rates nobody had reviewed, and until Wave A every one of them was nameable by any authenticated
@@ -534,9 +534,11 @@ INSERT INTO public."Currencies" (
 -- So: EUR exists here from day one, and Wave B flips IsActive = true in the same commit that gives it
 -- price rows and the fail-closed rule. SetDefaultCurrency refuses an inactive currency in the meantime.
 --
+-- LoyaltyPointsDivisor: the amount that earns one point. CZK keeps the historical 10; EUR stays NULL
+-- (earns nothing) until the owner rules its rate at activation.
 VALUES
-  (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna'),
-  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro');
+  (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 10.00),
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', NULL);
 
 -- 6. SERVICE CATEGORIES
 -- Slugs are the client-facing stable identifier (mobile maps them to icons/colors).

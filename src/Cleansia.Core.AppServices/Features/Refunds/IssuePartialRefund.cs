@@ -221,7 +221,17 @@ public class IssuePartialRefund
                 return 0m;
             }
 
-            return Math.Round(refundAmount * (rate / 100m) + fixedFee, 2, MidpointRounding.AwayFromZero);
+            // The FIXED part is a number in the COUNTRY's currency (6 on the CZE row means 6 CZK). The
+            // caller names the order's currency and the address names the country, and nothing ties the
+            // two — so on a CZ-address order priced in EUR it would be deducted as 6 EUR. The rate is
+            // unit-free and still applies; the fixed part is absorbed, the same fail-open direction a
+            // null figure already takes. → /product/business-rules#money-constants
+            var fixedPart = string.Equals(
+                order.Currency?.Code, config.DefaultCurrencyCode, StringComparison.OrdinalIgnoreCase)
+                ? fixedFee
+                : 0m;
+
+            return Math.Round(refundAmount * (rate / 100m) + fixedPart, 2, MidpointRounding.AwayFromZero);
         }
 
         private static decimal ApportionVat(decimal amount, decimal? appliedVatRate)

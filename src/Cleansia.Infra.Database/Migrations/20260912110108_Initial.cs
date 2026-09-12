@@ -88,6 +88,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Symbol = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Name = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
                     IsDefault = table.Column<bool>(type: "boolean", nullable: false),
+                    LoyaltyPointsDivisor = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),

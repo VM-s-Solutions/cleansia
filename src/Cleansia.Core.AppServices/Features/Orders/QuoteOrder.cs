@@ -190,7 +190,6 @@ public class QuoteOrder
         IPackageRepository packageRepository,
         IUserSessionProvider userSessionProvider,
         ILoyaltyService loyaltyService,
-        ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
         IUserMembershipRepository userMembershipRepository,
         ICreditAccountRepository creditAccountRepository)
         : ICommandHandler<Command, Response>
@@ -260,14 +259,11 @@ public class QuoteOrder
             if (!string.IsNullOrEmpty(userId))
             {
                 var tierResult = await loyaltyService.ResolveTierDiscountForOrderAsync(
-                    userId, rawSubtotal, cancellationToken);
+                    userId, rawSubtotal, result.CurrencyId, cancellationToken);
                 tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
-                if (tierResult.TierAtPurchase.HasValue)
-                {
-                    var tierConfig = await loyaltyTierConfigRepository.GetByTierAsync(
-                        tierResult.TierAtPurchase.Value, cancellationToken);
-                    tierMinOrderAmount = tierConfig?.MinimumOrderAmountForDiscount;
-                }
+                // The floor the ORDER will judge, in the order's currency — null when none applies, so
+                // the wizard never states a 1000 CZK floor over a EUR price.
+                tierMinOrderAmount = tierResult.MinimumOrderAmount;
 
                 var activeMembership = await userMembershipRepository
                     .GetEntitledForUserAsync(userId, cancellationToken);

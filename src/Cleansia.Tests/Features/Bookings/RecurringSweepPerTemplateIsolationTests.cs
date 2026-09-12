@@ -274,7 +274,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
 
         var loyalty = new Mock<ILoyaltyService>();
         loyalty.Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
 
         var holdResolver = new Mock<IPreferredCleanerHoldResolver>();

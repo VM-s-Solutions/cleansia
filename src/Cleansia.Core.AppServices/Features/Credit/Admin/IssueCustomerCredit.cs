@@ -57,6 +57,12 @@ public class IssueCustomerCredit
         /// A ceiling on one manual grant. Not a business rule — a typo guard, in the same spirit as
         /// <c>GrantPointsManually</c>'s 100k points cap. An admin who genuinely owes a customer more
         /// than this issues it twice, and both rows are in the ledger under their name.
+        ///
+        /// <para><b>Unit-free on purpose.</b> It caps the NUMBER typed, in whatever currency the grant
+        /// is denominated in: CZK-sized (≈ 400 EUR), so in EUR it is 25× looser and catches almost
+        /// nothing — accepted, because a per-currency table for a typo guard is worse than the typo
+        /// (→ /product/business-rules#money-constants). The client mirrors it as <c>AMOUNT_MAX</c> in
+        /// the issue-credit dialog.</para>
         /// </summary>
         public const decimal SanityCap = 10_000m;
 

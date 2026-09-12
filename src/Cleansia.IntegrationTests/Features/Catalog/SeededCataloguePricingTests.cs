@@ -204,6 +204,21 @@ public class SeededCataloguePricingTests : IAsyncLifetime
             await ctx.ServicePrices.CountAsync());
     }
 
+    /// <summary>
+    /// The seeded default currency keeps the historical "1 point per 10 CZK"; the inactive EUR row has
+    /// no divisor and earns nothing until the owner rules its rate. A forgotten seed column would make
+    /// every completed CZK order earn nothing (and log), which no unit test with a mocked currency
+    /// would notice (T-0703).
+    /// </summary>
+    [Fact]
+    public async Task The_Seeded_Default_Currency_Earns_One_Point_Per_Ten_Units()
+    {
+        await using var ctx = NewContext();
+
+        Assert.Equal(10m, await ctx.Currencies.Where(c => c.IsDefault).Select(c => c.LoyaltyPointsDivisor).SingleAsync());
+        Assert.Null(await ctx.Currencies.Where(c => c.Code == "EUR").Select(c => c.LoyaltyPointsDivisor).SingleAsync());
+    }
+
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
         private string? _tenantId = tenantId;

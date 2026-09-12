@@ -171,7 +171,7 @@ public class ExpressSurchargeDiscountCompositionTests
     {
         _loyaltyService
             .Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(tierDiscount, LoyaltyTier.GoldPolisher));
         _userMembershipRepository
             .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
@@ -243,7 +243,7 @@ public class ExpressSurchargeDiscountCompositionTests
         var loyaltyService = new Mock<ILoyaltyService>();
         loyaltyService
             .Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(tierDiscount, LoyaltyTier.GoldPolisher));
 
         var membershipRepository = new Mock<IUserMembershipRepository>();
@@ -269,7 +269,6 @@ public class ExpressSurchargeDiscountCompositionTests
             packageRepository.Object,
             session.Object,
             loyaltyService.Object,
-            new Mock<ILoyaltyTierConfigRepository>().Object,
             membershipRepository.Object,
             new Mock<ICreditAccountRepository>().Object);
 

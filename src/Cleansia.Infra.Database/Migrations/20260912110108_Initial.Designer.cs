@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260912104435_Initial")]
+    [Migration("20260912110108_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -2216,6 +2216,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<bool>("IsDefault")
                         .HasColumnType("boolean");
+
+                    b.Property<decimal?>("LoyaltyPointsDivisor")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()

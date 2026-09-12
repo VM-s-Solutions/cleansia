@@ -24,6 +24,9 @@ public class CurrencyEntityConfiguration : AuditableEntityConfiguration<Currency
             .IsRequired()
             .HasMaxLength(10);
 
+        builder.Property(c => c.LoyaltyPointsDivisor)
+            .HasPrecision(18, 2);
+
         // A CODE NAMES A CURRENCY, so two rows may not answer to the same one. Until now nothing
         // enforced that: the only guard was a FluentValidation existence check on the create path,
         // which crosses a snapshot boundary with no lock, and DeleteCurrency's hard Remove frees the

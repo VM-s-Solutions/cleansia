@@ -74,9 +74,9 @@ public sealed class OrderFactory(
         // caller already validated one. Snapshot stays on the Order so
         // receipts stay accurate even if the user's tier later changes.
         //
-        // Tier discount respects the per-tier floor (today 1000 CZK uniformly,
-        // enforced in LoyaltyService). Plus discount has no floor — paying
-        // subscribers always see value, even on small orders.
+        // Tier discount respects the per-tier floor on a default-currency order only
+        // (LoyaltyService; → /product/business-rules#money-constants). Plus discount has
+        // no floor — paying subscribers always see value, even on small orders.
         decimal tierDiscount = 0m;
         LoyaltyTier? tierAtPurchase = null;
         decimal membershipDiscount = 0m;
@@ -85,7 +85,7 @@ public sealed class OrderFactory(
         if (!string.IsNullOrEmpty(input.UserId))
         {
             var tierResult = await loyaltyService.ResolveTierDiscountForOrderAsync(
-                input.UserId, input.RawSubtotal, cancellationToken);
+                input.UserId, input.RawSubtotal, input.Currency.Id, cancellationToken);
             tierAtPurchase = tierResult.TierAtPurchase;
             tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
 

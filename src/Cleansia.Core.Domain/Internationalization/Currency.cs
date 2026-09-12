@@ -19,6 +19,21 @@ public class Currency : Auditable
 
     public bool IsDefault { get; private set; }
 
+    /// <summary>
+    /// How much of this currency earns ONE loyalty point: <c>points = floor(amount / divisor)</c>.
+    /// AUTHORED per currency like a price — never derived from a rate. Null means the currency earns
+    /// no points yet: the earn and the partial-refund clawback both skip and log, so a currency switched
+    /// on before this is set fails closed rather than earning at another currency's rate in either
+    /// direction. CZK is seeded at 10 — the historical "1 point per 10 CZK".
+    /// → /product/business-rules#money-constants
+    /// </summary>
+    public decimal? LoyaltyPointsDivisor { get; private set; }
+
+    public void SetLoyaltyPointsDivisor(decimal? divisor)
+    {
+        LoyaltyPointsDivisor = divisor;
+    }
+
     public static Currency Create(string code, string symbol, string name) => new()
     {
         Code = Canonical(code),

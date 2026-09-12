@@ -32,7 +32,6 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
-    private readonly Mock<ILoyaltyTierConfigRepository> _tierConfigRepository = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
 
@@ -49,7 +48,7 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _loyaltyService
             .Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
         _membershipRepository
             .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
@@ -110,7 +109,6 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
             _packageRepository.Object,
             _session.Object,
             _loyaltyService.Object,
-            _tierConfigRepository.Object,
             _membershipRepository.Object,
             _creditAccountRepository.Object);
 
@@ -175,8 +173,30 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
         // The tier floor (min order amount) must be judged on the same base CreateOrder will use,
         // or a booking straddling the floor qualifies in the wizard and loses the discount at submit.
         _loyaltyService.Verify(
-            s => s.ResolveTierDiscountForOrderAsync(UserId, BaseSubtotal, It.IsAny<CancellationToken>()),
+            s => s.ResolveTierDiscountForOrderAsync(UserId, BaseSubtotal, It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>
+    /// The quote states the floor the ORDER will judge -- the one the loyalty service returns -- and
+    /// no longer re-reads the tier configuration for it. Null when no floor applies (a non-default
+    /// currency, or a tier without one), so the wizard never states a 1000 CZK floor over a EUR price.
+    /// </summary>
+    [Theory]
+    [InlineData(1000, true)]
+    [InlineData(null, false)]
+    public async Task Quote_States_The_Floor_The_Service_Judged(int? judgedFloor, bool stated)
+    {
+        ArrangePricing(expressSlot: false);
+        _loyaltyService
+            .Setup(s => s.ResolveTierDiscountForOrderAsync(
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TierDiscountResult(0m, LoyaltyTier.SilverMopper, judgedFloor));
+
+        var result = await CreateHandler().Handle(ExpressCommand(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(stated ? judgedFloor : null, result.Value!.TierDiscountMinOrderAmount);
     }
 
     [Fact]

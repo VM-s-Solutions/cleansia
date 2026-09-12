@@ -13,7 +13,8 @@ public class CreateCurrency
     public record Command(
         string Code,
         string Symbol,
-        string Name) : ICommand<Response>;
+        string Name,
+        decimal? LoyaltyPointsDivisor = null) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -45,6 +46,11 @@ public class CreateCurrency
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
+            // Zero is a division by zero and a negative is a negative earn; null is "earns nothing yet".
+            RuleFor(x => x.LoyaltyPointsDivisor)
+                .GreaterThan(0m)
+                .When(x => x.LoyaltyPointsDivisor.HasValue)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
         }
     }
 
@@ -54,6 +60,7 @@ public class CreateCurrency
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var currency = Currency.Create(command.Code, command.Symbol, command.Name);
+            currency.SetLoyaltyPointsDivisor(command.LoyaltyPointsDivisor);
 
             currencyRepository.Add(currency);
 

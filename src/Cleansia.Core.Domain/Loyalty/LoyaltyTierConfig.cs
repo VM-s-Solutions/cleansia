@@ -22,8 +22,11 @@ public class LoyaltyTierConfig : Auditable, ITenantEntity
     public decimal DiscountPercent { get; private set; }
 
     /// <summary>
-    /// Minimum order amount required for the tier discount to apply. Null
-    /// means the discount always applies (no floor).
+    /// Minimum raw subtotal for the tier discount to apply, denominated in the PLATFORM DEFAULT currency
+    /// — and enforced only on an order in that currency. On any other currency no floor applies: the
+    /// discount is the promise, the floor only keeps it off trivially small orders, and comparing this
+    /// number against a subtotal in a stronger currency withheld the promise from a whole market. Null
+    /// means no floor anywhere. → /product/business-rules#money-constants
     /// </summary>
     public decimal? MinimumOrderAmountForDiscount { get; private set; }
 

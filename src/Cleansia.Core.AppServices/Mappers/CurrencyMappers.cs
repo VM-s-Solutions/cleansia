@@ -38,7 +38,21 @@ public static class CurrencyMappers
             Symbol: currency.Symbol,
             Name: currency.Name,
             IsDefault: currency.IsDefault,
-            IsActive: currency.IsActive);
+            IsActive: currency.IsActive,
+            LoyaltyPointsDivisor: currency.LoyaltyPointsDivisor);
+    }
+
+    /// <summary>Admin only — see <see cref="AdminCurrencyDetailDto"/>.</summary>
+    public static AdminCurrencyDetailDto MapToAdminDetailDto(this Currency currency)
+    {
+        return new AdminCurrencyDetailDto(
+            Id: currency.Id,
+            Code: currency.Code,
+            Name: currency.Name,
+            Symbol: currency.Symbol,
+            IsDefault: currency.IsDefault,
+            IsActive: currency.IsActive,
+            LoyaltyPointsDivisor: currency.LoyaltyPointsDivisor);
     }
 
     public static CurrencyDetailDto MapToDetailDto(this Currency currency)

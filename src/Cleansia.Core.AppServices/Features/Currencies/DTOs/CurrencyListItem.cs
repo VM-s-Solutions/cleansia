@@ -28,4 +28,5 @@ public record AdminCurrencyListItem(
     string Symbol,
     string Name,
     bool IsDefault,
-    bool IsActive);
+    bool IsActive,
+    decimal? LoyaltyPointsDivisor);

@@ -36,7 +36,6 @@ public class OrderCallerCurrencyTests
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
-    private readonly Mock<ILoyaltyTierConfigRepository> _tierConfigRepository = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<IMembershipPlanRepository> _membershipPlanRepository = new();
@@ -83,7 +82,6 @@ public class OrderCallerCurrencyTests
             _packageRepository.Object,
             _session.Object,
             _loyaltyService.Object,
-            _tierConfigRepository.Object,
             _membershipRepository.Object,
             _creditAccountRepository.Object);
 
@@ -169,7 +167,7 @@ public class OrderCallerCurrencyTests
                 trialPeriodDays: 0, expressUpgradesPerMonth: 1));
         _loyaltyService
             .Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
 
         await PlusHandler().Handle(PlusQuery(Eur), CancellationToken.None);

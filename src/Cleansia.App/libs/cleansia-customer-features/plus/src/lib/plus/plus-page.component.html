@@ -64,7 +64,7 @@
 
       @if (facade.monthlyPlan(); as monthly) {
         <p class="cl-muted cl-plusp__note">
-          {{ 'pages.plus.price_note' | translate: { price: formatCzk(monthly.price) } }}
+          {{ 'pages.plus.price_note' | translate: { price: formatPrice(monthly.price) } }}
         </p>
       }
     </div>
@@ -246,7 +246,7 @@
             <div class="cl-lbl cl-plusp__plan-lbl">
               {{ 'pages.membership.plan_monthly' | translate }}
             </div>
-            <div class="cl-num cl-plusp__price">{{ formatCzk(monthly.price) }}</div>
+            <div class="cl-num cl-plusp__price">{{ formatPrice(monthly.price) }}</div>
             <div class="cl-muted">{{ 'pages.plus.per_month' | translate }}</div>
             <p class="cl-plusp__plan-text">{{ 'pages.plus.plan_monthly_text' | translate }}</p>
             <div class="cl-plusp__plan-spacer"></div>
@@ -277,7 +277,7 @@
               `monthlyEquivalentPrice` is what the server computed the savings
               percentage against.
             -->
-            <div class="cl-num cl-plusp__price">{{ formatCzk(yearly.price) }}</div>
+            <div class="cl-num cl-plusp__price">{{ formatPrice(yearly.price) }}</div>
             <div class="cl-muted">{{ 'pages.plus.per_year' | translate }}</div>
             <p class="cl-plusp__plan-text">
               {{ 'pages.plus.plan_yearly_text' | translate: { percent: facade.yearlySavingsPercent() } }}

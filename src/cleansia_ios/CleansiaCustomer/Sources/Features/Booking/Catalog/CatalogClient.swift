@@ -14,20 +14,27 @@ struct LiveCatalogClient: CatalogClient {
         async let packagesCall = apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerPackageAPI.packageGetOverview()
         }
+        async let currenciesCall = apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerCurrencyAPI.currencyGetOverview()
+        }
 
         let services = await servicesCall
         let packages = await packagesCall
+        let currencies = await currenciesCall
 
-        switch (services, packages) {
-        case let (.failure(error), _):
+        switch (services, packages, currencies) {
+        case let (.failure(error), _, _):
             return .failure(error)
-        case let (_, .failure(error)):
+        case let (_, .failure(error), _):
             return .failure(error)
-        case let (.success(serviceItems), .success(packageItems)):
+        case let (_, _, .failure(error)):
+            return .failure(error)
+        case let (.success(serviceItems), .success(packageItems), .success(currencyItems)):
             return await apiResult {
                 try Catalog(
                     services: serviceItems.map(CatalogService.init),
-                    packages: packageItems.map(CatalogPackage.init)
+                    packages: packageItems.map(CatalogPackage.init),
+                    currencyCode: CatalogCurrency.defaultRow(in: currencyItems).code
                 )
             }
         }
@@ -89,5 +96,23 @@ extension CatalogPackage {
         price = try dto.price.require("price")
         translations = dto.translations?.toDomain ?? [:]
         includedServices = try (dto.includedServices ?? []).map(CatalogPackageServiceSummary.init)
+    }
+}
+
+/// Refused like the services: the default row is the currency every catalogue figure is stated in,
+/// so a price list this cannot label is a price list the customer was never shown.
+extension CatalogCurrency {
+    init(_ dto: CurrencyListItem) throws {
+        id = try dto.id.requireNonBlank("id")
+        code = try dto.code.requireNonBlank("code")
+        symbol = try dto.symbol.require("symbol")
+        name = try dto.name.require("name")
+        isDefault = try dto.isDefault.require("isDefault")
+    }
+
+    /// An overview with no default row leaves every catalogue figure unlabelled, and a label guessed
+    /// here is the CZK fallback this read exists to remove — so it refuses too.
+    static func defaultRow(in items: [CurrencyListItem]) throws -> CatalogCurrency {
+        try items.map(CatalogCurrency.init).first(where: \.isDefault).require("CurrencyListItem[isDefault]")
     }
 }

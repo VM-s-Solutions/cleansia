@@ -616,8 +616,8 @@
     <string name="booking_packages_featured">Featured packages</string>
     <string name="booking_package_includes">INCLUDES</string>
     <string name="booking_package_includes_prefix">Includes:</string>
-    <string name="booking_price_from">from %1$d CZK</string>
-    <string name="booking_price_per_room">+ %1$d CZK/room</string>
+    <string name="booking_price_from">from %1$s</string>
+    <string name="booking_price_per_room">+ %1$s/room</string>
     <string name="details_base_price">Base price</string>
     <string name="details_per_room">Per room</string>
     <string name="details_add_to_booking">Add to booking</string>

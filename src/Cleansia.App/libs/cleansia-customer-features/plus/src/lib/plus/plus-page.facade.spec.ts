@@ -3,7 +3,12 @@ import {
   CustomerClient,
   GetMembershipPlansResponse,
 } from '@cleansia/customer-services';
+import {
+  loadCustomerCurrencies,
+  selectCustomerDefaultCurrencyCode,
+} from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { PlusPageFacade } from './plus-page.facade';
@@ -42,6 +47,7 @@ const SEEDED = [
 
 describe('PlusPageFacade', () => {
   let facade: PlusPageFacade;
+  let store: MockStore;
   let getPlans: jest.Mock;
 
   // Resets first: several tests re-mock `getPlans` and rebuild, and configuring
@@ -52,6 +58,9 @@ describe('PlusPageFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         PlusPageFacade,
+        provideMockStore({
+          selectors: [{ selector: selectCustomerDefaultCurrencyCode, value: null }],
+        }),
         { provide: CustomerClient, useValue: { membershipClient: { getPlans } } },
         // Reached only by startCheckout's failure path, which these plan-facts
         // cases never take — the facade still needs them to construct.
@@ -59,6 +68,7 @@ describe('PlusPageFacade', () => {
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
+    store = TestBed.inject(MockStore);
     facade = TestBed.inject(PlusPageFacade);
   }
 
@@ -68,6 +78,25 @@ describe('PlusPageFacade', () => {
   });
 
   afterEach(() => TestBed.resetTestingModule());
+
+  // `GetMembershipPlansResponse` carries `price` and no currency, so the label is the platform
+  // default — read from the store, never assumed.
+  describe('the currency a plan is priced in', () => {
+    it('asks the store for the platform currencies when the page loads', () => {
+      jest.spyOn(store, 'dispatch');
+
+      facade.load();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+    });
+
+    it('re-exposes the platform default', () => {
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'EUR');
+      store.refreshState();
+
+      expect(facade.defaultCurrencyCode()).toBe('EUR');
+    });
+  });
 
   it('splits the two plans by billing interval, not by code', () => {
     facade.load();

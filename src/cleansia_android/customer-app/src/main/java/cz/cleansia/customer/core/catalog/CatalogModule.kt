@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.catalog
 
+import cz.cleansia.customer.api.client.CurrencyApi
 import cz.cleansia.customer.api.client.ExtraApi
 import cz.cleansia.customer.api.client.PackageApi
 import cz.cleansia.customer.api.client.ServiceApi
@@ -32,7 +33,12 @@ object CatalogModule {
     fun provideGenExtraApi(@NoAuthRetrofit retrofit: Retrofit): ExtraApi =
         retrofit.create(ExtraApi::class.java)
 
-    // App-facing adapter — combines the three generated clients into one
+    @Provides
+    @Singleton
+    fun provideGenCurrencyApi(@NoAuthRetrofit retrofit: Retrofit): CurrencyApi =
+        retrofit.create(CurrencyApi::class.java)
+
+    // App-facing adapter — combines the four generated clients into one
     // surface that returns the hand-written DTOs the repo + UI already
     // consume. Keeps consumer call sites unchanged.
     @Provides
@@ -41,5 +47,6 @@ object CatalogModule {
         serviceApi: ServiceApi,
         packageApi: PackageApi,
         extraApi: ExtraApi,
-    ): CatalogApi = CatalogApi(serviceApi, packageApi, extraApi)
+        currencyApi: CurrencyApi,
+    ): CatalogApi = CatalogApi(serviceApi, packageApi, extraApi, currencyApi)
 }

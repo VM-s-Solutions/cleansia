@@ -21,8 +21,11 @@ enum BookingPricing {
         }
     }
 
+    /// A blank code renders the bare amount: an unlabelled figure over a label guessed for it.
     static func formatTotal(_ total: Double, currencyCode: String) -> String {
-        String(format: "%.0f %@", total, currencySymbol(for: currencyCode))
+        let amount = String(format: "%.0f", total)
+        let symbol = currencySymbol(for: currencyCode)
+        return symbol.isEmpty ? amount : "\(amount) \(symbol)"
     }
 }
 

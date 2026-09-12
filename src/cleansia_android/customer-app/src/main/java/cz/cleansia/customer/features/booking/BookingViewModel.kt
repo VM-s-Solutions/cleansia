@@ -12,6 +12,7 @@ import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
+import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.resolveExpressWaiver
@@ -143,6 +144,7 @@ class BookingViewModel @Inject constructor(
     // serviced too the fallback fails and the user would see "country.required".
     private val serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider,
     private val membershipRepository: MembershipRepository,
+    catalogRepository: CatalogRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -208,6 +210,16 @@ class BookingViewModel @Inject constructor(
 
     private val _referralCodeState = MutableStateFlow<ReferralCodeUiState>(ReferralCodeUiState.Idle)
     val referralCodeState: StateFlow<ReferralCodeUiState> = _referralCodeState.asStateFlow()
+
+    /**
+     * The currency every wizard amount is labelled with. The quote's own code the moment one lands;
+     * until then the catalogue's default, which is what the pre-quote catalogue sum is priced in.
+     * Null only before the catalogue has loaded, when there is no figure on screen to label.
+     */
+    val displayCurrencyCode: StateFlow<String?> =
+        combine(_quoteState, catalogRepository.currencyCode) { quote, catalogCurrency ->
+            (quote as? QuoteState.Quoted)?.response?.currencyCode ?: catalogCurrency
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /**
      * Loyalty Phase B — explicit one-shot validation triggered by the promo

@@ -30,6 +30,7 @@ import {
 import { OrderStatus, PaymentStatus } from '@cleansia/models';
 import { OrderStatusIconPipe, OrderStatusLabelPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { GuestOrderService } from './guest-order.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
@@ -399,11 +400,6 @@ export class TrackOrderComponent implements OnInit {
     price: number | undefined
   ): string {
     if (price == null) return '';
-    const code = order.currency?.code || 'CZK';
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, order.currency?.code, this.getLocale());
   }
 }

@@ -66,12 +66,8 @@
         <div class="cl-rwd__progress" role="progressbar" [attr.aria-valuenow]="progressPercent()">
           <span class="cl-rwd__progress-fill" [style.width.%]="progressPercent()"></span>
         </div>
-        <!--
-          What the points are WORTH as a fact about the past, since a point is a
-          fixed tenth of a koruna spent. → /product/business-rules
-        -->
         <p class="cl-rwd__balance-note">
-          {{ 'pages.rewards.spent_note' | translate: { amount: cleanedForLabel(acc.lifetimePoints) } }}
+          {{ 'pages.rewards.spent_note' | translate }}
         </p>
         } @else {
         <p class="cl-rwd__balance-note cl-rwd__balance-note--top">

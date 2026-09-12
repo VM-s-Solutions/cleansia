@@ -1287,7 +1287,7 @@
       "discount_of": "zľava {{percent}} %",
       "to_next_tier": "Do stupňa {{tier}}",
       "points_remaining": "{{count}} bodov",
-      "spent_note": "To je približne {{amount}} upratané. Body sa počítajú zo všetkého, čo ste kedy minuli — stupeň už vám nikdy neklesne pod dosiahnutý.",
+      "spent_note": "Body sa počítajú zo všetkého, čo ste kedy minuli — stupeň už vám nikdy neklesne pod ten, ktorý ste dosiahli.",
       "how_title": "Ako sa body počítajú",
       "tier_ladder_lead": "Podľa bodov, ktoré ste kedy získali. Zľava sa odpočíta automaticky.",
       "your_tier": "Váš stupeň",

@@ -4,7 +4,12 @@ import {
   GetMyMembershipResponse,
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
+import {
+  loadCustomerCurrencies,
+  selectCustomerDefaultCurrencyCode,
+} from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of, throwError } from 'rxjs';
 import { MembershipFacade } from './membership.facade';
 
@@ -24,6 +29,7 @@ function buildMembership(fields: {
 
 describe('MembershipFacade — express waiver state', () => {
   let facade: MembershipFacade;
+  let store: MockStore;
   let membershipClient: {
     getMine: jest.Mock;
     swapPlan: jest.Mock;
@@ -50,12 +56,36 @@ describe('MembershipFacade — express waiver state', () => {
     TestBed.configureTestingModule({
       providers: [
         MembershipFacade,
+        provideMockStore({
+          selectors: [{ selector: selectCustomerDefaultCurrencyCode, value: null }],
+        }),
         { provide: CustomerClient, useValue: { membershipClient } },
         { provide: SnackbarService, useValue: snackbar },
       ],
     });
 
+    store = TestBed.inject(MockStore);
     facade = TestBed.inject(MembershipFacade);
+  });
+
+  // Neither `GetMyMembershipResponse` nor `GetMembershipPlansResponse` carries a currency —
+  // `monthlyPriceCzk` is the wire name, not a label — so the amounts are labelled with the
+  // platform default, read from the store rather than assumed.
+  describe('the currency a plan is priced in', () => {
+    it('asks the store for the platform currencies when the plans are loaded', () => {
+      jest.spyOn(store, 'dispatch');
+
+      facade.loadPlans();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+    });
+
+    it('re-exposes the platform default', () => {
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'EUR');
+      store.refreshState();
+
+      expect(facade.defaultCurrencyCode()).toBe('EUR');
+    });
   });
 
   it('advertises nothing before the membership is loaded', () => {

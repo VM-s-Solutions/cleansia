@@ -48,11 +48,24 @@ struct CatalogPackage: Equatable, Identifiable {
     let includedServices: [CatalogPackageServiceSummary]
 }
 
+/// One row of the platform's currency overview. The catalogue rows above carry no currency of their
+/// own — they are priced in the row flagged `isDefault`, which is how every catalogue figure gets its
+/// label.
+struct CatalogCurrency: Equatable, Identifiable {
+    let id: String
+    let code: String
+    let symbol: String
+    let name: String
+    let isDefault: Bool
+}
+
 struct Catalog: Equatable {
     let services: [CatalogService]
     let packages: [CatalogPackage]
+    /// The default currency's code — the one every price in `services` and `packages` is stated in.
+    let currencyCode: String
 
-    static let empty = Catalog(services: [], packages: [])
+    static let empty = Catalog(services: [], packages: [], currencyCode: "")
 
     var isEmpty: Bool {
         services.isEmpty && packages.isEmpty

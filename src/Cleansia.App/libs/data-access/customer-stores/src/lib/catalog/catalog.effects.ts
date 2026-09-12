@@ -48,4 +48,21 @@ export class CustomerCatalogEffects {
       )
     )
   );
+
+  loadCurrencies$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(CatalogActions.loadCustomerCurrencies),
+      switchMap(() =>
+        this.customerClient.currencyClient.getOverview().pipe(
+          // Same null, same reason — see loadServices$ above.
+          map((currencies) =>
+            CatalogActions.loadCustomerCurrenciesSuccess({
+              currencies: currencies ?? [],
+            })
+          ),
+          catchError((error) => of(CatalogActions.loadCustomerCurrenciesFailure({ error })))
+        )
+      )
+    )
+  );
 }

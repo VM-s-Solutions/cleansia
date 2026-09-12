@@ -9,6 +9,7 @@ import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
+import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
@@ -23,6 +24,7 @@ import cz.cleansia.customer.core.referral.ValidateReferralResponse
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
@@ -72,10 +74,12 @@ class BookingViewModelTest {
     private lateinit var snackbar: SnackbarController
     private lateinit var serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider
     private lateinit var membershipRepository: MembershipRepository
+    private lateinit var catalogRepository: CatalogRepository
     private lateinit var appContext: Context
 
     private val currentUserFlow = MutableStateFlow<CurrentUser?>(null)
     private val membershipFlow = MutableStateFlow<GetMyMembershipResponse?>(null)
+    private val catalogCurrencyFlow = MutableStateFlow<String?>(null)
 
     private val networkMessage = "Check your internet connection and try again."
     private val pickTimeMessage = "Please select a cleaning date and time."
@@ -95,6 +99,8 @@ class BookingViewModelTest {
         coEvery { serviceAreaProvider.loadCountries() } returns emptyList()
         membershipRepository = mockk(relaxed = true)
         every { membershipRepository.current } returns membershipFlow
+        catalogRepository = mockk(relaxed = true)
+        every { catalogRepository.currencyCode } returns catalogCurrencyFlow
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
@@ -126,6 +132,7 @@ class BookingViewModelTest {
         snackbar = snackbar,
         serviceAreaProvider = serviceAreaProvider,
         membershipRepository = membershipRepository,
+        catalogRepository = catalogRepository,
         appContext = appContext,
     )
 
@@ -954,6 +961,47 @@ class BookingViewModelTest {
         assertEquals(0.0, vm.effectiveDiscount.value, 0.001)
     }
 
+    // ── displayCurrencyCode — the one code every wizard amount is labelled with ──
+    //
+    // The quote's own currency wins the moment it lands; until then the catalogue's default labels
+    // the catalogue-sum fallback, which used to be a null that formatOrderPrice read as CZK.
+
+    @Test
+    fun displayCurrencyCode_givenAQuoteInEur_isEurEvenWhenTheCatalogueDefaultsToCzk() = runTest {
+        catalogCurrencyFlow.value = "CZK"
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith(currencyCode = "EUR"))
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+
+        assertEquals("EUR", vm.displayCurrencyCode.value)
+        assertEquals("1,000 €", formatOrderPrice(1000.0, vm.displayCurrencyCode.value, java.util.Locale.US))
+    }
+
+    @Test
+    fun displayCurrencyCode_beforeTheFirstQuote_isTheCatalogueDefault() = runTest {
+        catalogCurrencyFlow.value = "EUR"
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(QuoteState.Idle, vm.quoteState.value)
+        assertEquals("EUR", vm.displayCurrencyCode.value)
+    }
+
+    @Test
+    fun displayCurrencyCode_followsTheCatalogueOnceItLoads() = runTest {
+        val vm = newViewModel()
+        advanceUntilIdle()
+        assertNull(vm.displayCurrencyCode.value)
+
+        catalogCurrencyFlow.value = "PLN"
+        advanceUntilIdle()
+
+        assertEquals("PLN", vm.displayCurrencyCode.value)
+    }
+
     private fun quoteWith(
         tierDiscount: Double = 0.0,
         membershipDiscount: Double = 0.0,
@@ -961,6 +1009,7 @@ class BookingViewModelTest {
         surcharge: Double = 0.0,
         surchargeApplied: Boolean = surcharge > 0.0,
         waived: Boolean = false,
+        currencyCode: String = "CZK",
     ) = QuoteOrderResponse(
         finalPriceAfterDiscount = 0.0,
         originalSubtotal = 0.0,
@@ -970,7 +1019,7 @@ class BookingViewModelTest {
         tierDiscountAmount = tierDiscount,
         membershipDiscountAmount = membershipDiscount,
         currencyId = "cur-1",
-        currencyCode = "CZK",
+        currencyCode = currencyCode,
         servicesSubtotal = totalPrice,
         packagesSubtotal = 0.0,
         expressSurchargeApplied = surchargeApplied,

@@ -54,6 +54,7 @@ describe('PlusPageComponent', () => {
               trialDays: signal(14),
               hasExpressPerk: signal(true),
               expressPerMonth: signal(1),
+              defaultCurrencyCode: signal<string | null>(null),
             },
           },
         ],

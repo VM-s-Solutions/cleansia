@@ -46,6 +46,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 @Composable
 fun ServiceDetailsSheet(
     service: ServiceListItem,
+    currencyCode: String?,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -97,13 +98,13 @@ fun ServiceDetailsSheet(
             Spacer(Modifier.height(20.dp))
             PriceBreakdownRow(
                 label = stringResource(R.string.details_base_price),
-                value = formatOrderPrice(service.basePrice, null),
+                value = formatOrderPrice(service.basePrice, currencyCode),
             )
             if (service.perRoomPrice > 0) {
                 Spacer(Modifier.height(6.dp))
                 PriceBreakdownRow(
                     label = stringResource(R.string.details_per_room),
-                    value = formatOrderPrice(service.perRoomPrice, null),
+                    value = formatOrderPrice(service.perRoomPrice, currencyCode),
                 )
             }
 
@@ -124,6 +125,7 @@ fun ServiceDetailsSheet(
 @Composable
 fun PackageDetailsSheet(
     pkg: PackageListItem,
+    currencyCode: String?,
     isSelected: Boolean,
     onToggle: () -> Unit,
     onDismiss: () -> Unit,
@@ -152,7 +154,7 @@ fun PackageDetailsSheet(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                formatOrderPrice(pkg.price, null),
+                formatOrderPrice(pkg.price, currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.primary,
             )

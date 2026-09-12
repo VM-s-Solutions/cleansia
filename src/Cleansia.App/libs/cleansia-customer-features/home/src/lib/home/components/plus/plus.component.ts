@@ -10,6 +10,10 @@ import {
   CustomerAuthService,
   MembershipPlanFactsService,
 } from '@cleansia/customer-services';
+import { selectCustomerDefaultCurrencyCode } from '@cleansia/customer-stores';
+import { formatMoney } from '@cleansia/utils';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Store } from '@ngrx/store';
 import { TranslatePipe } from '@ngx-translate/core';
 
 /**
@@ -35,7 +39,17 @@ import { TranslatePipe } from '@ngx-translate/core';
 })
 export class PlusComponent implements OnInit {
   private readonly authService = inject(CustomerAuthService);
+  private readonly store = inject(Store);
   readonly facts = inject(MembershipPlanFactsService);
+
+  /**
+   * A plan's price arrives with no currency of its own — `GetMembershipPlansResponse` carries
+   * `price` alone — so it is labelled with the platform default, which the home page loads with
+   * the catalogue.
+   */
+  private readonly currencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+    initialValue: null,
+  });
 
   /**
    * This CTA pointed at `/membership/subscribe` unconditionally, which is
@@ -65,18 +79,7 @@ export class PlusComponent implements OnInit {
     this.facts.load();
   }
 
-  /**
-   * Whole korunas. Both seeded plans are round numbers and "199,00 Kč" in a
-   * headline reads as a form field; the fractional branch stays because an
-   * admin can price a plan to the halér.
-   */
-  formatCzk(amount: number): string {
-    const fractionDigits = amount % 1 === 0 ? 0 : 2;
-    return new Intl.NumberFormat('cs-CZ', {
-      style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    }).format(amount);
+  formatPrice(amount: number): string {
+    return formatMoney(amount, this.currencyCode(), 'cs-CZ');
   }
 }

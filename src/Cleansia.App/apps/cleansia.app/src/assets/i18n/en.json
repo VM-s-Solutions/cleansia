@@ -1287,7 +1287,7 @@
       "discount_of": "{{percent}}% off",
       "to_next_tier": "To {{tier}}",
       "points_remaining": "{{count}} points",
-      "spent_note": "That is roughly {{amount}} cleaned for. Points count everything you have ever spent — and your tier never drops below the one you reached.",
+      "spent_note": "Points count everything you have ever spent — and your tier never drops below the one you have reached.",
       "how_title": "How points work",
       "tier_ladder_lead": "By the points you have earned. The discount comes off automatically.",
       "your_tier": "Your tier",

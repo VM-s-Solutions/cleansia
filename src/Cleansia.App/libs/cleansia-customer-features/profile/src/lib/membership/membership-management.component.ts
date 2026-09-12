@@ -13,6 +13,7 @@ import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { GetMembershipPlansResponse, GetMyMembershipResponse } from '@cleansia/customer-services';
+import { formatMoney } from '@cleansia/utils';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -91,17 +92,8 @@ export class MembershipManagementComponent implements OnInit {
     });
   }
 
-  /**
-   * Grouped, and in the reader's locale. It was `amount.toFixed(0) + ' Kč'`,
-   * which prints 2030 where the board prints 2 030 — a four-figure price is
-   * read wrong for a beat without the separator.
-   */
-  formatCzk(amount: number): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: 'CZK',
-      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
-    }).format(amount);
+  formatPrice(amount: number): string {
+    return formatMoney(amount, this.facade.defaultCurrencyCode(), this.getLocale());
   }
 
   private getLocale(): string {
@@ -154,7 +146,7 @@ export class MembershipManagementComponent implements OnInit {
     if (!plan) return;
     this.confirmService.confirm({
       message: this.translate.instant('pages.membership.switch_dialog_message', {
-        price: this.formatCzk(plan.price),
+        price: this.formatPrice(plan.price),
       }),
       header: this.translate.instant('pages.membership.switch_dialog_title'),
       icon: 'pi pi-arrow-up-right',

@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { RecurringBookingTemplateDto } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
@@ -117,11 +118,7 @@ export class RecurringBookingsListComponent implements OnInit {
   priceFor(template: RecurringBookingTemplateDto): string | null {
     const quoted = template.id ? this.facade.templatePrices()[template.id] : undefined;
     if (!quoted) return null;
-    return new Intl.NumberFormat(this.locale(), {
-      style: 'currency',
-      currency: quoted.currency,
-      minimumFractionDigits: 0,
-    }).format(quoted.amount);
+    return formatMoney(quoted.amount, quoted.currency, this.locale());
   }
 
   cadenceKey(frequency: number): string {

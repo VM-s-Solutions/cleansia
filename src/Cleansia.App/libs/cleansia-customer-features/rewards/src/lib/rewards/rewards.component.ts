@@ -61,19 +61,6 @@ export class RewardsComponent implements OnInit {
   protected readonly discountCapPercent = 12;
 
   /**
-   * Roughly what has been cleaned for, read back out of the points. A point is
-   * a fixed tenth of a koruna of order total, so this is a restatement rather
-   * than an estimate — the "roughly" is the flooring, not the rate.
-   */
-  cleanedForLabel(points: number): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: 'CZK',
-      maximumFractionDigits: 0,
-    }).format(points * 10);
-  }
-
-  /**
    * Progress 0..100 to the next tier. Computed against the current tier's
    * threshold so the bar starts empty after each tier-up rather than always
    * filling proportionally to lifetime points.

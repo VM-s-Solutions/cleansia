@@ -1,5 +1,6 @@
 import {
   ApiException,
+  CurrencyListItem,
   PackageListItem,
   ServiceListItem,
 } from '@cleansia/customer-services';
@@ -22,5 +23,15 @@ export const loadCustomerPackagesSuccess = createAction(
 );
 export const loadCustomerPackagesFailure = createAction(
   '[Customer Catalog] Load Packages Failure',
+  props<{ error: ApiException }>()
+);
+
+export const loadCustomerCurrencies = createAction('[Customer Catalog] Load Currencies');
+export const loadCustomerCurrenciesSuccess = createAction(
+  '[Customer Catalog] Load Currencies Success',
+  props<{ currencies: CurrencyListItem[] }>()
+);
+export const loadCustomerCurrenciesFailure = createAction(
+  '[Customer Catalog] Load Currencies Failure',
   props<{ error: ApiException }>()
 );

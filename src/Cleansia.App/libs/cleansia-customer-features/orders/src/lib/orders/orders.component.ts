@@ -14,6 +14,7 @@ import { OrderListItem } from '@cleansia/customer-services';
 import { OrderStatus } from '@cleansia/models';
 import { OrderStatusLabelPipe, OrderStatusSeverityPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -222,10 +223,6 @@ export class OrdersComponent implements OnInit {
   }
 
   formatPrice(price: number, currency?: { code?: string }): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: currency?.code || 'CZK',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, currency?.code, this.getLocale());
   }
 }

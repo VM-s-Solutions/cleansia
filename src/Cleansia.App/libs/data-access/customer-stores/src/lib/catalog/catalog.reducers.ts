@@ -29,5 +29,18 @@ export const customerCatalogReducer = createReducer(
   on(CatalogActions.loadCustomerPackagesFailure, (state) => ({
     ...state,
     loading: { ...state.loading, packages: false },
+  })),
+  on(CatalogActions.loadCustomerCurrencies, (state) => ({
+    ...state,
+    loading: { ...state.loading, currencies: true },
+  })),
+  on(CatalogActions.loadCustomerCurrenciesSuccess, (state, { currencies }) => ({
+    ...state,
+    currencies,
+    loading: { ...state.loading, currencies: false },
+  })),
+  on(CatalogActions.loadCustomerCurrenciesFailure, (state) => ({
+    ...state,
+    loading: { ...state.loading, currencies: false },
   }))
 );

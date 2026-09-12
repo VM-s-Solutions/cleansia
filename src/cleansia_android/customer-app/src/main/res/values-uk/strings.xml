@@ -605,8 +605,8 @@
     <string name="booking_packages_featured">Рекомендовані пакети</string>
     <string name="booking_package_includes">ВКЛЮЧАЄ</string>
     <string name="booking_package_includes_prefix">Включає:</string>
-    <string name="booking_price_from">від %1$d CZK</string>
-    <string name="booking_price_per_room">+ %1$d CZK/кімната</string>
+    <string name="booking_price_from">від %1$s</string>
+    <string name="booking_price_per_room">+ %1$s/кімната</string>
     <string name="details_base_price">Базова ціна</string>
     <string name="details_per_room">За кімнату</string>
     <string name="details_add_to_booking">Додати до бронювання</string>

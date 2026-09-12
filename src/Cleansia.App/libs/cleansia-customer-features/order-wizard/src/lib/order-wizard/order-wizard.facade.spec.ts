@@ -8,7 +8,9 @@ import {
   PaymentType,
 } from '@cleansia/customer-services';
 import {
+  loadCustomerCurrencies,
   SavedAddressStore,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
@@ -29,6 +31,7 @@ import {
   EXPRESS_DISCOUNTED_QUOTE,
   EXPRESS_QUOTE,
   PLAIN_QUOTE,
+  quoteFixture,
 } from './order-quote.fixtures';
 
 describe('OrderWizardFacade', () => {
@@ -144,10 +147,47 @@ describe('OrderWizardFacade', () => {
     store = TestBed.inject(MockStore);
     store.overrideSelector(selectCustomerServices, []);
     store.overrideSelector(selectCustomerPackages, []);
+    store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
     facade = TestBed.inject(OrderWizardFacade);
   }
 
   beforeEach(() => configure());
+
+  describe('the currency the wizard prints in', () => {
+    it('asks the store for the platform currencies alongside the catalogue', () => {
+      jest.spyOn(store, 'dispatch');
+
+      facade.initialize();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+    });
+
+    it('has no label until the platform default is known', () => {
+      expect(facade.currencyCode()).toBeNull();
+    });
+
+    // The catalogue DTOs carry a price and no currency: they are priced in the platform default,
+    // which is the flag on the currency list and nothing the wizard may assume.
+    it('labels catalogue prices in the platform default until a quote exists', () => {
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'EUR');
+      store.refreshState();
+
+      expect(facade.currencyCode()).toBe('EUR');
+    });
+
+    it("labels every figure in the quote's own currency once one exists", async () => {
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'CZK');
+      store.refreshState();
+      orderClient.quote.mockReturnValue(
+        of(quoteFixture({ currencyId: 'eur', currencyCode: 'EUR' })),
+      );
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      await facade.refreshQuoteNow();
+
+      expect(facade.currencyCode()).toBe('EUR');
+    });
+  });
 
   describe('validatePromoCodeNow', () => {
     it('returns idle and skips the client for an empty code', async () => {

@@ -47,12 +47,12 @@ extension L10n {
             plural("booking_package_more", count)
         }
 
-        static func priceFrom(_ amount: Int) -> String {
-            format("booking_price_from", amount)
+        static func priceFrom(_ price: String) -> String {
+            format("booking_price_from", price)
         }
 
-        static func pricePerRoom(_ amount: Int) -> String {
-            format("booking_price_per_room", amount)
+        static func pricePerRoom(_ price: String) -> String {
+            format("booking_price_per_room", price)
         }
 
         static var yourHome: String {

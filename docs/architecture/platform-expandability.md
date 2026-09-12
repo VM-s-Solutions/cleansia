@@ -233,8 +233,9 @@ from the work country (pay configs, dashboards) — never from a tenant config.
   (nullable, FK Restrict), written only by `UpdateBankDetails` (`currency.invalid` when it names no
   currency; absent on the wire means unchanged, because two shipped mobile clients cannot send it yet),
   shown on `MyPayoutDetails`, `MaskedPayoutDetails` and the GDPR export. `ApproveInvoice` refuses
-  (`payroll.invoice.payout_currency_mismatch`) when the declared currency — the platform default when
-  undeclared — is not the invoice's. Approval is the last point the platform can refuse: the transfer is
+  (`payroll.invoice.payout_currency_mismatch`) when the declared currency — the work country's currency
+  when undeclared, which is the normal case — is not the invoice's. Approval is the last point the
+  platform can refuse: the transfer is
   keyed by hand in a bank and `MarkInvoicePaid` only records it. There is **no payout execution path**
   (no bank file, no Stripe Connect, no SEPA), and a missing payout record passes this rule — ADR-0034
   D7's presence gate is not implemented anywhere. → /flows/pay-and-payouts#the-path

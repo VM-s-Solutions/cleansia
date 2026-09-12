@@ -81,8 +81,9 @@ path are gated:
 | Mark paid | invoice is `Approved`. `Paid` is terminal — a second mark is refused rather than overwriting the first actor's record of a transfer that already left the bank |
 
 The currency rule reads `EmployeePayoutDetails.CurrencyId` — the currency the cleaner declared their
-account holds — and takes an undeclared account to hold the platform default, which is the assumption
-every destination was collected under before the column existed. A mismatch is refused as
+account holds — and takes an undeclared account to hold the currency of the country the cleaner works
+in (CZ is CZK, SK is EUR, PL is PLN; owner ruling 2026-09-12), resolved through the same work-country
+chain every partner screen uses and never the platform default. A mismatch is refused as
 `payroll.invoice.payout_currency_mismatch`; the cleaner corrects the declaration (or the account) and
 the admin approves again.
 
@@ -144,7 +145,7 @@ already does.
 | Reopen a paid period | Refused. |
 | Pay in two currencies in one period | Two invoices, two references, two e-mails; the reconciliation sweep re-enqueues a pair while any of its currencies is still un-invoiced. |
 | Approve an invoice in a currency the payout account does not hold | Refused — `payroll.invoice.payout_currency_mismatch`. The cleaner updates the declaration, the admin approves again. |
-| A cleaner who never declared an account currency | Treated as holding the platform default at approval. |
+| A cleaner who never declared an account currency | Treated as holding their work country's currency at approval — the normal case; a declaration is only for an account that holds something else. |
 | Two invoices allocate a number at once | The `ON CONFLICT` counter serialises them; the unique index is the backstop. |
 | A cleaner with no payout destination | Blocked by the profile-completeness gate before they can work. |
 | A cleaner with a legacy `IBAN` but no payout record | Passes the completeness gate (it reads `HasPayoutDetails || IBAN`) and passes approval — there is no record to compare, and D7's issuance gate is not built. |

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -15,8 +16,9 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 /// outside the platform -- so it is the last point where the platform can refuse an invoice whose
 /// currency the cleaner's account does not hold (T-0708). The account's currency is DECLARED by the
 /// cleaner (<c>EmployeePayoutDetails.CurrencyId</c>); an undeclared account is taken to hold the
-/// platform default, the assumption every destination was collected under. A missing payout record is
-/// ADR-0034 D7's presence gate, not this rule's, and passes here.
+/// currency of the country the cleaner works in -- CZ is CZK, SK is EUR, PL is PLN (owner ruling
+/// 2026-09-12) -- resolved through the same chain every partner screen uses, never the platform
+/// default. A missing payout record is ADR-0034 D7's presence gate, not this rule's, and passes here.
 /// </summary>
 public class ApproveInvoicePayoutCurrencyTests
 {
@@ -30,7 +32,7 @@ public class ApproveInvoicePayoutCurrencyTests
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IEmployeeInvoiceRepository> _invoiceRepository = new();
     private readonly Mock<IEmployeePayoutDetailsRepository> _payoutDetails = new();
-    private readonly Mock<ICurrencyRepository> _currencies = new();
+    private readonly Mock<ICurrencyResolutionService> _resolution = new();
 
     public ApproveInvoicePayoutCurrencyTests()
     {
@@ -39,9 +41,12 @@ public class ApproveInvoicePayoutCurrencyTests
         _session.Setup(s => s.GetUserEmail()).Returns(AdminEmail);
         _users.Setup(r => r.GetByEmailAsync(AdminEmail, It.IsAny<CancellationToken>())).ReturnsAsync(admin);
 
-        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
-        czk.Id = CzkId;
-        _currencies.Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>())).ReturnsAsync(czk);
+        // A Slovak cleaner: their work country pays EUR.
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = EurId;
+        _resolution
+            .Setup(s => s.ResolveCurrencyForEmployeeAsync(EmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eur);
     }
 
     [Fact]
@@ -55,8 +60,8 @@ public class ApproveInvoicePayoutCurrencyTests
         Assert.False(result.IsValid);
         var error = Assert.Single(result.Errors);
         Assert.Equal(BusinessErrorMessage.InvoicePayoutCurrencyMismatch, error.ErrorMessage);
-        // A declared currency needs no default lookup.
-        _currencies.Verify(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()), Times.Never);
+        // A declared currency needs no resolution.
+        _resolution.Verify(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -71,9 +76,9 @@ public class ApproveInvoicePayoutCurrencyTests
     }
 
     [Theory]
-    [InlineData(CzkId, true)]
-    [InlineData(EurId, false)]
-    public async Task An_Undeclared_Account_Is_Taken_To_Hold_The_Platform_Default(string invoiceCurrencyId, bool approves)
+    [InlineData(EurId, true)]
+    [InlineData(CzkId, false)]
+    public async Task An_Undeclared_Account_Holds_The_Currency_Of_The_Cleaners_Work_Country(string invoiceCurrencyId, bool approves)
     {
         ArrangeInvoice(invoiceCurrencyId, EmployeeInvoiceStatus.Pending);
         ArrangePayout(currencyId: null);
@@ -98,7 +103,7 @@ public class ApproveInvoicePayoutCurrencyTests
         var result = await Validator().ValidateAsync(new ApproveInvoice.Command(InvoiceId, null));
 
         Assert.True(result.IsValid);
-        _currencies.Verify(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _resolution.Verify(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -118,7 +123,7 @@ public class ApproveInvoicePayoutCurrencyTests
     // ── arrangement ──────────────────────────────────────────────────
 
     private ApproveInvoice.Validator Validator() => new(
-        _users.Object, _session.Object, _invoiceRepository.Object, _payoutDetails.Object, _currencies.Object);
+        _users.Object, _session.Object, _invoiceRepository.Object, _payoutDetails.Object, _resolution.Object);
 
     private void ArrangeInvoice(string currencyId, EmployeeInvoiceStatus status)
     {

@@ -14,7 +14,8 @@
 > **Amended 2026-09-12 (T-0708) — `CurrencyId`**, the currency the account **holds**: nullable, FK to
 > `Currency` with `ON DELETE RESTRICT`. Declared by the cleaner, never derived — a bank's country does
 > not decide it (a Czech bank sells EUR accounts) and the platform has no other source. `null` ⇒ not
-> declared, which `ApproveInvoice` reads as the platform default. Absent on the wire ⇒ **unchanged**,
+> declared, which `ApproveInvoice` reads as the currency of the cleaner's work country (CZ is CZK, SK
+> is EUR, PL is PLN — owner ruling 2026-09-12). Absent on the wire ⇒ **unchanged**,
 > not cleared: the field is on both partner hosts' `UpdateBankDetails` contract but no shipped client
 > populates it yet, and a full-replace save from a client that does not know the field must not revert
 > a declaration made from one that does. Shown on `MyPayoutDetails`, `MaskedPayoutDetails` and the GDPR export; not on the
@@ -51,7 +52,7 @@ destination requires, and so an invoice in a currency the account does not hold 
   It does **not** refuse: nothing on the issuance path reads this record's presence or its `Status`,
   so the issuance gate ADR-0034 D7 describes is not built.
 - **`ApproveInvoice`** — the one place on the money path that reads this record. It compares
-  `CurrencyId` (undeclared ⇒ the platform default) with the invoice's currency and refuses
+  `CurrencyId` (undeclared ⇒ the work country's currency) with the invoice's currency and refuses
   `payroll.invoice.payout_currency_mismatch`; a missing record passes. Why approval and not generation
   or payment is in [Pay and payouts](/flows/pay-and-payouts#approval-is-the-last-refusal).
 - **`Currency`** (via `CurrencyId`) — the FK is `ON DELETE RESTRICT`, so `DeleteCurrency` answers
@@ -93,7 +94,7 @@ destination requires, and so an invoice in a currency the account does not hold 
   safe.
 - `Scheme = null` ⟺ the row is unusable for payout ⟺ `Status = NeedsReconfirmation`.
 - `CurrencyId` is either `null` or the id of an existing `Currency`, and an absent value on the wire
-  never clears it. `null` is a legal state — "not declared", read as the platform default by
+  never clears it. `null` is a legal state — "not declared", read as the work country's currency by
   `ApproveInvoice` — not an error and not `NeedsReconfirmation`.
 - `AccountPrefix` / `AccountNumber` / `BankCode` are **text**, never numeric — because they are digit
   strings, not quantities. **Leading zeros are NOT identity** (`123456` and `0000123456` derive the same

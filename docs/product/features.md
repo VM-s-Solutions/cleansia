@@ -72,17 +72,24 @@ set one on a single cleaner, and does not for anyone today.
 **People** — approve or reject cleaners, review and remove documents, set which document types each
 country requires, answer removal requests, manage admin users, inspect a customer's loyalty position.
 
-**Money** — pay periods (open, close, reopen, mark paid), employee invoices, payout details behind an
-audited reveal, refunds, disputes, chargebacks, fiscal failures.
+**Money** — pay periods (open, close, reopen, mark paid), employee invoices (one per cleaner per period
+per currency they were paid in), payout details behind an audited reveal, refunds, disputes,
+chargebacks, fiscal failures, customer credit issued in a named currency.
 
-**Catalogue** — services, packages, extras, prices, per-employee pay rates in bulk, countries,
-currencies, languages, service cities.
+**Catalogue** — services, packages, extras, per-employee pay rates in bulk, countries, currencies,
+languages, service cities. Prices are per currency: a service, package or extra carries one price row
+per currency it is sold in, nothing converts, and an entry with no price in a currency is not offered
+in it. Extras are priced per currency like services and packages; the slug is fixed at creation
+because order lines snapshot it, so deactivating is how an extra is retired once an order references
+it. A currency is switched on deliberately — a new one starts inactive — and the platform default
+cannot be switched off.
 
 **Growth** — promo codes, referral programme, loyalty tiers, membership plans, site-wide push
 campaigns, email templates.
 
 **Oversight** — an append-only audit log of privileged actions, including the ones that failed, plus
-reporting and GDPR request handling.
+revenue and payroll reporting — one currency per report, never a sum across two — and GDPR request
+handling.
 
 ## Across all of it
 

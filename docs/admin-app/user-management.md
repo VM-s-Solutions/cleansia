@@ -40,7 +40,7 @@ The detail page provides comprehensive information about a partner and tools for
 | Contract Status | Current status with approval/rejection actions |
 | Profile Completion | Whether all required fields are filled |
 | Availability | Weekly availability schedule with edit capability |
-| Pay Configuration | Per-employee rate overrides with bulk grade apply |
+| Pay Configuration | Per-employee rate overrides, one currency each, with bulk grade apply |
 | Payout Details | **Masked** bank destination, with an audited reveal action |
 | Documents | Uploaded documents with review workflow |
 
@@ -56,12 +56,24 @@ employee and never on `EmployeeDto`. Two endpoints, two DTOs:
 
 The record is never `Include`d on the employee grid or any paged query.
 
+`MaskedPayoutDetails` carries `CurrencyId`: the currency the cleaner declares the account holds. It is
+nullable, written only by the cleaner's own `UpdateBankDetails` (never by an admin), and an undeclared
+account is read as the platform default. It is not a label — `ApproveInvoice` compares it with the invoice's
+currency and refuses `payroll.invoice.payout_currency_mismatch` when they differ, because approval is
+the last point where the platform can refuse a transfer that is then keyed by hand. The masked rows on
+the detail page do not render it. → [/flows/pay-and-payouts](/flows/pay-and-payouts),
+[/domain/roles/employee-payout-details](/domain/roles/employee-payout-details)
+
 ### Pay Configuration
 
 Per-employee rate overrides are live. An `EmployeePayConfig` row with a non-null `EmployeeId`
-overrides the platform-wide row for the same service or package; `CalculateOrderPay` picks the
-employee-specific config when one exists and falls back to the global one otherwise. The bulk apply
-seeds a whole grade at once (junior 0.5×, medior 0.75×, senior 1.0×).
+overrides the platform-wide row for the same service or package **in the same currency**;
+`CalculateOrderPay` reads only rows in the order's currency, picks the employee-specific config when
+one exists and falls back to the global one otherwise. The unique index is
+`(EmployeeId, ServiceId, PackageId, CurrencyId)`, so a cleaner legitimately holds a CZK rate and a EUR
+rate for the same service, and neither counts for an order in the other currency. The bulk apply seeds a
+whole grade at once (junior 0.5×, medior 0.75×, senior 1.0×) in one currency.
+→ [/product/business-rules#rates-per-currency](/product/business-rules#rates-per-currency)
 
 ### Weekly Order Limit — a brake, and nobody is behind it by default
 
@@ -193,8 +205,9 @@ The `canApproveOrReject()` method returns `true` when:
 - `isProfileComplete === true`
 - `contractStatus === 'Pending'`
 
-The **server** adds one more, and it is the one that bites: every document type the employee's work
-country marks required must be present **and** `Approved`. Approval used to consult
+The **server** adds two more. The first is the one that bites: every document type the employee's work
+country marks required must be present **and** `Approved`. The second is pay coverage in the work
+country's currency, described under [Approve Employee](#approve-employee) below. Approval used to consult
 `IsProfileComplete()` alone, which excludes documents deliberately — so an admin could approve a cleaner
 who had uploaded nothing, or whose every document had been rejected, and `Approved` meant only that
 somebody had pressed the button. The refusal comes back as `employee.documents_not_approved`.
@@ -244,12 +257,28 @@ skip. → [/flows/gdpr-and-audit](/flows/gdpr-and-audit)
 ### Approve Employee
 
 ```typescript
-facade.approveEmployee();
-// Calls adminEmployeeClient.approve(employeeId)
+facade.openApproveEmployeeDialog();
+// Opens ApproveDialogComponent: a required work country, optional notes (≤ 1000 chars)
+// On confirm: calls adminEmployeeClient.approve(employeeId, { workCountryId, notes })
 // Reloads employee detail on success
 ```
 
-Sets the employee's `ContractStatus` to `Approved`, granting full platform access.
+Sets the employee's `ContractStatus` to `Approved` and `WorkCountryId` to the country picked, granting
+full platform access. The country must exist and be serviced (`country.not_found`,
+`country.not_serviced`).
+
+The work country also decides the currency the cleaner will be paid in, and approval is refused when
+that currency is not covered. `ICurrencyResolutionService.ResolveCurrencyForWorkCountryAsync` takes the
+country's `CountryConfiguration.DefaultCurrencyCode` when it names a real currency and the platform
+default otherwise — the same chain that later labels the cleaner's earnings, entered at the country
+because this is the command that assigns it. Every active service and package must then have a pay
+config in that currency, platform-wide or this cleaner's own (`PayCoverage.Applies`); an uncovered
+entry refuses `employee.pay_config_missing`, one failure per entry with the entry's name as the error
+code, so the refusal says what to configure. A rate in another currency does not count — a cleaner
+approved on a CZK rate for a EUR market would sit silently unpaid. Approval creates no pay config; it
+only checks that they exist. Because a platform-wide row covers every cleaner, a fully configured
+[Global Rates page](./pay-config) in the market's currency is what makes approval satisfiable without
+any per-employee work.
 
 ### Reject Employee
 
@@ -298,9 +327,30 @@ The fastest way to onboard an employee. Pick a grade and currency, click **Apply
 | Medior | 0.75x     | Experienced cleaner               |
 | Senior | 1.0x      | Top performer, full base rate     |
 
-The multiplier is applied to each service's `BasePrice` and `PerRoomPrice`, and to each package's `Price`. The result is stored as a per-employee `EmployeePayConfig` record.
+The multiplier is applied to the catalogue price **in the currency picked**: the `ServicePrices` row
+(`BasePrice`, `PerRoomPrice`) and the `PackagePrices` row (`Price`) for that currency. A service or
+package carries no price of its own — prices are authored per currency, and nothing converts — so the
+result is a per-employee `EmployeePayConfig` in that same currency:
 
-**Overwrite Existing** checkbox: when enabled, existing per-employee configs are deleted and replaced. When disabled (default), existing configs are skipped.
+```
+service:  BasePay = BasePrice × m      ExtraPerRoom = PerRoomPrice × m      (rounded to 2 places)
+package:  BasePay = Price × m
+          ExtraPerBathroom = 0, DistanceRatePerKm = 0, description "Auto-generated from {grade} grade template"
+```
+
+An entry with no price row in that currency is **skipped and counted in `skippedCount`**, never
+defaulted: there is nothing to derive a rate from, and a zero rate is a cleaner paid nothing. Nothing is
+derived from a price in another currency — that is exactly the defect this closes, where generating EUR
+configs produced EUR pay from CZK numbers.
+
+**Overwrite Existing** checkbox: when enabled, this employee's existing configs **in that currency** are
+removed and replaced; rates in any other currency are untouched. When disabled (default), an entry that
+already has a config in that currency is skipped. The price guard runs before the overwrite branch, so a
+bulk run against a currency the catalogue is not priced in deletes nothing and creates nothing.
+
+The currency select lists every currency the platform knows, switched on or not (the admin overview);
+the command checks only that it exists (`currency.invalid`). Whether anything is generated is decided by
+whether the catalogue is priced in it.
 
 API call:
 ```
@@ -328,16 +378,24 @@ Two tables list every active service and package with status icons:
 - ✓ Green checkmark — employee has a per-employee config for this item
 - ✗ Grey X — employee uses the global rate (or no rate exists)
 
-Each row shows the rate breakdown: `basePay + extraPerRoom/room + extraPerBathroom/bath {currency}`.
+Each row shows the rate breakdown: `basePay + extraPerRoom/room + extraPerBathroom/bath {currencyCode}`.
+The summary (`GetEmployeePayConfigSummary`) shows **one** config per entry — the first found for the
+employee, whichever currency it is in — so a cleaner holding a CZK and a EUR rate for the same service
+sees one of them here, labelled with its code; the coverage counts are over entries, not currencies.
 
 ### How Pay is Calculated for Orders
 
-When an order is completed, the system looks up the pay rate in this order:
+When an order is completed, the system looks up the pay rate **in the order's currency**, in this order:
 
-1. **Per-employee config** (`EmployeePayConfig` where `EmployeeId = currentEmployee.Id`) — used if exists
-2. **Global rate** (`EmployeePayConfig` where `EmployeeId IS NULL`) — fallback
+1. **Per-employee config** (`EmployeePayConfig` where `EmployeeId = currentEmployee.Id` and
+   `CurrencyId = order.CurrencyId`) — used if exists
+2. **Global rate** (`EmployeePayConfig` where `EmployeeId IS NULL` and `CurrencyId = order.CurrencyId`)
+   — fallback
 
-This means an employee can have overrides for some services and use global rates for others.
+A config in any other currency is not read at all. This means an employee can have overrides for some
+services and use global rates for others; it also means an override authored in CZK does nothing for a
+EUR order, which falls through to the EUR global rate.
+→ [/product/business-rules#rates-per-currency](/product/business-rules#rates-per-currency)
 
 ## Reject Dialog
 

@@ -7,6 +7,12 @@ Points, tiers, Cleansia Plus, and the metered benefit that is easiest to get wro
 Every grant carries an **idempotency key**, unique per tenant. A retried grant is rejected by the
 index rather than doubling someone's balance.
 
+A completed order earns `floor(total / Currency.LoyaltyPointsDivisor)` in the order's currency — 1
+point per 10 CZK today — and a partial refund claws back the same fraction of the refund's net through
+the same divisor. The divisor is authored per currency on the admin currency form; a currency with no
+divisor earns nothing and logs. It is not scaled from another currency's rate.
+→ [Money constants](/product/business-rules#money-constants)
+
 ## Cleansia Plus
 
 A membership buys a discount, a wider free-cancellation window, and a quota of express-surcharge
@@ -57,4 +63,5 @@ alone. You cannot redeem your own code, and you cannot be referred twice.
 | Plan downgraded mid-month | The live count carries across, so a downgrade cannot grant a fourth waiver on a two-waiver plan. |
 | Re-subscribing | Quota does **not** reset — the key has no membership id in it. |
 | Points granted twice by a retry | Rejected by the idempotency index. |
+| Order in a currency with no points divisor | Earns nothing, and a warning is logged; nothing is borrowed from another currency's rate. |
 | Self-referral | Refused. |

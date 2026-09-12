@@ -85,10 +85,11 @@ first-time window buys trust from someone who has not used the platform before.
 
 The customer is refunded **and** credited **250 CZK**. The credit is the apology; the refund is not.
 
-> **Not implemented.** No production code writes `CancelledBy.Cleaner`, so neither half of this
-> happens today — a customer has to notice and complain. The credit half additionally waits on the
-> customer-credit balance, which does not exist yet. `BookingPolicy.NoShowCreditCzk` holds the number
-> so the copy and the eventual implementation cannot disagree about it.
+> Implemented by the unfilled-order sweep (`CancelUnfilledOrders`) — the one no-show the platform can
+> prove: the slot was reached and nobody ever took the seat. Every other version of "the cleaner did not
+> arrive" rests on a missing tap, which is indistinguishable from a cleaner who turned up and forgot to
+> slide to start, so no lateness detector refunds on its own, and a drop refunds nothing. The credit is
+> paid only on an order in the platform default currency; see [Money constants](#money-constants).
 
 ## Disputes {#disputes}
 
@@ -209,6 +210,24 @@ Two things that surprise people:
 package, non-null is an override for one cleaner. Per target id, the employee-specific config wins,
 otherwise the global one.
 
+### Rates are per currency {#rates-per-currency}
+
+A rate is an amount **in a currency** (`EmployeePayConfig.CurrencyId`; the unique index carries it), so
+every pay-coverage question is asked in one currency, and one predicate — `PayCoverage.Applies` —
+answers all of them: the customer catalogue offers an entry only when it has a platform-wide rate in the
+currency being browsed in; a booking is refused (`order.selected_services.invalid` /
+`order.selected_package.invalid`) when its selection has no platform-wide rate in the order's currency;
+a cleaner is approved only against the rates in their work country's currency; and the last
+platform-wide rate for a live entry in a currency cannot be deleted
+(`pay_config.last_for_live_catalogue_entry`). A rate in another currency counts for nothing —
+`CalculateOrderPay` reads only rows in the order's currency, so an order admitted on a CZK rate would sit
+silently unpaid in EUR. That is why the gate and the writer share the predicate rather than paraphrase
+it.
+
+The pay a cleaner earns is therefore always in the order's currency, and an invoice is one currency —
+a cleaner who worked a CZK job and a EUR job in one period receives two invoices.
+→ [Pay and payouts](/flows/pay-and-payouts)
+
 ## Charging a package and a service together
 
 Selecting a package **and** a service that the package already includes buys that service **twice** —
@@ -258,7 +277,79 @@ the lifetime-savings sum, every client's `totalPrice − discount` — and **the
 flag for any of them to correct with**. So the correction can only be made once, before the amount is
 persisted.
 
+### Which discounts know what currency they are in
+
+A percentage is unit-free: the tier rate, the Plus rate, the 12 % cap and a percent promo apply to an
+order in any currency. The two **amounts** in this section do not — the tier floor is a number in the
+platform default currency and a promo minimum is a number in the code's currency — and each is enforced
+only on an order in its own currency. The rules are in [Money constants](#money-constants).
+
+## Money constants and the default currency {#money-constants}
+
+Prices are authored per currency and nothing converts — see [Order currency](#price-stages) — so every
+constant that is an **amount** rather than a percentage is an amount in *some* currency. Each one below
+says which, and what happens on an order priced in another. The pattern is deliberate: a number the
+platform cannot denominate is not applied, rather than applied at the wrong scale — 250 CZK handed over
+as 250 EUR is a twenty-five-fold apology.
+
+**No-show credit — `BookingPolicy.NoShowCreditCzk = 250`.** A CZK scalar, paid by `CancelUnfilledOrders`
+only on an order in the platform default currency; on any other currency the credit is skipped and
+logged, the refund is unaffected, and the push sent is the plain cancellation rather than the one that
+promises the credit (owner ruling 2026-09-06). It is deliberately not a per-currency lookup: the figure
+is hand-written into the home page copy and both mobile pushes, five locales each — the lock-screen
+loc-arg allowlist cannot interpolate it — and `check-booking-policy-parity.mjs` reads the declaration to
+hold that copy to the number. A second number here would be a promise no surface makes until the
+customer surfaces know their market.
+
+**Loyalty earn — `Currency.LoyaltyPointsDivisor`.** A completed order earns
+`floor(total / divisor)` in the order's currency, and the partial-refund clawback removes the same
+fraction of the refund's net through the same divisor, so the two cannot disagree about what a unit of
+money is worth. The divisor is authored per currency by the admin on the currency form, like a price;
+CZK is seeded at **10** — the historical "1 point per 10 CZK". A currency with no divisor earns nothing
+and logs; it is never scaled from another currency's rate in either direction.
+
+**Tier floor — `LoyaltyTierConfig.MinimumOrderAmountForDiscount`.** Seeded at **1000** for every tier
+that has one. It is a platform-default-currency number, enforced only on an order in that currency; on
+any other currency no floor applies at all. The discount is the promise and the floor only keeps it off
+trivially small orders, and comparing 1000 against a subtotal in a stronger currency would withhold the
+promise from a whole market. The quote reports the floor it judged (`tierDiscountMinOrderAmount`, null
+when none was judged), so the wizard states exactly the rule the order used.
+
+**Promo minimum — `PromoCode.MinimumOrderAmount`.** A code with a minimum is bound to **one** currency:
+its own `CurrencyId` when set (a fixed-amount code always has one), otherwise the platform default,
+because every percent code with a minimum was authored that way. On an order in any other currency the
+code is refused **before** the minimum is compared: the checkout preview (`ValidatePromoCode`) answers
+the `CurrencyMismatch` error code, and the create path applies no discount rather than a wrong one. A
+percent code with no minimum is global.
+
+**Credit sanity cap — `IssueCustomerCredit.SanityCap = 10 000`.** A typo guard on the *number* typed by
+an admin issuing credit, unit-free on purpose: it caps 10 000 in whatever currency the grant names, so
+in EUR it is about twenty-five times looser and catches almost nothing. Accepted — a per-currency table
+for a typo guard is worse than the typo, and an admin who genuinely owes more issues it twice with both
+rows in the ledger under their name.
+
+**Stripe fixed refund fee — `CountryConfiguration.RefundStripeFixedFee`.** A number in the country's
+`DefaultCurrencyCode` (6 on the CZE row means 6 CZK), deducted only from a refund in that same currency.
+The caller names the order's currency and the address names the country, and nothing ties the two, so
+on a CZ-address order priced in EUR the fixed part is absorbed by the platform; the percentage
+(`RefundStripeFeeRate`) is unit-free and still applies. Both figures are dormant: no production writer
+sets either today, and while either is null the whole fee — rate included — is 0.
+
+**The standing risk.** Three of these numbers are bound to *whichever* currency is the platform
+default, not to CZK by name — the no-show credit, the tier floor, and every promo minimum on a code
+with no `CurrencyId`. Promoting a different default (`SetDefaultCurrency`) silently re-denominates all
+three: 250 becomes 250 of the new currency, 1000 becomes 1000. It is an owner-level event, and those
+three numbers are the checklist for it.
+
 ## What "price" means at each stage {#price-stages}
+
+**Order currency.** An order is priced and stamped in the currency the caller names on quote and on
+create (`currencyId`, null = platform default) — one the platform can quote in: switched on and carrying
+at least one catalogue price row (`ICurrencyRepository.IsOfferableAsync`), else `currency.invalid`.
+It is not derived from the address. Prices are authored per currency in `ServicePrices`,
+`PackagePrices` and `ExtraPrices`; nothing converts, and an entry with no price row in a currency is
+not offerable in it. A recurring occurrence is priced in the platform default, because a template
+carries no currency.
 
 The pricing calculator returns a **raw subtotal before any user-level discount** — tier, membership or
 promo. The **express surcharge is already folded in**, because the surcharge is a property of the

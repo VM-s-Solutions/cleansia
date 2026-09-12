@@ -444,6 +444,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'currency.default_changed_concurrently',
   'currency.in_use',
   'currency.invalid',
+  // A market may not open while it earns no loyalty points, and an open one may not stop:
+  // AdminCurrencyController.ActivateCurrency and UpdateCurrency.
+  'currency.loyalty_divisor_missing',
   'currency.not_found',
   'currency.not_priced',
   'language.code_already_exists',
@@ -527,8 +530,11 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'payroll.invoice.not_approved',
   'payroll.invoice.not_found',
   // T-0708 — ApproveInvoice refuses when the cleaner's declared payout-account currency (or the
-  // platform default, when undeclared) is not the invoice's. AdminInvoiceController.ApproveInvoice.
+  // currency of their work country, when undeclared) is not the invoice's; and, judged first, when
+  // there is no usable payout record at all (ADR-0034 D7, gated at approval since 2026-09-12).
+  // AdminInvoiceController.ApproveInvoice.
   'payroll.invoice.payout_currency_mismatch',
+  'payroll.invoice.payout_details_missing',
   // cdd3133b — RegenerateInvoicePdf now RECORDS a failed render on the row instead of
   // clearing the flag it never set, so this key became reachable rather than theoretical.
   'payroll.invoice.pdf_generation_failed',

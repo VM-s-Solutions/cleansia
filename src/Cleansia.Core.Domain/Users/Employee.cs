@@ -28,8 +28,8 @@ public class Employee : Auditable, ITenantEntity
     /// every loader that loads an <see cref="Employee"/> at all.
     ///
     /// <para>Invariant: <c>HasPayoutDetails == (an EmployeePayoutDetails row exists for this employee)</c>.
-    /// It carries <i>presence</i>, never validity (D7) — real validation applies to writes and to payout
-    /// issuance, and never retroactively invalidates a profile.</para>
+    /// It carries <i>presence</i>, never validity (D7) — real validation applies to writes and to invoice
+    /// approval, and never retroactively invalidates a profile.</para>
     /// </summary>
     public bool HasPayoutDetails { get; private set; }
 

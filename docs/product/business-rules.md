@@ -306,7 +306,9 @@ customer surfaces know their market.
 fraction of the refund's net through the same divisor, so the two cannot disagree about what a unit of
 money is worth. The divisor is authored per currency by the admin on the currency form, like a price;
 CZK is seeded at **10** — the historical "1 point per 10 CZK". A currency with no divisor earns nothing
-and logs; it is never scaled from another currency's rate in either direction.
+and logs; it is never scaled from another currency's rate in either direction. Because an order completed
+in that state earns nothing permanently, a market cannot be switched on without a divisor and an active
+one cannot have it cleared (`currency.loyalty_divisor_missing`).
 
 **Tier floor — `LoyaltyTierConfig.MinimumOrderAmountForDiscount`.** Seeded at **1000** for every tier
 that has one. It is a platform-default-currency number, enforced only on an order in that currency; on

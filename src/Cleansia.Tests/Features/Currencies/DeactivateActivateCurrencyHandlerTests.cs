@@ -26,12 +26,13 @@ public class DeactivateActivateCurrencyHandlerTests
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IUserSessionProvider> _userSessionProvider = new();
 
-    private Currency ArrangeCurrency(bool isActive, bool isDefault = false)
+    private Currency ArrangeCurrency(bool isActive, bool isDefault = false, decimal? loyaltyPointsDivisor = 1m)
     {
         var currency = Currency.Create("EUR", "€", "Euro");
         currency.Id = CurrencyId;
         currency.IsActive = isActive;
         currency.SetAsDefault(isDefault);
+        currency.SetLoyaltyPointsDivisor(loyaltyPointsDivisor);
 
         _currencyRepository
             .Setup(r => r.GetByIdAsync(CurrencyId, It.IsAny<CancellationToken>()))
@@ -155,6 +156,52 @@ public class DeactivateActivateCurrencyHandlerTests
         Assert.True(currency.IsActive);
         _currencyRepository.Verify(
             r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// An order completed while the divisor is unset earns nothing, permanently -- the earn skips
+    /// before any ledger row is written and nothing re-fires it once the divisor is authored. So a
+    /// market may not open until it has an earn rate; the admin authors it on the currency form first.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0.0)]
+    [InlineData(-1.0)]
+    public async Task Activate_Refuses_A_Currency_With_No_Loyalty_Divisor(double? divisor)
+    {
+        ArrangeCurrency(isActive: false, loyaltyPointsDivisor: (decimal?)divisor);
+
+        var result = await new ActivateCurrency.Validator(_currencyRepository.Object)
+            .ValidateAsync(new ActivateCurrency.Command(CurrencyId));
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.CurrencyLoyaltyDivisorMissing, error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Activate_Accepts_Once_The_Divisor_Is_Authored()
+    {
+        ArrangeCurrency(isActive: false, loyaltyPointsDivisor: 0.4m);
+
+        var result = await new ActivateCurrency.Validator(_currencyRepository.Object)
+            .ValidateAsync(new ActivateCurrency.Command(CurrencyId));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Activate_Reports_An_Unknown_Currency_Before_Its_Divisor()
+    {
+        _currencyRepository
+            .Setup(r => r.ExistsAsync("missing", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await new ActivateCurrency.Validator(_currencyRepository.Object)
+            .ValidateAsync(new ActivateCurrency.Command("missing"));
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.CurrencyNotFound, error.ErrorMessage);
     }
 
     [Fact]

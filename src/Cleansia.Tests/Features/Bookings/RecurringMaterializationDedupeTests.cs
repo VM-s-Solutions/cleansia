@@ -276,7 +276,8 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             sp => new CurrencyResolutionService(
                 new EmployeeRepository(sp.GetRequiredService<CleansiaDbContext>()),
                 new CountryConfigurationRepository(sp.GetRequiredService<CleansiaDbContext>()),
-                sp.GetRequiredService<ICurrencyRepository>()));
+                sp.GetRequiredService<ICurrencyRepository>(),
+                NullLogger<CurrencyResolutionService>.Instance));
         services.AddScoped<IOrderRepository>(
             sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());

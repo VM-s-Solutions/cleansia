@@ -10,7 +10,9 @@ namespace Cleansia.Tests.Features.Currencies;
 /// A currency's loyalty divisor is optional -- null is "earns nothing yet" -- but when set it must be
 /// positive: zero is a division by zero and a negative is a negative earn, and a zero that slipped
 /// through would be treated as "no divisor" by the earn while the admin believes the currency is
-/// configured (T-0703).
+/// configured (T-0703). And an ACTIVE currency may not have its divisor cleared at all: activation
+/// refuses a currency without one, and clearing it afterwards would reopen the same hole -- every
+/// order completed in the window earns nothing, permanently.
 /// </summary>
 public class CurrencyLoyaltyDivisorValidationTests
 {
@@ -43,6 +45,55 @@ public class CurrencyLoyaltyDivisorValidationTests
             && e.ErrorMessage == BusinessErrorMessage.MustBePositive));
     }
 
+    [Fact]
+    public async Task Update_Refuses_Clearing_The_Divisor_On_An_Active_Currency()
+    {
+        ArrangeStored(isActive: true, divisor: 10m);
+        var command = new UpdateCurrency.Command(CurrencyId, "EUR", "€", "Euro", LoyaltyPointsDivisor: null);
+
+        var result = await new UpdateCurrency.Validator(_currencies.Object).ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.CurrencyLoyaltyDivisorMissing, error.ErrorMessage);
+        Assert.Equal(nameof(UpdateCurrency.Command.LoyaltyPointsDivisor), error.PropertyName);
+    }
+
+    [Fact]
+    public async Task Update_Allows_A_Null_Divisor_On_An_Inactive_Currency()
+    {
+        ArrangeStored(isActive: false, divisor: 10m);
+        var command = new UpdateCurrency.Command(CurrencyId, "EUR", "€", "Euro", LoyaltyPointsDivisor: null);
+
+        var result = await new UpdateCurrency.Validator(_currencies.Object).ValidateAsync(command);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Update_Allows_Changing_The_Divisor_On_An_Active_Currency()
+    {
+        ArrangeStored(isActive: true, divisor: 10m);
+        var command = new UpdateCurrency.Command(CurrencyId, "EUR", "€", "Euro", LoyaltyPointsDivisor: 25m);
+
+        var result = await new UpdateCurrency.Validator(_currencies.Object).ValidateAsync(command);
+
+        Assert.True(result.IsValid);
+    }
+
+    /// <summary>A non-positive value is refused for being non-positive; the active-market rule does not also fire.</summary>
+    [Fact]
+    public async Task Update_On_An_Active_Currency_Reports_A_Zero_Divisor_Once()
+    {
+        ArrangeStored(isActive: true, divisor: 10m);
+        var command = new UpdateCurrency.Command(CurrencyId, "EUR", "€", "Euro", LoyaltyPointsDivisor: 0m);
+
+        var result = await new UpdateCurrency.Validator(_currencies.Object).ValidateAsync(command);
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.MustBePositive, error.ErrorMessage);
+    }
+
     [Theory]
     [InlineData(0.0, false)]
     [InlineData(null, true)]
@@ -54,5 +105,14 @@ public class CurrencyLoyaltyDivisorValidationTests
         var result = await new CreateCurrency.Validator(_currencies.Object).ValidateAsync(command);
 
         Assert.Equal(valid, result.IsValid);
+    }
+
+    private void ArrangeStored(bool isActive, decimal? divisor)
+    {
+        var currency = Currency.Create("EUR", "€", "Euro");
+        currency.Id = CurrencyId;
+        currency.IsActive = isActive;
+        currency.SetLoyaltyPointsDivisor(divisor);
+        _currencies.Setup(r => r.GetByIdAsync(CurrencyId, It.IsAny<CancellationToken>())).ReturnsAsync(currency);
     }
 }

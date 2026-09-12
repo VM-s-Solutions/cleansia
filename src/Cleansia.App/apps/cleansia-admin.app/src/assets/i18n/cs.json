@@ -2523,7 +2523,8 @@
       "in_use": "Měnu nelze smazat, protože je aktuálně používána",
       "invalid": "Neplatná měna",
       "not_found": "Měna nenalezena",
-      "not_priced": "Katalog v této měně zatím nemá žádné ceny. Nejprve v ní naceňte alespoň jednu službu nebo balíček"
+      "not_priced": "Katalog v této měně zatím nemá žádné ceny. Nejprve v ní naceňte alespoň jednu službu nebo balíček",
+      "loyalty_divisor_missing": "Tato měna zatím nemá nastavený kurz věrnostních bodů. Než trh zapnete, nastavte ve formuláři měny, kolik z ní vynese jeden bod; zapnutý trh ho musí mít stále"
     },
     "device": {
       "invalid_platform": "Platforma musí být 'android' nebo 'ios'"
@@ -2700,6 +2701,7 @@
         "not_approved": "Fakturu je nutné nejprve schválit, teprve poté ji lze označit jako zaplacenou",
         "not_found": "Faktura nenalezena",
         "payout_currency_mismatch": "Výplatní účet uklízeče není nastaven pro příjem měny této faktury. Požádejte ho, aby před schválením aktualizoval své výplatní údaje.",
+        "payout_details_missing": "Uklízeč nemá uložené použitelné výplatní údaje, takže platbu za tuto fakturu není kam poslat. Požádejte ho, aby před schválením doplnil své výplatní údaje.",
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
         "reference_already_assigned": "Tato faktura již variabilní symbol má.",
         "reference_capacity_exhausted": "Variabilní symboly pro letošní rok jsou vyčerpány. Kontaktujte podporu.",

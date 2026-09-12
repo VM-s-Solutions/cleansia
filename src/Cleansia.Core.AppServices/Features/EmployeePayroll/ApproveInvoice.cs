@@ -41,6 +41,8 @@ public class ApproveInvoice
                 .WithMessage(BusinessErrorMessage.InvoiceNotFound)
                 .MustAsync(BePendingStatusAsync)
                 .WithMessage(BusinessErrorMessage.InvalidInvoiceStatus)
+                .MustAsync(PayoutDetailsAreUsableAsync)
+                .WithMessage(BusinessErrorMessage.InvoicePayoutDetailsMissing)
                 .MustAsync(PayoutAccountHoldsInvoiceCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvoicePayoutCurrencyMismatch);
 
@@ -56,25 +58,31 @@ public class ApproveInvoice
         }
 
         // Approval is the admin's commitment to transfer, and the transfer itself is keyed by hand in a
-        // bank, outside the platform -- so this is the last point where the platform can still say no
-        // (T-0708). MarkInvoicePaid is too late (the money has left) and generation is too early (it
-        // would withhold a sequence-numbered tax document). A cleaner is paid in the currency of the
-        // country they work in (owner ruling 2026-09-12: CZ is CZK, SK is EUR, PL is PLN -- never the
-        // platform default), so an account that has not declared a currency is taken to hold that one,
-        // resolved through the same work-country chain every partner screen uses. The declaration is
-        // the exception: an account that holds something other than its market's currency. A MISSING
-        // record is not this rule's concern: that is ADR-0034 D7's presence gate, and it is not built
-        // here.
+        // bank, outside the platform -- so this is the last point where the platform can still say no.
+        // MarkInvoicePaid is too late (the money has left) and generation is too early (it would
+        // withhold a sequence-numbered tax document). That reasoning put the currency rule here first,
+        // and it is why ADR-0034 D7's presence gate sits here too (correction of 2026-09-12) rather than
+        // at generation as the ADR was written: the document is always issued on time, only the
+        // payment waits until the cleaner has somewhere usable to receive it. Presence is judged before
+        // currency, so an absent record is never reported as a currency mismatch.
+        private async Task<bool> PayoutDetailsAreUsableAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            var payout = await _payoutDetailsRepository.GetByEmployeeIdAsync(invoice!.EmployeeId, cancellationToken);
+            return payout is { Scheme: not null, Status: PayoutDetailsStatus.Provided };
+        }
+
+        // A cleaner is paid in the currency of the country they work in (owner ruling 2026-09-12: CZ is
+        // CZK, SK is EUR, PL is PLN -- never the platform default), so an account that has not declared
+        // a currency is taken to hold that one, resolved through the same work-country chain every
+        // partner screen uses. The declaration is the exception: an account that holds something other
+        // than its market's currency. The record is present here: the presence rule ran first.
         private async Task<bool> PayoutAccountHoldsInvoiceCurrencyAsync(string invoiceId, CancellationToken cancellationToken)
         {
             var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
             var payout = await _payoutDetailsRepository.GetByEmployeeIdAsync(invoice!.EmployeeId, cancellationToken);
-            if (payout is null)
-            {
-                return true;
-            }
 
-            var accountCurrencyId = payout.CurrencyId
+            var accountCurrencyId = payout!.CurrencyId
                 ?? (await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(invoice.EmployeeId, cancellationToken)).Id;
 
             return accountCurrencyId == invoice.CurrencyId;

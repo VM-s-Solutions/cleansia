@@ -1,13 +1,15 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Services;
 
 public sealed class CurrencyResolutionService(
     IEmployeeRepository employeeRepository,
     ICountryConfigurationRepository countryConfigurationRepository,
-    ICurrencyRepository currencyRepository) : ICurrencyResolutionService
+    ICurrencyRepository currencyRepository,
+    ILogger<CurrencyResolutionService> logger) : ICurrencyResolutionService
 {
     public async Task<Currency> ResolveCurrencyForEmployeeAsync(
         string employeeId,
@@ -49,6 +51,15 @@ public sealed class CurrencyResolutionService(
                     return configured;
                 }
             }
+
+            // A cleaner is paid in the currency of the country they work in, never the platform
+            // default (owner ruling 2026-09-12) -- so a configured country landing here is a
+            // configuration defect, not a case. The fallback stays so no money screen or approval
+            // breaks, but it must be visible.
+            logger.LogError(
+                "Work country {CountryId} resolves to no currency (DefaultCurrencyCode {DefaultCurrencyCode}); falling back to the platform default",
+                countryId,
+                countryConfig?.DefaultCurrencyCode);
         }
 
         return await currencyRepository.GetDefaultAsync(cancellationToken);

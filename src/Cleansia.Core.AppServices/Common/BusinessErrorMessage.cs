@@ -48,6 +48,9 @@ public static class BusinessErrorMessage
     /// <summary>Promotion refused: the catalogue has no price rows in this currency, so making it the
     /// default would withhold every entry from every customer.</summary>
     public const string CurrencyNotPriced = "currency.not_priced";
+    /// <summary>A market cannot open, and an open one cannot stop, earning loyalty points: an order
+    /// completed while the divisor is unset earns nothing and nothing re-fires the grant later.</summary>
+    public const string CurrencyLoyaltyDivisorMissing = "currency.loyalty_divisor_missing";
     
     // Email
     public const string InvalidEmailFormat = "email.invalid_format";
@@ -277,6 +280,9 @@ public static class BusinessErrorMessage
     // T-0708 -- the cleaner's payout account does not hold the invoice's currency; raised at approval,
     // the last point before the owner keys a manual transfer.
     public const string InvoicePayoutCurrencyMismatch = "payroll.invoice.payout_currency_mismatch";
+    // ADR-0034 D7's presence gate, relocated to approval (correction of 2026-09-12): the record is
+    // absent, has no scheme, or is not Provided -- the transfer has nowhere usable to go.
+    public const string InvoicePayoutDetailsMissing = "payroll.invoice.payout_details_missing";
 
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";

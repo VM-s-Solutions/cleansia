@@ -57,11 +57,25 @@ public class UpdateCurrency
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            // Zero is a division by zero and a negative is a negative earn; null is "earns nothing yet".
+            // Zero is a division by zero and a negative is a negative earn; null is "earns nothing yet",
+            // which an open market may not become: ActivateCurrency refuses to open one without a
+            // divisor, and clearing it afterwards would reopen the same hole from the other side.
             RuleFor(x => x.LoyaltyPointsDivisor)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThan(0m)
                 .When(x => x.LoyaltyPointsDivisor.HasValue)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .MustAsync(async (command, divisor, ct) =>
+                {
+                    if (divisor.HasValue)
+                    {
+                        return true;
+                    }
+
+                    var currency = await currencyRepository.GetByIdAsync(command.CurrencyId, ct);
+                    return currency is null || !currency.IsActive;
+                })
+                .WithMessage(BusinessErrorMessage.CurrencyLoyaltyDivisorMissing);
         }
     }
 

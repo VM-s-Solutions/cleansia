@@ -14,7 +14,10 @@ namespace Cleansia.Core.AppServices.Features.Currencies;
 /// must price the currency (<c>MustCoverAllActiveCurrencies</c>), the booking path accepts it once
 /// anything is priced in it, and it becomes promotable on the same condition. It is NOT gated on
 /// prices -- an active, unpriced currency is simply not offerable, and the price rule is the forcing
-/// function that gets it priced. The last DeactivatedBy/DeactivatedOn trail is kept. Idempotent.</para>
+/// function that gets it priced. It IS gated on the loyalty divisor: an order completed while the
+/// divisor is unset earns nothing, permanently, and nothing re-fires the grant once it is authored, so
+/// a market may not open while it earns no points. The last DeactivatedBy/DeactivatedOn trail is
+/// kept. Idempotent.</para>
 /// </summary>
 public class ActivateCurrency
 {
@@ -31,7 +34,13 @@ public class ActivateCurrency
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(currencyRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.CurrencyNotFound);
+                .WithMessage(BusinessErrorMessage.CurrencyNotFound)
+                .MustAsync(async (id, ct) =>
+                {
+                    var currency = await currencyRepository.GetByIdAsync(id, ct);
+                    return currency is null || currency.LoyaltyPointsDivisor is > 0m;
+                })
+                .WithMessage(BusinessErrorMessage.CurrencyLoyaltyDivisorMissing);
         }
     }
 

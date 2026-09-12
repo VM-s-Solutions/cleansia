@@ -8,6 +8,7 @@ using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 
 namespace Cleansia.IntegrationTests.Features.Catalog;
@@ -178,7 +179,10 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
                 new ServiceRepository(ctx),
                 new ServicePriceRepository(ctx),
                 new CurrencyResolutionService(
-                    new EmployeeRepository(ctx), new CountryConfigurationRepository(ctx), new CurrencyRepository(ctx)),
+                    new EmployeeRepository(ctx),
+                    new CountryConfigurationRepository(ctx),
+                    new CurrencyRepository(ctx),
+                    NullLogger<CurrencyResolutionService>.Instance),
                 new EmployeePayConfigRepository(ctx))
             .Handle(new GetServiceOverview.Request(), CancellationToken.None);
 

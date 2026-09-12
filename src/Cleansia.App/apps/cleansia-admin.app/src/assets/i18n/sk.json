@@ -2523,7 +2523,8 @@
       "in_use": "Nie je možné odstrániť menu, pretože sa práve používa",
       "invalid": "Neplatná mena",
       "not_found": "Mena nebola nájdená",
-      "not_priced": "Katalóg v tejto mene zatiaľ nemá žiadne ceny. Najprv v nej naceňte aspoň jednu službu alebo balík"
+      "not_priced": "Katalóg v tejto mene zatiaľ nemá žiadne ceny. Najprv v nej naceňte aspoň jednu službu alebo balík",
+      "loyalty_divisor_missing": "Táto mena zatiaľ nemá nastavený kurz vernostných bodov. Skôr než trh zapnete, nastavte vo formulári meny, koľko z nej vynesie jeden bod; zapnutý trh ho musí mať stále"
     },
     "device": {
       "invalid_platform": "Platforma musí byť 'android' alebo 'ios'"
@@ -2700,6 +2701,7 @@
         "not_approved": "Faktúru je potrebné najskôr schváliť, až potom ju možno označiť ako zaplatenú",
         "not_found": "Faktúra nebola nájdená",
         "payout_currency_mismatch": "Výplatný účet upratovača nie je nastavený na príjem meny tejto faktúry. Požiadajte ho, aby pred schválením aktualizoval svoje výplatné údaje.",
+        "payout_details_missing": "Upratovač nemá uložené použiteľné výplatné údaje, takže platbu za túto faktúru nie je kam poslať. Požiadajte ho, aby pred schválením doplnil svoje výplatné údaje.",
         "pdf_generation_failed": "Nepodarilo sa vygenerovať PDF",
         "reference_already_assigned": "Táto faktúra už variabilný symbol má.",
         "reference_capacity_exhausted": "Variabilné symboly pre tento rok sú vyčerpané. Kontaktujte podporu.",

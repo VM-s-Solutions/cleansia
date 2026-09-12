@@ -30,7 +30,7 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
     public string EmployeeId { get; private set; } = default!;
     public Employee? Employee { get; private set; }
 
-    /// <summary>Null ⇒ unusable for payout: the issuance block refuses it (D7).</summary>
+    /// <summary>Null ⇒ unusable for payout: invoice approval refuses it (D7, gate at approval since 2026-09-12).</summary>
     public PayoutScheme? Scheme { get; private set; }
 
     /// <summary>
@@ -44,8 +44,8 @@ public class EmployeePayoutDetails : Auditable, ITenantEntity
     /// <summary>
     /// The currency the account HOLDS, by the cleaner's own statement. Declared, never derived: a bank's
     /// country does not decide it (a Czech bank sells EUR accounts) and the platform has no other source.
-    /// Null ⇒ not declared, which the approval gate reads as the platform default — the assumption every
-    /// destination was collected under before this column existed (T-0708).
+    /// Null ⇒ not declared, which the approval gate reads as the currency of the cleaner's work country
+    /// (owner ruling 2026-09-12: CZ is CZK, SK is EUR, PL is PLN — never the platform default).
     /// </summary>
     [MaxLength(26)]
     public string? CurrencyId { get; private set; }

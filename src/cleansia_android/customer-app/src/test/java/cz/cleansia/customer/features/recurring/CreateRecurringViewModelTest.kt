@@ -514,6 +514,67 @@ class CreateRecurringViewModelTest {
     }
 
     @Test
+    fun `the wizard opens on its first step and cannot step back`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(1, vm.step.value)
+        assertEquals(false, vm.canStepBack.value)
+    }
+
+    @Test
+    fun `stepping forward then back returns exactly one step`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+        assertEquals(3, vm.step.value)
+        assertEquals(true, vm.canStepBack.value)
+
+        vm.previousStep()
+        runCurrent()
+        assertEquals(2, vm.step.value)
+        assertEquals(true, vm.canStepBack.value)
+
+        vm.previousStep()
+        runCurrent()
+        assertEquals(1, vm.step.value)
+        assertEquals(false, vm.canStepBack.value)
+    }
+
+    @Test
+    fun `the steps are clamped at both ends`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.previousStep()
+        assertEquals(1, vm.step.value)
+
+        repeat(CreateRecurringViewModel.TOTAL_STEPS + 2) { vm.nextStep() }
+        assertEquals(CreateRecurringViewModel.TOTAL_STEPS, vm.step.value)
+    }
+
+    @Test
+    fun `the exposed address and catalogue flows mirror the repositories`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(emptyList<UserAddress>(), vm.savedAddresses.value)
+        assertEquals(emptyList<ServiceListItem>(), vm.services.value)
+        assertEquals(emptyList<PackageListItem>(), vm.packages.value)
+
+        addressesFlow.value = listOf(address("addr-1", countryId = null))
+        catalogServicesFlow.value = listOf(service("svc-1"))
+        catalogPackagesFlow.value = listOf(pkg("pkg-1"))
+        advanceUntilIdle()
+
+        assertEquals(listOf("addr-1"), vm.savedAddresses.value.map { it.serverId })
+        assertEquals(listOf("svc-1"), vm.services.value.map { it.id })
+        assertEquals(listOf("pkg-1"), vm.packages.value.map { it.id })
+    }
+
+    @Test
     fun `create mode never calls update`() = runTest {
         coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
 

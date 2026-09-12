@@ -10,7 +10,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.catalog.PackageListItem
+import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.AddressRepository
+import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
@@ -70,6 +73,19 @@ class CreateRecurringViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(CreateRecurringFormState())
     val state: StateFlow<CreateRecurringFormState> = _state.asStateFlow()
+
+    private val _step = MutableStateFlow(1)
+    val step: StateFlow<Int> = _step.asStateFlow()
+
+    val canStepBack: StateFlow<Boolean> = _step
+        .map { it > 1 }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val savedAddresses: StateFlow<List<UserAddress>> = addressRepo.addresses
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val services: StateFlow<List<ServiceListItem>> = catalogRepo.services
+    val packages: StateFlow<List<PackageListItem>> = catalogRepo.packages
 
     private val _submitState = MutableStateFlow<ActionState>(ActionState.Idle)
     val submitState: StateFlow<ActionState> = _submitState.asStateFlow()
@@ -131,6 +147,9 @@ class CreateRecurringViewModel @Inject constructor(
     }
     fun setPaymentType(t: Int) { _state.update { it.copy(paymentType = t) } }
     fun setStartsOn(iso: String) { _state.update { it.copy(startsOnIso = iso) } }
+
+    fun nextStep() { _step.update { (it + 1).coerceAtMost(TOTAL_STEPS) } }
+    fun previousStep() { _step.update { (it - 1).coerceAtLeast(1) } }
 
     // ─── Validation + submit ───
 
@@ -253,6 +272,10 @@ class CreateRecurringViewModel @Inject constructor(
             CoroutineScope(Dispatchers.Main.immediate).launch { catalogRepo.refresh(null) }
         }
         super.onCleared()
+    }
+
+    companion object {
+        const val TOTAL_STEPS = 3
     }
 
     // ─── Path C pre-fill ───

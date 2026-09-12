@@ -220,7 +220,12 @@ final class CreateRecurringViewModelTests: XCTestCase {
             services: [OrderFixtures.service(id: "s-1")],
             paymentType: Code(type: "PaymentType", name: nil, value: 2)
         ))]
-        let (vm, _) = makeVM(sourceOrderId: "ord-7", catalog: catalog, addressClient: addressClient, orderClient: orderClient)
+        let (vm, _) = makeVM(
+            sourceOrderId: "ord-7",
+            catalog: catalog,
+            addressClient: addressClient,
+            orderClient: orderClient
+        )
 
         await vm.load()
 
@@ -294,7 +299,12 @@ final class CreateRecurringViewModelTests: XCTestCase {
         ]
         let addressClient = FakeRecurringSavedAddressClient()
         addressClient.result = .success([RecurringFixtures.address(id: "addr-sk", countryId: "svk", isDefault: true)])
-        let (vm, _) = makeVM(sourceOrderId: "ord-7", catalog: catalog, addressClient: addressClient, orderClient: orderClient)
+        let (vm, _) = makeVM(
+            sourceOrderId: "ord-7",
+            catalog: catalog,
+            addressClient: addressClient,
+            orderClient: orderClient
+        )
         return vm
     }
 

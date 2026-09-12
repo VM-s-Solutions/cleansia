@@ -1,8 +1,8 @@
 import CleansiaCore
 import Foundation
 
-// The promo and referral code entry, split out of BookingViewModel.swift so the type body stays
-// under the lint ceiling; both read the quote and write the draft through the same `update`.
+/// The promo and referral code entry, split out of BookingViewModel.swift so the type body stays
+/// under the lint ceiling; both read the quote and write the draft through the same `update`.
 extension BookingViewModel {
     @discardableResult
     func validatePromoCode(_ rawCode: String) async -> PromoCodeState {

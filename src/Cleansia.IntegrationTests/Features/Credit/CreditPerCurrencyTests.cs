@@ -287,6 +287,85 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
         Assert.Equal(400m, accounts.Single(a => a.CurrencyId == czk).Balance);
     }
 
+    /// <summary>
+    /// A discharge drains the ONE account the admin named and leaves every other balance where it is.
+    /// The customer holds CZK and EUR; expiring EUR must empty the EUR account, write its Expired
+    /// ledger row there and nowhere else, and report the unit it took — a handler that still drained
+    /// "the funded account" would take the CZK 200 and fail the untouched assertion.
+    /// </summary>
+    [Fact]
+    public async Task ExpireCustomerCredit_Drains_Only_The_Currency_The_Admin_Named()
+    {
+        await ResetAsync();
+        var (userId, czk, eur) = await SeedAsync();
+        await GrantAsync(userId, czk, 200m, "grant-czk");
+        await GrantAsync(userId, eur, 50m, "grant-eur");
+
+        await using (var ctx = NewContext())
+        {
+            var result = await new ExpireCustomerCredit.Handler(
+                    new CreditAccountRepository(ctx),
+                    new CurrencyRepository(ctx),
+                    new TestUserSessionProvider(ActorId, "admin@cleansia.test"),
+                    new AuditContext())
+                .Handle(new ExpireCustomerCredit.Command(userId, eur, "customer is leaving", "req-expire-eur"),
+                    CancellationToken.None);
+            Assert.True(result.IsSuccess, $"ExpireCustomerCredit failed with: {result.Error?.Message}");
+            Assert.Equal(50m, result.Value!.AmountExpired);
+            Assert.Equal("EUR", result.Value.CurrencyCode);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await using var verify = NewContext();
+        var accounts = await verify.CreditAccounts.IgnoreQueryFilters()
+            .Include(a => a.Transactions)
+            .Where(a => a.UserId == userId)
+            .ToListAsync();
+
+        var eurAccount = accounts.Single(a => a.CurrencyId == eur);
+        var czkAccount = accounts.Single(a => a.CurrencyId == czk);
+        Assert.Equal(0m, eurAccount.Balance);
+        Assert.Equal(200m, czkAccount.Balance);
+        Assert.Single(eurAccount.Transactions, t => t.Reason == CreditTransactionReason.Expired && t.Amount == -50m);
+        Assert.DoesNotContain(czkAccount.Transactions, t => t.Reason == CreditTransactionReason.Expired);
+    }
+
+    /// <summary>
+    /// Naming a currency the customer holds nothing in is the no-op it always was: success with zero,
+    /// no ledger row, nothing else touched. The admin's intent — "nothing in EUR blocks anything" — is
+    /// already true.
+    /// </summary>
+    [Fact]
+    public async Task ExpireCustomerCredit_In_An_Unheld_Currency_Is_A_No_Op()
+    {
+        await ResetAsync();
+        var (userId, czk, eur) = await SeedAsync();
+        await GrantAsync(userId, czk, 200m, "grant-czk");
+
+        await using (var ctx = NewContext())
+        {
+            var result = await new ExpireCustomerCredit.Handler(
+                    new CreditAccountRepository(ctx),
+                    new CurrencyRepository(ctx),
+                    new TestUserSessionProvider(ActorId, "admin@cleansia.test"),
+                    new AuditContext())
+                .Handle(new ExpireCustomerCredit.Command(userId, eur, "nothing here", "req-expire-none"),
+                    CancellationToken.None);
+            Assert.True(result.IsSuccess);
+            Assert.Equal(0m, result.Value!.AmountExpired);
+            Assert.Equal("EUR", result.Value.CurrencyCode);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await using var verify = NewContext();
+        var accounts = await verify.CreditAccounts.IgnoreQueryFilters()
+            .Include(a => a.Transactions)
+            .Where(a => a.UserId == userId)
+            .ToListAsync();
+        Assert.Equal(200m, Assert.Single(accounts).Balance);
+        Assert.DoesNotContain(accounts[0].Transactions, t => t.Reason == CreditTransactionReason.Expired);
+    }
+
     // ── the read models ─────────────────────────────────────────────────────
 
     /// <summary>
@@ -368,9 +447,9 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
 
     /// <summary>
     /// THE ADMIN SCREEN, and the reason it matters more than the customer's: erasure is refused while
-    /// ANY balance is positive, and the discharge refuses outright when more than one is funded. An
-    /// admin looking at a single balance could be told erasure is blocked by money the screen never
-    /// showed them. Each account carries its OWN ledger, capped separately.
+    /// ANY balance is positive, and the discharge drains one named currency at a time. An admin looking
+    /// at a single balance could be told erasure is blocked by money the screen never showed them. Each
+    /// account carries its OWN ledger, capped separately, and its CurrencyId — what the discharge sends.
     /// </summary>
     [Fact]
     public async Task GetUserCredit_Reports_Every_Account_With_Its_Own_Ledger()
@@ -388,6 +467,7 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
         var response = result.Value!;
         Assert.True(response.HasAccount);
         Assert.Equal(["CZK", "EUR"], response.Accounts.Select(a => a.CurrencyCode));
+        Assert.Equal([czk, eur], response.Accounts.Select(a => a.CurrencyId));
         Assert.All(response.Accounts, a => Assert.Single(a.Ledger));
 
         Assert.Equal(response.Accounts[0].Balance, response.Balance);

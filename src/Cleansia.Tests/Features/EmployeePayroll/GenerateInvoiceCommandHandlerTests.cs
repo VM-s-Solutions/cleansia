@@ -1,10 +1,8 @@
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
-using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
-using Cleansia.TestUtilities.MockDataFactories.Currencies;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Moq;
 
@@ -21,28 +19,18 @@ public class GenerateInvoiceCommandHandlerTests
     private const string EmployeeId = PayrollMockFactory.EmployeeId;
     private const string PayPeriodId = PayrollMockFactory.PayPeriodId;
 
-    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
-    private readonly Mock<ICurrencyResolutionService> _currencyResolution = new();
     private readonly Mock<IEmployeeInvoiceRepository> _invoiceRepository = new();
     private readonly Mock<IOrderEmployeePayRepository> _orderPayRepository = new();
     private readonly Mock<IPayoutReferenceAllocator> _payoutReferenceAllocator = new();
 
-    private readonly Currency _currency = CurrencyMockFactory.Generate();
-
     public GenerateInvoiceCommandHandlerTests()
     {
-        _currency.Id = PayrollMockFactory.CurrencyId;
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_currency);
     }
 
     private GenerateInvoice.Handler CreateHandler() => new(
-        _currencyRepository.Object,
-        _currencyResolution.Object,
         _invoiceRepository.Object,
         _orderPayRepository.Object,
         _payoutReferenceAllocator.Object);

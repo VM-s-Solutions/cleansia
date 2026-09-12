@@ -29,6 +29,14 @@ public static class FileExtensions
         IReadOnlyList<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo,
         EmployeePayoutDetails? payoutDetails, string dateFormat = "dd.MM.yyyy")
     {
+        // A tax document in a guessed unit is a false one, not a degraded one. The caller records the
+        // exception as the invoice's render failure; it never prints CZK for a EUR invoice.
+        if (currency is null)
+        {
+            throw new InvalidOperationException(
+                $"Invoice {invoice.Id} has no resolved currency; refusing to render it in a default one");
+        }
+
         var supplier = employee.CreateSupplierData(payoutDetails);
         var vatAmount = countryContext?.VatWithinGross(invoice.TotalAmount, supplier.IsVatPayer) ?? 0m;
 
@@ -47,8 +55,8 @@ public static class FileExtensions
             DeductionAmount = invoice.DeductionAmount,
             VatAmount = vatAmount,
             TotalAmount = invoice.TotalAmount,
-            CurrencyCode = currency?.Code ?? Constants.Currency.Czk,
-            CurrencySymbol = currency?.Symbol ?? "Kč",
+            CurrencyCode = currency.Code,
+            CurrencySymbol = currency.Symbol,
             LineItems = orderPays.Select(op => new InvoiceLineItem
             {
                 OrderNumber = op.Order?.DisplayOrderNumber ?? "N/A",

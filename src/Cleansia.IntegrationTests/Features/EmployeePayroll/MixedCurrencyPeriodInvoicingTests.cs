@@ -79,6 +79,34 @@ public class MixedCurrencyPeriodInvoicingTests(PostgresContainerFixture fixture)
     }
 
     /// <summary>
+    /// The by-id load carries the invoice's currency, like every other loader in the repository. A
+    /// reader of <c>invoice.Currency.Code</c> after <c>GetByIdAsync</c> used to get an empty label.
+    /// </summary>
+    [Fact]
+    public async Task An_Invoice_Loaded_By_Id_Carries_Its_Currency()
+    {
+        await TestMethod(
+            arrange: SeedAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new GenerateInvoice.Command(_employeeId, _payPeriodId)),
+            assert: async (CleansiaDbContext context, BusinessResult<GenerateInvoice.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, $"GenerateInvoice failed with: {result.Error?.Message}");
+
+                var repository = new EmployeeInvoiceRepository(context);
+                var codes = new List<string?>();
+                foreach (var id in result.Value!.InvoiceIds)
+                {
+                    var loaded = await repository.GetByIdAsync(id, CancellationToken.None);
+                    codes.Add(loaded!.Currency?.Code);
+                }
+
+                Assert.Equal(["CZK", "EUR"], codes.Order());
+            },
+            transactional: false);
+    }
+
+    /// <summary>
     /// A second delivery of the same message is a no-op, not a duplicate: nothing is unassigned after a
     /// full run, so the "nothing to invoice" rule refuses it before any reference is claimed.
     /// </summary>

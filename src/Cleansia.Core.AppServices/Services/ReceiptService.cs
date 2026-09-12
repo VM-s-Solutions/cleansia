@@ -181,10 +181,9 @@ public sealed class ReceiptService(
 
         FiscalGoLiveGate.EnsureRegisterIdempotent(fiscalService, enforcementMode);
 
-        var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
-
         try
         {
+            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
             var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
 
             if (result.IsRegistered && result.FiscalCode != null)
@@ -207,7 +206,8 @@ public sealed class ReceiptService(
         }
         catch (Exception ex)
         {
-            // Never fail the receipt generation over a fiscal authority hiccup.
+            // Never fail the receipt generation over a fiscal authority hiccup, and never over a
+            // request the platform refused to build (an order without its currency lands here too).
             // The receipt is marked as failed so the retry job can pick it up later.
             receipt.MarkFiscalRegistrationFailed(fiscalService.ProviderKey, FiscalErrorKind.Unknown, ex.Message);
             logger.LogError(ex,
@@ -243,7 +243,7 @@ public sealed class ReceiptService(
             issuedAt: receipt.IssuedAt,
             totalAmount: order.TotalPrice,
             vatAmount: VatApplied(order) && order.VatAmount > 0 ? order.VatAmount : null,
-            currencyCode: order.Currency?.Code ?? Constants.Currency.Czk,
+            currencyCode: FiscalCurrencyCodeOf(order),
             companyLegalName: companyInfo.LegalName,
             companyRegistrationNumber: companyInfo.RegistrationNumber,
             companyVatNumber: companyInfo.VatNumber,
@@ -254,6 +254,14 @@ public sealed class ReceiptService(
             // must be registered with the fiscal authority as a cash sale.
             paymentMethod: order.ActualPaymentType.ToString(),
             countryCode: isoCode);
+
+    // A declaration to a tax authority in a guessed unit is a false one, not a degraded one. An order
+    // that reaches the register without its currency loaded is refused; the throw lands in the
+    // caller's failure recording, never in a registered CZK receipt for a EUR sale.
+    private static string FiscalCurrencyCodeOf(Order order) =>
+        order.Currency?.Code
+        ?? throw new InvalidOperationException(
+            $"Order {order.Id} has no resolved currency; refusing to register its receipt in a default one");
 
     private static IReadOnlyList<FiscalLineItem> BuildFiscalLineItems(Order order, decimal? vatRate)
     {
@@ -316,10 +324,9 @@ public sealed class ReceiptService(
         var isoCode = countryCode ?? "CZ";
         var fiscalService = fiscalServiceResolver.Resolve(isoCode);
 
-        var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
-
         try
         {
+            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
             var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
 
             if (result.IsRegistered && result.FiscalCode != null)

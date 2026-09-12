@@ -71,8 +71,6 @@ public class GenerateInvoice
     }
 
     public class Handler(
-        ICurrencyRepository currencyRepository,
-        ICurrencyResolutionService currencyResolutionService,
         IEmployeeInvoiceRepository invoiceRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         IPayoutReferenceAllocator payoutReferenceAllocator)

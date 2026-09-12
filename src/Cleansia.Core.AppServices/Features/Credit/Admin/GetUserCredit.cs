@@ -33,8 +33,8 @@ public class GetUserCredit
     /// <para>Credit is only spendable on an order in the SAME currency (owner ruling 2026-09-09), so
     /// "this customer's balance" stopped being a single number. It matters most on the two admin
     /// actions beside this screen: erasure is refused while ANY balance is positive, and the discharge
-    /// refuses outright when more than one is funded — so an admin looking at one balance could be told
-    /// erasure is blocked by money the screen never showed them.</para>
+    /// drains one named currency at a time — so an admin looking at one balance could be told erasure
+    /// is blocked by money the screen never showed them.</para>
     ///
     /// <para><b>Added beside the scalars rather than replacing them.</b> HasAccount, Balance,
     /// CurrencyCode and the flat Ledger are unchanged and still describe the largest account, and they
@@ -48,12 +48,16 @@ public class GetUserCredit
         IEnumerable<LedgerEntry> Ledger,
         IReadOnlyList<CurrencyAccount> Accounts);
 
-    /// <summary>One currency's account and its own ledger, capped the same way the flat one is.</summary>
+    /// <summary>
+    /// One currency's account and its own ledger, capped the same way the flat one is.
+    /// <paramref name="CurrencyId"/> is what the discharge command takes back.
+    /// </summary>
     public record CurrencyAccount(
         string AccountId,
         decimal Balance,
         string CurrencyCode,
-        IReadOnlyList<LedgerEntry> Ledger);
+        IReadOnlyList<LedgerEntry> Ledger,
+        string CurrencyId);
 
     /// <param name="Amount">Signed: positive was given, negative was spent.</param>
     /// <param name="Note">
@@ -127,7 +131,7 @@ public class GetUserCredit
             {
                 var currencyOf = await currencyRepository.GetByIdAsync(held.CurrencyId, cancellationToken);
                 perCurrency.Add(new CurrencyAccount(
-                    held.Id, held.Balance, currencyOf?.Code ?? string.Empty, LedgerOf(held)));
+                    held.Id, held.Balance, currencyOf?.Code ?? string.Empty, LedgerOf(held), held.CurrencyId));
             }
 
             var account = accounts.FirstOrDefault();

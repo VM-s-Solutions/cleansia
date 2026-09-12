@@ -339,6 +339,37 @@ public class PayoutInvoicePdfDataTests
         Assert.Null(Map(countryContext: context).LegalDisclaimer);
     }
 
+    // ── the unit on the document ─────────────────────────────────────
+
+    [Fact]
+    public void The_Document_Carries_The_Invoices_Own_Currency()
+    {
+        var eur = Currency.Create("EUR", "€", "Euro");
+
+        var data = Invoice().CreatePdfData(
+            Cleaner(), eur, [PayrollMockFactory.OrderPay(basePay: 100m)], null, Company(), null);
+
+        Assert.Equal("EUR", data.CurrencyCode);
+        Assert.Equal("€", data.CurrencySymbol);
+    }
+
+    /// <summary>
+    /// A payout invoice without a resolved currency is not rendered. It used to fall back to CZK, so
+    /// a EUR invoice loaded without its currency printed as crowns — a tax document in the wrong
+    /// unit, indistinguishable from a right one. The exception names the invoice so the recorded
+    /// render failure says which row to look at.
+    /// </summary>
+    [Fact]
+    public void A_Missing_Currency_Refuses_To_Render_Rather_Than_Print_Crowns()
+    {
+        var invoice = Invoice();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => invoice.CreatePdfData(
+            Cleaner(), null, [PayrollMockFactory.OrderPay(basePay: 100m)], null, Company(), null));
+
+        Assert.Contains(invoice.Id, ex.Message);
+    }
+
     // ── arrangement ──────────────────────────────────────────────────
 
     private static InvoicePdfData Map(

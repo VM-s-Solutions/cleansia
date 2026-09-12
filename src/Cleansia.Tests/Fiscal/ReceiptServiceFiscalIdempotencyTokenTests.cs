@@ -97,6 +97,13 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
         _fiscalServiceResolver.Object,
         NullLogger<ReceiptService>.Instance);
 
+    private static Currency Euro()
+    {
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "eur";
+        return eur;
+    }
+
     private static Order BuildOrder()
     {
         var address = Address.Create("Hauptstr. 2", "Berlin", "10115", CountryId);
@@ -112,6 +119,7 @@ public class ReceiptServiceFiscalIdempotencyTokenTests
             totalPrice: 1000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending);
+        order.SetCurrency(Euro());
         order.Id = "01HZX9N6M7Q8R9S0T1V2W3X4Y5";
         return order;
     }

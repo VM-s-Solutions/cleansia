@@ -2,8 +2,8 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
-using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
@@ -17,18 +17,17 @@ using Moq;
 namespace Cleansia.Tests.Fiscal;
 
 /// <summary>
-/// A card booking the cleaner settled in cash (its Stripe webhook never arrived) is legally a CASH
-/// sale. <see cref="Order.PaymentType"/> stays Card — it is the booking contract the refund path keys
-/// off — so the tender that reaches the fiscal authority and the receipt's payment label is the derived
-/// <see cref="Order.ActualPaymentType"/>. Registering such a sale as a card payment misstates the
-/// takings to the authority, which is exactly the class of error a fiscal regime exists to catch.
+/// A fiscal receipt is registered in the ORDER's currency, and an order that reaches the register
+/// without its currency loaded is refused — never registered in a guessed one. The old fallback
+/// declared a EUR sale to the authority as CZK; a tax declaration in the wrong unit is not a degraded
+/// receipt, it is a false one. The refusal lands on the receipt row as a recorded failure, the same
+/// place an unreachable authority lands, so nothing 500s and the retry job sees it.
 /// </summary>
-public class ActualTenderRoutingTests
+public class ReceiptServiceCurrencyFailClosedTests
 {
-    private const string CountryId = "de";
+    private const string DeId = "de";
     private const string LanguageCode = "en";
     private const string OrderId = "01HZX9N6M7Q8R9S0T1V2W3X4Y5";
-    private const string ReceiptNumber = "RCP-2026-0043";
 
     private readonly Mock<IPdfService> _pdfService = new();
     private readonly Mock<IOrderReceiptRepository> _receiptRepository = new();
@@ -39,16 +38,10 @@ public class ActualTenderRoutingTests
     private readonly Mock<ICountryConfigurationRepository> _countryConfigurationRepository = new();
     private readonly Mock<IBlobContainerClientFactory> _blobClientFactory = new();
     private readonly Mock<IFiscalServiceResolver> _fiscalServiceResolver = new();
-    private readonly RecordingFiscalProvider _provider = new();
+    private readonly CapturingFiscalService _provider = new();
 
-    private ReceiptPdfData? _pdfData;
-
-    public ActualTenderRoutingTests()
+    public ReceiptServiceCurrencyFailClosedTests()
     {
-        _languageRepository
-            .Setup(r => r.GetByCodeAsync(LanguageCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Language.Create(LanguageCode, "English"));
-
         var company = CompanyInfo.Create(
             legalName: "Cleansia GmbH",
             tradingName: "Cleansia",
@@ -56,51 +49,31 @@ public class ActualTenderRoutingTests
             street: "Hauptstr. 1",
             city: "Berlin",
             zipCode: "10115",
-            countryId: CountryId);
+            countryId: DeId);
         _companyInfoRepository
-            .Setup(r => r.GetActiveByCountryAsync(CountryId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveByCountryAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
         _companyInfoRepository
             .Setup(r => r.GetActiveCompanyInfoAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(company);
 
         _countryRepository
-            .Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdAsync(DeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Country.Create("Germany", "DE"));
-
         _countryConfigurationRepository
-            .Setup(r => r.GetByCountryIdAsync(CountryId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByCountryIdAsync(DeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CountryConfiguration
-                .Create(CountryId, "EUR", LanguageCode, standardVatRate: 19m)
-                .UpdateFiscalEnforcementMode(FiscalEnforcementMode.BlockingOnline));
+                .Create(DeId, "EUR", LanguageCode, standardVatRate: 19m)
+                .UpdateFiscalEnforcementMode(FiscalEnforcementMode.AsyncBackground));
 
         _fiscalServiceResolver.Setup(r => r.Resolve(It.IsAny<string>())).Returns(_provider);
 
         _pdfService
             .Setup(p => p.GenerateReceiptPdf(It.IsAny<ReceiptPdfData>(), It.IsAny<string?>()))
-            .Callback<ReceiptPdfData, string?>((data, _) => _pdfData = data)
             .Returns([1, 2, 3]);
-
         _blobClientFactory
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
             .Returns(new Mock<IBlobContainerClient>().Object);
-    }
-
-    [Theory]
-    [InlineData(PaymentType.Card, false, "Card")]
-    [InlineData(PaymentType.Card, true, "Cash")]
-    [InlineData(PaymentType.Cash, true, "Cash")]
-    public async Task Fiscal_Registration_And_Receipt_Label_Carry_The_Tender_Actually_Taken(
-        PaymentType bookedType, bool collectedInCash, string expectedTender)
-    {
-        var order = BuildOrder(bookedType, collectedInCash);
-
-        await CreateService().RealizeFiscalAndPdfAsync(
-            order, BuildReceipt(), LanguageCode, CancellationToken.None);
-
-        Assert.Equal(expectedTender, _provider.LastRequest!.PaymentMethod);
-        Assert.Equal(expectedTender, _pdfData!.PaymentType);
-        Assert.Equal(bookedType, order.PaymentType);
     }
 
     private ReceiptService CreateService() => new(
@@ -115,28 +88,26 @@ public class ActualTenderRoutingTests
         _fiscalServiceResolver.Object,
         NullLogger<ReceiptService>.Instance);
 
-    private static Order BuildOrder(PaymentType paymentType, bool collectedInCash)
+    private static Order BuildOrder(Currency? currency)
     {
+        var address = Address.Create("Hauptstr. 2", "Berlin", "10115", DeId);
         var order = Order.Create(
             customerName: "Test Customer",
             customerEmail: "customer@example.com",
             customerPhone: "+490000000000",
-            customerAddress: Address.Create("Hauptstr. 2", "Berlin", "10115", CountryId),
+            customerAddress: address,
             rooms: 1,
             bathrooms: 1,
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
-            paymentType: paymentType,
+            paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending);
-        order.SetCurrency(Euro());
         order.Id = OrderId;
-
-        if (collectedInCash)
+        if (currency is not null)
         {
-            order.MarkCashCollected("emp-1");
+            order.SetCurrency(currency);
         }
-
         return order;
     }
 
@@ -148,19 +119,69 @@ public class ActualTenderRoutingTests
     }
 
     private static OrderReceipt BuildReceipt() =>
-        OrderReceipt.Create(OrderId, ReceiptNumber, "receipt.pdf", "2026/ORD/receipt.pdf", LanguageCode);
+        OrderReceipt.Create(OrderId, "2026-000001", "receipt.pdf", "2026/ORD/receipt.pdf", LanguageCode);
 
-    private sealed class RecordingFiscalProvider : IFiscalService
+    [Fact]
+    public async Task The_Register_Carries_The_Orders_Own_Currency()
     {
+        var receipt = BuildReceipt();
+
+        await CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), receipt, LanguageCode, CancellationToken.None);
+
+        Assert.Equal("EUR", Assert.Single(_provider.Seen).CurrencyCode);
+        Assert.Equal("SIG-OK", receipt.FiscalCode);
+    }
+
+    [Fact]
+    public async Task An_Order_Without_Its_Currency_Is_Recorded_Failed_And_Never_Registered()
+    {
+        var receipt = BuildReceipt();
+
+        var ex = await Record.ExceptionAsync(() =>
+            CreateService().RealizeFiscalAndPdfAsync(BuildOrder(currency: null), receipt, LanguageCode, CancellationToken.None));
+
+        Assert.Null(ex);
+        Assert.Empty(_provider.Seen);
+        Assert.Null(receipt.FiscalCode);
+        Assert.True(receipt.FiscalRegistrationFailed);
+        Assert.Contains(OrderId, receipt.FiscalError);
+    }
+
+    [Fact]
+    public async Task The_Retry_Register_Carries_The_Orders_Own_Currency()
+    {
+        var receipt = BuildReceipt();
+
+        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(Euro()), CancellationToken.None);
+
+        Assert.True(succeeded);
+        Assert.Equal("EUR", Assert.Single(_provider.Seen).CurrencyCode);
+    }
+
+    [Fact]
+    public async Task A_Retry_On_An_Order_Without_Its_Currency_Is_Recorded_As_A_Failed_Attempt()
+    {
+        var receipt = BuildReceipt();
+
+        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(currency: null), CancellationToken.None);
+
+        Assert.False(succeeded);
+        Assert.Empty(_provider.Seen);
+        Assert.Equal(1, receipt.FiscalRetryCount);
+        Assert.Contains(OrderId, receipt.FiscalError);
+    }
+
+    private sealed class CapturingFiscalService : IFiscalService
+    {
+        public List<FiscalReceiptRequest> Seen { get; } = [];
         public string ProviderKey => "de-tse-test";
         public string CountryCode => "DE";
         public bool RegisterIsIdempotent => true;
-        public FiscalReceiptRequest? LastRequest { get; private set; }
 
         public Task<FiscalResult> RegisterReceiptAsync(FiscalReceiptRequest request, CancellationToken cancellationToken)
         {
-            LastRequest = request;
-            return Task.FromResult(FiscalResult.Success($"SIG-{request.IdempotencyKey}", request.IssuedAt.ToString("o")));
+            Seen.Add(request);
+            return Task.FromResult(FiscalResult.Success("SIG-OK", DateTime.UtcNow.ToString("o")));
         }
     }
 }

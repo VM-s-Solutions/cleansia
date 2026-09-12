@@ -36,6 +36,7 @@ public class RequestLogAdminFreeTextPathTests
         var json = JsonSerializer.Serialize(new IssueCustomerCredit.Command(
             UserId: "01USERCREDIT00000000000001",
             Amount: 500m,
+            CurrencyId: "01CURRENCYCZK0000000000001",
             Reason: CreditTransactionReason.Goodwill,
             Note: marker,
             RequestId: "req-1"));

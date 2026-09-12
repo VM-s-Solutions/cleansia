@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Credit.Admin;
 using Cleansia.Core.AppServices.Features.Credit;
 using Cleansia.Core.Domain.Credit;
@@ -248,6 +249,43 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
         Assert.Empty(spendables);
     }
 
+
+    // ── the write ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// An admin grant lands in the currency the COMMAND names, not in the platform default. The
+    /// customer already holds CZK — the default — so a handler that still resolved the default would
+    /// add 50 to the CZK balance and open nothing; this asserts the EUR account exists and carries
+    /// exactly the grant, and that the CZK balance is untouched.
+    /// </summary>
+    [Fact]
+    public async Task IssueCustomerCredit_Lands_In_The_Currency_The_Admin_Named()
+    {
+        await ResetAsync();
+        var (userId, czk, eur) = await SeedAsync();
+        await GrantAsync(userId, czk, 400m, "grant-czk");
+
+        await using (var ctx = NewContext())
+        {
+            var result = await new IssueCustomerCredit.Handler(
+                    new CreditAccountRepository(ctx),
+                    new TestUserSessionProvider(ActorId, "admin@cleansia.test"),
+                    new AuditContext())
+                .Handle(new IssueCustomerCredit.Command(
+                    userId, 50m, eur, CreditTransactionReason.Goodwill, "goodwill in euro", "req-eur"),
+                    CancellationToken.None);
+            Assert.True(result.IsSuccess, $"IssueCustomerCredit failed with: {result.Error?.Message}");
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await using var verify = NewContext();
+        var accounts = await verify.CreditAccounts.IgnoreQueryFilters()
+            .Where(a => a.UserId == userId)
+            .ToListAsync();
+        Assert.Equal(2, accounts.Count);
+        Assert.Equal(50m, accounts.Single(a => a.CurrencyId == eur).Balance);
+        Assert.Equal(400m, accounts.Single(a => a.CurrencyId == czk).Balance);
+    }
 
     // ── the read models ─────────────────────────────────────────────────────
 

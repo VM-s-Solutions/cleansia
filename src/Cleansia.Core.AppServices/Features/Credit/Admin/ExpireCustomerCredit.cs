@@ -98,10 +98,11 @@ public class ExpireCustomerCredit
             // the admin's confirmation AND in the audit record of money being destroyed. A number with
             // no unit is not a number.
             //
-            // So it REFUSES rather than guesses. Unreachable today, because every order is still forced
-            // to the platform default currency and nothing else opens an account; it becomes reachable
-            // in the same chunk that gives this screen a per-currency shape, and the refusal is what
-            // makes that a visible gap rather than a silent miscount.
+            // So it REFUSES rather than guesses. Reachable from the admin screen since IssueCustomerCredit
+            // names its currency: an admin can fund a second account beside the first. The refusal is
+            // what makes that a visible gap rather than a silent miscount; a per-currency discharge --
+            // a CurrencyId on this command -- is the follow-up, and until it lands a customer holding
+            // two funded balances cannot be discharged from here.
             if (funded.Count > 1)
             {
                 return BusinessResult.Failure<Response>(new Error(

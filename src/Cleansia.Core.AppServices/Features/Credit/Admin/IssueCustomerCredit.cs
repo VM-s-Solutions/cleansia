@@ -30,9 +30,17 @@ public class IssueCustomerCredit
     /// — the ledger's job is to record what an admin said they were compensating, and a dispute or an
     /// order can be erased under GDPR while the money movement must survive.</para>
     /// </summary>
+    /// <remarks>
+    /// <paramref name="CurrencyId"/> is REQUIRED and names the unit of <paramref name="Amount"/>. It
+    /// used to be resolved to the platform default inside the handler while the admin dialog labelled
+    /// the amount with the customer's largest balance's currency -- so the label and the write could
+    /// disagree the moment a customer held a non-default balance. The admin names it now, and the
+    /// grant lands in THAT currency's account, opening one if the customer has none in it.
+    /// </remarks>
     public record Command(
         string UserId,
         decimal Amount,
+        string CurrencyId,
         CreditTransactionReason Reason,
         string Note,
         string RequestId,
@@ -52,7 +60,7 @@ public class IssueCustomerCredit
         /// </summary>
         public const decimal SanityCap = 10_000m;
 
-        public Validator(IUserRepository userRepository)
+        public Validator(IUserRepository userRepository, ICurrencyRepository currencyRepository)
         {
             RuleFor(x => x.UserId)
                 .Cascade(CascadeMode.Stop)
@@ -72,6 +80,23 @@ public class IssueCustomerCredit
                 // never quite reconciles.
                 .Must(amount => decimal.Round(amount, 2) == amount)
                 .WithMessage(BusinessErrorMessage.CreditAmountNotWholeMinorUnits);
+
+            // The unit of the amount. Must exist and be ACTIVE: credit is spendable only on an order in
+            // the same currency, and an order can only be placed in a currency the platform operates
+            // in, so a grant in a switched-off one is money the customer could never spend. Same two
+            // keys, in the same order, as SetDefaultCurrency.
+            RuleFor(x => x.CurrencyId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(currencyRepository.ExistsAsync)
+                .WithMessage(BusinessErrorMessage.CurrencyNotFound)
+                .MustAsync(async (id, ct) =>
+                {
+                    var currency = await currencyRepository.GetByIdAsync(id, ct);
+                    return currency is not null && currency.IsActive;
+                })
+                .WithMessage(BusinessErrorMessage.InvalidCurrency);
 
             // Reason is server-owned and closed. An out-of-range int on the wire would otherwise be
             // written to the column verbatim and read back as an enum value that does not exist.
@@ -108,7 +133,6 @@ public class IssueCustomerCredit
 
     public class Handler(
         ICreditAccountRepository creditAccountRepository,
-        ICurrencyRepository currencyRepository,
         IUserSessionProvider userSessionProvider,
         IAuditContext auditContext) : ICommandHandler<Command, Response>
     {
@@ -116,14 +140,13 @@ public class IssueCustomerCredit
             Command command, CancellationToken cancellationToken)
         {
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
-            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
 
-            // Goodwill credit is denominated in the platform default, so it lands in the customer's
-            // DEFAULT-currency account -- opening one if their only balance is in another currency.
-            // The lookup gained that currency term silently (same signature, changed meaning): it
-            // previously returned whatever account existed and added a default-currency number to it.
+            // THE CURRENCY THE ADMIN NAMED, validated above as real and operated. The grant lands in
+            // that currency's account, opening one if the customer has none in it. The lookup is keyed
+            // on the currency on purpose: it previously returned whatever account existed and added a
+            // default-currency number to it, which is how a CZK refund could land on a EUR balance.
             var account = await creditAccountRepository.EnsureForUserAsync(
-                command.UserId, currency!.Id, cancellationToken);
+                command.UserId, command.CurrencyId, cancellationToken);
 
             var balanceBefore = account.Balance;
 

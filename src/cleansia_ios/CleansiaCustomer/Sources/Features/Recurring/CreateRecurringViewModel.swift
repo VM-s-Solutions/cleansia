@@ -57,8 +57,9 @@ extension UpdateRecurringInput {
 }
 
 enum CreateRecurringEvent: Equatable {
-    /// The picked address moved the schedule into a market where part of the selection is not
-    /// offered; the selection was cut down to what the reloaded catalogue still lists.
+    /// Part of the selection is not offered in the picked address's market — the address moved the
+    /// schedule there, or the order it was prefilled from was priced elsewhere; the selection was
+    /// cut down to what the catalogue for that market lists.
     case selectionPrunedForMarket
 }
 
@@ -133,7 +134,8 @@ final class CreateRecurringViewModel: ViewModel {
         savedAddresses.first { $0.id == formState.savedAddressId }?.countryId
     }
 
-    /// The addresses come first so the catalogue is read once, priced for the seeded address's market.
+    /// The addresses come first so the catalogue is read once, priced for the seeded address's market,
+    /// and the prefill last so the order's picks are pruned against that catalogue.
     func load() async {
         if case let .success(addresses) = await addressClient.getMine() {
             apply(addresses)
@@ -183,6 +185,12 @@ final class CreateRecurringViewModel: ViewModel {
             catalogCountryId = countryId
             pruneSelection(notListedIn: catalog)
         }
+    }
+
+    /// A market reload still in flight prunes when it lands; pruning against the catalogue it is
+    /// replacing would drop what the new market may well price.
+    private var isCatalogForSelectedMarket: Bool {
+        isCatalogLoaded && catalogCountryId == selectedCountryId
     }
 
     private func pruneSelection(notListedIn catalog: Catalog) {
@@ -322,6 +330,9 @@ final class CreateRecurringViewModel: ViewModel {
             state.dayOfWeek = RecurringTime.dotNetDayOfWeek(cleaningDate)
         }
         formState = state
+        if isCatalogForSelectedMarket {
+            pruneSelection(notListedIn: catalog)
+        }
     }
 }
 

@@ -105,7 +105,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
             statusCode: Code(type: "OrderStatus", name: nil, value: 5),
             rooms: 3,
             bathrooms: 2,
-            services: [OrderFixtures.service(id: "svc-prefill")],
+            services: [OrderFixtures.service(id: "s-1")],
             paymentType: Code(type: "PaymentType", name: nil, value: 2)
         )
         orderClient.detailResults = [.success(order)]
@@ -116,7 +116,71 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.formState.rooms, 3)
         XCTAssertEqual(vm.formState.bathrooms, 2)
         XCTAssertEqual(vm.formState.paymentType, 2)
-        XCTAssertTrue(vm.formState.selectedServiceIds.contains("svc-prefill"))
+        XCTAssertTrue(vm.formState.selectedServiceIds.contains("s-1"))
+    }
+
+    // MARK: - A prefilled selection is priced in the address's market, not the source order's
+
+    /// The order being repeated may have been priced for another market; what the seeded address's
+    /// catalogue does not list is dropped, and the screen is told, exactly as when the address moves.
+    func testAPrefilledPickTheMarketDoesNotOfferIsPrunedWithANotice() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.slovak))
+        let vm = prefilledFromOrder(
+            catalog: catalog,
+            services: [OrderFixtures.service(id: "s-1"), OrderFixtures.service(id: "s-2")],
+            packages: [OrderFixtures.package(id: "p-1")]
+        )
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+
+        await vm.load()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["svk"])
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(vm.formState.selectedPackageIds, [])
+        XCTAssertEqual(events, [.selectionPrunedForMarket])
+    }
+
+    func testAPrefilledPickTheMarketOffersSurvives() async {
+        let vm = prefilledFromOrder(
+            catalog: FakeCatalogClient(result: .success(CatalogFixtures.populated)),
+            services: [OrderFixtures.service(id: "s-2")],
+            packages: [OrderFixtures.package(id: "p-1")]
+        )
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-2"])
+        XCTAssertEqual(vm.formState.selectedPackageIds, ["p-1"])
+    }
+
+    func testAPrefilledSelectionTheMarketFullyOffersRaisesNoNotice() async {
+        let vm = prefilledFromOrder(
+            catalog: FakeCatalogClient(result: .success(CatalogFixtures.populated)),
+            services: [OrderFixtures.service(id: "s-1")]
+        )
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(events, [])
+    }
+
+    private func prefilledFromOrder(
+        catalog: FakeCatalogClient,
+        services: [CustomerOrderService] = [],
+        packages: [CustomerOrderPackage] = []
+    ) -> CreateRecurringViewModel {
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [
+            .success(OrderFixtures.detail(id: "ord-7", services: services, packages: packages))
+        ]
+        let addressClient = FakeRecurringSavedAddressClient()
+        addressClient.result = .success([RecurringFixtures.address(id: "addr-sk", countryId: "svk", isDefault: true)])
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", catalog: catalog, addressClient: addressClient, orderClient: orderClient)
+        return vm
     }
 
     // MARK: - Edit mode

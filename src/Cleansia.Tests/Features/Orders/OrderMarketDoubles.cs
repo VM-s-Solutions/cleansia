@@ -15,34 +15,51 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 internal static class OrderMarketDoubles
 {
-    /// <summary>Every country, and no country, resolves to <paramref name="currency"/>.</summary>
-    public static ICurrencyResolutionService Trading(Currency currency) => Trading(currency, []);
+    /// <summary>
+    /// A single-market platform: every country, and no country, resolves to <paramref name="currency"/>,
+    /// and every cleaner is paid in it.
+    /// </summary>
+    public static ICurrencyResolutionService Trading(Currency currency)
+    {
+        var mock = new Mock<ICurrencyResolutionService>();
+        mock.Setup(s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+        mock.Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+        return mock.Object;
+    }
 
     /// <summary>
-    /// The named countries trade in their own currency; every other country, and no country, falls to
-    /// <paramref name="fallback"/> — the platform default, as the production chain falls. Every cleaner
-    /// is paid in the fallback, so a suite that names a preferred cleaner keeps its single-market meaning.
+    /// The named countries trade in their own currency; no country is <paramref name="platformDefault"/>,
+    /// the customer wizard before an address is known. Any OTHER named country throws, as the production
+    /// resolver does for a country it cannot resolve (owner ruling 2026-09-12) -- a suite has to say which
+    /// market every address it books into trades in. Every cleaner is paid in the platform default's
+    /// market, so a suite that names a preferred cleaner keeps its single-market meaning.
     /// </summary>
     public static ICurrencyResolutionService Trading(
-        Currency fallback, params (string CountryId, Currency Currency)[] markets)
-        => TradingAndPaying(fallback, markets);
+        Currency platformDefault, params (string CountryId, Currency Currency)[] markets)
+        => TradingAndPaying(platformDefault, markets);
 
     /// <summary>
     /// <see cref="Trading(Currency, ValueTuple{string, Currency}[])"/>, and the named cleaners are paid in
     /// their own currency — the shape of a cleaner working in another market than the booking's.
     /// </summary>
     public static ICurrencyResolutionService TradingAndPaying(
-        Currency fallback,
+        Currency platformDefault,
         (string CountryId, Currency Currency)[] markets,
         params (string EmployeeId, Currency Currency)[] cleaners)
     {
         var mock = new Mock<ICurrencyResolutionService>();
         mock.Setup(s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string? countryId, CancellationToken _) =>
-                markets.FirstOrDefault(m => m.CountryId == countryId).Currency ?? fallback);
+                countryId is null
+                    ? platformDefault
+                    : markets.FirstOrDefault(m => m.CountryId == countryId).Currency
+                      ?? throw new InvalidOperationException(
+                          $"Country '{countryId}' has no default currency configured (DefaultCurrencyCode '')."));
         mock.Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string employeeId, CancellationToken _) =>
-                cleaners.FirstOrDefault(c => c.EmployeeId == employeeId).Currency ?? fallback);
+                cleaners.FirstOrDefault(c => c.EmployeeId == employeeId).Currency ?? platformDefault);
         return mock.Object;
     }
 

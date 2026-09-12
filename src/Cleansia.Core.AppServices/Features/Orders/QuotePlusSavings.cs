@@ -116,9 +116,25 @@ public static class QuotePlusSavings
                 .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum);
         }
 
-        private async Task<bool> CountryIsServicedAsync(Query query, CancellationToken cancellationToken)
-            => string.IsNullOrEmpty(query.CountryId)
-               || await _countryRepository.IsServicedAsync(query.CountryId, cancellationToken);
+        private const string CountryServicedKey = "quotePlusSavings.countryServiced";
+
+        /// <summary>
+        /// Cached for the same reason as in <c>QuoteOrder</c>: the item chains run first and the
+        /// resolver throws on a country it cannot resolve, so they yield to <c>CountryNotServiced</c>.
+        /// </summary>
+        private async Task<bool> CountryIsServicedAsync(
+            Query query, Query _, ValidationContext<Query> context, CancellationToken cancellationToken)
+        {
+            if (context.RootContextData.TryGetValue(CountryServicedKey, out var cached) && cached is bool serviced)
+            {
+                return serviced;
+            }
+
+            serviced = string.IsNullOrEmpty(query.CountryId)
+                       || await _countryRepository.IsServicedAsync(query.CountryId, cancellationToken);
+            context.RootContextData[CountryServicedKey] = serviced;
+            return serviced;
+        }
 
         /// <summary>
         /// The same cap QuoteOrder draws (ADR-0039 D3.4): a preview must not show savings on a basket the
@@ -156,7 +172,7 @@ public static class QuotePlusSavings
             CancellationToken cancellationToken)
         {
             var ids = serviceIds.Distinct().ToList();
-            if (ids.Count == 0)
+            if (ids.Count == 0 || !await CountryIsServicedAsync(query, query, context, cancellationToken))
             {
                 return true;
             }
@@ -174,7 +190,7 @@ public static class QuotePlusSavings
             CancellationToken cancellationToken)
         {
             var ids = packageIds.Distinct().ToList();
-            if (ids.Count == 0)
+            if (ids.Count == 0 || !await CountryIsServicedAsync(query, query, context, cancellationToken))
             {
                 return true;
             }

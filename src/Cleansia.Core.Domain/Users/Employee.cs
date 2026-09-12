@@ -188,8 +188,9 @@ public class Employee : Auditable, ITenantEntity
     /// <summary>
     /// Country the cleaner is approved to take work in; drives currency, language, VAT and pay defaults.
     /// <b>Distinct from nationality (passport) and address country (residency)</b> — an EU contractor may
-    /// be CZ-national, SK-resident and approved to work in CZ. Nullable until admin approves; resolution
-    /// falls back to global defaults while null.
+    /// be CZ-national, SK-resident and approved to work in CZ. Nullable until admin approves, and
+    /// approval requires it: a cleaner is paid in this country's currency and nothing is guessed while
+    /// it is null -- the currency resolver throws rather than fall back.
     /// </summary>
     public string? WorkCountryId { get; private set; }
     public Country? WorkCountry { get; private set; }

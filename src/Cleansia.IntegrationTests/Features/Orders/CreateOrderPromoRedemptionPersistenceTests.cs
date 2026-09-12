@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -142,6 +143,7 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
         var country = Country.Create("Czechia", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
 
         context.Add(ServiceCity.Create(CountryId, City));
 

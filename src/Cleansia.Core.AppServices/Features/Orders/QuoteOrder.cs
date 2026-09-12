@@ -198,9 +198,26 @@ public class QuoteOrder
                 .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum);
         }
 
-        private async Task<bool> CountryIsServicedAsync(Command command, CancellationToken cancellationToken)
-            => string.IsNullOrEmpty(command.CountryId)
-               || await _countryRepository.IsServicedAsync(command.CountryId, cancellationToken);
+        private const string CountryServicedKey = "quoteOrder.countryServiced";
+
+        /// <summary>
+        /// Cached on the context because the two item chains ask it before the chain that owns the
+        /// refusal does: the resolver throws on a country it cannot resolve, and an unserviced country
+        /// has no currency to ask for -- the item rules yield to <c>CountryNotServiced</c> instead.
+        /// </summary>
+        private async Task<bool> CountryIsServicedAsync(
+            Command command, Command _, ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            if (context.RootContextData.TryGetValue(CountryServicedKey, out var cached) && cached is bool serviced)
+            {
+                return serviced;
+            }
+
+            serviced = string.IsNullOrEmpty(command.CountryId)
+                       || await _countryRepository.IsServicedAsync(command.CountryId, cancellationToken);
+            context.RootContextData[CountryServicedKey] = serviced;
+            return serviced;
+        }
 
         private async Task<bool> CurrencyIsOfferableAsync(
             Command command,
@@ -220,7 +237,7 @@ public class QuoteOrder
             CancellationToken cancellationToken)
         {
             var ids = serviceIds.Distinct().ToList();
-            if (ids.Count == 0)
+            if (ids.Count == 0 || !await CountryIsServicedAsync(command, command, context, cancellationToken))
             {
                 return true;
             }
@@ -238,7 +255,7 @@ public class QuoteOrder
             CancellationToken cancellationToken)
         {
             var ids = packageIds.Distinct().ToList();
-            if (ids.Count == 0)
+            if (ids.Count == 0 || !await CountryIsServicedAsync(command, command, context, cancellationToken))
             {
                 return true;
             }

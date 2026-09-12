@@ -242,6 +242,40 @@ public class OrderAddressResolverTests
         Assert.Equal("sk", countryId);
     }
 
+    /// <summary>
+    /// An unserviced country is not a market: the currency resolver throws on a country it cannot
+    /// resolve, so the validator must never ask for one the platform does not operate in. Null here,
+    /// and ResolveAsync refuses the booking with CountryNotServiced.
+    /// </summary>
+    [Fact]
+    public async Task CountryOf_InlineAddress_NotServiced_IsNull()
+    {
+        _countryRepository
+            .Setup(r => r.IsServicedAsync("ar", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: "ar"));
+
+        var countryId = await CreateResolver().ResolveCountryIdAsync(command, UserId, CancellationToken.None);
+
+        Assert.Null(countryId);
+    }
+
+    [Fact]
+    public async Task CountryOf_SavedAddress_NotServicedAnyMore_IsNull()
+    {
+        _countryRepository
+            .Setup(r => r.IsServicedAsync("ar", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        ArrangeSavedAddress("saved-1", ownerUserId: UserId,
+            resolved: AddressMockFactory.Generate(new AddressMockFactory.AddressPartial { CountryId = "ar" }));
+        var command = CreateOrderTestData.ValidCommand(savedAddressId: "saved-1");
+
+        var countryId = await CreateResolver().ResolveCountryIdAsync(command, UserId, CancellationToken.None);
+
+        Assert.Null(countryId);
+    }
+
     [Fact]
     public async Task CountryOf_InlineAddress_NoCountry_SingleServiced_IsThatCountry()
     {

@@ -188,7 +188,7 @@ public class IssuePartialRefund
 
             logger.LogInformation(
                 "Admin partial refund issued for order {OrderId}: {Amount} {Currency} ({Reason}); windowOverridden={WindowOverridden}.",
-                order.Id, result.Amount, order.Currency.Code, command.Reason, windowOverridden);
+                order.Id, result.Amount, order.Currency?.Code, command.Reason, windowOverridden);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,
@@ -225,10 +225,11 @@ public class IssuePartialRefund
             // derives the order's currency from the address's country and refuses a mismatch, so on every
             // order created under that rule the two agree and the fee is deducted whole. The Equals guard
             // is the defence for legacy rows from before it, where the caller named the currency and
-            // nothing tied it to the address, and for a country whose configured code names no currency
-            // the platform has (the resolver then falls back to the default and logs): in both the fixed
-            // part is absorbed rather than deducted in the wrong unit, the same fail-open direction a null
-            // figure already takes. The rate is unit-free and still applies.
+            // nothing tied it to the address, and for a country whose configured code was changed after
+            // the order was priced (the resolver throws on a code naming no currency, so no order is ever
+            // created under one): in both the fixed part is absorbed rather than deducted in the wrong
+            // unit, the same fail-open direction a null figure already takes. The rate is unit-free and
+            // still applies.
             // → /product/business-rules#money-constants
             var fixedPart = string.Equals(
                 order.Currency?.Code, config.DefaultCurrencyCode, StringComparison.OrdinalIgnoreCase)

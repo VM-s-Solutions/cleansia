@@ -92,7 +92,7 @@ public class GetMyPendingOffers
                     o.Rooms,
                     o.Bathrooms,
                     o.TotalPrice,
-                    o.Currency.Code))
+                    o.Currency!.Code))
                 .ToListAsync(cancellationToken);
 
             return BusinessResult.Success<IReadOnlyList<PendingOfferItem>>(

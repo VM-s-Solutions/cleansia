@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -221,6 +222,7 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
         var country = Country.Create("Czechia", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.IsActive = true;

@@ -3,6 +3,7 @@ using System.Text.Json;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -210,6 +211,7 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
         var country = Country.Create("Czechia", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.IsActive = true;

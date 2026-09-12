@@ -29,6 +29,7 @@ public class RecurringMaterializationCurrencyTests
     private const string TemplateId = "template-currency-1";
     private const string UserId = "user-currency-1";
     private const string SavedAddressId = "saved-address-currency-1";
+    private const string Czechia = "country-cze";
     private const string Slovakia = "country-svk";
 
     private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
@@ -122,7 +123,7 @@ public class RecurringMaterializationCurrencyTests
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _addressRepository.Object,
-            OrderMarketDoubles.Trading(Czk, (Slovakia, Eur)),
+            OrderMarketDoubles.Trading(Czk, (Czechia, Czk), (Slovakia, Eur)),
             _orderRepository.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
@@ -155,7 +156,7 @@ public class RecurringMaterializationCurrencyTests
     [Fact]
     public async Task A_Template_On_A_Czech_Address_Materialises_Default_Currency_Orders()
     {
-        ArrangeTemplateAt("country-cze");
+        ArrangeTemplateAt(Czechia);
 
         var result = await CreateHandler().Handle(SweepCommand(), CancellationToken.None);
 

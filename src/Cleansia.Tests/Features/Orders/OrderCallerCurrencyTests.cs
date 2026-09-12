@@ -193,14 +193,34 @@ public class OrderCallerCurrencyTests
         _currencyRepository.Verify(r => r.IsOfferableAsync(Huf, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// The country rule owns this refusal and it is the ONLY one reported: the item rules run in their
+    /// own chains and yield rather than ask the resolver -- which throws on a country it cannot resolve
+    /// -- for the currency of a country the platform does not operate in.
+    /// </summary>
     [Fact]
     public async Task Quote_Refuses_A_Country_The_Platform_Does_Not_Service()
     {
         var result = await QuoteValidator().ValidateAsync(Quote(null, Argentina));
 
         Assert.False(result.IsValid);
-        var failure = Assert.Single(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CountryNotServiced);
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.CountryNotServiced, failure.ErrorMessage);
         Assert.Equal(nameof(QuoteOrder.Command.CountryId), failure.ErrorCode);
+        Mock.Get(_markets).Verify(
+            s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Quote_Refuses_A_Package_On_A_Country_The_Platform_Does_Not_Service_With_The_Country_Key_Only()
+    {
+        var command = new QuoteOrder.Command(
+            [], ["package-1"], Rooms: 2, Bathrooms: 1, CurrencyId: null, CountryId: Argentina);
+
+        var result = await QuoteValidator().ValidateAsync(command);
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.CountryNotServiced, failure.ErrorMessage);
     }
 
     [Fact]
@@ -347,6 +367,9 @@ public class OrderCallerCurrencyTests
         var result = await PlusValidator().ValidateAsync(PlusQuery(null, Argentina));
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CountryNotServiced);
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.CountryNotServiced, failure.ErrorMessage);
+        Mock.Get(_markets).Verify(
+            s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

@@ -6,7 +6,6 @@ using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
-using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -68,8 +67,8 @@ public class PreferredCleanerCurrencyGateTests
             .Setup(r => r.UserHasCompletedOrderWithEmployeeAsync(UserId, StrangerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _orderRepository
-            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CzkOrderOf(UserId));
+            .Setup(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OrderOwnerAndCurrency(UserId, Czk.Id));
         _savedAddressRepository
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([CzechSavedAddress()]);
@@ -166,12 +165,26 @@ public class PreferredCleanerCurrencyGateTests
     public async Task ChoosePreferredCleaner_Does_Not_Judge_The_Currency_Of_Another_Customers_Order()
     {
         _orderRepository
-            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CzkOrderOf("user-someone-else"));
+            .Setup(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OrderOwnerAndCurrency("user-someone-else", Czk.Id));
 
         var result = await ChooseValidator().ValidateAsync(new ChoosePreferredCleaner.Command(OrderId, EurCleanerId));
 
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    /// <summary>
+    /// The term reads two columns, not the order graph: the handler loads the order itself, so a
+    /// full load here was the same order materialised twice per request.
+    /// </summary>
+    [Fact]
+    public async Task ChoosePreferredCleaner_Reads_The_Orders_Owner_And_Currency_Without_Loading_It()
+    {
+        await ChooseValidator().ValidateAsync(new ChoosePreferredCleaner.Command(OrderId, EurCleanerId));
+
+        _orderRepository.Verify(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
+        _orderRepository.Verify(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _orderRepository.Verify(r => r.GetQueryable(), Times.Never);
     }
 
     // ---------------------------------------------------------------- CreateRecurringBooking
@@ -304,25 +317,6 @@ public class PreferredCleanerCurrencyGateTests
             StartsOn: DateTime.UtcNow.AddDays(3),
             EndsOn: null,
             PreferredEmployeeId: preferredEmployeeId);
-
-    private static Order CzkOrderOf(string userId)
-    {
-        var order = Order.Create(
-            customerName: "Gate Customer",
-            customerEmail: "gate@cleansia.test",
-            customerPhone: "+420777000111",
-            customerAddress: Address.Create("Dlouhá 12", "Praha", "11000", Czechia),
-            rooms: 2,
-            bathrooms: 1,
-            cleaningDateTime: DateTime.UtcNow.AddDays(2),
-            paymentType: PaymentType.Cash,
-            totalPrice: 1500m,
-            currencyId: Czk.Id,
-            paymentStatus: PaymentStatus.Pending,
-            userId: userId);
-        order.Id = OrderId;
-        return order;
-    }
 
     private static SavedAddress CzechSavedAddress()
     {

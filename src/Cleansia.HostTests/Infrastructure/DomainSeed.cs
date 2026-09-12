@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -47,6 +48,13 @@ public static class DomainSeed
         {
             ctx.Languages.Add(Language.Create(LanguageCode, "English"));
         }
+
+        // A cleaner is paid in the currency of the country they work in, and the resolver throws for a
+        // country with no configuration; every approved cleaner below works in this country.
+        if (!await ctx.CountryConfigurations.IgnoreQueryFilters().AnyAsync(c => c.CountryId == CountryId))
+        {
+            ctx.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
+        }
     }
 
     public static User Customer(string email, string? tenantId = null)
@@ -79,6 +87,7 @@ public static class DomainSeed
     public static Employee ApprovedEmployee(User user, string? tenantId = null)
     {
         var employee = BuildCompleteEmployee(user, tenantId);
+        employee.AssignWorkCountry(CountryId);
         employee.Approve(approvedByUserId: "admin-seed");
         return employee;
     }
@@ -102,6 +111,7 @@ public static class DomainSeed
     {
         var employee = BuildCompleteEmployee(user, tenantId);
         employee.ClearPayoutDetails();
+        employee.AssignWorkCountry(CountryId);
         employee.Approve(approvedByUserId: "admin-seed");
         return employee;
     }

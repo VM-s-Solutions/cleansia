@@ -149,7 +149,10 @@ public class CreateOrder
             // audience.
             // Both gates are asked IN THE ORDER'S CURRENCY -- the service address's country's -- because
             // the pay writer reads only rates denominated in it and the calculator reads only price rows
-            // in it. The resolution is the same the handler stamps the order with.
+            // in it. The resolution is the same the handler stamps the order with. They yield when the
+            // caller NAMED another market's currency: the currency rule below refuses that with its own
+            // key, and a second refusal in the address's currency would describe a market the caller
+            // never asked to book in.
             RuleFor(x => x.SelectedServiceIds)
                 .Cascade(CascadeMode.Stop)
                 .MustAsync(serviceRepository.ExistWithIdsAsync)
@@ -295,7 +298,8 @@ public class CreateOrder
             IEnumerable<string> serviceIds,
             ValidationContext<Command> context,
             CancellationToken cancellationToken) =>
-            (await PayCoverageLookup.FindSelectionGapsAsync(
+            await NamedCurrencyIsAnotherMarketsAsync(command, context, cancellationToken)
+            || (await PayCoverageLookup.FindSelectionGapsAsync(
                 _serviceRepository, _packageRepository, _payConfigRepository,
                 serviceIds, [], await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
                 cancellationToken)).Count == 0;
@@ -305,7 +309,8 @@ public class CreateOrder
             IEnumerable<string> packageIds,
             ValidationContext<Command> context,
             CancellationToken cancellationToken) =>
-            (await PayCoverageLookup.FindSelectionGapsAsync(
+            await NamedCurrencyIsAnotherMarketsAsync(command, context, cancellationToken)
+            || (await PayCoverageLookup.FindSelectionGapsAsync(
                 _serviceRepository, _packageRepository, _payConfigRepository,
                 [], packageIds, await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
                 cancellationToken)).Count == 0;
@@ -316,6 +321,11 @@ public class CreateOrder
             ValidationContext<Command> context,
             CancellationToken cancellationToken)
         {
+            if (await NamedCurrencyIsAnotherMarketsAsync(command, context, cancellationToken))
+            {
+                return true;
+            }
+
             var ids = serviceIds.Distinct().ToList();
             var prices = await CataloguePriceLookup.ForServicesAsync(
                 _servicePriceRepository, ids,
@@ -329,6 +339,11 @@ public class CreateOrder
             ValidationContext<Command> context,
             CancellationToken cancellationToken)
         {
+            if (await NamedCurrencyIsAnotherMarketsAsync(command, context, cancellationToken))
+            {
+                return true;
+            }
+
             var ids = packageIds.Distinct().ToList();
             var prices = await CataloguePriceLookup.ForPackagesAsync(
                 _packagePriceRepository, ids,
@@ -336,14 +351,20 @@ public class CreateOrder
             return ids.All(prices.ContainsKey);
         }
 
+        private async Task<bool> NamedCurrencyIsAnotherMarketsAsync(
+            Command command, ValidationContext<Command> context, CancellationToken cancellationToken)
+            => !await CurrencyMatchesAddressCountryAsync(command, command, context, cancellationToken);
+
         private const string OrderCurrencyIdKey = "createOrder.orderCurrencyId";
 
         /// <summary>
         /// THE ORDER'S CURRENCY IS THE SERVICE ADDRESS'S COUNTRY'S (owner ruling 2026-09-12) -- the same
         /// resolution the handler stamps the order with, cached on the validation context because six
         /// rules ask for it and each resolution is two reads. A country the command does not determine
-        /// (a missing or foreign saved row, no country in a multi-country platform) resolves to the
-        /// platform default here; the handler's address resolver refuses those with their own codes.
+        /// (a missing or foreign saved row, no country in a multi-country platform, a country the
+        /// platform does not service) resolves to the platform default here; the handler's address
+        /// resolver refuses those with their own codes. A serviced country resolves to its currency or
+        /// throws -- nothing is guessed for a named market.
         /// </summary>
         private async Task<string> ResolveOrderCurrencyIdAsync(
             Command command, ValidationContext<Command> context, CancellationToken cancellationToken)

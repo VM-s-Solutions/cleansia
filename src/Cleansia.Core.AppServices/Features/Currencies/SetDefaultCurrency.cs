@@ -98,7 +98,7 @@ public class SetDefaultCurrency
             //
             // The transaction is what keeps the window between the two flushes unobservable:
             // `GetDefaultAsync` throws when no default exists, and its production callers -- the pricing
-            // calculator, CurrencyResolutionService's fallback, the quote validators, the catalogue paging
+            // calculator, CurrencyResolutionService's no-country case, the quote validators, the catalogue paging
             // queries, promo validation, the credit queries, the two admin reports and CancelUnfilledOrders
             // -- would all fail on a durable zero-default gap, taking quoting and order creation down, not
             // just this screen. Both

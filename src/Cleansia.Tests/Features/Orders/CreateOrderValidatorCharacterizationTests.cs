@@ -383,6 +383,49 @@ public class CreateOrderValidatorCharacterizationTests
             && e.ErrorMessage == BusinessErrorMessage.InvalidSelectedPackage);
     }
 
+    /// <summary>
+    /// ONE TRUTH PER REQUEST. A CZK-priced selection named in CZK on a Slovak address is a currency
+    /// mismatch and nothing else: the item rules evaluate in the ADDRESS's currency, in which the
+    /// selection has no rows, and without yielding they reported a second refusal about a market the
+    /// caller never asked to book in. The client renders whichever error it reads first, so the
+    /// second one is not merely noise -- it can hide the one the caller can act on.
+    /// </summary>
+    [Fact]
+    public async Task A_Named_Currency_Of_Another_Market_Reports_Only_The_Currency_Error()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia))
+            with { CurrencyId = CreateOrderTestData.CurrencyId };
+
+        var result = await CreateValidator(servicePrices: PricedServices(Czk), packagePrices: PricedPackages(Czk))
+            .ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.InvalidCurrency, failure.ErrorMessage);
+        Assert.Equal(nameof(CreateOrder.Command.CurrencyId), failure.ErrorCode);
+    }
+
+    /// <summary>Anti-vacuity for the yield: named AND matching, the item rules still refuse an unpriced entry.</summary>
+    [Fact]
+    public async Task A_Named_Matching_Currency_Still_Refuses_An_Unpriced_Selection()
+    {
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia)) with { CurrencyId = Eur.Id };
+
+        var result = await CreateValidator(servicePrices: PricedServices(Czk), packagePrices: PricedPackages(Czk))
+            .ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidCurrency);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateOrder.Command.SelectedServiceIds)
+            && e.ErrorMessage == BusinessErrorMessage.InvalidSelectedServices);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateOrder.Command.SelectedPackageIds)
+            && e.ErrorMessage == BusinessErrorMessage.InvalidSelectedPackage);
+    }
+
     // ---------------------------------------------------------------- a promo the server will not honour
 
     private const string PromoCode = "SAVE10";

@@ -192,6 +192,14 @@ public interface IOrderRepository : IRepository<Order, string>
     Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct);
 
     /// <summary>
+    /// The order's owner and currency id, projected with no includes. For a validator term that only
+    /// has to know whether the caller's order is priced in a given currency -- a full
+    /// <c>GetByIdAsync</c> there loaded the order's whole graph a second time on the same request,
+    /// ahead of the handler's own load. Null when no such order is visible to the caller's tenant.
+    /// </summary>
+    Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The customer profile hero stats for <paramref name="userId"/> (T-0392):
     /// total bookings placed, total money saved (tier + promo + membership
     /// discounts summed over the user's non-cancelled orders), and the currency

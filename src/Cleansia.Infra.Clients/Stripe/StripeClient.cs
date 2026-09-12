@@ -57,7 +57,7 @@ public class StripeClient : IStripeClient
                 {
                     PriceData = new SessionLineItemPriceDataOptions
                     {
-                        Currency = order.Currency.Code.ToLower(),
+                        Currency = order.Currency!.Code.ToLower(),
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
                             Name = $"Cleaning Order #{order.Id}"

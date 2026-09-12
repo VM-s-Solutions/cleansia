@@ -206,7 +206,7 @@ public class Order : Auditable, ITenantEntity
     public string? AccessMode { get; private set; }
 
     public string CurrencyId { get; private set; }
-    public Currency Currency { get; private set; }
+    public Currency? Currency { get; private set; }
 
     public string? UserId { get; private set; }
     public User? User { get; private set; }

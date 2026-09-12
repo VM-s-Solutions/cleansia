@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
@@ -224,8 +225,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
             sp => new CurrencyResolutionService(
                 new EmployeeRepository(sp.GetRequiredService<CleansiaDbContext>()),
                 new CountryConfigurationRepository(sp.GetRequiredService<CleansiaDbContext>()),
-                sp.GetRequiredService<ICurrencyRepository>(),
-                NullLogger<CurrencyResolutionService>.Instance));
+                sp.GetRequiredService<ICurrencyRepository>()));
         services.AddScoped<IOrderRepository>(
             sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());
@@ -333,6 +333,13 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
         currency.Id = "currency-czk";
         currency.SetAsDefault(true);
         ctx.Set<Currency>().Add(currency);
+
+        // The service address's country must resolve to a real currency: a named country with no
+        // configuration throws rather than falling back to the default.
+        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        country.Id = "country-cz";
+        ctx.Set<Country>().Add(country);
+        ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create("country-cz", "CZK", "cs", 0.21m));
 
         foreach (var templateId in templateIds)
         {

@@ -1,67 +1,63 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Services;
 
 public sealed class CurrencyResolutionService(
     IEmployeeRepository employeeRepository,
     ICountryConfigurationRepository countryConfigurationRepository,
-    ICurrencyRepository currencyRepository,
-    ILogger<CurrencyResolutionService> logger) : ICurrencyResolutionService
+    ICurrencyRepository currencyRepository) : ICurrencyResolutionService
 {
     public async Task<Currency> ResolveCurrencyForEmployeeAsync(
         string employeeId,
         CancellationToken cancellationToken)
     {
-        var employee = await employeeRepository.GetByIdAsync(employeeId, cancellationToken);
-        return await ResolveCurrencyForCountryAsync(employee?.WorkCountryId, cancellationToken);
+        var employee = await employeeRepository.GetByIdAsync(employeeId, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Employee '{employeeId}' does not exist; no currency can be resolved for them.");
+
+        // A cleaner is paid in the currency of the country they work in, and ApproveEmployee is the
+        // only writer of Approved: it refuses without a serviced work country. So a cleaner with none
+        // has never worked and has no pay to label -- there is nothing to guess, and guessing the
+        // platform default would label money in a currency the cleaner is not paid in.
+        if (string.IsNullOrEmpty(employee.WorkCountryId))
+        {
+            throw new InvalidOperationException(
+                $"Employee '{employeeId}' has no work country; a cleaner is paid in the currency of the country they work in and there is nothing to fall back to.");
+        }
+
+        return await ResolveCurrencyForCountryAsync(employee.WorkCountryId, cancellationToken);
     }
 
     public async Task<Currency> ResolveCurrencyForCountryAsync(
         string? countryId,
         CancellationToken cancellationToken)
     {
-        if (countryId is not null)
+        if (countryId is null)
         {
-            var countryConfig = await countryConfigurationRepository
-                .GetByCountryIdAsync(countryId, cancellationToken);
-            // THE CODE HAS TO NAME A REAL CURRENCY. `CountryConfiguration.DefaultCurrencyCode` is
-            // free text with no FK -- three characters an admin types -- and this is its only reader,
-            // so an unrecognised value used to travel straight out to a DTO and label money in a
-            // currency the platform does not have. Resolving it here turns a typo, or a currency that
-            // was deleted after the country was configured, into the platform default rather than a
-            // dangling label.
-            //
-            // Deliberately NOT filtered on IsActive: EUR is seeded real-but-inactive, and a country
-            // configured for it should resolve to EUR the moment it is switched on rather than read
-            // as broken until then.
-            //
-            // The alternative -- a real FK on CountryConfiguration -- was weighed and is the wrong
-            // shape today: nothing in the platform WRITES this column (no admin command carries it,
-            // the seed authors it), so a schema constraint would guard a path that does not exist
-            // while the one path that does exist would still hand out whatever it read.
-            if (!string.IsNullOrWhiteSpace(countryConfig?.DefaultCurrencyCode))
-            {
-                var configured = await currencyRepository.GetByCodeAsync(
-                    countryConfig.DefaultCurrencyCode, cancellationToken);
-                if (configured is not null)
-                {
-                    return configured;
-                }
-            }
-
-            // A cleaner is paid in the currency of the country they work in, never the platform
-            // default (owner ruling 2026-09-12) -- so a configured country landing here is a
-            // configuration defect, not a case. The fallback stays so no money screen or approval
-            // breaks, but it must be visible.
-            logger.LogError(
-                "Work country {CountryId} resolves to no currency (DefaultCurrencyCode {DefaultCurrencyCode}); falling back to the platform default",
-                countryId,
-                countryConfig?.DefaultCurrencyCode);
+            return await currencyRepository.GetDefaultAsync(cancellationToken);
         }
 
-        return await currencyRepository.GetDefaultAsync(cancellationToken);
+        var countryConfig = await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
+
+        // A named country resolves to ITS currency or to nothing (owner ruling 2026-09-12, "throw
+        // instead 100%"): a country with no configuration, a blank code, or a code that names no
+        // Currency row is a configuration defect, and a defect that resolves to the platform default
+        // prices a booking or labels a cleaner's pay in the wrong unit while looking healthy.
+        // `DefaultCurrencyCode` is free text with no FK -- three characters the seed authors -- which
+        // is why the code is looked up here rather than trusted.
+        //
+        // Deliberately NOT filtered on IsActive: EUR is seeded real-but-inactive, and a country
+        // configured for it resolves to EUR; the offerability gate is a separate question.
+        if (string.IsNullOrWhiteSpace(countryConfig?.DefaultCurrencyCode))
+        {
+            throw new InvalidOperationException(
+                $"Country '{countryId}' has no default currency configured (DefaultCurrencyCode '{countryConfig?.DefaultCurrencyCode}').");
+        }
+
+        return await currencyRepository.GetByCodeAsync(countryConfig.DefaultCurrencyCode, cancellationToken)
+            ?? throw new InvalidOperationException(
+                $"Country '{countryId}' is configured for currency code '{countryConfig.DefaultCurrencyCode}', which names no Currency.");
     }
 }

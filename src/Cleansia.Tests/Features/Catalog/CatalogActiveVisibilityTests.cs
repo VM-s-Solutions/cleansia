@@ -12,7 +12,6 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.Tests.Features.Catalog;
 
@@ -35,7 +34,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
     public void Dispose() => _connection.Dispose();
 
     private static CurrencyResolutionService Markets(CleansiaDbContext ctx) =>
-        new(new EmployeeRepository(ctx), new CountryConfigurationRepository(ctx), new CurrencyRepository(ctx), NullLogger<CurrencyResolutionService>.Instance);
+        new(new EmployeeRepository(ctx), new CountryConfigurationRepository(ctx), new CurrencyRepository(ctx));
 
     private CleansiaDbContext NewContext()
     {

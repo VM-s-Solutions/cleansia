@@ -52,6 +52,7 @@ public class CataloguePriceCurrencyTests
     {
         _czk = Currency.Create("CZK", "Kc", "Czech koruna");
         _czk.Id = CzkId;
+        _czk.IsActive = true;
         _czk.SetAsDefault(true);
         // As seeded: CZK operated, EUR present but not yet switched on.
         _eur = Currency.Create("EUR", "E", "Euro");

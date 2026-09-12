@@ -1193,10 +1193,16 @@
         "load_error": "Failed to load currencies",
         "delete_success": "Currency deleted successfully",
         "delete_error": "Failed to delete currency",
-        "set_default_success": "Default currency updated"
+        "set_default_success": "Default currency updated",
+        "activate_success": "Currency switched on",
+        "deactivate_success": "Currency switched off"
       },
       "set_default": "Set as Default",
-      "set_default_confirm": "Set {{code}} as the default currency?"
+      "set_default_confirm": "Set {{code}} as the default currency?",
+      "activate": "Switch on",
+      "activate_confirm": "Switch on {{code}}? From now on every service and package must be priced in it before it can be saved.",
+      "deactivate": "Switch off",
+      "deactivate_confirm": "Switch off {{code}}? Customers will no longer be able to book in it. Existing orders, pay and invoices are not affected."
     },
     "currency_form": {
       "create_title": "Create Currency",
@@ -2448,11 +2454,13 @@
     },
     "currency": {
       "cannot_delete_default": "Cannot delete the default currency",
+      "cannot_deactivate_default": "The default currency cannot be switched off. Set another currency as the default first",
       "code_already_exists": "A currency with this code already exists",
       "default_changed_concurrently": "The default currency was changed by someone else. Refresh and try again",
       "in_use": "Cannot delete currency because it is currently in use",
       "invalid": "Invalid currency",
-      "not_found": "Currency not found"
+      "not_found": "Currency not found",
+      "not_priced": "The catalogue has no prices in this currency yet. Price at least one service or package in it first"
     },
     "device": {
       "invalid_platform": "Platform must be 'android' or 'ios'"

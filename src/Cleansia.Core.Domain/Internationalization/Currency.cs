@@ -24,6 +24,12 @@ public class Currency : Auditable
         Code = Canonical(code),
         Symbol = symbol,
         Name = name,
+        // BORN SWITCHED OFF. On a Currency, IsActive is the market switch, not the soft-delete flag it
+        // is elsewhere: the catalogue price rule reads it to decide which currencies every entry must
+        // be priced in, SetDefaultCurrency refuses to promote past it, and the booking path refuses a
+        // caller-named currency without it. A currency an admin has just created has no prices, so it
+        // is not operated until someone says so -- ActivateCurrency is the only writer of true.
+        IsActive = false,
     };
 
     public void Update(string code, string symbol, string name)

@@ -35,6 +35,7 @@ public static class DomainSeed
         if (!await ctx.Currencies.IgnoreQueryFilters().AnyAsync(c => c.Id == CurrencyId))
         {
             var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+            currency.IsActive = true;
             currency.Id = CurrencyId;
             ctx.Currencies.Add(currency);
         }

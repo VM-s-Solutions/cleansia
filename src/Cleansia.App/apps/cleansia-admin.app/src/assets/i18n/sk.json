@@ -1193,10 +1193,16 @@
         "load_error": "Nepodarilo sa načítať meny",
         "delete_success": "Mena bola úspešne odstránená",
         "delete_error": "Nepodarilo sa odstrániť menu",
-        "set_default_success": "Predvolená mena bola zmenená"
+        "set_default_success": "Predvolená mena bola zmenená",
+        "activate_success": "Mena bola zapnutá",
+        "deactivate_success": "Mena bola vypnutá"
       },
       "set_default": "Nastaviť ako predvolenú",
-      "set_default_confirm": "Nastaviť {{code}} ako predvolenú menu?"
+      "set_default_confirm": "Nastaviť {{code}} ako predvolenú menu?",
+      "activate": "Zapnúť",
+      "activate_confirm": "Zapnúť {{code}}? Odteraz musí mať každá služba a balík cenu v tejto mene, aby sa dali uložiť.",
+      "deactivate": "Vypnúť",
+      "deactivate_confirm": "Vypnúť {{code}}? Zákazníci v nej už nebudú môcť objednávať. Existujúce objednávky, výplaty a faktúry zostávajú bez zmeny."
     },
     "currency_form": {
       "create_title": "Vytvoriť menu",
@@ -2448,11 +2454,13 @@
     },
     "currency": {
       "cannot_delete_default": "Nie je možné odstrániť predvolenú menu",
+      "cannot_deactivate_default": "Predvolenú menu nie je možné vypnúť. Najprv nastavte ako predvolenú inú menu",
       "code_already_exists": "Mena s týmto kódom už existuje",
       "default_changed_concurrently": "Predvolenú menu medzitým zmenil niekto iný. Obnovte stránku a skúste to znova",
       "in_use": "Nie je možné odstrániť menu, pretože sa práve používa",
       "invalid": "Neplatná mena",
-      "not_found": "Mena nebola nájdená"
+      "not_found": "Mena nebola nájdená",
+      "not_priced": "Katalóg v tejto mene zatiaľ nemá žiadne ceny. Najprv v nej naceňte aspoň jednu službu alebo balík"
     },
     "device": {
       "invalid_platform": "Platforma musí byť 'android' alebo 'ios'"

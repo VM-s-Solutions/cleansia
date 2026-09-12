@@ -85,6 +85,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         ctx.Countries.Add(country);
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         ctx.Currencies.Add(currency);
 

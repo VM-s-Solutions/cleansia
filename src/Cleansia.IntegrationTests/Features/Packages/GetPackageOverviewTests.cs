@@ -26,6 +26,7 @@ public class GetPackageOverviewTests(PostgresContainerFixture fixture) : BaseInt
                 // its platform-wide pay config or the wizard withholds it and this asserts nothing.
                 // DEFAULT, and priced — see GetServiceOverviewTests for why both halves matter.
                 var currency = Currency.Create("CZK", "Kc", "Czech Koruna");
+                currency.IsActive = true;
                 currency.SetAsDefault(true);
                 currency.Created("system", DateTimeOffset.UtcNow);
                 context.Currencies.Add(currency);

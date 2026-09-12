@@ -62,6 +62,7 @@ public class CreditDebitTests(PostgresContainerFixture fixture) : BaseIntegratio
         await using var ctx = NewContext();
 
         var currency = Currency.Create("CZK", "Kc", "Czech koruna");
+        currency.IsActive = true;
         var user = User.CreateWithPassword(
             "credit-tests@cleansia.test", "Seed-Password-123", "Credit", "Tester");
         ctx.Languages.Add(Language.Create("en", "English"));

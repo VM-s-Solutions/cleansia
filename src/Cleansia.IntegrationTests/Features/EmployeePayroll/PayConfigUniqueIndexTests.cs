@@ -66,6 +66,7 @@ public class PayConfigUniqueIndexTests(PostgresContainerFixture fixture) : BaseI
     {
         await using var ctx = NewContext();
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         var category = ServiceCategory.Create("payconfig-cat", "Category", "seeded");
         var service = Service.Create(category.Id, "Pay Config Service", "seeded");
         ctx.Currencies.Add(currency);
@@ -171,6 +172,7 @@ public class PayConfigUniqueIndexTests(PostgresContainerFixture fixture) : BaseI
 
         await using var ctx = NewContext();
         var eur = Currency.Create("EUR", "E", "Euro");
+        eur.IsActive = true;
         ctx.Currencies.Add(eur);
         ctx.Set<EmployeePayConfig>().Add(ForService(employeeId: null));
         ctx.Set<EmployeePayConfig>().Add(EmployeePayConfig.CreateForService(

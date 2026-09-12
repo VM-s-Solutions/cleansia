@@ -152,6 +152,7 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
         context.Add(ServiceCity.Create(CountryId, City));
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);

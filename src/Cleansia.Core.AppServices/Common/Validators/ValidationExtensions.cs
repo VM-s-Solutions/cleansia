@@ -81,11 +81,11 @@ public static class ValidationExtensions
     /// missing key a client bug rather than a choice.</para>
     ///
     /// <para><b>An INACTIVE currency may be present, and is not required.</b> On a Currency,
-    /// <c>IsActive</c> is not the soft-delete flag it is elsewhere — <c>DeleteCurrency</c> hard-deletes,
-    /// and nothing else ever writes it false. It is the market switch: the DEV seed carries CZK active
-    /// and EUR inactive on purpose, and <c>SetDefaultCurrency</c> refuses to promote an inactive one so
-    /// the CZK catalogue can never be charged under another code. EUR becomes active in the same change
-    /// that gives it price rows, so pricing it BEFORE the flip is exactly the intended path and must be
+    /// <c>IsActive</c> is not the soft-delete flag it is elsewhere — <c>DeleteCurrency</c> hard-deletes.
+    /// It is the market switch: <c>Currency.Create</c> makes a row switched off,
+    /// <c>ActivateCurrency</c> and <c>DeactivateCurrency</c> flip it, and <c>SetDefaultCurrency</c>
+    /// refuses to promote an inactive or unpriced one so the CZK catalogue can never be charged under
+    /// another code. Pricing a currency BEFORE switching it on is exactly the intended path and must be
     /// allowed; requiring it before then would be the opposite of the rule above.</para>
     ///
     /// <para>Codes that name no currency at all are refused rather than dropped -- the handlers key

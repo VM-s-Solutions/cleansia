@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.AppServices.Features.Currencies;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
@@ -59,6 +60,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
     private static Currency Czk(bool isDefault = false)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.SetAsDefault(isDefault);
         return currency;
     }
@@ -66,6 +68,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
     private static Currency Eur(bool isDefault = false)
     {
         var currency = Currency.Create("EUR", "€", "Euro");
+        currency.IsActive = true;
         currency.SetAsDefault(isDefault);
         return currency;
     }
@@ -74,6 +77,26 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
     {
         await using var ctx = NewContext();
         ctx.Currencies.AddRange(currencies);
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// One priced service in each currency given. The promote handler refuses a currency the catalogue
+    /// has no rows in (an active, empty default would withhold every entry from every customer), so
+    /// the cases that promote through the REAL handler need their target priced -- the index
+    /// behaviour they exist to prove is downstream of that gate.
+    /// </summary>
+    private async Task PriceAsync(params Currency[] currencies)
+    {
+        await using var ctx = NewContext();
+        var category = ServiceCategory.Create("cat", "Category", "d");
+        var service = Service.Create(category.Id, "Service", "d", 60);
+        ctx.Add(category);
+        ctx.Add(service);
+        foreach (var currency in currencies)
+        {
+            ctx.Add(ServicePrice.Create(service.Id, currency.Id, 100m, 0m));
+        }
         await ctx.CommitAsync(CancellationToken.None);
     }
 
@@ -170,6 +193,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
 
         var eur = Eur();
         await SeedAsync(Czk(isDefault: true), eur);
+        await PriceAsync(eur);
 
         await using (var ctx = NewContext())
         {
@@ -278,6 +302,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
         var czk = Czk(isDefault: true);
         var eur = Eur();
         await SeedAsync(czk, eur);
+        await PriceAsync(czk, eur);
 
         foreach (var targetId in new[] { eur.Id, czk.Id })
         {

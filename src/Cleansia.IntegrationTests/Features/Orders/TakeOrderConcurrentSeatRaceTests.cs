@@ -132,6 +132,7 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
         if (currency is null)
         {
             currency = Currency.Create("CZK", "Kč", "Czech koruna");
+            currency.IsActive = true;
             currency.Id = Ulid.NewUlid().ToString();
             context.Currencies.Add(currency);
         }

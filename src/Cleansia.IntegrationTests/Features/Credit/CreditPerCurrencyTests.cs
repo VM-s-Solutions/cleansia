@@ -61,8 +61,10 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
         ctx.Languages.Add(Language.Create("en", "English"));
 
         var czk = Currency.Create("CZK", "Kc", "Czech koruna");
+        czk.IsActive = true;
         czk.SetAsDefault(true);
         var eur = Currency.Create("EUR", "E", "Euro");
+        eur.IsActive = true;
         ctx.Currencies.AddRange(czk, eur);
 
         var user = User.CreateWithPassword(

@@ -44,6 +44,10 @@ public static class BusinessErrorMessage
     public const string CurrencyDefaultChangedConcurrently = "currency.default_changed_concurrently";
     public const string CurrencyInUse = "currency.in_use";
     public const string CannotDeleteDefaultCurrency = "currency.cannot_delete_default";
+    public const string CannotDeactivateDefaultCurrency = "currency.cannot_deactivate_default";
+    /// <summary>Promotion refused: the catalogue has no price rows in this currency, so making it the
+    /// default would withhold every entry from every customer.</summary>
+    public const string CurrencyNotPriced = "currency.not_priced";
     
     // Email
     public const string InvalidEmailFormat = "email.invalid_format";

@@ -128,6 +128,7 @@ public class PreferredHoldVisibilityAgreementTests(PostgresContainerFixture fixt
         context.Countries.Add(country);
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);

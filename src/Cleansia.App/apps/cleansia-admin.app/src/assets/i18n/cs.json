@@ -1303,10 +1303,16 @@
         "load_error": "Nepodařilo se načíst měny",
         "delete_success": "Měna byla úspěšně smazána",
         "delete_error": "Nepodařilo se smazat měnu",
-        "set_default_success": "Výchozí měna byla změněna"
+        "set_default_success": "Výchozí měna byla změněna",
+        "activate_success": "Měna byla zapnuta",
+        "deactivate_success": "Měna byla vypnuta"
       },
       "set_default": "Nastavit jako výchozí",
-      "set_default_confirm": "Nastavit {{code}} jako výchozí měnu?"
+      "set_default_confirm": "Nastavit {{code}} jako výchozí měnu?",
+      "activate": "Zapnout",
+      "activate_confirm": "Zapnout {{code}}? Od této chvíle musí mít každá služba a balíček cenu v této měně, aby šly uložit.",
+      "deactivate": "Vypnout",
+      "deactivate_confirm": "Vypnout {{code}}? Zákazníci v ní už nebudou moci objednávat. Stávající objednávky, výplaty a faktury zůstávají beze změny."
     },
     "currency_form": {
       "create_title": "Vytvořit měnu",
@@ -2448,11 +2454,13 @@
     },
     "currency": {
       "cannot_delete_default": "Výchozí měnu nelze smazat",
+      "cannot_deactivate_default": "Výchozí měnu nelze vypnout. Nejprve nastavte jako výchozí jinou měnu",
       "code_already_exists": "Měna s tímto kódem již existuje",
       "default_changed_concurrently": "Výchozí měnu mezitím změnil někdo jiný. Obnovte stránku a zkuste to znovu",
       "in_use": "Měnu nelze smazat, protože je aktuálně používána",
       "invalid": "Neplatná měna",
-      "not_found": "Měna nenalezena"
+      "not_found": "Měna nenalezena",
+      "not_priced": "Katalog v této měně zatím nemá žádné ceny. Nejprve v ní naceňte alespoň jednu službu nebo balíček"
     },
     "device": {
       "invalid_platform": "Platforma musí být 'android' nebo 'ios'"

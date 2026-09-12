@@ -88,6 +88,7 @@ public class CatalogDeleteFkRestrictPostgresTests : IAsyncLifetime
         if (priced)
         {
             var currency = Currency.Create("CZK", "Kc", "Czech Koruna");
+            currency.IsActive = true;
             ctx.Currencies.Add(currency);
             ctx.ServicePrices.Add(ServicePrice.Create(service.Id, currency.Id, 500m, 150m));
         }

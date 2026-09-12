@@ -213,6 +213,7 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
         country.Id = CountryId;
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
 

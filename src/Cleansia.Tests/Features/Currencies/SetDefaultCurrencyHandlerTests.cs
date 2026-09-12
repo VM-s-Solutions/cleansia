@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Currencies;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
@@ -54,14 +55,23 @@ public class SetDefaultCurrencyHandlerTests
             .Callback(() => _flushes.Add((previousDefault.IsDefault, target.IsDefault)))
             .Returns(Task.CompletedTask);
 
-    private Currency ArrangeCurrency(string id, string code, bool isDefault = false)
+    /// <summary>
+    /// Operated AND priced by default -- the two halves of offerable -- because most cases here are
+    /// about the clear-then-promote ordering and need a promotable target. The gate cases switch one
+    /// half off deliberately.
+    /// </summary>
+    private Currency ArrangeCurrency(string id, string code, bool isDefault = false, bool priced = true)
     {
         var currency = Currency.Create(code, code, code);
         currency.Id = id;
+        currency.IsActive = true;
         currency.SetAsDefault(isDefault);
         _currencyRepository
             .Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
+        _currencyRepository
+            .Setup(r => r.IsOfferableAsync(id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(priced && currency.IsActive);
         return currency;
     }
 
@@ -74,11 +84,12 @@ public class SetDefaultCurrencyHandlerTests
     ///
     /// <para>This was introduced by the Wave A change that deleted the scaling, and <b>4410 passing
     /// tests did not see it</b> — the suite had no case where a non-default currency was promoted and
-    /// then priced against. It was found by an adversarial review of the commit. Wave B replaces the
-    /// <c>IsActive</c> condition with "has price rows in this currency".</para>
+    /// then priced against. It was found by an adversarial review of the commit. The gate is now TWO
+    /// halves: switched on, and priced. Each has its own case, because <c>IsActive</c> alone was
+    /// vacuous for any currency an admin could create.</para>
     /// </summary>
     [Fact]
-    public async Task SetDefault_RefusesAnInactiveCurrency_BecauseTheCatalogueIsNotPricedInIt()
+    public async Task SetDefault_RefusesAnInactiveCurrency()
     {
         var previousDefault = ArrangeCurrency("currency-czk", "CZK", isDefault: true);
         var target = ArrangeCurrency("currency-eur", "EUR");
@@ -89,8 +100,31 @@ public class SetDefaultCurrencyHandlerTests
             new SetDefaultCurrency.Command("currency-eur"), CancellationToken.None);
 
         Assert.False(result.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.InvalidCurrency, result.Error!.Message);
         Assert.False(target.IsDefault);
         Assert.True(previousDefault.IsDefault, "the existing default must survive a refused promotion");
+    }
+
+    /// <summary>
+    /// The half that was missing. An active currency with an empty catalogue, promoted, withholds every
+    /// entry from every customer -- and every currency an admin creates used to arrive active. Refused
+    /// with the key that tells the admin the one thing to do next: price something in it.
+    /// </summary>
+    [Fact]
+    public async Task SetDefault_RefusesAnActiveButUnpricedCurrency()
+    {
+        var previousDefault = ArrangeCurrency("currency-czk", "CZK", isDefault: true);
+        var target = ArrangeCurrency("currency-eur", "EUR", priced: false);
+        ArrangeClear(previousDefault);
+
+        var result = await CreateHandler().Handle(
+            new SetDefaultCurrency.Command("currency-eur"), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.CurrencyNotPriced, result.Error!.Message);
+        Assert.False(target.IsDefault);
+        Assert.True(previousDefault.IsDefault);
+        _currencyRepository.Verify(r => r.ClearDefaultAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>

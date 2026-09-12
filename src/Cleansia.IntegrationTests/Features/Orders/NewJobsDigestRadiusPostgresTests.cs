@@ -152,6 +152,7 @@ public class NewJobsDigestRadiusPostgresTests(PostgresContainerFixture fixture) 
         context.Countries.Add(foreignCountry);
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);

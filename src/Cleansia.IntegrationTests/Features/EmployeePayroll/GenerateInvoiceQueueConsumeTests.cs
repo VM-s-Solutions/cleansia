@@ -101,6 +101,7 @@ public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) 
         country.TenantId = TenantId;
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         currency.TenantId = TenantId;

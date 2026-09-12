@@ -56,21 +56,29 @@ public class SetDefaultCurrency
                 return BusinessResult.Success(new Response(currency.Id));
             }
 
-            // THE DEFAULT CURRENCY IS THE PRICING CURRENCY, so it may only ever be one the catalogue is
-            // actually priced in. Until per-currency price tables exist (Wave B) the catalogue carries a
-            // single unlabelled set of numbers, and the pricing calculator no longer scales them by an
-            // exchange rate — so promoting a second currency here would charge the CZK figures under its
-            // code. On the seeded basket that is roughly a 25x overcharge, on the card and on the fiscal
-            // receipt, from one star icon in Admin -> Currencies.
+            // THE DEFAULT IS WHAT EVERY QUOTE FALLS BACK TO, so it may only ever be a currency the
+            // platform sells in AND has something to sell in. Two halves, checked in that order so the
+            // admin is told which one is missing, and the same two halves the booking path checks a
+            // caller-named currency against -- ICurrencyRepository.IsOfferableAsync is the one
+            // definition, so the star and the quote cannot disagree about what "offerable" means.
             //
-            // `IsActive` is the gate, and this is its FIRST reader anywhere in the platform: no
-            // repository predicate, no query filter and no endpoint consulted it before. Wave B replaces
-            // the condition with "has price rows in this currency" and activates EUR in the same commit
-            // that gives it those rows.
+            // ACTIVE is the market switch. Currency.Create makes a row switched off and ActivateCurrency
+            // is the only writer of true; the catalogue price rule reads it to decide which currencies
+            // every entry must be priced in.
             if (!currency.IsActive)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.CurrencyId), BusinessErrorMessage.InvalidCurrency));
+            }
+
+            // PRICED is what stops an active currency with an empty catalogue becoming the default.
+            // Every customer overview fails closed on the price rows, so promoting one would withhold
+            // every entry from every customer until someone promoted the old default back. IsActive
+            // alone was vacuous here for any currency an admin could create, which is why this exists.
+            if (!await currencyRepository.IsOfferableAsync(currency.Id, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.CurrencyId), BusinessErrorMessage.CurrencyNotPriced));
             }
 
             // ORDERED, AND ATOMIC. `IX_Currencies_IsDefault_Unique` is a partial unique index, which

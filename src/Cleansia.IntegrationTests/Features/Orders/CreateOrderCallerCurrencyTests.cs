@@ -229,14 +229,18 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
 
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");
         czk.Id = Czk;
+        czk.IsActive = true;
         czk.SetAsDefault(true);
         var eur = Currency.Create("EUR", "€", "Euro");
         eur.Id = Eur;
+        eur.IsActive = true;
         var huf = Currency.Create("HUF", "Ft", "Forint");
         huf.Id = Huf;
+        huf.IsActive = true;
+        // Born switched off (Currency.Create), and left that way -- the case that proves the switch
+        // wins over the price rows.
         var pln = Currency.Create("PLN", "zł", "Złoty");
         pln.Id = Pln;
-        pln.IsActive = false;
         context.Currencies.AddRange(czk, eur, huf, pln);
 
         var category = ServiceCategory.Create("caller", "Caller", "Category under test");

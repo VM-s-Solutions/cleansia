@@ -13,8 +13,8 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var state = BookingState()
     @Published internal(set) var submitState: ActionState = .idle
     @Published internal(set) var quoteState: BookingQuoteState = .idle
-    @Published private(set) var promoState: PromoCodeState = .idle
-    @Published private(set) var referralState: ReferralCodeState = .idle
+    @Published internal(set) var promoState: PromoCodeState = .idle
+    @Published internal(set) var referralState: ReferralCodeState = .idle
     @Published private(set) var catalogState: UiState<Catalog> = .loading
     @Published private(set) var extrasState: UiState<[CatalogExtra]> = .loading
     @Published private(set) var membership: MembershipSnapshot?
@@ -28,8 +28,8 @@ final class BookingViewModel: ViewModel {
     let quoteClient: QuoteClient
     private let membershipClient: MembershipClient
     private let extraClient: ExtraClient
-    private let promoClient: PromoCodeClient
-    private let referralClient: ReferralClient
+    let promoClient: PromoCodeClient
+    let referralClient: ReferralClient
     let profileClient: ProfileClient
     let orderCreateClient: OrderCreateClient
     let paymentIntentClient: PaymentIntentClient
@@ -366,89 +366,6 @@ final class BookingViewModel: ViewModel {
                 next.selectedInstant = nil
                 return next
             }
-        }
-    }
-
-    @discardableResult
-    func validatePromoCode(_ rawCode: String) async -> PromoCodeState {
-        let normalized = rawCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if normalized.isEmpty {
-            promoState = .idle
-            return .idle
-        }
-        promoState = .validating
-        let quote = quoteState.quote
-        let subtotal = quote?.preSurchargeSubtotal ?? 0
-        let currencyId = quote.flatMap { $0.currencyId.isBlank ? nil : $0.currencyId }
-        let resolved: PromoCodeState = switch await promoClient.validate(
-            code: normalized,
-            orderSubtotal: subtotal,
-            currencyId: currencyId
-        ) {
-        case let .success(validation):
-            if validation.isValid, let discount = validation.discountAmount {
-                .valid(discountAmount: quote?.discountAsCharged(discount) ?? discount)
-            } else {
-                .invalid(PromoCodeError.from(validation.errorCode))
-            }
-        case .failure:
-            .invalid(nil)
-        }
-        promoState = resolved
-        if case .valid = resolved {
-            update { current in
-                var next = current
-                next.promoCode = normalized
-                return next
-            }
-        }
-        return resolved
-    }
-
-    @discardableResult
-    func validateReferralCode(_ rawCode: String) async -> ReferralCodeState {
-        let normalized = rawCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if normalized.isEmpty {
-            referralState = .idle
-            return .idle
-        }
-        referralState = .validating
-        let resolved: ReferralCodeState = switch await referralClient.validate(code: normalized) {
-        case let .success(validation):
-            if validation.isValid {
-                .valid(referrerFirstName: validation.referrerFirstName)
-            } else {
-                .invalid(ReferralValidationError.from(validation.errorCode))
-            }
-        case .failure:
-            .invalid(nil)
-        }
-        referralState = resolved
-        if case .valid = resolved {
-            update { current in
-                var next = current
-                next.referralCode = normalized
-                return next
-            }
-        }
-        return resolved
-    }
-
-    func clearPromoCode() {
-        promoState = .idle
-        update { current in
-            var next = current
-            next.promoCode = ""
-            return next
-        }
-    }
-
-    func clearReferralCode() {
-        referralState = .idle
-        update { current in
-            var next = current
-            next.referralCode = ""
-            return next
         }
     }
 

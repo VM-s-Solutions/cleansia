@@ -195,6 +195,44 @@ public class ReceiptServiceCurrencyFailClosedTests
         Assert.Contains(OrderId, receipt.FiscalError);
     }
 
+    /// <summary>
+    /// The regime is the country's. A receipt whose country row cannot be resolved used to be declared
+    /// to the Czech authority by default; it is refused on the same landing as a missing currency.
+    /// </summary>
+    [Fact]
+    public async Task An_Order_Whose_Country_Cannot_Be_Resolved_Is_Recorded_Failed_And_Never_Registered()
+    {
+        _countryRepository
+            .Setup(r => r.GetByIdAsync(DeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Country?)null);
+        var receipt = BuildReceipt();
+
+        var ex = await Record.ExceptionAsync(() =>
+            CreateService().RealizeFiscalAndPdfAsync(BuildOrder(Euro()), receipt, LanguageCode, CancellationToken.None));
+
+        Assert.Null(ex);
+        Assert.Empty(_provider.Seen);
+        Assert.Null(receipt.FiscalCode);
+        Assert.True(receipt.FiscalRegistrationFailed);
+        Assert.Contains(OrderId, receipt.FiscalError);
+    }
+
+    [Fact]
+    public async Task A_Retry_On_An_Order_Whose_Country_Cannot_Be_Resolved_Is_A_Failed_Attempt()
+    {
+        _countryRepository
+            .Setup(r => r.GetByIdAsync(DeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Country?)null);
+        var receipt = BuildReceipt();
+
+        var succeeded = await CreateService().RetryFiscalRegistrationAsync(receipt, BuildOrder(Euro()), CancellationToken.None);
+
+        Assert.False(succeeded);
+        Assert.Empty(_provider.Seen);
+        Assert.Equal(1, receipt.FiscalRetryCount);
+        Assert.Contains(OrderId, receipt.FiscalError);
+    }
+
     private sealed class CapturingFiscalService : IFiscalService
     {
         public List<FiscalReceiptRequest> Seen { get; } = [];

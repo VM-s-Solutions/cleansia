@@ -225,9 +225,11 @@ public class IssuePartialRefund
             // derives the order's currency from the address's country and refuses a mismatch, so on every
             // order created under that rule the two agree and the fee is deducted whole. The Equals guard
             // is the defence for legacy rows from before it, where the caller named the currency and
-            // nothing tied it to the address: there the fixed part is absorbed rather than deducted in the
-            // wrong unit, the same fail-open direction a null figure already takes. The rate is unit-free
-            // and still applies. → /product/business-rules#money-constants
+            // nothing tied it to the address, and for a country whose configured code names no currency
+            // the platform has (the resolver then falls back to the default and logs): in both the fixed
+            // part is absorbed rather than deducted in the wrong unit, the same fail-open direction a null
+            // figure already takes. The rate is unit-free and still applies.
+            // → /product/business-rules#money-constants
             var fixedPart = string.Equals(
                 order.Currency?.Code, config.DefaultCurrencyCode, StringComparison.OrdinalIgnoreCase)
                 ? fixedFee

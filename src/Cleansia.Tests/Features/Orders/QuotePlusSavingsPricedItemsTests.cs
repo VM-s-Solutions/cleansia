@@ -2,7 +2,10 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
+using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -44,6 +47,13 @@ public class QuotePlusSavingsPricedItemsTests
         _currencyRepository
             .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Czk);
+        // The span rule sums the catalogue; this suite asserts on prices, so it sums nothing.
+        _serviceRepository
+            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(Array.Empty<Service>().AsQueryable().BuildMock());
+        _packageRepository
+            .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
+            .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
     }
 
     private static Currency WithId(Currency currency, string id)

@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -52,6 +53,8 @@ public static class QuotePlusSavings
 
     public class Validator : AbstractValidator<Query>
     {
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IPackageRepository _packageRepository;
         private readonly ICurrencyRepository _currencyRepository;
         private readonly ICountryRepository _countryRepository;
         private readonly ICurrencyResolutionService _currencyResolutionService;
@@ -67,6 +70,8 @@ public static class QuotePlusSavings
             IServicePriceRepository servicePriceRepository,
             IPackagePriceRepository packagePriceRepository)
         {
+            _serviceRepository = serviceRepository;
+            _packageRepository = packageRepository;
             _currencyRepository = currencyRepository;
             _countryRepository = countryRepository;
             _currencyResolutionService = currencyResolutionService;
@@ -106,12 +111,32 @@ public static class QuotePlusSavings
                 .WithErrorCode(nameof(Query.CountryId))
                 .MustAsync(CurrencyIsOfferableAsync)
                 .WithMessage(BusinessErrorMessage.InvalidCurrency)
-                .WithErrorCode(nameof(Query.CurrencyId));
+                .WithErrorCode(nameof(Query.CurrencyId))
+                .MustAsync(SpanWithinCapAsync)
+                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum);
         }
 
         private async Task<bool> CountryIsServicedAsync(Query query, CancellationToken cancellationToken)
             => string.IsNullOrEmpty(query.CountryId)
                || await _countryRepository.IsServicedAsync(query.CountryId, cancellationToken);
+
+        /// <summary>
+        /// The same cap QuoteOrder draws (ADR-0039 D3.4): a preview must not show savings on a basket the
+        /// booking will refuse on span. An empty selection still previews, as it still quotes.
+        /// </summary>
+        private async Task<bool> SpanWithinCapAsync(Query query, CancellationToken cancellationToken)
+        {
+            var serviceMinutes = await _serviceRepository
+                .GetByIds(query.SelectedServiceIds)
+                .SumAsync(s => s.EstimatedTime, cancellationToken);
+
+            var packagedServiceMinutes = await _packageRepository
+                .GetByIds(query.SelectedPackageIds)
+                .SelectMany(p => p.IncludedServices)
+                .SumAsync(ps => ps.Service!.EstimatedTime, cancellationToken);
+
+            return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
+        }
 
         private async Task<bool> CurrencyIsOfferableAsync(
             Query query,

@@ -158,8 +158,9 @@ public sealed class ReceiptService(
         }
 
         var country = await countryRepository.GetByIdAsync(countryId, cancellationToken);
-        var isoCode = country?.IsoCode ?? "CZ";
-        return fiscalServiceResolver.Resolve(isoCode).ProviderKey;
+        // No ISO code, no regime: the empty key resolves to the default scope, never to the Czech one.
+        var isoCode = country?.IsoCode;
+        return isoCode is null ? string.Empty : fiscalServiceResolver.Resolve(isoCode).ProviderKey;
     }
 
     private async Task HandleFiscalAsync(
@@ -176,14 +177,15 @@ public sealed class ReceiptService(
             return;
         }
 
-        var isoCode = countryCode ?? "CZ";
-        var fiscalService = fiscalServiceResolver.Resolve(isoCode);
+        // An unresolved country resolves to the no-op provider, and the request below refuses to be
+        // built for it -- the same fail-closed landing as a missing currency, never the Czech regime.
+        var fiscalService = fiscalServiceResolver.Resolve(countryCode ?? string.Empty);
 
         FiscalGoLiveGate.EnsureRegisterIdempotent(fiscalService, enforcementMode);
 
         try
         {
-            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
+            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, countryCode));
             var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
 
             if (result.IsRegistered && result.FiscalCode != null)
@@ -263,6 +265,13 @@ public sealed class ReceiptService(
         ?? throw new InvalidOperationException(
             $"Order {order.Id} has no resolved currency; refusing to register its receipt in a default one");
 
+    // The regime is the country's, and a receipt whose country could not be resolved used to be declared
+    // to the Czech authority by default. Same refusal, same landing.
+    private static string FiscalCountryCodeOf(Order order, string? countryCode) =>
+        countryCode
+        ?? throw new InvalidOperationException(
+            $"Order {order.Id} has no resolved country; refusing to register its receipt under a default regime");
+
     private static IReadOnlyList<FiscalLineItem> BuildFiscalLineItems(Order order, decimal? vatRate)
     {
         var items = new List<FiscalLineItem>();
@@ -321,12 +330,11 @@ public sealed class ReceiptService(
             countryCode = country?.IsoCode;
         }
 
-        var isoCode = countryCode ?? "CZ";
-        var fiscalService = fiscalServiceResolver.Resolve(isoCode);
+        var fiscalService = fiscalServiceResolver.Resolve(countryCode ?? string.Empty);
 
         try
         {
-            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
+            var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, FiscalCountryCodeOf(order, countryCode));
             var result = await fiscalService.RegisterReceiptAsync(fiscalRequest, cancellationToken);
 
             if (result.IsRegistered && result.FiscalCode != null)

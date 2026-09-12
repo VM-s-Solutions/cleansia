@@ -54,6 +54,9 @@ export const CURRENCY_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
   'currency.not_found': 'api.currency.not_found',
   'currency.in_use': 'api.currency.in_use',
   'currency.cannot_delete_default': 'api.currency.cannot_delete_default',
+  'currency.cannot_deactivate_default': 'api.currency.cannot_deactivate_default',
+  'currency.invalid': 'api.currency.invalid',
+  'currency.not_priced': 'api.currency.not_priced',
 };
 
 export const CURRENCY_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
@@ -88,6 +91,8 @@ export function getCurrencyTableDefinition(
     onEdit: (row: AdminCurrencyListItem) => void;
     onDelete: (row: AdminCurrencyListItem) => void;
     onSetDefault: (row: AdminCurrencyListItem) => void;
+    onDeactivate: (row: AdminCurrencyListItem) => void;
+    onActivate: (row: AdminCurrencyListItem) => void;
   },
   translate: TranslateService,
   flagTemplate?: TemplateRef<AdminCurrencyListItem>
@@ -154,11 +159,29 @@ export function getCurrencyTableDefinition(
         onClick: (row: AdminCurrencyListItem) => defs.onEdit(row),
       },
       {
+        // Hidden on a row the server would refuse: SetDefaultCurrency will not promote a currency
+        // the platform does not sell in, so the star is offered only once the row is switched on.
         icon: 'pi pi-star',
         tooltip: translate.instant('pages.currency_management.set_default'),
         color: 'info',
         onClick: (row: AdminCurrencyListItem) => defs.onSetDefault(row),
-        visible: (row: AdminCurrencyListItem) => !row.isDefault,
+        visible: (row: AdminCurrencyListItem) => !row.isDefault && row.isActive,
+      },
+      {
+        // THE MARKET SWITCH. Off is hidden on the default row for the same reason delete is: the
+        // server refuses it, and an admin should not be offered a button that only ever says no.
+        icon: 'pi pi-ban',
+        tooltip: translate.instant('pages.currency_management.deactivate'),
+        color: 'danger',
+        visible: (row: AdminCurrencyListItem) => row.isActive && !row.isDefault,
+        onClick: (row: AdminCurrencyListItem) => defs.onDeactivate(row),
+      },
+      {
+        icon: 'pi pi-check-circle',
+        tooltip: translate.instant('pages.currency_management.activate'),
+        color: 'success',
+        visible: (row: AdminCurrencyListItem) => !row.isActive,
+        onClick: (row: AdminCurrencyListItem) => defs.onActivate(row),
       },
       {
         icon: 'pi pi-trash',

@@ -75,6 +75,58 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
       });
   }
 
+  deactivateCurrency(currency: AdminCurrencyListItem): void {
+    if (!currency.id) return;
+
+    this.adminClient.adminCurrencyClient
+      .deactivate(currency.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveCurrencyErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.currency_management.messages.deactivate_success'
+            )
+          );
+          this.loadCurrencies();
+        }
+      });
+  }
+
+  activateCurrency(currency: AdminCurrencyListItem): void {
+    if (!currency.id) return;
+
+    this.adminClient.adminCurrencyClient
+      .activate(currency.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveCurrencyErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.currency_management.messages.activate_success'
+            )
+          );
+          this.loadCurrencies();
+        }
+      });
+  }
+
   deleteCurrency(currency: AdminCurrencyListItem): void {
     if (!currency.id) return;
 

@@ -87,6 +87,8 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
         onEdit: this.editCurrency.bind(this),
         onDelete: this.confirmDeleteCurrency.bind(this),
         onSetDefault: this.confirmSetDefaultCurrency.bind(this),
+        onDeactivate: this.confirmDeactivateCurrency.bind(this),
+        onActivate: this.confirmActivateCurrency.bind(this),
       },
       this.translate,
       this.flagTemplate()
@@ -118,6 +120,34 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
       icon: 'pi pi-star',
       accept: () => {
         this.facade.setDefaultCurrency(currency);
+      },
+    });
+  }
+
+  confirmActivateCurrency(currency: AdminCurrencyListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.currency_management.activate_confirm',
+        { code: currency.code }
+      ),
+      header: this.translate.instant('pages.currency_management.activate'),
+      icon: 'pi pi-check-circle',
+      accept: () => {
+        this.facade.activateCurrency(currency);
+      },
+    });
+  }
+
+  confirmDeactivateCurrency(currency: AdminCurrencyListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.currency_management.deactivate_confirm',
+        { code: currency.code }
+      ),
+      header: this.translate.instant('pages.currency_management.deactivate'),
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.facade.deactivateCurrency(currency);
       },
     });
   }

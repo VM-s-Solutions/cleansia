@@ -10,6 +10,8 @@ describe('CurrencyManagementFacade', () => {
   let facade: CurrencyManagementFacade;
   let getOverviewMock: jest.Mock;
   let setDefaultMock: jest.Mock;
+  let deactivateMock: jest.Mock;
+  let activateMock: jest.Mock;
   let deleteMock: jest.Mock;
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
 
@@ -21,6 +23,8 @@ describe('CurrencyManagementFacade', () => {
   beforeEach(() => {
     getOverviewMock = jest.fn();
     setDefaultMock = jest.fn();
+    deactivateMock = jest.fn();
+    activateMock = jest.fn();
     deleteMock = jest.fn();
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
 
@@ -33,6 +37,8 @@ describe('CurrencyManagementFacade', () => {
             adminCurrencyClient: {
               getOverview: getOverviewMock,
               setDefault: setDefaultMock,
+              deactivate: deactivateMock,
+              activate: activateMock,
               delete: deleteMock,
             },
           },
@@ -114,5 +120,88 @@ describe('CurrencyManagementFacade', () => {
     expect(snackbar.showError).toHaveBeenCalledWith(
       'api.common.error_occurred'
     );
+  });
+
+  it('maps currency.invalid to its translation key on setDefault failure', () => {
+    setDefaultMock.mockReturnValue(
+      throwError(() => ({ result: { detail: 'currency.invalid' } }))
+    );
+
+    facade.setDefaultCurrency(currencies[1]);
+
+    expect(snackbar.showError).toHaveBeenCalledWith('api.currency.invalid');
+  });
+
+  it('maps currency.not_priced to its translation key on setDefault failure', () => {
+    setDefaultMock.mockReturnValue(
+      throwError(() => ({ result: { detail: 'currency.not_priced' } }))
+    );
+
+    facade.setDefaultCurrency(currencies[1]);
+
+    expect(snackbar.showError).toHaveBeenCalledWith('api.currency.not_priced');
+  });
+
+  it('switches a currency off, shows success and reloads the list', () => {
+    deactivateMock.mockReturnValue(of({ currencyId: 'cur-2' }));
+    getOverviewMock.mockReturnValue(of(currencies));
+
+    facade.deactivateCurrency(currencies[1]);
+
+    expect(deactivateMock).toHaveBeenCalledWith('cur-2');
+    expect(activateMock).not.toHaveBeenCalled();
+    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      'pages.currency_management.messages.deactivate_success'
+    );
+    expect(getOverviewMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('switches a currency on, shows success and reloads the list', () => {
+    activateMock.mockReturnValue(of({ currencyId: 'cur-2' }));
+    getOverviewMock.mockReturnValue(of(currencies));
+
+    facade.activateCurrency(currencies[1]);
+
+    expect(activateMock).toHaveBeenCalledWith('cur-2');
+    expect(deactivateMock).not.toHaveBeenCalled();
+    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      'pages.currency_management.messages.activate_success'
+    );
+    expect(getOverviewMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call deactivate or activate for a row without id', () => {
+    facade.deactivateCurrency(AdminCurrencyListItem.fromJS({}));
+    facade.activateCurrency(AdminCurrencyListItem.fromJS({}));
+
+    expect(deactivateMock).not.toHaveBeenCalled();
+    expect(activateMock).not.toHaveBeenCalled();
+  });
+
+  it('maps currency.cannot_deactivate_default to its translation key on deactivate failure', () => {
+    deactivateMock.mockReturnValue(
+      throwError(() => ({ result: { detail: 'currency.cannot_deactivate_default' } }))
+    );
+
+    facade.deactivateCurrency(currencies[0]);
+
+    expect(snackbar.showError).toHaveBeenCalledWith(
+      'api.currency.cannot_deactivate_default'
+    );
+    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(getOverviewMock).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the generic error for unknown codes on activate failure', () => {
+    activateMock.mockReturnValue(
+      throwError(() => ({ result: { detail: 'something.unknown' } }))
+    );
+
+    facade.activateCurrency(currencies[1]);
+
+    expect(snackbar.showError).toHaveBeenCalledWith(
+      'api.common.error_occurred'
+    );
+    expect(getOverviewMock).not.toHaveBeenCalled();
   });
 });

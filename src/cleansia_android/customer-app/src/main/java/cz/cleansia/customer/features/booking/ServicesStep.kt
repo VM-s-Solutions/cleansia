@@ -418,7 +418,7 @@ private fun PackageCard(
             Spacer(Modifier.weight(1f).heightIn(min = 4.dp))
 
             Text(
-                formatOrderPrice(pkg.price, currencyCode),
+                formatOrderPrice(pkg.price, pkg.currencyCode ?: currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.White,
             )
@@ -574,16 +574,17 @@ private fun ServiceRow(
                 )
             }
             Spacer(Modifier.height(8.dp))
+            val rowCurrency = service.currencyCode ?: currencyCode
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    stringResource(R.string.booking_price_from, formatOrderPrice(service.basePrice, currencyCode)),
+                    stringResource(R.string.booking_price_from, formatOrderPrice(service.basePrice, rowCurrency)),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.primary,
                 )
                 if (service.perRoomPrice > 0) {
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        stringResource(R.string.booking_price_per_room, formatOrderPrice(service.perRoomPrice, currencyCode)),
+                        stringResource(R.string.booking_price_per_room, formatOrderPrice(service.perRoomPrice, rowCurrency)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

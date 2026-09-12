@@ -26,6 +26,12 @@ data class QuoteOrderCommand(
      * surcharge applies for this slot.
      */
     val cleaningDate: String? = null,
+    /**
+     * The service address's country. The server prices the quote in that country's currency when
+     * [currencyId] is null, and refuses a selection with no price row in it. Null until the address
+     * step has yielded one — the platform default, exactly as before.
+     */
+    val countryId: String? = null,
 )
 
 @Serializable

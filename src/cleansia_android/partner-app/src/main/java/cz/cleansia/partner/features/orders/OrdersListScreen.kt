@@ -361,9 +361,7 @@ private fun AvailablePane(
     val filtered = remember(uiState.orders, uiState.searchQuery) {
         uiState.orders.filter { it.matchesSearch(uiState.searchQuery) }
     }
-    val totalEarnings = remember(filtered) {
-        filtered.sumOf { (it.estimatedCleanerPay ?: 0.0) }
-    }
+    val totalEarnings = remember(filtered) { formatEarningsTotal(filtered) }
     // The "hot deal" badge highlights the single highest-paying offer in
     // the currently visible list. We hide it when the list is trivially
     // short (<2) so we don't decorate the only card on screen.
@@ -397,7 +395,6 @@ private fun AvailablePane(
             AvailableSummaryRow(
                 count = filtered.size,
                 totalEarnings = totalEarnings,
-                currencySymbol = commonCurrencySymbol(filtered),
                 currentSort = uiState.availableSort,
                 onSortSelected = onSortSelected,
             )
@@ -424,8 +421,7 @@ private fun AvailablePane(
 @Composable
 private fun AvailableSummaryRow(
     count: Int,
-    totalEarnings: Double,
-    currencySymbol: String?,
+    totalEarnings: String,
     currentSort: AvailableSort,
     onSortSelected: (AvailableSort) -> Unit,
 ) {
@@ -435,7 +431,7 @@ private fun AvailableSummaryRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = stringResource(R.string.available_summary, count, formatMoney(totalEarnings, currencySymbol)),
+            text = stringResource(R.string.available_summary, count, totalEarnings),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -913,9 +909,7 @@ private fun HistoryPane(
     val grouped = remember(uiState.orders) {
         uiState.orders.groupBy { it.cleaningLocalDate() }.toSortedMap(compareByDescending { it })
     }
-    val totalEarnings = remember(uiState.orders) {
-        uiState.orders.sumOf { (it.estimatedCleanerPay ?: 0.0) }
-    }
+    val totalEarnings = remember(uiState.orders) { formatEarningsTotal(uiState.orders) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -931,7 +925,6 @@ private fun HistoryPane(
         item {
             HistorySummaryCard(
                 totalEarnings = totalEarnings,
-                currencySymbol = commonCurrencySymbol(uiState.orders),
                 jobCount = uiState.orders.size,
             )
         }
@@ -993,8 +986,7 @@ private fun PeriodFilterRow(
 
 @Composable
 private fun HistorySummaryCard(
-    totalEarnings: Double,
-    currencySymbol: String?,
+    totalEarnings: String,
     jobCount: Int,
 ) {
     Surface(
@@ -1013,7 +1005,7 @@ private fun HistorySummaryCard(
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SummaryStat(label = stringResource(R.string.earnings), value = formatMoney(totalEarnings, currencySymbol))
+            SummaryStat(label = stringResource(R.string.earnings), value = totalEarnings)
             SummaryStat(label = stringResource(R.string.jobs), value = jobCount.toString())
         }
     }
@@ -1143,16 +1135,6 @@ private fun EmptyInline(text: String) {
 }
 
 // ─── Formatters ─────────────────────────────────────────────────────
-
-private fun formatMoney(amount: Double, currencySymbol: String?): String {
-    val rounded = amount.roundToInt()
-    val whole = rounded.toString().reversed().chunked(3).joinToString(" ").reversed()
-    val sym = currencySymbol?.trim().orEmpty()
-    return if (sym.isEmpty()) whole else "$whole $sym"
-}
-
-private fun commonCurrencySymbol(orders: List<OrderListItem>): String? =
-    orders.mapNotNull { it.currency?.symbol }.distinct().singleOrNull()
 
 private fun formatDistance(km: Double): String = when {
     km < 1.0 -> String.format(Locale.getDefault(), "%.1f", km)

@@ -131,7 +131,6 @@
 
     <string name="home_hero2_top">Весна вже тут</string>
     <string name="home_hero2_title">Глибоке прибирання + вікна разом</string>
-    <string name="home_hero2_cta">Економія 450 CZK</string>
 
     <string name="home_hero3_top">Запросіть друга</string>
     <string name="home_hero3_title">Подаруйте бонус, отримайте додаток безкоштовно</string>
@@ -180,13 +179,10 @@
     <string name="home_services_see_all">Показати всі</string>
 
     <string name="home_service_household_name">Домашнє</string>
-    <string name="home_service_household_price">599 CZK</string>
 
     <string name="home_service_upholstery_name">Оббивка</string>
-    <string name="home_service_upholstery_price">799 CZK</string>
 
     <string name="home_service_windows_name">Вікна</string>
-    <string name="home_service_windows_price">299 CZK</string>
 
     <!-- Home — promo carousel -->
     <string name="home_promo_title">Для вас</string>
@@ -809,13 +805,12 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Кращий спосіб тримати дім чистим</string>
-    <string name="membership_plus_price_per_month">199 Kč / місяць</string>
     <string name="membership_subscribe_cta">Спробувати Cleansia Plus</string>
     <string name="membership_disclosure">Можна скасувати будь-коли. Підписка автоматично продовжується до скасування.</string>
 
     <!-- Plus subscribe page redesign -->
     <string name="membership_hero_headline">Почніть економити вже сьогодні</string>
-    <string name="membership_hero_trial_price">0 Kč / перші %1$d днів</string>
+    <string name="membership_hero_trial_price">%1$s / перші %2$d днів</string>
     <string name="membership_hero_then_price">потім %1$s / місяць</string>
     <string name="membership_hero_then_price_year">потім %1$s / рік</string>
     <string name="membership_social_proof_headline">Як працює знижка для учасників</string>
@@ -1066,6 +1061,7 @@
     <string name="order_action_report_issue">Повідомити про проблему</string>
     <string name="order_action_rebook">Замовити знову</string>
     <string name="order_rebook_unavailable_items">Деякі позиції з вашого попереднього замовлення більше не доступні.</string>
+    <string name="booking_market_items_unavailable">Деякі вибрані позиції за цією адресою не пропонуються, тому їх вилучено.</string>
 
     <!-- Dispute list -->
     <string name="dispute_list_title">Мої спори</string>
@@ -1137,13 +1133,9 @@
     <string name="loyalty_tier_status_locked">Заблоковано</string>
     <string name="loyalty_threshold_points">%1$d б.</string>
     <string name="loyalty_discount_basic">%1$d%% знижка на всі бронювання</string>
-    <string name="loyalty_discount_min_order">%1$d%% знижка на замовлення ≥%2$d CZK</string>
+    <string name="loyalty_discount_min_order">%1$d%% знижка на замовлення ≥ %2$s</string>
     <string name="loyalty_no_discount_yet">Поки без знижки</string>
     <string name="loyalty_perks_welcome_badge">Ласкаво просимо до винагород Cleansia</string>
-    <string name="loyalty_perks_discount_5_above_1000" formatted="false">5% знижка на бронювання понад 1000 CZK</string>
-    <string name="loyalty_perks_discount_10" formatted="false">10% знижка на бронювання понад 1000 CZK</string>
-    <string name="loyalty_perks_discount_12" formatted="false">12% знижка на бронювання понад 1000 CZK</string>
-    <string name="loyalty_perks_discount_15" formatted="false">15% знижка на бронювання понад 1000 CZK</string>
     <string name="loyalty_perks_priority_support">Пріоритетна підтримка клієнтів</string>
     <string name="loyalty_perks_dedicated_pool">Спеціалізована команда клінерів</string>
     <string name="loyalty_activity_title">Остання активність</string>
@@ -1255,6 +1247,15 @@
     <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
     <string name="error_country_not_existing_id">Країну не знайдено</string>
     <string name="error_currency_invalid">Недійсна валюта</string>
+    <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>
+    <string name="error_promo_not_found">Код не знайдено</string>
+    <string name="error_promo_inactive">Код більше не доступний</string>
+    <string name="error_promo_expired">Термін дії коду закінчився</string>
+    <string name="error_promo_not_yet_valid">Код ще не активний</string>
+    <string name="error_promo_global_limit_reached">Код більше не доступний</string>
+    <string name="error_promo_per_user_limit_reached">Ви вже використали цей код</string>
+    <string name="error_promo_below_minimum_order_amount">Замовлення не відповідає мінімальній сумі для цього коду</string>
+    <string name="error_promo_currency_mismatch">Код не діє для цієї валюти</string>
     <string name="error_device_invalid_platform">Непідтримувана платформа пристрою.</string>
     <string name="error_dispute_already_exists">Суперечка для цього замовлення вже існує</string>
     <string name="error_dispute_max_length_exceeded">Перевищено максимальну довжину</string>

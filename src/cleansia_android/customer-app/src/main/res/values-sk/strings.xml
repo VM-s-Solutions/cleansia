@@ -131,7 +131,6 @@
 
     <string name="home_hero2_top">Jar je tu</string>
     <string name="home_hero2_title">Hĺbkové upratovanie + okná v jednom</string>
-    <string name="home_hero2_cta">Ušetríte 450 Kč</string>
 
     <string name="home_hero3_top">Pozvite kamaráta</string>
     <string name="home_hero3_title">Dajte mu bonus, získajte doplnok zdarma</string>
@@ -180,13 +179,10 @@
     <string name="home_services_see_all">Zobraziť všetko</string>
 
     <string name="home_service_household_name">Domáce</string>
-    <string name="home_service_household_price">599 Kč</string>
 
     <string name="home_service_upholstery_name">Čalúnenie</string>
-    <string name="home_service_upholstery_price">799 Kč</string>
 
     <string name="home_service_windows_name">Okná</string>
-    <string name="home_service_windows_price">299 Kč</string>
 
     <!-- Home — promo carousel -->
     <string name="home_promo_title">Pre vás</string>
@@ -809,13 +805,12 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Lepší spôsob, ako udržiavať domov čistý</string>
-    <string name="membership_plus_price_per_month">199 Kč / mesiac</string>
     <string name="membership_subscribe_cta">Vyskúšať Cleansia Plus</string>
     <string name="membership_disclosure">Môžete kedykoľvek zrušiť. Predplatné sa obnovuje automaticky, kým ho nezrušíte.</string>
 
     <!-- Plus subscribe page redesign -->
     <string name="membership_hero_headline">Začnite šetriť ešte dnes</string>
-    <string name="membership_hero_trial_price">0 Kč / prvých %1$d dní</string>
+    <string name="membership_hero_trial_price">%1$s / prvých %2$d dní</string>
     <string name="membership_hero_then_price">potom %1$s / mesiac</string>
     <string name="membership_hero_then_price_year">potom %1$s / rok</string>
     <string name="membership_social_proof_headline">Ako funguje členská zľava</string>
@@ -1066,6 +1061,7 @@
     <string name="order_action_report_issue">Nahlásiť problém</string>
     <string name="order_action_rebook">Objednať znova</string>
     <string name="order_rebook_unavailable_items">Niektoré položky z vašej predchádzajúcej objednávky už nie sú dostupné.</string>
+    <string name="booking_market_items_unavailable">Niektoré vybrané položky sa na tejto adrese neponúkajú a boli odobraté.</string>
 
     <!-- Dispute list -->
     <string name="dispute_list_title">Moje sťažnosti</string>
@@ -1137,13 +1133,9 @@
     <string name="loyalty_tier_status_locked">Zamknuté</string>
     <string name="loyalty_threshold_points">%1$d b.</string>
     <string name="loyalty_discount_basic">%1$d %% zľava na všetky objednávky</string>
-    <string name="loyalty_discount_min_order">%1$d %% zľava na objednávky od %2$d Kč</string>
+    <string name="loyalty_discount_min_order">%1$d %% zľava na objednávky od %2$s</string>
     <string name="loyalty_no_discount_yet">Zatiaľ bez zľavy</string>
     <string name="loyalty_perks_welcome_badge">Vitajte v odmenách Cleansia</string>
-    <string name="loyalty_perks_discount_5_above_1000" formatted="false">5% zľava na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_10" formatted="false">10% zľava na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_12" formatted="false">12% zľava na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_15" formatted="false">15% zľava na objednávky nad 1000 Kč</string>
     <string name="loyalty_perks_priority_support">Prednostná zákaznícka podpora</string>
     <string name="loyalty_perks_dedicated_pool">Vlastný tím upratovačiek</string>
     <string name="loyalty_activity_title">Nedávna aktivita</string>
@@ -1255,6 +1247,15 @@
     <string name="error_company_not_found">Informácie o spoločnosti neboli nájdené</string>
     <string name="error_country_not_existing_id">Krajina nebola nájdená</string>
     <string name="error_currency_invalid">Neplatná mena</string>
+    <string name="error_country_not_serviced">V tejto krajine zatiaľ nepôsobíme.</string>
+    <string name="error_promo_not_found">Kód nebol nájdený</string>
+    <string name="error_promo_inactive">Kód už nie je dostupný</string>
+    <string name="error_promo_expired">Tento kód vypršal</string>
+    <string name="error_promo_not_yet_valid">Kód ešte nie je aktívny</string>
+    <string name="error_promo_global_limit_reached">Kód už nie je dostupný</string>
+    <string name="error_promo_per_user_limit_reached">Tento kód ste už použili</string>
+    <string name="error_promo_below_minimum_order_amount">Objednávka nespĺňa minimálnu sumu pre tento kód</string>
+    <string name="error_promo_currency_mismatch">Kód neplatí pre túto menu</string>
     <string name="error_device_invalid_platform">Nepodporovaná platforma zariadenia.</string>
     <string name="error_dispute_already_exists">Reklamácia pre túto objednávku už existuje</string>
     <string name="error_dispute_max_length_exceeded">Bola prekročená maximálna dĺžka</string>

@@ -1289,6 +1289,7 @@
     <string name="error_company_not_found">Informácie o spoločnosti neboli nájdené</string>
     <string name="error_country_not_existing_id">Krajina nebola nájdená</string>
     <string name="error_currency_invalid">Neplatná mena</string>
+    <string name="error_currency_not_found">Mena nebola nájdená</string>
     <string name="error_dispute_max_length_exceeded">Bola prekročená maximálna dĺžka</string>
     <string name="error_employee_not_approved">Váš účet zatiaľ nebol schválený.</string>
     <string name="error_gdpr_consent_already_granted">Tento súhlas už bol udelený.</string>

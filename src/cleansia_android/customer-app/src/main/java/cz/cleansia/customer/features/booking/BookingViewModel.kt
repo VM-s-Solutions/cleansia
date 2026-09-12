@@ -22,6 +22,7 @@ import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ReferralValidationError
 import cz.cleansia.customer.core.user.UserRepository
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -76,6 +78,8 @@ data class PaymentSheetParams(
     val clientSecret: String,
     val ephemeralKey: String,
     val customerId: String,
+    /** The quote's currency — the one the PaymentIntent is minted in, which Google Pay is told up front. */
+    val currencyCode: String,
 )
 
 /**
@@ -137,14 +141,9 @@ class BookingViewModel @Inject constructor(
     private val paymentRepository: cz.cleansia.customer.core.payments.PaymentRepository,
     private val tokenStore: TokenStore,
     private val snackbar: SnackbarController,
-    // Service-areas: resolve countryIsoCode → backend CountryId at submit
-    // time so the CreateOrder payload carries a real CountryId rather than
-    // null. The CZ-only path still works without this (backend's
-    // single-serviced-country fallback), but the moment we flag SK as
-    // serviced too the fallback fails and the user would see "country.required".
     private val serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider,
     private val membershipRepository: MembershipRepository,
-    catalogRepository: CatalogRepository,
+    private val catalogRepository: CatalogRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -183,17 +182,37 @@ class BookingViewModel @Inject constructor(
     // to decide whether the cached quote can be reused without re-calling /Quote.
     private var lastQuoteInputs: QuoteInputs? = null
 
+    /**
+     * The service address's country, resolved from the picked ISO code. It is the booking's market:
+     * the quote is priced in its currency and the catalogue is re-read for it. Null before the
+     * address step, or for a country the platform does not serve — the platform default either way.
+     */
+    private val resolvedCountryId = MutableStateFlow<String?>(null)
+
+    private val countryWatcher = viewModelScope.launch {
+        _state
+            .map { it.countryIsoCode }
+            .distinctUntilChanged()
+            .collectLatest { isoCode ->
+                val countryId = resolveCountryId(isoCode)
+                resolvedCountryId.value = countryId
+                followMarket(countryId)
+            }
+    }
+
     @OptIn(FlowPreview::class)
     private val quoteWatcher = viewModelScope.launch {
-        _state
-            .map { it.toQuoteInputs() }
+        combine(_state, resolvedCountryId) { s, countryId -> s.toQuoteInputs(countryId) }
             .distinctUntilChanged()
             .debounce(400L)
-            .collectLatest { refreshQuote() }
+            .collectLatest { refreshQuote(it) }
     }
 
     private val _promoCodeState = MutableStateFlow<PromoCodeUiState>(PromoCodeUiState.Idle)
     val promoCodeState: StateFlow<PromoCodeUiState> = _promoCodeState.asStateFlow()
+
+    /** The currency the applied promo was previewed in; a quote in another one retires it. */
+    private var promoCurrencyId: String? = null
 
     /**
      * The one discount the summary card and the sticky price bar both spend. They used to derive it
@@ -242,7 +261,7 @@ class BookingViewModel @Inject constructor(
         val quote = (_quoteState.value as? QuoteState.Quoted)?.response
         val subtotal = quote?.preSurchargeSubtotal ?: 0.0
         val newState = try {
-            val resp = promoCodeApi.validate(ValidatePromoCodeRequest(normalized, subtotal))
+            val resp = promoCodeApi.validate(ValidatePromoCodeRequest(normalized, subtotal, quote?.currencyId))
             if (!resp.isSuccessful) {
                 PromoCodeUiState.Invalid(null)
             } else {
@@ -259,6 +278,7 @@ class BookingViewModel @Inject constructor(
         }
         _promoCodeState.value = newState
         if (newState is PromoCodeUiState.Valid) {
+            promoCurrencyId = quote?.currencyId
             _state.value = _state.value.copy(promoCode = normalized)
         }
         return newState
@@ -293,6 +313,7 @@ class BookingViewModel @Inject constructor(
     /** Drop the applied promo code from both UI state and the booking payload. */
     fun clearPromoCode() {
         _promoCodeState.value = PromoCodeUiState.Idle
+        promoCurrencyId = null
         _state.value = _state.value.copy(promoCode = "")
     }
 
@@ -315,6 +336,7 @@ class BookingViewModel @Inject constructor(
         _quoteState.value = QuoteState.Idle
         _submitState.value = ActionState.Idle
         _promoCodeState.value = PromoCodeUiState.Idle
+        promoCurrencyId = null
         _referralCodeState.value = ReferralCodeUiState.Idle
         lastQuoteInputs = null
     }
@@ -391,9 +413,13 @@ class BookingViewModel @Inject constructor(
                 return BookingSubmitOutcome.Failed
             }
 
+            // Resolved again at submit rather than read from the watcher: a country the admin
+            // stopped serving between the pick and the swipe must not ride in on a stale id.
+            val resolvedCountryId = resolveCountryId(s.countryIsoCode)
+
             // Reuse the live-quote cache when its inputs match current state — saves a
             // round trip and guarantees the user submits exactly the number they saw.
-            val currentInputs = s.toQuoteInputs()
+            val currentInputs = s.toQuoteInputs(resolvedCountryId)
             val cached = (_quoteState.value as? QuoteState.Quoted)?.response
             val quoted: QuoteOrderResponse = if (cached != null && lastQuoteInputs == currentInputs) {
                 cached
@@ -406,6 +432,7 @@ class BookingViewModel @Inject constructor(
                     currencyId = null,
                     selectedExtraSlugs = s.selectedExtraSlugs.toList(),
                     cleaningDate = instant.toString(),
+                    countryId = resolvedCountryId,
                 )
                 val quoteResp = try {
                     bookingApi.quote(quoteCmd)
@@ -429,27 +456,6 @@ class BookingViewModel @Inject constructor(
             // forward that number on submit — backend re-computes authoritatively
             // anyway via CreateOrder.PriceMatchesAsync.
             val finalTotal = quoted.totalPrice
-
-            // Resolve the picked address's country ISO code → backend country
-            // ID. Null when:
-            //   - no ISO code captured (legacy flow, address picked before
-            //     we started recording it), OR
-            //   - the ISO doesn't match any serviced country (admin removed
-            //     the country in the time between pick + submit).
-            // In both cases backend's "single serviced country" fallback fills
-            // it in for CZ-only deployments. Once multiple countries are
-            // serviced the fallback fails — that's the trade-off acknowledged
-            // in service-areas.md.
-            val resolvedCountryId: String? = if (s.countryIsoCode.isNotBlank()) {
-                // :core's ServicedCountry.isoCode is already lowercase
-                // (the adapter normalises) — just compare directly. A failed
-                // load (null) degrades to no country id, same as no match.
-                serviceAreaProvider
-                    .loadCountries()
-                    .orEmpty()
-                    .firstOrNull { it.isoCode == s.countryIsoCode.lowercase() }
-                    ?.id
-            } else null
 
             val createCmd = CreateOrderCommand(
                 customerName = listOfNotNull(user.firstName, user.lastName)
@@ -542,6 +548,7 @@ class BookingViewModel @Inject constructor(
                     clientSecret = intent.clientSecret,
                     ephemeralKey = intent.ephemeralKey,
                     customerId = intent.stripeCustomerId,
+                    currencyCode = quoted.currencyCode,
                 ),
             )
         } finally {
@@ -549,9 +556,7 @@ class BookingViewModel @Inject constructor(
         }
     }
 
-    private suspend fun refreshQuote() {
-        val s = _state.value
-        val inputs = s.toQuoteInputs()
+    private suspend fun refreshQuote(inputs: QuoteInputs) {
         if (inputs.serviceIds.isEmpty() && inputs.packageIds.isEmpty()) {
             _quoteState.value = QuoteState.Idle
             lastQuoteInputs = null
@@ -573,6 +578,7 @@ class BookingViewModel @Inject constructor(
                     currencyId = null,
                     selectedExtraSlugs = inputs.extraSlugs.toList(),
                     cleaningDate = inputs.cleaningInstant?.toString(),
+                    countryId = inputs.countryId,
                 ),
             )
         } catch (t: Throwable) {
@@ -587,6 +593,55 @@ class BookingViewModel @Inject constructor(
             previousQuoted != null -> QuoteState.Quoted(previousQuoted)
             else -> QuoteState.Idle
         }
+        // A promo previewed in one currency is refused by CreateOrder in another
+        // (`promo.currency_mismatch`), so it does not outlive the currency it was judged in.
+        if (body != null && _promoCodeState.value is PromoCodeUiState.Valid &&
+            promoCurrencyId != null && promoCurrencyId != body.currencyId
+        ) {
+            clearPromoCode()
+        }
+    }
+
+    /**
+     * `ServicedCountry.isoCode` is already lowercase (the adapter normalises). A failed load, like an
+     * unserviced country, resolves to nothing — the platform default, which the server re-checks.
+     */
+    private suspend fun resolveCountryId(isoCode: String): String? {
+        if (isoCode.isBlank()) return null
+        return serviceAreaProvider
+            .loadCountries()
+            .orEmpty()
+            .firstOrNull { it.isoCode == isoCode.lowercase() }
+            ?.id
+    }
+
+    /**
+     * Re-read the catalogue for the booking's market and drop whatever it no longer offers. A pick
+     * with no price row in the new currency would be refused on quote and create
+     * (`order.selected_services.invalid`), so it goes now, with a notice, while the customer can
+     * still re-pick. A failed reload proves nothing about the market and prunes nothing.
+     */
+    private suspend fun followMarket(countryId: String?) {
+        if (catalogRepository.countryId.value == countryId) return
+        if (catalogRepository.refresh(countryId) !is ApiResult.Success) return
+
+        val services = catalogRepository.services.value.map { it.id }.toSet()
+        val packages = catalogRepository.packages.value.map { it.id }.toSet()
+        val extras = catalogRepository.extras.value.map { it.slug }.toSet()
+        var dropped = false
+        _state.update { s ->
+            val kept = s.copy(
+                selectedServiceIds = s.selectedServiceIds.filterTo(mutableSetOf()) { it in services },
+                selectedPackageIds = s.selectedPackageIds.filterTo(mutableSetOf()) { it in packages },
+                // Extras load best-effort: an empty list may be a failed call, not an empty market,
+                // and the server drops an unpriced extra silently rather than refusing the booking.
+                selectedExtraSlugs = if (extras.isEmpty()) s.selectedExtraSlugs
+                else s.selectedExtraSlugs.filterTo(mutableSetOf()) { it in extras },
+            )
+            dropped = kept != s
+            kept
+        }
+        if (dropped) snackbar.showInfo(appContext.getString(R.string.booking_market_items_unavailable))
     }
 
     private data class QuoteInputs(
@@ -596,15 +651,17 @@ class BookingViewModel @Inject constructor(
         val rooms: Int,
         val bathrooms: Int,
         val cleaningInstant: kotlinx.datetime.Instant?,
+        val countryId: String?,
     )
 
-    private fun BookingState.toQuoteInputs() = QuoteInputs(
+    private fun BookingState.toQuoteInputs(countryId: String?) = QuoteInputs(
         serviceIds = selectedServiceIds,
         packageIds = selectedPackageIds,
         extraSlugs = selectedExtraSlugs,
         rooms = rooms,
         bathrooms = bathrooms,
         cleaningInstant = selectedInstant,
+        countryId = countryId,
     )
 
     companion object {

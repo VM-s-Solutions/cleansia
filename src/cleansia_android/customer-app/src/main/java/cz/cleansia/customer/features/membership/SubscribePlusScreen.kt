@@ -58,6 +58,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
@@ -88,6 +89,7 @@ fun SubscribePlusScreen(
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val current by viewModel.current.collectAsStateWithLifecycle()
     val plans by viewModel.plans.collectAsStateWithLifecycle()
+    val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
 
     var selectedPlanCode by remember(plans) {
         mutableStateOf(plans.firstOrNull { it.billingInterval == 1 }?.code ?: plans.firstOrNull()?.code.orEmpty())
@@ -163,6 +165,7 @@ fun SubscribePlusScreen(
                 selectedPlanCode = selectedPlanCode,
                 onSelectPlan = { selectedPlanCode = it },
                 selectedPlan = selectedPlan,
+                currencyCode = currencyCode,
             )
 
             Spacer(Modifier.height(20.dp))
@@ -220,7 +223,7 @@ fun SubscribePlusScreen(
             } else {
                 stringResource(R.string.membership_cta_subscribe)
             },
-            disclosure = buildDisclosure(selectedPlan),
+            disclosure = buildDisclosure(selectedPlan, currencyCode),
             enabled = !submitting && selectedPlanCode.isNotBlank(),
             onClick = {
                 if (selectedPlanCode.isBlank()) return@StickyCtaBar
@@ -244,8 +247,13 @@ fun SubscribePlusScreen(
                                         } else {
                                             PaymentSheet.GooglePayConfiguration.Environment.Test
                                         },
+                                        // Stripe: "The two-letter ISO 3166 code of the country of your
+                                        // business" — the merchant account, not the plan.
                                         countryCode = "CZ",
-                                        currencyCode = "CZK",
+                                        // A SetupIntent carries no currency, so this is what the Google Pay
+                                        // sheet shows and what gates it; the plan's price is stated in the
+                                        // platform default.
+                                        currencyCode = currencyCode,
                                     ),
                                     allowsDelayedPaymentMethods = false,
                                 ),
@@ -275,7 +283,7 @@ fun SubscribePlusScreen(
 /**
  * Dark gradient hero with back arrow, brand splash, big trial-first price,
  * and the monthly/annual plan toggle. The trial price is the visual anchor —
- * the "199 Kč" struck-through line under it is doing comparison work, not the
+ * the struck-through regular price under it is doing comparison work, not the
  * other way around.
  */
 @Composable
@@ -285,13 +293,14 @@ private fun HeroBlock(
     selectedPlanCode: String,
     onSelectPlan: (String) -> Unit,
     selectedPlan: cz.cleansia.customer.core.memberships.MembershipPlanDto?,
+    currencyCode: String?,
 ) {
     val trialDays = selectedPlan?.trialPeriodDays ?: 0
     // Annual: lead with the year price (no per-month split — keeps pricing
-    // honest and frames the "2030 Kč once" commitment up front).
+    // honest and frames the one-off annual commitment up front).
     // Monthly: lead with the per-month price as before.
     val isAnnual = selectedPlan?.billingInterval == 2
-    val regularPrice = selectedPlan?.price
+    val regularPrice = formatPlanPrice(selectedPlan?.price, currencyCode)
     val regularPriceLabelRes = if (isAnnual) {
         R.string.membership_plan_per_year
     } else {
@@ -377,11 +386,15 @@ private fun HeroBlock(
             // anchor and the struck line goes away.
             //
             // Sizes intentionally smaller than headline-display defaults so the
-            // line "0 Kč / first 14 days" stays on a single line on narrow
+            // trial line ("0 / first 14 days", with its currency) stays on a single line on narrow
             // phones (~360dp). 36sp is the upper bound that still fits.
             if (trialDays > 0) {
                 Text(
-                    text = stringResource(R.string.membership_hero_trial_price, trialDays),
+                    text = stringResource(
+                        R.string.membership_hero_trial_price,
+                        formatOrderPrice(0.0, currencyCode),
+                        trialDays,
+                    ),
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 34.sp,
@@ -392,14 +405,14 @@ private fun HeroBlock(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(4.dp))
-                // "Then X Kč/month" for monthly, "Then X Kč/year" for annual.
+                // "Then X/month" for monthly, "Then X/year" for annual.
                 // Annual intentionally has no per-month split so we don't show
                 // a rounded number that doesn't match what Stripe charges.
                 Text(
                     text = stringResource(
                         if (isAnnual) R.string.membership_hero_then_price_year
                         else R.string.membership_hero_then_price,
-                        formatPriceCzk(regularPrice),
+                        regularPrice,
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.7f),
@@ -411,7 +424,7 @@ private fun HeroBlock(
                 Text(
                     text = stringResource(
                         regularPriceLabelRes,
-                        formatPriceCzk(regularPrice),
+                        regularPrice,
                     ),
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
@@ -531,7 +544,7 @@ private fun PlanSwitcherDark(
 }
 
 /**
- * Stat tile under the hero — "Members typically save X Kč per cleaning".
+ * Stat tile under the hero — "Members typically save X per cleaning".
  * Number is currently hardcoded as a marketing claim; once we have real
  * analytics on member discount realization, source it from the backend.
  */
@@ -685,11 +698,14 @@ private fun StickyCtaBar(
 
 /**
  * Build the fine-print disclosure under the CTA. Trial-aware: when the plan
- * has a trial, lead with "Then X Kč/month, cancel anytime"; otherwise the
+ * has a trial, lead with "Then X/month, cancel anytime"; otherwise the
  * plain "Cancel anytime" disclosure.
  */
 @Composable
-private fun buildDisclosure(plan: cz.cleansia.customer.core.memberships.MembershipPlanDto?): String {
+private fun buildDisclosure(
+    plan: cz.cleansia.customer.core.memberships.MembershipPlanDto?,
+    currencyCode: String?,
+): String {
     if (plan == null) return stringResource(R.string.membership_disclosure)
     if (plan.trialPeriodDays <= 0) return stringResource(R.string.membership_disclosure)
     // Trial-aware disclosure. Annual variant uses year price; monthly uses
@@ -700,24 +716,16 @@ private fun buildDisclosure(plan: cz.cleansia.customer.core.memberships.Membersh
     } else {
         R.string.membership_cta_disclosure_trial
     }
-    return stringResource(resId, formatPriceCzk(plan.price))
+    return stringResource(resId, formatPlanPrice(plan.price, currencyCode))
 }
 
-/**
- * Format a CZK amount for display. Drops the decimal when the price is a whole
- * number (199 Kč rather than 199.00 Kč) — matches the rest of the app's
- * money-display convention.
- */
 /**
  * Null is "no plan is selected", which is only reachable before the plans load or after the API
  * refuses them; it is never a plan whose price the wire dropped, because [MembershipPlanDto] refuses
  * those. Rendering the em dash keeps the screen from quoting a subscription at nothing.
  */
-private fun formatPriceCzk(amount: Double?): String {
-    if (amount == null) return "\u2014"
-    val rounded = if (amount % 1.0 == 0.0) amount.toInt().toString() else "%.2f".format(amount)
-    return "$rounded Kč"
-}
+private fun formatPlanPrice(amount: Double?, currencyCode: String?): String =
+    if (amount == null) "\u2014" else formatOrderPrice(amount, currencyCode)
 
 /**
  * Snackbar pulled out of the Hilt graph at composition time. Same pattern

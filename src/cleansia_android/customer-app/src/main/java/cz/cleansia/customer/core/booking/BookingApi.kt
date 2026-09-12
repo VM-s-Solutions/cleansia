@@ -49,6 +49,7 @@ private fun QuoteOrderCommand.toWire(): GenQuoteOrderCommand = GenQuoteOrderComm
     currencyId = currencyId,
     selectedExtraSlugs = selectedExtraSlugs,
     cleaningDate = cleaningDate?.let { Instant.parse(it) },
+    countryId = countryId,
 )
 
 private fun CreateOrderCommand.toWire(): GenCreateOrderCommand = GenCreateOrderCommand(

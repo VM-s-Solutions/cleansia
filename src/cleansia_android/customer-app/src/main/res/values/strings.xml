@@ -132,7 +132,6 @@
 
     <string name="home_hero2_top">Spring is here</string>
     <string name="home_hero2_title">Deep clean + windows combo</string>
-    <string name="home_hero2_cta">Save 450 CZK</string>
 
     <string name="home_hero3_top">Invite a friend</string>
     <string name="home_hero3_title">Give a treat, get a free add-on</string>
@@ -182,13 +181,10 @@
     <string name="home_services_see_all">See all</string>
 
     <string name="home_service_household_name">Household</string>
-    <string name="home_service_household_price">599 CZK</string>
 
     <string name="home_service_upholstery_name">Upholstery</string>
-    <string name="home_service_upholstery_price">799 CZK</string>
 
     <string name="home_service_windows_name">Windows</string>
-    <string name="home_service_windows_price">299 CZK</string>
 
     <!-- Home — promo carousel -->
     <string name="home_promo_title">For you</string>
@@ -825,13 +821,12 @@
          and perk wording is provisional; lock with product before launch. -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">A better way to keep your home clean</string>
-    <string name="membership_plus_price_per_month">199 Kč / month</string>
     <string name="membership_subscribe_cta">Try Cleansia Plus</string>
     <string name="membership_disclosure">Cancel anytime. Your subscription renews automatically until you cancel.</string>
 
     <!-- Plus subscribe page redesign (Bolt+/Wolt+ style) -->
     <string name="membership_hero_headline">Start saving today</string>
-    <string name="membership_hero_trial_price">0 Kč / first %1$d days</string>
+    <string name="membership_hero_trial_price">%1$s / first %2$d days</string>
     <string name="membership_hero_then_price">then %1$s / month</string>
     <string name="membership_hero_then_price_year">then %1$s / year</string>
     <string name="membership_social_proof_headline">How the member discount works</string>
@@ -1089,6 +1084,7 @@
     <string name="order_action_report_issue">Report issue</string>
     <string name="order_action_rebook">Book again</string>
     <string name="order_rebook_unavailable_items">Some items from your previous booking are no longer available.</string>
+    <string name="booking_market_items_unavailable">Some of your picks aren\'t offered at this address and were removed.</string>
 
     <!-- Dispute list -->
     <string name="dispute_list_title">My disputes</string>
@@ -1163,13 +1159,9 @@
     <string name="loyalty_tier_status_locked">Locked</string>
     <string name="loyalty_threshold_points">%1$d pts</string>
     <string name="loyalty_discount_basic">%1$d%% off all bookings</string>
-    <string name="loyalty_discount_min_order">%1$d%% off orders ≥%2$d CZK</string>
+    <string name="loyalty_discount_min_order">%1$d%% off orders ≥ %2$s</string>
     <string name="loyalty_no_discount_yet">No discount yet</string>
     <string name="loyalty_perks_welcome_badge">Welcome to Cleansia rewards</string>
-    <string name="loyalty_perks_discount_5_above_1000" formatted="false">5% off bookings over 1000 CZK</string>
-    <string name="loyalty_perks_discount_10" formatted="false">10% off bookings over 1000 CZK</string>
-    <string name="loyalty_perks_discount_12" formatted="false">12% off bookings over 1000 CZK</string>
-    <string name="loyalty_perks_discount_15" formatted="false">15% off bookings over 1000 CZK</string>
     <string name="loyalty_perks_priority_support">Priority customer support</string>
     <string name="loyalty_perks_dedicated_pool">Dedicated cleaner pool</string>
     <string name="loyalty_activity_title">Recent activity</string>
@@ -1284,6 +1276,15 @@
     <string name="error_company_not_found">Company information not found</string>
     <string name="error_country_not_existing_id">Country not found</string>
     <string name="error_currency_invalid">Invalid currency</string>
+    <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>
+    <string name="error_promo_not_found">Code not found</string>
+    <string name="error_promo_inactive">Code is no longer available</string>
+    <string name="error_promo_expired">This code has expired</string>
+    <string name="error_promo_not_yet_valid">Code is not yet active</string>
+    <string name="error_promo_global_limit_reached">Code is no longer available</string>
+    <string name="error_promo_per_user_limit_reached">You\'ve already used this code</string>
+    <string name="error_promo_below_minimum_order_amount">Order doesn\'t meet the minimum for this code</string>
+    <string name="error_promo_currency_mismatch">Code doesn\'t apply to this currency</string>
     <string name="error_device_invalid_platform">Unsupported device platform.</string>
     <string name="error_dispute_already_exists">Dispute already exists for this order</string>
     <string name="error_dispute_max_length_exceeded">Maximum length exceeded</string>

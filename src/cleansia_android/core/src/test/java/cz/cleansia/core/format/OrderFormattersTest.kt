@@ -65,9 +65,11 @@ class OrderFormattersTest {
         assertEquals("\$1,200", formatOrderPrice(1200.0, "USD"))
     }
 
+    /** An unlabelled figure over a label guessed for it: a null code is not a CZK order. */
     @Test
-    fun `formatOrderPrice defaults blank currency to CZK`() {
-        assertEquals("1,200 Kč", formatOrderPrice(1200.0, null))
+    fun `formatOrderPrice renders no unit for a blank currency`() {
+        assertEquals("1,200", formatOrderPrice(1200.0, null))
+        assertEquals("1,200", formatOrderPrice(1200.0, "  "))
     }
 
     @Test

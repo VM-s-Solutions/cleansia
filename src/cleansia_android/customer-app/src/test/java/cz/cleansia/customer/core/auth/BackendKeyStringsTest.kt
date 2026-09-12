@@ -46,6 +46,34 @@ class BackendKeyStringsTest {
         "validation.invalid_password",
     )
 
+    /**
+     * `CreateOrder` refuses a promo the server will not honour instead of booking at full price, so
+     * every `BusinessErrorMessage.Promo*` key is a live 400 on the mobile customer host. Error code
+     * `PromoCode`; the preview road (`ValidatePromoCode`) still answers the enum name at 200.
+     */
+    private val createOrderPromoKeys = listOf(
+        "promo.not_found",
+        "promo.inactive",
+        "promo.expired",
+        "promo.not_yet_valid",
+        "promo.global_limit_reached",
+        "promo.per_user_limit_reached",
+        "promo.below_minimum_order_amount",
+        "promo.currency_mismatch",
+    )
+
+    /**
+     * `QuoteOrder` judges the address's country and the selection's price rows itself now, so a
+     * refusal that used to come only from the address resolver or from Create can land on the
+     * live quote.
+     */
+    private val quoteOrderMarketKeys = listOf(
+        "country.not_serviced",
+        "currency.invalid",
+        "order.selected_services.invalid",
+        "order.selected_package.invalid",
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -73,6 +101,16 @@ class BackendKeyStringsTest {
     @Test
     fun `every google-auth refusal resolves to a sentence in all five locales`() {
         assertAllResolve(googleAuthKeys)
+    }
+
+    @Test
+    fun `every promo refusal CreateOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(createOrderPromoKeys)
+    }
+
+    @Test
+    fun `every market refusal QuoteOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(quoteOrderMarketKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

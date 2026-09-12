@@ -38,6 +38,16 @@ class BackendKeyStringsTest {
         }
     }
 
+    /** `GetPeriodPays` refuses a currency view it cannot find; the key is new to the partner host. */
+    @Test
+    fun `the My Pay currency-view refusal resolves to a sentence`() {
+        val resName = "error_currency_not_found"
+        assertTrue(
+            "currency.not_found renders raw — values/strings.xml declares no <string name=\"$resName\">",
+            resName in declared,
+        )
+    }
+
     /**
      * The only refusal `UpdateJobRadius` can return. The client clamps to the same bounds, so this
      * fires only when the two drift — which is exactly when a raw key is least useful.

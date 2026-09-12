@@ -9,6 +9,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -43,6 +44,7 @@ class BookingQuoteWireTest {
 
     private suspend fun quote(
         body: String,
+        command: QuoteOrderCommand = COMMAND,
         onRequest: (RecordedRequest) -> Unit = {},
     ): QuoteOrderResponse? {
         val server = MockWebServer()
@@ -61,7 +63,7 @@ class BookingQuoteWireTest {
                     .build()
                     .create(GenOrderApi::class.java),
             )
-            api.quote(COMMAND).body().also { onRequest(server.takeRequest()) }
+            api.quote(command).body().also { onRequest(server.takeRequest()) }
         } finally {
             server.shutdown()
         }
@@ -98,6 +100,23 @@ class BookingQuoteWireTest {
 
         assertEquals("POST", method)
         assertEquals("/api/Order/Quote", path)
+    }
+
+    /**
+     * The address's country is the market the server prices in. It travels under the name the
+     * command binds, and a wizard that has not reached the address step sends nothing rather than a
+     * null the server would have to interpret.
+     */
+    @Test
+    fun theRequestCarriesTheCountryTheServerPricesFor() = runTest {
+        var body: JsonObject? = null
+        quote(CAPTURED_QUOTE, command = COMMAND.copy(countryId = "svk")) {
+            body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject
+        }
+        assertEquals("svk", body?.get("countryId")?.jsonPrimitive?.content)
+
+        quote(CAPTURED_QUOTE) { body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }
+        assertNull(body?.get("countryId"))
     }
 
     // --- rule 1: money is never coerced -----------------------------------------

@@ -10,6 +10,11 @@ import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.catalog.CategoryDto
+import cz.cleansia.customer.core.catalog.ExtraListItem
+import cz.cleansia.customer.core.catalog.PackageListItem
+import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.core.servicearea.ServicedCountry
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
@@ -25,6 +30,7 @@ import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
@@ -80,6 +86,11 @@ class BookingViewModelTest {
     private val currentUserFlow = MutableStateFlow<CurrentUser?>(null)
     private val membershipFlow = MutableStateFlow<GetMyMembershipResponse?>(null)
     private val catalogCurrencyFlow = MutableStateFlow<String?>(null)
+    private val catalogCountryFlow = MutableStateFlow<String?>(null)
+    private val catalogServicesFlow = MutableStateFlow<List<ServiceListItem>>(emptyList())
+    private val catalogPackagesFlow = MutableStateFlow<List<PackageListItem>>(emptyList())
+    private val catalogExtrasFlow = MutableStateFlow<List<ExtraListItem>>(emptyList())
+    private val marketNotice = "Some of your picks are not offered at this address and were removed."
 
     private val networkMessage = "Check your internet connection and try again."
     private val pickTimeMessage = "Please select a cleaning date and time."
@@ -101,6 +112,14 @@ class BookingViewModelTest {
         every { membershipRepository.current } returns membershipFlow
         catalogRepository = mockk(relaxed = true)
         every { catalogRepository.currencyCode } returns catalogCurrencyFlow
+        every { catalogRepository.countryId } returns catalogCountryFlow
+        every { catalogRepository.services } returns catalogServicesFlow
+        every { catalogRepository.packages } returns catalogPackagesFlow
+        every { catalogRepository.extras } returns catalogExtrasFlow
+        coEvery { catalogRepository.refresh(any()) } coAnswers {
+            catalogCountryFlow.value = firstArg()
+            ApiResult.Success(Unit)
+        }
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
@@ -113,6 +132,7 @@ class BookingViewModelTest {
         every { appContext.getString(R.string.error_booking_pick_time) } returns pickTimeMessage
         every { appContext.getString(R.string.error_booking_sign_in_required) } returns signInMessage
         every { appContext.getString(R.string.error_booking_profile_incomplete) } returns profileIncompleteMessage
+        every { appContext.getString(R.string.booking_market_items_unavailable) } returns marketNotice
         every { appContext.getString(R.string.error_generic_unknown) } returns "unknown"
         every { appContext.getString(R.string.error_generic_server) } returns "server"
         every { appContext.getString(R.string.error_generic_unauthorized) } returns "unauth"
@@ -1000,6 +1020,334 @@ class BookingViewModelTest {
         advanceUntilIdle()
 
         assertEquals("PLN", vm.displayCurrencyCode.value)
+    }
+
+    // ── the market rule — the address's country prices the booking ──
+    //
+    // Owner ruling 2026-09-12: a booking is priced and charged in the currency of the service
+    // address's country. Once the address step yields a country the quote carries it, the catalogue
+    // is re-read for it, and anything picked earlier that the new market does not offer is dropped
+    // with a notice rather than refused at submit.
+
+    private fun slovakia() = ServicedCountry(id = "svk-id", isoCode = "sk", name = "Slovakia")
+
+    private fun service(id: String) = ServiceListItem(
+        id = id,
+        name = "Service $id",
+        basePrice = 10.0,
+        perRoomPrice = 1.0,
+        category = CategoryDto(id = "c-1", slug = "general", name = "General"),
+    )
+
+    private fun pkg(id: String) = PackageListItem(id = id, name = "Package $id", price = 20.0)
+
+    private fun extra(slug: String) = ExtraListItem(id = "e-$slug", slug = slug, name = slug, price = 5.0)
+
+    @Test
+    fun quoteWatcher_beforeTheAddressStep_sendsNoCountry() = runTest {
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } returns Response.success(quoteWith())
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+
+        assertNull(sent.last().countryId)
+        coVerify(exactly = 0) { serviceAreaProvider.loadCountries() }
+    }
+
+    @Test
+    fun quoteWatcher_onceTheAddressYieldsACountry_quotesWithThatCountry() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+        catalogServicesFlow.value = listOf(service("s-1"))
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } returns Response.success(quoteWith(currencyCode = "EUR"))
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        assertNull(sent.last().countryId)
+
+        vm.update { it.copy(countryIsoCode = "SK") }
+        advanceUntilIdle()
+
+        assertEquals("svk-id", sent.last().countryId)
+        assertEquals("EUR", vm.displayCurrencyCode.value)
+    }
+
+    /** A country the platform does not serve resolves to nothing, and the quote stays on the default. */
+    @Test
+    fun quoteWatcher_givenAnUnservicedCountry_sendsNoCountry() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } returns Response.success(quoteWith())
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1"), countryIsoCode = "hu") }
+        advanceUntilIdle()
+
+        assertNull(sent.last().countryId)
+    }
+
+    @Test
+    fun submit_quotesInTheAddressCountryAndEchoesTheQuotedCurrency() = runTest {
+        currentUserFlow.value = completeUser()
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+        catalogServicesFlow.value = listOf(service("s-1"))
+        val quotes = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(quotes)) } returns Response.success(
+            quoteWith(currencyCode = "EUR").copy(currencyId = "cur-eur"),
+        )
+        val created = slot<CreateOrderCommand>()
+        coEvery { bookingApi.create(capture(created)) } returns Response.success(
+            CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"),
+        )
+
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                paymentMethod = "cash",
+                street = "Hlavná",
+                city = "Bratislava",
+                zipCode = "81101",
+                countryIsoCode = "sk",
+            )
+        }
+        advanceUntilIdle()
+
+        val outcome = vm.submit()
+        advanceUntilIdle()
+
+        assertTrue("expected Success but was $outcome", outcome is BookingSubmitOutcome.Success)
+        assertTrue(quotes.all { it.countryId == "svk-id" })
+        assertEquals("svk-id", created.captured.customerAddress?.countryId)
+        assertEquals("cur-eur", created.captured.currencyId)
+    }
+
+    @Test
+    fun countryChange_reloadsTheCatalogueForThatCountry() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { catalogRepository.refresh(any()) }
+
+        vm.update { it.copy(countryIsoCode = "sk") }
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepository.refresh("svk-id") }
+    }
+
+    /** The catalogue already answers for this country — a second address in it reloads nothing. */
+    @Test
+    fun countryChange_whenTheCatalogueAlreadyAnswersForIt_doesNotReload() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+        catalogCountryFlow.value = "svk-id"
+
+        val vm = newViewModel()
+        vm.update { it.copy(countryIsoCode = "sk") }
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { catalogRepository.refresh(any()) }
+    }
+
+    /** A fresh wizard after a Slovak booking must not keep pricing the catalogue in euros. */
+    @Test
+    fun reset_afterAForeignMarket_returnsTheCatalogueToThePlatformDefault() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+
+        val vm = newViewModel()
+        vm.update { it.copy(countryIsoCode = "sk") }
+        advanceUntilIdle()
+        assertEquals("svk-id", catalogCountryFlow.value)
+
+        vm.reset()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepository.refresh(null) }
+    }
+
+    @Test
+    fun countryChange_prunesWhatTheNewMarketDoesNotOfferAndSaysSo() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+        coEvery { catalogRepository.refresh("svk-id") } coAnswers {
+            catalogServicesFlow.value = listOf(service("s-1"))
+            catalogPackagesFlow.value = emptyList()
+            catalogExtrasFlow.value = listOf(extra("inside-oven"))
+            catalogCountryFlow.value = "svk-id"
+            ApiResult.Success(Unit)
+        }
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith())
+
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1", "s-2"),
+                selectedPackageIds = setOf("p-1"),
+                selectedExtraSlugs = setOf("inside-oven", "inside-fridge"),
+            )
+        }
+        advanceUntilIdle()
+
+        vm.update { it.copy(countryIsoCode = "sk") }
+        advanceUntilIdle()
+
+        assertEquals(setOf("s-1"), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        assertEquals(setOf("inside-oven"), vm.state.value.selectedExtraSlugs)
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+    }
+
+    @Test
+    fun countryChange_whenEverythingPickedIsStillOffered_staysQuiet() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+        coEvery { catalogRepository.refresh("svk-id") } coAnswers {
+            catalogServicesFlow.value = listOf(service("s-1"))
+            catalogCountryFlow.value = "svk-id"
+            ApiResult.Success(Unit)
+        }
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith())
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+
+        vm.update { it.copy(countryIsoCode = "sk") }
+        advanceUntilIdle()
+
+        assertEquals(setOf("s-1"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    /** A reload that failed says nothing about the market; pruning against it would empty the basket. */
+    @Test
+    fun countryChange_whenTheReloadFails_keepsTheSelection() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(slovakia())
+        coEvery { catalogRepository.refresh("svk-id") } returns ApiResult.Error(ApiError.Network("boom"))
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith())
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1", "s-2")) }
+        advanceUntilIdle()
+
+        vm.update { it.copy(countryIsoCode = "sk") }
+        advanceUntilIdle()
+
+        assertEquals(setOf("s-1", "s-2"), vm.state.value.selectedServiceIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    // ── promo × currency ──
+
+    @Test
+    fun validatePromoCodeNow_previewsInTheQuotesCurrency() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith().copy(currencyId = "cur-eur"))
+        val request = slot<ValidatePromoCodeRequest>()
+        coEvery { promoCodeApi.validate(capture(request)) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        vm.validatePromoCodeNow("CODE")
+
+        assertEquals("cur-eur", request.captured.currencyId)
+    }
+
+    @Test
+    fun validatePromoCodeNow_withoutAQuote_previewsAgainstThePlatformDefault() = runTest {
+        val request = slot<ValidatePromoCodeRequest>()
+        coEvery { promoCodeApi.validate(capture(request)) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.validatePromoCodeNow("CODE")
+
+        assertNull(request.captured.currencyId)
+    }
+
+    /**
+     * A code judged valid in koruna says nothing about euros; CreateOrder would refuse it as
+     * `promo.currency_mismatch`, so the wizard drops it the moment the quote changes currency.
+     */
+    @Test
+    fun aValidPromo_isDroppedWhenTheQuoteChangesCurrency() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith().copy(currencyId = "cur-czk"))
+        coEvery { promoCodeApi.validate(any()) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        vm.validatePromoCodeNow("CODE")
+        assertTrue(vm.promoCodeState.value is PromoCodeUiState.Valid)
+
+        coEvery { bookingApi.quote(any()) } returns Response.success(
+            quoteWith(currencyCode = "EUR").copy(currencyId = "cur-eur"),
+        )
+        vm.update { it.copy(selectedServiceIds = setOf("s-1", "s-2")) }
+        advanceUntilIdle()
+
+        assertEquals(PromoCodeUiState.Idle, vm.promoCodeState.value)
+        assertEquals("", vm.state.value.promoCode)
+    }
+
+    @Test
+    fun aValidPromo_survivesAReQuoteInTheSameCurrency() = runTest {
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith().copy(currencyId = "cur-czk"))
+        coEvery { promoCodeApi.validate(any()) } returns Response.success(
+            ValidatePromoCodeResponse(isValid = true, discountAmount = 100.0),
+        )
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        vm.validatePromoCodeNow("CODE")
+
+        vm.update { it.copy(selectedServiceIds = setOf("s-1", "s-2")) }
+        advanceUntilIdle()
+
+        assertTrue(vm.promoCodeState.value is PromoCodeUiState.Valid)
+        assertEquals("CODE", vm.state.value.promoCode)
+    }
+
+    // ── the payment sheet is told the currency the intent is minted in ──
+
+    @Test
+    fun submit_givenCardFlow_paymentSheetCarriesTheQuotesCurrency() = runTest {
+        currentUserFlow.value = completeUser()
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith(currencyCode = "EUR"))
+        coEvery { bookingApi.create(any()) } returns Response.success(
+            CreateOrderResponse(id = "o-1", confirmationCode = "X"),
+        )
+        coEvery { paymentRepository.createPaymentIntent("o-1") } returns ApiResult.Success(
+            CreatePaymentIntentResponse(
+                clientSecret = "pi_secret",
+                paymentIntentId = "pi_1",
+                stripeCustomerId = "cus_1",
+                ephemeralKey = "ek",
+            ),
+        )
+
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                paymentMethod = "card",
+            )
+        }
+        advanceUntilIdle()
+
+        val outcome = vm.submit()
+        advanceUntilIdle()
+
+        assertEquals("EUR", (outcome as BookingSubmitOutcome.CardPending).paymentSheet.currencyCode)
     }
 
     private fun quoteWith(

@@ -64,6 +64,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
+import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.customer.core.catalog.CatalogRepositoryEntryPoint
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
@@ -128,8 +130,16 @@ fun RewardsTab(
             .fromApplication(context, SnackbarControllerEntryPoint::class.java)
             .snackbarController()
     }
+    // The tier floor is a platform-default-currency number, so it is labelled with the catalogue's
+    // default code — the same source the booking wizard's tier-floor hint reads.
+    val catalogRepo = remember {
+        EntryPointAccessors
+            .fromApplication(context, CatalogRepositoryEntryPoint::class.java)
+            .catalogRepository()
+    }
     val scope = rememberCoroutineScope()
 
+    val currencyCode by catalogRepo.currencyCode.collectAsState()
     val account by loyaltyRepo.account.collectAsState()
     val tiers by loyaltyRepo.tiers.collectAsState()
     val loading by loyaltyRepo.loading.collectAsState()
@@ -214,6 +224,7 @@ fun RewardsTab(
                 else -> LoyaltyContent(
                     account = loadedAccount,
                     tiers = tiers,
+                    currencyCode = currencyCode,
                     referralAccount = referralAccount,
                     activityPreview = activityPreview,
                     onOpenActivity = onOpenActivity,
@@ -229,6 +240,7 @@ fun RewardsTab(
 private fun LoyaltyContent(
     account: LoyaltyAccountDto,
     tiers: List<TierInfoDto>,
+    currencyCode: String?,
     referralAccount: ReferralAccountDto?,
     activityPreview: List<LoyaltyActivityItemDto>,
     onOpenActivity: () -> Unit,
@@ -254,7 +266,7 @@ private fun LoyaltyContent(
         CurrentPerksCard(perks = account.currentPerks)
         Spacer(Modifier.height(16.dp))
 
-        TierLadderCard(tiers = tiers, currentTier = currentTier)
+        TierLadderCard(tiers = tiers, currentTier = currentTier, currencyCode = currencyCode)
         Spacer(Modifier.height(16.dp))
 
         // ── Loyalty Phase C — Invite friends card ──
@@ -523,6 +535,7 @@ private fun resolveLabelKey(
 private fun TierLadderCard(
     tiers: List<TierInfoDto>,
     currentTier: LoyaltyTier,
+    currencyCode: String?,
 ) {
     Column(
         modifier = Modifier
@@ -553,7 +566,7 @@ private fun TierLadderCard(
             )
         } else {
             sorted.forEachIndexed { idx, tier ->
-                TierLadderRow(tierDto = tier, currentTier = currentTier)
+                TierLadderRow(tierDto = tier, currentTier = currentTier, currencyCode = currencyCode)
                 if (idx < sorted.lastIndex) Spacer(Modifier.height(12.dp))
             }
         }
@@ -564,6 +577,7 @@ private fun TierLadderCard(
 private fun TierLadderRow(
     tierDto: TierInfoDto,
     currentTier: LoyaltyTier,
+    currencyCode: String?,
 ) {
     val tier = LoyaltyTier.fromValue(tierDto.tier) ?: return
     val gradient = tierGradientColors(tier)
@@ -610,7 +624,7 @@ private fun TierLadderRow(
                 )
             }
             Text(
-                composeDiscountSummary(tierDto),
+                composeDiscountSummary(tierDto, currencyCode),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -640,20 +654,19 @@ private fun TierLadderRow(
  * Compose the per-tier discount summary line shown under the tier name in the
  * ladder. Three branches:
  *  - 0% discount → "No discount yet" (Bronze)
- *  - >0% with min order amount → "X% off orders ≥Y CZK" (Silver)
+ *  - >0% with min order amount → "X% off orders ≥ Y" (Silver), Y in the platform default currency
  *  - >0% with no min → "X% off all bookings" (Gold / Platinum)
  *
  * Discount percent is rendered as an integer (5, 10, 15) — backend stores it
- * as a 0..1 decimal so we multiply and round. Min-order amount likewise rounded
- * to a whole CZK value (no fractional thresholds exist in the agreed config).
+ * as a 0..1 decimal so we multiply and round.
  */
 @Composable
-private fun composeDiscountSummary(tierDto: TierInfoDto): String {
+private fun composeDiscountSummary(tierDto: TierInfoDto, currencyCode: String?): String {
     val pct = (tierDto.discountPercent * 100).toInt()
     if (pct <= 0) return stringResource(R.string.loyalty_no_discount_yet)
-    val minOrder = tierDto.minimumOrderAmountForDiscount?.toInt() ?: 0
+    val minOrder = tierDto.minimumOrderAmountForDiscount ?: 0.0
     return if (minOrder > 0) {
-        stringResource(R.string.loyalty_discount_min_order, pct, minOrder)
+        stringResource(R.string.loyalty_discount_min_order, pct, formatOrderPrice(minOrder, currencyCode))
     } else {
         stringResource(R.string.loyalty_discount_basic, pct)
     }

@@ -5,6 +5,7 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.memberships.CancelMembershipSubscriptionResponse
 import cz.cleansia.customer.core.memberships.CreateMembershipSubscriptionResponse
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
@@ -35,9 +36,11 @@ class MembershipViewModelTest {
 
     private lateinit var repository: MembershipRepository
     private lateinit var snackbar: SnackbarController
+    private lateinit var catalogRepository: CatalogRepository
     private lateinit var appContext: Context
     private val current = MutableStateFlow<GetMyMembershipResponse?>(null)
     private val loading = MutableStateFlow(false)
+    private val catalogCurrency = MutableStateFlow<String?>(null)
 
     @Before
     fun setUp() {
@@ -46,18 +49,35 @@ class MembershipViewModelTest {
         appContext = mockk(relaxed = true)
         every { repository.current } returns current
         every { repository.loading } returns loading
+        catalogRepository = mockk(relaxed = true)
+        every { catalogRepository.currencyCode } returns catalogCurrency
         coEvery { repository.refresh() } returns ApiResult.Error(ApiError.Network("network error"))
         coEvery { repository.getPlans() } returns ApiResult.Success(emptyList())
         every { appContext.getString(R.string.error_generic_network) } returns "network error"
     }
 
-    private fun viewModel() = MembershipViewModel(repository, snackbar, appContext)
+    private fun viewModel() = MembershipViewModel(repository, snackbar, catalogRepository, appContext)
 
     @Test
     fun `submit starts Idle`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
         assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    /**
+     * Neither a plan nor the membership arrives with a currency, so every figure on the Plus surfaces
+     * is labelled with the platform default the catalogue resolved — never a koruna literal.
+     */
+    @Test
+    fun `currencyCode mirrors the catalogue default`() = runTest {
+        val vm = viewModel()
+        assertEquals(null, vm.currencyCode.value)
+
+        catalogCurrency.value = "EUR"
+        advanceUntilIdle()
+
+        assertEquals("EUR", vm.currencyCode.value)
     }
 
     @Test

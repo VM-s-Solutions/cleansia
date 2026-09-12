@@ -600,8 +600,12 @@ private fun SheetContent(
                                                 } else {
                                                     com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
                                                 },
+                                                // Stripe: "The two-letter ISO 3166 code of the country of
+                                                // your business" — the merchant account, not the order.
                                                 countryCode = "CZ",
-                                                currencyCode = "CZK",
+                                                // The PaymentIntent's own currency wins on the sheet; this
+                                                // is the Google Pay availability hint.
+                                                currencyCode = outcome.paymentSheet.currencyCode,
                                             ),
                                             allowsDelayedPaymentMethods = false,
                                         ),

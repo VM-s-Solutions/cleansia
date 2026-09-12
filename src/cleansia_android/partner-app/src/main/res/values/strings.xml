@@ -1324,6 +1324,7 @@
     <string name="error_company_not_found">Company information not found</string>
     <string name="error_country_not_existing_id">Country not found</string>
     <string name="error_currency_invalid">Invalid currency</string>
+    <string name="error_currency_not_found">Currency not found</string>
     <string name="error_dispute_max_length_exceeded">Maximum length exceeded</string>
     <string name="error_employee_not_approved">Your account hasn\'t been approved yet.</string>
     <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>

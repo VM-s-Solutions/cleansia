@@ -16,7 +16,16 @@ import javax.inject.Singleton
  * EmployeeId server-side; a foreign employeeId comes back as employee.not_found.
  */
 interface PeriodPayRepository {
-    suspend fun getPeriodPays(employeeId: String, payPeriodId: String): ApiResult<PeriodPaySummary>
+    /**
+     * [currencyId] names the currency view — the invoice's, when My Pay is opened from one — so a
+     * cleaner with a koruna and a euro invoice in one period is shown the one they tapped. Null is
+     * the server's own rule: the cleaner's resolved currency, else the period's only invoice.
+     */
+    suspend fun getPeriodPays(
+        employeeId: String,
+        payPeriodId: String,
+        currencyId: String? = null,
+    ): ApiResult<PeriodPaySummary>
 }
 
 data class PeriodPaySummary(
@@ -51,6 +60,8 @@ data class OrderPayLine(
     val totalPay: Double,
     val isApproved: Boolean,
     val createdOn: String?,
+    /** The row's own currency; the summary's applies where the wire sends none. */
+    val currencyCode: String?,
 )
 
 // Stateless — nothing cached, so no SessionScopedCache
@@ -60,8 +71,12 @@ class PeriodPayRepositoryImpl @Inject constructor(
     private val json: Json,
 ) : PeriodPayRepository {
 
-    override suspend fun getPeriodPays(employeeId: String, payPeriodId: String): ApiResult<PeriodPaySummary> =
-        safeApiCall(json) { payrollApi.employeePayrollGetPeriodPays(employeeId, payPeriodId) }
+    override suspend fun getPeriodPays(
+        employeeId: String,
+        payPeriodId: String,
+        currencyId: String?,
+    ): ApiResult<PeriodPaySummary> =
+        safeApiCall(json) { payrollApi.employeePayrollGetPeriodPays(employeeId, payPeriodId, currencyId) }
             .mapWire { it.toDomain() }
 }
 
@@ -104,5 +119,6 @@ internal fun OrderEmployeePayDto.toDomainOrNull(): OrderPayLine? {
         totalPay = totalPay.required("totalPay"),
         isApproved = isApproved.required("isApproved"),
         createdOn = createdOn,
+        currencyCode = currencyCode,
     )
 }

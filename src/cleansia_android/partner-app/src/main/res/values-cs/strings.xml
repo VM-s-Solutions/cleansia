@@ -1309,6 +1309,7 @@
     <string name="error_company_not_found">Informace o společnosti nenalezeny</string>
     <string name="error_country_not_existing_id">Země nenalezena</string>
     <string name="error_currency_invalid">Neplatná měna</string>
+    <string name="error_currency_not_found">Měna nebyla nalezena</string>
     <string name="error_dispute_max_length_exceeded">Překročena maximální délka</string>
     <string name="error_employee_not_approved">Váš účet zatím nebyl schválen.</string>
     <string name="error_gdpr_consent_already_granted">Tento souhlas již byl udělen.</string>

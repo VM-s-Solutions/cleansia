@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
@@ -74,6 +75,7 @@ fun MembershipManagementCard(
     val current by viewModel.current.collectAsStateWithLifecycle()
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
+    val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val context = LocalContext.current
 
@@ -141,7 +143,7 @@ fun MembershipManagementCard(
             title = stringResource(R.string.membership_switch_dialog_title),
             message = stringResource(
                 R.string.membership_switch_dialog_message,
-                formatPriceCzkCard(yearlyPlan.price),
+                formatOrderPrice(yearlyPlan.price, currencyCode),
             ),
             confirmLabel = stringResource(R.string.membership_switch_dialog_confirm),
             onConfirm = {
@@ -492,11 +494,6 @@ private val PremiumGold = androidx.compose.ui.graphics.Color(0xFFD97706)
  */
 private val EndingAccent = androidx.compose.ui.graphics.Color(0xFFB91C1C)
 
-/** CZK formatter shared with the subscribe screen — local copy to avoid file deps. */
-private fun formatPriceCzkCard(amount: Double): String {
-    val rounded = if (amount % 1.0 == 0.0) amount.toInt().toString() else "%.2f".format(amount)
-    return "$rounded Kč"
-}
 
 /** Format a backend ISO-8601 instant as a localized short date (e.g. "May 30, 2026"). */
 private fun formatPeriodEnd(iso: String): String {

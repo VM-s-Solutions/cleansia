@@ -1294,6 +1294,7 @@
     <string name="error_company_not_found">Информация о компании не найдена</string>
     <string name="error_country_not_existing_id">Страна не найдена</string>
     <string name="error_currency_invalid">Недействительная валюта</string>
+    <string name="error_currency_not_found">Валюта не найдена</string>
     <string name="error_dispute_max_length_exceeded">Превышена максимальная длина</string>
     <string name="error_employee_not_approved">Ваш аккаунт ещё не одобрен.</string>
     <string name="error_gdpr_consent_already_granted">Это согласие уже предоставлено.</string>

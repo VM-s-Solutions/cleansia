@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
@@ -57,11 +58,19 @@ sealed interface SubscribeOutcome {
 class MembershipViewModel @Inject constructor(
     private val repository: MembershipRepository,
     private val snackbar: SnackbarController,
+    catalogRepository: CatalogRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     val current: StateFlow<GetMyMembershipResponse?> = repository.current
     val loading: StateFlow<Boolean> = repository.loading
+
+    /**
+     * Neither the membership nor a plan arrives with a currency — `monthlyPriceCzk` is the wire name,
+     * not a label — so every amount here is labelled with the platform default, as the web does.
+     * Null until the catalogue has loaded, when there is no figure to label yet.
+     */
+    val currencyCode: StateFlow<String?> = catalogRepository.currencyCode
 
     private val _submitState = MutableStateFlow<ActionState>(ActionState.Idle)
     val submitState: StateFlow<ActionState> = _submitState.asStateFlow()

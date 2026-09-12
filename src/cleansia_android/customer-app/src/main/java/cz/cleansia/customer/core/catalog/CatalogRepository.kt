@@ -18,7 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * In-memory cache of the public services and packages catalog, and of the currency it is priced in.
+ * In-memory cache of the public services and packages catalog, of the platform's default currency,
+ * and of the country the loaded catalogue is priced for.
  *
  * Category derivation lives at the call site — the services flow already carries the data, and a second
  * derived flow would be a second thing to keep in step.
@@ -32,6 +33,7 @@ class CatalogRepository @Inject constructor(
     private val _packages = MutableStateFlow<List<PackageListItem>>(emptyList())
     private val _extras = MutableStateFlow<List<ExtraListItem>>(emptyList())
     private val _currencyCode = MutableStateFlow<String?>(null)
+    private val _countryId = MutableStateFlow<String?>(null)
     private val _loading = MutableStateFlow(false)
     private val _loaded = MutableStateFlow(false)
 
@@ -40,14 +42,25 @@ class CatalogRepository @Inject constructor(
     val extras: StateFlow<List<ExtraListItem>> = _extras.asStateFlow()
 
     /**
-     * The platform's default currency — the one every catalogue price is stated in. Null until the
-     * catalogue has loaded, and [loaded] never flips true without it.
+     * The platform's default currency — what a catalogue row with no `currencyCode` of its own and
+     * every default-bound figure is stated in. Null until the catalogue has loaded, and [loaded] never
+     * flips true without it.
      */
     val currencyCode: StateFlow<String?> = _currencyCode.asStateFlow()
+
+    /**
+     * The country the loaded rows are priced for — null is the platform default. Set only by a
+     * successful [refresh], so it always describes the rows actually on screen.
+     */
+    val countryId: StateFlow<String?> = _countryId.asStateFlow()
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
-    suspend fun refresh(): ApiResult<Unit> = wireResult {
+    /**
+     * [countryId] is the booking's market: the server prices the overview in that country's currency
+     * and withholds every entry with no price row in it. Null asks for the platform default.
+     */
+    suspend fun refresh(countryId: String? = null): ApiResult<Unit> = wireResult {
         if (_loading.value) {
             Log.d(TAG, "refresh: already loading, skipping")
             return ApiResult.Success(Unit)
@@ -55,10 +68,10 @@ class CatalogRepository @Inject constructor(
         _loading.value = true
         Log.d(TAG, "refresh: start")
         try {
-            val servicesResp = networkCall(TAG) { api.getServices() }
+            val servicesResp = networkCall(TAG) { api.getServices(countryId) }
                 ?: return networkError()
 
-            val packagesResp = networkCall(TAG) { api.getPackages() }
+            val packagesResp = networkCall(TAG) { api.getPackages(countryId) }
                 ?: return networkError()
 
             val currenciesResp = networkCall(TAG) { api.getCurrencies() }
@@ -68,7 +81,7 @@ class CatalogRepository @Inject constructor(
             // back before the Extras table shipped to this env) the wizard
             // still functions, just without the add-on section. Don't fail
             // the whole catalog refresh on this one.
-            val extrasResp = networkCall(TAG) { api.getExtras() }
+            val extrasResp = networkCall(TAG) { api.getExtras(countryId) }
 
             Log.d(TAG, "refresh: services http=${servicesResp.code()} ok=${servicesResp.isSuccessful}")
             Log.d(TAG, "refresh: packages http=${packagesResp.code()} ok=${packagesResp.isSuccessful}")
@@ -108,6 +121,7 @@ class CatalogRepository @Inject constructor(
             _packages.value = packagesBody
             _extras.value = extrasBody.orEmpty()
             _currencyCode.value = defaultCurrency.code
+            _countryId.value = countryId
             _loaded.value = true
             Log.d(TAG, "refresh: DONE, _services=${_services.value.size} _packages=${_packages.value.size} _extras=${_extras.value.size} currency=${defaultCurrency.code} _loaded=true")
             return ApiResult.Success(Unit)

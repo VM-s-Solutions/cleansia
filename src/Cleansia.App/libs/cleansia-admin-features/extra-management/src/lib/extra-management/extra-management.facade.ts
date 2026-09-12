@@ -2,13 +2,14 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminCurrencyListItem,
   ExtraListItem,
   SortDefinition,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { Observable, catchError, finalize, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { resolveExtraErrorKey } from './extra-management.models';
 
 export interface ExtraFilterParams {
@@ -35,19 +36,39 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
 
   readonly isActiveFilter = computed(() => this.currentFilter()?.isActive);
 
+  /**
+   * The currency the list's price column is in. The paged list shows the platform default currency's
+   * row (ExtraListItem carries no code of its own -- it travels on both mobile specs), so the code is
+   * read once from the currency overview rather than assumed. Null until known; the formatter then
+   * prints the bare number rather than a currency it cannot name.
+   */
+  readonly defaultCurrencyCode = signal<string | null>(null);
+
   loadExtras(): void {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    this.adminClient.adminExtraClient
-      .getPaged(
-        filterParams?.searchTerm,
-        filterParams?.isActive,
-        this.currentSort(),
-        this.currentOffset(),
-        this.currentLimit()
-      )
+    // The currency first, once, so the rows never render under a label that arrives later.
+    const currency$: Observable<string | null> =
+      this.defaultCurrencyCode() !== null
+        ? of(this.defaultCurrencyCode())
+        : this.adminClient.adminCurrencyClient.getOverview().pipe(
+            catchError(() => of([] as AdminCurrencyListItem[])),
+            map((currencies) => (currencies ?? []).find((c) => c.isDefault)?.code ?? null),
+            tap((code) => this.defaultCurrencyCode.set(code))
+          );
+
+    currency$
       .pipe(
+        switchMap(() =>
+          this.adminClient.adminExtraClient.getPaged(
+            filterParams?.searchTerm,
+            filterParams?.isActive,
+            this.currentSort(),
+            this.currentOffset(),
+            this.currentLimit()
+          )
+        ),
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
@@ -88,9 +109,11 @@ export class ExtraManagementFacade extends UnsubscribeControlDirective {
 
   formatCurrency(value: number | undefined): string {
     if (value === undefined || value === null) return '';
+    const currencyCode = this.defaultCurrencyCode();
+    if (!currencyCode) return String(value);
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'CZK',
+      currency: currencyCode,
     }).format(value);
   }
 

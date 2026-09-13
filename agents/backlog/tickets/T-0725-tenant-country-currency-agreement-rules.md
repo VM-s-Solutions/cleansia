@@ -49,3 +49,21 @@ case, the unresolved country left to the handler, one resolution for both rules)
 `ApproveEmployeeWorkCountryOperatorTests`, `GetMarketsHandlerTests` (the operator-less market),
 `CreateOrderCallerCurrencyTests` (TC-TEN-MISMATCH-1 over Postgres, the guest booking landing in the
 Slovak company).
+
+## Review
+
+Second pass, 2026-09-13, against the acceptance criteria on the tree at `e5a45de3`. Every criterion
+already has its named test; nothing was added. Sabotages, each restored byte-exact before the next:
+
+- `CreateOrder.Validator`: the operator comparison replaced by `return true` →
+  `CreateOrderOperatorAgreementTests` 2 red / 3 green.
+- `ApproveEmployee.Validator`: the comparison replaced by `IsMarket` →
+  `ApproveEmployeeWorkCountryOperatorTests` 1 red / 2 green.
+- `GetMarkets.Handler`: the operator-less predicate disabled (`&& false`) → `GetMarketsHandlerTests`
+  1 red / 12 green.
+
+TC-TEN-MISMATCH-3 as written (a guest naming a `SavedAddressId` in another operator's country) cannot
+occur: a guest's `SavedAddressId` is refused `general.not_found` by `OrderAddressResolver`, so the
+guest case is proven with the rule's inputs mocked
+(`CreateOrderOperatorAgreementTests.A_Guest_Is_Held_To_The_Same_Rule_As_A_Customer`). Suites:
+Cleansia.Tests 4887, IntegrationTests 351, HostTests 183, green.

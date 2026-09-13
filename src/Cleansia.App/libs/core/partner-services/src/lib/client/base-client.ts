@@ -18,6 +18,7 @@ import {
   IEmployeeClient,
   IEmployeePayrollClient,
   ILanguageClient,
+  IMarketClient,
   IOrderClient,
   IPackageClient,
   IPayPeriodClient,
@@ -25,6 +26,7 @@ import {
   IServiceClient,
   IUserClient,
   LanguageClient,
+  MarketClient,
   OrderClient,
   PackageClient,
   PayPeriodClient,
@@ -46,6 +48,7 @@ interface IPartnerClient {
   employeeClient: IEmployeeClient;
   employeePayrollClient: IEmployeePayrollClient;
   languageClient: ILanguageClient;
+  marketClient: IMarketClient;
   packageClient: IPackageClient;
   payPeriodClient: IPayPeriodClient;
   paymentClient: IPaymentClient;
@@ -85,6 +88,10 @@ export class PartnerClient implements IPartnerClient {
     this.apiBaseUrl
   );
   languageClient: ILanguageClient = new LanguageClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  marketClient: IMarketClient = new MarketClient(
     this.httpClient,
     this.apiBaseUrl
   );

@@ -1491,6 +1491,8 @@
       "email": "Електронна пошта",
       "password": "Пароль",
       "confirm_password": "Підтвердити пароль",
+      "market": "Ринок",
+      "market_placeholder": "Оберіть свій ринок",
       "terms_agreement": "Я погоджуюсь з умовами",
       "terms_and_conditions": "Я погоджуюсь з <a href='/gdpr' target='_blank'>Умовами обслуговування та Політикою конфіденційності</a>",
       "have_account": "Вже є обліковий запис?",

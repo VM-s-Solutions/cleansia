@@ -1491,6 +1491,8 @@
       "email": "Электронная почта",
       "password": "Пароль",
       "confirm_password": "Подтвердить пароль",
+      "market": "Рынок",
+      "market_placeholder": "Выберите свой рынок",
       "terms_agreement": "Я соглашаюсь с условиями",
       "terms_and_conditions": "Я соглашаюсь с <a href='/gdpr' target='_blank'>Условиями обслуживания и Политикой конфиденциальности</a>",
       "have_account": "Уже есть учётная запись?",

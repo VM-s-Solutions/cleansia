@@ -1491,6 +1491,8 @@
       "email": "E-mail",
       "password": "Heslo",
       "confirm_password": "Potvrdit heslo",
+      "market": "Trh",
+      "market_placeholder": "Vyberte svůj trh",
       "terms_agreement": "Souhlasím s podmínkami",
       "terms_and_conditions": "Souhlasím s <a href='/gdpr' target='_blank'>Obchodními podmínkami a Zásadami ochrany osobních údajů</a>",
       "have_account": "Již máte účet?",

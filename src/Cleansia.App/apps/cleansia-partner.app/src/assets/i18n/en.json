@@ -1491,6 +1491,8 @@
       "email": "Email",
       "password": "Password",
       "confirm_password": "Confirm Password",
+      "market": "Market",
+      "market_placeholder": "Choose your market",
       "terms_agreement": "I agree to the terms",
       "terms_and_conditions": "I agree to the <a href='/gdpr'>Terms of Service and Privacy Policy</a>",
       "have_account": "Already have an account?",

@@ -230,9 +230,8 @@ final class CustomerAuthViewModel: ViewModel {
             return .idle
         }
         referralState = .validating
-        let resolved: ReferralCodeState = switch await referralClient
-            .validate(code: normalized, countryId: marketCountryId)
-        {
+        let validated = await referralClient.validate(code: normalized, countryId: marketCountryId)
+        let resolved: ReferralCodeState = switch validated {
         case let .success(validation):
             if validation.isValid {
                 .valid(referrerFirstName: validation.referrerFirstName)

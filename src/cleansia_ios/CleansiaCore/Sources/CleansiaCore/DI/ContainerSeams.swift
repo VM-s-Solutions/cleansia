@@ -14,6 +14,9 @@ public protocol RegistrationAuthClient: AnyObject {
 }
 
 public extension RegistrationAuthClient {
+    // One label per wire member, `countryId` deliberately without a default so every caller names the
+    // market (or its absence) rather than forgetting it.
+    // swiftlint:disable:next function_parameter_count
     func register(
         email: String,
         password: String,

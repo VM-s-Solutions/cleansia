@@ -11,7 +11,8 @@ public class GdprExportService(
     IEmployeeDocumentRepository employeeDocumentRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
     IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
-    IUserConsentRepository userConsentRepository) : IGdprExportService
+    IUserConsentRepository userConsentRepository,
+    ICustomerActionAuditRepository customerActionAuditRepository) : IGdprExportService
 {
     public async Task<GdprExportDto> BuildAsync(
         string userId,
@@ -82,11 +83,20 @@ public class GdprExportService(
         var consentDtos = consents.Select(c => new GdprExportConsentDto(
             c.Id, c.ConsentType, c.IsGranted, c.GrantedAt, c.WithdrawnAt)).ToList();
 
+        var customerActions = await customerActionAuditRepository.GetQueryable()
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.OccurredOn)
+            .AsNoTracking()
+            .Select(a => new GdprExportCustomerActionDto(
+                a.Action, a.OccurredOn, a.ResourceType, a.ResourceId, a.Success, a.ErrorCode,
+                a.PayloadJson, a.IpAddress, a.DeviceLabel, a.ClientAudience))
+            .ToListAsync(cancellationToken);
+
         var metadata = new GdprExportMetadataDto(
             DateTimeOffset.UtcNow, exportedBy, "JSON");
 
         return new GdprExportDto(
             profile, address, employee, payoutDetails, orders,
-            documents, invoices, consentDtos, metadata);
+            documents, invoices, consentDtos, customerActions, metadata);
     }
 }

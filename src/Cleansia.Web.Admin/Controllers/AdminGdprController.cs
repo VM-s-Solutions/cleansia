@@ -14,12 +14,13 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminGdprController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpGet("export/{userId}")]
+    [HttpPost("export/{userId}")]
     [Permission(Policy.CanAdminExportUserData)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(GdprExportDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportUserData(string userId, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new AdminExportUserData.Query(userId), cancellationToken);
+        var result = await Mediator.Send(new AdminExportUserData.Command(userId), cancellationToken);
         return HandleResult<GdprExportDto>(result);
     }
 

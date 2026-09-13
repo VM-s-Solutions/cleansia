@@ -285,7 +285,8 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             Mock.Of<IEmployeeDocumentRepository>(),
             Mock.Of<IEmployeeInvoiceRepository>(),
             Mock.Of<IEmployeePayoutDetailsRepository>(),
-            consentRepository.Object);
+            consentRepository.Object,
+            new CustomerActionAuditRepository(ctx));
 
         var export = await service.BuildAsync(userId, exportedBy: "admin-cold", CancellationToken.None);
 

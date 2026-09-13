@@ -11,6 +11,7 @@ public record GdprExportDto(
     List<GdprExportDocumentDto> Documents,
     List<GdprExportInvoiceDto> Invoices,
     List<GdprExportConsentDto> Consents,
+    List<GdprExportCustomerActionDto> CustomerActions,
     GdprExportMetadataDto Metadata
 );
 
@@ -103,6 +104,25 @@ public record GdprExportConsentDto(
     bool IsGranted,
     DateTimeOffset? GrantedAt,
     DateTimeOffset? WithdrawnAt
+);
+
+/// <summary>
+/// ADR-0062 D5 — the subject's own conduct record, row for row as the platform holds it: the act, its
+/// outcome, the evidence payload and the request context. After an erasure the IP address and device
+/// label read null because the row was pseudonymised, and the payload is still there because it is
+/// what a dispute is answered from.
+/// </summary>
+public record GdprExportCustomerActionDto(
+    string Action,
+    DateTimeOffset OccurredOn,
+    string? ResourceType,
+    string? ResourceId,
+    bool Success,
+    string? ErrorCode,
+    string? PayloadJson,
+    string? IpAddress,
+    string? DeviceLabel,
+    string ClientAudience
 );
 
 public record GdprExportMetadataDto(

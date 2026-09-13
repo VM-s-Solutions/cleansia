@@ -244,8 +244,10 @@ public class SubjectDataErasureRosterTests
 
         [typeof(Core.Domain.Users.GdprRequest)] = new(
             Verdict.RetainedByPolicy,
-            "It IS the erasure's own audit record — deleting it would erase the evidence that the erasure "
-                + "happened. The retention job anonymizes its ProcessedBy after its own window.",
+            "It IS the erasure's own audit record — and, since ADR-0062, the subject export's: both the "
+                + "customer's self-export and the admin export commit their Export row. Deleting it would erase "
+                + "the evidence that the erasure or the export happened. The retention job anonymizes its "
+                + "ProcessedBy after its own window.",
             InErasure("gdprRequestRepository.Add(auditEntry)")),
 
         [typeof(Core.Domain.Auditing.AdminActionAudit)] = new(

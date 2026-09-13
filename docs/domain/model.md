@@ -116,9 +116,19 @@ is a row in `ServicePrices` (`BasePrice`, `PerRoomPrice`), `PackagePrices` (`Pri
 (`Price`), one per (entry, currency). Nothing converts between rows — an entry with no row in a
 currency is simply not sold in it. `Currency` has no exchange rate: its columns are `Code` (unique,
 case-insensitive), `Symbol`, `Name`, `IsDefault` (a filtered unique index holds exactly one), `IsActive`
-(the market switch — a new currency is born switched off) and `LoyaltyPointsDivisor` (how much of the
-currency earns one point; required before the market can be switched on).
+(the market switch — a new currency is born switched off), `LoyaltyPointsDivisor` (how much of the
+currency earns one point; required before the market can be switched on) and `NoShowCredit` (the
+apology credit paid on an order in this currency when its slot arrives with no cleaner; null = none —
+not an activation gate).
 → [Platform expandability](/architecture/platform-expandability#market-switch)
+
+**A market is not an entity.** It is a `Country` that is serviced, whose `CountryConfiguration.DefaultCurrencyCode`
+names an active `Currency` — three existing rows joined by the anonymous `Market/GetOverview` read.
+`Country` carries `IsoCode` (alpha-3, what clients persist) and `IsoAlpha2` (what the market chip
+prints); `CountryConfiguration` carries, besides the fiscal and formatting columns, `InsuranceCoverageAmount`
+— the one marketing figure in customer copy, a number in the country's currency, per country because
+a policy is written per jurisdiction, null = the copy names no figure. → [ADR-0058](/decisions/adr-0058),
+[ADR-0060](/decisions/adr-0060)
 
 | Entity | |
 |---|---|
@@ -128,11 +138,11 @@ currency earns one point; required before the market can be switched on).
 | `ServicePrice` | references `Service` (Cascade — a price has no meaning without the thing it prices), `Currency` (Restrict); unique `(ServiceId, CurrencyId)` |
 | `PackagePrice` | references `Package` (Cascade), `Currency` (Restrict); unique `(PackageId, CurrencyId)` |
 | `ExtraPrice` | references `Extra` (Cascade), `Currency` (Restrict); unique `(ExtraId, CurrencyId)` |
-| `Currency` | — |
-| `Country` | — |
+| `Currency` | — ; `NoShowCredit` (nullable) is the per-currency apology credit |
+| `Country` | — ; `IsoCode` alpha-3 + `IsoAlpha2` (required, two letters) |
 | `Language` | — |
 | `CompanyInfo` | references `Country` |
-| `CountryConfiguration` | references `Country` |
+| `CountryConfiguration` | references `Country`; `InsuranceCoverageAmount` (nullable) is the per-country copy figure |
 | `PropertySizePreset` | references `Country` (Restrict); unique `(CountryId, Code)` — the size chips a country's booking wizard offers |
 | `ServiceCity` | references `Country` |
 
@@ -178,10 +188,21 @@ that money was ever recorded in cannot be deleted. → [Pay and payouts](/flows/
 ```mermaid
 erDiagram
   UserMembership }o--|| MembershipPlan : "MembershipPlan"
+  UserMembership }o--|| Currency : "Currency"
+  MembershipPlanPrice }o--|| MembershipPlan : "MembershipPlan"
+  MembershipPlanPrice }o--|| Currency : "Currency"
   Referral }o--|| ReferralCode : "ReferralCode"
   PromoCodeRedemption }o--|| PromoCode : "PromoCode"
   MembershipBenefitUsage }o--|| UserMembership : "UserMembership"
 ```
+
+**A plan carries no price, like a catalogue entry.** `MembershipPlan` is the benefits and the billing
+cadence; what it costs, and which Stripe Price charges it, is a `MembershipPlanPrice` row per
+(plan, currency) — the `PackagePrice` shape plus the Stripe id. A plan with no row in a currency is not
+on sale in that market. `UserMembership.CurrencyId` is the currency the subscription was created in
+(the chosen market's), never updated: Stripe refuses a currency change on a live subscription, so a
+plan swap reads the target plan's row in this currency. Both plan tables are platform config; the
+membership is tenant-scoped. → [ADR-0059](/decisions/adr-0059)
 
 | Entity | |
 |---|---|
@@ -192,8 +213,9 @@ erDiagram
 | `Referral` | references `FirstQualifyingOrder`, `ReferralCode`, `Referred`, `Referrer` |
 | `PromoCode` | references `Currency` |
 | `PromoCodeRedemption` | references `Order`, `PromoCode`, `User` |
-| `MembershipPlan` | — |
-| `UserMembership` | references `MembershipPlan`, `User` |
+| `MembershipPlan` | — (no price column) |
+| `MembershipPlanPrice` | references `MembershipPlan` (Cascade), `Currency` (Restrict); unique `(MembershipPlanId, CurrencyId)` with no tenant term, unique `StripePriceId` |
+| `UserMembership` | references `MembershipPlan`, `Currency` (Restrict — the subscription's currency for life), `User` |
 | `MembershipBenefitUsage` | references `Order`, `UserMembership`, `User` |
 
 ## Platform

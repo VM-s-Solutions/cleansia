@@ -70,6 +70,27 @@ need backfilling.
 
 ### Added
 
+- **Customer — you choose the market you browse in.** A market selector sits beside the language
+  switcher in the web navbar and footer and under Profile → Preferences → Market on Android and iOS,
+  and a "CZ · CZK" chip beside the home quick quote opens the same selector. The choice is remembered
+  on the device (one cookie on the web, so the server-rendered page and the browser agree), defaults
+  to the platform's default market, and drives the catalogue, the quick quote, the property-size
+  presets, the Plus plans and the money figures in the copy — until a booking's address takes over,
+  which it still does silently. With one market on sale the selector stays hidden and the chip is a
+  plain label; if the market list cannot be loaded nothing guesses a unit. (ADR-0058)
+
+- **Customer — Cleansia Plus is priced per market.** The Plus page, the wizard's Plus step and both
+  mobile Subscribe screens show the plans priced in your chosen market's currency; a market with no
+  priced plan says "Plus is not available in your market yet" instead of showing a price. A
+  subscription keeps the currency it was started in for life — the management screens label it that
+  way whatever market you browse in now, and the switch to annual is offered only when the yearly
+  plan is priced in it. (ADR-0059)
+
+- **Admin — a price per currency on the membership plan form**, a no-show apology credit per currency
+  on the currency form, a two-letter code and an insurance ceiling on the country form, and an
+  anonymous `GET /api/Market/GetOverview` on both customer hosts listing the markets. (ADR-0058,
+  ADR-0059, ADR-0060)
+
 - **Cleaner — reminders about the jobs you have already taken.** Three of them, and none can be switched
   off. The evening before, from 18:00 **in your own local time**, a digest saying how many jobs you have
   tomorrow. About two hours before each job, a reminder naming it. And close to the start, if you still
@@ -146,6 +167,19 @@ need backfilling.
   client sends the slot yet, so nothing displays this today. (ADR-0039)
 
 ### Changed
+
+- **Customer — the money figures in the copy come from the market, not from the translation.** The
+  "if we cancel" apology credit on the home page, the insurance ceiling on the mobile trust badge and
+  FAQ, and the currency named in the terms are formatted from the market you browse in; a market with
+  no figure gets the sentence without one. The apology credit is now authored per currency by an admin
+  (250 on CZK, none elsewhere yet) and paid in the order's own currency; the push that announces it
+  names the credit but no longer states an amount — the figure is on your credit screen with its
+  unit. The seasonal "window + upholstery combo" card on the mobile home tabs is gone: nothing backed
+  it. (ADR-0060)
+
+- **Admin — a country cannot be switched on as serviced until its configuration names an active
+  currency.** The wizard used to offer such a country as an address and the quote then failed; the
+  refusal now lands on the admin (`country.market_not_ready`). (ADR-0058)
 
 - **Cleaner — the weekly limit on how many jobs you can take is gone by default.** It used to scale with
   your rating: under 3.5 stars you could hold three jobs a week, under 4.5 six, above that ten. A cleaner
@@ -252,6 +286,12 @@ need backfilling.
   nothing should start producing it, and no order can be moved into it. (ADR-0037)
 
 ### Removed
+
+- **`MembershipPlan.MonthlyPriceCzk` / `StripePriceId` and `BookingPolicy.NoShowCreditCzk`.** A
+  plan's price and Stripe Price id are `MembershipPlanPrice` rows, one per currency; the apology
+  credit is `Currency.NoShowCredit`. The customer and admin wires renamed `monthlyPriceCzk` to `price`
+  and gained `currencyCode`; the `Initial` migration was regenerated (DEV drop owed at deploy).
+  (ADR-0059, ADR-0060)
 
 - **Customer — the Cleansia Plus "same-day express upgrade" perk claim is gone from the web, Android
   and iOS apps.** It promised something the pricing never delivered: "express" is a 2–4 hour lead-time

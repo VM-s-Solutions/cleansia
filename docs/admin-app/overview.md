@@ -165,6 +165,28 @@ The admin app provides CRUD interfaces for platform-wide configuration:
 
 Per-employee pay overrides are managed on the Employee Detail page (see [User Management](./user-management)), not via Global Rates.
 
+### The market forms (ADR-0058, ADR-0059, ADR-0060)
+
+Three of those forms author what a customer's **market** shows:
+
+- **Membership plans** — the plan form renders **one price block per currency the platform knows**
+  (active currencies badged *Active*, inactive ones *Optional*), each with a price for one billing
+  period and the Stripe Price id that charges it. Every block is optional: a block is sent only when
+  both fields are filled, a half-filled block is a per-block error, and a currency the plan is not
+  priced in stays blank on populate (never `0`). The list shows the platform-default-currency price
+  with its code and prints "—" when the plan has none. Refusals rendered: `currency.not_found`,
+  `membership.plan.stripe_price_already_used`.
+- **Currencies** — `No-show apology credit` beside the loyalty divisor: the amount `CancelUnfilledOrders`
+  pays on an order in that currency; blank means none is paid.
+- **Countries** — the `Two-letter code` (required on create, pattern-checked on edit; the market chip
+  prints it) and a **Market** section with `Insurance coverage per booking`, disabled with a hint until
+  the country has a configuration row. The Market section saves through its own PUT after the country
+  update (`country.configuration_missing` if the row is missing). On the Service Area page the serviced
+  toggle snaps back off with `country.market_not_ready` when the country's configured currency is not
+  active.
+
+→ [API — markets and memberships](/api/markets-and-memberships)
+
 ## Mobile Responsiveness
 
 The admin app includes a mobile-optimized layout. On smaller screens, a **fixed mobile toolbar** is displayed with:

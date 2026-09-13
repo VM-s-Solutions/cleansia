@@ -4,10 +4,18 @@ What the platform does, by audience. Each line is shipped behaviour, not a roadm
 
 ## Customer
 
+**Choosing a market** — pick the country you browse in (a market selector in the web navbar and
+footer, Profile → Preferences → Market on the mobile apps, and a "CZ · CZK" chip beside the home
+quick quote that opens the same selector). The choice is remembered on the device, defaults to the
+platform's default market, and drives the catalogue, the quick quote, the Plus plans and the money
+figures in the copy until a booking's address takes over. One market today (CZ), so the selector
+stays hidden and the chip is a plain label. → [Business rules — the market](/product/business-rules#market)
+
 **Booking** — browse the service catalogue and packages, pick rooms, bathrooms and extras, choose a
 date and a 60-minute window between 08:00 and 20:00, and pay by card or cash. Book as a guest with no
 account. Get a live price quote before committing, including whether an express surcharge applies and
-whether a membership waives it.
+whether a membership waives it. Before the address step the catalogue and the quote are in the chosen
+market's currency; from the address step on, the address's country decides.
 
 **Recurring bookings** — set up a repeating clean; occurrences materialise ahead of time and are
 confirmed individually, so a single occurrence can be skipped without cancelling the arrangement. A
@@ -30,7 +38,14 @@ three complaints this month"* answerable.
 [Business rules](/product/business-rules#cancellation).
 
 **Cleansia Plus** — a discount, a wider free-cancellation window, and a monthly quota of
-express-surcharge waivers.
+express-surcharge waivers. Priced per market: the Plus page, the wizard's Plus step and the mobile
+Subscribe screens show the plans priced in the chosen market's currency, a market with no priced plan
+says so instead of showing a price, and a subscription keeps the currency it was started in for life.
+→ [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
+
+**Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
+comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
+from the market, not from the translation; a market with no figure gets the sentence without one.
 
 **Loyalty and referrals** — earn points, move through tiers, share a referral code, redeem promo codes.
 
@@ -84,10 +99,14 @@ per currency it is sold in, nothing converts, and an entry with no price in a cu
 in it. Extras are priced per currency like services and packages; the slug is fixed at creation
 because order lines snapshot it, so deactivating is how an extra is retired once an order references
 it. A currency is switched on deliberately — a new one starts inactive — and the platform default
-cannot be switched off.
+cannot be switched off. The currency form also authors the no-show apology credit paid in that
+currency; the country form carries the two-letter code the market chip prints and, under "Market",
+the insurance ceiling the customer copy states for that country; and a country cannot be switched on
+as serviced until its configuration names an active currency.
 
-**Growth** — promo codes, referral programme, loyalty tiers, membership plans, site-wide push
-campaigns, email templates.
+**Growth** — promo codes, referral programme, loyalty tiers, membership plans (a price and a Stripe
+Price id per currency, any currency optional — a plan unpriced in a market is simply not on sale
+there), site-wide push campaigns, email templates.
 
 **Oversight** — an append-only audit log of privileged actions, including the ones that failed, plus
 revenue and payroll reporting — one currency per report, never a sum across two — and GDPR request

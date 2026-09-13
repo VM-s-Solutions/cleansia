@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**57 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**60 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -101,6 +101,9 @@ Grey nodes are superseded in whole or in part.
 | **[ADR-0055](./adr-0055)** | A cleaner may set off or start only inside a 60-minute… | `accepted` |
 | **[ADR-0056](./adr-0056)** | Property size is two integers; the label is per-country… | `proposed` |
 | **[ADR-0057](./adr-0057)** | Confirmed means a cleaner took the job, and nothing else | `accepted` |
+| **[ADR-0058](./adr-0058)** | A customer's market is chosen, remembered, and overridden by the address | `accepted` |
+| **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
+| **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

@@ -291,6 +291,16 @@ each new key, so "the perk is advertised again" is pinned rather than assumed. M
 inverted spec with one mutation per property — the copy going false, the number going hard, the gate
 going away — not just by deleting a key.
 
+**The money-figure form of property 2 is now the rule for every customer-facing amount** (ADR-0060
+D0, built in T-0715): a locale string carries `{{amount}}` / `{{currency}}` and nothing else that is
+money; the component formats the market's figure with the shared `formatMoney(value, currencyCode,
+locale)` and renders a second key when the market has no figure. The reference is
+`home/.../rules/rules.component.ts` — `creditAmount` is a `computed` over `selectMarketNoShowCredit`
+and `selectMarketCurrencyCode`, null when the credit is null, zero or no market resolved, and the
+template branches to `we_cancel_value_refund_only` on null. The repo-wide pin is
+`agents/tools/check-booking-policy-parity.mjs` (`pinPlaceholderCopy`: placeholder present, no integer
+and no currency word after the placeholder slot is stripped, five locales × three clients).
+
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 
 > **A spec asserting a translated refusal needs `Blob.prototype.text`, or it proves nothing — and the

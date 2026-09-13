@@ -271,13 +271,15 @@ POST /api/Order/Quote
 `cleaningDate` is optional — omit it on the wizard's first step, before a slot is chosen, and the
 express-surcharge check is skipped.
 
-`countryId` — optional; the service address's country once the wizard has one. The quote is priced
-in that country's currency (owner ruling 2026-09-12: the market is the booking's, not the customer's);
-a country the platform does not service is refused as `country.not_serviced`. `currencyId` — optional;
-an explicit currency, which wins over `countryId` — it exists so a client can re-quote in exactly the
-currency it was first quoted in, not so it can choose one, and on create it is checked against the
-address. With neither the quote is in the platform default, which is what the wizard's first step and
-the home page's quick quote get. Whichever way it resolves, the currency must be one the platform can
+`countryId` — optional; the service address's country once the wizard has one, and the customer's
+**chosen market** before that (the home page's quick quote and the wizard's first step send the
+market's, ADR-0058). The quote is priced in that country's currency (owner ruling 2026-09-12: the
+market of an order is the address's; the market browsed in before there is one is the customer's
+choice); a country the platform does not service is refused as `country.not_serviced`. `currencyId` —
+optional; an explicit currency, which wins over `countryId` — it exists so a client can re-quote in
+exactly the currency it was first quoted in, not so it can choose one, and on create it is checked
+against the address. With neither the quote is in the platform default, which is what a client whose
+market list failed to load sends. Whichever way it resolves, the currency must be one the platform can
 quote in — switched on and carrying at least one catalogue price row — or the quote is refused as
 `currency.invalid`. The response's `currencyId` / `currencyCode` say which one was used. Prices are
 authored per currency and nothing converts, so a selected service or package with no price row in
@@ -395,7 +397,8 @@ GET /api/Extra/GetOverview?countryId=country-id
 
 **Auth:** Anonymous
 
-`countryId` — optional; the service address's country once the wizard has one. A country the platform
+`countryId` — optional; the service address's country once the wizard has one, else the customer's
+chosen market (the home strips and `/services` send the market's). A country the platform
 does not serve (unknown id, or `Country.IsServiced` false) has **no catalogue**: the overview answers an
 empty list, never the default catalogue and never an error, before any currency is resolved. A
 serviced country's overview is priced in that country's currency and **withholds** any entry that
@@ -429,8 +432,10 @@ catalogue, re-reads the overview with the country and prunes any selection that 
 otherwise the next quote refuses the selection as `order.selected_services.invalid`.
 
 The Partner host's `Service/GetOverview` and `Package/GetOverview` take no `countryId` and answer in
-the platform default. `GET /api/Currency/GetOverview` (anonymous, Customer + Customer Mobile) lists
-the currencies with `isDefault`, for a surface that has no country yet to learn what the default is.
+the platform default. A customer surface that has no country yet learns its market — country, currency
+and `isDefault` in one row — from `GET /api/Market/GetOverview` (anonymous, Customer + Customer
+Mobile); `GET /api/Currency/GetOverview` still lists the currencies with `isDefault` for admin-style
+readers. → [Markets and memberships](/api/markets-and-memberships)
 
 ---
 

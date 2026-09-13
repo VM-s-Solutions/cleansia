@@ -24,8 +24,11 @@ The oops window is **15 minutes** from booking, or **60** for a first-time custo
 close the cleaning is. A Plus membership can widen the free window. The fee ladder itself is priced in
 exactly one place.
 
-When the **cleaner** cancels or no-shows, the customer is refunded *and* credited 250 CZK. The credit
-is the apology; the refund is not.
+When the **cleaner** cancels or no-shows, the customer is refunded *and* credited the apology figure
+authored for the order's currency — `Currency.NoShowCredit`, 250 on a CZK order, paid into the
+customer's credit account in that currency. The credit is the apology; the refund is not. A currency
+with no figure pays no credit and sends the plain cancellation push rather than the one that promises
+one. → [Money constants](/product/business-rules#money-constants)
 
 ## Refund
 

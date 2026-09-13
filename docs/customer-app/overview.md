@@ -11,7 +11,8 @@ Provide a seamless booking experience for cleaning services, allowing both authe
 | Feature          | Description                                                                                                                                                                                                                 |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Home page        | Landing page with "What you get with our service" benefits section (Less worries, More time, Professional approach, Clean home), "How it works" (6 booking-flow steps), FAQ (6 questions), "Why Choose Us" section, and CTA |
-| Services catalog | Browse available cleaning services and packages                                                                                                                                                                             |
+| Market           | A market selector (navbar, mobile menu, footer — drawn only with two or more markets) and a "CZ · CZK" chip beside the quick quote; the choice lives in one cookie, `preferred_market`, so SSR and the browser resolve the same market; every pre-address surface sends its `countryId` |
+| Services catalog | Browse available cleaning services and packages, priced in the chosen market                                                                                                                                                 |
 | Order wizard     | Multi-step booking flow (services, address, date/time, payment, review)                                                                                                                                                     |
 | Checkout         | Stripe card payments or cash-on-delivery                                                                                                                                                                                    |
 | Order tracking   | Anonymous order lookup by order number + email                                                                                                                                                                              |
@@ -90,6 +91,11 @@ The customer app uses NgRx with `customerReducers` and `customerEffects`:
 - **Customer user store** -- Current user profile
 - **Customer services store** -- Available services list
 - **Customer packages store** -- Available packages list
+- **Market store** -- `markets[]` from `Market/GetOverview`, `selectedIsoCode`, `loadFailed`; resolved by
+  the `initializeMarket` APP_INITIALIZER on both the server (request cookie) and the browser
+  (`document.cookie`), never throws, retried on the next navigation while failed. Selectors:
+  `selectMarket`, `selectMarketCountryId` (null when unresolved), `selectMarketCurrencyCode`,
+  `selectMarketNoShowCredit`, `selectMarketInsuranceCoverageAmount`, `selectHasMarketChoice`.
 
 Feature-level state is managed via signal-based Facades (e.g., `OrderWizardFacade`, `LoginFacade`).
 

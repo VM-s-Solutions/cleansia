@@ -83,13 +83,16 @@ first-time window buys trust from someone who has not used the platform before.
 
 ### When the cleaner cancels or no-shows
 
-The customer is refunded **and** credited **250 CZK**. The credit is the apology; the refund is not.
+The customer is refunded **and** credited the apology figure authored for the order's currency —
+**250 CZK** on a CZK order. The credit is the apology; the refund is not.
 
 > Implemented by the unfilled-order sweep (`CancelUnfilledOrders`) — the one no-show the platform can
 > prove: the slot was reached and nobody ever took the seat. Every other version of "the cleaner did not
 > arrive" rests on a missing tap, which is indistinguishable from a cleaner who turned up and forgot to
-> slide to start, so no lateness detector refunds on its own, and a drop refunds nothing. The credit is
-> paid only on an order in the platform default currency; see [Money constants](#money-constants).
+> slide to start, so no lateness detector refunds on its own, and a drop refunds nothing. The figure is
+> `Currency.NoShowCredit`, authored per currency; a currency with none pays no credit and the push is
+> the plain cancellation. The home page states the figure from the market, never from the translation;
+> see [Money constants](#money-constants).
 
 ## Disputes {#disputes}
 
@@ -143,6 +146,31 @@ All six resolve through **one** entitlement predicate
 period and a trialing enrolment are refused identically. That predicate is deliberately separate from
 the *lifecycle* one that answers "is there a live enrolment?" — the lifecycle question is what stops a
 second Stripe subscription, lets a customer cancel, and is what GDPR erasure reads.
+
+**Plus is priced per market, and a subscription keeps its currency for life** (owner ruling
+2026-09-12, [ADR-0059](/decisions/adr-0059)). A plan's price is a row per currency
+(`MembershipPlanPrice`: the charge for one billing period and the Stripe Price that charges it —
+CZK 199 monthly / 2 030 yearly today, no EUR rows). The Plus page, the home teaser, the wizard's Plus
+step and both mobile Subscribe screens list the plans priced in the customer's **chosen market**
+(`GetPlans?countryId`), and the subscribe commands carry the same `countryId`, so the figure shown is
+the figure Stripe charges. Three consequences:
+
+- **A market with no priced plan has no Plus.** The list is empty, the surfaces say *"Plus is not
+  available in your market yet"* with no price and no button, and a subscribe attempt is refused as
+  `membership.plan.not_priced_in_currency`. That is a valid product state, not a gate on opening the
+  market — an admin may price the catalogue in EUR and leave Plus for later.
+- **The subscription is born in the market's currency and never changes it.** Stripe refuses a
+  currency change on a live subscription, so a plan swap picks the target plan's price in the
+  membership's own currency (or refuses), the management screens label every figure with that
+  currency whatever market the customer browses in now, and the switch-to-annual offer only appears
+  when the yearly plan is priced in it. A customer who wants Plus in another currency cancels and
+  re-subscribes in the new market. Stripe's one-currency-per-Customer rule may refuse that
+  re-subscribe; the refusal is classified as `membership.stripe_customer_currency_locked` ("contact
+  support"), never a 500, and the DEV sandbox did not enforce it on 2026-09-13.
+- **The benefits are currency-free.** The discount is a percentage of the order's own subtotal, the
+  cancellation window is hours and the waivers are a count, so a CZK subscription serves a EUR
+  booking without conversion. The subscription's currency decides only what Stripe charges for the
+  subscription.
 
 **A lapsed membership stops the schedule.** A recurring schedule is one of the six benefits, so when the
 membership lapses the sweep stops generating new occurrences. Three deliberate limits on that:
@@ -350,14 +378,29 @@ are seeded, and every one of those codes is a seeded `Currency` row), and a
 deploy that services a country without one breaks that country's bookings, boards and approvals on
 first use rather than paying anyone in the platform default. → [Cleaner currency](#cleaner-currency)
 
-**No-show credit — `BookingPolicy.NoShowCreditCzk = 250`.** A CZK scalar, paid by `CancelUnfilledOrders`
-only on an order in the platform default currency; on any other currency the credit is skipped and
-logged, the refund is unaffected, and the push sent is the plain cancellation rather than the one that
-promises the credit (owner ruling 2026-09-06). It is deliberately not a per-currency lookup: the figure
-is hand-written into the home page copy and both mobile pushes, five locales each — the lock-screen
-loc-arg allowlist cannot interpolate it — and `check-booking-policy-parity.mjs` reads the declaration to
-hold that copy to the number. A second number here would be a promise no surface makes: the copy that
-states it is the same in every market, whichever currency the address put the booking in.
+**No-show credit — `Currency.NoShowCredit`.** Authored per currency on the admin currency form, like
+the loyalty divisor; CZK is seeded at **250**, every other seeded currency at null. `CancelUnfilledOrders`
+pays the order currency's figure into the customer's credit account **in that currency**; a currency
+with no figure pays no credit, logs a warning, leaves the refund unaffected, and sends the plain
+cancellation push rather than the one that promises the credit (owner ruling 2026-09-06 — fail closed,
+never scaled from another currency's figure). It is not an activation gate: a market may open without
+an apology credit. **No locale string states the figure** ([ADR-0060](/decisions/adr-0060)): the home
+page's rules card carries `{{amount}}` and formats the market's `noShowCredit` in the market's
+currency, or renders the refund-only sentence when the market has none; the two mobile pushes announce
+the credit without a number (the amount is on the credit screen with its unit — the lock-screen
+loc-arg allowlist stays closed). `check-booking-policy-parity.mjs` pins the *absence* of a figure and
+the presence of the placeholder in every locale.
+
+**Plus prices — `MembershipPlanPrice`.** One row per (plan, currency) carrying the charge for one
+billing period and the Stripe Price id; CZK 199 / 2 030 seeded, no EUR rows. A plan with no row in a
+currency is not on sale in that market; a subscription is created in the chosen market's currency and
+keeps it — see [Cleansia Plus](#cleansia-plus).
+
+**Insurance ceiling — `CountryConfiguration.InsuranceCoverageAmount`.** The one marketing figure in
+customer copy (the mobile trust badge and FAQ), a number in the country's `DefaultCurrencyCode`, per
+country because a policy is written per jurisdiction. Authored on the admin country form's Market
+section; **null today** — the former "1 000 000 CZK" claim had no backing and was not re-seeded, so the
+copy reads "Insured" with no figure until the owner enters the real ceiling.
 
 **Loyalty earn — `Currency.LoyaltyPointsDivisor`.** A completed order earns
 `floor(total / divisor)` in the order's currency, and the partial-refund clawback removes the same
@@ -404,19 +447,24 @@ percentage (`RefundStripeFeeRate`), being unit-free, still applies.
 Both figures are dormant: no production writer sets either today, and while either is null the whole
 fee — rate included — is 0.
 
-**The standing risk.** Three of these numbers are bound to *whichever* currency is the platform
-default, not to CZK by name — the no-show credit, the tier floor, and every promo minimum on a code
-with no `CurrencyId`. Promoting a different default (`SetDefaultCurrency`) silently re-denominates all
-three: 250 becomes 250 of the new currency, 1000 becomes 1000. It is an owner-level event, and those
-three numbers are the checklist for it.
+**The standing risk.** Two of these numbers are bound to *whichever* currency is the platform
+default, not to CZK by name — the tier floor, and every promo minimum on a code with no `CurrencyId`.
+Promoting a different default (`SetDefaultCurrency`) silently re-denominates both: 1000 becomes 1000
+of the new currency. It also **moves the default market**: the market a visitor gets before choosing
+one is the market whose configured currency is the default ([ADR-0058](/decisions/adr-0058) D2), so
+promoting EUR makes the first EUR country by ISO code the landing-page default. It is an owner-level
+event, and those three items are the checklist for it. (The no-show credit is no longer on the list —
+it is authored per currency and does not move.)
 
 ## What "price" means at each stage {#price-stages}
 
 **Order currency.** An order is priced, charged and stamped in the currency of the country its
-**service address** is in (owner ruling 2026-09-12). The market is a property of the booking, not of
-the customer: a customer has no currency of their own, no preference to set and no picker on any
-surface — a Czech customer booking a Bratislava flat is quoted in EUR, and the same customer's next
-Prague booking is in CZK. The chain is `Address.CountryId` → `CountryConfiguration.DefaultCurrencyCode`
+**service address** is in (owner ruling 2026-09-12). The market of an **order** is the address's
+country, not the customer's preference: a customer has no currency of their own — a Czech customer
+booking a Bratislava flat is quoted in EUR, and the same customer's next Prague booking is in CZK.
+(The market a customer **browses** in before there is an address is a separate, chosen thing — see
+[The market a customer browses in](#market) — and the address overrides it the moment there is one.)
+The chain is `Address.CountryId` → `CountryConfiguration.DefaultCurrencyCode`
 → `Currency`, through `ICurrencyResolutionService.ResolveCurrencyForCountryAsync`, the same chain that
 pays a cleaner in the currency of the country they work in. A `currencyId` the caller names is checked,
 not trusted: it must equal the address country's, else `currency.invalid` before anything is priced.
@@ -429,10 +477,59 @@ quote and create refuse a selected service or package without one as `order.sele
 / `order.selected_package.invalid` (an extra without one is dropped from the line items rather than
 refused, because no extras-level error key exists). A recurring occurrence is priced in the currency
 of its saved address's country. A quote that names no country yet — the wizard's first step, the home
-page's quick quote — is in the platform default until the address supplies one; that null-country
-case is the **only** one the chain defaults. A named country with no configured currency does not
-fall through — the resolver throws, because the seed configures every serviced country and a gap is a
-deploy defect, not a market ([Money constants](#money-constants)).
+page's quick quote — is in the **chosen market's** currency, because the clients send the market's
+`countryId` until the address supplies one; a quote with no country at all (a client whose market
+list failed to load) is in the platform default, and that null-country case is the **only** one the
+chain defaults. A named country with no configured currency does not fall through — the resolver
+throws, because the seed configures every serviced country and a gap is a deploy defect, not a market
+([Money constants](#money-constants)).
+
+## The market a customer browses in {#market}
+
+Before there is a service address, every customer surface has a **market**: a serviced country whose
+configuration names an active currency, listed by the anonymous `Market/GetOverview` read
+([ADR-0058](/decisions/adr-0058), owner ruling 2026-09-12: *"customer-chosen market, defaulting to
+CZ"*). The rules, in precedence order:
+
+1. **The service address wins.** From the wizard's address step on, for a recurring schedule's saved
+   address, for an existing order: the address's country decides, exactly as above, and a market
+   chosen afterwards does not touch that booking.
+2. **Else the chosen market.** Picked in the navbar/footer selector on the web or in Profile →
+   Preferences → Market on the mobile apps, remembered per device like the language (the web keeps
+   it in one cookie, `preferred_market`, so the server render and the browser agree; the mobile apps
+   in their settings store), keyed by the country's ISO code so a reseed cannot invalidate it. A
+   stored code is only ever compared against the list — a delisted market falls to the default.
+3. **Else the default market** — the market whose configured currency is the platform default
+   currency (CZE/CZK today). With several markets on the default currency the lowest ISO code is
+   pre-selected and an error is logged; with none, the first listed market is. A pre-selection, not a
+   pricing invariant.
+
+**What reads it:** the home catalogue strips and `/services`, the quick quote and its market chip
+("CZ · CZK" — the country's alpha-2 beside the currency code; a static label with one market, a
+control with two or more), the property-size presets, the Plus plans and the subscribe commands (the
+wizard's Plus step follows the market even inside a booking priced in the address's currency, because
+a subscription belongs to the customer, not to the booking), the rewards tier-floor line (shown only
+when the market's currency is the platform default, since the floor applies only there), and the copy
+figures below. **What does not:** the partner and admin apps, any existing order, dispute, credit
+account or invoice (each carries its own currency), and an active membership (its own currency, for
+life).
+
+**When the market list cannot be loaded** no chip and no selector render, nothing is persisted, every
+reader sends no `countryId` (the platform default), prices are labelled from their own payloads, and
+the list is retried on the next navigation.
+
+**Copy figures come from the market, never from the translation** (owner ruling 2026-09-12,
+[ADR-0060](/decisions/adr-0060)). A locale string carries a placeholder, never an amount or a
+currency word; the client formats the market's figure in the market's currency. The two figures are
+the no-show credit (per currency) and the insurance ceiling (per country), both on the market row;
+the terms page states the market's currency code; a market with no figure gets the copy variant that
+names none. The parity checker fails any locale that types a figure back in.
+
+**Opening a market is data, gated twice:** the currency needs a loyalty divisor before
+`ActivateCurrency` accepts it (`currency.loyalty_divisor_missing`), and a country cannot be switched
+on as serviced until its configuration names an **active** currency (`country.market_not_ready`) —
+otherwise the wizard would offer an address the quote cannot price. Plus prices and the copy figures
+are optional steps. → [Platform expandability — the expansion path](/architecture/platform-expandability#expansion-path)
 
 The pricing calculator returns a **raw subtotal before any user-level discount** — tier, membership or
 promo. The **express surcharge is already folded in**, because the surcharge is a property of the

@@ -37,6 +37,64 @@ cleaner — resolves through the one entitlement predicate (`UserMembershipRepos
 still ride the wire for clients built before the ruling; with every plan at zero days no enrolment
 carries a trial end. → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
 
+## Plus is priced per market, end to end
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant C as Customer (chosen market = SK)
+  participant API as Customer API
+  participant R as MembershipPlanPrices
+  participant S as Stripe
+  participant W as Webhook
+
+  C->>API: GET /Membership/GetPlans?countryId=SVK
+  API->>R: rows for every active plan in EUR
+  R-->>API: PLUS_MONTHLY × EUR (PLUS_YEARLY has none)
+  API-->>C: [PLUS_MONTHLY, currencyCode EUR]  (empty list = "Plus is not available in your market yet")
+
+  C->>API: POST CreateCheckoutSession / Subscribe { planCode, countryId: SVK }
+  API->>R: PLUS_MONTHLY × EUR
+  alt no row
+    API-->>C: membership.plan.not_priced_in_currency (nothing reaches Stripe)
+  else row
+    API->>S: subscribe with THAT row's StripePriceId
+    S-->>W: customer.subscription.created (Subscription.Currency = "eur")
+    W->>W: GetByCodeAsync("EUR") → UserMembership.CurrencyId = EUR
+  end
+
+  C->>API: POST SwapPlan { newPlanCode: PLUS_YEARLY }
+  API->>R: PLUS_YEARLY × the MEMBERSHIP's currency (EUR), not the market's
+  R-->>API: none → membership.plan.not_priced_in_currency
+```
+
+**The row is the price.** `MembershipPlan` carries no price; `MembershipPlanPrice` is one row per
+(plan, currency) with the charge for one billing period and the Stripe Price id that charges it. The
+customer's surfaces ask for the plans **in the chosen market** (`GetPlans?countryId=`, the market's
+`countryId` even from inside a booking priced in the address's currency — a subscription belongs to
+the customer, not to the booking), the server resolves the market's currency with the same resolver
+the quote uses, and only plans with a row in it are listed, labelled `currencyCode`. The subscribe
+commands carry the same `countryId`, so the figure shown is the figure charged.
+
+**The subscription keeps its currency for life.** `UserMembership.CurrencyId` is written once — the
+webhook confirms it off the Stripe `Subscription` object's own `currency`, and refuses to provision a
+code the platform does not know — and never updated. A swap therefore looks the target plan up in
+the membership's currency, never the market's, and the clients offer the annual switch only when the
+yearly plan is priced in that currency. `GetMine` labels every figure with it, whatever market the
+customer browses in now. A customer who wants Plus in another currency cancels and re-subscribes;
+Stripe's one-currency-per-Customer rule may refuse that, and the refusal is classified as
+`membership.stripe_customer_currency_locked` rather than a 500 (the DEV sandbox did not enforce it on
+2026-09-13).
+
+**The benefits are currency-free.** The discount is a percentage of the order's own subtotal; the
+window is hours; the waivers are a count. A CZK subscription serves a EUR booking without conversion.
+
+**What an admin authors.** A price and a Stripe Price id per currency on the plan form — every
+block optional, a half-filled block refused, currencies not sent left alone. A plan with no row in a
+currency is "Plus is not on sale in that market", a valid state that gates nothing:
+`ActivateCurrency` does not check plans. → [ADR-0059](/decisions/adr-0059),
+[API — markets and memberships](/api/markets-and-memberships)
+
 ## The express waiver is metered per calendar month
 
 ```mermaid
@@ -92,6 +150,10 @@ alone. You cannot redeem your own code, and you cannot be referred twice.
 | Quota released mid-month | The smallest **free** ordinal is reused, so capacity genuinely returns. |
 | Plan downgraded mid-month | The live count carries across, so a downgrade cannot grant a fourth waiver on a two-waiver plan. |
 | Re-subscribing | Quota does **not** reset — the key has no membership id in it. |
+| Plus page opened in a market with no priced plan | Empty list; "Plus is not available in your market yet", no price, no button; a subscribe attempt is `membership.plan.not_priced_in_currency`. |
+| Market switched while a membership is active | The membership keeps its currency and its labels; no second subscription is offered (`membership.already_active`). |
+| Swap to a plan unpriced in the membership's currency | `membership.plan.not_priced_in_currency`; the clients do not offer the switch. |
+| Webhook names a currency the platform does not know | Nothing is provisioned; an error is logged. |
 | Points granted twice by a retry | Rejected by the idempotency index. |
 | Order in a currency with no points divisor | Unreachable through the admin surface — activation refuses without a divisor and an active currency cannot have it cleared (`currency.loyalty_divisor_missing`). A row that reaches the state anyway earns nothing and logs a warning; nothing is borrowed from another currency's rate. |
 | Self-referral | Refused. |

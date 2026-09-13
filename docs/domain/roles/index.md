@@ -16,7 +16,9 @@ catalogues.
 | **[Role](./express-waiver-resolver)** | **✅ BUILT. The "NOT YET BUILT" banner below is stale and is corrected here rather than deleted, so |
 | **[Role](./fcm-message-factory)** | Introduced by **ADR-0025** (iOS push display via per-platform APNs alert with loc-keys) |
 | **[Role](./idempotency-guard)** | Introduced by **ADR-0002 D2 |
+| **[MarketDirectory (ADR-0058, accepted 2026-09-13)](./market-directory)** | **Responsibility (one sentence):** List the markets a customer may browse in — each serviced country joined to its configured, active currency — and name the default one, from an anonymous read that never throws |
 | **[Role](./membership-benefit-usage)** | **✅ ACCEPTED AND SHIPPED |
+| **[MembershipPlanPrice (ADR-0059, accepted 2026-09-13)](./membership-plan-price)** | **Responsibility (one sentence):** Name what one billing period of a plan costs in one currency and which Stripe Price charges it — the figure shown and the figure billed are the same row |
 | **[Role](./order-availability)** | **THE STANDARD.** Introduced by **ADR-0037** |
 | **[Role](./payout-details-validator)** | Introduced by **ADR-0034** (**`accepted`** 2026-08-02) |
 | **[Role](./payout-reference-allocator)** | **✅ BUILT AND SHIPPED |

@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem, SignupConsentService } from '@cleansia/customer-services';
+import { CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -92,7 +92,6 @@ export class OrderWizardComponent implements OnInit {
   protected readonly facade = inject(OrderWizardFacade);
   protected readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly signupConsent = inject(SignupConsentService);
   private readonly draft = inject(OrderDraftService);
   private readonly router = inject(Router);
   private readonly apiBaseUrl = inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? '';
@@ -1212,16 +1211,6 @@ export class OrderWizardComponent implements OnInit {
     if (this.blockingReasons().length > 0) {
       this.triedToAdvance.set(true);
       return;
-    }
-    // Parked BEFORE the submit, not after: the order can succeed and navigate
-    // away, and a consent recorded only on the way out is a consent lost to a
-    // slow network. The service delivers it at the first session that can take
-    // one, so an anonymous booking's tick is not dropped either.
-    // Only when one was actually taken. An account that already holds both was
-    // not asked, and re-recording the same grant writes a consent nobody gave
-    // on this screen.
-    if (!this.facade.alreadyConsented()) {
-      this.signupConsent.record(this.facade.formData().customerEmail);
     }
 
     if (this.saveNewAddress() && this.isCustomAddress()) {

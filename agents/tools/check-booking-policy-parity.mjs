@@ -6,7 +6,8 @@
  * express slot adds. Four surfaces then STATE those numbers to a customer — the web copy, the web's
  * shared constants, Android's string resources and iOS's string catalog — and every one of them
  * holds its own literal. Nothing compiled them together, so nothing noticed when they stopped
- * agreeing.
+ * agreeing. `LegalDocumentVersions` is pinned the same way (§4): the version the server stamps on a
+ * consent is the one the legal pages show, in every locale.
  *
  * They did stop agreeing. Both mobile apps told customers a cancellation cost "50% charge" between
  * 4 and 24 hours and "100% charge" under 4, against a policy of 25% and 50%: double the real fee, in
@@ -44,6 +45,7 @@ const REPO = rootArg
   : join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const POLICY_CS = 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs';
+const LEGAL_VERSIONS_CS = 'src/Cleansia.Core.Domain/Legal/LegalDocumentVersions.cs';
 const WEB_MODEL = 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts';
 const WEB_I18N = 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n';
 const ANDROID_RES = 'src/cleansia_android/customer-app/src/main/res';
@@ -64,6 +66,12 @@ export function readCsConst(source, name) {
     `public\\s+const\\s+\\w+\\s+${name}\\s*=\\s*(-?[0-9]+(?:\\.[0-9]+)?)[mMdDfF]?\\s*;`,
   ).exec(source);
   return match ? Number(match[1]) : null;
+}
+
+/** `public const string X = "2026-09-draft";` → string. */
+export function readCsStringConst(source, name) {
+  const match = new RegExp(`public\\s+const\\s+string\\s+${name}\\s*=\\s*"([^"]*)"\\s*;`).exec(source);
+  return match ? match[1] : null;
 }
 
 /** `export const X = 0.2;` → number. */
@@ -309,20 +317,52 @@ for (const locale of LOCALES) {
   }
 }
 
+// ─── 4. The legal text version the server stamps on an acceptance (ADR-0062 D4) ────────
+// `LegalDocumentVersions` is what a consent row and a customer audit row carry; the legal pages
+// render `terms_page.version` / `privacy_page.version` so the reader can see which text they agreed
+// to. A legal-text edit bumps the constant AND the key in the same change — this is what notices when
+// only one of them moved. Mobile catalogues are not pinned: they deep-link the web page.
+const legalSource = read(LEGAL_VERSIONS_CS);
+const legalVersions = {
+  CustomerTerms: readCsStringConst(legalSource, 'CustomerTerms'),
+  CustomerPrivacy: readCsStringConst(legalSource, 'CustomerPrivacy'),
+};
+for (const [name, value] of Object.entries(legalVersions)) {
+  if (value === null) note(LEGAL_VERSIONS_CS, `could not read \`${name}\` — the parser needs updating`);
+}
+
+for (const locale of LOCALES) {
+  const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
+  for (const [key, csName] of [
+    ['terms_page.version', 'CustomerTerms'],
+    ['privacy_page.version', 'CustomerPrivacy'],
+  ]) {
+    const [page, member] = key.split('.');
+    const value = web[page]?.[member];
+    if (value === undefined) {
+      note(`web/${locale}`, `${key} is missing`);
+    } else if (value !== legalVersions[csName]) {
+      note(`web/${locale}`, `${key} = "${value}", LegalDocumentVersions.${csName} is "${legalVersions[csName]}"`);
+    }
+  }
+}
+
 // ─── Report ─────────────────────────────────────────────────────────────────
 if (findings.length) {
   console.log('booking-policy-parity violations:');
   for (const f of findings) console.log(`  ${f}`);
   console.log(
-    '\nBookingPolicy is the authority. Change the COPY to match it — or, if the policy itself is' +
-      '\nmoving, change BookingPolicy first and let this check tell you every surface that quotes it.',
+    '\nBookingPolicy and LegalDocumentVersions are the authority. Change the COPY to match them — or,' +
+      '\nif the policy or the legal text itself is moving, change the constant first and let this check' +
+      '\ntell you every surface that quotes it.',
   );
 } else {
   console.log(
     `booking-policy-parity: ${LOCALES.length} locale(s) × web + android + ios agree with ` +
       `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, express +${expressPct}% ` +
       `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
-      'money figures in copy come from the market',
+      `money figures in copy come from the market; legal texts at ${legalVersions.CustomerTerms} / ` +
+      legalVersions.CustomerPrivacy,
   );
 }
 

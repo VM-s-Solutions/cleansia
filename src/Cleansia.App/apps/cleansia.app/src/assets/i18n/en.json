@@ -1741,6 +1741,7 @@
     "title": "Terms of Service",
     "last_updated": "Last updated: {{date}}",
     "last_updated_date": "",
+    "version": "2026-09-draft",
     "intro": "Please read these terms of service carefully before using our services.",
     "review_notice": "Draft — this wording has not yet been through legal review and is not the final, binding version.",
     "section1_title": "Acceptance of Terms",
@@ -1761,6 +1762,7 @@
     "title": "Privacy Policy",
     "last_updated": "Last updated: {{date}}",
     "last_updated_date": "",
+    "version": "2026-09-draft",
     "intro": "Your privacy is important to us. This policy explains how we collect, use, and protect your personal data.",
     "review_notice": "Draft — this wording has not yet been through legal review and is not the final, binding version.",
     "section1_title": "Data We Collect",
@@ -2202,6 +2204,7 @@
     "eyebrow": "Legal information",
     "contents": "Contents",
     "ask_lead": "Something unclear? Write to",
-    "ask_tail": "— we answer like people, not with a paragraph number."
+    "ask_tail": "— we answer like people, not with a paragraph number.",
+    "version": "Version {{version}}"
   }
 }

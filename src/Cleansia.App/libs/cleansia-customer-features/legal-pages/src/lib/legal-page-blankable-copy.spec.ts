@@ -36,12 +36,14 @@ describe.each(PAGES)('$name legal page', ({ component, namespace }) => {
     translate.setTranslation(
       'en',
       {
+        legal: { version: 'Version {{version}}' },
         [namespace]: {
           title: 'Legal title',
           intro: 'Legal intro',
           last_updated: 'Last updated on {{date}}',
           review_notice: '',
           last_updated_date: '',
+          version: '2026-09-draft',
           ...sectionCopy(),
           ...overrides,
         },
@@ -58,6 +60,7 @@ describe.each(PAGES)('$name legal page', ({ component, namespace }) => {
   // a customer is reading for legal terms.
   const notice = (): HTMLElement | null => host().querySelector('.cl-lgl__notice');
   const meta = (): HTMLElement | null => host().querySelector('.cl-lgl__updated');
+  const version = (): HTMLElement | null => host().querySelector('.cl-lgl__version');
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -89,6 +92,14 @@ describe.each(PAGES)('$name legal page', ({ component, namespace }) => {
     render({ last_updated_date: '2026-08-05' });
 
     expect(meta()?.textContent?.trim()).toBe('Last updated on 2026-08-05');
+  });
+
+  // The version is what a consent row and an audit row name (ADR-0062 D4), so the reader has to be
+  // able to see which one they are looking at — unlike the date, it is never blank.
+  it('states the document version the server stamps on an acceptance', () => {
+    render({});
+
+    expect(version()?.textContent?.trim()).toBe('Version 2026-09-draft');
   });
 
   it('renders one block per section, keyed by index', () => {

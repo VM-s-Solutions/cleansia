@@ -1741,6 +1741,7 @@
     "title": "Obchodné podmienky",
     "last_updated": "Posledná aktualizácia: {{date}}",
     "last_updated_date": "",
+    "version": "2026-09-draft",
     "intro": "Pred použitím našich služieb si pozorne prečítajte tieto obchodné podmienky.",
     "review_notice": "Návrh — toto znenie zatiaľ neprešlo právnou kontrolou a nie je konečnou záväznou verziou.",
     "section1_title": "Prijatie podmienok",
@@ -1761,6 +1762,7 @@
     "title": "Zásady ochrany súkromia",
     "last_updated": "Posledná aktualizácia: {{date}}",
     "last_updated_date": "",
+    "version": "2026-09-draft",
     "intro": "Vaše súkromie je pre nás dôležité. Tieto zásady vysvetľujú, ako zhromažďujeme, používame a chránime vaše osobné údaje.",
     "review_notice": "Návrh — toto znenie zatiaľ neprešlo právnou kontrolou a nie je konečnou záväznou verziou.",
     "section1_title": "Údaje, ktoré zhromažďujeme",
@@ -2202,6 +2204,7 @@
     "eyebrow": "Právne informácie",
     "contents": "Obsah",
     "ask_lead": "Niečomu nerozumiete? Napíšte na",
-    "ask_tail": "— odpovieme ľudsky, nie odkazom na odsek."
+    "ask_tail": "— odpovieme ľudsky, nie odkazom na odsek.",
+    "version": "Verzia {{version}}"
   }
 }

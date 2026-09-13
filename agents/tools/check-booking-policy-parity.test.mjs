@@ -3,8 +3,9 @@
  * Self-test for the booking-policy parity gate (`check-booking-policy-parity.mjs`).
  *
  * It never touches the working tree: every scenario materialises a fixture repository under a
- * throwaway directory — a BookingPolicy.cs, the web's shared model, five web locale files, five
- * Android string files and an iOS catalog — and runs the tool against it with `--root=`.
+ * throwaway directory — a BookingPolicy.cs, a LegalDocumentVersions.cs, the web's shared model, five
+ * web locale files, five Android string files and an iOS catalog — and runs the tool against it with
+ * `--root=`.
  *
  * WHAT THIS HAS TO PROVE, in order of what it cost to learn:
  *
@@ -82,6 +83,12 @@ function buildFixture(overrides = {}) {
     iosFaq: 'Covered by insurance up to %1$@ per booking.',
     iosFaqNoFigure: 'Covered by insurance.',
     iosSeasonal: null,
+    csTermsVersion: '2026-09-draft',
+    csPrivacyVersion: '2026-09-draft',
+    webTermsVersion: '2026-09-draft',
+    webPrivacyVersion: '2026-09-draft',
+    /** Per-locale overrides of the two version keys, for the "one translator edited one file" case. */
+    webVersionByLocale: {},
     ...overrides,
   };
 
@@ -100,6 +107,15 @@ public static class BookingPolicy
 }
 `);
 
+  write(root, 'src/Cleansia.Core.Domain/Legal/LegalDocumentVersions.cs', `
+public static class LegalDocumentVersions
+{
+    public const string CustomerTerms = "${o.csTermsVersion}";
+
+    public const string CustomerPrivacy = "${o.csPrivacyVersion}";
+}
+`);
+
   write(root, 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts', `
 export const FIRST_WINDOW_HOUR = ${o.firstHour};
 export const LAST_WINDOW_HOUR = ${o.lastHour};
@@ -109,6 +125,7 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
 `);
 
   for (const locale of LOCALES) {
+    const versions = { terms: o.webTermsVersion, privacy: o.webPrivacyVersion, ...(o.webVersionByLocale[locale] ?? {}) };
     write(
       root,
       `src/Cleansia.App/apps/cleansia.app/src/assets/i18n/${locale}.json`,
@@ -132,8 +149,12 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
           },
         },
         terms_page: {
+          ...(versions.terms === null ? {} : { version: versions.terms }),
           section3_text: o.webTermsCurrency,
           section3_text_no_market: o.webTermsNoMarket,
+        },
+        privacy_page: {
+          ...(versions.privacy === null ? {} : { version: versions.privacy }),
         },
       }, null, 2),
     );
@@ -280,6 +301,52 @@ scenario(
   {},
   { code: 0, silentAbout: ['we_cancel_desc'] },
 );
+
+// ─── 2c. The legal text version is the C# constant (ADR-0062 D4) ─────────────────────
+// The version a consent row and an audit row are stamped with is `LegalDocumentVersions`; the legal
+// pages render `terms_page.version` / `privacy_page.version` so the reader can see which text they
+// agreed to. A legal-text edit bumps the constant AND the key in the same change; this is what holds
+// the five locale files to the constant.
+scenario(
+  'catches one locale whose terms version drifted from the constant, naming the locale',
+  { webVersionByLocale: { cs: { terms: '2026-10-draft' } } },
+  {
+    code: 1,
+    mentions: ['web/cs', 'terms_page.version = "2026-10-draft"', 'LegalDocumentVersions.CustomerTerms is "2026-09-draft"'],
+    silentAbout: ['web/en', 'web/sk', 'web/ru', 'web/uk', 'privacy_page.version'],
+  },
+);
+scenario(
+  'catches one locale whose privacy version drifted from the constant',
+  { webVersionByLocale: { uk: { privacy: '2026-09-final' } } },
+  { code: 1, mentions: ['web/uk', 'privacy_page.version = "2026-09-final"'], silentAbout: ['terms_page.version'] },
+);
+scenario(
+  'a bumped constant fails every locale still carrying the old version',
+  { csTermsVersion: '2026-11-final' },
+  { code: 1, mentions: ['web/en', 'web/cs', 'web/sk', 'web/ru', 'web/uk', 'LegalDocumentVersions.CustomerTerms is "2026-11-final"'] },
+);
+scenario(
+  'the two documents are pinned independently',
+  { csPrivacyVersion: '2026-11-final', webPrivacyVersion: '2026-11-final' },
+  { code: 0 },
+);
+scenario(
+  'a missing version key is a finding, not a silent pass',
+  { webVersionByLocale: { sk: { terms: null } } },
+  { code: 1, mentions: ['web/sk', 'terms_page.version is missing'] },
+);
+{
+  const root = buildFixture();
+  try {
+    write(root, 'src/Cleansia.Core.Domain/Legal/LegalDocumentVersions.cs', 'public static class LegalDocumentVersions { }\n');
+    const result = run(root);
+    if (result.code === 1 && result.stdout.includes('could not read `CustomerTerms`')) passed++;
+    else failures.push(`an unreadable LegalDocumentVersions.cs passed silently\n${result.stdout}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
 
 // ─── 3. The two defects that motivated this gate ────────────────────────────
 scenario(

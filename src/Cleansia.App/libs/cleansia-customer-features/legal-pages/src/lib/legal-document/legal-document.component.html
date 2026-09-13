@@ -8,6 +8,14 @@
       {{ namespace() + '.last_updated' | translate: { date: updated } }}
     </p>
     }
+    <!--
+      The version the server stamps on a consent row at acceptance. A reader checking
+      whether they agreed to THIS text needs the handle, not just a date.
+    -->
+    @let version = namespace() + '.version' | translate;
+    <p class="cl-lgl__version">
+      {{ 'legal.version' | translate: { version } }}
+    </p>
   </div>
   <cleansia-foam-edge variant="cap-short" [fill]="'var(--cl-surface)'" />
 </div>

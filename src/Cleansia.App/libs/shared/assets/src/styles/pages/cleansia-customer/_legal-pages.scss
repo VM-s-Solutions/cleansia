@@ -63,9 +63,10 @@
   color: var(--cl-body);
 }
 
-// When the document was last changed. Small, but it is the first thing a
-// reader checking whether they agreed to THIS version looks for.
-.cl-lgl__updated {
+// When the document was last changed, and which version it is. Small, but it
+// is the first thing a reader checking whether they agreed to THIS text looks for.
+.cl-lgl__updated,
+.cl-lgl__version {
   margin: calc(0.375 * var(--cl-u)) 0 0;
   font-size: calc(0.8125 * var(--cl-u));
   color: var(--cl-muted);

@@ -19,7 +19,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
 import { SESSION_LIFECYCLE_LISTENERS } from './session-lifecycle';
-import { SignupConsentService } from './signup-consent.service';
 
 @Injectable({
   providedIn: 'root',
@@ -30,7 +29,6 @@ export class CustomerAuthService {
   private readonly translate = inject(TranslateService);
   private readonly sessionListeners =
     inject(SESSION_LIFECYCLE_LISTENERS, { optional: true }) ?? [];
-  private readonly signupConsent = inject(SignupConsentService);
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
   // Guard storage access by platform, not `typeof localStorage` — Node 22+
   // exposes a global localStorage whose methods throw during SSR.
@@ -60,15 +58,18 @@ export class CustomerAuthService {
   }
 
   /**
-   * `countryId` is the market the account is opened with — the operating company an anonymous
-   * request lands in (ADR-0061 D3). The caller reads it from the market store, which sits above
-   * this library; null means "let the server pick its default market".
+   * `termsAccepted` is the tick as the form holds it at submit; the server grants the two consents
+   * from it and records the assertion either way (ADR-0062 D4). `countryId` is the market the
+   * account is opened with — the operating company an anonymous request lands in (ADR-0061 D3).
+   * The caller reads it from the market store, which sits above this library; null means "let the
+   * server pick its default market".
    */
   register(
     email: string,
     password: string,
     firstName: string,
     lastName: string,
+    termsAccepted: boolean,
     referralCode?: string,
     countryId?: string | null
   ): Observable<boolean> {
@@ -82,6 +83,7 @@ export class CustomerAuthService {
       ? referralCode.trim().toUpperCase()
       : undefined;
     command.countryId = countryId ?? undefined;
+    command.termsAccepted = termsAccepted;
 
     // 200 with no body since T-0665 — the bool was always `true`, failures come through as
     // errors. Success is "it did not throw", matching logout() in this same service.
@@ -329,10 +331,6 @@ export class CustomerAuthService {
     }
 
     this._isLoggedIn.set(true);
-
-    // The signup tick predates any session, and the identity here is the
-    // server's rather than whatever a form held.
-    this.signupConsent.flush(authResult.email);
 
     // Preload saved addresses so the order wizard finds them warm, even when
     // the user lands there without visiting profile first. Fire-and-forget —

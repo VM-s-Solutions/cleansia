@@ -2581,7 +2581,8 @@
       "not_found": "Zaměstnanec nenalezen",
       "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte.",
       "profile_incomplete": "Profil zaměstnance je nekompletní",
-      "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet"
+      "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet",
+      "work_country_operator_mismatch": "Pracovní země patří jiné provozní společnosti."
     },
     "employee_document": {
       "deletion_already_resolved": "Tato žádost o smazání již byla vyřízena.",

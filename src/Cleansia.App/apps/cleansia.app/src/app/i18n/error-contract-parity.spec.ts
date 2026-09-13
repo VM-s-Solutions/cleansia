@@ -30,6 +30,16 @@ const FEATURES_DIR = join(APP_SERVICES_DIR, 'Features');
 
 const SHARED_VALIDATORS_DIR = join(APP_SERVICES_DIR, 'Common/Validators');
 
+const OPERATOR_TENANT_SCOPE_BEHAVIOR_PATH = join(
+  APP_SERVICES_DIR,
+  'Tenancy/OperatorTenantScopeBehavior.cs'
+);
+
+// A request record whose base list names the marker: `...) : ICommand, IOperatorScopedRequest`.
+// Anchored on the base list rather than a bare mention, because a doc comment naming the interface
+// is not an implementation of it.
+const OPERATOR_SCOPED_REQUEST = /[)\w]\s*:\s*[\w<>,?.\s]*\bIOperatorScopedRequest\b/;
+
 // The host that serves this app: Cleansia.Web.Customer listens on :5003 and the
 // customer dev server proxies /api to it (apps/cleansia.app/proxy.conf.json).
 const HOST_CONTROLLERS_DIR = join(
@@ -157,6 +167,7 @@ interface HostSurface {
 function deriveHostSurface(): HostSurface {
   const featureFiles = featureFilesByClassName();
   const extensions = ruleBuilderExtensionKeys();
+  const operatorScope = operatorTenantScopeKeys();
   const constants = parseBusinessErrorConstants();
   const sites: DispatchSite[] = [];
   const featureClasses = new Set<string>();
@@ -232,6 +243,21 @@ function deriveHostSurface(): HostSurface {
             keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
           }
         }
+
+        // ...and the refusals OperatorTenantScopeBehavior raises before validation for every request
+        // that implements IOperatorScopedRequest. The behaviour lives under Tenancy/, not in the
+        // feature file, so the token scan above never sees them; the marker on the record is the reach.
+        if (OPERATOR_SCOPED_REQUEST.test(fileSource)) {
+          const provenance = `${controller.replace('.cs', '')} -> ${relative(
+            FEATURES_DIR,
+            file
+          )
+            .split(sep)
+            .join('/')} -> OperatorTenantScopeBehavior`;
+          for (const value of operatorScope) {
+            keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
+          }
+        }
       }
     }
   }
@@ -287,6 +313,26 @@ function ruleBuilderExtensionKeys(): Map<string, Set<string>> {
     }
   }
   return index;
+}
+
+/**
+ * Keys OperatorTenantScopeBehavior emits. It runs before validation on every anonymous request that
+ * implements IOperatorScopedRequest, so each such request can return them from any controller that
+ * dispatches it — and the feature-file scan cannot see that, because the tokens sit under Tenancy/.
+ * Read from the behaviour rather than listed, so a key added there reaches every host that dispatches
+ * a scoped request without an edit here.
+ */
+function operatorTenantScopeKeys(): Set<string> {
+  const constants = parseBusinessErrorConstants();
+  const source = readFileSync(OPERATOR_TENANT_SCOPE_BEHAVIOR_PATH, 'utf8');
+  const keys = new Set<string>();
+  const emitted = /BusinessErrorMessage\.(\w+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = emitted.exec(source)) !== null) {
+    const value = constants.get(match[1]);
+    if (value) keys.add(value);
+  }
+  return keys;
 }
 
 /**
@@ -459,6 +505,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.span_exceeds_maximum',
   'order.payment_gateway_unavailable',
   'currency.invalid',
+  // The ambient tenant (the claim, or the market's operator for a guest) must be the operator of the
+  // address country; a booking in another operating company's country is refused (ADR-0061 D6).
+  'order.country_operator_mismatch',
   // Preferred cleaner — CreateOrder, CreateRecurringBooking and the standalone
   // ChoosePreferredCleaner all run the same two entitlement gates in the same
   // order, and the re-offer window closing is its own refusal.
@@ -493,6 +542,10 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'country.required',
   'country.not_existing_id',
   'city.not_serviced',
+  // OperatorTenantScopeBehavior, before validation, on every anonymous IOperatorScopedRequest this
+  // host dispatches: the named (or default) market has no operating company (ADR-0061 D3). Its
+  // sibling refusal, a country that is not a market, is country.not_serviced above.
+  'tenant.not_found',
   // Dispute — customer dispute flow
   'dispute.not_found',
   'dispute.already_exists',
@@ -783,6 +836,30 @@ describe('error-contract parity (customer app, EP-1/EP-2/DA-7)', () => {
       expect([...(surface.keys.get('order.preferred_offer_closed') ?? [])]).toEqual([
         'OrderController -> Orders/ChoosePreferredCleaner.cs',
       ]);
+    });
+
+    it('walks the IOperatorScopedRequest marker to the refusals OperatorTenantScopeBehavior raises', () => {
+      expect([...operatorTenantScopeKeys()].sort()).toEqual([
+        'country.not_serviced',
+        'tenant.not_found',
+      ]);
+      const scoped = [
+        'AuthController -> Auth/AppleAuth.cs -> OperatorTenantScopeBehavior',
+        'AuthController -> Auth/GoogleAuth.cs -> OperatorTenantScopeBehavior',
+        'AuthController -> Auth/Register.cs -> OperatorTenantScopeBehavior',
+        'OrderController -> Orders/CreateOrder.cs -> OperatorTenantScopeBehavior',
+        'OrderController -> Orders/QuoteOrder.cs -> OperatorTenantScopeBehavior',
+        'OrderController -> Orders/QuotePlusSavings.cs -> OperatorTenantScopeBehavior',
+        'PaymentController -> Orders/CreateOrder.cs -> OperatorTenantScopeBehavior',
+        'PromoCodeController -> PromoCodes/RequestPromoCode.cs -> OperatorTenantScopeBehavior',
+        'ReferralController -> Referrals/ValidateReferral.cs -> OperatorTenantScopeBehavior',
+      ];
+      expect([...(surface.keys.get('tenant.not_found') ?? [])].sort()).toEqual(scoped);
+      expect(
+        [...(surface.keys.get('country.not_serviced') ?? [])]
+          .filter((provenance) => provenance.endsWith('OperatorTenantScopeBehavior'))
+          .sort()
+      ).toEqual(scoped);
     });
 
     it('leaves no derived key unclassified', () => {

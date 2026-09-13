@@ -1844,6 +1844,7 @@
         "not_match": "Celková cena objednávky sa zmenila — skontrolujte objednávku a skúste to znova."
       },
       "payment_gateway_unavailable": "Platby sú dočasne nedostupné. Skúste to prosím o chvíľu.",
+      "country_operator_mismatch": "Túto adresu obsluhuje iná spoločnosť Cleansia, preto ju tu nie je možné objednať.",
       "payment": {
         "already_paid": "Táto objednávka už bola zaplatená."
       },
@@ -1885,6 +1886,9 @@
       "not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
       "required": "Vyberte krajinu.",
       "not_existing_id": "Túto krajinu sme nenašli."
+    },
+    "tenant": {
+      "not_found": "Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia."
     },
     "city": {
       "not_serviced": "V tomto meste zatiaľ nepôsobíme."

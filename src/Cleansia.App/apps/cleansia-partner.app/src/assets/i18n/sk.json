@@ -1267,6 +1267,9 @@
       "in_use": "Krajinu nie je možné vymazať, pretože sa aktuálne používa",
       "not_serviced": "V tejto krajine zatiaľ nepôsobíme"
     },
+    "tenant": {
+      "not_found": "Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia."
+    },
     "gdpr": {
       "consent_not_found": "Toto nastavenie súhlasu sme nenašli",
       "consent_already_granted": "Tento súhlas ste už udelili",

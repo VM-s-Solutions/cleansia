@@ -1267,6 +1267,9 @@
       "in_use": "Zemi nelze smazat, protože je aktuálně používána",
       "not_serviced": "V této zemi zatím nepůsobíme"
     },
+    "tenant": {
+      "not_found": "Tento trh zatím neprovozuje žádná společnost Cleansia."
+    },
     "gdpr": {
       "consent_not_found": "Toto nastavení souhlasu jsme nenašli",
       "consent_already_granted": "Tento souhlas jste už udělili",

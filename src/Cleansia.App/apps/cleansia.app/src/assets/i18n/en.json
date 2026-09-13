@@ -1844,6 +1844,7 @@
         "not_match": "The order total has changed — please review your order and try again."
       },
       "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
+      "country_operator_mismatch": "This address is served by another Cleansia company, so it can't be booked here.",
       "payment": {
         "already_paid": "This order has already been paid."
       },
@@ -1885,6 +1886,9 @@
       "not_serviced": "We don't currently operate in this country.",
       "required": "Please select a country.",
       "not_existing_id": "We couldn't find that country."
+    },
+    "tenant": {
+      "not_found": "This market is not operated by any Cleansia company yet."
     },
     "city": {
       "not_serviced": "We don't currently serve this city."

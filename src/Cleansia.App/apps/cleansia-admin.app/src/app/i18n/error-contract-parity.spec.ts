@@ -30,6 +30,16 @@ const FEATURES_DIR = join(APP_SERVICES_DIR, 'Features');
 
 const SHARED_VALIDATORS_DIR = join(APP_SERVICES_DIR, 'Common/Validators');
 
+const OPERATOR_TENANT_SCOPE_BEHAVIOR_PATH = join(
+  APP_SERVICES_DIR,
+  'Tenancy/OperatorTenantScopeBehavior.cs'
+);
+
+// A request record whose base list names the marker: `...) : ICommand, IOperatorScopedRequest`.
+// Anchored on the base list rather than a bare mention, because a doc comment naming the interface
+// is not an implementation of it.
+const OPERATOR_SCOPED_REQUEST = /[)\w]\s*:\s*[\w<>,?.\s]*\bIOperatorScopedRequest\b/;
+
 // The host that serves this app: Cleansia.Web.Admin listens on :5001 and the
 // admin dev server proxies /api to it (apps/cleansia-admin.app/proxy.conf.json).
 const HOST_CONTROLLERS_DIR = join(
@@ -165,6 +175,7 @@ interface HostSurface {
 function deriveHostSurface(): HostSurface {
   const featureFiles = featureFilesByClassName();
   const extensions = ruleBuilderExtensionKeys();
+  const operatorScope = operatorTenantScopeKeys();
   const constants = parseBusinessErrorConstants();
   const sites: DispatchSite[] = [];
   const featureClasses = new Set<string>();
@@ -240,6 +251,21 @@ function deriveHostSurface(): HostSurface {
             keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
           }
         }
+
+        // ...and the refusals OperatorTenantScopeBehavior raises before validation for every request
+        // that implements IOperatorScopedRequest. The behaviour lives under Tenancy/, not in the
+        // feature file, so the token scan above never sees them; the marker on the record is the reach.
+        if (OPERATOR_SCOPED_REQUEST.test(fileSource)) {
+          const provenance = `${controller.replace('.cs', '')} -> ${relative(
+            FEATURES_DIR,
+            file
+          )
+            .split(sep)
+            .join('/')} -> OperatorTenantScopeBehavior`;
+          for (const value of operatorScope) {
+            keys.set(value, (keys.get(value) ?? new Set()).add(provenance));
+          }
+        }
       }
     }
   }
@@ -295,6 +321,26 @@ function ruleBuilderExtensionKeys(): Map<string, Set<string>> {
     }
   }
   return index;
+}
+
+/**
+ * Keys OperatorTenantScopeBehavior emits. It runs before validation on every anonymous request that
+ * implements IOperatorScopedRequest, so each such request can return them from any controller that
+ * dispatches it — and the feature-file scan cannot see that, because the tokens sit under Tenancy/.
+ * Read from the behaviour rather than listed, so a key added there reaches every host that dispatches
+ * a scoped request without an edit here.
+ */
+function operatorTenantScopeKeys(): Set<string> {
+  const constants = parseBusinessErrorConstants();
+  const source = readFileSync(OPERATOR_TENANT_SCOPE_BEHAVIOR_PATH, 'utf8');
+  const keys = new Set<string>();
+  const emitted = /BusinessErrorMessage\.(\w+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = emitted.exec(source)) !== null) {
+    const value = constants.get(match[1]);
+    if (value) keys.add(value);
+  }
+  return keys;
 }
 
 /**
@@ -481,6 +527,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'employee.pay_config_missing',
   'employee.profile_incomplete',
   'employee.weekly_limit_invalid',
+  // ApproveEmployee: the work country's operator must be the approving admin's own operating
+  // company (ADR-0061 D6).
+  'employee.work_country_operator_mismatch',
   'employee_document.deletion_already_resolved',
   'employee_document.not_found',
   'payout.not_found',
@@ -632,7 +681,13 @@ const DELIBERATELY_NOT_TRANSLATED: ReadonlyArray<{
 const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   key: string;
   reason: string;
-}> = [];
+}> = [
+  {
+    key: 'tenant.not_found',
+    reason:
+      'Emitted by OperatorTenantScopeBehavior, which only runs for an anonymous request that implements IOperatorScopedRequest. No admin controller dispatches one — every admin action is authenticated, so the claim is the tenant and the behaviour steps aside. The marker walk in deriveHostSurface asserts the roster is empty; the day an admin controller dispatches a scoped request, that walk derives this key here and the contract gains it.',
+  },
+];
 
 
 // Contract keys that no BusinessErrorMessage reference anywhere in
@@ -702,6 +757,21 @@ describe('error-contract parity (admin app)', () => {
       expect([...(surface.keys.get('audit.not_found') ?? [])]).toEqual([
         'AdminAuditLogController -> Auditing/GetAdminActionAuditById.cs',
       ]);
+    });
+
+    it('walks the IOperatorScopedRequest marker, and finds no scoped request behind an admin controller', () => {
+      expect([...operatorTenantScopeKeys()].sort()).toEqual([
+        'country.not_serviced',
+        'tenant.not_found',
+      ]);
+      const scoped = [...surface.keys.entries()]
+        .flatMap(([key, provenances]) =>
+          [...provenances]
+            .filter((provenance) => provenance.endsWith('OperatorTenantScopeBehavior'))
+            .map((provenance) => `${key}: ${provenance}`)
+        )
+        .sort();
+      expect(scoped).toEqual([]);
     });
 
     it('leaves no derived key unclassified', () => {

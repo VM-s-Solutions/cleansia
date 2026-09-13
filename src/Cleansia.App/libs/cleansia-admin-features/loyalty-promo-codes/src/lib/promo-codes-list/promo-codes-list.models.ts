@@ -10,10 +10,7 @@ export function getPromoCodeStatus(row: PromoCodeListItem): PromoCodeStatusBadge
   return 'active';
 }
 
-export function formatDiscount(
-  row: PromoCodeListItem,
-  translate: TranslateService
-): string {
+export function formatDiscount(row: PromoCodeListItem): string {
   if (row.type === PromoCodeType.PercentDiscount) {
     const pct = row.discountPercent ?? 0;
     // Backend stores percent as 0..1; UI shows 0..100.
@@ -44,7 +41,7 @@ export function formatValidity(
     });
   }
   return translate.instant('pages.promo_codes.validity.until', {
-    date: formatDate(row.validUntil!),
+    date: formatDate(row.validUntil),
   });
 }
 
@@ -111,7 +108,7 @@ export function getPromoCodeTableDefinition(
         id: 'discount',
         field: 'discountPercent',
         header: translate.instant('pages.promo_codes.column.discount'),
-        getValue: (row) => formatDiscount(row, translate),
+        getValue: (row) => formatDiscount(row),
         width: '10%',
       },
       {

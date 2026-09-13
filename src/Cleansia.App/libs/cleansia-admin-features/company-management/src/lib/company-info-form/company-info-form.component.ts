@@ -95,7 +95,7 @@ export class CompanyInfoFormComponent implements OnInit, OnDestroy {
       .countries()
       .filter((c) => c.id)
       .map((c) => ({
-        value: c.id!,
+        value: c.id,
         label: c.name ?? c.isoCode ?? '',
       }))
   );

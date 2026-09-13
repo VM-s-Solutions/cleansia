@@ -130,7 +130,11 @@ export class CountryPhoneCodeService {
   }
 
   getDefaultCountry(): CountryPhoneCode {
-    return this.countries.find((c) => c.flag === 'cz')!;
+    const czech = this.countries.find((c) => c.flag === 'cz');
+    if (!czech) {
+      throw new Error('The default phone country is missing from the country list');
+    }
+    return czech;
   }
 
   findByPhoneValue(phoneValue: string): CountryPhoneCode | undefined {

@@ -113,9 +113,9 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
           (languages ?? [])
             .filter((lang: LanguageListItem): lang is LanguageListItem & { code: string; name: string } =>
               Boolean(lang.code) && Boolean(lang.name))
-            .map((lang: LanguageListItem) => ({
-              code: lang.code!,
-              name: lang.name!,
+            .map((lang) => ({
+              code: lang.code,
+              name: lang.name,
             }))
         );
       });
@@ -167,7 +167,7 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
           (categories ?? [])
             .filter((c): c is CategoryDto & { id: string; name: string } =>
               Boolean(c.id) && Boolean(c.name))
-            .map((c) => ({ id: c.id!, name: c.name! }))
+            .map((c) => ({ id: c.id, name: c.name }))
         );
       });
   }

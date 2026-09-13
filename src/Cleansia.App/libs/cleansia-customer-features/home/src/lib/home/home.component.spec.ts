@@ -14,7 +14,7 @@ class ObserverStub {
   readonly observed: unknown[] = [];
   disconnect = jest.fn();
 
-  constructor(..._args: unknown[]) {
+  constructor() {
     ObserverStub.instances.push(this);
   }
 

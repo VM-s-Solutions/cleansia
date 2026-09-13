@@ -20,6 +20,7 @@ import {
   CleansiaCustomerRoute,
   createAppleNonce,
   getAppleIdApi,
+  getGoogleIdApi,
   GOOGLE_CLIENT_ID,
   isAppleSignInCancelled,
 } from '@cleansia/services';
@@ -198,8 +199,8 @@ export class RegisterComponent implements OnInit, AfterViewInit {
 
   private initGoogleSignIn() {
     this.loadGsiScript();
-    const google = (window as any).google;
-    if (!google?.accounts?.id) {
+    const googleId = getGoogleIdApi();
+    if (!googleId) {
       if (this._gsiRetries < this._gsiMaxRetries) {
         this._gsiRetries++;
         setTimeout(() => this.initGoogleSignIn(), 300);
@@ -207,9 +208,9 @@ export class RegisterComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    google.accounts.id.initialize({
+    googleId.initialize({
       client_id: this.googleClientId,
-      callback: (response: { credential: string }) => {
+      callback: (response) => {
         this.zone.run(() => this.facade.googleRegister(response.credential));
       },
     });
@@ -220,7 +221,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
       // value, max 400. Measure the container; fall back to 400 if hidden.
       const measured = (btnEl as HTMLElement).clientWidth;
       const width = Math.min(measured > 0 ? measured : 400, 400);
-      google.accounts.id.renderButton(btnEl, {
+      googleId.renderButton(btnEl, {
         theme: 'outline',
         size: 'large',
         width,

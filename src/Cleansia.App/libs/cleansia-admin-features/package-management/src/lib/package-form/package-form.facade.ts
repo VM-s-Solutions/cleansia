@@ -180,9 +180,9 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
               ): lang is LanguageListItem & { code: string; name: string } =>
                 Boolean(lang.code) && Boolean(lang.name)
             )
-            .map((lang: LanguageListItem) => ({
-              code: lang.code!,
-              name: lang.name!,
+            .map((lang) => ({
+              code: lang.code,
+              name: lang.name,
             }))
         );
       });

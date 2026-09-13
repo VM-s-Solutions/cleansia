@@ -52,7 +52,7 @@ export class RejectDialogComponent {
     }
 
     const result: RejectDialogResult = {
-      reason: this.form.value.reason!,
+      reason: this.form.getRawValue().reason,
     };
 
     this.dialogRef.close(result);

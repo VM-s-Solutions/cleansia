@@ -70,7 +70,7 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(PayPeriodManagementFacade);
   private readonly translate = inject(TranslateService);
 
-  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+  statusTemplate = viewChild<TemplateRef<PayPeriodDto>>('statusTemplate');
 
   payPeriodTableColumns!: TableColumn<PayPeriodDto>[];
   payPeriodTableActions!: TableAction<PayPeriodDto>[];
@@ -187,9 +187,11 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   closePayPeriod(payPeriod: PayPeriodDto): void {
-    if (confirm(this.translate.instant('pay_periods.confirm_close'))) {
-      this.facade.closePayPeriod(payPeriod.id!);
+    const payPeriodId = payPeriod.id;
+    if (!payPeriodId || !confirm(this.translate.instant('pay_periods.confirm_close'))) {
+      return;
     }
+    this.facade.closePayPeriod(payPeriodId);
   }
 
   applyFilters(): void {

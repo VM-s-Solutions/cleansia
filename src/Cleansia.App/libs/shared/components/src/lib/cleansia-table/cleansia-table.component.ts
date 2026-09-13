@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   input,
+  OnInit,
   output,
   signal,
 } from '@angular/core';
@@ -38,7 +39,7 @@ import {
   imports: [CommonModule, TranslateModule, TooltipModule, FormsModule, SelectModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CleansiaTableComponent<T = any> {
+export class CleansiaTableComponent<T = unknown> implements OnInit {
   // Inputs
   data = input.required<T[]>();
   columns = input<TableColumn<T>[]>([]);
@@ -329,7 +330,7 @@ export class CleansiaTableComponent<T = any> {
     return colorMap[color || ''] || '#6b7280';
   }
 
-  trackByFn(index: number, item: T): any {
-    return (item as any).id || index;
+  trackByFn(index: number, item: T): unknown {
+    return (item as { id?: unknown }).id || index;
   }
 }

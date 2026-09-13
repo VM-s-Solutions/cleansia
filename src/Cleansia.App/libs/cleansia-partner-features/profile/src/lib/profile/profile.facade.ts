@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -68,7 +68,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   // the onboarding command carries no email, so anything typed here could never be saved.
   email = signal('');
 
-  private profileData$: Observable<any> | null = null;
+  private profileData$: Observable<unknown> | null = null;
 
   /**
    * Silent on failure and silent on 404. A country we hold no configuration for is one whose word for
@@ -126,11 +126,11 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           (country) => {
             const translation =
               country.translations?.[this.translate.currentLang]?.name;
-            const name = translation ?? country.name!;
+            const name = translation ?? country.name ?? '';
             const iso = country.isoCode ?? '';
             return {
               label: iso ? `${name} (${iso})` : name,
-              value: country.id!,
+              value: country.id,
             };
           }
         );

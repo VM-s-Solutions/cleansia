@@ -4,7 +4,6 @@ import {
   EmployeeEntityType,
   EmployeeItem,
   UpdateEmployeeCommand,
-  UpdateEmployeeTimeRangeDto,
 } from '@cleansia/partner-services';
 import { CustomValidators } from '@cleansia/services';
 import { FileTransformationUtils } from '@cleansia/utils';

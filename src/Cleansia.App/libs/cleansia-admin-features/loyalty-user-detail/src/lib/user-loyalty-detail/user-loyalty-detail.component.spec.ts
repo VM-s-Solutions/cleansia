@@ -1,7 +1,5 @@
 /* Dialog stubs mirror the real selectors and bindings so the override-imports swap is
    binding-compatible under the strict template test env. */
-/* eslint-disable @angular-eslint/component-selector */
-/* eslint-disable @angular-eslint/component-class-suffix */
 import { Component, input, output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -9,6 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   AdminClient,
   GetReferralsByUserResponse,
+  GetUserCreditCurrencyAccount,
   GetUserCreditResponse,
   GetUserLoyaltyAccountResponse,
   LoyaltyTier,
@@ -122,6 +121,13 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
   // One discharge per FUNDED account, and the dialog is told which one: the server drains the
   // currency it is named and nothing else, so a single button over two balances would have to guess.
   it('offers a discharge beside each funded balance and hands the dialog that account', () => {
+    const eurAccount = GetUserCreditCurrencyAccount.fromJS({
+      accountId: 'acc-eur',
+      balance: 25,
+      currencyCode: 'EUR',
+      currencyId: 'cur-eur',
+      ledger: [],
+    });
     const fixture = renderFixture(
       GetUserCreditResponse.fromJS({
         userId: 'user-1',
@@ -131,7 +137,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
         ledger: [],
         accounts: [
           { accountId: 'acc-czk', balance: 400, currencyCode: 'CZK', currencyId: 'cur-czk', ledger: [] },
-          { accountId: 'acc-eur', balance: 25, currencyCode: 'EUR', currencyId: 'cur-eur', ledger: [] },
+          eurAccount,
           { accountId: 'acc-pln', balance: 0, currencyCode: 'PLN', currencyId: 'cur-pln', ledger: [] },
         ],
       })
@@ -144,7 +150,6 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     expect(blocks[1].querySelector('cleansia-button')).toBeTruthy();
     expect(blocks[2].querySelector('cleansia-button')).toBeNull();
 
-    const eurAccount = fixture.componentInstance['facade'].credit()!.accounts![1];
     fixture.componentInstance.openExpireCredit(eurAccount);
     fixture.detectChanges();
 

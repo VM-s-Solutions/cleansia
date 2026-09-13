@@ -84,8 +84,8 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
       .update(id, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError((err) => {
-          this.handleSaveError(err);
+        catchError(() => {
+          this.handleSaveError();
           return of(null);
         }),
         finalize(() => this.saving.set(false))
@@ -149,7 +149,7 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
   ): void {
     const current = this.tiers();
     const changed = current.filter(
-      (t) =>
+      (t): t is TierConfigAdminDto & { id: string } =>
         t.id != null &&
         proposedThresholds[t.tier] !== undefined &&
         proposedThresholds[t.tier] !== t.lifetimePointsThreshold
@@ -175,7 +175,7 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
           command.minimumOrderAmountForDiscount = t.minimumOrderAmountForDiscount;
           command.perksJson = t.perksJson;
           return this.adminClient.adminLoyaltyTierClient
-            .update(t.id!, command)
+            .update(t.id, command)
             .pipe(catchError(() => of(null)));
         }),
         toArray(),
@@ -200,7 +200,7 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
       });
   }
 
-  private handleSaveError(_err: unknown): void {
+  private handleSaveError(): void {
     this.snackbarService.showError(
       this.translate.instant('pages.loyalty_tiers.form.error.generic')
     );

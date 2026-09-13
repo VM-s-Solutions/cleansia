@@ -156,18 +156,19 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   }
 
   openApproveDialog(employee: AdminEmployeeListItem): void {
-    if (!employee.id) return;
+    const employeeId = employee.id;
+    if (!employeeId) return;
 
     // Lazy-load countries the first time someone opens the dialog from
     // the list page; thereafter cached on the signal.
     if (this.countries().length === 0) {
-      this.loadCountries(() => this.showApproveDialog(employee));
+      this.loadCountries(() => this.showApproveDialog(employeeId));
       return;
     }
-    this.showApproveDialog(employee);
+    this.showApproveDialog(employeeId);
   }
 
-  private showApproveDialog(employee: AdminEmployeeListItem): void {
+  private showApproveDialog(employeeId: string): void {
     const dialogData: ApproveDialogData = {
       title: this.translate.instant(
         'pages.employee_management.approve_dialog.title'
@@ -189,7 +190,7 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ApproveDialogResult | undefined) => {
       if (result?.workCountryId) {
-        this.approveEmployee(employee.id!, result.workCountryId, result.notes);
+        this.approveEmployee(employeeId, result.workCountryId, result.notes);
       }
     });
   }
@@ -206,7 +207,7 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
           const iso = country.isoCode ?? '';
           return {
             label: iso ? `${name} (${iso})` : name,
-            value: country.id!,
+            value: country.id,
           };
         });
         this.countries.set(options);
@@ -236,7 +237,8 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   }
 
   openRejectDialog(employee: AdminEmployeeListItem): void {
-    if (!employee.id) return;
+    const employeeId = employee.id;
+    if (!employeeId) return;
 
     const dialogData: RejectDialogData = {
       title: this.translate.instant(
@@ -258,7 +260,7 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
 
     dialogRef?.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: RejectDialogResult | undefined) => {
       if (result?.reason) {
-        this.rejectEmployee(employee.id!, result.reason);
+        this.rejectEmployee(employeeId, result.reason);
       }
     });
   }

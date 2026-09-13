@@ -269,17 +269,18 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     this.syncPreviewPrice();
 
     // Set selected services for multiselect
-    if (pkg.includedServices) {
+    const includedServices = pkg.includedServices;
+    if (includedServices) {
       const availableServices = this.facade.availableServices();
       const selected = availableServices.filter((s) =>
-        pkg.includedServices!.some((is) => is.id === s.id)
+        includedServices.some((is) => is.id === s.id)
       );
       this.selectedServices.set(selected);
       this.facade.syncWeightRows(
         selected
           .filter((s): s is ServiceListItem & { id: string } => Boolean(s.id))
           .map((s) => ({ id: s.id, name: s.name ?? '' })),
-        pkg.includedServices
+        includedServices
       );
     }
 

@@ -33,7 +33,7 @@ export class EmailTemplateListComponent implements OnInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private destroy$ = new Subject<void>();
 
-  languagesTemplate = viewChild<TemplateRef<any>>('languagesTemplate');
+  languagesTemplate = viewChild<TemplateRef<EmailTypeListItemDto>>('languagesTemplate');
 
   columns!: TableColumn<EmailTypeListItemDto>[];
   actions!: TableAction<EmailTypeListItemDto>[];
@@ -53,7 +53,7 @@ export class EmailTemplateListComponent implements OnInit, OnDestroy {
   private rebuildTableDefinitions(): void {
     const tableDef = getEmailTypeTableDefinition(
       {
-        onViewDetail: (row) => this.facade.navigateToDetail(row.emailType!),
+        onViewDetail: (row) => this.facade.navigateToDetail(row.emailType),
       },
       this.translate,
       this.languagesTemplate()

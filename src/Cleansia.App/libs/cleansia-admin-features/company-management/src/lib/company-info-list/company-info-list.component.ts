@@ -67,7 +67,7 @@ export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+  statusTemplate = viewChild<TemplateRef<CompanyInfoListItem>>('statusTemplate');
 
   companyColumns!: TableColumn<CompanyInfoListItem>[];
   companyActions!: TableAction<CompanyInfoListItem>[];

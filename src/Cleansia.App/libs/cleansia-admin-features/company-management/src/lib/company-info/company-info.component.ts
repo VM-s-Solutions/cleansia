@@ -21,7 +21,7 @@ import {
   CleansiaTitleComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CompanyInfoFormData, CompanyInfoFacade } from './company-info.facade';
 
 @Component({
@@ -75,7 +75,7 @@ export class CompanyInfoComponent implements OnInit, OnDestroy {
       .countries()
       .filter((c) => c.id)
       .map((c) => ({
-        value: c.id!,
+        value: c.id,
         label: c.name ?? c.isoCode ?? '',
       }))
   );

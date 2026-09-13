@@ -74,7 +74,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private setupScrollAnimations(): void {
-    this.observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
@@ -84,11 +84,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
     );
+    this.observer = observer;
 
-    this.observeAll();
+    this.observeAll(observer);
 
     this.mutationObserver = new MutationObserver(() => {
-      this.observeAll();
+      this.observeAll(observer);
     });
     this.mutationObserver.observe(this.el.nativeElement, {
       childList: true,
@@ -96,7 +97,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private observeAll(): void {
+  private observeAll(observer: IntersectionObserver): void {
     const elements = this.el.nativeElement.querySelectorAll(
       '.animate-on-scroll:not(.section-visible):not(.anim-pending)'
     );
@@ -106,7 +107,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       // stays visible so the server-rendered paint is never blanked out.
       if (el.getBoundingClientRect().top > viewportBottom) {
         el.classList.add('anim-pending');
-        this.observer!.observe(el);
+        observer.observe(el);
       } else {
         el.classList.add('section-visible');
       }

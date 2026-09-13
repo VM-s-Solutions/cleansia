@@ -92,12 +92,12 @@ export class OrderEffects {
               )
             )
           ),
-          map(([response, completedStatusCode]) => {
+          map(([, completedStatusCode]) => {
             this.snackbarService.showSuccess(
               this.translate.instant('pages.orders.complete_order.success')
             );
             return OrderActions.completeOrderSuccess({
-              orderId: response.orderId!,
+              orderId,
               orderStatus: completedStatusCode?.name || 'Completed',
             });
           }),

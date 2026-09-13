@@ -70,16 +70,22 @@ export function persistPreferredLanguage(lang: string): void {
   document.documentElement.lang = lang;
 }
 
+/** The language the preference cookie names, or null when it names none the app supports. */
+export function readPreferredLanguageCookie(cookieHeader: string | null | undefined): string | null {
+  const cookieMatch = (cookieHeader ?? '').match(
+    /(?:^|;\s*)preferred_language=([a-zA-Z-]+)/
+  );
+  const fromCookie = cookieMatch?.[1]?.split('-')[0]?.toLowerCase();
+  return fromCookie && SUPPORTED_LANGUAGES.includes(fromCookie) ? fromCookie : null;
+}
+
 /** Resolves the render language for an SSR request: preference cookie first, then Accept-Language. */
 export function resolveRequestLanguage(
   cookieHeader: string | null | undefined,
   acceptLanguageHeader: string | null | undefined
 ): string {
-  const cookieMatch = (cookieHeader ?? '').match(
-    /(?:^|;\s*)preferred_language=([a-zA-Z-]+)/
-  );
-  const fromCookie = cookieMatch?.[1]?.split('-')[0]?.toLowerCase();
-  if (fromCookie && SUPPORTED_LANGUAGES.includes(fromCookie)) {
+  const fromCookie = readPreferredLanguageCookie(cookieHeader);
+  if (fromCookie) {
     return fromCookie;
   }
   for (const part of (acceptLanguageHeader ?? '').split(',')) {
@@ -113,7 +119,10 @@ export function initializeTranslations(
       return;
     }
 
-    const stored = localStorage.getItem(PREFERRED_LANGUAGE_KEY);
+    // The COOKIE is the first word in the browser too: it is what the server just rendered with,
+    // so reading it first is what keeps hydration from repainting the page in another language.
+    // localStorage is only the pre-cookie legacy store, and the persist below re-aligns both.
+    const stored = readPreferredLanguageCookie(document.cookie) ?? localStorage.getItem(PREFERRED_LANGUAGE_KEY);
     const browserLang = navigator.language?.split('-')[0]?.toLowerCase();
 
     const lang =

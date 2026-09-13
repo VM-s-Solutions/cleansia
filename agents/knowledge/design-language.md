@@ -256,6 +256,7 @@ material is stronger and unrepeatable by a competitor's generated page:
 | Free cancellation to 24 h; 25 % at 4–24 h; 50 % under 4 h | `business-rules.md` |
 | 15 minutes to change your mind — 60 on a first booking | `business-rules.md` |
 | Cleaner cancels: full refund **and** a credit — `{{amount}}` formatted in the market's currency, never a literal (ADR-0060) | `MarketListItem.noShowCredit`, `business-rules.md#money-constants` |
+| The push that says so carries the same credit as a **server-formatted loc-arg** ("250 Kč", "10 €") — the one sanctioned money figure in a string, because the server formats it from the credit's own currency row (owner ruling 2026-09-13, ADR-0025 D3) | `CancelUnfilledOrders.FormatCreditAmount`, `FcmMessageFactory.ApnsDisplayMap` |
 | Windows 08:00–20:00, one-hour slots | `business-rules.md` |
 | From 4 h notice; express from 2 h (+20 %) | `business-rules.md` |
 | Pick your cleaner again — first refusal up to 12 h | ADR-0036 / ADR-0045 |

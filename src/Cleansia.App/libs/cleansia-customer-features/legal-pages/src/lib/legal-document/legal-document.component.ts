@@ -37,6 +37,16 @@ export class LegalDocumentComponent implements AfterViewInit, OnDestroy {
   /** Which sections exist. The copy is keyed `section<N>_title` / `_text`. */
   readonly sections = input.required<number[]>();
 
+  /**
+   * Interpolation for a section's text, by section number — a paragraph that names a figure the
+   * market decides (the currency in the terms' ordering section) carries a placeholder, and the
+   * caller supplies the value.
+   */
+  readonly sectionParams = input<Record<number, Record<string, unknown>>>({});
+
+  /** A key to render instead of `section<N>_text`, by section number, for a variant of the copy. */
+  readonly sectionTextKeys = input<Record<number, string>>({});
+
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -111,6 +121,14 @@ export class LegalDocumentComponent implements AfterViewInit, OnDestroy {
       if (!Number.isNaN(index)) current = index;
     }
     if (current !== this.activeSection()) this.activeSection.set(current);
+  }
+
+  textKey(index: number): string {
+    return this.sectionTextKeys()[index] ?? `${this.namespace()}.section${index}_text`;
+  }
+
+  textParams(index: number): Record<string, unknown> | undefined {
+    return this.sectionParams()[index];
   }
 
   /** Two digits, as the board sets them: 01, 02 … */

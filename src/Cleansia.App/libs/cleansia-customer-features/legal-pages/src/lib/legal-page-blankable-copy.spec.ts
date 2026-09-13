@@ -1,5 +1,7 @@
 import { Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { selectMarketCurrencyCode } from '@cleansia/customer-stores';
+import { provideMockStore } from '@ngrx/store/testing';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PrivacyComponent } from './privacy/privacy.component';
 import { TermsComponent } from './terms/terms.component';
@@ -60,6 +62,9 @@ describe.each(PAGES)('$name legal page', ({ component, namespace }) => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [component, TranslateModule.forRoot()],
+      providers: [
+        provideMockStore({ selectors: [{ selector: selectMarketCurrencyCode, value: 'CZK' }] }),
+      ],
     }).compileComponents();
 
     translate = TestBed.inject(TranslateService);

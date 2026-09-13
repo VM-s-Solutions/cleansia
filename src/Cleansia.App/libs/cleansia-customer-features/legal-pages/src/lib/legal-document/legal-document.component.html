@@ -50,7 +50,7 @@
             {{ namespace() + '.section' + i + '_title' | translate }}
           </h2>
           <p class="cl-lgl__section-text">
-            {{ namespace() + '.section' + i + '_text' | translate }}
+            {{ textKey(i) | translate: textParams(i) }}
           </p>
         </div>
       </section>

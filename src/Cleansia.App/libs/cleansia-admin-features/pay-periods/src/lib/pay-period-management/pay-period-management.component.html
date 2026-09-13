@@ -74,7 +74,14 @@
 
 <!-- Filter Drawer Backdrop -->
 @if (isFilterDrawerOpen()) {
-<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+<div
+  class="filter-drawer-backdrop"
+  role="button"
+  tabindex="0"
+  (click)="closeFilterDrawer()"
+  (keydown.escape)="closeFilterDrawer()"
+  [attr.aria-label]="'global.close' | translate"
+></div>
 }
 
 <!-- Filter Drawer -->
@@ -100,7 +107,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="filterForm.value.status === null"
+            tabindex="0"
             (click)="onStatusSelect(null)"
+            (keydown.enter)="onStatusSelect(null)"
           >
             <cleansia-radio
               [label]="'global.all' | translate"
@@ -115,7 +124,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="filterForm.value.status === option.value"
+            tabindex="0"
             (click)="onStatusSelect(option.value)"
+            (keydown.enter)="onStatusSelect(option.value)"
           >
             <cleansia-radio
               [label]="option.label"
@@ -139,7 +150,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="filterForm.value.year === null"
+            tabindex="0"
             (click)="onYearSelect(null)"
+            (keydown.enter)="onYearSelect(null)"
           >
             <cleansia-radio
               [label]="'global.all' | translate"
@@ -154,7 +167,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="filterForm.value.year === option.value"
+            tabindex="0"
             (click)="onYearSelect(option.value)"
+            (keydown.enter)="onYearSelect(option.value)"
           >
             <cleansia-radio
               [label]="option.label"
@@ -184,7 +199,14 @@
 
 <!-- Create Pay Period Dialog -->
 @if (showCreateDialog()) {
-<div class="filter-drawer-backdrop" (click)="closeCreateDialog()"></div>
+<div
+  class="filter-drawer-backdrop"
+  role="button"
+  tabindex="0"
+  (click)="closeCreateDialog()"
+  (keydown.escape)="closeCreateDialog()"
+  [attr.aria-label]="'global.close' | translate"
+></div>
 <div class="filter-drawer open">
   <div class="filter-drawer-header">
     <div class="filter-drawer-title">

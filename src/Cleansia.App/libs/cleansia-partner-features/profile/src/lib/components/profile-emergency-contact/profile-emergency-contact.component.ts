@@ -9,7 +9,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ProfileFacade } from '../../profile/profile.facade';
 
 @Component({
-  selector: 'cleansia-profile-emergency-contact',
+  selector: 'cleansia-partner-profile-emergency-contact',
   standalone: true,
   imports: [
     ReactiveFormsModule,

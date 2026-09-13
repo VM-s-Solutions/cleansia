@@ -60,7 +60,7 @@ interface DocumentGroup {
 }
 
 @Component({
-  selector: 'cleansia-profile-documents',
+  selector: 'cleansia-partner-profile-documents',
   standalone: true,
   imports: [
     CommonModule,

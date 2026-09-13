@@ -3,7 +3,10 @@
   <div
     class="doc-upload__dropzone"
     [class.doc-upload__dropzone--active]="isDragOver"
+    role="button"
+    tabindex="0"
     (click)="fileInput.click()"
+    (keydown.enter)="fileInput.click()"
     (dragover)="isDragOver = true; $event.preventDefault()"
     (dragleave)="isDragOver = false"
     (drop)="onDrop($event); isDragOver = false"

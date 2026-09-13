@@ -16,7 +16,7 @@ import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { ProfileFacade } from '../../profile/profile.facade';
 
 @Component({
-  selector: 'cleansia-profile-personal-info',
+  selector: 'cleansia-partner-profile-personal-info',
   standalone: true,
   imports: [
     CommonModule,

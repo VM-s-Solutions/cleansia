@@ -785,10 +785,32 @@
       @if (facade.activeStep() === 4) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_plus_title' | translate }}</h1>
+        <!--
+          Not on sale in the chosen market: the catalogue's empty pattern above
+          the decline row, and nothing else — no price, no button. Next and
+          Back walk past this step; it is only seen from the stepper.
+        -->
+        @if (facade.plusUnavailable()) {
+        <div class="cl-cat__empty">
+          <img
+            class="cl-cat__empty-mascot"
+            src="assets/images/mascot/mascot-leaning.webp"
+            alt=""
+            width="400"
+            height="400"
+          />
+          <h2 class="cl-h3">{{ 'pages.plus.not_available_in_market' | translate }}</h2>
+        </div>
+        } @else {
+        <!--
+          The saving is in the BASKET's currency (the address's) and the plan's
+          price in the chosen MARKET's (ADR-0058 D4); each is labelled with its
+          own code, and when they differ that is honest, not a defect.
+        -->
         @if (plusSavings(); as savings) {
         <p class="cl-body cl-wiz__lead">
           {{ 'pages.order.plus_lead_before' | translate }}
-          <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount) }}</strong>
+          <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount, savings.currencyCode) }}</strong>
           @if (trialDays() > 0) {
             {{ 'pages.order.plus_lead_after' | translate: { days: trialDays() } }}
           } @else {
@@ -812,7 +834,7 @@
             <span class="cl-wiz__plan-badge">{{ 'pages.order.plus_best_value' | translate }}</span>
             }
             <div class="cl-lbl cl-wiz__plan-period">{{ 'pages.order.plus_interval.' + plan.billingInterval | translate }}</div>
-            <div class="cl-num cl-wiz__plan-price">{{ formatPrice(plan.price) }}</div>
+            <div class="cl-num cl-wiz__plan-price">{{ formatPrice(plan.price, plan.currencyCode) }}</div>
             <div class="cl-muted cl-wiz__plan-per">{{ 'pages.order.plus_interval.' + plan.billingInterval | translate }}</div>
             <p class="cl-wiz__plan-note">
               @if (plan.savingsPercentVsMonthly > 0) {
@@ -879,6 +901,7 @@
             </button>
           </span>
         </div>
+        }
         }
 
         <!--
@@ -1168,7 +1191,7 @@
         @if (savings.wouldSaveAmount > 0) {
         <div class="cl-wiz__summary-plus">
           <span>{{ 'pages.order.summary_with_plus' | translate }}</span>
-          <span class="cl-num cl-wiz__summary-plus-value">{{ formatPrice(savings.wouldPayTotal) }}</span>
+          <span class="cl-num cl-wiz__summary-plus-value">{{ formatPrice(savings.wouldPayTotal, savings.currencyCode) }}</span>
         </div>
         }
         }

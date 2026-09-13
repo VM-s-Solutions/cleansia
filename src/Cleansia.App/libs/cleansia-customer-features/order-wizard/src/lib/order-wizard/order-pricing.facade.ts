@@ -43,8 +43,9 @@ interface QuoteInputs {
   rooms: number;
   bathrooms: number;
   /**
-   * The service address's country. The server prices the booking in that country's currency —
-   * a property of the booking, never a choice — so the wizard names the country and no currency.
+   * The service address's country, or the chosen market's before an address names one
+   * (ADR-0058 D4). The server prices the booking in that country's currency, so the wizard names
+   * the country and no currency.
    */
   countryId: string | null;
   cleaningDate: string | null;
@@ -53,6 +54,8 @@ interface QuoteInputs {
 /** Dependencies the pricing engine reads from the orchestrating wizard facade. */
 interface PricingConnection {
   formData: Signal<OrderWizardFormData>;
+  /** The chosen market's country; what the quote names until the address step names one. */
+  marketCountryId: Signal<string | null>;
   /**
    * Promo amount the customer applied at checkout. The only discount the quote cannot fold in
    * itself — `QuoteOrderCommand` carries no promo code, by design (the code is entered after the
@@ -216,7 +219,7 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
       selectedExtraSlugs,
       rooms: data.rooms,
       bathrooms: data.bathrooms,
-      countryId: data.address.countryId || null,
+      countryId: data.address.countryId || this.deps?.marketCountryId() || null,
       cleaningDate: cleaningDateIso,
     };
   });

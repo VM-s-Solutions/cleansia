@@ -1,9 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import {
-  loadCustomerCurrencies,
-  selectCustomerDefaultCurrencyCode,
-} from '@cleansia/customer-stores';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
@@ -48,10 +45,20 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   membership = signal<GetMyMembershipResponse | null>(null);
   plans = signal<GetMembershipPlansResponse[]>([]);
   /**
-   * Neither the membership nor a plan arrives with a currency — `monthlyPriceCzk` is the wire
-   * name, not a label — so every amount here is labelled with the platform default.
+   * A subscription keeps its currency for life (ADR-0059 D2), so every figure on this screen is
+   * labelled with the membership's own code — not the market the customer is browsing in now.
    */
-  readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+  readonly currencyCode = computed(() => this.membership()?.currencyCode ?? null);
+  /**
+   * The plans a member may switch to: those the market prices in the membership's currency. A
+   * swap is settled in that currency (the server picks that row), so a plan listed in another
+   * cannot be offered at the price the market shows.
+   */
+  readonly switchablePlans = computed(() => {
+    const currencyCode = this.currencyCode();
+    return this.plans().filter((plan) => plan.currencyCode === currencyCode);
+  });
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
     initialValue: null,
   });
 
@@ -103,9 +110,8 @@ export class MembershipFacade extends UnsubscribeControlDirective {
    * bearer if present. Failing silently is fine; the switch CTA just won't show.
    */
   loadPlans(onLoaded?: (plans: GetMembershipPlansResponse[]) => void): void {
-    this.store.dispatch(loadCustomerCurrencies());
     this.client
-      .getPlans()
+      .getPlans(this.marketCountryId() ?? undefined)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of<GetMembershipPlansResponse[]>([])),

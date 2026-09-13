@@ -46,6 +46,27 @@ const SERVICED_COUNTRIES_FIXTURE = [
   { id: CZ_COUNTRY_ID, isoCode: 'CZ', name: 'Czechia', translations: {} },
 ];
 
+/**
+ * The market directory the app resolves before its first render. One market, so the quote card
+ * draws a static "CZ · CZK" label and the navbar no pill; every catalogue read then carries this
+ * country. Without it the catch-all's `{}` is a failed list, and the wizard reads with no country.
+ */
+const MARKETS_FIXTURE = [
+  {
+    countryId: CZ_COUNTRY_ID,
+    isoCode: 'CZE',
+    isoAlpha2: 'CZ',
+    name: 'Czechia',
+    translations: {},
+    currencyId: CURRENCY_ID,
+    currencyCode: 'CZK',
+    currencySymbol: 'Kč',
+    isDefault: true,
+    noShowCredit: 250,
+    insuranceCoverageAmount: null,
+  },
+];
+
 const SERVICE_CITIES_FIXTURE = [
   { id: '55555555-5555-5555-5555-555555555555', name: 'Praha', countryId: CZ_COUNTRY_ID },
 ];
@@ -101,6 +122,7 @@ const MEMBERSHIP_PLANS_FIXTURE = [
     expressUpgradesPerMonth: 2,
     trialPeriodDays: 14,
     savingsPercentVsMonthly: 0,
+    currencyCode: 'CZK',
   },
 ];
 
@@ -150,11 +172,13 @@ async function stubBackend(page: Page): Promise<void> {
   await page.route('**/api/Package/GetOverview*', (route) => json(route, []));
   await page.route('**/api/Country/GetServiced', (route) => json(route, SERVICED_COUNTRIES_FIXTURE));
   await page.route('**/api/Country/GetOverview', (route) => json(route, SERVICED_COUNTRIES_FIXTURE));
+  await page.route('**/api/Country/GetPropertySizes*', (route) => json(route, []));
+  await page.route('**/api/Market/GetOverview', (route) => json(route, MARKETS_FIXTURE));
   await page.route('**/api/Extra/GetOverview*', (route) => json(route, []));
   await page.route('**/api/ServiceCity**', (route) => json(route, SERVICE_CITIES_FIXTURE));
   await page.route('**/api/Order/Quote', (route) => json(route, QUOTE_FIXTURE));
   await page.route('**/api/Order/QuotePlusSavings', (route) => json(route, PLUS_SAVINGS_FIXTURE));
-  await page.route('**/api/Membership/GetPlans', (route) => json(route, MEMBERSHIP_PLANS_FIXTURE));
+  await page.route('**/api/Membership/GetPlans*', (route) => json(route, MEMBERSHIP_PLANS_FIXTURE));
   await page.route('**/api/Payment/CreateOrder', (route) => json(route, CREATE_ORDER_FIXTURE));
 }
 

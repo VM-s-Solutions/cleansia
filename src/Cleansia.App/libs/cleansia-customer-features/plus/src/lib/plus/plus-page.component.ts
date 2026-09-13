@@ -105,10 +105,6 @@ export class PlusPageComponent implements OnInit {
   }
 
   formatPrice(amount: number): string {
-    return formatMoney(
-      amount,
-      this.facade.defaultCurrencyCode(),
-      localeFor(this.translate.currentLang),
-    );
+    return formatMoney(amount, this.facade.currencyCode(), localeFor(this.translate.currentLang));
   }
 }

@@ -10,3 +10,4 @@ export * from './snackbar.service';
 export * from './theme.service';
 export * from './translation-loader.service';
 export * from './mapbox-autocomplete.service';
+export * from './market-preference';

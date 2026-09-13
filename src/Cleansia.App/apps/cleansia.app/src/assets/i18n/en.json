@@ -16,6 +16,7 @@
     "theme_light": "Light Mode",
     "theme_dark": "Dark Mode",
     "language": "Language",
+    "market": "Market",
     "settings": "Settings",
     "section_account": "Account",
     "section_activity": "Activity",
@@ -595,8 +596,7 @@
         "perk3": "{{count}} express clean a month at no surcharge",
         "perk4": "Recurring slots and a cleaner you have had before",
         "yearly": "{{price}} a year — saves {{percent}}%",
-        "cta": "Try it free",
-        "lead_plain": "A membership that pays for itself if you book regularly."
+        "cta": "Try it free"
       },
       "quote": {
         "title": "Get a price",
@@ -605,11 +605,6 @@
         "size_label": "Property size",
         "date_label": "When",
         "date_hint": "Optional. Booking less than 4 hours ahead adds an express surcharge.",
-        "size_1kk": "1 room",
-        "size_2kk": "2 rooms",
-        "size_3kk": "3 rooms",
-        "size_4kk": "4 rooms",
-        "size_house": "House",
         "price_label": "Fixed price",
         "continue": "Continue",
         "pick_service": "Pick a service to see the price",
@@ -1574,6 +1569,7 @@
       "badge": "Membership",
       "best_value": "Best value",
       "checkout_failed": "We couldn't open the payment page. Please try again.",
+      "not_available_in_market": "Plus is not available in your market yet",
       "closing_alt": "Book without membership",
       "closing_cta": "Try Plus",
       "closing_text": "No commitment. If it does not pay off, switch it off before the first payment arrives.",
@@ -1946,12 +1942,14 @@
     },
     "membership": {
       "plan": {
+        "not_priced_in_currency": "Plus isn't on sale in this market yet.",
         "not_found": "That membership plan no longer exists."
       },
       "already_active": "You already have an active membership.",
       "not_found": "We couldn't find your membership.",
       "not_owned_by_user": "You can't manage this membership.",
       "stripe_customer_required": "We couldn't reach the payment provider — please try again.",
+      "stripe_customer_currency_locked": "Your Plus billing is already set up in another currency. Contact support to change it.",
       "swap_same_plan": "You're already on this plan.",
       "express_waiver": {
         "no_longer_available": "Your free express upgrade is no longer available for this booking — this month's included express bookings have just been used up. You can still book at the standard express price."

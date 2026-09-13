@@ -25,6 +25,8 @@ import {
   LanguageClient,
   ILoyaltyClient,
   LoyaltyClient,
+  IMarketClient,
+  MarketClient,
   IMembershipClient,
   MembershipClient,
   INotificationPreferencesClient,
@@ -72,6 +74,7 @@ interface ICustomerClient {
   disputeClient: IDisputeClient;
   savedAddressClient: ISavedAddressClient;
   loyaltyClient: ILoyaltyClient;
+  marketClient: IMarketClient;
   creditClient: ICreditClient;
   promoCodeClient: IPromoCodeClient;
   referralClient: IReferralClient;
@@ -148,6 +151,7 @@ export class CustomerClient implements ICustomerClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  marketClient: IMarketClient = new MarketClient(this.httpClient, this.apiBaseUrl);
   creditClient: ICreditClient = new CreditClient(
     this.httpClient,
     this.apiBaseUrl

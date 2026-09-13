@@ -10,6 +10,7 @@ import {
 import {
   loadCustomerCurrencies,
   selectCustomerDefaultCurrencyCode,
+  selectMarketCurrencyCode,
 } from '@cleansia/customer-stores';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { of, throwError } from 'rxjs';
@@ -60,7 +61,36 @@ describe('RewardsFacade', () => {
 
     store = TestBed.inject(MockStore);
     store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
+    store.overrideSelector(selectMarketCurrencyCode, null);
     facade = TestBed.inject(RewardsFacade);
+  });
+
+  // The floor is a default-currency number enforced only on default-currency orders; it is said
+  // only in a market priced in that currency, and never printed in another unit.
+  describe('whether the tier floor applies to the market', () => {
+    it('applies in the market priced in the platform default', () => {
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'CZK');
+      store.overrideSelector(selectMarketCurrencyCode, 'CZK');
+      store.refreshState();
+
+      expect(facade.floorApplies()).toBe(true);
+    });
+
+    it('does not apply in a market priced in another currency', () => {
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'CZK');
+      store.overrideSelector(selectMarketCurrencyCode, 'EUR');
+      store.refreshState();
+
+      expect(facade.floorApplies()).toBe(false);
+    });
+
+    it('applies when no market resolved, because the readers then price in the default', () => {
+      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'CZK');
+      store.overrideSelector(selectMarketCurrencyCode, null);
+      store.refreshState();
+
+      expect(facade.floorApplies()).toBe(true);
+    });
   });
 
   // The tier floor is a platform-default-currency number and the page prints it as money, so

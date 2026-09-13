@@ -141,7 +141,11 @@ export class RewardsComponent implements OnInit {
     if (!tier.discountPercent) {
       return { key: 'pages.rewards.no_discount_yet', params: {} };
     }
-    if (tier.minimumOrderAmountForDiscount && tier.minimumOrderAmountForDiscount > 0) {
+    if (
+      this.facade.floorApplies() &&
+      tier.minimumOrderAmountForDiscount &&
+      tier.minimumOrderAmountForDiscount > 0
+    ) {
       return {
         key: 'pages.rewards.discount_min_order',
         params: {

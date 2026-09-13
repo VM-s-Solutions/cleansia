@@ -26,7 +26,7 @@ describe('PlusPageComponent', () => {
 
   function build(
     plans: { code?: string; billingInterval?: number }[] = [],
-    defaultCurrencyCode: string | null = null,
+    currencyCode: string | null = null,
   ): PlusPageComponent {
     navigate = jest.fn();
     startCheckout = jest.fn();
@@ -61,7 +61,8 @@ describe('PlusPageComponent', () => {
               trialDays: signal(14),
               hasExpressPerk: signal(true),
               expressPerMonth: signal(1),
-              defaultCurrencyCode: signal<string | null>(defaultCurrencyCode),
+              currencyCode: signal<string | null>(currencyCode),
+              plusUnavailable: signal(false),
             },
           },
         ],
@@ -121,8 +122,9 @@ describe('PlusPageComponent', () => {
   });
 
   // The locale was a `'cs-CZ'` literal, so an English reader got Czech digit grouping and symbol
-  // placement on the Plus page while every order screen formatted per language.
-  it("groups and places the symbol the way the reader's language does", () => {
+  // placement on the Plus page while every order screen formatted per language. The code is the
+  // plan response's own (ADR-0059 D3), never a platform default.
+  it("labels the price with the plans' currency, grouped the way the reader's language does", () => {
     const component = build([], 'CZK');
 
     translate.currentLang = 'en';

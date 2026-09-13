@@ -6,15 +6,12 @@ import {
   GetMyMembershipResponse,
   MembershipPlanFactsService,
 } from '@cleansia/customer-services';
-import {
-  loadCustomerCurrencies,
-  selectCustomerDefaultCurrencyCode,
-} from '@cleansia/customer-stores';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, of, take, takeUntil } from 'rxjs';
+import { catchError, distinctUntilChanged, of, take, takeUntil } from 'rxjs';
 
 /**
  * The public Cleansia Plus page.
@@ -41,11 +38,12 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
 
   readonly loading = this.facts.loading;
   readonly plans = this.facts.plans;
-  /**
-   * A plan's price arrives with no currency of its own — `GetMembershipPlansResponse` carries
-   * `price` alone — so it is labelled with the platform default.
-   */
-  readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
+  /** The code the plans are priced in — the response's own (ADR-0059 D3). */
+  readonly currencyCode = this.facts.currencyCode;
+  /** Plus is not on sale in the chosen market: no price, no button, one line saying so. */
+  readonly plusUnavailable = this.facts.unavailable;
+  /** The chosen market (ADR-0058 D4): the plans are read in it and a subscription is bought in it. */
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
     initialValue: null,
   });
 
@@ -70,8 +68,10 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
   readonly submitting = signal(false);
 
   load(): void {
-    this.facts.load();
-    this.store.dispatch(loadCustomerCurrencies());
+    this.store
+      .select(selectMarketCountryId)
+      .pipe(distinctUntilChanged(), takeUntil(this.destroyed$))
+      .subscribe((countryId) => this.facts.load(countryId));
   }
 
   refreshMembership(): void {
@@ -100,6 +100,7 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
 
     const command = new CreateMembershipCheckoutSessionCommand();
     command.planCode = planCode;
+    command.countryId = this.marketCountryId() ?? undefined;
 
     this.membershipClient
       .createCheckoutSession(command)

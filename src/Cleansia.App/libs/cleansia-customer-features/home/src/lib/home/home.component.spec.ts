@@ -4,6 +4,7 @@ import {
   loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { HomeComponent } from './home.component';
@@ -39,7 +40,7 @@ describe('HomeComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         HomeComponent,
-        provideMockStore(),
+        provideMockStore({ selectors: [{ selector: selectMarketCountryId, value: 'cze-id' }] }),
         { provide: PLATFORM_ID, useValue: platform },
         { provide: ElementRef, useValue: new ElementRef(host) },
       ],
@@ -59,14 +60,37 @@ describe('HomeComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('asks the store for the catalog the landing page renders, and the currency it is priced in', () => {
+  it('asks the store for the catalog priced in the chosen market, and the platform currencies', () => {
     const component = build('browser');
 
     component.ngOnInit();
 
-    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices());
-    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages());
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('cze-id'));
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('cze-id'));
     expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+  });
+
+  it('re-reads the catalog when the customer switches market', () => {
+    const component = build('browser');
+    component.ngOnInit();
+
+    store.overrideSelector(selectMarketCountryId, 'svk-id');
+    store.refreshState();
+
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('svk-id'));
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('svk-id'));
+  });
+
+  // The no-market shape (ADR-0058 D3): the list failed, so nothing names a country.
+  it('sends no country when no market resolved', () => {
+    const component = build('browser');
+    store.overrideSelector(selectMarketCountryId, null);
+    store.refreshState();
+
+    component.ngOnInit();
+
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices(null));
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages(null));
   });
 
   it('installs no observer during a server render', () => {

@@ -12,6 +12,7 @@ import {
 import {
   loadCustomerCurrencies,
   selectCustomerDefaultCurrencyCode,
+  selectMarketCurrencyCode,
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
 import { catchError, forkJoin, of, takeUntil } from 'rxjs';
@@ -40,6 +41,19 @@ export class RewardsFacade extends UnsubscribeControlDirective {
    */
   readonly defaultCurrencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
     initialValue: null,
+  });
+  private readonly marketCurrencyCode = toSignal(this.store.select(selectMarketCurrencyCode), {
+    initialValue: null,
+  });
+  /**
+   * The floor is enforced only on an order in the default currency, so it is stated only while
+   * the market the customer browses in is priced in it (ADR-0058 D5). With no market resolved
+   * the readers price in the default, so the floor applies and is stated; in any other market no
+   * floor applies and the line is omitted rather than printed in a unit it was never set in.
+   */
+  readonly floorApplies = computed(() => {
+    const market = this.marketCurrencyCode();
+    return market === null || market === this.defaultCurrencyCode();
   });
   readonly recentActivity = signal<GetLoyaltyActivityActivityItem[]>([]);
   readonly activityList = signal<GetLoyaltyActivityActivityItem[]>([]);

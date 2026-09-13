@@ -110,6 +110,16 @@ export type {
   IRegisterCommand,
 } from './lib/client/customer-client';
 export {
+  MarketClient,
+  MarketListItem,
+  GetPropertySizePresetsPropertySizePresetDto,
+} from './lib/client/customer-client';
+export type {
+  IMarketClient,
+  IMarketListItem,
+  IGetPropertySizePresetsPropertySizePresetDto,
+} from './lib/client/customer-client';
+export {
   MembershipClient,
   MembershipStatus,
   GetMyMembershipResponse,

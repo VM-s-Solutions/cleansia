@@ -16,6 +16,7 @@
     "theme_light": "Svetlý režim",
     "theme_dark": "Tmavý režim",
     "language": "Jazyk",
+    "market": "Trh",
     "settings": "Nastavenia",
     "section_account": "Účet",
     "section_activity": "Aktivita",
@@ -595,8 +596,7 @@
         "perk3": "{{count}}× mesačne expresné upratovanie bez príplatku",
         "perk4": "Opakované termíny a obľúbený upratovač",
         "yearly": "{{price}} ročne — ušetríte {{percent}} %",
-        "cta": "Vyskúšať zdarma",
-        "lead_plain": "Členstvo, ktoré sa vráti každému, kto objednáva pravidelne."
+        "cta": "Vyskúšať zdarma"
       },
       "quote": {
         "title": "Vypočítať cenu",
@@ -605,11 +605,6 @@
         "size_label": "Veľkosť bytu",
         "date_label": "Kedy",
         "date_hint": "Nepovinné. Objednávka menej ako 4 hodiny vopred má expresný príplatok.",
-        "size_1kk": "1+kk",
-        "size_2kk": "2+kk",
-        "size_3kk": "3+kk",
-        "size_4kk": "4+kk",
-        "size_house": "Dom",
         "price_label": "Pevná cena",
         "continue": "Pokračovať",
         "pick_service": "Vyberte službu a uvidíte cenu",
@@ -1574,6 +1569,7 @@
       "badge": "Členstvo",
       "best_value": "Najvýhodnejšie",
       "checkout_failed": "Platobnú stránku sa nepodarilo otvoriť. Skúste to prosím znovu.",
+      "not_available_in_market": "Plus zatiaľ nie je vo vašom trhu k dispozícii",
       "closing_alt": "Objednať bez členstva",
       "closing_cta": "Vyskúšať Plus",
       "closing_text": "Bez záväzku. Keď sa to neoplatí, vypnete to skôr, než príde prvá platba.",
@@ -1946,12 +1942,14 @@
     },
     "membership": {
       "plan": {
+        "not_priced_in_currency": "Plus sa v tomto trhu zatiaľ nepredáva.",
         "not_found": "Tento členský plán už neexistuje."
       },
       "already_active": "Aktívne členstvo už máte.",
       "not_found": "Vaše členstvo sme nenašli.",
       "not_owned_by_user": "Toto členstvo nemôžete spravovať.",
       "stripe_customer_required": "Nepodarilo sa nám spojiť s platobnou bránou — skúste to prosím znova.",
+      "stripe_customer_currency_locked": "Vaše platby za Plus sú už nastavené v inej mene. Pre zmenu kontaktujte podporu.",
       "swap_same_plan": "Na tomto pláne už ste.",
       "express_waiver": {
         "no_longer_available": "Vaše bezplatné expresné vylepšenie už pre túto objednávku nie je k dispozícii — expresné objednávky zahrnuté v tomto mesiaci boli práve vyčerpané. Objednať môžete aj za bežnú expresnú cenu."

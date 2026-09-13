@@ -24,7 +24,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
 import { CUSTOMER_API_BASE_URL } from '@cleansia/customer-services';
-import { customerEffects, customerReducers } from '@cleansia/customer-stores';
+import { customerEffects, customerReducers, initializeMarket } from '@cleansia/customer-stores';
 import {
   APPLE_CLIENT_ID,
   AUTH_COOKIE_KEYS,
@@ -91,6 +91,13 @@ export const appConfig: ApplicationConfig = {
       provide: APP_INITIALIZER,
       useFactory: initializeTranslations,
       deps: [TranslateService, PLATFORM_ID],
+      multi: true,
+    },
+    // The market is resolved before the first render on both branches, from the one cookie the
+    // server and the browser can both read, so the two issue the same catalogue URLs. -> ADR-0058
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeMarket,
       multi: true,
     },
     MessageService,

@@ -1,15 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import {
   CustomerClient,
+  GetMembershipPlansResponse,
   GetMyMembershipResponse,
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
-import {
-  loadCustomerCurrencies,
-  selectCustomerDefaultCurrencyCode,
-} from '@cleansia/customer-stores';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
-import { MockStore, provideMockStore } from '@ngrx/store/testing';
+import { provideMockStore } from '@ngrx/store/testing';
 import { of, throwError } from 'rxjs';
 import { MembershipFacade } from './membership.facade';
 
@@ -18,18 +16,26 @@ function buildMembership(fields: {
   expressUpgradesPerMonth?: number;
   expressUpgradesRemaining?: number;
   trialEndsAtUtc?: Date;
+  currencyCode?: string;
 }): GetMyMembershipResponse {
   const response = new GetMyMembershipResponse();
   response.hasMembership = fields.hasMembership ?? true;
   response.expressUpgradesPerMonth = fields.expressUpgradesPerMonth;
   response.expressUpgradesRemaining = fields.expressUpgradesRemaining;
   response.trialEndsAtUtc = fields.trialEndsAtUtc;
+  response.currencyCode = fields.currencyCode;
   return response;
+}
+
+function buildPlan(code: string, currencyCode: string): GetMembershipPlansResponse {
+  const plan = new GetMembershipPlansResponse();
+  plan.code = code;
+  plan.currencyCode = currencyCode;
+  return plan;
 }
 
 describe('MembershipFacade — express waiver state', () => {
   let facade: MembershipFacade;
-  let store: MockStore;
   let membershipClient: {
     getMine: jest.Mock;
     swapPlan: jest.Mock;
@@ -57,34 +63,56 @@ describe('MembershipFacade — express waiver state', () => {
       providers: [
         MembershipFacade,
         provideMockStore({
-          selectors: [{ selector: selectCustomerDefaultCurrencyCode, value: null }],
+          selectors: [{ selector: selectMarketCountryId, value: 'svk-id' }],
         }),
         { provide: CustomerClient, useValue: { membershipClient } },
         { provide: SnackbarService, useValue: snackbar },
       ],
     });
 
-    store = TestBed.inject(MockStore);
     facade = TestBed.inject(MembershipFacade);
   });
 
-  // Neither `GetMyMembershipResponse` nor `GetMembershipPlansResponse` carries a currency —
-  // `monthlyPriceCzk` is the wire name, not a label — so the amounts are labelled with the
-  // platform default, read from the store rather than assumed.
-  describe('the currency a plan is priced in', () => {
-    it('asks the store for the platform currencies when the plans are loaded', () => {
-      jest.spyOn(store, 'dispatch');
+  // A subscription keeps its currency for life (ADR-0059 D2): every figure on this screen is
+  // labelled with `GetMine.currencyCode`, whatever market the customer is browsing in now.
+  describe('the currency the membership is billed in', () => {
+    it("is the membership response's own code, not the market's", () => {
+      membershipClient.getMine.mockReturnValue(of(buildMembership({ currencyCode: 'CZK' })));
 
-      facade.loadPlans();
+      facade.refresh();
 
-      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+      expect(facade.currencyCode()).toBe('CZK');
     });
 
-    it('re-exposes the platform default', () => {
-      store.overrideSelector(selectCustomerDefaultCurrencyCode, 'EUR');
-      store.refreshState();
+    it('is unknown until the membership is loaded', () => {
+      expect(facade.currencyCode()).toBeNull();
+    });
 
-      expect(facade.defaultCurrencyCode()).toBe('EUR');
+    it('reads the plans for the chosen market', () => {
+      facade.loadPlans();
+
+      expect(membershipClient.getPlans).toHaveBeenCalledWith('svk-id');
+    });
+
+    // A swap is settled in the membership's currency (the server picks that row), so a plan the
+    // market prices in another currency cannot be offered at the price the market shows.
+    it("offers only the plans priced in the membership's currency", () => {
+      membershipClient.getMine.mockReturnValue(of(buildMembership({ currencyCode: 'CZK' })));
+      membershipClient.getPlans.mockReturnValue(
+        of([buildPlan('PLUS_MONTHLY', 'EUR'), buildPlan('PLUS_YEARLY', 'EUR')]),
+      );
+
+      facade.refresh();
+      facade.loadPlans();
+
+      expect(facade.switchablePlans()).toEqual([]);
+
+      membershipClient.getPlans.mockReturnValue(
+        of([buildPlan('PLUS_MONTHLY', 'CZK'), buildPlan('PLUS_YEARLY', 'CZK')]),
+      );
+      facade.loadPlans();
+
+      expect(facade.switchablePlans().map((p) => p.code)).toEqual(['PLUS_MONTHLY', 'PLUS_YEARLY']);
     });
   });
 

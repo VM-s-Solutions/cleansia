@@ -1,10 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { CustomerAuthService } from '@cleansia/customer-services';
+import { chooseMarket, selectMarket, selectMarkets } from '@cleansia/customer-stores';
 import { ThemeService } from '@cleansia/services';
+import { Store } from '@ngrx/store';
 import { TranslatePipe } from '@ngx-translate/core';
 // Entry-point imports — see the note in app.ts. → T-0682
 import { CleansiaLanguageSwitcherComponent } from '@cleansia/components/cleansia-language-switcher';
+import { CleansiaMarketSwitcherComponent } from '@cleansia/components/cleansia-market-switcher';
 import { CookieConsentService } from '@cleansia/components/cleansia-cookie-consent';
 
 @Component({
@@ -12,12 +16,27 @@ import { CookieConsentService } from '@cleansia/components/cleansia-cookie-conse
   templateUrl: './customer-footer.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterModule, TranslatePipe, CleansiaLanguageSwitcherComponent],
+  imports: [
+    RouterModule,
+    TranslatePipe,
+    CleansiaLanguageSwitcherComponent,
+    CleansiaMarketSwitcherComponent,
+  ],
 })
 export class CleansiaCustomerFooterComponent {
   private readonly authService = inject(CustomerAuthService);
   private readonly themeService = inject(ThemeService);
   private readonly cookieConsent = inject(CookieConsentService);
+  private readonly store = inject(Store);
+
+  // The same market control the header carries, so the two cannot disagree.
+  readonly markets = toSignal(this.store.select(selectMarkets), { initialValue: [] });
+  private readonly market = toSignal(this.store.select(selectMarket), { initialValue: null });
+  readonly selectedMarketCode = computed(() => this.market()?.isoCode ?? null);
+
+  onMarketChange(isoCode: string): void {
+    this.store.dispatch(chooseMarket({ isoCode }));
+  }
 
   // Same source of truth as the header control, so the two never disagree.
   readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');

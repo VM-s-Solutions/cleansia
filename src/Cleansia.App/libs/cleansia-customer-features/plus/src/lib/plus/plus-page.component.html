@@ -39,33 +39,40 @@
         }
       </p>
 
-      <div class="cl-plusp__actions">
-        <button type="button" class="cl-btn" [disabled]="facade.submitting()" (click)="startTrial()">
-          @if (facade.submitting()) {
-            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
-          }
-          @if (facade.trialDays() > 0) {
-            {{ 'pages.plus.cta_trial' | translate: { days: facade.trialDays() } }}
-          } @else {
-            {{ 'pages.plus.cta_subscribe' | translate }}
-          }
-        </button>
-        <!--
-          `routerLink="[]"` with a fragment, NOT href="#perks": a bare hash is a
-          navigation to the path "#perks", which the router resolves to the
-          empty path — so the link went to the home page instead of down the
-          page. anchorScrolling is enabled in app.config, so the fragment alone
-          does the scrolling.
-        -->
-        <a class="cl-link" [routerLink]="[]" fragment="perks">
-          {{ 'pages.plus.cta_whats_in_it' | translate }}
-        </a>
-      </div>
+      <!--
+        Not on sale in the chosen market: the hero keeps its badge, title and
+        mascot and drops every action — a button that opens a checkout the
+        server refuses is not an action.
+      -->
+      @if (!facade.plusUnavailable()) {
+        <div class="cl-plusp__actions">
+          <button type="button" class="cl-btn" [disabled]="facade.submitting()" (click)="startTrial()">
+            @if (facade.submitting()) {
+              <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+            }
+            @if (facade.trialDays() > 0) {
+              {{ 'pages.plus.cta_trial' | translate: { days: facade.trialDays() } }}
+            } @else {
+              {{ 'pages.plus.cta_subscribe' | translate }}
+            }
+          </button>
+          <!--
+            `routerLink="[]"` with a fragment, NOT href="#perks": a bare hash is a
+            navigation to the path "#perks", which the router resolves to the
+            empty path — so the link went to the home page instead of down the
+            page. anchorScrolling is enabled in app.config, so the fragment alone
+            does the scrolling.
+          -->
+          <a class="cl-link" [routerLink]="[]" fragment="perks">
+            {{ 'pages.plus.cta_whats_in_it' | translate }}
+          </a>
+        </div>
 
-      @if (facade.monthlyPlan(); as monthly) {
-        <p class="cl-muted cl-plusp__note">
-          {{ 'pages.plus.price_note' | translate: { price: formatPrice(monthly.price) } }}
-        </p>
+        @if (facade.monthlyPlan(); as monthly) {
+          <p class="cl-muted cl-plusp__note">
+            {{ 'pages.plus.price_note' | translate: { price: formatPrice(monthly.price) } }}
+          </p>
+        }
       }
     </div>
 
@@ -105,6 +112,27 @@
   </section>
 }
 
+@if (facade.plusUnavailable()) {
+  <!--
+    The catalogue's empty pattern, verbatim: no price, no button, no "notify me",
+    no date. The perks, the comparison and the FAQ describe a product this
+    market cannot buy, so they go with the actions.
+  -->
+  <section class="cl-plusp__body">
+    <div class="cl-plusp__inner">
+      <div class="cl-cat__empty">
+        <img
+          class="cl-cat__empty-mascot"
+          src="assets/images/mascot/mascot-leaning.webp"
+          alt=""
+          width="400"
+          height="400"
+        />
+        <h2 class="cl-h3">{{ 'pages.plus.not_available_in_market' | translate }}</h2>
+      </div>
+    </div>
+  </section>
+} @else {
 <section class="cl-plusp__body" id="perks">
   <div class="cl-plusp__inner">
     <h2 class="cl-d2">{{ 'pages.plus.perks_title' | translate }}</h2>
@@ -285,7 +313,7 @@
             <div class="cl-plusp__plan-spacer"></div>
             <button
               type="button"
-              class="cl-btn cl-btn--on-dark"
+              class="cl-btn cl-btn--inverse"
               [disabled]="facade.submitting()"
               (click)="startTrial(yearly.code)"
             >
@@ -412,3 +440,4 @@
     </div>
   </div>
 </section>
+}

@@ -58,7 +58,7 @@ export class MembershipManagementComponent implements OnInit {
   readonly cancelling = this.facade.cancelling;
   readonly switching = this.facade.switching;
   readonly membership = this.facade.membership;
-  readonly plans = this.facade.plans;
+  readonly plans = this.facade.switchablePlans;
   readonly expressUpgradesRemaining = this.facade.expressUpgradesRemaining;
   readonly expressWaiverAvailable = this.facade.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.facade.expressWaiverExhausted;
@@ -91,12 +91,9 @@ export class MembershipManagementComponent implements OnInit {
     });
   }
 
+  /** Every figure here is in the membership's own currency (ADR-0059 D2). */
   formatPrice(amount: number): string {
-    return formatMoney(
-      amount,
-      this.facade.defaultCurrencyCode(),
-      localeFor(this.translate.currentLang),
-    );
+    return formatMoney(amount, this.facade.currencyCode(), localeFor(this.translate.currentLang));
   }
 
   /**
@@ -122,14 +119,9 @@ export class MembershipManagementComponent implements OnInit {
       : 'pages.membership.cadence.monthly';
   }
 
-  /**
-   * What the next charge will be. The membership response carries the monthly
-   * figure and the interval; the plan list carries the actual charge, so it is
-   * read from there when the codes match and falls back to the monthly one.
-   */
+  /** What the next charge will be: the membership's own row, in its own currency. */
   currentPrice(m: GetMyMembershipResponse): number {
-    const plan = this.plans().find((p) => p.code === m.planCode);
-    return plan?.price ?? m.monthlyPriceCzk ?? 0;
+    return m.price ?? 0;
   }
 
   /** Any plan, not only the annual one — the board offers both directions. */

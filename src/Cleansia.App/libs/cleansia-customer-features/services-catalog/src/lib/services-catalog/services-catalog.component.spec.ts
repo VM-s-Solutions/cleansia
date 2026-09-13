@@ -9,6 +9,7 @@ import {
   selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
@@ -65,6 +66,7 @@ describe('ServicesCatalogComponent', () => {
             { selector: selectCustomerServices, value: services },
             { selector: selectCustomerCatalogLoading, value: false },
             { selector: selectCustomerDefaultCurrencyCode, value: defaultCurrencyCode },
+            { selector: selectMarketCountryId, value: 'cze-id' },
           ],
         }),
         { provide: Router, useValue: router },
@@ -89,14 +91,25 @@ describe('ServicesCatalogComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('asks the store for both catalogs and the currency they are priced in on init', () => {
+  it('asks the store for both catalogs priced in the chosen market, and the platform currencies', () => {
     build();
 
     component.ngOnInit();
 
-    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices());
-    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages());
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('cze-id'));
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('cze-id'));
     expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+  });
+
+  it('re-reads both catalogs when the customer switches market', () => {
+    build();
+    component.ngOnInit();
+
+    store.overrideSelector(selectMarketCountryId, 'svk-id');
+    store.refreshState();
+
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('svk-id'));
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('svk-id'));
   });
 
   describe('sorting the services', () => {

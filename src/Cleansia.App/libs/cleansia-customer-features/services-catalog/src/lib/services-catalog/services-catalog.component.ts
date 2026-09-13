@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaScrollTopComponent } from '@cleansia/components';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
@@ -11,14 +19,16 @@ import {
   selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Skeleton } from 'primeng/skeleton';
+import { distinctUntilChanged } from 'rxjs';
 
 type SortOption = 'price_asc' | 'price_desc' | 'name_asc';
 
@@ -40,6 +50,7 @@ export class ServicesCatalogComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** The artboard shows three packages and a link to the rest. */
   private readonly PACKAGE_PREVIEW = 3;
@@ -129,9 +140,15 @@ export class ServicesCatalogComponent implements OnInit {
   readonly heroMascotRight = 'assets/images/mascot/mascot-dusting-tile.webp';
   readonly closingMascot = 'assets/images/mascot/mascot-waving.webp';
 
+  /** Priced for the chosen market and re-read when it changes (ADR-0058 D5). */
   ngOnInit(): void {
-    this.store.dispatch(loadCustomerServices());
-    this.store.dispatch(loadCustomerPackages());
+    this.store
+      .select(selectMarketCountryId)
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((countryId) => {
+        this.store.dispatch(loadCustomerServices(countryId));
+        this.store.dispatch(loadCustomerPackages(countryId));
+      });
     this.store.dispatch(loadCustomerCurrencies());
   }
 

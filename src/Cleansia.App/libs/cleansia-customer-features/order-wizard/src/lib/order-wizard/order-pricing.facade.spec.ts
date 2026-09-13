@@ -21,6 +21,7 @@ describe('OrderPricingFacade', () => {
   let orderClient: { quote: jest.Mock };
   let formData: ReturnType<typeof signal<OrderWizardFormData>>;
   let promoDiscount: ReturnType<typeof signal<number>>;
+  let marketCountryId: ReturnType<typeof signal<string | null>>;
 
   function pickExpressSlot(): void {
     const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
@@ -35,6 +36,7 @@ describe('OrderPricingFacade', () => {
     orderClient = { quote: jest.fn().mockReturnValue(of(PLAIN_QUOTE)) };
     formData = signal<OrderWizardFormData>({ ...ORDER_WIZARD_INITIAL_DATA });
     promoDiscount = signal(0);
+    marketCountryId = signal<string | null>(null);
 
     TestBed.configureTestingModule({
       providers: [
@@ -45,7 +47,7 @@ describe('OrderPricingFacade', () => {
     });
 
     facade = TestBed.inject(OrderPricingFacade);
-    facade.connect({ formData, promoDiscount });
+    facade.connect({ formData, promoDiscount, marketCountryId });
   }
 
   async function quoteWith(response: unknown): Promise<void> {
@@ -414,6 +416,26 @@ describe('OrderPricingFacade', () => {
 
       expect(orderClient.quote).toHaveBeenCalledTimes(2);
       expect(orderClient.quote.mock.calls[1][0].countryId).toBe('svk');
+    }));
+
+    // Before an address, the quote is priced in the chosen market — the same market the catalogue
+    // on the same step was read for — and the address then overrides it (ADR-0058 D4).
+    it('names the chosen market until the address names a country', fakeAsync(() => {
+      marketCountryId.set('cze-id');
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      TestBed.flushEffects();
+      tick(800);
+      expect(orderClient.quote.mock.calls[0][0].countryId).toBe('cze-id');
+
+      formData.update((d) => ({ ...d, address: createAddressDto({ countryId: 'svk' }) }));
+      TestBed.flushEffects();
+      tick(800);
+      expect(orderClient.quote.mock.calls[1][0].countryId).toBe('svk');
+
+      marketCountryId.set('deu-id');
+      TestBed.flushEffects();
+      tick(800);
+      expect(orderClient.quote).toHaveBeenCalledTimes(2);
     }));
 
     it('does not re-quote when the address changes but its country does not', fakeAsync(() => {

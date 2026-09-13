@@ -55,11 +55,16 @@ describe('RewardsComponent — the discount a tier prints', () => {
 
   async function setup(
     currentDiscountPercent: number,
-    options: { tiers?: GetLoyaltyTiersTierInfo[]; defaultCurrencyCode?: string | null } = {},
+    options: {
+      tiers?: GetLoyaltyTiersTierInfo[];
+      defaultCurrencyCode?: string | null;
+      floorApplies?: boolean;
+    } = {},
   ): Promise<void> {
     const facade = {
       loadAll: jest.fn(),
       defaultCurrencyCode: signal<string | null>(options.defaultCurrencyCode ?? null),
+      floorApplies: signal(options.floorApplies ?? true),
       account: signal(
         GetMyLoyaltyResponse.fromJS({
           currentTier: 2,
@@ -154,6 +159,28 @@ describe('RewardsComponent — the discount a tier prints', () => {
     expect(lines).toContain('1,000');
     expect(lines).not.toContain('Kč');
     expect(lines).not.toContain('CZK');
+  });
+
+  // In a market priced in another currency no floor applies (ADR-0058 D5), and a number in a
+  // unit it was never set in must not be printed.
+  it('omits the floor line in a market the floor does not apply to', async () => {
+    await setup(0.05, {
+      defaultCurrencyCode: 'CZK',
+      floorApplies: false,
+      tiers: [
+        GetLoyaltyTiersTierInfo.fromJS({
+          tier: 2,
+          lifetimePointsThreshold: 100,
+          discountPercent: 0.05,
+          minimumOrderAmountForDiscount: 1000,
+        }),
+      ],
+    });
+
+    const lines = tierDiscountLines();
+    expect(lines).not.toContain('over');
+    expect(lines).not.toContain('1,000');
+    expect(lines).toContain('5%');
   });
 
   it('states no floor for a tier that has none, and no discount for a tier without one', async () => {

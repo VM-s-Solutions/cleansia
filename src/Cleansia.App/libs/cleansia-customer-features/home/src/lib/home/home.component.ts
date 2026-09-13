@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   inject,
   OnDestroy,
@@ -9,12 +10,15 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
+import { distinctUntilChanged } from 'rxjs';
 import { CleansiaScrollTopComponent } from '@cleansia/components/cleansia-scroll-top';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -38,13 +42,23 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly el = inject(ElementRef);
   private readonly store = inject(Store);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
 
   private observer?: IntersectionObserver;
   private mutationObserver?: MutationObserver;
 
+  /**
+   * The catalogue is priced for the chosen market (ADR-0058 D5) and re-read when the customer
+   * switches it. No market resolved sends no country — the platform default.
+   */
   ngOnInit(): void {
-    this.store.dispatch(loadCustomerServices());
-    this.store.dispatch(loadCustomerPackages());
+    this.store
+      .select(selectMarketCountryId)
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((countryId) => {
+        this.store.dispatch(loadCustomerServices(countryId));
+        this.store.dispatch(loadCustomerPackages(countryId));
+      });
     this.store.dispatch(loadCustomerCurrencies());
   }
 

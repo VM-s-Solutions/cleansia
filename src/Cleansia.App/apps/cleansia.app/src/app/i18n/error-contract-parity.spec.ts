@@ -542,10 +542,12 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'referral.inactive',
   // Membership — subscribe / cancel / swap
   'membership.plan.not_found',
+  'membership.plan.not_priced_in_currency',
   'membership.already_active',
   'membership.not_found',
   'membership.not_owned_by_user',
   'membership.stripe_customer_required',
+  'membership.stripe_customer_currency_locked',
   'membership.swap_same_plan',
   // The CreateOrder waiver rule runs BEFORE the price rule and has its own code
   // precisely so this never renders as the generic "the price changed".

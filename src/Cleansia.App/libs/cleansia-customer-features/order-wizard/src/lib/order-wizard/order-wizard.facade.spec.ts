@@ -18,6 +18,7 @@ import {
   selectCustomerPackagesCatalogue,
   selectCustomerServices,
   selectCustomerServicesCatalogue,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
@@ -50,7 +51,7 @@ describe('OrderWizardFacade', () => {
   let extraClient: { getOverview: jest.Mock };
   let userClient: { getCurrent: jest.Mock };
   let apiClient: { serviceCity: jest.Mock };
-  let membershipClient: { getMine: jest.Mock };
+  let membershipClient: { getMine: jest.Mock; getPlans: jest.Mock };
   let authService: { isLoggedIn: jest.Mock };
   let snackbar: { showError: jest.Mock; showInfoTranslated: jest.Mock };
   let router: { navigate: jest.Mock };
@@ -92,7 +93,10 @@ describe('OrderWizardFacade', () => {
     extraClient = { getOverview: jest.fn().mockReturnValue(of([])) };
     userClient = { getCurrent: jest.fn().mockReturnValue(of({})) };
     apiClient = { serviceCity: jest.fn().mockReturnValue(of([])) };
-    membershipClient = { getMine: jest.fn().mockReturnValue(of({ hasMembership: false })) };
+    membershipClient = {
+      getMine: jest.fn().mockReturnValue(of({ hasMembership: false })),
+      getPlans: jest.fn().mockReturnValue(of([])),
+    };
     authService = { isLoggedIn: jest.fn().mockReturnValue(false) };
     snackbar = { showError: jest.fn(), showInfoTranslated: jest.fn() };
     router = { navigate: jest.fn() };
@@ -155,6 +159,7 @@ describe('OrderWizardFacade', () => {
     store.overrideSelector(selectCustomerServicesCatalogue, { services: [], countryId: null });
     store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
     store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
+    store.overrideSelector(selectMarketCountryId, null);
     facade = TestBed.inject(OrderWizardFacade);
   }
 
@@ -176,6 +181,42 @@ describe('OrderWizardFacade', () => {
       expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices(null));
       expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages(null));
       expect(extraClient.getOverview).toHaveBeenCalledWith(undefined);
+    });
+
+    // Before an address, the catalogue is the chosen market's (ADR-0058 D4); the address then
+    // wins, and a market chosen afterwards leaves the booking alone.
+    it('reads the catalogue for the chosen market before an address names a country', () => {
+      store.overrideSelector(selectMarketCountryId, 'cze-id');
+      store.refreshState();
+      jest.spyOn(store, 'dispatch');
+
+      facade.initialize();
+
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('cze-id'));
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('cze-id'));
+      expect(extraClient.getOverview).toHaveBeenCalledWith('cze-id');
+    });
+
+    it('re-reads for a market switched before an address, and not for one switched after', () => {
+      store.overrideSelector(selectMarketCountryId, 'cze-id');
+      store.refreshState();
+      facade.initialize();
+      jest.spyOn(store, 'dispatch');
+
+      store.overrideSelector(selectMarketCountryId, 'svk-id');
+      store.refreshState();
+      TestBed.flushEffects();
+      expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('svk-id'));
+
+      nameACountry('cze');
+      TestBed.flushEffects();
+      (store.dispatch as jest.Mock).mockClear();
+
+      store.overrideSelector(selectMarketCountryId, 'deu-id');
+      store.refreshState();
+      TestBed.flushEffects();
+      expect(store.dispatch).not.toHaveBeenCalled();
+      expect(facade.formData().address.countryId).toBe('cze');
     });
 
     it('re-reads services, packages and extras for the country the address names', () => {
@@ -264,6 +305,37 @@ describe('OrderWizardFacade', () => {
 
       expect(facade.formData().selectedServiceIds).toEqual(['s1']);
       expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+  });
+
+  // A market with no plan has no Plus step worth stopping on (ADR-0059 D3).
+  describe('the Plus step when the market sells no plan', () => {
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      configure('browser');
+    });
+
+    it('is walked past in both directions', () => {
+      facade.loadPlans();
+      facade.goToStep(3);
+
+      facade.nextStep();
+      expect(facade.activeStep()).toBe(5);
+
+      facade.prevStep();
+      expect(facade.activeStep()).toBe(3);
+    });
+
+    it('is stopped on while a plan is on sale', () => {
+      membershipClient.getPlans.mockReturnValue(of([{ code: 'PLUS_MONTHLY' }]));
+      facade.loadPlans();
+      facade.goToStep(3);
+
+      facade.nextStep();
+      expect(facade.activeStep()).toBe(4);
+
+      facade.nextStep();
+      expect(facade.activeStep()).toBe(5);
     });
   });
 

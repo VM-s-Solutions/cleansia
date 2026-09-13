@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnInit,
 } from '@angular/core';
@@ -10,11 +11,12 @@ import {
   CustomerAuthService,
   MembershipPlanFactsService,
 } from '@cleansia/customer-services';
-import { selectCustomerDefaultCurrencyCode } from '@cleansia/customer-stores';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { formatMoney, localeFor } from '@cleansia/utils';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { distinctUntilChanged } from 'rxjs';
 
 /**
  * The home page's argument for Cleansia Plus.
@@ -41,16 +43,8 @@ export class PlusComponent implements OnInit {
   private readonly authService = inject(CustomerAuthService);
   private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly facts = inject(MembershipPlanFactsService);
-
-  /**
-   * A plan's price arrives with no currency of its own — `GetMembershipPlansResponse` carries
-   * `price` alone — so it is labelled with the platform default, which the home page loads with
-   * the catalogue.
-   */
-  private readonly currencyCode = toSignal(this.store.select(selectCustomerDefaultCurrencyCode), {
-    initialValue: null,
-  });
 
   /**
    * This CTA pointed at `/membership/subscribe` unconditionally, which is
@@ -68,19 +62,24 @@ export class PlusComponent implements OnInit {
   );
 
   /**
-   * The band's numeric copy renders only once there is a plan to read it from.
-   * Not a set of fallback constants: a fallback matching today's seed would be
-   * right until the day it mattered, which is the failure this replaces. With
-   * no answer the band keeps its badge, a plain line and its call to action,
-   * and states nothing it cannot support.
+   * The band renders only once there is a plan to read it from — priced in the
+   * chosen market (ADR-0059 D3). Not a set of fallback constants: a fallback
+   * matching today's seed would be right until the day it mattered, which is
+   * the failure this replaces. With no plan — not on sale in this market, or no
+   * answer — the band is omitted: an upsell that cannot state a price and
+   * cannot be bought is not an upsell.
    */
   readonly canStateFigures = this.facts.hasPlans;
 
   ngOnInit(): void {
-    this.facts.load();
+    this.store
+      .select(selectMarketCountryId)
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((countryId) => this.facts.load(countryId));
   }
 
+  /** Labelled with the plans' own currency code, never a platform default. */
   formatPrice(amount: number): string {
-    return formatMoney(amount, this.currencyCode(), localeFor(this.translate.currentLang));
+    return formatMoney(amount, this.facts.currencyCode(), localeFor(this.translate.currentLang));
   }
 }

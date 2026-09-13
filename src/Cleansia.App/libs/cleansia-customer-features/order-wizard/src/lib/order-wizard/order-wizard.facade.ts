@@ -29,6 +29,7 @@ import {
   selectCustomerPackagesCatalogue,
   selectCustomerServices,
   selectCustomerServicesCatalogue,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
@@ -48,6 +49,9 @@ import {
   PromoCodeUiState,
   RebookParams,
 } from './order-wizard.models';
+
+/** The index of the Plus step in `steps`. */
+const PLUS_STEP = 4;
 
 @Injectable()
 export class OrderWizardFacade extends UnsubscribeControlDirective {
@@ -185,12 +189,16 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     () => this.quote()?.currencyCode || this.defaultCurrencyCode(),
   );
 
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null,
+  });
   /**
-   * The service address's country, which decides the currency the booking is priced in — and
-   * with it which catalogue entries can be offered at all.
+   * The country the catalogue and the quote are priced for: the service address's, which decides
+   * the currency the booking is charged in, and until an address names one the chosen market's
+   * (ADR-0058 D4). A market chosen after the address is entered does not touch the booking.
    */
-  private readonly addressCountryId = computed<string | null>(
-    () => this.formData().address.countryId || null,
+  private readonly catalogueCountry = computed<string | null>(
+    () => this.formData().address.countryId || this.marketCountryId(),
   );
   /** The country the catalogue was last read for, so a same-country address edit re-reads nothing. */
   private catalogueCountryId: string | null = null;
@@ -218,6 +226,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly expressUpgradesRemaining = this.membership.expressUpgradesRemaining;
   readonly activeMembership = this.membership.membership;
   readonly plans = this.membership.plans;
+  readonly plusUnavailable = this.membership.plusUnavailable;
   readonly plusSavings = this.membership.plusSavings;
   readonly expressWaiverAvailable = this.membership.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.membership.expressWaiverExhausted;
@@ -251,6 +260,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     this.pricing.connect({
       formData: this.formData,
       promoDiscount: this.promo.effectivePromoDiscount,
+      marketCountryId: this.marketCountryId,
     });
     this.promo.connect({
       preSurchargeSubtotal: this.preSurchargeSubtotal,
@@ -411,18 +421,18 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   /**
    * The catalogue is priced per market and the server withholds what has no price in the
-   * address country's currency, so it is read for the platform default first and again for every
-   * country the address names. A basket entry the new list no longer offers would make the server
-   * refuse the quote outright, so the basket is trimmed to the new list — with a word to the
-   * customer — once that list has landed.
+   * country's currency, so it is read for the chosen market first and again for every country
+   * the address names. A basket entry the new list no longer offers would make the server refuse
+   * the quote outright, so the basket is trimmed to the new list — with a word to the customer —
+   * once that list has landed.
    */
   private followAddressCountry(): void {
-    toObservable(this.addressCountryId, { injector: this.injector })
+    toObservable(this.catalogueCountry, { injector: this.injector })
       .pipe(takeUntil(this.destroyed$))
       .subscribe((countryId) => {
         if (countryId !== this.catalogueCountryId) this.loadCatalogue(countryId);
       });
-    this.loadCatalogue(this.addressCountryId());
+    this.loadCatalogue(this.catalogueCountry());
 
     this.store
       .select(selectCustomerServicesCatalogue)
@@ -468,7 +478,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   /** A list priced for the platform default never trims: nothing was ever picked outside it. */
   private pricedForAddress(countryId: string | null): boolean {
-    return countryId !== null && countryId === this.addressCountryId();
+    return countryId !== null && countryId === this.catalogueCountry();
   }
 
   private keepSelectedServices(offered: (id: string) => boolean): void {
@@ -616,19 +626,32 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   }
 
   nextStep(): void {
-    if (this.activeStep() < this.steps.length - 1) {
-      this.activeStep.update((s) => s + 1);
+    const next = this.stepFrom(this.activeStep(), 1);
+    if (next !== null) {
+      this.activeStep.set(next);
       this.onStepEntered();
       if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   prevStep(): void {
-    if (this.activeStep() > 0) {
-      this.activeStep.update((s) => s - 1);
+    const previous = this.stepFrom(this.activeStep(), -1);
+    if (previous !== null) {
+      this.activeStep.set(previous);
       this.onStepEntered();
       if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  }
+
+  /**
+   * The neighbouring step in one direction, or null at the ends. The Plus step is walked past
+   * when the chosen market sells no plan: a checkout step whose only content is a decline row is
+   * a dead page (ADR-0059 D3). Reached directly it still renders, saying so.
+   */
+  private stepFrom(step: number, direction: 1 | -1): number | null {
+    let candidate = step + direction;
+    if (candidate === PLUS_STEP && this.plusUnavailable()) candidate += direction;
+    return candidate >= 0 && candidate < this.steps.length ? candidate : null;
   }
 
   /**

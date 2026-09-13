@@ -508,3 +508,11 @@ final class RecordingSignupConsent: SignupConsentRecording, @unchecked Sendable 
         lock.withLock { records.append((email, accepted)) }
     }
 }
+
+/// For flows that never open the market picker: the directory is never read and a market-less
+/// register sends no countryId, which is the shape those flows were written against.
+struct UnreadMarketClient: PartnerMarketClient {
+    func getMarkets() async -> ApiResult<[RegisterMarket]> {
+        .success([])
+    }
+}

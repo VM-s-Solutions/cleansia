@@ -92,6 +92,7 @@ final class PartnerTrustedDeviceLoginTests: XCTestCase {
     private func register() async {
         let viewModel = RegisterViewModel(
             client: spine,
+            marketClient: UnreadMarketClient(),
             settings: UserDefaultsAppSettingsStore(defaults: defaults),
             snackbar: SnackbarController(),
             signupConsent: RecordingSignupConsent()

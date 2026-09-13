@@ -176,20 +176,26 @@ final class CustomerAppContainer: AppContainer {
             makeAuthSpine: { _ in authStack.spine },
             makeApiClient: { seams in CustomerMobileApiClient(baseURL: seams.apiBaseURL) }
         )
-        sessionScopedCaches.register(orderRepository)
-        sessionScopedCaches.register(loyaltyRepository)
-        sessionScopedCaches.register(referralRepository)
-        sessionScopedCaches.register(membershipRepository)
-        sessionScopedCaches.register(recurringRepository)
-        sessionScopedCaches.register(disputeRepository)
-        sessionScopedCaches.register(savedAddressRepository)
-        sessionScopedCaches.register(userProfileRepository)
-        sessionScopedCaches.register(avatarCache)
-        sessionScopedCaches.register(notificationBadge)
-        sessionScopedCaches.register(pushTokenRegistrar)
+        registerSessionScopedCaches(in: sessionScopedCaches)
         authStack.spine.setPreLogout { [pushTokenRegistrar] in
             await pushTokenRegistrar.unregisterDevice()
         }
+    }
+
+    /// Every per-user cache joins the session-wipe set here, in one place, so a logout empties all of
+    /// them (S11); the market directory and the device settings are deliberately not on this list.
+    private func registerSessionScopedCaches(in registry: SessionScopedCacheRegistry) {
+        registry.register(orderRepository)
+        registry.register(loyaltyRepository)
+        registry.register(referralRepository)
+        registry.register(membershipRepository)
+        registry.register(recurringRepository)
+        registry.register(disputeRepository)
+        registry.register(savedAddressRepository)
+        registry.register(userProfileRepository)
+        registry.register(avatarCache)
+        registry.register(notificationBadge)
+        registry.register(pushTokenRegistrar)
     }
 
     func startPush() {

@@ -4,19 +4,24 @@ import XCTest
 
 @MainActor
 final class RewardsViewModelTests: XCTestCase {
+    /// Default arguments are evaluated in a nonisolated context, so the two main-actor stores are
+    /// built inside the body instead.
     private func makeVM(
         _ loyalty: FakeLoyaltyClient,
         _ referral: FakeRewardsReferralClient,
-        catalogSource: BookingViewModel = BookingViewModel(catalogClient: FakeCatalogClient()),
-        marketStore: MarketStore = MarketStore(client: FakeMarketClient(), preference: FakeMarketPreferenceStore())
+        catalogSource: BookingViewModel? = nil,
+        marketStore: MarketStore? = nil
     ) -> (RewardsViewModel, LoyaltyRepository, RewardsReferralRepository) {
         let loyaltyRepo = LoyaltyRepository(client: loyalty)
         let referralRepo = RewardsReferralRepository(client: referral)
         let vm = RewardsViewModel(
             loyaltyRepository: loyaltyRepo,
             referralRepository: referralRepo,
-            catalogSource: catalogSource,
-            marketStore: marketStore,
+            catalogSource: catalogSource ?? BookingViewModel(catalogClient: FakeCatalogClient()),
+            marketStore: marketStore ?? MarketStore(
+                client: FakeMarketClient(),
+                preference: FakeMarketPreferenceStore()
+            ),
             snackbar: SnackbarController()
         )
         return (vm, loyaltyRepo, referralRepo)

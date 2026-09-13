@@ -4020,6 +4020,65 @@
         }
       }
     },
+    "/api/Market/GetOverview": {
+      "get": {
+        "tags": [
+          "Market"
+        ],
+        "operationId": "Market_GetOverview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketListItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketListItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MarketListItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Notification/Paged": {
       "get": {
         "tags": [
@@ -8731,6 +8790,60 @@
         },
         "additionalProperties": false
       },
+      "MarketListItem": {
+        "type": "object",
+        "properties": {
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "isoCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "isoAlpha2": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "translations": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Translation"
+            },
+            "nullable": true
+          },
+          "currencyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencySymbol": {
+            "type": "string",
+            "nullable": true
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "noShowCredit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "insuranceCoverageAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "MobilePartnerLogin_Command": {
         "type": "object",
         "properties": {
@@ -11673,6 +11786,9 @@
     },
     {
       "name": "Language"
+    },
+    {
+      "name": "Market"
     },
     {
       "name": "Notification"

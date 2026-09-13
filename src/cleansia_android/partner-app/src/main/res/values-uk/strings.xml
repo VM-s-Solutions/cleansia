@@ -1214,6 +1214,7 @@
     <string name="error_general_not_found">Не знайдено.</string>
 
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>
+    <string name="error_tenant_not_found">Цей ринок поки що не обслуговує жодна компанія Cleansia.</string>
     <string name="error_country_required">Виберіть, будь ласка, країну.</string>
     <string name="error_city_not_serviced">У цьому місті ми поки що не працюємо.</string>
     <string name="error_language_not_supported">Ця мова не підтримується.</string>

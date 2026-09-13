@@ -1243,6 +1243,7 @@
 
     <!-- Country / language scope -->
     <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>
+    <string name="error_tenant_not_found">This market is not operated by any Cleansia company yet.</string>
     <string name="error_country_required">Please select a country.</string>
     <string name="error_city_not_serviced">We don\'t operate in this city yet.</string>
     <string name="error_language_not_supported">This language isn\'t supported.</string>

@@ -86,6 +86,25 @@ class BackendKeyStringsTest {
         "country.not_serviced",
     )
 
+    /**
+     * `OperatorTenantScopeBehavior` runs before validation on every anonymous request that names a
+     * market — `Register`, `GoogleAuth`, `Referral/Validate`, `Order/Quote`, `Order/QuotePlusSavings`
+     * and both `CreateOrder` routes. A country that is not a market is refused with the existing key;
+     * a market nobody operates is refused with the new one (ADR-0061 D3).
+     */
+    private val operatorScopeKeys = listOf(
+        "country.not_serviced",
+        "tenant.not_found",
+    )
+
+    /**
+     * `CreateOrder` refuses an address whose country is operated by another company than the one the
+     * caller's account belongs to (ADR-0061 D6); reachable from both the order and the payment route.
+     */
+    private val createOrderOperatorKeys = listOf(
+        "order.country_operator_mismatch",
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -128,6 +147,16 @@ class BackendKeyStringsTest {
     @Test
     fun `every market refusal Subscribe can answer resolves to a sentence in all five locales`() {
         assertAllResolve(subscribeMarketKeys)
+    }
+
+    @Test
+    fun `every operator-scope refusal an anonymous request can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(operatorScopeKeys)
+    }
+
+    @Test
+    fun `the operator mismatch CreateOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(createOrderOperatorKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

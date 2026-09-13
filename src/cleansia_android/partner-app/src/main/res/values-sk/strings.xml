@@ -1209,6 +1209,7 @@
     <string name="error_general_not_found">Nenájdené.</string>
 
     <string name="error_country_not_serviced">V tejto krajine zatiaľ nepôsobíme.</string>
+    <string name="error_tenant_not_found">Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia.</string>
     <string name="error_country_required">Zvoľte prosím krajinu.</string>
     <string name="error_city_not_serviced">V tomto meste zatiaľ nepôsobíme.</string>
     <string name="error_language_not_supported">Tento jazyk nie je podporovaný.</string>

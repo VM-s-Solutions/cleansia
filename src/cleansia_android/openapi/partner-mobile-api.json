@@ -7255,6 +7255,10 @@
             "type": "string",
             "nullable": true
           },
+          "isoAlpha2": {
+            "type": "string",
+            "nullable": true
+          },
           "name": {
             "type": "string",
             "nullable": true

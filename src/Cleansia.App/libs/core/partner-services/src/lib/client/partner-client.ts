@@ -7299,6 +7299,7 @@ export enum ContractStatus {
 export class CountryListItem implements ICountryListItem {
     id!: string | undefined;
     isoCode!: string | undefined;
+    isoAlpha2!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
 
@@ -7315,6 +7316,7 @@ export class CountryListItem implements ICountryListItem {
         if (Data) {
             this.id = Data["id"];
             this.isoCode = Data["isoCode"];
+            this.isoAlpha2 = Data["isoAlpha2"];
             this.name = Data["name"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -7337,6 +7339,7 @@ export class CountryListItem implements ICountryListItem {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["isoCode"] = this.isoCode;
+        data["isoAlpha2"] = this.isoAlpha2;
         data["name"] = this.name;
         if (this.translations) {
             data["translations"] = {};
@@ -7352,6 +7355,7 @@ export class CountryListItem implements ICountryListItem {
 export interface ICountryListItem {
     id: string | undefined;
     isoCode: string | undefined;
+    isoAlpha2: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
 }

@@ -2856,6 +2856,92 @@ export class LoyaltyClient implements ILoyaltyClient {
     }
 }
 
+export interface IMarketClient {
+    /**
+     * @return OK
+     */
+    getOverview(): Observable<MarketListItem[]>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class MarketClient implements IMarketClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    getOverview(): Observable<MarketListItem[]> {
+        let url = this.baseUrl + "/api/Market/GetOverview";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetOverview(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MarketListItem[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MarketListItem[]>;
+        }));
+    }
+
+    protected processGetOverview(response: HttpResponseBase): Observable<MarketListItem[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(MarketListItem.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IMembershipClient {
     /**
      * @param body (optional) 
@@ -2876,9 +2962,10 @@ export interface IMembershipClient {
      */
     createCheckoutSession(body?: CreateMembershipCheckoutSessionCommand | undefined): Observable<CreateMembershipCheckoutSessionResponse>;
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getPlans(): Observable<GetMembershipPlansResponse[]>;
+    getPlans(countryId?: string | undefined): Observable<GetMembershipPlansResponse[]>;
     /**
      * @param body (optional) 
      * @return OK
@@ -3135,10 +3222,15 @@ export class MembershipClient implements IMembershipClient {
     }
 
     /**
+     * @param countryId (optional) 
      * @return OK
      */
-    getPlans(): Observable<GetMembershipPlansResponse[]> {
-        let url = this.baseUrl + "/api/Membership/GetPlans";
+    getPlans(countryId?: string | undefined): Observable<GetMembershipPlansResponse[]> {
+        let url = this.baseUrl + "/api/Membership/GetPlans?";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -7857,6 +7949,7 @@ export enum ContractStatus {
 export class CountryListItem implements ICountryListItem {
     id!: string | undefined;
     isoCode!: string | undefined;
+    isoAlpha2!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
 
@@ -7873,6 +7966,7 @@ export class CountryListItem implements ICountryListItem {
         if (Data) {
             this.id = Data["id"];
             this.isoCode = Data["isoCode"];
+            this.isoAlpha2 = Data["isoAlpha2"];
             this.name = Data["name"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -7895,6 +7989,7 @@ export class CountryListItem implements ICountryListItem {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["isoCode"] = this.isoCode;
+        data["isoAlpha2"] = this.isoAlpha2;
         data["name"] = this.name;
         if (this.translations) {
             data["translations"] = {};
@@ -7910,6 +8005,7 @@ export class CountryListItem implements ICountryListItem {
 export interface ICountryListItem {
     id: string | undefined;
     isoCode: string | undefined;
+    isoAlpha2: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
 }
@@ -8048,6 +8144,7 @@ export interface ICreateDisputeResponse {
 
 export class CreateMembershipCheckoutSessionCommand implements ICreateMembershipCheckoutSessionCommand {
     planCode!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: ICreateMembershipCheckoutSessionCommand) {
         if (data) {
@@ -8061,6 +8158,7 @@ export class CreateMembershipCheckoutSessionCommand implements ICreateMembership
     init(Data?: any) {
         if (Data) {
             this.planCode = Data["planCode"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -8074,12 +8172,14 @@ export class CreateMembershipCheckoutSessionCommand implements ICreateMembership
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["planCode"] = this.planCode;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
 
 export interface ICreateMembershipCheckoutSessionCommand {
     planCode: string | undefined;
+    countryId: string | undefined;
 }
 
 export class CreateMembershipCheckoutSessionResponse implements ICreateMembershipCheckoutSessionResponse {
@@ -8121,6 +8221,7 @@ export interface ICreateMembershipCheckoutSessionResponse {
 export class CreateMembershipSubscriptionCommand implements ICreateMembershipSubscriptionCommand {
     planCode!: string | undefined;
     paymentMethodConfirmed!: boolean;
+    countryId!: string | undefined;
     idempotencyToken!: string | undefined;
 
     constructor(data?: ICreateMembershipSubscriptionCommand) {
@@ -8136,6 +8237,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
         if (Data) {
             this.planCode = Data["planCode"];
             this.paymentMethodConfirmed = Data["paymentMethodConfirmed"];
+            this.countryId = Data["countryId"];
             this.idempotencyToken = Data["idempotencyToken"];
         }
     }
@@ -8151,6 +8253,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
         data = typeof data === 'object' ? data : {};
         data["planCode"] = this.planCode;
         data["paymentMethodConfirmed"] = this.paymentMethodConfirmed;
+        data["countryId"] = this.countryId;
         data["idempotencyToken"] = this.idempotencyToken;
         return data;
     }
@@ -8159,6 +8262,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
 export interface ICreateMembershipSubscriptionCommand {
     planCode: string | undefined;
     paymentMethodConfirmed: boolean;
+    countryId: string | undefined;
     idempotencyToken: string | undefined;
 }
 
@@ -10229,6 +10333,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
     expressUpgradesPerMonth!: number;
     trialPeriodDays!: number;
     savingsPercentVsMonthly!: number;
+    currencyCode!: string | undefined;
 
     constructor(data?: IGetMembershipPlansResponse) {
         if (data) {
@@ -10252,6 +10357,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.savingsPercentVsMonthly = Data["savingsPercentVsMonthly"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -10275,6 +10381,7 @@ export class GetMembershipPlansResponse implements IGetMembershipPlansResponse {
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["savingsPercentVsMonthly"] = this.savingsPercentVsMonthly;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -10291,6 +10398,7 @@ export interface IGetMembershipPlansResponse {
     expressUpgradesPerMonth: number;
     trialPeriodDays: number;
     savingsPercentVsMonthly: number;
+    currencyCode: string | undefined;
 }
 
 export class GetMyCreditCurrencyBalance implements IGetMyCreditCurrencyBalance {
@@ -10521,7 +10629,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
     hasMembership!: boolean;
     planCode!: string | undefined;
     planName!: string | undefined;
-    monthlyPriceCzk!: number | undefined;
+    price!: number | undefined;
     discountPercentage!: number | undefined;
     freeCancellationWindowHours!: number | undefined;
     allowsExpressUpgrade!: boolean | undefined;
@@ -10529,11 +10637,12 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
     currentPeriodEnd!: Date | undefined;
     cancelRequested!: boolean;
     billingInterval!: number | undefined;
-    monthlyEquivalentPriceCzk!: number | undefined;
+    monthlyEquivalentPrice!: number | undefined;
     expressUpgradesPerMonth!: number | undefined;
     expressUpgradesRemaining!: number | undefined;
     trialEndsAtUtc!: Date | undefined;
     trialEligible!: boolean;
+    currencyCode!: string | undefined;
 
     constructor(data?: IGetMyMembershipResponse) {
         if (data) {
@@ -10549,7 +10658,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
             this.hasMembership = Data["hasMembership"];
             this.planCode = Data["planCode"];
             this.planName = Data["planName"];
-            this.monthlyPriceCzk = Data["monthlyPriceCzk"];
+            this.price = Data["price"];
             this.discountPercentage = Data["discountPercentage"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
@@ -10557,11 +10666,12 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
             this.currentPeriodEnd = Data["currentPeriodEnd"] ? new Date(Data["currentPeriodEnd"].toString()) : undefined as any;
             this.cancelRequested = Data["cancelRequested"];
             this.billingInterval = Data["billingInterval"];
-            this.monthlyEquivalentPriceCzk = Data["monthlyEquivalentPriceCzk"];
+            this.monthlyEquivalentPrice = Data["monthlyEquivalentPrice"];
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.expressUpgradesRemaining = Data["expressUpgradesRemaining"];
             this.trialEndsAtUtc = Data["trialEndsAtUtc"] ? new Date(Data["trialEndsAtUtc"].toString()) : undefined as any;
             this.trialEligible = Data["trialEligible"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -10577,7 +10687,7 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
         data["hasMembership"] = this.hasMembership;
         data["planCode"] = this.planCode;
         data["planName"] = this.planName;
-        data["monthlyPriceCzk"] = this.monthlyPriceCzk;
+        data["price"] = this.price;
         data["discountPercentage"] = this.discountPercentage;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
@@ -10585,11 +10695,12 @@ export class GetMyMembershipResponse implements IGetMyMembershipResponse {
         data["currentPeriodEnd"] = this.currentPeriodEnd ? this.currentPeriodEnd.toISOString() : undefined as any;
         data["cancelRequested"] = this.cancelRequested;
         data["billingInterval"] = this.billingInterval;
-        data["monthlyEquivalentPriceCzk"] = this.monthlyEquivalentPriceCzk;
+        data["monthlyEquivalentPrice"] = this.monthlyEquivalentPrice;
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["expressUpgradesRemaining"] = this.expressUpgradesRemaining;
         data["trialEndsAtUtc"] = this.trialEndsAtUtc ? this.trialEndsAtUtc.toISOString() : undefined as any;
         data["trialEligible"] = this.trialEligible;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
@@ -10598,7 +10709,7 @@ export interface IGetMyMembershipResponse {
     hasMembership: boolean;
     planCode: string | undefined;
     planName: string | undefined;
-    monthlyPriceCzk: number | undefined;
+    price: number | undefined;
     discountPercentage: number | undefined;
     freeCancellationWindowHours: number | undefined;
     allowsExpressUpgrade: boolean | undefined;
@@ -10606,11 +10717,12 @@ export interface IGetMyMembershipResponse {
     currentPeriodEnd: Date | undefined;
     cancelRequested: boolean;
     billingInterval: number | undefined;
-    monthlyEquivalentPriceCzk: number | undefined;
+    monthlyEquivalentPrice: number | undefined;
     expressUpgradesPerMonth: number | undefined;
     expressUpgradesRemaining: number | undefined;
     trialEndsAtUtc: Date | undefined;
     trialEligible: boolean;
+    currencyCode: string | undefined;
 }
 
 export class GetMyReferralResponse implements IGetMyReferralResponse {
@@ -11504,6 +11616,94 @@ export enum LoyaltyTier {
 export enum LoyaltyTransactionType {
     Earn = 1,
     Revoke = 2,
+}
+
+export class MarketListItem implements IMarketListItem {
+    countryId!: string | undefined;
+    isoCode!: string | undefined;
+    isoAlpha2!: string | undefined;
+    name!: string | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
+    currencyId!: string | undefined;
+    currencyCode!: string | undefined;
+    currencySymbol!: string | undefined;
+    isDefault!: boolean;
+    noShowCredit!: number | undefined;
+    insuranceCoverageAmount!: number | undefined;
+
+    constructor(data?: IMarketListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+            this.isoCode = Data["isoCode"];
+            this.isoAlpha2 = Data["isoAlpha2"];
+            this.name = Data["name"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
+            this.currencyId = Data["currencyId"];
+            this.currencyCode = Data["currencyCode"];
+            this.currencySymbol = Data["currencySymbol"];
+            this.isDefault = Data["isDefault"];
+            this.noShowCredit = Data["noShowCredit"];
+            this.insuranceCoverageAmount = Data["insuranceCoverageAmount"];
+        }
+    }
+
+    static fromJS(data: any): MarketListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new MarketListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        data["isoCode"] = this.isoCode;
+        data["isoAlpha2"] = this.isoAlpha2;
+        data["name"] = this.name;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        data["currencyId"] = this.currencyId;
+        data["currencyCode"] = this.currencyCode;
+        data["currencySymbol"] = this.currencySymbol;
+        data["isDefault"] = this.isDefault;
+        data["noShowCredit"] = this.noShowCredit;
+        data["insuranceCoverageAmount"] = this.insuranceCoverageAmount;
+        return data;
+    }
+}
+
+export interface IMarketListItem {
+    countryId: string | undefined;
+    isoCode: string | undefined;
+    isoAlpha2: string | undefined;
+    name: string | undefined;
+    translations: { [key: string]: Translation; } | undefined;
+    currencyId: string | undefined;
+    currencyCode: string | undefined;
+    currencySymbol: string | undefined;
+    isDefault: boolean;
+    noShowCredit: number | undefined;
+    insuranceCoverageAmount: number | undefined;
 }
 
 export enum MembershipStatus {

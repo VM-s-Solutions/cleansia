@@ -1214,6 +1214,11 @@ export interface IAdminCountryClient {
      */
     serviced(countryId: string, body?: AdminCountryControllerSetCountryServicedRequest | undefined): Observable<SetCountryServicedResponse>;
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    marketContent(countryId: string, body?: UpdateCountryMarketContentCommand | undefined): Observable<UpdateCountryMarketContentResponse>;
+    /**
      * @return OK
      */
     fieldLabels(countryId: string): Observable<GetCountryFieldLabelsCountryFieldLabelsDto>;
@@ -1688,6 +1693,93 @@ export class AdminCountryClient implements IAdminCountryClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = SetCountryServicedResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    marketContent(countryId: string, body?: UpdateCountryMarketContentCommand | undefined): Observable<UpdateCountryMarketContentResponse> {
+        let url = this.baseUrl + "/api/AdminCountry/{countryId}/market-content";
+        if (countryId === undefined || countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' must be defined.");
+        url = url.replace("{countryId}", encodeURIComponent("" + countryId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processMarketContent(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processMarketContent(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UpdateCountryMarketContentResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UpdateCountryMarketContentResponse>;
+        }));
+    }
+
+    protected processMarketContent(response: HttpResponseBase): Observable<UpdateCountryMarketContentResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UpdateCountryMarketContentResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -15912,6 +16004,7 @@ export class AdminCurrencyDetailDto implements IAdminCurrencyDetailDto {
     isDefault!: boolean;
     isActive!: boolean;
     loyaltyPointsDivisor!: number | undefined;
+    noShowCredit!: number | undefined;
 
     constructor(data?: IAdminCurrencyDetailDto) {
         if (data) {
@@ -15931,6 +16024,7 @@ export class AdminCurrencyDetailDto implements IAdminCurrencyDetailDto {
             this.isDefault = Data["isDefault"];
             this.isActive = Data["isActive"];
             this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
+            this.noShowCredit = Data["noShowCredit"];
         }
     }
 
@@ -15950,6 +16044,7 @@ export class AdminCurrencyDetailDto implements IAdminCurrencyDetailDto {
         data["isDefault"] = this.isDefault;
         data["isActive"] = this.isActive;
         data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
+        data["noShowCredit"] = this.noShowCredit;
         return data;
     }
 }
@@ -15962,6 +16057,7 @@ export interface IAdminCurrencyDetailDto {
     isDefault: boolean;
     isActive: boolean;
     loyaltyPointsDivisor: number | undefined;
+    noShowCredit: number | undefined;
 }
 
 export class AdminCurrencyListItem implements IAdminCurrencyListItem {
@@ -15972,6 +16068,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
     isDefault!: boolean;
     isActive!: boolean;
     loyaltyPointsDivisor!: number | undefined;
+    noShowCredit!: number | undefined;
 
     constructor(data?: IAdminCurrencyListItem) {
         if (data) {
@@ -15991,6 +16088,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
             this.isDefault = Data["isDefault"];
             this.isActive = Data["isActive"];
             this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
+            this.noShowCredit = Data["noShowCredit"];
         }
     }
 
@@ -16010,6 +16108,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
         data["isDefault"] = this.isDefault;
         data["isActive"] = this.isActive;
         data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
+        data["noShowCredit"] = this.noShowCredit;
         return data;
     }
 }
@@ -16022,6 +16121,7 @@ export interface IAdminCurrencyListItem {
     isDefault: boolean;
     isActive: boolean;
     loyaltyPointsDivisor: number | undefined;
+    noShowCredit: number | undefined;
 }
 
 export class AdminEmployeeDetail implements IAdminEmployeeDetail {
@@ -18479,8 +18579,11 @@ export enum ContractStatus {
 export class CountryDetailDto implements ICountryDetailDto {
     id!: string | undefined;
     isoCode!: string | undefined;
+    isoAlpha2!: string | undefined;
     name!: string | undefined;
     isServiced!: boolean;
+    insuranceCoverageAmount!: number | undefined;
+    hasConfiguration!: boolean;
 
     constructor(data?: ICountryDetailDto) {
         if (data) {
@@ -18495,8 +18598,11 @@ export class CountryDetailDto implements ICountryDetailDto {
         if (Data) {
             this.id = Data["id"];
             this.isoCode = Data["isoCode"];
+            this.isoAlpha2 = Data["isoAlpha2"];
             this.name = Data["name"];
             this.isServiced = Data["isServiced"];
+            this.insuranceCoverageAmount = Data["insuranceCoverageAmount"];
+            this.hasConfiguration = Data["hasConfiguration"];
         }
     }
 
@@ -18511,8 +18617,11 @@ export class CountryDetailDto implements ICountryDetailDto {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["isoCode"] = this.isoCode;
+        data["isoAlpha2"] = this.isoAlpha2;
         data["name"] = this.name;
         data["isServiced"] = this.isServiced;
+        data["insuranceCoverageAmount"] = this.insuranceCoverageAmount;
+        data["hasConfiguration"] = this.hasConfiguration;
         return data;
     }
 }
@@ -18520,13 +18629,17 @@ export class CountryDetailDto implements ICountryDetailDto {
 export interface ICountryDetailDto {
     id: string | undefined;
     isoCode: string | undefined;
+    isoAlpha2: string | undefined;
     name: string | undefined;
     isServiced: boolean;
+    insuranceCoverageAmount: number | undefined;
+    hasConfiguration: boolean;
 }
 
 export class CountryListItem implements ICountryListItem {
     id!: string | undefined;
     isoCode!: string | undefined;
+    isoAlpha2!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
 
@@ -18543,6 +18656,7 @@ export class CountryListItem implements ICountryListItem {
         if (Data) {
             this.id = Data["id"];
             this.isoCode = Data["isoCode"];
+            this.isoAlpha2 = Data["isoAlpha2"];
             this.name = Data["name"];
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -18565,6 +18679,7 @@ export class CountryListItem implements ICountryListItem {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["isoCode"] = this.isoCode;
+        data["isoAlpha2"] = this.isoAlpha2;
         data["name"] = this.name;
         if (this.translations) {
             data["translations"] = {};
@@ -18580,6 +18695,7 @@ export class CountryListItem implements ICountryListItem {
 export interface ICountryListItem {
     id: string | undefined;
     isoCode: string | undefined;
+    isoAlpha2: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
 }
@@ -18823,6 +18939,7 @@ export interface ICreateCompanyInfoResponse {
 export class CreateCountryCommand implements ICreateCountryCommand {
     isoCode!: string | undefined;
     name!: string | undefined;
+    isoAlpha2!: string | undefined;
 
     constructor(data?: ICreateCountryCommand) {
         if (data) {
@@ -18837,6 +18954,7 @@ export class CreateCountryCommand implements ICreateCountryCommand {
         if (Data) {
             this.isoCode = Data["isoCode"];
             this.name = Data["name"];
+            this.isoAlpha2 = Data["isoAlpha2"];
         }
     }
 
@@ -18851,6 +18969,7 @@ export class CreateCountryCommand implements ICreateCountryCommand {
         data = typeof data === 'object' ? data : {};
         data["isoCode"] = this.isoCode;
         data["name"] = this.name;
+        data["isoAlpha2"] = this.isoAlpha2;
         return data;
     }
 }
@@ -18858,6 +18977,7 @@ export class CreateCountryCommand implements ICreateCountryCommand {
 export interface ICreateCountryCommand {
     isoCode: string | undefined;
     name: string | undefined;
+    isoAlpha2: string | undefined;
 }
 
 export class CreateCountryResponse implements ICreateCountryResponse {
@@ -18901,6 +19021,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
     symbol!: string | undefined;
     name!: string | undefined;
     loyaltyPointsDivisor!: number | undefined;
+    noShowCredit!: number | undefined;
 
     constructor(data?: ICreateCurrencyCommand) {
         if (data) {
@@ -18917,6 +19038,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
             this.symbol = Data["symbol"];
             this.name = Data["name"];
             this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
+            this.noShowCredit = Data["noShowCredit"];
         }
     }
 
@@ -18933,6 +19055,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
         data["symbol"] = this.symbol;
         data["name"] = this.name;
         data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
+        data["noShowCredit"] = this.noShowCredit;
         return data;
     }
 }
@@ -18942,6 +19065,7 @@ export interface ICreateCurrencyCommand {
     symbol: string | undefined;
     name: string | undefined;
     loyaltyPointsDivisor: number | undefined;
+    noShowCredit: number | undefined;
 }
 
 export class CreateCurrencyResponse implements ICreateCurrencyResponse {
@@ -19300,8 +19424,7 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
     code!: string | undefined;
     name!: string | undefined;
     billingInterval!: BillingInterval;
-    monthlyPriceCzk!: number;
-    stripePriceId!: string | undefined;
+    prices!: { [key: string]: MembershipPlanPriceInput; } | undefined;
     discountPercentage!: number;
     freeCancellationWindowHours!: number;
     trialPeriodDays!: number;
@@ -19322,8 +19445,13 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
             this.code = Data["code"];
             this.name = Data["name"];
             this.billingInterval = Data["billingInterval"];
-            this.monthlyPriceCzk = Data["monthlyPriceCzk"];
-            this.stripePriceId = Data["stripePriceId"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key] ? MembershipPlanPriceInput.fromJS(Data["prices"][key]) : new MembershipPlanPriceInput();
+                }
+            }
             this.discountPercentage = Data["discountPercentage"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.trialPeriodDays = Data["trialPeriodDays"];
@@ -19344,8 +19472,13 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
         data["code"] = this.code;
         data["name"] = this.name;
         data["billingInterval"] = this.billingInterval;
-        data["monthlyPriceCzk"] = this.monthlyPriceCzk;
-        data["stripePriceId"] = this.stripePriceId;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = this.prices[key] ? this.prices[key].toJSON() : undefined as any;
+            }
+        }
         data["discountPercentage"] = this.discountPercentage;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["trialPeriodDays"] = this.trialPeriodDays;
@@ -19359,8 +19492,7 @@ export interface ICreateMembershipPlanCommand {
     code: string | undefined;
     name: string | undefined;
     billingInterval: BillingInterval;
-    monthlyPriceCzk: number;
-    stripePriceId: string | undefined;
+    prices: { [key: string]: MembershipPlanPriceInput; } | undefined;
     discountPercentage: number;
     freeCancellationWindowHours: number;
     trialPeriodDays: number;
@@ -25416,9 +25548,7 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
     code!: string | undefined;
     name!: string | undefined;
     billingInterval!: BillingInterval;
-    monthlyPriceCzk!: number;
-    monthlyEquivalentPriceCzk!: number;
-    stripePriceId!: string | undefined;
+    prices!: { [key: string]: MembershipPlanPriceDto; } | undefined;
     discountPercentage!: number;
     trialPeriodDays!: number;
     freeCancellationWindowHours!: number;
@@ -25443,9 +25573,13 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
             this.code = Data["code"];
             this.name = Data["name"];
             this.billingInterval = Data["billingInterval"];
-            this.monthlyPriceCzk = Data["monthlyPriceCzk"];
-            this.monthlyEquivalentPriceCzk = Data["monthlyEquivalentPriceCzk"];
-            this.stripePriceId = Data["stripePriceId"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key] ? MembershipPlanPriceDto.fromJS(Data["prices"][key]) : new MembershipPlanPriceDto();
+                }
+            }
             this.discountPercentage = Data["discountPercentage"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
@@ -25470,9 +25604,13 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
         data["code"] = this.code;
         data["name"] = this.name;
         data["billingInterval"] = this.billingInterval;
-        data["monthlyPriceCzk"] = this.monthlyPriceCzk;
-        data["monthlyEquivalentPriceCzk"] = this.monthlyEquivalentPriceCzk;
-        data["stripePriceId"] = this.stripePriceId;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = this.prices[key] ? this.prices[key].toJSON() : undefined as any;
+            }
+        }
         data["discountPercentage"] = this.discountPercentage;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
@@ -25490,9 +25628,7 @@ export interface IMembershipPlanDetailDto {
     code: string | undefined;
     name: string | undefined;
     billingInterval: BillingInterval;
-    monthlyPriceCzk: number;
-    monthlyEquivalentPriceCzk: number;
-    stripePriceId: string | undefined;
+    prices: { [key: string]: MembershipPlanPriceDto; } | undefined;
     discountPercentage: number;
     trialPeriodDays: number;
     freeCancellationWindowHours: number;
@@ -25508,8 +25644,9 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
     code!: string | undefined;
     name!: string | undefined;
     billingInterval!: BillingInterval;
-    monthlyPriceCzk!: number;
-    monthlyEquivalentPriceCzk!: number;
+    price!: number | undefined;
+    monthlyEquivalentPrice!: number | undefined;
+    currencyCode!: string | undefined;
     discountPercentage!: number;
     trialPeriodDays!: number;
     freeCancellationWindowHours!: number;
@@ -25533,8 +25670,9 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
             this.code = Data["code"];
             this.name = Data["name"];
             this.billingInterval = Data["billingInterval"];
-            this.monthlyPriceCzk = Data["monthlyPriceCzk"];
-            this.monthlyEquivalentPriceCzk = Data["monthlyEquivalentPriceCzk"];
+            this.price = Data["price"];
+            this.monthlyEquivalentPrice = Data["monthlyEquivalentPrice"];
+            this.currencyCode = Data["currencyCode"];
             this.discountPercentage = Data["discountPercentage"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
@@ -25558,8 +25696,9 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
         data["code"] = this.code;
         data["name"] = this.name;
         data["billingInterval"] = this.billingInterval;
-        data["monthlyPriceCzk"] = this.monthlyPriceCzk;
-        data["monthlyEquivalentPriceCzk"] = this.monthlyEquivalentPriceCzk;
+        data["price"] = this.price;
+        data["monthlyEquivalentPrice"] = this.monthlyEquivalentPrice;
+        data["currencyCode"] = this.currencyCode;
         data["discountPercentage"] = this.discountPercentage;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
@@ -25576,8 +25715,9 @@ export interface IMembershipPlanListItem {
     code: string | undefined;
     name: string | undefined;
     billingInterval: BillingInterval;
-    monthlyPriceCzk: number;
-    monthlyEquivalentPriceCzk: number;
+    price: number | undefined;
+    monthlyEquivalentPrice: number | undefined;
+    currencyCode: string | undefined;
     discountPercentage: number;
     trialPeriodDays: number;
     freeCancellationWindowHours: number;
@@ -25585,6 +25725,90 @@ export interface IMembershipPlanListItem {
     expressUpgradesPerMonth: number;
     isActive: boolean;
     createdOn: Date;
+}
+
+export class MembershipPlanPriceDto implements IMembershipPlanPriceDto {
+    price!: number;
+    monthlyEquivalentPrice!: number;
+    stripePriceId!: string | undefined;
+
+    constructor(data?: IMembershipPlanPriceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.price = Data["price"];
+            this.monthlyEquivalentPrice = Data["monthlyEquivalentPrice"];
+            this.stripePriceId = Data["stripePriceId"];
+        }
+    }
+
+    static fromJS(data: any): MembershipPlanPriceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MembershipPlanPriceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["price"] = this.price;
+        data["monthlyEquivalentPrice"] = this.monthlyEquivalentPrice;
+        data["stripePriceId"] = this.stripePriceId;
+        return data;
+    }
+}
+
+export interface IMembershipPlanPriceDto {
+    price: number;
+    monthlyEquivalentPrice: number;
+    stripePriceId: string | undefined;
+}
+
+export class MembershipPlanPriceInput implements IMembershipPlanPriceInput {
+    price!: number;
+    stripePriceId!: string | undefined;
+
+    constructor(data?: IMembershipPlanPriceInput) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.price = Data["price"];
+            this.stripePriceId = Data["stripePriceId"];
+        }
+    }
+
+    static fromJS(data: any): MembershipPlanPriceInput {
+        data = typeof data === 'object' ? data : {};
+        let result = new MembershipPlanPriceInput();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["price"] = this.price;
+        data["stripePriceId"] = this.stripePriceId;
+        return data;
+    }
+}
+
+export interface IMembershipPlanPriceInput {
+    price: number;
+    stripePriceId: string | undefined;
 }
 
 export class MonthlyPayroll implements IMonthlyPayroll {
@@ -31222,9 +31446,86 @@ export interface IUpdateCompanyInfoResponse {
     id: string | undefined;
 }
 
+export class UpdateCountryMarketContentCommand implements IUpdateCountryMarketContentCommand {
+    countryId!: string | undefined;
+    insuranceCoverageAmount!: number | undefined;
+
+    constructor(data?: IUpdateCountryMarketContentCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+            this.insuranceCoverageAmount = Data["insuranceCoverageAmount"];
+        }
+    }
+
+    static fromJS(data: any): UpdateCountryMarketContentCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateCountryMarketContentCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        data["insuranceCoverageAmount"] = this.insuranceCoverageAmount;
+        return data;
+    }
+}
+
+export interface IUpdateCountryMarketContentCommand {
+    countryId: string | undefined;
+    insuranceCoverageAmount: number | undefined;
+}
+
+export class UpdateCountryMarketContentResponse implements IUpdateCountryMarketContentResponse {
+    countryId!: string | undefined;
+
+    constructor(data?: IUpdateCountryMarketContentResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+        }
+    }
+
+    static fromJS(data: any): UpdateCountryMarketContentResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateCountryMarketContentResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        return data;
+    }
+}
+
+export interface IUpdateCountryMarketContentResponse {
+    countryId: string | undefined;
+}
+
 export class UpdateCountryCommand implements IUpdateCountryCommand {
     countryId!: string | undefined;
     name!: string | undefined;
+    isoAlpha2!: string | undefined;
 
     constructor(data?: IUpdateCountryCommand) {
         if (data) {
@@ -31239,6 +31540,7 @@ export class UpdateCountryCommand implements IUpdateCountryCommand {
         if (Data) {
             this.countryId = Data["countryId"];
             this.name = Data["name"];
+            this.isoAlpha2 = Data["isoAlpha2"];
         }
     }
 
@@ -31253,6 +31555,7 @@ export class UpdateCountryCommand implements IUpdateCountryCommand {
         data = typeof data === 'object' ? data : {};
         data["countryId"] = this.countryId;
         data["name"] = this.name;
+        data["isoAlpha2"] = this.isoAlpha2;
         return data;
     }
 }
@@ -31260,6 +31563,7 @@ export class UpdateCountryCommand implements IUpdateCountryCommand {
 export interface IUpdateCountryCommand {
     countryId: string | undefined;
     name: string | undefined;
+    isoAlpha2: string | undefined;
 }
 
 export class UpdateCountryResponse implements IUpdateCountryResponse {
@@ -31304,6 +31608,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
     symbol!: string | undefined;
     name!: string | undefined;
     loyaltyPointsDivisor!: number | undefined;
+    noShowCredit!: number | undefined;
 
     constructor(data?: IUpdateCurrencyCommand) {
         if (data) {
@@ -31321,6 +31626,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
             this.symbol = Data["symbol"];
             this.name = Data["name"];
             this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
+            this.noShowCredit = Data["noShowCredit"];
         }
     }
 
@@ -31338,6 +31644,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
         data["symbol"] = this.symbol;
         data["name"] = this.name;
         data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
+        data["noShowCredit"] = this.noShowCredit;
         return data;
     }
 }
@@ -31348,6 +31655,7 @@ export interface IUpdateCurrencyCommand {
     symbol: string | undefined;
     name: string | undefined;
     loyaltyPointsDivisor: number | undefined;
+    noShowCredit: number | undefined;
 }
 
 export class UpdateCurrencyResponse implements IUpdateCurrencyResponse {
@@ -31821,8 +32129,7 @@ export interface IUpdateLanguageResponse {
 export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand {
     membershipPlanId!: string | undefined;
     name!: string | undefined;
-    monthlyPriceCzk!: number;
-    stripePriceId!: string | undefined;
+    prices!: { [key: string]: MembershipPlanPriceInput; } | undefined;
     discountPercentage!: number;
     freeCancellationWindowHours!: number;
     trialPeriodDays!: number;
@@ -31842,8 +32149,13 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
         if (Data) {
             this.membershipPlanId = Data["membershipPlanId"];
             this.name = Data["name"];
-            this.monthlyPriceCzk = Data["monthlyPriceCzk"];
-            this.stripePriceId = Data["stripePriceId"];
+            if (Data["prices"]) {
+                this.prices = {} as any;
+                for (let key in Data["prices"]) {
+                    if (Data["prices"].hasOwnProperty(key))
+                        (this.prices as any)![key] = Data["prices"][key] ? MembershipPlanPriceInput.fromJS(Data["prices"][key]) : new MembershipPlanPriceInput();
+                }
+            }
             this.discountPercentage = Data["discountPercentage"];
             this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.trialPeriodDays = Data["trialPeriodDays"];
@@ -31863,8 +32175,13 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
         data = typeof data === 'object' ? data : {};
         data["membershipPlanId"] = this.membershipPlanId;
         data["name"] = this.name;
-        data["monthlyPriceCzk"] = this.monthlyPriceCzk;
-        data["stripePriceId"] = this.stripePriceId;
+        if (this.prices) {
+            data["prices"] = {};
+            for (let key in this.prices) {
+                if (this.prices.hasOwnProperty(key))
+                    (data["prices"] as any)[key] = this.prices[key] ? this.prices[key].toJSON() : undefined as any;
+            }
+        }
         data["discountPercentage"] = this.discountPercentage;
         data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["trialPeriodDays"] = this.trialPeriodDays;
@@ -31877,8 +32194,7 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
 export interface IUpdateMembershipPlanCommand {
     membershipPlanId: string | undefined;
     name: string | undefined;
-    monthlyPriceCzk: number;
-    stripePriceId: string | undefined;
+    prices: { [key: string]: MembershipPlanPriceInput; } | undefined;
     discountPercentage: number;
     freeCancellationWindowHours: number;
     trialPeriodDays: number;

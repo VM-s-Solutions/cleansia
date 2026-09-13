@@ -110,6 +110,18 @@ class ServiceAreaWireTest {
         assertEquals(listOf("cz", "sk"), countries(CAPTURED_COUNTRIES)?.map { it.isoCode })
     }
 
+    /** The wire now names the alpha-2 itself; when it does, it wins over the device map. */
+    @Test
+    fun theWireAlphaTwoWinsOverTheDeviceMap() = runTest {
+        val body = """
+            [
+              { "id": "cnt-cz", "isoCode": "CZE", "isoAlpha2": "CZ", "name": "Česko" },
+              { "id": "cnt-xk", "isoCode": "XKX", "isoAlpha2": "XK", "name": "Kosovo" }
+            ]
+        """.trimIndent()
+        assertEquals(listOf("cz", "xk"), countries(body)?.map { it.isoCode })
+    }
+
     @Test
     fun everyServicedCityArrivesWithItsLiteralValue() = runTest {
         val list = cities(CAPTURED_CITIES)
@@ -193,7 +205,7 @@ class ServiceAreaWireTest {
             ]
         """.trimIndent()
 
-        val COUNTRY_SPEC_PROPERTIES = setOf("id", "isoCode", "name", "translations")
+        val COUNTRY_SPEC_PROPERTIES = setOf("id", "isoCode", "isoAlpha2", "name", "translations")
 
         val CITY_SPEC_PROPERTIES = setOf(
             "id",

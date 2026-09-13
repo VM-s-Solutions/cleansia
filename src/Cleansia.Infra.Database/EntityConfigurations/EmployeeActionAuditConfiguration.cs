@@ -27,11 +27,10 @@ public class EmployeeActionAuditConfiguration : AuditableEntityConfiguration<Emp
             .IsRequired()
             .HasConversion<int>();
 
-        // ONE declared index, for the one question the table exists to answer: "what has this cleaner
-        // done, most recent first". CreatedOn descending because every read of a history is newest-first.
-        //
-        // No index on OrderId and none on (CreatedOn) alone: neither has a caller today, and a
-        // speculative index is paid on every insert forever. They arrive with the query that needs them.
+        // Two declared indexes, one per reader, CreatedOn descending because every read of a history is
+        // newest-first: the cleaner's own history ("what has this cleaner done"), and the customer
+        // timeline, which reads the table by OrderId — one order by resource, the user's recent orders
+        // by user. None on (CreatedOn) alone: no caller, and a speculative index is paid on every insert.
         //
         // The inherited TenantId index comes from AuditableEntityConfiguration and is accepted as-is;
         // 61 configurations carry it. It is NOT a uniqueness arbiter here — nothing on this table is
@@ -39,5 +38,9 @@ public class EmployeeActionAuditConfiguration : AuditableEntityConfiguration<Emp
         builder.HasIndex(e => new { e.EmployeeId, e.CreatedOn })
             .IsDescending(false, true)
             .HasDatabaseName("IX_EmployeeActionAudits_EmployeeId_CreatedOn");
+
+        builder.HasIndex(e => new { e.OrderId, e.CreatedOn })
+            .IsDescending(false, true)
+            .HasDatabaseName("IX_EmployeeActionAudits_OrderId_CreatedOn");
     }
 }

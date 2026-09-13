@@ -22,7 +22,7 @@ public static class CustomerActionAuditMappers
             OccurredOn: audit.OccurredOn);
     }
 
-    public static CustomerActionAuditDetailDto MapToDetailDto(this CustomerActionAudit audit, string? currencyCode)
+    public static CustomerActionAuditDetailDto MapToDetailDto(this CustomerActionAudit audit)
     {
         return new CustomerActionAuditDetailDto(
             Id: audit.Id,
@@ -38,8 +38,7 @@ public static class CustomerActionAuditMappers
             ErrorCode: audit.ErrorCode,
             OccurredOn: audit.OccurredOn,
             PayloadJson: audit.PayloadJson,
-            CorrelationId: audit.CorrelationId,
-            CurrencyCode: currencyCode);
+            CorrelationId: audit.CorrelationId);
     }
 
     public static TimelineEntryDto MapToTimelineEntry(this CustomerActionAudit audit)
@@ -95,7 +94,6 @@ public static class CustomerActionAuditMappers
             OccurredFrom = filter?.OccurredFrom,
             OccurredTo = filter?.OccurredTo,
             Success = filter?.Success,
-            ErrorCode = filter?.ErrorCode,
             ClientAudience = filter?.ClientAudience
         };
     }

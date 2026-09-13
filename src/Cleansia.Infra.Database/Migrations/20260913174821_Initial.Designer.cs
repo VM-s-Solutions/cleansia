@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260913154309_Initial")]
+    [Migration("20260913174821_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -250,6 +250,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("EmployeeId", "CreatedOn")
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_EmployeeActionAudits_EmployeeId_CreatedOn");
+
+                    b.HasIndex("OrderId", "CreatedOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_EmployeeActionAudits_OrderId_CreatedOn");
 
                     b.ToTable("EmployeeActionAudits", (string)null);
                 });

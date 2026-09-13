@@ -3260,6 +3260,12 @@ namespace Cleansia.Infra.Database.Migrations
                 descending: new[] { false, true });
 
             migrationBuilder.CreateIndex(
+                name: "IX_EmployeeActionAudits_OrderId_CreatedOn",
+                table: "EmployeeActionAudits",
+                columns: new[] { "OrderId", "CreatedOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EmployeeActionAudits_TenantId",
                 table: "EmployeeActionAudits",
                 column: "TenantId");

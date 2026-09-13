@@ -30,7 +30,7 @@ public class RequestLogCustomerAuditPathSuppressionTests
             Id: "aud-1", UserId: "user-1", ClientAudience: "cleansia.customer", IpAddress: Ip, DeviceLabel: Device,
             DeviceId: "device-1", Action: "customer.order.cancel", ResourceType: "Order", ResourceId: "order-1",
             Success: true, ErrorCode: null, OccurredOn: DateTimeOffset.UtcNow, PayloadJson: Payload,
-            CorrelationId: "corr-1", CurrencyCode: "CZK"), RequestLoggingHarness.WireOptions);
+            CorrelationId: "corr-1"), RequestLoggingHarness.WireOptions);
 
         AssertWouldOtherwiseBeVisible(middlewareType, json);
 

@@ -9,7 +9,8 @@ namespace Cleansia.HostTests.Tests;
 /// ADR-0062 D6 — the three-source timeline (<c>CustomerAuditController.GetActionTimeline</c>) on the
 /// Admin host behind <c>Policy.CanViewAuditLog</c>: Employee and Customer roles are 403'd, an anonymous
 /// caller is 401'd, an Administrator clears the gate, the validator refuses a call keyed by neither or
-/// both of user / resource with <c>audit.timeline.filter_required</c>, and the tenant filter keeps
+/// both of user / resource with <c>audit.timeline.filter_required</c>, a page past the shared
+/// <c>DataRangeRequest</c> bounds or the timeline's own limit is 400, and the tenant filter keeps
 /// another operator's rows out of the page. The three-table merge itself is proven on real Postgres in
 /// <c>Cleansia.IntegrationTests/Features/Auditing/GetActionTimelineTests</c>.
 /// </summary>
@@ -58,6 +59,27 @@ public sealed class CustomerAuditTimelinePolicyTests(HostTestPostgresFixture db)
 
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, resp.StatusCode);
         await HttpAssert.AssertBusinessErrorAsync(resp, BusinessErrorMessage.TimelineFilterRequired);
+    }
+
+    [Fact]
+    public async Task An_offset_past_the_shared_DataRangeRequest_bound_is_400()
+    {
+        var token = TestJwtFactory.Mint(AdminAudience, "admin-a", "admin-a@hosttests.local", UserProfile.Administrator);
+
+        var resp = await AdminClient(token).GetAsync(ByUser + "&offset=501");
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_limit_past_the_timelines_own_cap_is_400_page_size_exceeded()
+    {
+        var token = TestJwtFactory.Mint(AdminAudience, "admin-a", "admin-a@hosttests.local", UserProfile.Administrator);
+
+        var resp = await AdminClient(token).GetAsync(ByUser + "&limit=101");
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, resp.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(resp, BusinessErrorMessage.PageSizeExceeded);
     }
 
     [Fact]

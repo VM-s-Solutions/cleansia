@@ -9,5 +9,4 @@ public record CustomerActionAuditFilter(
     DateTimeOffset? OccurredFrom,
     DateTimeOffset? OccurredTo,
     bool? Success,
-    string? ErrorCode,
     string? ClientAudience);

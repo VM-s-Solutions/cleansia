@@ -153,6 +153,19 @@ collide with empty success because there is no body on this channel at all. The 
 Fixed in the checker, with a STILL-FLAGS self-test proving a real nullable body is still caught.
 **No Android code changed.**
 
+### `A2` ×1 — `GetActionTimeline` returns `BusinessResult<PagedData<T>>` — **declared 2026-09-13, not doing**
+
+The customer timeline (ADR-0062 D6) is a paged query whose "exactly one key: a user, or a resource
+pair" rule must answer **400** with `audit.timeline.filter_required` — the contract and the ticket's
+AC say so, and the admin web's parity spec carries the key. `ValidationPipelineBehavior` is
+constrained `where TResponse : BusinessResult`, so the canonical `IRequest<PagedData<T>>` form never
+sees a validator (which is why `GetAllGdprRequests.Validator` is dead code). The query therefore
+declares `Request : DataRangeRequest, IQuery<PagedData<TimelineEntryDto>>` and returns
+`BusinessResult.Success(page.MapToDto(total, request))`: A1, A5 and A7 hold, A2 does not. Satisfying
+A2 would mean either an empty page for a malformed key (the `GetUserLoyaltyActivity` shape, which
+contradicts the AC) or a change to the pipeline's constraint — the Architect's call, not a lane's.
+`check-consistency` was widened at the same time so `IQuery<PagedData<` is held to A1/A5.
+
 ---
 
 ## How to move this number

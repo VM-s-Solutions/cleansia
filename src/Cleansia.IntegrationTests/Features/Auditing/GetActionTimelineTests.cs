@@ -44,7 +44,7 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
         await TestMethod(
             setup: AdminSession,
             arrange: SeedOneOrderWithFourActs,
-            act: provider => Send(provider, new GetActionTimeline.Query(UserId: CustomerId)),
+            act: provider => Send(provider, new GetActionTimeline.Request { UserId = CustomerId }),
             assert: (CleansiaDbContext _, BusinessResult<PagedData<TimelineEntryDto>> result) =>
             {
                 Assert.True(result.IsSuccess);
@@ -68,9 +68,9 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
             setup: AdminSession,
             arrange: SeedOneOrderWithFourActs,
             act: async provider => (
-                Order: await Send(provider, new GetActionTimeline.Query(ResourceType: "Order", ResourceId: OrderId)),
-                Guest: await Send(provider, new GetActionTimeline.Query(ResourceType: "Order", ResourceId: GuestOrderId)),
-                GuestByUser: await Send(provider, new GetActionTimeline.Query(UserId: CustomerId))),
+                Order: await Send(provider, new GetActionTimeline.Request { ResourceType = "Order", ResourceId = OrderId }),
+                Guest: await Send(provider, new GetActionTimeline.Request { ResourceType = "Order", ResourceId = GuestOrderId }),
+                GuestByUser: await Send(provider, new GetActionTimeline.Request { UserId = CustomerId })),
             assert: (CleansiaDbContext _, (BusinessResult<PagedData<TimelineEntryDto>> Order, BusinessResult<PagedData<TimelineEntryDto>> Guest, BusinessResult<PagedData<TimelineEntryDto>> GuestByUser) r) =>
             {
                 Assert.Equal(3, r.Order.Value!.Total);
@@ -98,7 +98,7 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
                 var pages = new List<PagedData<TimelineEntryDto>>();
                 for (var offset = 0; offset < 4; offset += 3)
                 {
-                    pages.Add((await Send(provider, new GetActionTimeline.Query(UserId: CustomerId, Offset: offset, Limit: 3))).Value!);
+                    pages.Add((await Send(provider, new GetActionTimeline.Request { UserId = CustomerId, Offset = offset, Limit = 3 })).Value!);
                 }
 
                 return pages;
@@ -133,8 +133,8 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
                 context.EmployeeActionAudits.Add(EmployeeRow("eaud-other-tenant", OrderId, T0.AddHours(7), TestTenants.Second));
             },
             act: async provider => (
-                ByUser: await Send(provider, new GetActionTimeline.Query(UserId: CustomerId)),
-                ByOrder: await Send(provider, new GetActionTimeline.Query(ResourceType: "Order", ResourceId: OrderId))),
+                ByUser: await Send(provider, new GetActionTimeline.Request { UserId = CustomerId }),
+                ByOrder: await Send(provider, new GetActionTimeline.Request { ResourceType = "Order", ResourceId = OrderId })),
             assert: (CleansiaDbContext _, (BusinessResult<PagedData<TimelineEntryDto>> ByUser, BusinessResult<PagedData<TimelineEntryDto>> ByOrder) r) =>
             {
                 Assert.Equal(4, r.ByUser.Value!.Total);
@@ -144,10 +144,10 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
             });
     }
 
-    private static async Task<BusinessResult<PagedData<TimelineEntryDto>>> Send(IServiceProvider provider, GetActionTimeline.Query query)
+    private static async Task<BusinessResult<PagedData<TimelineEntryDto>>> Send(IServiceProvider provider, GetActionTimeline.Request request)
     {
         var mediator = provider.GetRequiredService<IMediator>();
-        return await mediator.Send(query);
+        return await mediator.Send(request);
     }
 
     private static Task AdminSession(IServiceCollection services)

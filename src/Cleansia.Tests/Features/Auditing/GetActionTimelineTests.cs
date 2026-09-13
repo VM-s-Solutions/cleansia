@@ -46,8 +46,6 @@ public class GetActionTimelineTests
         _memberships.Setup(r => r.GetQueryable()).Returns(Array.Empty<UserMembership>().AsQueryable().BuildMock());
     }
 
-    // ---- validator ----------------------------------------------------------------------------
-
     [Theory]
     [InlineData(null, null, null)]
     [InlineData("", "", "")]
@@ -59,7 +57,7 @@ public class GetActionTimelineTests
     public async Task Validator_Refuses_Anything_But_Exactly_One_Key(string? userId, string? type, string? id)
     {
         var result = await new GetActionTimeline.Validator()
-            .ValidateAsync(new GetActionTimeline.Query(userId, type, id));
+            .ValidateAsync(new GetActionTimeline.Request { UserId = userId, ResourceType = type, ResourceId = id });
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.TimelineFilterRequired);
@@ -71,25 +69,29 @@ public class GetActionTimelineTests
     public async Task Validator_Accepts_A_User_Or_A_Resource_Pair(string? userId, string? type, string? id)
     {
         var result = await new GetActionTimeline.Validator()
-            .ValidateAsync(new GetActionTimeline.Query(userId, type, id));
+            .ValidateAsync(new GetActionTimeline.Request { UserId = userId, ResourceType = type, ResourceId = id });
 
         Assert.True(result.IsValid);
     }
 
-    [Theory]
-    [InlineData(0, 0)]
-    [InlineData(0, GetActionTimeline.MaxLimit + 1)]
-    [InlineData(-1, 20)]
-    public async Task Validator_Bounds_The_Page(int offset, int limit)
+    [Fact]
+    public async Task Validator_Refuses_A_Page_Larger_Than_MaxLimit_As_Page_Size_Exceeded()
     {
         var result = await new GetActionTimeline.Validator()
-            .ValidateAsync(new GetActionTimeline.Query(UserId, Offset: offset, Limit: limit));
+            .ValidateAsync(new GetActionTimeline.Request { UserId = UserId, Limit = GetActionTimeline.MaxLimit + 1 });
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.MustBePositive);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.PageSizeExceeded);
     }
 
-    // ---- the pure merge -----------------------------------------------------------------------
+    [Fact]
+    public async Task Validator_Accepts_A_Page_Of_Exactly_MaxLimit()
+    {
+        var result = await new GetActionTimeline.Validator()
+            .ValidateAsync(new GetActionTimeline.Request { UserId = UserId, Limit = GetActionTimeline.MaxLimit });
+
+        Assert.True(result.IsValid);
+    }
 
     [Fact]
     public void Page_Orders_Newest_First_Across_Sources_And_Breaks_Ties_By_Id()
@@ -126,7 +128,16 @@ public class GetActionTimelineTests
         Assert.Equal("employee.order.dropped", GetActionTimeline.EmployeeActionLabel(EmployeeAuditAction.OrderDropped));
     }
 
-    // ---- the handler --------------------------------------------------------------------------
+    [Fact]
+    public void Every_Employee_Action_Has_A_Named_Label_And_None_Is_Synthesised()
+    {
+        foreach (var action in Enum.GetValues<EmployeeAuditAction>())
+        {
+            Assert.StartsWith("employee.", GetActionTimeline.EmployeeActionLabel(action), StringComparison.Ordinal);
+        }
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => GetActionTimeline.EmployeeActionLabel((EmployeeAuditAction)int.MaxValue));
+    }
 
     [Fact]
     public async Task ByUser_Merges_The_Customers_Rows_With_Admin_And_Employee_Rows_On_Their_Order()
@@ -137,7 +148,7 @@ public class GetActionTimelineTests
             [AdminRow("a-1", "Order", OrderId, T0.AddMinutes(3)), AdminRow("a-other", "Order", "order-9", T0.AddMinutes(9))],
             [EmployeeRow("e-1", OrderId, T0.AddMinutes(2)), EmployeeRow("e-other", "order-9", T0.AddMinutes(8))]);
 
-        var result = await Handle(new GetActionTimeline.Query(UserId));
+        var result = await Handle(new GetActionTimeline.Request { UserId = UserId });
 
         Assert.True(result.IsSuccess);
         var page = result.Value!;
@@ -164,7 +175,7 @@ public class GetActionTimelineTests
             ],
             []);
 
-        var result = await Handle(new GetActionTimeline.Query(UserId));
+        var result = await Handle(new GetActionTimeline.Request { UserId = UserId });
 
         Assert.Equal(new[] { "a-membership", "a-dispute", "a-user" }, result.Value!.Data.Select(e => e.Id));
     }
@@ -177,7 +188,7 @@ public class GetActionTimelineTests
             [AdminRow("a-1", "Order", OrderId, T0.AddMinutes(3))],
             [EmployeeRow("e-1", OrderId, T0.AddMinutes(4))]);
 
-        var result = await Handle(new GetActionTimeline.Query(ResourceType: "Order", ResourceId: OrderId));
+        var result = await Handle(new GetActionTimeline.Request { ResourceType = "Order", ResourceId = OrderId });
 
         Assert.Equal(3, result.Value!.Total);
         Assert.Equal(new[] { "e-1", "a-1", "c-guest" }, result.Value.Data.Select(e => e.Id));
@@ -189,7 +200,7 @@ public class GetActionTimelineTests
         SeedUserOwns(orderIds: [OrderId]);
         Seed([CustomerRow("c-guest", null, OrderId, T0)], [], []);
 
-        var result = await Handle(new GetActionTimeline.Query(UserId));
+        var result = await Handle(new GetActionTimeline.Request { UserId = UserId });
 
         Assert.Equal(0, result.Value!.Total);
         Assert.Empty(result.Value.Data);
@@ -200,7 +211,7 @@ public class GetActionTimelineTests
     {
         Seed([], [AdminRow("a-1", "Dispute", "dispute-1", T0)], [EmployeeRow("e-1", "dispute-1", T0.AddMinutes(1))]);
 
-        var result = await Handle(new GetActionTimeline.Query(ResourceType: "Dispute", ResourceId: "dispute-1"));
+        var result = await Handle(new GetActionTimeline.Request { ResourceType = "Dispute", ResourceId = "dispute-1" });
 
         var only = Assert.Single(result.Value!.Data);
         Assert.Equal("a-1", only.Id);
@@ -215,9 +226,9 @@ public class GetActionTimelineTests
             Enumerable.Range(0, 3).Select(i => AdminRow($"a-{i}", "Order", OrderId, T0.AddMinutes(i * 3 + 1))).ToArray(),
             Enumerable.Range(0, 3).Select(i => EmployeeRow($"e-{i}", OrderId, T0.AddMinutes(i * 3 + 2))).ToArray());
 
-        var first = await Handle(new GetActionTimeline.Query(UserId, Offset: 0, Limit: 4));
-        var second = await Handle(new GetActionTimeline.Query(UserId, Offset: 4, Limit: 4));
-        var third = await Handle(new GetActionTimeline.Query(UserId, Offset: 8, Limit: 4));
+        var first = await Handle(new GetActionTimeline.Request { UserId = UserId, Offset = 0, Limit = 4 });
+        var second = await Handle(new GetActionTimeline.Request { UserId = UserId, Offset = 4, Limit = 4 });
+        var third = await Handle(new GetActionTimeline.Request { UserId = UserId, Offset = 8, Limit = 4 });
 
         var ids = first.Value!.Data.Concat(second.Value!.Data).Concat(third.Value!.Data).Select(e => e.Id).ToList();
         Assert.Equal(9, first.Value.Total);
@@ -226,15 +237,13 @@ public class GetActionTimelineTests
         Assert.Equal(4, second.Value.PageSize);
     }
 
-    // ---- fixtures -----------------------------------------------------------------------------
-
-    private Task<BusinessResult<PagedData<TimelineEntryDto>>> Handle(GetActionTimeline.Query query)
+    private Task<BusinessResult<PagedData<TimelineEntryDto>>> Handle(GetActionTimeline.Request request)
     {
         var handlerType = typeof(GetActionTimeline).GetNestedType("Handler", BindingFlags.NonPublic)!;
         var handler = Activator.CreateInstance(handlerType,
             _customer.Object, _admin.Object, _employee.Object, _orders.Object, _disputes.Object, _memberships.Object)!;
         var method = handlerType.GetMethod("Handle")!;
-        return (Task<BusinessResult<PagedData<TimelineEntryDto>>>)method.Invoke(handler, [query, CancellationToken.None])!;
+        return (Task<BusinessResult<PagedData<TimelineEntryDto>>>)method.Invoke(handler, [request, CancellationToken.None])!;
     }
 
     private void Seed(CustomerActionAudit[] customer, AdminActionAudit[] admin, EmployeeActionAudit[] employee)

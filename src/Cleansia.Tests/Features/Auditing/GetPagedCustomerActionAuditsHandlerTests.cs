@@ -99,7 +99,7 @@ public class GetPagedCustomerActionAuditsHandlerTests
     [Fact]
     public void User_Filter_Reaches_Specification()
     {
-        var predicate = Predicate(new CustomerActionAuditFilter("user-1", null, null, null, null, null, null, null, null), this);
+        var predicate = Predicate(new CustomerActionAuditFilter("user-1", null, null, null, null, null, null, null), this);
 
         Assert.True(predicate(Row(userId: "user-1")));
         Assert.False(predicate(Row(userId: "user-2")));
@@ -109,7 +109,7 @@ public class GetPagedCustomerActionAuditsHandlerTests
     [Fact]
     public void Action_And_Resource_Filters_Reach_Specification()
     {
-        var predicate = Predicate(new CustomerActionAuditFilter(null, "customer.order.cancel", "Order", "order-1", null, null, null, null, null), this);
+        var predicate = Predicate(new CustomerActionAuditFilter(null, "customer.order.cancel", "Order", "order-1", null, null, null, null), this);
 
         Assert.True(predicate(Row(action: "customer.order.cancel", resourceType: "Order", resourceId: "order-1")));
         Assert.False(predicate(Row(action: "customer.order.create", resourceType: "Order", resourceId: "order-1")));
@@ -119,7 +119,7 @@ public class GetPagedCustomerActionAuditsHandlerTests
     [Fact]
     public void Outcome_Filter_Reaches_Specification()
     {
-        var predicate = Predicate(new CustomerActionAuditFilter(null, null, null, null, null, null, Success: false, null, null), this);
+        var predicate = Predicate(new CustomerActionAuditFilter(null, null, null, null, null, null, Success: false, null), this);
 
         Assert.True(predicate(Row(success: false, errorCode: "order.in_progress_cannot_cancel")));
         Assert.False(predicate(Row(success: true)));
@@ -130,26 +130,16 @@ public class GetPagedCustomerActionAuditsHandlerTests
     {
         var from = new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero);
         var to = new DateTimeOffset(2026, 6, 30, 0, 0, 0, TimeSpan.Zero);
-        var predicate = Predicate(new CustomerActionAuditFilter(null, null, null, null, from, to, null, null, null), this);
+        var predicate = Predicate(new CustomerActionAuditFilter(null, null, null, null, from, to, null, null), this);
 
         Assert.True(predicate(Row(occurredOn: new DateTimeOffset(2026, 6, 15, 0, 0, 0, TimeSpan.Zero))));
         Assert.False(predicate(Row(occurredOn: new DateTimeOffset(2026, 7, 15, 0, 0, 0, TimeSpan.Zero))));
     }
 
     [Fact]
-    public void ErrorCode_Filter_Is_A_Text_Match_On_The_Key()
-    {
-        var predicate = Predicate(new CustomerActionAuditFilter(null, null, null, null, null, null, null, ErrorCode: "in_progress", null), this);
-
-        Assert.True(predicate(Row(success: false, errorCode: "order.in_progress_cannot_cancel")));
-        Assert.False(predicate(Row(success: false, errorCode: "order.not_found")));
-        Assert.False(predicate(Row(success: true, errorCode: null)));
-    }
-
-    [Fact]
     public void ClientAudience_Filter_Reaches_Specification()
     {
-        var predicate = Predicate(new CustomerActionAuditFilter(null, null, null, null, null, null, null, null, ClientAudience: "cleansia.mobile.customer"), this);
+        var predicate = Predicate(new CustomerActionAuditFilter(null, null, null, null, null, null, null, ClientAudience: "cleansia.mobile.customer"), this);
 
         Assert.True(predicate(Row(clientAudience: "cleansia.mobile.customer")));
         Assert.False(predicate(Row(clientAudience: "cleansia.customer")));

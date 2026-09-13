@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auditing.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Disputes;
@@ -31,36 +32,37 @@ public class GetActionTimeline
     /// </summary>
     public const int RecentResourceCap = 1000;
 
-    public record Query(
-        string? UserId = null,
-        string? ResourceType = null,
-        string? ResourceId = null,
-        int Offset = 0,
-        int Limit = 20) : IQuery<PagedData<TimelineEntryDto>>;
+    /// <summary>
+    /// <see cref="IQuery{TResponse}"/> rather than the paged <c>IRequest&lt;PagedData&lt;T&gt;&gt;</c>
+    /// form because the "exactly one key" rule must answer 400, and the validation pipeline only runs
+    /// for a <c>BusinessResult</c> response. The order is fixed newest-first; <c>Sort</c> is not read.
+    /// </summary>
+    public class Request : DataRangeRequest, IQuery<PagedData<TimelineEntryDto>>
+    {
+        public string? UserId { get; init; }
+        public string? ResourceType { get; init; }
+        public string? ResourceId { get; init; }
+    }
 
-    public class Validator : AbstractValidator<Query>
+    public class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
             RuleFor(x => x)
                 .Must(KeyedByExactlyOneOfUserOrResource)
                 .WithMessage(BusinessErrorMessage.TimelineFilterRequired)
-                .WithName(nameof(Query.UserId));
-
-            RuleFor(x => x.Offset)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+                .WithName(nameof(Request.UserId));
 
             RuleFor(x => x.Limit)
-                .InclusiveBetween(1, MaxLimit)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+                .LessThanOrEqualTo(MaxLimit)
+                .WithMessage(BusinessErrorMessage.PageSizeExceeded);
         }
 
-        private static bool KeyedByExactlyOneOfUserOrResource(Query query)
+        private static bool KeyedByExactlyOneOfUserOrResource(Request request)
         {
-            var hasUser = !string.IsNullOrWhiteSpace(query.UserId);
-            var hasType = !string.IsNullOrWhiteSpace(query.ResourceType);
-            var hasId = !string.IsNullOrWhiteSpace(query.ResourceId);
+            var hasUser = !string.IsNullOrWhiteSpace(request.UserId);
+            var hasType = !string.IsNullOrWhiteSpace(request.ResourceType);
+            var hasId = !string.IsNullOrWhiteSpace(request.ResourceId);
 
             return (hasUser && !hasType && !hasId) || (!hasUser && hasType && hasId);
         }
@@ -73,9 +75,9 @@ public class GetActionTimeline
         IOrderRepository orderRepository,
         IDisputeRepository disputeRepository,
         IUserMembershipRepository userMembershipRepository)
-        : IQueryHandler<Query, PagedData<TimelineEntryDto>>
+        : IQueryHandler<Request, PagedData<TimelineEntryDto>>
     {
-        public async Task<BusinessResult<PagedData<TimelineEntryDto>>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<BusinessResult<PagedData<TimelineEntryDto>>> Handle(Request request, CancellationToken cancellationToken)
         {
             var (customer, admin, employee) = string.IsNullOrWhiteSpace(request.UserId)
                 ? ByResource(request.ResourceType!, request.ResourceId!)
@@ -112,11 +114,7 @@ public class GetActionTimeline
 
             var page = Page(customerRows.Concat(adminRows).Concat(employeeRows), request.Offset, request.Limit);
 
-            return BusinessResult.Success(new PagedData<TimelineEntryDto>(
-                PageNumber: request.Offset / request.Limit + 1,
-                PageSize: request.Limit,
-                Total: total,
-                Data: page));
+            return BusinessResult.Success(page.MapToDto(total, request));
         }
 
         private (IQueryable<CustomerActionAudit>, IQueryable<AdminActionAudit>, IQueryable<EmployeeActionAudit>) ByResource(
@@ -180,12 +178,13 @@ public class GetActionTimeline
 
     /// <summary>
     /// The employee table stores its act as an enum; the timeline speaks the same dotted labels the
-    /// other two tables carry, so one column reads the same whatever the source.
+    /// other two tables carry, so one column reads the same whatever the source. No fallback arm: a new
+    /// enum member must be named here, or it would reach the timeline under a label no catalogue knows.
     /// </summary>
     public static string EmployeeActionLabel(EmployeeAuditAction action) => action switch
     {
         EmployeeAuditAction.CoverRequested => "employee.order.cover_requested",
         EmployeeAuditAction.OrderDropped => "employee.order.dropped",
-        _ => $"employee.{action.ToString().ToLowerInvariant()}",
+        _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
     };
 }

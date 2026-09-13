@@ -13,7 +13,6 @@ public class CustomerActionAuditSpecification : BaseSpecification<string?>, ISpe
     public DateTimeOffset? OccurredFrom { get; set; }
     public DateTimeOffset? OccurredTo { get; set; }
     public bool? Success { get; set; }
-    public string? ErrorCode { get; set; }
     public string? ClientAudience { get; set; }
 
     public Expression<Func<CustomerActionAudit, bool>> SatisfiedBy()
@@ -55,12 +54,6 @@ public class CustomerActionAuditSpecification : BaseSpecification<string?>, ISpe
             specification &= new DirectSpecification<CustomerActionAudit>(x => x.Success == Success.Value);
         }
 
-        if (!string.IsNullOrEmpty(ErrorCode))
-        {
-            specification &= new DirectSpecification<CustomerActionAudit>(x =>
-                x.ErrorCode != null && x.ErrorCode.Contains(ErrorCode));
-        }
-
         if (!string.IsNullOrEmpty(ClientAudience))
         {
             specification &= new DirectSpecification<CustomerActionAudit>(x => x.ClientAudience == ClientAudience);
@@ -77,7 +70,6 @@ public class CustomerActionAuditSpecification : BaseSpecification<string?>, ISpe
         DateTimeOffset? occurredFrom = null,
         DateTimeOffset? occurredTo = null,
         bool? success = null,
-        string? errorCode = null,
         string? clientAudience = null)
     {
         return new CustomerActionAuditSpecification
@@ -89,7 +81,6 @@ public class CustomerActionAuditSpecification : BaseSpecification<string?>, ISpe
             OccurredFrom = occurredFrom,
             OccurredTo = occurredTo,
             Success = success,
-            ErrorCode = errorCode,
             ClientAudience = clientAudience
         };
     }

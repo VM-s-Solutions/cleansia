@@ -248,6 +248,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_EmployeeActionAudits_EmployeeId_CreatedOn");
 
+                    b.HasIndex("OrderId", "CreatedOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_EmployeeActionAudits_OrderId_CreatedOn");
+
                     b.ToTable("EmployeeActionAudits", (string)null);
                 });
 

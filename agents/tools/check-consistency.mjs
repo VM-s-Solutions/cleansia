@@ -236,11 +236,12 @@ function checkBackend(roots) {
                     );
             }
         });
-        // A1/A5 — paged queries
-        if (/IRequest<\s*PagedData</.test(text)) {
+        // A1/A5 — paged queries. IQuery<PagedData<>> is the same archetype behind a BusinessResult
+        // (a paged query that must answer 400 from its validator) and is held to the same two rules.
+        if (/I(Request|Query)<\s*PagedData</.test(text)) {
             if (!/:\s*DataRangeRequest/.test(text)) {
                 const n =
-                    lines.findIndex((l) => /IRequest<\s*PagedData</.test(l)) +
+                    lines.findIndex((l) => /I(Request|Query)<\s*PagedData</.test(l)) +
                     1;
                 add(
                     f,

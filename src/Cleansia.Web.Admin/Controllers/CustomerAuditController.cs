@@ -43,9 +43,9 @@ public class CustomerAuditController(IMediator mediator) : ApiController(mediato
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetActionTimeline([FromQuery] GetActionTimeline.Query query, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetActionTimeline([FromQuery] GetActionTimeline.Request request, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(query, cancellationToken);
+        var result = await Mediator.Send(request, cancellationToken);
         return HandleResult<PagedData<TimelineEntryDto>>(result);
     }
 }

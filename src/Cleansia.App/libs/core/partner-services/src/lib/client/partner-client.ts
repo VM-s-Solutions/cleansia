@@ -13064,6 +13064,7 @@ export class RegisterCommand implements IRegisterCommand {
     language!: string | undefined;
     referralCode!: string | undefined;
     countryId!: string | undefined;
+    termsAccepted!: boolean | undefined;
 
     constructor(data?: IRegisterCommand) {
         if (data) {
@@ -13083,6 +13084,7 @@ export class RegisterCommand implements IRegisterCommand {
             this.language = Data["language"];
             this.referralCode = Data["referralCode"];
             this.countryId = Data["countryId"];
+            this.termsAccepted = Data["termsAccepted"];
         }
     }
 
@@ -13102,6 +13104,7 @@ export class RegisterCommand implements IRegisterCommand {
         data["language"] = this.language;
         data["referralCode"] = this.referralCode;
         data["countryId"] = this.countryId;
+        data["termsAccepted"] = this.termsAccepted;
         return data;
     }
 }
@@ -13114,6 +13117,7 @@ export interface IRegisterCommand {
     language: string | undefined;
     referralCode: string | undefined;
     countryId: string | undefined;
+    termsAccepted: boolean | undefined;
 }
 
 export class RegistrationCompletionStatus implements IRegistrationCompletionStatus {

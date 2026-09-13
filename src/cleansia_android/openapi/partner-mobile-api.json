@@ -10400,6 +10400,10 @@
           "countryId": {
             "type": "string",
             "nullable": true
+          },
+          "termsAccepted": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false

@@ -39,21 +39,63 @@ class MembershipCurrencyBindingTest {
         assertEquals("these lines label a plan price by hand", emptyList<String>(), offenders)
     }
 
+    /**
+     * ADR-0059 D3: every plan figure is labelled with the plan's own `currencyCode` (the market's), the
+     * Google Pay sheet is gated on the same code, and a swap price is quoted only in the membership's
+     * own currency — never the catalogue default, never a literal.
+     */
     @Test
-    fun `every plan price goes through the shared formatter with the resolved currency`() {
+    fun `every plan price goes through the shared formatter with the payload's currency`() {
         val subscribe = source(File(membershipDir, "SubscribePlusScreen.kt")).replace(Regex("\\s+"), " ")
         assertTrue(
-            "the subscribe screen no longer reads the resolved currency",
-            subscribe.contains("viewModel.currencyCode.collectAsStateWithLifecycle()"),
+            "the hero no longer labels with the selected plan's currency",
+            subscribe.contains("val currencyCode = selectedPlan?.currencyCode"),
         )
         assertTrue(
             "the plan price no longer goes through formatOrderPrice",
             subscribe.contains("formatOrderPrice(amount, currencyCode)"),
         )
+        assertTrue(
+            "the CTA disclosure no longer formats with the plan's currency",
+            subscribe.contains("formatPlanPrice(plan.price, plan.currencyCode)"),
+        )
+        assertTrue(
+            "the Google Pay sheet is no longer gated on the plan's currency",
+            subscribe.contains("currencyCode = selectedPlan?.currencyCode"),
+        )
+        assertTrue(
+            "the Google Pay country no longer follows the market",
+            subscribe.contains("countryCode = market.selectedOrNull?.isoAlpha2"),
+        )
+        assertTrue(
+            "the subscribe screen reads the catalogue default again",
+            !subscribe.contains("catalogRepository") && !subscribe.contains("viewModel.currencyCode"),
+        )
         val card = source(File(membershipDir, "MembershipManagementCard.kt")).replace(Regex("\\s+"), " ")
         assertTrue(
-            "the switch-to-annual dialog no longer formats with the resolved currency",
-            card.contains("formatOrderPrice(yearlyPlan.price, currencyCode)"),
+            "the switch-to-annual dialog no longer formats with the yearly plan's own currency",
+            card.contains("formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode)"),
+        )
+        assertTrue(
+            "the switch-to-annual CTA no longer requires the plan to be priced in the membership's currency",
+            card.contains("it.currencyCode == membership?.currencyCode"),
+        )
+    }
+
+    /** The not-on-sale state names no price and no button (ADR-0059 D3). */
+    @Test
+    fun `the not-on-sale state renders the empty pattern with no price and no button`() {
+        val subscribe = source(File(membershipDir, "SubscribePlusScreen.kt"))
+        val start = subscribe.indexOf("private fun NotAvailableInMarket(")
+        assertTrue("the subscribe screen lost its not-on-sale state", start >= 0)
+        val body = subscribe.substring(start, subscribe.indexOf("\n}\n", start))
+        assertTrue("the empty state must show the not-available copy", body.contains("R.string.plus_not_available_in_market"))
+        assertTrue("the empty state must draw the leaning mascot", body.contains("R.drawable.mascot_leaning"))
+        assertTrue("the empty state must not offer a CTA", !body.contains("StickyCtaBar") && !body.contains("CleansiaPrimaryButton"))
+        assertTrue("the empty state must not print a price", !body.contains("formatPlanPrice") && !body.contains("formatOrderPrice"))
+        assertTrue(
+            "the screen must only render the empty state once the server has answered with no plans",
+            subscribe.contains("val notOnSaleInMarket = plansLoaded && plans.isEmpty()"),
         )
     }
 

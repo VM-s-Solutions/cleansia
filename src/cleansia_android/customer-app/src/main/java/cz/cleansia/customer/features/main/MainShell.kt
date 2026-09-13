@@ -44,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
+import cz.cleansia.customer.core.market.offersAChoice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,6 +88,8 @@ fun MainShell(
     onOpenRewardsActivity: () -> Unit = {},
     /** Tap on the Home upsell carousel's Plus card. Routes to Subscribe Plus. */
     onSubscribePlus: () -> Unit = {},
+    /** Tap on the Home header's market chip. Routes to the Market preference screen. */
+    onOpenMarket: () -> Unit = {},
     /** Tap on "Set up recurring" affordance from Home (carousel slide or empty section). */
     onSetupRecurring: () -> Unit = {},
     /** Tap on "Manage" / open a specific recurring schedule from Home. */
@@ -223,6 +226,9 @@ fun MainShell(
         }
     }
 
+    // The market directory decides whether the Profile tab offers a Market row at all.
+    val marketState by shellViewModel.marketRepository.state.collectAsStateWithLifecycle()
+
     // Warm the orders cache so the Orders tab is instant on first tap. Gate on
     // `loaded` like the catalog — avoids re-fetching on every recomposition
     // after navigating back from a child screen.
@@ -307,6 +313,7 @@ fun MainShell(
                     onOrderClick = onOrderClick,
                     onSeeAllOrders = { selectTab(MainTab.Orders) },
                     onSubscribePlus = onSubscribePlus,
+                    onOpenMarket = onOpenMarket,
                     onOpenReferral = { selectTab(MainTab.Rewards) },
                     onBookPackage = { packageId ->
                         prefillPackageId = packageId
@@ -330,6 +337,7 @@ fun MainShell(
                 MainTab.Profile -> ProfileTab(
                     user = currentUser,
                     isPlus = isPlus,
+                    showMarketRow = marketState.offersAChoice,
                     onLogout = onLogout,
                     onRowClick = onProfileRow,
                     onAvatarLoadFailed = profileVm::onAvatarLoadFailed,

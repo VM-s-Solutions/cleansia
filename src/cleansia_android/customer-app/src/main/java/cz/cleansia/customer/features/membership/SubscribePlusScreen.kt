@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.core.market.selectedOrNull
+import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import com.stripe.android.paymentsheet.rememberPaymentSheet
@@ -85,7 +87,9 @@ fun SubscribePlusScreen(
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val current by viewModel.current.collectAsStateWithLifecycle()
     val plans by viewModel.plans.collectAsStateWithLifecycle()
-    val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
+    val plansLoaded by viewModel.plansLoaded.collectAsStateWithLifecycle()
+    val market by viewModel.market.collectAsStateWithLifecycle()
+    val notOnSaleInMarket = plansLoaded && plans.isEmpty()
 
     var selectedPlanCode by remember(plans) {
         mutableStateOf(plans.firstOrNull { it.billingInterval == 1 }?.code ?: plans.firstOrNull()?.code.orEmpty())
@@ -132,6 +136,13 @@ fun SubscribePlusScreen(
         }
     }
 
+    // ADR-0059 D3: an empty list is the server saying Plus is not on sale in the chosen market — no
+    // price, no button, just the hero's top row and the customer app's own empty pattern.
+    if (notOnSaleInMarket) {
+        NotAvailableInMarket(onBack = onBack)
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Scrollable content sits behind the sticky CTA bar; we add bottom
         // padding equal to the bar height so the last perk doesn't get hidden.
@@ -147,7 +158,6 @@ fun SubscribePlusScreen(
                 selectedPlanCode = selectedPlanCode,
                 onSelectPlan = { selectedPlanCode = it },
                 selectedPlan = selectedPlan,
-                currencyCode = currencyCode,
             )
 
             Spacer(Modifier.height(20.dp))
@@ -205,7 +215,7 @@ fun SubscribePlusScreen(
             } else {
                 stringResource(R.string.membership_cta_subscribe)
             },
-            disclosure = buildDisclosure(selectedPlan, currencyCode),
+            disclosure = buildDisclosure(selectedPlan),
             enabled = !submitting && selectedPlanCode.isNotBlank(),
             onClick = {
                 if (selectedPlanCode.isBlank()) return@StickyCtaBar
@@ -229,13 +239,10 @@ fun SubscribePlusScreen(
                                         } else {
                                             PaymentSheet.GooglePayConfiguration.Environment.Test
                                         },
-                                        // Stripe: "The two-letter ISO 3166 code of the country of your
-                                        // business" — the merchant account, not the plan.
-                                        countryCode = "CZ",
+                                        countryCode = market.selectedOrNull?.isoAlpha2 ?: "CZ",
                                         // A SetupIntent carries no currency, so this is what the Google Pay
-                                        // sheet shows and what gates it; the plan's price is stated in the
-                                        // platform default.
-                                        currencyCode = currencyCode,
+                                        // sheet shows and what gates it: the currency the plan is sold in.
+                                        currencyCode = selectedPlan?.currencyCode,
                                     ),
                                     allowsDelayedPaymentMethods = false,
                                 ),
@@ -271,13 +278,13 @@ fun SubscribePlusScreen(
 @Composable
 private fun HeroBlock(
     onBack: () -> Unit,
-    plans: List<cz.cleansia.customer.core.memberships.MembershipPlanDto>,
+    plans: List<MembershipPlanDto>,
     selectedPlanCode: String,
     onSelectPlan: (String) -> Unit,
-    selectedPlan: cz.cleansia.customer.core.memberships.MembershipPlanDto?,
-    currencyCode: String?,
+    selectedPlan: MembershipPlanDto?,
 ) {
     val trialDays = selectedPlan?.trialPeriodDays ?: 0
+    val currencyCode = selectedPlan?.currencyCode
     // Annual: lead with the year price (no per-month split — keeps pricing
     // honest and frames the one-off annual commitment up front).
     // Monthly: lead with the per-month price as before.
@@ -317,38 +324,7 @@ private fun HeroBlock(
 
             Spacer(Modifier.height(8.dp))
 
-            // Brand splash — Plus wordmark + premium glyph. Centered for "logo
-            // moment" feel; eyes lock on this first.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Cleansia",
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 36.sp,
-                    ),
-                    color = Color.White,
-                )
-                Spacer(Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Sky400)
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = "PLUS",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                        ),
-                        color = Slate900,
-                    )
-                }
-            }
+            BrandSplash()
 
             Spacer(Modifier.height(24.dp))
 
@@ -453,6 +429,41 @@ private fun HeroBlock(
     }
 }
 
+/** Plus wordmark + premium glyph, centred for the "logo moment"; eyes lock on this first. */
+@Composable
+private fun BrandSplash() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Cleansia",
+            style = MaterialTheme.typography.displaySmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 36.sp,
+            ),
+            color = Color.White,
+        )
+        Spacer(Modifier.width(8.dp))
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Sky400)
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = "PLUS",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                ),
+                color = Slate900,
+            )
+        }
+    }
+}
+
 /**
  * Pill-style plan switcher tuned for dark hero. Compact sizing — wraps to
  * content width and centers under the price block instead of stretching to
@@ -461,7 +472,7 @@ private fun HeroBlock(
  */
 @Composable
 private fun PlanSwitcherDark(
-    plans: List<cz.cleansia.customer.core.memberships.MembershipPlanDto>,
+    plans: List<MembershipPlanDto>,
     selectedCode: String,
     onSelect: (String) -> Unit,
 ) {
@@ -684,10 +695,7 @@ private fun StickyCtaBar(
  * plain "Cancel anytime" disclosure.
  */
 @Composable
-private fun buildDisclosure(
-    plan: cz.cleansia.customer.core.memberships.MembershipPlanDto?,
-    currencyCode: String?,
-): String {
+private fun buildDisclosure(plan: MembershipPlanDto?): String {
     if (plan == null) return stringResource(R.string.membership_disclosure)
     if (plan.trialPeriodDays <= 0) return stringResource(R.string.membership_disclosure)
     // Trial-aware disclosure. Annual variant uses year price; monthly uses
@@ -698,7 +706,52 @@ private fun buildDisclosure(
     } else {
         R.string.membership_cta_disclosure_trial
     }
-    return stringResource(resId, formatPlanPrice(plan.price, currencyCode))
+    return stringResource(resId, formatPlanPrice(plan.price, plan.currencyCode))
+}
+
+/** The hero's top row over the Disputes list's empty pattern: one mascot, a title, nothing to buy. */
+@Composable
+private fun NotAvailableInMarket(onBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Sky950, Slate900)))
+                .windowInsetsPadding(WindowInsets.statusBars),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
+                IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null, tint = Color.White)
+                }
+                Spacer(Modifier.height(8.dp))
+                BrandSplash()
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.mascot_leaning),
+                contentDescription = null,
+                modifier = Modifier.size(160.dp),
+            )
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = stringResource(R.string.plus_not_available_in_market),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = cz.cleansia.core.ui.theme.Poppins,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
 }
 
 /**

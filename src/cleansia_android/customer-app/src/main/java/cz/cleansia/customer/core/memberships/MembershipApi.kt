@@ -30,18 +30,8 @@ class MembershipApi(
             createMembershipSubscriptionCommand = GenCreateMembershipSubscriptionCommand(
                 planCode = body.planCode,
                 paymentMethodConfirmed = body.paymentMethodConfirmed,
-                // forward the client idempotency token so the
-                // backend can derive the Stripe idempotency key from it and collapse
-                // retried/double-tapped confirms onto a single subscription.
-                //
-                // BLOCKED ON nswag-regen (owner-only): the generated
-                // GenCreateMembershipSubscriptionCommand does not yet carry the
-                // `idempotencyToken` field — the backend Command gained it
-                // (CreateMembershipSubscription.Command.IdempotencyToken) but the
-                // mobile client hasn't been regenerated. Once the owner regenerates
-                // the client, uncomment the line below; the token already flows here
-                // from the VM via CreateMembershipSubscriptionRequest.idempotencyToken.
-                // idempotencyToken = body.idempotencyToken,
+                countryId = body.countryId,
+                idempotencyToken = body.idempotencyToken,
             ),
         )
         return raw.mapWire { it.toAppDto() }
@@ -64,10 +54,11 @@ class MembershipApi(
      * option existed.
      *
      * The body is refused for the same reason rather than defaulted to empty: an absent plan list is
-     * not "Plus is unavailable today", and emptiness here deletes the subscribe CTA outright.
+     * not "Plus is not on sale in this market" — that is what an empty list says — and only the
+     * server's own empty answer may take the subscribe CTA off the screen.
      */
-    suspend fun getPlans(): Response<List<MembershipPlanDto>> {
-        val raw = membershipApi.membershipGetPlans()
+    suspend fun getPlans(countryId: String?): Response<List<MembershipPlanDto>> {
+        val raw = membershipApi.membershipGetPlans(countryId = countryId)
         return raw.mapWire { list -> list.required("GetMembershipPlansResponse").map { it.toAppDto() } }
     }
 
@@ -125,7 +116,7 @@ private fun GenGetMyMembershipResponse?.toAppDto(): GetMyMembershipResponse {
         hasMembership = mine.hasMembership.required("hasMembership"),
         planCode = mine.planCode,
         planName = mine.planName,
-        monthlyPriceCzk = mine.monthlyPriceCzk,
+        price = mine.price,
         discountPercentage = mine.discountPercentage,
         freeCancellationWindowHours = mine.freeCancellationWindowHours,
         allowsExpressUpgrade = mine.allowsExpressUpgrade,
@@ -133,10 +124,11 @@ private fun GenGetMyMembershipResponse?.toAppDto(): GetMyMembershipResponse {
         currentPeriodEnd = mine.currentPeriodEnd?.toString(),
         cancelRequested = mine.cancelRequested.required("cancelRequested"),
         billingInterval = mine.billingInterval,
-        monthlyEquivalentPriceCzk = mine.monthlyEquivalentPriceCzk,
+        monthlyEquivalentPrice = mine.monthlyEquivalentPrice,
         expressUpgradesPerMonth = mine.expressUpgradesPerMonth,
         expressUpgradesRemaining = mine.expressUpgradesRemaining,
         trialEndsAtUtc = mine.trialEndsAtUtc,
+        currencyCode = mine.currencyCode,
     )
 }
 
@@ -147,7 +139,8 @@ private fun GenMembershipStatus.toCode(): Int = value
  * them defaults. `billingInterval` defaulting to `1` was the sharpest: it silently reframed an annual
  * plan's price as a monthly one. `allowsExpressUpgrade = false` and `trialPeriodDays = 0` each delete
  * a benefit the card sells, and `savingsPercentVsMonthly = 0.0` deletes the reason to pick the annual
- * plan at all.
+ * plan at all. `currencyCode` is the unit of every figure on the card; a price with no unit is a
+ * guessed one.
  */
 private fun GenGetMembershipPlansResponse.toAppDto(): MembershipPlanDto =
     MembershipPlanDto(
@@ -161,6 +154,7 @@ private fun GenGetMembershipPlansResponse.toAppDto(): MembershipPlanDto =
         allowsExpressUpgrade = allowsExpressUpgrade.required("allowsExpressUpgrade"),
         trialPeriodDays = trialPeriodDays.required("trialPeriodDays"),
         savingsPercentVsMonthly = savingsPercentVsMonthly.required("savingsPercentVsMonthly"),
+        currencyCode = currencyCode.required("currencyCode"),
     )
 
 /**

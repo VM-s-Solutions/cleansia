@@ -198,7 +198,7 @@ class ServiceAreaWireTest {
             ]
         """.trimIndent()
 
-        val COUNTRY_SPEC_PROPERTIES = setOf("id", "isoCode", "name", "translations")
+        val COUNTRY_SPEC_PROPERTIES = setOf("id", "isoCode", "isoAlpha2", "name", "translations")
 
         val CITY_SPEC_PROPERTIES = setOf(
             "id",

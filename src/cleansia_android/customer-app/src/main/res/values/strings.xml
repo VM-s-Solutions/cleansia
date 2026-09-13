@@ -541,6 +541,8 @@
     <!-- Profile — language -->
     <string name="language_title">Language</string>
     <string name="language_hint">Changes apply immediately.</string>
+    <string name="market_title">Market</string>
+    <string name="market_hint">Prices, Cleansia Plus and our rules follow the market you browse in. The address of a booking decides what that order is charged in.</string>
     <string name="language_system">System default</string>
     <string name="language_english">English</string>
     <string name="language_czech">Czech</string>
@@ -550,6 +552,8 @@
 
     <string name="profile_row_appearance">Appearance</string>
     <string name="profile_row_language">Language</string>
+    <string name="profile_row_market">Market</string>
+    <string name="market_chip_a11y">Market: %1$s, prices in %2$s</string>
 
     <!-- Profile — security -->
     <string name="profile_security_title">Security</string>
@@ -823,6 +827,7 @@
     <string name="membership_plus_subtitle">A better way to keep your home clean</string>
     <string name="membership_subscribe_cta">Try Cleansia Plus</string>
     <string name="membership_disclosure">Cancel anytime. Your subscription renews automatically until you cancel.</string>
+    <string name="plus_not_available_in_market">Plus is not available in your market yet</string>
 
     <!-- Plus subscribe page redesign (Bolt+/Wolt+ style) -->
     <string name="membership_hero_headline">Start saving today</string>
@@ -1304,6 +1309,8 @@
     <string name="error_membership_not_found">Membership not found.</string>
     <string name="error_membership_plan_not_found">Membership plan not found.</string>
     <string name="error_membership_swap_same_plan">You\'re already on this plan.</string>
+    <string name="error_membership_plan_not_priced_in_currency">This plan is not on sale in your market yet.</string>
+    <string name="error_membership_stripe_customer_currency_locked">Your Plus billing is already set up in another currency. Contact support to change it.</string>
     <string name="error_order_not_completed">You can review an order only after it\'s completed.</string>
     <string name="error_order_preferred_employee_not_eligible">The selected cleaner isn\'t available for this order.</string>
     <string name="error_order_preferred_employee_membership_required">Choosing your favourite cleaner is a Cleansia Plus benefit.</string>

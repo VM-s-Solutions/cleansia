@@ -81,8 +81,12 @@ class BookingViewModelTest {
     private lateinit var serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider
     private lateinit var membershipRepository: MembershipRepository
     private lateinit var catalogRepository: CatalogRepository
+    private lateinit var marketRepository: cz.cleansia.customer.core.market.MarketRepository
     private lateinit var appContext: Context
 
+    private val marketFlow = MutableStateFlow<cz.cleansia.customer.core.market.MarketState>(
+        cz.cleansia.customer.core.market.MarketState.Unavailable,
+    )
     private val currentUserFlow = MutableStateFlow<CurrentUser?>(null)
     private val membershipFlow = MutableStateFlow<GetMyMembershipResponse?>(null)
     private val catalogCurrencyFlow = MutableStateFlow<String?>(null)
@@ -120,6 +124,8 @@ class BookingViewModelTest {
             catalogCountryFlow.value = firstArg()
             ApiResult.Success(Unit)
         }
+        marketRepository = mockk(relaxed = true)
+        every { marketRepository.state } returns marketFlow
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
@@ -153,8 +159,93 @@ class BookingViewModelTest {
         serviceAreaProvider = serviceAreaProvider,
         membershipRepository = membershipRepository,
         catalogRepository = catalogRepository,
+        marketRepository = marketRepository,
         appContext = appContext,
     )
+
+    private fun slovakMarket(): cz.cleansia.customer.core.market.MarketState {
+        val svk = cz.cleansia.customer.core.market.MarketListItem(
+            countryId = "svk-id",
+            isoCode = "SVK",
+            isoAlpha2 = "SK",
+            name = "Slovakia",
+            currencyId = "cur-eur",
+            currencyCode = "EUR",
+            currencySymbol = "€",
+            isDefault = false,
+        )
+        return cz.cleansia.customer.core.market.MarketState.Resolved(listOf(svk), svk)
+    }
+
+    // ADR-0058 D4: before there is an address the wizard prices the chosen market; once the address
+    // names a country that country wins and a market chosen afterwards touches nothing.
+
+    @Test
+    fun quoteWatcher_beforeAnAddress_quotesInTheChosenMarket() = runTest {
+        marketFlow.value = slovakMarket()
+        catalogServicesFlow.value = listOf(service("s-1"))
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } returns Response.success(quoteWith(currencyCode = "EUR"))
+
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+
+        assertEquals("svk-id", sent.last().countryId)
+    }
+
+    @Test
+    fun switchingTheMarketBeforeAnAddress_reReadsTheCatalogueForIt() = runTest {
+        catalogCountryFlow.value = "cze-id"
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        marketFlow.value = slovakMarket()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepository.refresh("svk-id") }
+        assertEquals(1, vm.step.value)
+    }
+
+    @Test
+    fun switchingTheMarketAfterAnAddress_touchesNeitherTheCatalogueNorTheQuote() = runTest {
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(ServicedCountry(id = "cze-id", isoCode = "cz", name = "Czechia"))
+        catalogServicesFlow.value = listOf(service("s-1"))
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } returns Response.success(quoteWith())
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1"), countryIsoCode = "cz") }
+        advanceUntilIdle()
+        assertEquals("cze-id", sent.last().countryId)
+        val quotesBefore = sent.size
+
+        marketFlow.value = slovakMarket()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { catalogRepository.refresh("svk-id") }
+        assertEquals(quotesBefore, sent.size)
+        assertEquals("cze-id", sent.last().countryId)
+    }
+
+    /** The home strip prices from this repository, so a foreign-address booking hands the market back, not the default. */
+    @Test
+    fun reset_afterAForeignAddress_returnsTheCatalogueToTheChosenMarket() = runTest {
+        marketFlow.value = slovakMarket()
+        catalogCountryFlow.value = "svk-id"
+        coEvery { serviceAreaProvider.loadCountries() } returns listOf(ServicedCountry(id = "cze-id", isoCode = "cz", name = "Czechia"))
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.update { it.copy(countryIsoCode = "cz") }
+        advanceUntilIdle()
+        assertEquals("cze-id", catalogCountryFlow.value)
+
+        vm.reset()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepository.refresh("svk-id") }
+        coVerify(exactly = 0) { catalogRepository.refresh(null) }
+    }
 
     private fun completeUser() = CurrentUser(
         id = "u-1",

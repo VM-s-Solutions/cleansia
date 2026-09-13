@@ -11,13 +11,20 @@ import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.loyalty.TierInfoDto
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.MarketState
+import cz.cleansia.customer.core.market.defaultCurrencyCode
 import cz.cleansia.customer.core.referral.ReferralAccountDto
 import cz.cleansia.customer.core.referral.ReferralRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -29,6 +36,7 @@ class RewardsTabViewModel @Inject constructor(
     private val loyaltyRepository: LoyaltyRepository,
     private val referralRepository: ReferralRepository,
     catalogRepository: CatalogRepository,
+    marketRepository: MarketRepository,
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
@@ -38,8 +46,26 @@ class RewardsTabViewModel @Inject constructor(
     val loaded: StateFlow<Boolean> = loyaltyRepository.loaded
     val referralAccount: StateFlow<ReferralAccountDto?> = referralRepository.account
 
-    /** The tier floor is a platform-default-currency number, so it is labelled with the catalogue's default code. */
-    val currencyCode: StateFlow<String?> = catalogRepository.currencyCode
+    /** The market's currency when one resolved, else the catalogue default the server prices in. */
+    val currencyCode: StateFlow<String?> =
+        combine(marketRepository.state, catalogRepository.currencyCode) { market, catalogDefault ->
+            (market as? MarketState.Resolved)?.selected?.currencyCode ?: catalogDefault
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * The tier floor is a platform-default-currency number enforced only on orders in that currency
+     * (ADR-0058 D5), so the floor line renders only when the market's currency is the default —
+     * otherwise no floor applies and nothing renders a guessed unit. With no market resolved the
+     * server prices the default, and the floor applies.
+     */
+    val tierFloorApplies: StateFlow<Boolean> = marketRepository.state
+        .map { market ->
+            when (market) {
+                MarketState.Unavailable -> true
+                is MarketState.Resolved -> market.selected.currencyCode == market.defaultCurrencyCode
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     private val _activityPreview = MutableStateFlow<List<LoyaltyActivityItemDto>>(emptyList())
     val activityPreview: StateFlow<List<LoyaltyActivityItemDto>> = _activityPreview.asStateFlow()

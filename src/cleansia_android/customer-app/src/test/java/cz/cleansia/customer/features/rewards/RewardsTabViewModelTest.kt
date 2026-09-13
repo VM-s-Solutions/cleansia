@@ -21,6 +21,7 @@ import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -36,7 +37,11 @@ class RewardsTabViewModelTest {
     private lateinit var loyaltyRepository: LoyaltyRepository
     private lateinit var referralRepository: ReferralRepository
     private lateinit var catalogRepository: CatalogRepository
+    private lateinit var marketRepository: cz.cleansia.customer.core.market.MarketRepository
     private lateinit var snackbar: SnackbarController
+    private val marketState = MutableStateFlow<cz.cleansia.customer.core.market.MarketState>(
+        cz.cleansia.customer.core.market.MarketState.Unavailable,
+    )
 
     private val account = MutableStateFlow<LoyaltyAccountDto?>(null)
     private val tiers = MutableStateFlow<List<TierInfoDto>>(emptyList())
@@ -57,9 +62,72 @@ class RewardsTabViewModelTest {
         every { loyaltyRepository.loaded } returns loaded
         every { referralRepository.account } returns referralAccount
         every { catalogRepository.currencyCode } returns currencyCode
+        marketRepository = mockk(relaxed = true)
+        every { marketRepository.state } returns marketState
     }
 
-    private fun viewModel() = RewardsTabViewModel(loyaltyRepository, referralRepository, catalogRepository, snackbar)
+    private fun viewModel() =
+        RewardsTabViewModel(loyaltyRepository, referralRepository, catalogRepository, marketRepository, snackbar)
+
+    private fun market(iso: String, currency: String, isDefault: Boolean) = cz.cleansia.customer.core.market.MarketListItem(
+        countryId = "$iso-id",
+        isoCode = iso,
+        isoAlpha2 = iso.take(2),
+        name = iso,
+        currencyId = "$currency-id",
+        currencyCode = currency,
+        currencySymbol = currency,
+        isDefault = isDefault,
+    )
+
+    private val cze = market("CZE", "CZK", isDefault = true)
+    private val svk = market("SVK", "EUR", isDefault = false)
+
+    // ADR-0058 D5: the tier floor is a platform-default-currency number enforced only on orders in
+    // that currency, so the floor line renders only when the market's currency is the default.
+
+    @Test
+    fun `with no market the floor applies and is labelled with the catalogue default`() = runTest {
+        currencyCode.value = "CZK"
+        val vm = viewModel()
+        runCurrent()
+
+        assertEquals(true, vm.tierFloorApplies.value)
+        assertEquals("CZK", vm.currencyCode.value)
+    }
+
+    @Test
+    fun `in the default-currency market the floor applies and is labelled with that currency`() = runTest {
+        marketState.value = cz.cleansia.customer.core.market.MarketState.Resolved(listOf(cze, svk), selected = cze)
+        val vm = viewModel()
+        runCurrent()
+
+        assertEquals(true, vm.tierFloorApplies.value)
+        assertEquals("CZK", vm.currencyCode.value)
+    }
+
+    @Test
+    fun `in another market the floor line is omitted`() = runTest {
+        marketState.value = cz.cleansia.customer.core.market.MarketState.Resolved(listOf(cze, svk), selected = svk)
+        val vm = viewModel()
+        runCurrent()
+
+        assertEquals(false, vm.tierFloorApplies.value)
+        assertEquals("EUR", vm.currencyCode.value)
+    }
+
+    @Test
+    fun `switching the market moves the floor line without a restart`() = runTest {
+        marketState.value = cz.cleansia.customer.core.market.MarketState.Resolved(listOf(cze, svk), selected = cze)
+        val vm = viewModel()
+        runCurrent()
+        assertEquals(true, vm.tierFloorApplies.value)
+
+        marketState.value = cz.cleansia.customer.core.market.MarketState.Resolved(listOf(cze, svk), selected = svk)
+        runCurrent()
+
+        assertEquals(false, vm.tierFloorApplies.value)
+    }
 
     @Test
     fun `the exposed flows mirror the repositories`() = runTest {
@@ -74,6 +142,7 @@ class RewardsTabViewModelTest {
         loaded.value = true
         referralAccount.value = referral
         currencyCode.value = "EUR"
+        runCurrent()
 
         assertEquals(loyalty, vm.account.value)
         assertEquals(listOf(tier), vm.tiers.value)

@@ -41,6 +41,7 @@ import cz.cleansia.customer.features.profile.DevicesScreen
 import cz.cleansia.customer.features.profile.EditProfileScreen
 import cz.cleansia.customer.features.profile.HelpSupportScreen
 import cz.cleansia.customer.features.profile.LanguageScreen
+import cz.cleansia.customer.features.profile.MarketScreen
 import cz.cleansia.customer.features.profile.NotificationsScreen
 import cz.cleansia.customer.features.profile.SecurityScreen
 import cz.cleansia.customer.features.rewards.RewardsActivityScreen
@@ -334,6 +335,7 @@ fun CleansiaNavHost(
                         "devices" -> navController.navigate(Routes.Devices)
                         "appearance" -> navController.navigate(Routes.Appearance)
                         "language" -> navController.navigate(Routes.Language)
+                        "market" -> navController.navigate(Routes.Market)
                         "help" -> navController.navigate(Routes.HelpSupport)
                         "delete_account" -> navController.navigate(Routes.DeleteAccount)
                         "subscribe_plus" -> navController.navigate(Routes.SubscribePlus)
@@ -354,6 +356,9 @@ fun CleansiaNavHost(
                 },
                 onSubscribePlus = {
                     navController.navigate(Routes.SubscribePlus)
+                },
+                onOpenMarket = {
+                    navController.navigate(Routes.Market)
                 },
                 onSetupRecurring = {
                     navController.navigate(Routes.CreateRecurringBooking())
@@ -536,6 +541,14 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             LanguageScreen(onBack = { navController.popBackStack() })
+        }
+        composable<Routes.Market>(
+            enterTransition = pushEnter,
+            exitTransition = pushExit,
+            popEnterTransition = popEnter,
+            popExitTransition = popExit,
+        ) {
+            MarketScreen(onBack = { navController.popBackStack() })
         }
         composable<Routes.SubscribePlus>(
             enterTransition = pushEnter,

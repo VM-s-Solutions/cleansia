@@ -537,6 +537,8 @@
     <!-- Profile — language -->
     <string name="language_title">Jazyk</string>
     <string name="language_hint">Změny se použijí okamžitě.</string>
+    <string name="market_title">Trh</string>
+    <string name="market_hint">Ceny, Cleansia Plus i naše pravidla se řídí trhem, který si prohlížíte. O tom, v čem se objednávka účtuje, rozhoduje její adresa.</string>
     <string name="language_system">Podle systému</string>
     <string name="language_english">Angličtina</string>
     <string name="language_czech">Čeština</string>
@@ -546,6 +548,8 @@
 
     <string name="profile_row_appearance">Vzhled</string>
     <string name="profile_row_language">Jazyk</string>
+    <string name="profile_row_market">Trh</string>
+    <string name="market_chip_a11y">Trh: %1$s, ceny v %2$s</string>
 
     <!-- Profile — security -->
     <string name="profile_security_title">Zabezpečení</string>
@@ -810,6 +814,7 @@
     <string name="membership_plus_subtitle">Lepší způsob, jak udržovat domov čistý</string>
     <string name="membership_subscribe_cta">Vyzkoušet Cleansia Plus</string>
     <string name="membership_disclosure">Můžete kdykoli zrušit. Předplatné se obnovuje automaticky, dokud ho nezrušíte.</string>
+    <string name="plus_not_available_in_market">Plus zatím není na vašem trhu k dispozici</string>
 
     <!-- Plus subscribe page redesign -->
     <string name="membership_hero_headline">Začněte šetřit ještě dnes</string>
@@ -1278,6 +1283,8 @@
     <string name="error_membership_not_found">Členství nenalezeno.</string>
     <string name="error_membership_plan_not_found">Plán členství nebyl nalezen.</string>
     <string name="error_membership_swap_same_plan">Tento plán již máte.</string>
+    <string name="error_membership_plan_not_priced_in_currency">Tento plán zatím není na vašem trhu v prodeji.</string>
+    <string name="error_membership_stripe_customer_currency_locked">Vaše platby za Plus jsou už nastavené v jiné měně. Pro změnu kontaktujte podporu.</string>
     <string name="error_order_not_completed">Objednávku lze hodnotit až po dokončení.</string>
     <string name="error_order_preferred_employee_not_eligible">Vybraný uklízeč není pro tuto objednávku k dispozici.</string>
     <string name="error_order_preferred_employee_membership_required">Výběr oblíbeného uklízeče je výhoda Cleansia Plus.</string>

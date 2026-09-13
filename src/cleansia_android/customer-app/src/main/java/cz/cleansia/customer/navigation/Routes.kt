@@ -79,6 +79,10 @@ object Routes {
     @Serializable
     data object Language
 
+    /** Profile → Preferences → Market, also the home chip's destination (ADR-0058 D6). */
+    @Serializable
+    data object Market
+
     // ── Cleansia Plus ──
     /** Single subscribe page, reachable from the inactive membership card. */
     @Serializable

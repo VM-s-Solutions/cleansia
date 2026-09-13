@@ -37,6 +37,8 @@ data class CreateMembershipSubscriptionRequest(
     val planCode: String,
     val paymentMethodConfirmed: Boolean = false,
     val idempotencyToken: String? = null,
+    /** The chosen market's country: the subscription is created in its currency and keeps it for life. */
+    val countryId: String? = null,
 )
 
 /**
@@ -64,13 +66,16 @@ data class CancelMembershipSubscriptionResponse(
  * all other fields are null and the UI shows the upgrade CTA. Otherwise the
  * UI renders the management card with plan + perks + period end + cancel
  * action (gated on [cancelRequested]).
+ *
+ * [price] and [monthlyEquivalentPrice] are stated in [currencyCode] — the subscription's own
+ * currency, which may differ from the market the customer browses in (ADR-0059 D2).
  */
 @Serializable
 data class GetMyMembershipResponse(
     val hasMembership: Boolean,
     val planCode: String? = null,
     val planName: String? = null,
-    val monthlyPriceCzk: Double? = null,
+    val price: Double? = null,
     val discountPercentage: Double? = null,
     val freeCancellationWindowHours: Int? = null,
     val allowsExpressUpgrade: Boolean? = null,
@@ -80,8 +85,8 @@ data class GetMyMembershipResponse(
     val cancelRequested: Boolean = false,
     /** 1 = Monthly, 2 = Yearly. Drives "Switch to annual" CTA gating. */
     val billingInterval: Int? = null,
-    /** Per-month equivalent: same as [monthlyPriceCzk] for monthly, /12 for yearly. */
-    val monthlyEquivalentPriceCzk: Double? = null,
+    /** Per-month equivalent: same as [price] for monthly, /12 for yearly. */
+    val monthlyEquivalentPrice: Double? = null,
     /** The resolver's quota, already zero for a plan whose express flag is off. */
     val expressUpgradesPerMonth: Int? = null,
     /**
@@ -91,13 +96,16 @@ data class GetMyMembershipResponse(
     val expressUpgradesRemaining: Int? = null,
     /** End of the Stripe free trial. In the future means metered benefits have not started yet. */
     val trialEndsAtUtc: kotlinx.datetime.Instant? = null,
+    /** Null only for a non-member, or when the plan's price row in this currency was deleted. */
+    val currencyCode: String? = null,
 )
 
 /**
  * Mirrors backend `GetMembershipPlans.Response`. Drives the monthly/yearly
  * switcher on the subscribe screen. [savingsPercentVsMonthly] is computed
  * server-side relative to the cheapest monthly plan in the catalog — UI just
- * renders the badge.
+ * renders the badge. Every figure is in [currencyCode], the market's currency;
+ * an empty list means Plus is not on sale in that market (ADR-0059 D3).
  */
 @Serializable
 data class MembershipPlanDto(
@@ -114,6 +122,7 @@ data class MembershipPlanDto(
     val allowsExpressUpgrade: Boolean,
     val trialPeriodDays: Int,
     val savingsPercentVsMonthly: Double,
+    val currencyCode: String,
 )
 
 @Serializable

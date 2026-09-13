@@ -110,6 +110,7 @@ fun CreateRecurringScreen(
     val savedAddresses by viewModel.savedAddresses.collectAsStateWithLifecycle()
     val services by viewModel.services.collectAsStateWithLifecycle()
     val packages by viewModel.packages.collectAsStateWithLifecycle()
+    val catalogState by viewModel.catalogState.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
@@ -199,6 +200,7 @@ fun CreateRecurringScreen(
                             state = state,
                             services = services,
                             packages = packages,
+                            catalogState = catalogState,
                             viewModel = viewModel,
                         )
                         3 -> WhereAndPayStep(
@@ -479,18 +481,37 @@ private fun WhatStep(
     state: CreateRecurringFormState,
     services: List<ServiceListItem>,
     packages: List<PackageListItem>,
+    catalogState: RecurringCatalogState,
     viewModel: CreateRecurringViewModel,
 ) {
     SectionLabel(stringResource(R.string.recurring_create_services_label))
     Spacer(Modifier.height(8.dp))
-    ServicesPackagesPicker(
-        services = services,
-        packages = packages,
-        selectedServiceIds = state.selectedServiceIds,
-        selectedPackageIds = state.selectedPackageIds,
-        onToggleService = viewModel::toggleService,
-        onTogglePackage = viewModel::togglePackage,
-    )
+    when (catalogState) {
+        RecurringCatalogState.Loading -> Text(
+            text = stringResource(R.string.recurring_create_services_loading),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        RecurringCatalogState.Error -> CatalogRetryBlock(
+            text = stringResource(R.string.booking_catalog_error),
+            onRetry = viewModel::retryCatalog,
+        )
+        RecurringCatalogState.Loaded -> if (services.isEmpty() && packages.isEmpty()) {
+            CatalogRetryBlock(
+                text = stringResource(R.string.booking_catalog_empty),
+                onRetry = viewModel::retryCatalog,
+            )
+        } else {
+            ServicesPackagesPicker(
+                services = services,
+                packages = packages,
+                selectedServiceIds = state.selectedServiceIds,
+                selectedPackageIds = state.selectedPackageIds,
+                onToggleService = viewModel::toggleService,
+                onTogglePackage = viewModel::togglePackage,
+            )
+        }
+    }
 
     Spacer(Modifier.height(24.dp))
 
@@ -982,6 +1003,31 @@ private fun SavedAddressPicker(
     }
 }
 
+/** The booking wizard's retry control, inline under the section label. */
+@Composable
+private fun CatalogRetryBlock(text: String, onRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.booking_catalog_retry),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .clickable(onClick = onRetry)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
+}
+
 /**
  * Services + packages picker — full-width selectable cards. Package cards
  * additionally show a bulleted "Includes:" list of services contained in
@@ -997,15 +1043,6 @@ private fun ServicesPackagesPicker(
     onToggleService: (String) -> Unit,
     onTogglePackage: (String) -> Unit,
 ) {
-    if (services.isEmpty() && packages.isEmpty()) {
-        Text(
-            text = stringResource(R.string.recurring_create_services_loading),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        return
-    }
-
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (packages.isNotEmpty()) {
             Text(

@@ -14,6 +14,8 @@ import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
@@ -60,6 +62,7 @@ class CreateRecurringViewModel @Inject constructor(
     private val orderRepo: OrderRepository,
     private val catalogRepo: CatalogRepository,
     private val addressRepo: AddressRepository,
+    private val marketRepo: MarketRepository,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -82,11 +85,19 @@ class CreateRecurringViewModel @Inject constructor(
         .map { it > 1 }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    val canAdvance: StateFlow<Boolean> = combine(_state, _step) { s, step ->
+    private val _catalogState = MutableStateFlow<RecurringCatalogState>(RecurringCatalogState.Loading)
+    /**
+     * The catalogue as this form sees it. A failed entry read used to leave the form on an empty
+     * catalogue for good — nothing retried it, and a selection prefilled from the source order went
+     * to the server unpruned against a catalogue the customer never saw.
+     */
+    val catalogState: StateFlow<RecurringCatalogState> = _catalogState.asStateFlow()
+
+    val canAdvance: StateFlow<Boolean> = combine(_state, _step, _catalogState) { s, step, catalog ->
         when (step) {
             1 -> s.timeOfDay.isNotBlank()
             2 -> s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()
-            3 -> s.savedAddressId.isNotBlank() && s.startsOnIso.isNotBlank()
+            3 -> s.savedAddressId.isNotBlank() && s.startsOnIso.isNotBlank() && catalog is RecurringCatalogState.Loaded
             else -> false
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -109,9 +120,7 @@ class CreateRecurringViewModel @Inject constructor(
         // refresh while one is in flight, so a concurrent reload for the address's country would be
         // dropped and the picks pruned against the wrong catalogue.
         viewModelScope.launch {
-            catalogRepo.refresh().onError { error ->
-                if (error !is ApiError.Network) snackbar.showError(error)
-            }
+            loadCatalog(marketRepo.ensureLoaded().countryId)
             _state
                 .map { it.savedAddressId }
                 .distinctUntilChanged()
@@ -210,13 +219,18 @@ class CreateRecurringViewModel @Inject constructor(
             endsOn = endsOnIso,
         )
 
-    /** True when the form has the minimum data needed to submit. */
-    val isValid: StateFlow<Boolean> = _state
-        .map { it.isSubmittable() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    /**
+     * True when the form has the minimum data needed to submit. A schedule is only ever submitted
+     * against a catalogue the customer could see: a prefilled selection no market has vetted is not a
+     * booking.
+     */
+    val isValid: StateFlow<Boolean> = combine(_state, _catalogState) { s, catalog ->
+        s.isSubmittable() && catalog is RecurringCatalogState.Loaded
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun submit() {
         if (_submitState.value is ActionState.Submitting) return
+        if (_catalogState.value !is RecurringCatalogState.Loaded) return
         val form = _state.value
         if (!form.isSubmittable()) return
         _submitState.value = ActionState.Submitting
@@ -244,9 +258,37 @@ class CreateRecurringViewModel @Inject constructor(
         }
     }
 
+    /**
+     * The country the schedule is priced in (ADR-0058 D4): the picked address's; the chosen market's
+     * while no address is picked; null for an address with no country — the platform default.
+     */
     private suspend fun resolveCountryId(savedAddressId: String): String? {
-        if (savedAddressId.isBlank()) return null
+        if (savedAddressId.isBlank()) return marketRepo.state.value.countryId
         return addressRepo.addresses.first().firstOrNull { it.serverId == savedAddressId }?.countryId
+    }
+
+    /**
+     * A retry lands the first catalogue the selection has ever been checked against: the market
+     * watcher was idle while there was nothing to reload, and the prefill could not prune.
+     */
+    fun retryCatalog() {
+        viewModelScope.launch {
+            loadCatalog(resolveCountryId(_state.value.savedAddressId))
+            if (_catalogState.value is RecurringCatalogState.Loaded && isCatalogueForSelectedMarket()) {
+                pruneSelectionToCatalogue()
+            }
+        }
+    }
+
+    private suspend fun loadCatalog(countryId: String?) {
+        _catalogState.value = RecurringCatalogState.Loading
+        _catalogState.value = when (val result = catalogRepo.refresh(countryId)) {
+            is ApiResult.Success -> RecurringCatalogState.Loaded
+            is ApiResult.Error -> {
+                if (result.error !is ApiError.Network) snackbar.showError(result.error)
+                RecurringCatalogState.Error
+            }
+        }
     }
 
     /**
@@ -257,6 +299,7 @@ class CreateRecurringViewModel @Inject constructor(
     private suspend fun followMarket(countryId: String?) {
         if (catalogRepo.countryId.value == countryId) return
         if (catalogRepo.refresh(countryId) !is ApiResult.Success) return
+        _catalogState.value = RecurringCatalogState.Loaded
         pruneSelectionToCatalogue()
     }
 
@@ -283,13 +326,14 @@ class CreateRecurringViewModel @Inject constructor(
     }
 
     /**
-     * The home carousel prices from the same repository, so a wizard left on a foreign market must
-     * hand the default back. `viewModelScope` is already closed here — the wizard is popped before
-     * this runs — so the reload rides on a scope of its own.
+     * The home carousel prices from the same repository, so a wizard left on a foreign address's
+     * market must hand the chosen market back. `viewModelScope` is already closed here — the wizard
+     * is popped before this runs — so the reload rides on a scope of its own.
      */
     override fun onCleared() {
-        if (catalogRepo.countryId.value != null) {
-            CoroutineScope(Dispatchers.Main.immediate).launch { catalogRepo.refresh(null) }
+        val market = marketRepo.state.value.countryId
+        if (catalogRepo.countryId.value != market) {
+            CoroutineScope(Dispatchers.Main.immediate).launch { catalogRepo.refresh(market) }
         }
         super.onCleared()
     }
@@ -364,6 +408,12 @@ class CreateRecurringViewModel @Inject constructor(
             if (isCatalogueForSelectedMarket()) pruneSelectionToCatalogue()
         }
     }
+}
+
+sealed interface RecurringCatalogState {
+    data object Loading : RecurringCatalogState
+    data object Error : RecurringCatalogState
+    data object Loaded : RecurringCatalogState
 }
 
 /** Form state — single object so Compose recomposes on any field change. */

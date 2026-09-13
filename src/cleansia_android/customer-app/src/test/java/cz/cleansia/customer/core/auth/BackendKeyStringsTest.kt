@@ -75,6 +75,17 @@ class BackendKeyStringsTest {
         "order.selected_package.invalid",
     )
 
+    /**
+     * `Subscribe` resolves the chosen market's currency and picks the plan's price row in it
+     * (ADR-0059); a market with no row, or a Stripe Customer already billed in another currency,
+     * refuses with a key the snackbar must be able to say.
+     */
+    private val subscribeMarketKeys = listOf(
+        "membership.plan.not_priced_in_currency",
+        "membership.stripe_customer_currency_locked",
+        "country.not_serviced",
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -112,6 +123,11 @@ class BackendKeyStringsTest {
     @Test
     fun `every market refusal QuoteOrder can answer resolves to a sentence in all five locales`() {
         assertAllResolve(quoteOrderMarketKeys)
+    }
+
+    @Test
+    fun `every market refusal Subscribe can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(subscribeMarketKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
-import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.MarketState
+import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
@@ -19,6 +21,9 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -58,26 +63,30 @@ sealed interface SubscribeOutcome {
 class MembershipViewModel @Inject constructor(
     private val repository: MembershipRepository,
     private val snackbar: SnackbarController,
-    catalogRepository: CatalogRepository,
+    private val marketRepository: MarketRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     val current: StateFlow<GetMyMembershipResponse?> = repository.current
     val loading: StateFlow<Boolean> = repository.loading
 
-    /**
-     * Neither the membership nor a plan arrives with a currency — `monthlyPriceCzk` is the wire name,
-     * not a label — so every amount here is labelled with the platform default, as the web does.
-     * Null until the catalogue has loaded, when there is no figure to label yet.
-     */
-    val currencyCode: StateFlow<String?> = catalogRepository.currencyCode
+    /** The chosen market — what the subscription is bought in, and the payment sheet's country. */
+    val market: StateFlow<MarketState> = marketRepository.state
 
     private val _submitState = MutableStateFlow<ActionState>(ActionState.Idle)
     val submitState: StateFlow<ActionState> = _submitState.asStateFlow()
 
     private val _plans = MutableStateFlow<List<MembershipPlanDto>>(emptyList())
-    /** Plan catalog driving the monthly/yearly switcher on the subscribe page. */
+    /**
+     * Plan catalog driving the monthly/yearly switcher on the subscribe page, priced in the chosen
+     * market's currency (each row carries its `currencyCode`). Empty once [plansLoaded] is true means
+     * Plus is not on sale in that market.
+     */
     val plans: StateFlow<List<MembershipPlanDto>> = _plans.asStateFlow()
+
+    private val _plansLoaded = MutableStateFlow(false)
+    /** Tells the empty market apart from a read that has not answered — only the former renders the empty state. */
+    val plansLoaded: StateFlow<Boolean> = _plansLoaded.asStateFlow()
 
     /**
      * Client idempotency token for the CURRENT logical subscribe attempt.
@@ -95,7 +104,21 @@ class MembershipViewModel @Inject constructor(
         // Background loads stay silent on failure (the repo used to swallow-and-log);
         // the management card just keeps rendering the cached/empty state.
         viewModelScope.launch { repository.refresh() }
-        viewModelScope.launch { repository.getPlans().onSuccess { _plans.value = it } }
+        // The plans follow the chosen market (ADR-0059 D3): the directory is awaited once so the first
+        // read is already for the resolved market, then every change re-reads.
+        viewModelScope.launch {
+            marketRepository.ensureLoaded()
+            marketRepository.state
+                .map { it.countryId }
+                .distinctUntilChanged()
+                .collectLatest { countryId ->
+                    _plansLoaded.value = false
+                    repository.getPlans(countryId).onSuccess {
+                        _plans.value = it
+                        _plansLoaded.value = true
+                    }
+                }
+        }
     }
 
     fun refresh() {
@@ -115,7 +138,7 @@ class MembershipViewModel @Inject constructor(
         // (Phase-2) retry for THIS attempt.
         subscribeIdempotencyToken = UUID.randomUUID().toString()
         try {
-            val resp = repository.subscribePhase1(planCode)
+            val resp = repository.subscribePhase1(planCode, marketRepository.state.value.countryId)
                 .showErrorUnlessNetwork().getOrNull()
                 ?: return SubscribeOutcome.Failed
             // Phase 1 always returns a SetupIntent; if membershipId is non-empty
@@ -147,7 +170,7 @@ class MembershipViewModel @Inject constructor(
             // prior startSubscribe (defensive — should not happen in the UI flow).
             val token = subscribeIdempotencyToken
                 ?: UUID.randomUUID().toString().also { subscribeIdempotencyToken = it }
-            val resp = repository.subscribePhase2(planCode, token)
+            val resp = repository.subscribePhase2(planCode, token, marketRepository.state.value.countryId)
                 .showErrorUnlessNetwork().getOrNull()
             if (resp == null || resp.membershipId.isEmpty()) {
                 // A null result already snackbarred via showErrorUnlessNetwork;

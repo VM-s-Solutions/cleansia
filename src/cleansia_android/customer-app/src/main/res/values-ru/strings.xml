@@ -534,6 +534,8 @@
     <!-- Profile — language -->
     <string name="language_title">Язык</string>
     <string name="language_hint">Изменения применяются сразу.</string>
+    <string name="market_title">Рынок</string>
+    <string name="market_hint">Цены, Cleansia Plus и наши правила соответствуют рынку, который вы просматриваете. В какой валюте оплачивается заказ, определяет его адрес.</string>
     <string name="language_system">Как в системе</string>
     <string name="language_english">Английский</string>
     <string name="language_czech">Чешский</string>
@@ -543,6 +545,8 @@
 
     <string name="profile_row_appearance">Оформление</string>
     <string name="profile_row_language">Язык</string>
+    <string name="profile_row_market">Рынок</string>
+    <string name="market_chip_a11y">Рынок: %1$s, цены в %2$s</string>
 
     <!-- Profile — security -->
     <string name="profile_security_title">Безопасность</string>
@@ -807,6 +811,7 @@
     <string name="membership_plus_subtitle">Лучший способ держать дом чистым</string>
     <string name="membership_subscribe_cta">Попробовать Cleansia Plus</string>
     <string name="membership_disclosure">Можно отменить в любое время. Подписка автоматически продлевается до отмены.</string>
+    <string name="plus_not_available_in_market">Plus пока недоступен на вашем рынке</string>
 
     <!-- Plus subscribe page redesign -->
     <string name="membership_hero_headline">Начните экономить уже сегодня</string>
@@ -1275,6 +1280,8 @@
     <string name="error_membership_not_found">Членство не найдено.</string>
     <string name="error_membership_plan_not_found">План членства не найден.</string>
     <string name="error_membership_swap_same_plan">У вас уже есть этот план.</string>
+    <string name="error_membership_plan_not_priced_in_currency">Этот план пока не продаётся на вашем рынке.</string>
+    <string name="error_membership_stripe_customer_currency_locked">Оплата Plus уже настроена в другой валюте. Чтобы изменить её, обратитесь в поддержку.</string>
     <string name="error_order_not_completed">Оценить заказ можно только после завершения.</string>
     <string name="error_order_preferred_employee_not_eligible">Выбранный клинер недоступен для этого заказа.</string>
     <string name="error_order_preferred_employee_membership_required">Выбор любимого уборщика — преимущество Cleansia Plus.</string>

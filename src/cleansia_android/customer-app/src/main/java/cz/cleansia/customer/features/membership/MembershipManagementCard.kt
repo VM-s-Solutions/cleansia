@@ -72,7 +72,6 @@ fun MembershipManagementCard(
     val current by viewModel.current.collectAsStateWithLifecycle()
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
-    val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
 
     var showCancelDialog by remember { mutableStateOf(false) }
@@ -80,11 +79,13 @@ fun MembershipManagementCard(
 
     // Find the yearly plan if there is one — drives the "Switch to annual" CTA
     // visibility. Only rendered when the user is on Monthly + a Yearly plan
-    // exists in the catalog.
-    val yearlyPlan = remember(plans) {
-        plans.firstOrNull { it.billingInterval == 2 }
-    }
+    // exists in the catalog. A swap keeps the subscription's currency (ADR-0059 D2), and the plans
+    // are priced in the chosen market's, so the CTA quotes a price only when the two agree — a
+    // yearly figure in another currency would be a price Stripe will not charge.
     val membership = current
+    val yearlyPlan = remember(plans, membership?.currencyCode) {
+        plans.firstOrNull { it.billingInterval == 2 && it.currencyCode == membership?.currencyCode }
+    }
     val showSwitchCta = membership?.hasMembership == true &&
         membership.billingInterval == 1 &&
         !membership.cancelRequested &&
@@ -124,7 +125,7 @@ fun MembershipManagementCard(
             title = stringResource(R.string.membership_switch_dialog_title),
             message = stringResource(
                 R.string.membership_switch_dialog_message,
-                formatOrderPrice(yearlyPlan.price, currencyCode),
+                formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
             ),
             confirmLabel = stringResource(R.string.membership_switch_dialog_confirm),
             onConfirm = {

@@ -103,6 +103,7 @@ fun RewardsTab(
     viewModel: RewardsTabViewModel = hiltViewModel(),
 ) {
     val currencyCode by viewModel.currencyCode.collectAsStateWithLifecycle()
+    val tierFloorApplies by viewModel.tierFloorApplies.collectAsStateWithLifecycle()
     val account by viewModel.account.collectAsStateWithLifecycle()
     val tiers by viewModel.tiers.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
@@ -162,6 +163,7 @@ fun RewardsTab(
                     account = loadedAccount,
                     tiers = tiers,
                     currencyCode = currencyCode,
+                    tierFloorApplies = tierFloorApplies,
                     referralAccount = referralAccount,
                     activityPreview = activityPreview,
                     onOpenActivity = onOpenActivity,
@@ -180,6 +182,7 @@ private fun LoyaltyContent(
     account: LoyaltyAccountDto,
     tiers: List<TierInfoDto>,
     currencyCode: String?,
+    tierFloorApplies: Boolean,
     referralAccount: ReferralAccountDto?,
     activityPreview: List<LoyaltyActivityItemDto>,
     onOpenActivity: () -> Unit,
@@ -207,7 +210,7 @@ private fun LoyaltyContent(
         CurrentPerksCard(perks = account.currentPerks)
         Spacer(Modifier.height(16.dp))
 
-        TierLadderCard(tiers = tiers, currentTier = currentTier, currencyCode = currencyCode)
+        TierLadderCard(tiers = tiers, currentTier = currentTier, currencyCode = currencyCode, tierFloorApplies = tierFloorApplies)
         Spacer(Modifier.height(16.dp))
 
         // ── Loyalty Phase C — Invite friends card ──
@@ -481,6 +484,7 @@ private fun TierLadderCard(
     tiers: List<TierInfoDto>,
     currentTier: LoyaltyTier,
     currencyCode: String?,
+    tierFloorApplies: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -511,7 +515,7 @@ private fun TierLadderCard(
             )
         } else {
             sorted.forEachIndexed { idx, tier ->
-                TierLadderRow(tierDto = tier, currentTier = currentTier, currencyCode = currencyCode)
+                TierLadderRow(tierDto = tier, currentTier = currentTier, currencyCode = currencyCode, tierFloorApplies = tierFloorApplies)
                 if (idx < sorted.lastIndex) Spacer(Modifier.height(12.dp))
             }
         }
@@ -523,6 +527,7 @@ private fun TierLadderRow(
     tierDto: TierInfoDto,
     currentTier: LoyaltyTier,
     currencyCode: String?,
+    tierFloorApplies: Boolean,
 ) {
     val tier = LoyaltyTier.fromValue(tierDto.tier) ?: return
     val gradient = tierGradientColors(tier)
@@ -569,7 +574,7 @@ private fun TierLadderRow(
                 )
             }
             Text(
-                composeDiscountSummary(tierDto, currencyCode),
+                composeDiscountSummary(tierDto, currencyCode, tierFloorApplies),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -599,18 +604,19 @@ private fun TierLadderRow(
  * Compose the per-tier discount summary line shown under the tier name in the
  * ladder. Three branches:
  *  - 0% discount → "No discount yet" (Bronze)
- *  - >0% with min order amount → "X% off orders ≥ Y" (Silver), Y in the platform default currency
+ *  - >0% with min order amount → "X% off orders ≥ Y" (Silver), Y in the platform default currency,
+ *    only while the market's currency is that one — elsewhere no floor applies (ADR-0058 D5)
  *  - >0% with no min → "X% off all bookings" (Gold / Platinum)
  *
  * Discount percent is rendered as an integer (5, 10, 15) — backend stores it
  * as a 0..1 decimal so we multiply and round.
  */
 @Composable
-private fun composeDiscountSummary(tierDto: TierInfoDto, currencyCode: String?): String {
+private fun composeDiscountSummary(tierDto: TierInfoDto, currencyCode: String?, tierFloorApplies: Boolean): String {
     val pct = (tierDto.discountPercent * 100).toInt()
     if (pct <= 0) return stringResource(R.string.loyalty_no_discount_yet)
     val minOrder = tierDto.minimumOrderAmountForDiscount ?: 0.0
-    return if (minOrder > 0) {
+    return if (minOrder > 0 && tierFloorApplies) {
         stringResource(R.string.loyalty_discount_min_order, pct, formatOrderPrice(minOrder, currencyCode))
     } else {
         stringResource(R.string.loyalty_discount_basic, pct)

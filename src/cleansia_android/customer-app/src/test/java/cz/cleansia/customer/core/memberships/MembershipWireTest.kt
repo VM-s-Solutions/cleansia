@@ -11,8 +11,10 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -70,7 +72,7 @@ class MembershipWireTest {
         }
     }
 
-    private suspend fun plans(body: String) = serving(body) { it.getPlans() }.body()
+    private suspend fun plans(body: String) = serving(body) { it.getPlans(countryId = null) }.body()
 
     private suspend fun mine(body: String) = serving(body) { it.getMine() }.body()
 
@@ -109,11 +111,44 @@ class MembershipWireTest {
     @Test
     fun theRequestsKeepThePathsTheServerBinds() = runTest {
         var path: String? = null
-        serving(CAPTURED_PLANS, onRequest = { path = it.path }) { it.getPlans() }
+        serving(CAPTURED_PLANS, onRequest = { path = it.path }) { it.getPlans(countryId = null) }
         assertEquals("/api/Membership/GetPlans", path)
 
         serving(CAPTURED_MINE, onRequest = { path = it.path }) { it.getMine() }
         assertEquals("/api/Membership/GetMine", path)
+    }
+
+    /** ADR-0059 D3: the market's country rides the query, and its absence asks for the platform default. */
+    @Test
+    fun thePlansRequestCarriesTheMarketsCountry() = runTest {
+        var path: String? = null
+        serving(CAPTURED_PLANS, onRequest = { path = it.path }) { it.getPlans(countryId = "01J0SVK") }
+        assertEquals("/api/Membership/GetPlans?countryId=01J0SVK", path)
+    }
+
+    /**
+     * The request side, asserted on the wire rather than on the app DTO (T-0441): every field of the
+     * generated command is optional, so a dropped mapper line leaves the token and the market off the
+     * body with nothing going red in a ViewModel test.
+     */
+    @Test
+    fun theSubscribeBodyCarriesTheMarketAndTheIdempotencyToken() = runTest {
+        var body: JsonObject? = null
+        serving(CAPTURED_SUBSCRIBE, onRequest = { body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.subscribe(
+                CreateMembershipSubscriptionRequest(
+                    planCode = "plus-annual",
+                    paymentMethodConfirmed = true,
+                    idempotencyToken = "tok-1",
+                    countryId = "01J0SVK",
+                ),
+            )
+        }
+
+        assertEquals("plus-annual", body!!["planCode"]!!.jsonPrimitive.content)
+        assertEquals(true, body!!["paymentMethodConfirmed"]!!.jsonPrimitive.boolean)
+        assertEquals("tok-1", body!!["idempotencyToken"]!!.jsonPrimitive.content)
+        assertEquals("01J0SVK", body!!["countryId"]!!.jsonPrimitive.content)
     }
 
     // --- rule 1: money is never coerced -----------------------------------------
@@ -126,6 +161,13 @@ class MembershipWireTest {
         assertEquals(169.17, plan.monthlyEquivalentPrice, 0.0)
         assertEquals(12.0, plan.discountPercentage, 0.0)
         assertEquals(18.5, plan.savingsPercentVsMonthly, 0.0)
+        assertEquals("CZK", plan.currencyCode)
+    }
+
+    /** A price with no unit is a guessed one; the card labels every figure with this code. */
+    @Test
+    fun aMissingPlanCurrencyRefusesTheListRatherThanLabellingThePriceByGuess() = runTest {
+        refuses("currencyCode") { plans(plansWithFirstRow { it - "currencyCode" }) }
     }
 
     @Test
@@ -173,7 +215,7 @@ class MembershipWireTest {
                         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
                         .build()
                         .create(GenMembershipApi::class.java),
-                ).getPlans()
+                ).getPlans(countryId = null)
             } finally {
                 server.shutdown()
             }
@@ -252,18 +294,22 @@ class MembershipWireTest {
 
         assertNotNull(answer)
         assertNull(answer?.planCode)
-        assertNull(answer?.monthlyPriceCzk)
+        assertNull(answer?.price)
+        assertNull(answer?.currencyCode)
         assertNull(answer?.expressUpgradesRemaining)
         assertNull(answer?.trialEndsAtUtc)
         assertEquals(true, answer?.hasMembership)
     }
 
+    /** The membership's figures are in the subscription's own currency, not the market's (ADR-0059 D2). */
     @Test
     fun aMemberCarriesTheirLiteralPlanFigures() = runTest {
         val answer = mine(CAPTURED_MINE)
 
         assertEquals("plus-annual", answer?.planCode)
-        assertEquals(169.17, answer?.monthlyPriceCzk)
+        assertEquals(2030.00, answer?.price)
+        assertEquals(169.17, answer?.monthlyEquivalentPrice)
+        assertEquals("CZK", answer?.currencyCode)
         assertEquals(12.0, answer?.discountPercentage)
         assertEquals(2, answer?.expressUpgradesRemaining)
     }
@@ -383,7 +429,8 @@ class MembershipWireTest {
                 "freeCancellationWindowHours": 24,
                 "allowsExpressUpgrade": true,
                 "trialPeriodDays": 14,
-                "savingsPercentVsMonthly": 18.5
+                "savingsPercentVsMonthly": 18.5,
+                "currencyCode": "CZK"
               },
               {
                 "code": "plus-monthly",
@@ -395,7 +442,8 @@ class MembershipWireTest {
                 "freeCancellationWindowHours": 12,
                 "allowsExpressUpgrade": true,
                 "trialPeriodDays": 7,
-                "savingsPercentVsMonthly": 0.5
+                "savingsPercentVsMonthly": 0.5,
+                "currencyCode": "CZK"
               }
             ]
         """.trimIndent()
@@ -406,7 +454,7 @@ class MembershipWireTest {
               "hasMembership": false,
               "planCode": null,
               "planName": null,
-              "monthlyPriceCzk": null,
+              "price": null,
               "discountPercentage": null,
               "freeCancellationWindowHours": null,
               "allowsExpressUpgrade": null,
@@ -414,8 +462,9 @@ class MembershipWireTest {
               "currentPeriodEnd": null,
               "cancelRequested": false,
               "billingInterval": null,
-              "monthlyEquivalentPriceCzk": null,
-              "trialEligible": true
+              "monthlyEquivalentPrice": null,
+              "trialEligible": true,
+              "currencyCode": null
             }
         """.trimIndent()
 
@@ -424,7 +473,7 @@ class MembershipWireTest {
               "hasMembership": true,
               "planCode": "plus-annual",
               "planName": "Cleansia Plus (annual)",
-              "monthlyPriceCzk": 169.17,
+              "price": 2030.00,
               "discountPercentage": 12.0,
               "freeCancellationWindowHours": 24,
               "allowsExpressUpgrade": true,
@@ -432,11 +481,12 @@ class MembershipWireTest {
               "currentPeriodEnd": "2027-08-10T00:00:00Z",
               "cancelRequested": true,
               "billingInterval": 2,
-              "monthlyEquivalentPriceCzk": 169.17,
+              "monthlyEquivalentPrice": 169.17,
               "expressUpgradesPerMonth": 3,
               "expressUpgradesRemaining": 2,
               "trialEndsAtUtc": "2026-08-24T00:00:00Z",
-              "trialEligible": false
+              "trialEligible": false,
+              "currencyCode": "CZK"
             }
         """.trimIndent()
 
@@ -452,13 +502,14 @@ class MembershipWireTest {
             "trialPeriodDays",
             "savingsPercentVsMonthly",
             "expressUpgradesPerMonth",
+            "currencyCode",
         )
 
         val MINE_SPEC_PROPERTIES = setOf(
             "hasMembership",
             "planCode",
             "planName",
-            "monthlyPriceCzk",
+            "price",
             "discountPercentage",
             "freeCancellationWindowHours",
             "allowsExpressUpgrade",
@@ -466,11 +517,12 @@ class MembershipWireTest {
             "currentPeriodEnd",
             "cancelRequested",
             "billingInterval",
-            "monthlyEquivalentPriceCzk",
+            "monthlyEquivalentPrice",
             "expressUpgradesPerMonth",
             "expressUpgradesRemaining",
             "trialEndsAtUtc",
             "trialEligible",
+            "currencyCode",
         )
 
         val PLAN_REQUIRED_MONEY = listOf(
@@ -483,16 +535,17 @@ class MembershipWireTest {
         val MINE_NULLABLE_FIELDS = listOf(
             "planCode",
             "planName",
-            "monthlyPriceCzk",
+            "price",
             "discountPercentage",
             "freeCancellationWindowHours",
             "allowsExpressUpgrade",
             "currentPeriodEnd",
             "billingInterval",
-            "monthlyEquivalentPriceCzk",
+            "monthlyEquivalentPrice",
             "expressUpgradesPerMonth",
             "expressUpgradesRemaining",
             "trialEndsAtUtc",
+            "currencyCode",
         )
     }
 }

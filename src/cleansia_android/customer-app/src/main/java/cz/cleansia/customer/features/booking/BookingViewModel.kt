@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import cz.cleansia.customer.core.market.countryId
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -144,6 +145,7 @@ class BookingViewModel @Inject constructor(
     private val serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider,
     private val membershipRepository: MembershipRepository,
     private val catalogRepository: CatalogRepository,
+    private val marketRepository: cz.cleansia.customer.core.market.MarketRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -190,18 +192,22 @@ class BookingViewModel @Inject constructor(
     private var lastQuoteInputs: QuoteInputs? = null
 
     /**
-     * The service address's country, resolved from the picked ISO code. It is the booking's market:
-     * the quote is priced in its currency and the catalogue is re-read for it. Null before the
-     * address step, or for a country the platform does not serve — the platform default either way.
+     * The country the booking is priced in (ADR-0058 D4): the service address's, resolved from the
+     * picked ISO code, once there is one; the chosen market's before the address step; null for a
+     * country the platform does not serve — the platform default, which the server re-checks. The
+     * quote is priced in its currency and the catalogue is re-read for it. A market chosen after the
+     * address is entered changes nothing here.
      */
     private val resolvedCountryId = MutableStateFlow<String?>(null)
 
     private val countryWatcher = viewModelScope.launch {
-        _state
-            .map { it.countryIsoCode }
+        combine(
+            _state.map { it.countryIsoCode },
+            marketRepository.state.map { it.countryId },
+        ) { isoCode, marketCountryId -> isoCode to marketCountryId }
             .distinctUntilChanged()
-            .collectLatest { isoCode ->
-                val countryId = resolveCountryId(isoCode)
+            .collectLatest { (isoCode, marketCountryId) ->
+                val countryId = if (isoCode.isBlank()) marketCountryId else resolveCountryId(isoCode)
                 resolvedCountryId.value = countryId
                 followMarket(countryId)
             }

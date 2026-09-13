@@ -380,7 +380,9 @@ extension CustomerShellView {
         case .appearance:
             AppearancePickerView(preferences: preferences, onSelected: { model.pop() })
         case .help:
-            HelpSupportView()
+            HelpSupportView(insurance: container.marketStore.state.insurance(
+                forCountryId: container.marketStore.state.countryId
+            ))
         case .deleteAccount:
             DeleteAccountView(
                 userEmail: profileVM.currentUser?.email ?? "",

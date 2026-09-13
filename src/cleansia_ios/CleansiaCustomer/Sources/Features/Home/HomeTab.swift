@@ -5,7 +5,7 @@ import SwiftUI
 /// The customer Home tab — a section-for-section port of `HomeTab.kt:217-307`:
 /// address bar + market chip + bell, smart upsell carousel, order-again/trust strip,
 /// recurring schedules (Plus), popular packages, recent bookings, loyalty
-/// milestone, seasonal card, behind the first-paint skeleton gate.
+/// milestone, behind the first-paint skeleton gate.
 struct HomeTab: View {
     @StateObject private var vm: HomeTabViewModel
     @ObservedObject private var notificationBadge: NotificationBadgeModel
@@ -195,9 +195,6 @@ struct HomeTab: View {
                     }
                     .transition(.opacity)
                 }
-
-                SeasonalCard(onTap: onBookCleaning)
-                    .padding(.horizontal, Spacing.ml)
             }
             .padding(.top, Spacing.s)
             // One animation keyed on the section fingerprint: any late-arriving

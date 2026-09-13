@@ -61,8 +61,12 @@ extension L10n.Booking {
         L10n.localized("booking_cancel_tier3_value")
     }
 
-    static var trustInsured: String {
-        L10n.localized("booking_trust_insured")
+    static func trustInsured(_ insuranceAmount: String) -> String {
+        L10n.format("booking_trust_insured", insuranceAmount)
+    }
+
+    static var trustInsuredNoFigure: String {
+        L10n.localized("booking_trust_insured_no_figure")
     }
 
     static var trustVetted: String {

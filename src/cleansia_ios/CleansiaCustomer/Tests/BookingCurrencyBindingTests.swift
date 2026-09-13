@@ -15,7 +15,9 @@ final class BookingCurrencyBindingTests: XCTestCase {
         "booking_price_per_room": "%1$@",
         "booking_summary_tier_discount_min_not_met": "%1$@",
         "membership_hero_trial_price": "%1$@",
-        "loyalty_discount_min_order": "%2$@"
+        "loyalty_discount_min_order": "%2$@",
+        "booking_trust_insured": "%1$@",
+        "help_faq_a3": "%1$@"
     ]
     private static let locales = ["en", "cs", "sk", "uk", "ru"]
 

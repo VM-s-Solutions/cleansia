@@ -93,6 +93,12 @@ final class BookingViewModel: ViewModel {
         state.countryId ?? marketState.countryId
     }
 
+    /// The insurance ceiling for the country the booking is priced in, in that country's currency;
+    /// nil renders the no-figure claim.
+    var insurance: MarketMoney? {
+        marketState.insurance(forCountryId: catalogCountryId)
+    }
+
     var isFirstStep: Bool {
         currentStep <= 1
     }

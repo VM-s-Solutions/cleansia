@@ -348,8 +348,12 @@ extension L10n {
             localized("help_faq_q3")
         }
 
-        static var faqA3: String {
-            localized("help_faq_a3")
+        static func faqA3(_ insuranceAmount: String) -> String {
+            format("help_faq_a3", insuranceAmount)
+        }
+
+        static var faqA3NoFigure: String {
+            localized("help_faq_a3_no_figure")
         }
 
         static var faqQ4: String {

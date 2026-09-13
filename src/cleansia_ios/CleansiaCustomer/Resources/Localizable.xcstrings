@@ -6202,37 +6202,72 @@
         }
       }
     },
+    "booking_trust_insured_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pojištěno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insured"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Застраховано"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poistené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Застраховано"
+          }
+        }
+      }
+    },
     "booking_trust_insured": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pojištěno až do 1M Kč"
+            "value": "Pojištěno až do %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Insured up to 1M CZK"
+            "value": "Insured up to %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Застраховано до 1М CZK"
+            "value": "Застраховано до %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Poistené až do 1M Kč"
+            "value": "Poistené až do %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Застраховано до 1М CZK"
+            "value": "Застраховано до %1$@"
           }
         }
       }
@@ -10577,37 +10612,72 @@
         }
       }
     },
+    "help_faq_a3_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes. All Cleansia cleaners are background-checked and covered by insurance."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Да. Все клинеры Cleansia проверены и застрахованы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áno. Všetci upratovači Cleansia sú preverení a poistení."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так. Усі клінери Cleansia перевірені та застраховані."
+          }
+        }
+      }
+    },
     "help_faq_a3": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni až do 1 000 000 Kč na rezervaci."
+            "value": "Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni až do %1$@ na rezervaci."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yes. All Cleansia cleaners are background-checked and covered by insurance up to 1,000,000 CZK per booking."
+            "value": "Yes. All Cleansia cleaners are background-checked and covered by insurance up to %1$@ per booking."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Да. Все клинеры Cleansia проверены и застрахованы до 1 000 000 CZK за заказ."
+            "value": "Да. Все клинеры Cleansia проверены и застрахованы до %1$@ за заказ."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Áno. Všetci upratovači Cleansia sú preverení a poistení až do 1 000 000 CZK na rezerváciu."
+            "value": "Áno. Všetci upratovači Cleansia sú preverení a poistení až do %1$@ na rezerváciu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Так. Усі клінери Cleansia перевірені та застраховані до 1 000 000 CZK за бронювання."
+            "value": "Так. Усі клінери Cleansia перевірені та застраховані до %1$@ за бронювання."
           }
         }
       }
@@ -11625,76 +11695,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваші регулярні прибирання"
-          }
-        }
-      }
-    },
-    "home_seasonal_subtitle": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kombinace oken + čalounění — tento měsíc +450 Kč"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Window + upholstery combo — +450 CZK this month"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Окна + обивка комбо — в этом месяце +450 CZK"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kombinácia okien + čalúnenia — tento mesiac +450 Kč"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Комбо вікна + оббивка — цього місяця +450 CZK"
-          }
-        }
-      }
-    },
-    "home_seasonal_title": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sezóna jarního úklidu"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spring deep clean season"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сезон весенней уборки"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sezóna jarného upratovania"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сезон весняного прибирання"
           }
         }
       }
@@ -26972,31 +26972,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
+            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added a credit towards your next clean. Sorry."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit 250 Kč na příští úklid. Omlouváme se."
+            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit na příští úklid. Omlouváme se."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit 250 Kč na ďalšie upratovanie. Ospravedlňujeme sa."
+            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit na ďalšie upratovanie. Ospravedlňujeme sa."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили 250 Kč бонусов на следующую уборку. Простите."
+            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили бонус на следующую уборку. Простите."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали 250 Kč бонусів на наступне прибирання. Вибачте."
+            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали бонус на наступне прибирання. Вибачте."
           }
         }
       }

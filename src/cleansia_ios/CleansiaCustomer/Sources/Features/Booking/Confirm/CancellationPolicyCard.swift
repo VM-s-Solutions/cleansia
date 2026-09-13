@@ -84,9 +84,11 @@ private struct PolicyTier: View {
 }
 
 struct TrustBadges: View {
+    let insurance: MarketMoney?
+
     var body: some View {
         HStack(spacing: Spacing.s) {
-            TrustBadge(systemImage: "checkmark.shield", text: L10n.Booking.trustInsured)
+            TrustBadge(systemImage: "checkmark.shield", text: InsuranceCopy.trustBadge(insurance))
             Rectangle()
                 .fill(CleansiaColors.outlineVariant)
                 .frame(width: 1)

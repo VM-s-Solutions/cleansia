@@ -50,7 +50,7 @@ struct ConfirmStep: View {
                     onSelect: setPreferredCleaner
                 )
                 CancellationPolicyCard(policy: extras.cancellationPolicy)
-                TrustBadges()
+                TrustBadges(insurance: viewModel.insurance)
             }
             .padding(Spacing.l)
         }

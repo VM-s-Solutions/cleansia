@@ -81,6 +81,25 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
         return await BodyAsync(resp);
     }
 
+    /// <summary>
+    /// The partner register form picks the operating company from the same directory the customer
+    /// host serves (ADR-0061 D6 / T-0728): both hosts answer the same rows anonymously, so the
+    /// market a cleaner registers into is the market a customer books in.
+    /// </summary>
+    [Fact]
+    public async Task The_partner_host_serves_the_same_market_directory_anonymously()
+    {
+        await SeedDevShapeAsync();
+
+        var customer = await ReadMarketsAsync();
+        var partnerResponse = await PartnerClientAnonymous().GetAsync("/api/Market/GetOverview");
+        HttpAssert.IsOk(partnerResponse);
+        var partner = await BodyAsync(partnerResponse);
+
+        Assert.Equal(customer.GetRawText(), partner.GetRawText());
+        Assert.Equal("CZE", Assert.Single(partner.EnumerateArray()).GetProperty("isoCode").GetString());
+    }
+
     [Fact]
     public async Task An_anonymous_customer_reads_the_ready_markets_with_their_figures()
     {

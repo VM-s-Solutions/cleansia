@@ -319,7 +319,15 @@ describe('UserLoyaltyDetailFacade — subject export', () => {
 
   const exportDto = GdprExportDto.fromJS({
     exportedAt: '2026-09-13T10:00:00Z',
-    customerActions: [],
+    customerActions: [
+      {
+        action: 'customer.order.cancel',
+        occurredOn: '2026-09-13T09:00:00Z',
+        resourceType: 'Order',
+        resourceId: 'order-1',
+        success: true,
+      },
+    ],
   });
 
   beforeEach(() => {
@@ -359,6 +367,19 @@ describe('UserLoyaltyDetailFacade — subject export', () => {
     expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.customer_detail.export_success');
     expect(facade.exporting()).toBe(false);
     jest.useRealTimers();
+  });
+
+  // The file is JSON.stringify(dto), which runs the generated toJSON — a client generated before the
+  // export DTO gained customerActions drops the whole trail from the download while every mock stays
+  // green, so this pins the wire shape, not the mock.
+  it('writes the customer trail into the downloaded file', () => {
+    facade.loadCredit('user-1');
+
+    facade.exportSubjectData();
+
+    const written = JSON.parse(JSON.stringify(download.mock.calls[0][0]));
+    expect(written.customerActions).toBeDefined();
+    expect(written.customerActions[0].action).toBe('customer.order.cancel');
   });
 
   it('surfaces the API error and downloads nothing on failure', () => {

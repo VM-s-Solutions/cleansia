@@ -72,6 +72,7 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
       'CanIssueCustomerCredit',
       'CanExpireCustomerCredit',
       'CanAdminExportUserData',
+      'CanViewAuditLog',
     ]);
 
     await TestBed.configureTestingModule({
@@ -263,5 +264,16 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
 
     expect(el.querySelector('.cleansia-user-loyalty-detail__export')).toBeNull();
     expect(el.querySelector('cleansia-admin-audit-timeline')).toBeTruthy();
+  });
+
+  // The timeline endpoint answers 403 without CanViewAuditLog; a section that always fails is worse
+  // than none, and the sibling entry points (order and dispute History) gate on the same policy.
+  it('hides the timeline section without CanViewAuditLog', () => {
+    grantedPolicies.delete('CanViewAuditLog');
+    const el = render(noAccount());
+
+    expect(el.querySelector('cleansia-admin-audit-timeline')).toBeNull();
+    expect(el.textContent).not.toContain('pages.customer_detail.timeline.title');
+    expect(el.querySelector('.cleansia-user-loyalty-detail__export')).toBeTruthy();
   });
 });

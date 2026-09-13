@@ -9,6 +9,7 @@ import {
   input,
   OnDestroy,
   TemplateRef,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -75,11 +76,15 @@ export class TimelineComponent implements AfterViewInit, OnDestroy {
       const userId = this.userId();
       const resourceType = this.resourceType();
       const resourceId = this.resourceId();
-      if (userId) {
-        this.facade.loadForUser(userId);
-      } else if (resourceType && resourceId) {
-        this.facade.loadForResource(resourceType, resourceId);
-      }
+      // Only the three inputs may re-run this: the facade reads its own paging signals while it
+      // loads, and tracking those would restart from page one on every page click.
+      untracked(() => {
+        if (userId) {
+          this.facade.loadForUser(userId);
+        } else if (resourceType && resourceId) {
+          this.facade.loadForResource(resourceType, resourceId);
+        }
+      });
     });
   }
 

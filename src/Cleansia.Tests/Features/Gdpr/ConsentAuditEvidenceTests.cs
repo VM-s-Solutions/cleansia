@@ -70,7 +70,7 @@ public sealed class ConsentAuditEvidenceTests
         Assert.Equal(UserId, snapshot.ResourceId);
         var payload = Payload(snapshot);
         Assert.Equal(LegalDocumentVersions.CustomerTerms, payload.GetProperty("documentVersion").GetString());
-        Assert.True(payload.TryGetProperty("consentType", out _));
+        Assert.Equal("termsOfService", payload.GetProperty("consentType").GetString());
         Assert.Equal(2, payload.EnumerateObject().Count());
     }
 

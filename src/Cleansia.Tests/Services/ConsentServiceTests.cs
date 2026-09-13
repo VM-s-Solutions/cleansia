@@ -66,7 +66,7 @@ public class ConsentServiceTests
     [Fact]
     public async Task An_Already_Granted_Consent_Reports_Not_Granted_And_Writes_Nothing()
     {
-        var existing = UserConsent.Grant(UserId, ConsentType.DataProcessing, "198.51.100.1", "Firefox");
+        var existing = UserConsent.Grant(UserId, ConsentType.DataProcessing, "198.51.100.1", "Firefox", null);
         Existing(existing);
 
         var granted = await CreateService().TryGrantAsync(UserId, ConsentType.DataProcessing, null, CancellationToken.None);
@@ -112,7 +112,7 @@ public class ConsentServiceTests
     [Fact]
     public async Task A_Legacy_Unversioned_Row_Learns_The_Version_On_An_Explicit_Re_Acceptance()
     {
-        var existing = UserConsent.Grant(UserId, ConsentType.TermsOfService, "198.51.100.1", "Firefox");
+        var existing = UserConsent.Grant(UserId, ConsentType.TermsOfService, "198.51.100.1", "Firefox", null);
         Existing(existing);
 
         var granted = await CreateService().TryGrantAsync(UserId, ConsentType.TermsOfService, Version, CancellationToken.None);
@@ -140,7 +140,7 @@ public class ConsentServiceTests
     public async Task A_Withdrawn_Consent_Is_Regranted_On_The_Existing_Row()
     {
         var withdrawn = UserConsent
-            .Grant(UserId, ConsentType.DataProcessing, "198.51.100.1", "Firefox")
+            .Grant(UserId, ConsentType.DataProcessing, "198.51.100.1", "Firefox", null)
             .Withdraw();
         Existing(withdrawn);
 

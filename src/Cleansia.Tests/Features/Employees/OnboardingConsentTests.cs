@@ -105,7 +105,7 @@ public class OnboardingConsentTests
     [Fact]
     public async Task Re_Submitting_Onboarding_Does_Not_Write_A_Second_Grant()
     {
-        var existing = UserConsent.Grant(_employee.UserId, ConsentType.DataProcessing, "198.51.100.1", "Firefox");
+        var existing = UserConsent.Grant(_employee.UserId, ConsentType.DataProcessing, "198.51.100.1", "Firefox", null);
         _userConsentRepository
             .Setup(r => r.GetByUserAndTypeAsync(_employee.UserId, ConsentType.DataProcessing, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -121,7 +121,7 @@ public class OnboardingConsentTests
     public async Task A_Withdrawn_Consent_Is_Regranted_Rather_Than_Duplicated()
     {
         var withdrawn = UserConsent
-            .Grant(_employee.UserId, ConsentType.DataProcessing, "198.51.100.1", "Firefox")
+            .Grant(_employee.UserId, ConsentType.DataProcessing, "198.51.100.1", "Firefox", null)
             .Withdraw();
         _userConsentRepository
             .Setup(r => r.GetByUserAndTypeAsync(_employee.UserId, ConsentType.DataProcessing, It.IsAny<CancellationToken>()))

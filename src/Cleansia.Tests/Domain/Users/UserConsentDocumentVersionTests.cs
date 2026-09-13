@@ -5,8 +5,8 @@ namespace Cleansia.Tests.Domain.Users;
 
 /// <summary>
 /// ADR-0062 D4 — a consent row records the version of the document in force when it was granted, and a
-/// re-acceptance under a newer version moves the row forward (the audit trail keeps the history; the row
-/// is the truth about now).
+/// re-acceptance under a different version moves the row (the audit trail keeps the history; the row is
+/// the truth about now).
 /// </summary>
 public sealed class UserConsentDocumentVersionTests
 {
@@ -24,7 +24,7 @@ public sealed class UserConsentDocumentVersionTests
     [Fact]
     public void Grant_Without_A_Version_Leaves_It_Null()
     {
-        var consent = UserConsent.Grant(UserId, ConsentType.DataProcessing, "203.0.113.9", "Chrome");
+        var consent = UserConsent.Grant(UserId, ConsentType.DataProcessing, "203.0.113.9", "Chrome", null);
 
         Assert.Null(consent.DocumentVersion);
     }
@@ -46,7 +46,7 @@ public sealed class UserConsentDocumentVersionTests
     }
 
     [Fact]
-    public void AcceptVersion_Moves_A_Granted_Row_To_The_Newer_Version_And_Restamps_When_And_Where()
+    public void AcceptVersion_Moves_A_Granted_Row_To_A_Different_Version_And_Restamps_When_And_Where()
     {
         var consent = UserConsent.Grant(UserId, ConsentType.TermsOfService, "198.51.100.1", "Firefox", "2025-01-old");
         var grantedBefore = consent.GrantedAt;

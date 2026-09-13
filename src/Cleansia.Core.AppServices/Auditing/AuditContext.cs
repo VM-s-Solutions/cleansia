@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Cleansia.Core.AppServices.Auditing;
 
@@ -8,12 +9,15 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// <c>AuditLogBehavior</c> drains it when writing the success row. Pure in-memory (no DbContext): the
 /// payloads are serialized eagerly to the same camelCase JSON the jsonb columns hold, so the behavior
 /// reads back ready-to-store strings and never touches a domain type. The last record in a request wins.
+/// Enums go in by name: a row is read years later by a support agent and a lawyer's file, and a name
+/// survives a renumbering where an integer silently changes meaning (ADR-0062 D3).
 /// </summary>
 public sealed class AuditContext : IAuditContext
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
     private AuditSnapshot? _snapshot;

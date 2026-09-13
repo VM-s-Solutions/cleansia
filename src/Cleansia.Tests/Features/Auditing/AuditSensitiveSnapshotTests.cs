@@ -82,8 +82,8 @@ public sealed class AuditSensitiveSnapshotTests
         Assert.Equal("Order", snapshot!.ResourceType);
         Assert.Equal("order-ovr", snapshot.ResourceId);
         Assert.Contains("\"orderId\":\"order-ovr\"", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)OrderStatus.Confirmed}", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)OrderStatus.OnTheWay}", snapshot.AfterJson);
+        Assert.Contains("\"status\":\"confirmed\"", snapshot.BeforeJson);
+        Assert.Contains("\"status\":\"onTheWay\"", snapshot.AfterJson);
         AssertNoSubjectPii(snapshot);
     }
 
@@ -205,8 +205,8 @@ public sealed class AuditSensitiveSnapshotTests
         Assert.NotNull(snapshot);
         Assert.Equal("Dispute", snapshot!.ResourceType);
         Assert.Equal("dispute-1", snapshot.ResourceId);
-        Assert.Contains($"\"status\":{(int)DisputeStatus.Pending}", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)DisputeStatus.Resolved}", snapshot.AfterJson);
+        Assert.Contains("\"status\":\"pending\"", snapshot.BeforeJson);
+        Assert.Contains("\"status\":\"resolved\"", snapshot.AfterJson);
         Assert.Contains("\"refundAmount\":250", snapshot.AfterJson);
         // The free-text resolution notes are NOT in the snapshot (could carry subject PII).
         Assert.DoesNotContain("approved by ops", snapshot.AfterJson);

@@ -130,6 +130,7 @@ public class ConsentVersioningTests(PostgresContainerFixture fixture) : BaseInte
                 Assert.Equal(JwtAudiences.Customer, audit.ClientAudience);
                 var payload = JsonDocument.Parse(audit.PayloadJson!).RootElement;
                 Assert.Equal(LegalDocumentVersions.CustomerTerms, payload.GetProperty("documentVersion").GetString());
+                Assert.Equal("termsOfService", payload.GetProperty("consentType").GetString());
             },
             transactional: false);
     }

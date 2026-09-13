@@ -116,7 +116,8 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
             TestConstants.TestUserSession.TestUserId,
             ConsentType.MarketingEmails,
             ipAddress: null,
-            userAgent: null);
+            userAgent: null,
+            documentVersion: null);
         context.UserConsents.Add(consent);
 
         var address = Address.Create("Domazlicka 18", "Prague", "11000", country.Id);

@@ -91,8 +91,8 @@ public sealed class EmployeeUserAuditCoverageTests
         Assert.NotNull(snapshot);
         Assert.Equal("User", snapshot!.ResourceType);
         Assert.Equal(SubjectUserId, snapshot.ResourceId);
-        Assert.Contains($"\"status\":{(int)ContractStatus.Pending}", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)ContractStatus.Approved}", snapshot.AfterJson);
+        Assert.Contains("\"status\":\"pending\"", snapshot.BeforeJson);
+        Assert.Contains("\"status\":\"approved\"", snapshot.AfterJson);
         Assert.Contains("\"workCountryId\":\"country-cz\"", snapshot.AfterJson);
         Assert.Contains($"\"employeeId\":\"{SubjectEmployeeId}\"", snapshot.AfterJson);
         // The admin's free-text notes never enter the snapshot (could carry subject PII).
@@ -148,8 +148,8 @@ public sealed class EmployeeUserAuditCoverageTests
         Assert.NotNull(snapshot);
         Assert.Equal("User", snapshot!.ResourceType);
         Assert.Equal(SubjectUserId, snapshot.ResourceId);
-        Assert.Contains($"\"status\":{(int)ContractStatus.Pending}", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)ContractStatus.Rejected}", snapshot.AfterJson);
+        Assert.Contains("\"status\":\"pending\"", snapshot.BeforeJson);
+        Assert.Contains("\"status\":\"rejected\"", snapshot.AfterJson);
         Assert.Contains($"\"employeeId\":\"{SubjectEmployeeId}\"", snapshot.AfterJson);
         Assert.DoesNotContain("documents look forged", snapshot.AfterJson);
         AssertNoSubjectPii(snapshot);

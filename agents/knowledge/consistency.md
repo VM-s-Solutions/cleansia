@@ -276,6 +276,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   |---|---|---|---|
   | `CatalogRepository` (customer) | Android | **Yes** (`_services`/`_packages`/`_extras` `StateFlow`) | The **public** services/packages/extras catalog — identical for every user, anonymous-fetchable (guest booking). No account data. Re-fetched on booking entry; a stale catalog is not a cross-account leak. |
   | `CustomerServiceAreaDataSource` / `PartnerServiceAreaDataSource` | Android | No (caches in the shared `ServiceAreaProvider`) | Public serviced-countries/cities list — device-level, not per-user. |
+  | `MarketRepository` (customer) | Android | **Yes** (the market directory + the chosen market `StateFlow`) | The **public** market directory (`Market/GetOverview`, anonymous) and a **device**-level preference, like the language. No account data; a stale list is not a cross-account leak. |
   | `AppSettingsStore` / `AppSettingsRepository` | Android/iOS | **Yes** (language/theme/onboarding) | **Device**-level UI prefs (survive uninstall parity is DataStore/`UserDefaults`). Per-user onboarding is keyed **by userId** (`hasSeenOnboarding(userId:)`) so it is already user-partitioned, not a shared bucket. No account content. |
   | `OrderEventBus` / `SnackbarController` / `PushTokenSessionObserver` | Android | No (`SharedFlow(replay=0)` / delegates) | Transient event buses hold nothing after emit; the observer delegates to `PushTokenRepository` (which **is** in the set). |
 

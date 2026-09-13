@@ -348,6 +348,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<MembershipPlan> MembershipPlans { get; set; }
     public virtual DbSet<MembershipPlanPrice> MembershipPlanPrices { get; set; }
     public virtual DbSet<UserMembership> UserMemberships { get; set; }
+    public virtual DbSet<UserStripeCustomer> UserStripeCustomers { get; set; }
     public virtual DbSet<MembershipBenefitUsage> MembershipBenefitUsages { get; set; }
     public virtual DbSet<RecurringBookingTemplate> RecurringBookingTemplates { get; set; }
     public virtual DbSet<UserNotificationPreferences> UserNotificationPreferences { get; set; }

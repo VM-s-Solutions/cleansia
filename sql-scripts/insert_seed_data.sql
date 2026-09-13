@@ -540,6 +540,7 @@ INSERT INTO public."Currencies" (
 -- NoShowCredit: the apology credit CancelUnfilledOrders pays on an order in this currency when its slot
 -- arrives with no cleaner (owner ruling 2026-09-05: 250 CZK). Authored per currency like the divisor;
 -- NULL means no credit in that currency -- the sweep refunds in full and sends the plain cancellation.
+-- The EUR/PLN/GBP/USD figures are DEV placeholders; author the real figure on the admin currency form before activation.
 --
 -- PLN, GBP and USD exist because the country configurations below name them: a named country resolves
 -- to its currency or THROWS, so flagging Poland, the UK or the US serviced with no Currency row behind
@@ -547,10 +548,10 @@ INSERT INTO public."Currencies" (
 -- them off the market until the owner prices a catalogue in them.
 VALUES
   (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 10.00, 250.00),
-  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', NULL, NULL),
-  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'PLN', 'zł', 'Polish Zloty', NULL, NULL),
-  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'GBP', '£', 'Pound Sterling', NULL, NULL),
-  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'USD', '$', 'US Dollar', NULL, NULL);
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', NULL, 10.00),
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'PLN', 'zł', 'Polish Zloty', NULL, 40.00),
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'GBP', '£', 'Pound Sterling', NULL, 9.00),
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'USD', '$', 'US Dollar', NULL, 10.00);
 
 -- 6. SERVICE CATEGORIES
 -- Slugs are the client-facing stable identifier (mobile maps them to icons/colors).
@@ -1039,9 +1040,12 @@ WHERE "CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'
 -- ============================================================
 -- COUNTRY CONFIGURATIONS
 -- ============================================================
--- "InsuranceCoverageAmount" is deliberately absent (NULL on every row): the per-booking insurance
--- ceiling customer copy states is a claim about a real policy, and the owner enters the figure on the
--- admin country form once one backs it. Until then the clients render the no-figure copy variant.
+-- "InsuranceCoverageAmount" is the per-booking insurance ceiling customer copy states, a number in the
+-- row's DefaultCurrencyCode. CZE carries the 1 000 000 CZK figure (owner ruling 2026-09-13, Q-MARKET-02);
+-- every other row stays NULL -- the clients render the no-figure copy variant -- until the owner authors
+-- that market's figure on the admin country form (SVK's EUR figure is still his to write).
+-- "IsDefaultMarket" is what a customer surface pre-selects before any choice is made (Q-MARKET-01):
+-- exactly one row carries it (partial unique index), CZE today; SetDefaultMarket moves it.
 INSERT INTO public."CountryConfigurations" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
@@ -1051,7 +1055,8 @@ INSERT INTO public."CountryConfigurations" (
   "TaxIdLabel", "TaxIdFormat",
   "RegistrationNumberLabel", "RegistrationNumberFormat", "RegistrationNumberRequired",
   "VatNumberLabel", "VatNumberFormat", "VatNumberRequired",
-  "DefaultPaymentGateway", "PayoutScheme"
+  "DefaultPaymentGateway", "PayoutScheme",
+  "InsuranceCoverageAmount", "IsDefaultMarket"
 )
 VALUES
   -- Czech Republic — IČO (company ID) mandatory, DIČ (VAT ID) optional
@@ -1061,7 +1066,8 @@ VALUES
    0.21, 0.15, 'IČO', '^\d{8}$',
    'IČO', '^\d{8}$', true,
    'DIČ', '^CZ\d{8,10}$', false,
-   'Stripe', 1),
+   'Stripe', 1,
+   1000000.00, true),
 
   -- Slovakia — IČO mandatory, IČ DPH (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1070,7 +1076,8 @@ VALUES
    0.20, 0.10, 'IČO', '^\d{8}$',
    'IČO', '^\d{8}$', true,
    'IČ DPH', '^SK\d{10}$', false,
-   'Stripe', 1),
+   'Stripe', 1,
+   NULL, false),
 
   -- Poland — NIP mandatory, EU VAT optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1079,7 +1086,8 @@ VALUES
    0.23, 0.08, 'NIP', '^\d{10}$',
    'NIP', '^\d{10}$', true,
    'VAT UE', '^PL\d{10}$', false,
-   'Stripe', NULL),
+   'Stripe', NULL,
+   NULL, false),
 
   -- Germany — Steuernummer mandatory, USt-IdNr optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1088,7 +1096,8 @@ VALUES
    0.19, 0.07, 'Steuernummer', '^\d{10,13}$',
    'Steuernummer', '^\d{10,13}$', true,
    'USt-IdNr', '^DE\d{9}$', false,
-   'Stripe', NULL),
+   'Stripe', NULL,
+   NULL, false),
 
   -- Austria — Firmenbuchnummer mandatory, UID (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1097,7 +1106,8 @@ VALUES
    0.20, 0.10, 'UID-Nummer', '^ATU\d{8}$',
    'Firmenbuchnummer', '^[A-Z]?\d{1,6}[a-z]?$', true,
    'UID-Nummer', '^ATU\d{8}$', false,
-   'Stripe', NULL),
+   'Stripe', NULL,
+   NULL, false),
 
   -- United Kingdom — UTR mandatory, VAT number optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1106,7 +1116,8 @@ VALUES
    0.20, 0.05, 'UTR', '^\d{10}$',
    'UTR', '^\d{10}$', true,
    'VAT Number', '^GB\d{9}$', false,
-   'Stripe', NULL),
+   'Stripe', NULL,
+   NULL, false),
 
   -- France — SIRET mandatory, TVA intracommunautaire optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1115,7 +1126,8 @@ VALUES
    0.20, 0.055, 'SIRET', '^\d{14}$',
    'SIRET', '^\d{14}$', true,
    'TVA', '^FR[A-Z0-9]{2}\d{9}$', false,
-   'Stripe', NULL),
+   'Stripe', NULL,
+   NULL, false),
 
   -- Italy — Codice Fiscale mandatory, Partita IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1124,7 +1136,8 @@ VALUES
    0.22, 0.10, 'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$',
    'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$', true,
    'Partita IVA', '^IT\d{11}$', false,
-   'Stripe', NULL),
+   'Stripe', NULL,
+   NULL, false),
 
   -- Spain — NIF mandatory, NIF-IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1133,7 +1146,8 @@ VALUES
    0.21, 0.10, 'NIF', '^[A-Z]\d{7}[A-Z0-9]$',
    'NIF', '^[A-Z]\d{7}[A-Z0-9]$', true,
    'NIF-IVA', '^ES[A-Z0-9]\d{7}[A-Z0-9]$', false,
-   'Stripe', NULL),
+   'Stripe', NULL,
+   NULL, false),
 
   -- United States — EIN mandatory, no separate VAT
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1142,7 +1156,8 @@ VALUES
    0.00, NULL, 'EIN', '^\d{2}-\d{7}$',
    'EIN', '^\d{2}-\d{7}$', true,
    NULL, NULL, false,
-   'Stripe', NULL);
+   'Stripe', NULL,
+   NULL, false);
 
 -- ============================================================
 -- EMPLOYEE DOCUMENT REQUIREMENTS

@@ -49,20 +49,21 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
     }
 
     /// <summary>
-    /// The DEV seed's shape: CZE serviced on active default CZK with the 250 apology; SVK serviced on
-    /// EUR which is present but not switched on; POL serviced with no configuration at all.
+    /// The DEV seed's shape: CZE serviced on active default CZK with the 250 apology and the
+    /// default-market flag; SVK serviced on EUR which is present but not switched on; POL serviced
+    /// with no configuration at all.
     /// </summary>
-    private Task SeedDevShapeAsync() => SeedAsync(ctx =>
+    private Task SeedDevShapeAsync(bool eurActive = false) => SeedAsync(ctx =>
     {
         ctx.Currencies.AddRange(
             NewCurrency(CzkId, "CZK", isActive: true, isDefault: true, noShowCredit: 250m),
-            NewCurrency(EurId, "EUR", isActive: false, isDefault: false, noShowCredit: null));
+            NewCurrency(EurId, "EUR", isActive: eurActive, isDefault: false, noShowCredit: null));
         ctx.Countries.AddRange(
             NewCountry(CzeId, "Czechia", "CZE", "CZ", isServiced: true),
             NewCountry(SvkId, "Slovakia", "SVK", "SK", isServiced: true),
             NewCountry(PolId, "Poland", "POL", "PL", isServiced: true));
         ctx.CountryConfigurations.AddRange(
-            CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m),
+            CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m).SetAsDefaultMarket(true),
             CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m));
         return Task.CompletedTask;
     });
@@ -151,6 +152,60 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
         var row = Assert.Single(markets.EnumerateArray());
         Assert.Equal("SVK", row.GetProperty("isoCode").GetString());
         Assert.False(row.GetProperty("isDefault").GetBoolean());
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-13 (Q-MARKET-01): the default market is an explicit flag the admin moves.
+    /// SVK is on EUR, not the default currency, and still becomes the pre-selection once flagged;
+    /// exactly one configuration carries the flag afterwards, and both admin reads show it.
+    /// </summary>
+    [Fact]
+    public async Task The_admin_moves_the_default_market_and_the_directory_pre_selects_it()
+    {
+        await SeedDevShapeAsync(eurActive: true);
+        var admin = AdminClient(AdminToken());
+
+        var before = (await ReadMarketsAsync()).EnumerateArray().ToList();
+        Assert.Equal("CZE", Assert.Single(before, r => r.GetProperty("isDefault").GetBoolean()).GetProperty("isoCode").GetString());
+
+        HttpAssert.IsOk(await admin.PutAsJsonAsync($"/api/AdminCountry/{SvkId}/default-market", new { }));
+
+        var after = (await ReadMarketsAsync()).EnumerateArray().ToList();
+        Assert.Equal(2, after.Count);
+        Assert.Equal("SVK", Assert.Single(after, r => r.GetProperty("isDefault").GetBoolean()).GetProperty("isoCode").GetString());
+
+        var detail = await BodyAsync(await admin.GetAsync($"/api/AdminCountry/details/{SvkId}"));
+        Assert.True(detail.GetProperty("isDefaultMarket").GetBoolean());
+        var overview = (await BodyAsync(await admin.GetAsync("/api/AdminCountry/get-overview"))).EnumerateArray().ToList();
+        Assert.Equal(SvkId, Assert.Single(overview, r => r.GetProperty("isDefaultMarket").GetBoolean()).GetProperty("id").GetString());
+
+        var flagged = await QueryAsync(ctx => ctx.CountryConfigurations.IgnoreQueryFilters().Where(c => c.IsDefaultMarket).Select(c => c.CountryId).ToListAsync());
+        Assert.Equal([SvkId], flagged);
+    }
+
+    [Fact]
+    public async Task An_unready_country_cannot_become_the_default_market_and_the_flag_stays_put()
+    {
+        await SeedDevShapeAsync();
+        var admin = AdminClient(AdminToken());
+
+        var noConfiguration = await admin.PutAsJsonAsync($"/api/AdminCountry/{PolId}/default-market", new { });
+        await HttpAssert.RejectedAsync(noConfiguration, BusinessErrorMessage.CountryMarketNotReady);
+
+        var inactiveCurrency = await admin.PutAsJsonAsync($"/api/AdminCountry/{SvkId}/default-market", new { });
+        await HttpAssert.RejectedAsync(inactiveCurrency, BusinessErrorMessage.CountryMarketNotReady);
+
+        var flagged = await QueryAsync(ctx => ctx.CountryConfigurations.IgnoreQueryFilters().Where(c => c.IsDefaultMarket).Select(c => c.CountryId).ToListAsync());
+        Assert.Equal([CzeId], flagged);
+    }
+
+    [Fact]
+    public async Task Setting_the_default_market_needs_the_country_permission()
+    {
+        await SeedDevShapeAsync();
+        var customer = AdminClient(TestJwtFactory.Mint(AdminAudience, "u-cust-market", "cust-market@hosttests.local", UserProfile.Customer));
+
+        HttpAssert.IsForbidden(await customer.PutAsJsonAsync($"/api/AdminCountry/{CzeId}/default-market", new { }));
     }
 
     [Fact]

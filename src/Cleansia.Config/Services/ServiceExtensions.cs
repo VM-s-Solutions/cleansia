@@ -255,6 +255,8 @@ public static class ServiceExtensions
         services.AddScoped<IExpressWaiverResolver, ExpressWaiverResolver>();
         // The one place the once-per-customer trial rule is decided, for both subscribe surfaces.
         services.AddScoped<IMembershipTrialResolver, MembershipTrialResolver>();
+        // The one place a user's Stripe Customer for a currency is decided, for both subscribe surfaces.
+        services.AddScoped<IStripeCustomerResolver, StripeCustomerResolver>();
         services.AddScoped<IExpressWaiverConsumer, ExpressWaiverConsumer>();
         services.AddScoped<IOrderAccessService, OrderAccessService>();
         services.AddScoped<IAddressGeocoder, AddressGeocoder>();

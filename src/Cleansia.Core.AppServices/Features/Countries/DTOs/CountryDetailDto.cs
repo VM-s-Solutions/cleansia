@@ -7,4 +7,5 @@ public record CountryDetailDto(
     string Name,
     bool IsServiced = false,
     decimal? InsuranceCoverageAmount = null,
-    bool HasConfiguration = false);
+    bool HasConfiguration = false,
+    bool IsDefaultMarket = false);

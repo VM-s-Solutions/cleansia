@@ -179,8 +179,8 @@ public static class NotificationEventCatalog
     /// Monday-to-Sunday week. Args: <c>count</c> — the new cap, as a decimal string.
     ///
     /// <para><b><c>count</c> rather than a <c>limit</c> of its own</b>, because <c>ApnsDisplayMap</c>
-    /// holds a CLOSED <c>{orderNumber, count}</c> allowlist for anything that renders on a lock screen
-    /// (ADR-0025 D3, so internal ids and raw enum values cannot leak there). A weekly cap is literally a
+    /// holds a CLOSED <c>{orderNumber, count, amount}</c> allowlist for anything that renders on a lock
+    /// screen (ADR-0025 D3, so internal ids and raw enum values cannot leak there). A weekly cap is literally a
     /// count of jobs, so it needs no new slot — and widening a deliberately closed allowlist to avoid
     /// reusing an accurate name would be the expensive way round.</para>
     ///
@@ -199,18 +199,21 @@ public static class NotificationEventCatalog
     /// <summary>
     /// Customer-targeted: the booking's time arrived with no cleaner on it, so the platform cancelled
     /// it, refunded in full and added the apology credit. Args: <c>orderNumber</c> (loc) +
-    /// <c>orderId</c> (deep link).
+    /// <c>amount</c> (loc, the credit with its currency's symbol, "250 Kč") + <c>orderId</c> (deep
+    /// link).
     ///
     /// <para><b>Why not the plain <see cref="OrderCancelled"/>.</b> Owner ruling 2026-09-06: the 250 is
     /// to be announced explicitly. "Your booking was cancelled" and "we failed you, here is all your
     /// money back plus credit towards the next one" are different news, and the second read as the
     /// first is the platform quietly under-selling the one apology it makes.</para>
     ///
-    /// <para><b>The amount is not an arg, and the copy states none.</b> The lock-screen allowlist is
-    /// a closed <c>{orderNumber, count}</c> set (ADR-0025 D3), and the figure is authored per currency
-    /// (<c>Currency.NoShowCredit</c>, ADR-0060 D1) so no single number is true in every market; the
-    /// push announces the credit and the credit screen shows the amount with its unit.
-    /// <c>check-booking-policy-parity.mjs</c> pins the copy.</para>
+    /// <para><b>The amount IS an arg, with its currency.</b> Owner ruling 2026-09-13 (Q-MARKET-04)
+    /// reversed the earlier position that the push states no figure: the credit is authored per
+    /// currency (<c>Currency.NoShowCredit</c>, ADR-0060 D1), so the server formats it from the
+    /// credit's own currency row — number, space, symbol — and the lock-screen allowlist (ADR-0025
+    /// D3) is <c>{orderNumber, count, amount}</c> for it. A money figure is not PII, so it rides the
+    /// push and the feed row's args alike. <c>check-booking-policy-parity.mjs</c> still pins that the
+    /// copy carries a placeholder rather than a literal figure.</para>
     ///
     /// <para>Sent only when the credit was actually issued. A guest has no account to hold it and an
     /// order in a currency with no authored credit is refused the grant, and both of those get the

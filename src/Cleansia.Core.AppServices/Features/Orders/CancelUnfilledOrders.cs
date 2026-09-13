@@ -1,8 +1,10 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -77,6 +79,20 @@ public class CancelUnfilledOrders
     /// it in full on a crew count of zero would pay back a clean that was partly done.
     /// </summary>
     private static readonly OrderStatus[] NeverStarted = [OrderStatus.New, OrderStatus.Confirmed];
+
+    /// <summary>
+    /// The credit as the push states it: the number in invariant culture with no trailing zeros, a
+    /// space, then the currency's own symbol ("250 Kč", "10 €", "9.5 zł"); the code stands in for a
+    /// currency with no symbol. Formatted here rather than on the device because the figure is the
+    /// credit's own currency, which the device cannot know from the order alone (owner ruling
+    /// 2026-09-13, Q-MARKET-04).
+    /// </summary>
+    public static string FormatCreditAmount(decimal amount, Currency currency)
+    {
+        var number = amount.ToString("0.############################", CultureInfo.InvariantCulture);
+        var unit = string.IsNullOrWhiteSpace(currency.Symbol) ? currency.Code : currency.Symbol;
+        return $"{number} {unit}";
+    }
 
     public class Handler(
         IOrderRepository orderRepository,
@@ -189,7 +205,8 @@ public class CancelUnfilledOrders
                     await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                         order, SystemActor, cancellationToken);
 
-                    var apologised = await TryIssueApologyCreditAsync(order, cancellationToken);
+                    var apology = await TryIssueApologyCreditAsync(order, cancellationToken);
+                    var apologised = apology is not null;
                     if (apologised)
                     {
                         credited++;
@@ -205,18 +222,27 @@ public class CancelUnfilledOrders
                     // an order in a currency with no authored credit is refused the grant, so both of
                     // those get the plain cancellation. Promising credit nobody received would be
                     // worse than saying less.
+                    //
+                    // The credit rides along WITH its currency, formatted here: a money figure, not
+                    // PII, so it may sit on the lock screen and in the feed row's args.
                     if (!string.IsNullOrEmpty(order.UserId))
                     {
+                        var args = new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        };
+                        if (apology is { } creditAmount)
+                        {
+                            args["amount"] = FormatCreditAmount(creditAmount, order.Currency!);
+                        }
+
                         await notificationProducer.NotifyAsync(
                             order.UserId,
                             apologised
                                 ? NotificationEventCatalog.OrderNoCleanerRefunded
                                 : NotificationEventCatalog.OrderCancelled,
-                            new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
+                            args,
                             order.TenantId,
                             order.Id,
                             cancellationToken);
@@ -242,8 +268,8 @@ public class CancelUnfilledOrders
         }
 
         /// <summary>
-        /// The apology credit. Returns false — without failing the cancellation — whenever it cannot
-        /// honestly be given.
+        /// The apology credit: the amount issued, or null — without failing the cancellation —
+        /// whenever it cannot honestly be given.
         ///
         /// <para><b>A guest gets the refund and no credit</b>, because there is nowhere to put it:
         /// <c>Order.UserId</c> is nullable and <c>CreditAccount.UserId</c> is not, behind an FK to
@@ -255,11 +281,11 @@ public class CancelUnfilledOrders
         /// no figure pays none: fail closed and log, the refund is unaffected (owner ruling
         /// 2026-09-06). Nothing is ever scaled from another currency's figure.</para>
         /// </summary>
-        private async Task<bool> TryIssueApologyCreditAsync(Order order, CancellationToken cancellationToken)
+        private async Task<decimal?> TryIssueApologyCreditAsync(Order order, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(order.UserId))
             {
-                return false;
+                return null;
             }
 
             var amount = order.Currency?.NoShowCredit;
@@ -269,7 +295,7 @@ public class CancelUnfilledOrders
                     "CancelUnfilledOrders skipped the apology credit on order {OrderId}: no apology credit "
                         + "is authored for {CurrencyCode}. The refund was not affected.",
                     order.Id, order.Currency?.Code ?? order.CurrencyId);
-                return false;
+                return null;
             }
 
             var account = await creditAccountRepository.EnsureForUserAsync(
@@ -288,7 +314,7 @@ public class CancelUnfilledOrders
                 orderId: order.Id,
                 note: "No cleaner was assigned when the booking's time arrived.");
 
-            return true;
+            return amount.Value;
         }
     }
 }

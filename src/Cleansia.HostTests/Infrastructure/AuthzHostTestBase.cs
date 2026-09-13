@@ -33,7 +33,7 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
         Db = db;
         _admin = new(() => new HostTestApplicationFactory<Cleansia.Web.Admin.Program>(db.ConnectionString));
         _partner = new(() => new HostTestApplicationFactory<Cleansia.Web.Partner.Program>(db.ConnectionString));
-        _customer = new(() => new HostTestApplicationFactory<Cleansia.Web.Customer.Program>(db.ConnectionString));
+        _customer = new(() => new HostTestApplicationFactory<Cleansia.Web.Customer.Program>(db.ConnectionString, ConfigureCustomerHostServices));
         _mobile = new(() => new HostTestApplicationFactory<Cleansia.Web.Mobile.Partner.Program>(db.ConnectionString));
     }
 
@@ -60,6 +60,14 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     }
 
     protected Task ResetDatabaseAsync() => Db.ResetAsync();
+
+    /// <summary>
+    /// Override to swap a seam on the Customer host only (the harness has no Stripe stub by default:
+    /// every other class exercises paths that stop before the outbound call).
+    /// </summary>
+    protected virtual void ConfigureCustomerHostServices(IServiceCollection services)
+    {
+    }
 
     /// <summary>
     /// Run <paramref name="seed"/> against a real host's <see cref="CleansiaDbContext"/> scope and

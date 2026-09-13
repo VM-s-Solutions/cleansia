@@ -84,6 +84,7 @@ public class MembershipCommandsStripeFailureTests
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
+            CustomerResolver(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
 
     private CreateMembershipCheckoutSession.Handler CheckoutHandler() =>
@@ -97,7 +98,12 @@ public class MembershipCommandsStripeFailureTests
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
+            CustomerResolver(),
             NullLogger<CreateMembershipCheckoutSession.Handler>.Instance);
+
+    private StripeCustomerResolver CustomerResolver() =>
+        new(new Mock<IUserStripeCustomerRepository>().Object, _membershipRepository.Object, _stripe.Object,
+            NullLogger<StripeCustomerResolver>.Instance);
 
     private SwapMembershipPlan.Handler SwapHandler() =>
         new(

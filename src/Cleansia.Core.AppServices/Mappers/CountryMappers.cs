@@ -6,13 +6,14 @@ namespace Cleansia.Core.AppServices.Mappers;
 
 public static class CountryMappers
 {
-    public static CountryListItem MapToDto(this Country country) =>
+    public static CountryListItem MapToDto(this Country country, bool isDefaultMarket = false) =>
         new(
             country.Id,
             country.IsoCode,
             country.IsoAlpha2,
             country.Name,
-            Translations: country.Translations.ToDictionary());
+            Translations: country.Translations.ToDictionary(),
+            IsDefaultMarket: isDefaultMarket);
 
     public static CountryDetailDto MapToDetailDto(this Country country, CountryConfiguration? configuration = null) =>
         new(
@@ -22,5 +23,6 @@ public static class CountryMappers
             country.Name,
             country.IsServiced,
             InsuranceCoverageAmount: configuration?.InsuranceCoverageAmount,
-            HasConfiguration: configuration is not null);
+            HasConfiguration: configuration is not null,
+            IsDefaultMarket: configuration?.IsDefaultMarket ?? false);
 }

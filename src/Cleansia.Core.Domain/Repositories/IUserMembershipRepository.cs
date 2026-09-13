@@ -70,4 +70,11 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     /// out a second trial. → /flows/loyalty-and-memberships</para>
     /// </summary>
     Task<bool> HasEverStartedTrialAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Has this user ever held a membership billed in a currency other than <paramref name="currencyId"/>,
+    /// in any status? The question behind adopting the legacy Stripe Customer for a currency: a Customer
+    /// that ever invoiced another currency is locked to it by Stripe. Historical, so every row counts.
+    /// </summary>
+    Task<bool> HasAnyInOtherCurrencyAsync(string userId, string currencyId, CancellationToken cancellationToken);
 }

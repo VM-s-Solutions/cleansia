@@ -7,4 +7,5 @@ public record CountryListItem(
     string IsoCode,
     string IsoAlpha2,
     string Name,
-    Dictionary<string, Translation> Translations);
+    Dictionary<string, Translation> Translations,
+    bool IsDefaultMarket = false);

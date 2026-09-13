@@ -358,6 +358,8 @@ public static class BusinessErrorMessage
     public const string CountryMarketNotReady = "country.market_not_ready";
     /// <summary>Market content hangs off the configuration row; a country without one has nowhere to hold it.</summary>
     public const string CountryConfigurationMissing = "country.configuration_missing";
+    /// <summary>Two admins promoted different default markets in the same instant; the loser is told to reload.</summary>
+    public const string CountryDefaultMarketChangedConcurrently = "country.default_market_changed_concurrently";
 
     // Service areas
     public const string ServiceCityNotFound = "service_city.not_found";

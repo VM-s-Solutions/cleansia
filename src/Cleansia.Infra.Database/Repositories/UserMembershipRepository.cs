@@ -59,6 +59,12 @@ public class UserMembershipRepository(CleansiaDbContext context)
             .AnyAsync(m => m.UserId == userId && m.TrialEndsAtUtc != null, cancellationToken);
     }
 
+    public Task<bool> HasAnyInOtherCurrencyAsync(string userId, string currencyId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .AnyAsync(m => m.UserId == userId && m.CurrencyId != currencyId, cancellationToken);
+    }
+
     public Task<UserMembership?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
     {
         // Cross-tenant by design: webhook lookup. Caller (HandleSubscriptionEvent)

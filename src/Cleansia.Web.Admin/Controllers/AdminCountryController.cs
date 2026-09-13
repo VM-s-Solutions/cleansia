@@ -139,6 +139,26 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
     }
 
     /// <summary>
+    /// Flags this country as the default market — what a customer surface pre-selects before any
+    /// choice is made. The country must be serviced and its configured currency switched on.
+    /// </summary>
+    [HttpPut("{countryId}/default-market")]
+    [Permission(Policy.CanUpdateCountry)]
+    [ProducesResponseType(typeof(SetDefaultMarket.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> SetDefaultMarket(
+        string countryId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new SetDefaultMarket.Command(countryId), cancellationToken);
+        return HandleResult<SetDefaultMarket.Response>(result);
+    }
+
+    /// <summary>
     /// What this country calls its business identifiers, and whether it demands them.
     ///
     /// <para>CountryConfiguration has carried these since it was seeded, and no endpoint on THIS host

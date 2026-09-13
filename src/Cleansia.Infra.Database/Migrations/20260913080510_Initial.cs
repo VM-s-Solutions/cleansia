@@ -539,6 +539,7 @@ namespace Cleansia.Infra.Database.Migrations
                     RefundStripeFeeRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
                     RefundStripeFixedFee = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     InsuranceCoverageAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    IsDefaultMarket = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -1588,6 +1589,40 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserStripeCustomers",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserStripeCustomers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserStripeCustomers_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserStripeCustomers_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2920,6 +2955,13 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "CountryConfigurations",
                 column: "CountryId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CountryConfigurations_IsDefaultMarket_Unique",
+                table: "CountryConfigurations",
+                column: "IsDefaultMarket",
+                unique: true,
+                filter: "\"IsDefaultMarket\" = true");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CountryConfigurations_TenantId",
@@ -4316,6 +4358,28 @@ namespace Cleansia.Infra.Database.Migrations
                 columns: new[] { "TenantId", "Email" },
                 unique: true)
                 .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserStripeCustomers_CurrencyId",
+                table: "UserStripeCustomers",
+                column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserStripeCustomers_StripeCustomerId",
+                table: "UserStripeCustomers",
+                column: "StripeCustomerId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserStripeCustomers_TenantId",
+                table: "UserStripeCustomers",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserStripeCustomers_UserId_CurrencyId",
+                table: "UserStripeCustomers",
+                columns: new[] { "UserId", "CurrencyId" },
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -4491,6 +4555,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserNotifications");
+
+            migrationBuilder.DropTable(
+                name: "UserStripeCustomers");
 
             migrationBuilder.DropTable(
                 name: "Carts");

@@ -353,10 +353,51 @@ public class CancelUnfilledOrdersTests
         _notifications.Verify(n => n.NotifyAsync(
             UserId,
             NotificationEventCatalog.OrderNoCleanerRefunded,
-            It.IsAny<Dictionary<string, string>>(),
+            It.Is<Dictionary<string, string>>(args => args["amount"] == "250 Kč" && args["orderNumber"] == order.DisplayOrderNumber),
             It.IsAny<string?>(),
             order.Id,
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-13 (Q-MARKET-04): the push carries the credit WITH its currency, formatted
+    /// from the credit's own currency row — a EUR apology says "10 €", never a CZK figure.
+    /// </summary>
+    [Fact]
+    public async Task TheAmountIsStatedInTheCreditsOwnCurrency()
+    {
+        _eur.SetNoShowCredit(10m);
+        var order = UnfilledOrder(currency: _eur);
+        Arrange(order);
+
+        await Sweep();
+
+        _notifications.Verify(n => n.NotifyAsync(
+            UserId,
+            NotificationEventCatalog.OrderNoCleanerRefunded,
+            It.Is<Dictionary<string, string>>(args => args["amount"] == "10 €"),
+            It.IsAny<string?>(),
+            order.Id,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("250", "250 Kč")]
+    [InlineData("250.00", "250 Kč")]
+    [InlineData("10", "10 Kč")]
+    [InlineData("9.5", "9.5 Kč")]
+    [InlineData("9.50", "9.5 Kč")]
+    public void TheCreditIsFormattedInvariantWithNoTrailingZerosThenTheSymbol(string amount, string expected)
+    {
+        Assert.Equal(expected, CancelUnfilledOrders.FormatCreditAmount(decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture), _czk));
+    }
+
+    [Fact]
+    public void ASymbollessCurrencyFallsBackToItsCode()
+    {
+        var bare = Currency.Create("XXX", "", "Bare");
+
+        Assert.Equal("250 XXX", CancelUnfilledOrders.FormatCreditAmount(250m, bare));
     }
 
     /// <summary>
@@ -376,7 +417,7 @@ public class CancelUnfilledOrdersTests
         _notifications.Verify(n => n.NotifyAsync(
             UserId,
             NotificationEventCatalog.OrderCancelled,
-            It.IsAny<Dictionary<string, string>>(),
+            It.Is<Dictionary<string, string>>(args => !args.ContainsKey("amount")),
             It.IsAny<string?>(),
             order.Id,
             It.IsAny<CancellationToken>()), Times.Once);

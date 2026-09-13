@@ -9,12 +9,13 @@ namespace Cleansia.Core.AppServices.Features.Markets;
 
 /// <summary>
 /// The market directory behind every pre-address customer surface (ADR-0058 D1–D2): each serviced
-/// country whose configuration names an ACTIVE currency, with the one on the platform default
-/// currency flagged <c>IsDefault</c>.
+/// country whose configuration names an ACTIVE currency, with the one whose configuration carries
+/// <c>IsDefaultMarket</c> flagged <c>IsDefault</c> (owner ruling 2026-09-13, Q-MARKET-01); when
+/// nothing listed is flagged, the one on the platform default currency.
 ///
 /// <para>This is the anonymous read behind the landing page, so it never throws on a configuration
 /// state: a serviced country that fails the join is omitted and logged, and the default-market
-/// tiebreak below is deterministic rather than an exception.</para>
+/// fallback below is deterministic rather than an exception.</para>
 /// </summary>
 public class GetMarkets
 {
@@ -72,7 +73,8 @@ public class GetMarkets
                 }
             }
 
-            var defaultMarket = await ChooseDefaultAsync(onDefaultCurrency, cancellationToken);
+            var defaultMarket = await ChooseFlaggedDefaultAsync(markets, cancellationToken)
+                ?? await ChooseDefaultByCurrencyAsync(onDefaultCurrency, cancellationToken);
             if (defaultMarket is not null)
             {
                 markets[markets.IndexOf(defaultMarket)] = defaultMarket with { IsDefault = true };
@@ -82,13 +84,39 @@ public class GetMarkets
         }
 
         /// <summary>
+        /// The explicit flag wins whenever the flagged country is listed. A flag on a country that is
+        /// not listed, or no flag at all, is a configuration state the owner should see — logged, then
+        /// the currency rule decides.
+        /// </summary>
+        private async Task<MarketListItem?> ChooseFlaggedDefaultAsync(List<MarketListItem> markets, CancellationToken cancellationToken)
+        {
+            var flagged = await countryConfigurationRepository.GetDefaultMarketAsync(cancellationToken);
+            if (flagged is null)
+            {
+                logger.LogError(
+                    "No country configuration is flagged as the default market; falling back to the default-currency rule");
+                return null;
+            }
+
+            var market = markets.FirstOrDefault(m => m.CountryId == flagged.CountryId);
+            if (market is null)
+            {
+                logger.LogError(
+                    "Country {IsoCode} is flagged as the default market but is not a listed market; falling back to the default-currency rule",
+                    flagged.Country?.IsoCode ?? flagged.CountryId);
+            }
+
+            return market;
+        }
+
+        /// <summary>
         /// The default market is a PRE-SELECTION, not a pricing invariant, so neither of the odd
         /// states throws (ADR-0058 D2). Several markets on the default currency is the ordinary state
         /// once EUR is the default and two EUR countries are serviced: the lowest ISO code wins and
         /// the log names every candidate. None is a serviced-country gap: nothing is flagged and the
         /// clients fall to the first listed market.
         /// </summary>
-        private async Task<MarketListItem?> ChooseDefaultAsync(List<MarketListItem> onDefaultCurrency, CancellationToken cancellationToken)
+        private async Task<MarketListItem?> ChooseDefaultByCurrencyAsync(List<MarketListItem> onDefaultCurrency, CancellationToken cancellationToken)
         {
             if (onDefaultCurrency.Count == 0)
             {

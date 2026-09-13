@@ -35,6 +35,7 @@ public class FcmMessageFactoryTests
         { "recurring.scheduled", OrderArgs(), ["A-1042"] },
         { "order.new_available", new Dictionary<string, string> { ["count"] = "3" }, ["3"] },
         { "order.assignment_cancelled", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-2201" }, ["A-2201"] },
+        { "order.no_cleaner_refunded", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-1042", ["amount"] = "250 Kč" }, ["A-1042", "250 Kč"] },
         { "payroll.invoice_paid", new Dictionary<string, string> { ["invoiceId"] = "inv-1" }, [] },
         { "dispute.reply", new Dictionary<string, string> { ["orderId"] = "ord-1", ["disputeId"] = "dsp-1" }, [] },
         { "loyalty.tier_upgrade", new Dictionary<string, string> { ["tier"] = "SilverMopper" }, [] },
@@ -70,6 +71,7 @@ public class FcmMessageFactoryTests
         { "recurring.scheduled", OrderArgs() },
         { "order.new_available", new Dictionary<string, string> { ["count"] = "3" } },
         { "order.assignment_cancelled", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-2201" } },
+        { "order.no_cleaner_refunded", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-1042", ["amount"] = "250 Kč" } },
         { "payroll.invoice_paid", new Dictionary<string, string> { ["invoiceId"] = "inv-1" } },
         { "dispute.reply", new Dictionary<string, string> { ["orderId"] = "ord-1", ["disputeId"] = "dsp-1" } },
         { "loyalty.tier_upgrade", new Dictionary<string, string> { ["tier"] = "SilverMopper" } },
@@ -289,11 +291,13 @@ public class FcmMessageFactoryTests
     }
 
     // ── TC-PUSH-APNS-5 — S6 tripwire: lock-screen args stay inside the closed allowlist ──────
+    // {orderNumber, count} plus `amount` since owner ruling 2026-09-13 (Q-MARKET-04): a server-
+    // formatted money figure with its currency's symbol, carried only by order.no_cleaner_refunded.
 
     [Fact]
-    public void Display_Map_Arg_Names_Stay_Within_The_OrderNumber_Count_Allowlist()
+    public void Display_Map_Arg_Names_Stay_Within_The_OrderNumber_Count_Amount_Allowlist()
     {
-        var allowlist = new[] { "orderNumber", "count" };
+        var allowlist = new[] { "orderNumber", "count", "amount" };
 
         var mappedArgNames = FcmMessageFactory.ApnsDisplayMap.Values
             .SelectMany(argNames => argNames)
@@ -301,6 +305,18 @@ public class FcmMessageFactoryTests
             .ToList();
 
         Assert.All(mappedArgNames, argName => Assert.Contains(argName, allowlist));
+    }
+
+    [Fact]
+    public void Only_The_No_Cleaner_Refund_Carries_The_Amount_Slot_And_It_Follows_The_Order_Number()
+    {
+        var carriers = FcmMessageFactory.ApnsDisplayMap
+            .Where(entry => entry.Value.Contains("amount"))
+            .Select(entry => entry.Key)
+            .ToList();
+
+        Assert.Equal(["order.no_cleaner_refunded"], carriers);
+        Assert.Equal(["orderNumber", "amount"], FcmMessageFactory.ApnsDisplayMap["order.no_cleaner_refunded"]);
     }
 
     [Fact]

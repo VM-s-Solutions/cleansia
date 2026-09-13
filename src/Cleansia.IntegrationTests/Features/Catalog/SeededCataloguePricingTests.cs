@@ -243,6 +243,47 @@ public class SeededCataloguePricingTests : IAsyncLifetime
         Assert.All(seeded.Where(c => !c.IsDefault), c => Assert.Null(c.LoyaltyPointsDivisor));
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-13 (Q-MARKET-03): no seeded currency carries a null apology credit by
+    /// accident. CZK is the ruled 250; the four not-yet-operated rows carry DEV placeholders the owner
+    /// replaces on the admin currency form before activation.
+    /// </summary>
+    [Fact]
+    public async Task Every_Seeded_Currency_Carries_An_Apology_Credit()
+    {
+        await using var ctx = NewContext();
+
+        var credits = await ctx.Currencies
+            .OrderBy(c => c.Code)
+            .Select(c => new { c.Code, c.NoShowCredit })
+            .ToListAsync();
+
+        Assert.Equal(
+            [("CZK", 250m), ("EUR", 10m), ("GBP", 9m), ("PLN", 40m), ("USD", 10m)],
+            credits.Select(c => (c.Code, c.NoShowCredit!.Value)));
+    }
+
+    /// <summary>
+    /// Owner rulings 2026-09-13: CZE is the default market (Q-MARKET-01) and states the 1 000 000 CZK
+    /// insurance ceiling (Q-MARKET-02); every other configuration is unflagged and figure-less until
+    /// the owner authors that market's figure.
+    /// </summary>
+    [Fact]
+    public async Task Czechia_Is_The_Seeded_Default_Market_With_The_Insurance_Figure_And_Nothing_Else_Is()
+    {
+        await using var ctx = NewContext();
+
+        var configurations = await ctx.CountryConfigurations
+            .Include(c => c.Country)
+            .Select(c => new { c.Country!.IsoCode, c.IsDefaultMarket, c.InsuranceCoverageAmount })
+            .ToListAsync();
+
+        var czechia = Assert.Single(configurations, c => c.IsDefaultMarket);
+        Assert.Equal("CZE", czechia.IsoCode);
+        Assert.Equal(1_000_000m, czechia.InsuranceCoverageAmount);
+        Assert.All(configurations.Where(c => c.IsoCode != "CZE"), c => Assert.Null(c.InsuranceCoverageAmount));
+    }
+
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
         private string? _tenantId = tenantId;

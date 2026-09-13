@@ -106,6 +106,14 @@ public class CountryConfiguration : Auditable
     /// </summary>
     public decimal? InsuranceCoverageAmount { get; private set; }
 
+    /// <summary>
+    /// The market a customer surface pre-selects before any choice is made (owner ruling 2026-09-13,
+    /// Q-MARKET-01). At most one configuration carries it, held by a partial unique index the way the
+    /// default currency is; <c>SetDefaultMarket</c> is the only writer. A pre-selection, not a pricing
+    /// invariant: <c>GetMarkets</c> falls back to the default-currency rule when nothing is flagged.
+    /// </summary>
+    public bool IsDefaultMarket { get; private set; }
+
     public static CountryConfiguration Create(
         string countryId,
         string defaultCurrencyCode,
@@ -213,6 +221,12 @@ public class CountryConfiguration : Auditable
     public CountryConfiguration UpdateMarketContent(decimal? insuranceCoverageAmount)
     {
         InsuranceCoverageAmount = insuranceCoverageAmount;
+        return this;
+    }
+
+    public CountryConfiguration SetAsDefaultMarket(bool isDefaultMarket)
+    {
+        IsDefaultMarket = isDefaultMarket;
         return this;
     }
 }

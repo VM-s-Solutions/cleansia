@@ -93,6 +93,7 @@ public class MembershipTrialOncePerCustomerTests
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             Resolver(),
+            CustomerResolver(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
 
     private CreateMembershipCheckoutSession.Handler CheckoutHandler() =>
@@ -106,7 +107,12 @@ public class MembershipTrialOncePerCustomerTests
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             Resolver(),
+            CustomerResolver(),
             NullLogger<CreateMembershipCheckoutSession.Handler>.Instance);
+
+    private StripeCustomerResolver CustomerResolver() =>
+        new(new Mock<IUserStripeCustomerRepository>().Object, _membershipRepository.Object, _stripe.Object,
+            NullLogger<StripeCustomerResolver>.Instance);
 
     private GetMyMembership.Handler MyMembershipHandler() =>
         new(

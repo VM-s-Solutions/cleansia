@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Devices;
 using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -158,6 +159,24 @@ public sealed class SubjectResidueErasureTests : IDisposable
         Assert.NotEqual("password_reset", GdprAuditReasons.RefreshTokenRevocation);
     }
 
+    /// <summary>
+    /// The per-currency Stripe Customer rows (owner ruling 2026-09-13, Q-MARKET-05) hold a Stripe id for
+    /// the subject exactly as the legacy <c>User.StripeCustomerId</c> does; the erasure clears that
+    /// field, so the rows go with it, and the bystander's stays.
+    /// </summary>
+    [Fact]
+    public async Task Erasure_Removes_The_Subjects_Per_Currency_Stripe_Customers()
+    {
+        await SeedAsync();
+        Assert.Contains(await ReadAsync<UserStripeCustomer>(), c => c.UserId == ErasedUserId);
+
+        await EraseAsync(ErasedUserId);
+
+        var remaining = await ReadAsync<UserStripeCustomer>();
+        Assert.DoesNotContain(remaining, c => c.UserId == ErasedUserId);
+        Assert.Equal("cus_kept_bystander", Assert.Single(remaining, c => c.UserId == BystanderUserId).StripeCustomerId);
+    }
+
     private async Task EraseAsync(string userId)
     {
         await using var ctx = NewContext();
@@ -171,6 +190,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
             new CreditAccountRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
+            new UserStripeCustomerRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),
@@ -234,6 +254,13 @@ public sealed class SubjectResidueErasureTests : IDisposable
         ctx.Add(NewOrder(BystanderUserId, BystanderOrderId));
         ctx.Add(NewPhoto(ErasedOrderId, ErasedPhotoOriginalName, ErasedPhotoNotes, ErasedEmployeeId));
         ctx.Add(NewPhoto(BystanderOrderId, BystanderPhotoOriginalName, "Nothing to report.", BystanderEmployeeId));
+
+        // Its own code: the order factory above already seeds the CZK row.
+        var currency = Currency.Create("XEU", "€", "Erasure euro");
+        currency.Id = "currency-xeu-erase-res";
+        ctx.Add(currency);
+        ctx.Add(UserStripeCustomer.Create(ErasedUserId, currency.Id, "cus_erased_subject"));
+        ctx.Add(UserStripeCustomer.Create(BystanderUserId, currency.Id, "cus_kept_bystander"));
 
         await ctx.CommitAsync(CancellationToken.None);
     }

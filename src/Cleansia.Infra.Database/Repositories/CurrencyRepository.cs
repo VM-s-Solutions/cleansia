@@ -83,6 +83,10 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
         if (await Context.UserMemberships.IgnoreQueryFilters().AnyAsync(m => m.CurrencyId == currencyId, cancellationToken))
             return true;
 
+        // A Stripe Customer opened to bill the currency (Restrict, tenant-scoped like the membership).
+        if (await Context.UserStripeCustomers.IgnoreQueryFilters().AnyAsync(c => c.CurrencyId == currencyId, cancellationToken))
+            return true;
+
         return false;
     }
 

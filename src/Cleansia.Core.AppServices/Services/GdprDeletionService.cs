@@ -20,6 +20,7 @@ public class GdprDeletionService(
     ICreditAccountRepository creditAccountRepository,
     IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserMembershipRepository userMembershipRepository,
+    IUserStripeCustomerRepository userStripeCustomerRepository,
     IOrderPhotoRepository orderPhotoRepository,
     IDeviceRepository deviceRepository,
     ILiveActivityTokenRepository liveActivityTokenRepository,
@@ -405,6 +406,9 @@ public class GdprDeletionService(
             user.Employee.Address?.Anonymize();
             user.Employee.Deactivated(deactivationReason, DateTimeOffset.UtcNow);
         }
+
+        // The per-currency Stripe Customer ids go with the legacy one Anonymize() clears.
+        await userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct);
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);

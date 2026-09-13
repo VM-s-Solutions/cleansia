@@ -446,6 +446,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDefaultMarket")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("LegalRequirementsJson")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
@@ -526,6 +531,11 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("CountryId")
                         .IsUnique();
+
+                    b.HasIndex("IsDefaultMarket")
+                        .IsUnique()
+                        .HasDatabaseName("IX_CountryConfigurations_IsDefaultMarket_Unique")
+                        .HasFilter("\"IsDefaultMarket\" = true");
 
                     b.HasIndex("TenantId");
 
@@ -6261,6 +6271,73 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("UserConsents");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.UserStripeCustomer", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("StripeCustomerId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("StripeCustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserStripeCustomers_StripeCustomerId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId", "CurrencyId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserStripeCustomers_UserId_CurrencyId");
+
+                    b.ToTable("UserStripeCustomers", (string)null);
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Bookings.RecurringBookingTemplate", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
@@ -7333,6 +7410,25 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.UserStripeCustomer", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Currency");
 
                     b.Navigation("User");
                 });

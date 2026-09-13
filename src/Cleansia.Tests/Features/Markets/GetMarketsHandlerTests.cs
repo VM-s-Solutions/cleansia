@@ -10,7 +10,8 @@ namespace Cleansia.Tests.Features.Markets;
 
 /// <summary>
 /// The market directory (ADR-0058 D1–D2). A market is a serviced country joined to its configured,
-/// ACTIVE currency; the default market is the one on the platform default currency. This is the
+/// ACTIVE currency; the default market is the one whose configuration carries <c>IsDefaultMarket</c>
+/// (owner ruling 2026-09-13, Q-MARKET-01), else the one on the platform default currency. This is the
 /// anonymous read behind the landing page, so every configuration state below answers with a list
 /// and a log line — never a throw.
 /// </summary>
@@ -22,6 +23,7 @@ public class GetMarketsHandlerTests
     private readonly List<(LogLevel Level, string Message)> _log = [];
 
     private readonly List<Country> _serviced = [];
+    private CountryConfiguration? _flagged;
 
     public GetMarketsHandlerTests()
     {
@@ -29,6 +31,8 @@ public class GetMarketsHandlerTests
             .ReturnsAsync(() => _serviced.OrderBy(c => c.Name).ToList());
         _configurations.Setup(r => r.GetByCountryIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((CountryConfiguration?)null);
+        _configurations.Setup(r => r.GetDefaultMarketAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => _flagged);
         _currencies.Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency?)null);
         _currencies.Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
@@ -51,18 +55,28 @@ public class GetMarketsHandlerTests
         return currency;
     }
 
-    private Country Market(string name, string iso3, string iso2, string? currencyCode, decimal? insurance = null)
+    private Country Market(
+        string name, string iso3, string iso2, string? currencyCode, decimal? insurance = null,
+        bool isDefaultMarket = false, bool isServiced = true)
     {
-        var country = Country.Create(name, iso3, iso2, isServiced: true);
+        var country = Country.Create(name, iso3, iso2, isServiced);
         country.Id = $"country-{iso3}";
-        _serviced.Add(country);
+        if (isServiced)
+        {
+            _serviced.Add(country);
+        }
 
         if (currencyCode is not null)
         {
             var configuration = CountryConfiguration.Create(country.Id, currencyCode, "en", 0.2m);
             configuration.UpdateMarketContent(insurance);
+            configuration.SetAsDefaultMarket(isDefaultMarket);
             _configurations.Setup(r => r.GetByCountryIdAsync(country.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(configuration);
+            if (isDefaultMarket)
+            {
+                _flagged = configuration;
+            }
         }
 
         return country;
@@ -76,7 +90,7 @@ public class GetMarketsHandlerTests
     public async Task A_Serviced_Country_On_An_Active_Currency_Is_A_Market_With_Its_Figures()
     {
         Currency("CZK", isDefault: true, noShowCredit: 250m);
-        Market("Czechia", "CZE", "CZ", "CZK", insurance: 1_000_000m);
+        Market("Czechia", "CZE", "CZ", "CZK", insurance: 1_000_000m, isDefaultMarket: true);
 
         var markets = await Run();
 
@@ -155,10 +169,11 @@ public class GetMarketsHandlerTests
         Assert.Equal(3, markets.Count);
         var flagged = Assert.Single(markets, m => m.IsDefault);
         Assert.Equal("DEU", flagged.IsoCode);
-        var error = Assert.Single(_log, e => e.Level == LogLevel.Error);
+        var error = Assert.Single(_log, e => e.Level == LogLevel.Error && e.Message.Contains("lowest ISO code"));
         Assert.Contains("EUR", error.Message);
         Assert.Contains("DEU", error.Message);
         Assert.Contains("SVK", error.Message);
+        Assert.Contains(_log, e => e.Level == LogLevel.Error && e.Message.Contains("No country configuration is flagged"));
     }
 
     /// <summary>
@@ -176,7 +191,7 @@ public class GetMarketsHandlerTests
 
         var slovakia = Assert.Single(markets);
         Assert.False(slovakia.IsDefault);
-        var error = Assert.Single(_log, e => e.Level == LogLevel.Error);
+        var error = Assert.Single(_log, e => e.Level == LogLevel.Error && e.Message.Contains("No listed market"));
         Assert.Contains("CZK", error.Message);
     }
 
@@ -194,8 +209,78 @@ public class GetMarketsHandlerTests
 
         var slovakia = Assert.Single(markets);
         Assert.False(slovakia.IsDefault);
+        Assert.Contains(_log, e => e.Level == LogLevel.Error && e.Message.Contains("no default currency"));
+    }
+
+    /// <summary>
+    /// The explicit flag decides, whatever currency the flagged market is on (owner ruling 2026-09-13):
+    /// CZK is the default currency, but SVK carries the flag, so SVK is the default market and the
+    /// currency rule is never consulted.
+    /// </summary>
+    [Fact]
+    public async Task The_Flagged_Market_Is_The_Default_Even_When_Another_Is_On_The_Default_Currency()
+    {
+        Currency("CZK", isDefault: true);
+        Currency("EUR");
+        Market("Czechia", "CZE", "CZ", "CZK");
+        Market("Slovakia", "SVK", "SK", "EUR", isDefaultMarket: true);
+
+        var markets = await Run();
+
+        var flagged = Assert.Single(markets, m => m.IsDefault);
+        Assert.Equal("SVK", flagged.IsoCode);
+        Assert.DoesNotContain(_log, e => e.Level >= LogLevel.Warning);
+    }
+
+    /// <summary>
+    /// Several markets on the default currency, one flagged: the flag wins and nothing about a
+    /// tiebreak is logged — the tiebreak is the fallback, not the rule.
+    /// </summary>
+    [Fact]
+    public async Task The_Flag_Settles_Several_Markets_On_The_Default_Currency_Without_The_Tiebreak()
+    {
+        Currency("EUR", isDefault: true);
+        Market("Slovakia", "SVK", "SK", "EUR", isDefaultMarket: true);
+        Market("Germany", "DEU", "DE", "EUR");
+
+        var markets = await Run();
+
+        Assert.Equal("SVK", Assert.Single(markets, m => m.IsDefault).IsoCode);
+        Assert.DoesNotContain(_log, e => e.Level >= LogLevel.Warning);
+    }
+
+    /// <summary>No flag anywhere: the currency rule still picks, and the missing flag is logged as an error.</summary>
+    [Fact]
+    public async Task With_No_Flag_The_Default_Currency_Rule_Still_Picks_And_The_Gap_Is_Logged()
+    {
+        Currency("CZK", isDefault: true);
+        Market("Czechia", "CZE", "CZ", "CZK");
+
+        var markets = await Run();
+
+        Assert.True(Assert.Single(markets).IsDefault);
         var error = Assert.Single(_log, e => e.Level == LogLevel.Error);
-        Assert.Contains("no default currency", error.Message);
+        Assert.Contains("No country configuration is flagged", error.Message);
+    }
+
+    /// <summary>
+    /// The flagged country has since been un-serviced: it is not listed, so it cannot be the
+    /// pre-selection; the read names it in the log and the currency rule decides.
+    /// </summary>
+    [Fact]
+    public async Task A_Flag_On_An_Unlisted_Country_Falls_Back_To_The_Currency_Rule_And_Logs_It()
+    {
+        Currency("CZK", isDefault: true);
+        Currency("EUR");
+        Market("Czechia", "CZE", "CZ", "CZK");
+        Market("Slovakia", "SVK", "SK", "EUR", isDefaultMarket: true, isServiced: false);
+
+        var markets = await Run();
+
+        Assert.Equal("CZE", Assert.Single(markets, m => m.IsDefault).IsoCode);
+        var error = Assert.Single(_log, e => e.Level == LogLevel.Error);
+        Assert.Contains("SVK", error.Message);
+        Assert.Contains("not a listed market", error.Message);
     }
 
     [Fact]

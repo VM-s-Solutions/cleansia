@@ -76,6 +76,7 @@ public class CreateMembershipSubscription
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
         IMembershipTrialResolver membershipTrialResolver,
+        IStripeCustomerResolver stripeCustomerResolver,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -120,28 +121,18 @@ public class CreateMembershipSubscription
                     nameof(command.PlanCode), BusinessErrorMessage.MembershipPlanNotPricedInCurrency));
             }
 
-            var stripeCustomerId = user.StripeCustomerId;
-            if (string.IsNullOrEmpty(stripeCustomerId))
+            // The Customer is per currency: Stripe locks a Customer to the currency of its first invoice,
+            // so a re-subscribe in another market needs its own (owner ruling 2026-09-13, Q-MARKET-05).
+            string stripeCustomerId;
+            try
             {
-                try
-                {
-                    stripeCustomerId = await stripeClient.CreateCustomerAsync(
-                        user.Id,
-                        user.Email,
-                        $"{user.FirstName} {user.LastName}".Trim(),
-                        user.PhoneNumber,
-                        cancellationToken);
-                }
-                catch (StripeException ex)
-                {
-                    logger.LogError(ex, "Stripe customer creation failed for user {UserId} (subscribe flow)", user.Id);
-                    return BusinessResult.Failure<Response>(new Error(
-                        nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
-                }
-                user.AssignStripeCustomerId(stripeCustomerId);
-                logger.LogInformation(
-                    "Created Stripe customer {StripeCustomerId} for user {UserId} (subscribe flow)",
-                    stripeCustomerId, user.Id);
+                stripeCustomerId = await stripeCustomerResolver.ResolveForCurrencyAsync(user, currency, cancellationToken);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Stripe customer creation failed for user {UserId} (subscribe flow)", user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
 
             if (command.PaymentMethodConfirmed)

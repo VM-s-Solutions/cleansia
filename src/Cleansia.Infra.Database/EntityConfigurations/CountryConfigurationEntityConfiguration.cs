@@ -95,5 +95,17 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
 
         builder.Property(e => e.InsuranceCoverageAmount)
             .HasPrecision(18, 2);
+
+        builder.Property(e => e.IsDefaultMarket)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        // AT MOST ONE DEFAULT MARKET, held by the database the way IX_Currencies_IsDefault_Unique holds
+        // the default currency. Same partial-unique shape, same consequence: Postgres cannot defer it,
+        // so SetDefaultMarket flushes the clear before it emits the promote.
+        builder.HasIndex(e => e.IsDefaultMarket)
+            .IsUnique()
+            .HasFilter("\"IsDefaultMarket\" = true")
+            .HasDatabaseName("IX_CountryConfigurations_IsDefaultMarket_Unique");
     }
 }

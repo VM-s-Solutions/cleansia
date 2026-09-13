@@ -80,7 +80,12 @@ public class CreateMembershipCheckoutSessionContractLockTests
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
+            CustomerResolver(),
             NullLogger<CreateMembershipCheckoutSession.Handler>.Instance);
+
+    private StripeCustomerResolver CustomerResolver() =>
+        new(new Mock<IUserStripeCustomerRepository>().Object, _membershipRepository.Object, _stripe.Object,
+            NullLogger<StripeCustomerResolver>.Instance);
 
     [Fact]
     public async Task UserNotFound_Failure_NamesOffendingUserField_NotCommand()

@@ -104,7 +104,12 @@ public class CreateMembershipSubscriptionIdempotencyTests
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
+            CustomerResolver(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
+
+    private StripeCustomerResolver CustomerResolver() =>
+        new(new Mock<IUserStripeCustomerRepository>().Object, _membershipRepository.Object, _stripe.Object,
+            NullLogger<StripeCustomerResolver>.Instance);
 
     private static CreateMembershipSubscription.Command ConfirmedCommand(string? token) =>
         new(PlanCode, PaymentMethodConfirmed: true) { IdempotencyToken = token };

@@ -273,6 +273,12 @@ public class SubjectDataErasureRosterTests
                 + "ground. The erasure requests cancellation at period end rather than deleting the row.",
             InErasure("membership.MarkCancellationRequested()")),
 
+        [typeof(UserStripeCustomer)] = new(
+            Verdict.Deleted,
+            "A Stripe Customer id per currency — the same handle User.StripeCustomerId holds, which "
+                + "Anonymize() clears; two tables recording one fact are treated the same way.",
+            InErasure("userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct)")),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeePayConfig)] = new(
             Verdict.RetainedPseudonymous,
             "Pay rates keyed to an employee id that no longer resolves to a person; no name, contact or "

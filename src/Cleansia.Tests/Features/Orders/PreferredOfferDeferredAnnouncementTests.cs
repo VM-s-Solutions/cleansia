@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -246,6 +247,7 @@ public class PreferredOfferDeferredAnnouncementTests
             _pending.Object,
             _notificationProducer.Object,
             resolver,
+            new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
     }
 

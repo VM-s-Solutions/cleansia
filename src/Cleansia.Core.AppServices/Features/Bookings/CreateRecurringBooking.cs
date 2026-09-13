@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -10,6 +11,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
+[AuditAction("customer.recurring.create", Audience = AuditAudience.Customer, ResourceType = "RecurringBookingTemplate")]
 public class CreateRecurringBooking
 {
     public record Command(
@@ -138,7 +140,8 @@ public class CreateRecurringBooking
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
         IUserMembershipRepository userMembershipRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -181,6 +184,9 @@ public class CreateRecurringBooking
                 preferredEmployeeId: command.PreferredEmployeeId);
 
             templateRepository.Add(template);
+
+            auditContext.RecordEvidence("RecurringBookingTemplate", template.Id,
+                new RecurringTemplateEvidence(Before: null, After: RecurringTemplateFacts.Of(template)));
 
             var line = $"{address.Address.Street}, {address.Address.City} {address.Address.ZipCode}";
 

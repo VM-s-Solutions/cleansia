@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
@@ -74,6 +75,7 @@ public class MembershipSubscribeUsesPerCurrencyCustomerTests
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
             _customerResolver.Object,
+            new AuditContext(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
 
     private CreateMembershipCheckoutSession.Handler CheckoutHandler() =>
@@ -88,6 +90,7 @@ public class MembershipSubscribeUsesPerCurrencyCustomerTests
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
             _customerResolver.Object,
+            new AuditContext(),
             NullLogger<CreateMembershipCheckoutSession.Handler>.Instance);
 
     [Fact]

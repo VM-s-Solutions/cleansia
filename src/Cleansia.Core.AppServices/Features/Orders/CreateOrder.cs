@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Catalog;
@@ -8,9 +9,13 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Legal;
+using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +23,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
+[AuditAction("customer.order.create", Audience = AuditAudience.Customer, ResourceType = "Order", AllowsAnonymousActor = true)]
 public class CreateOrder
 {
     public class Validator : AbstractValidator<Command>
@@ -662,7 +668,10 @@ public class CreateOrder
         /// </summary>
         string? CustomerFloor = null,
         string? CustomerApartment = null,
-        string? AccessMode = null) : ICommand<Response>, IOperatorScopedRequest
+        string? AccessMode = null,
+        // The terms tick as the client asserted it. Null is a client that sends nothing; it is recorded
+        // as "not asserted", never refused (ADR-0062 D4, Q-AUD-L4).
+        bool? TermsAccepted = null) : ICommand<Response>, IOperatorScopedRequest
     {
         // A guest's market is the inline address's country; a guest cannot name a saved address, and a
         // request with no country lands in the default market (ADR-0061 D3). The validator's operator
@@ -675,6 +684,109 @@ public class CreateOrder
         string ConfirmationCode,
         string? StripeSessionId);
 
+    /// <summary>
+    /// The booking as the server priced and stored it (ADR-0062 D3): every figure is read off the
+    /// persisted order and the calculator's answer, never off the request — except the terms tick,
+    /// which only the client can assert. No contact detail, no address text, no instructions, and no
+    /// preferred cleaner: the erasure nulls that on purpose and the row must not undo it.
+    /// </summary>
+    public record OrderBookingEvidence(
+        string OrderId,
+        decimal TotalPrice,
+        decimal NetPrice,
+        decimal VatAmount,
+        decimal? AppliedVatRate,
+        string CurrencyCode,
+        string CountryId,
+        LoyaltyTier? TierAtPurchase,
+        decimal? TierDiscountAmount,
+        string? PromoCodeId,
+        decimal? PromoDiscountAmount,
+        string? MembershipPlanIdAtPurchase,
+        decimal? MembershipDiscountAmount,
+        decimal ExpressSurchargeAmount,
+        bool ExpressWaivedByMembership,
+        decimal CreditAppliedAmount,
+        PaymentType PaymentType,
+        DateTimeOffset CleaningDateTime,
+        decimal LeadTimeHours,
+        IReadOnlyList<string> PackageIds,
+        IReadOnlyList<string> ServiceIds,
+        IReadOnlyList<string> ExtraSlugs,
+        int Rooms,
+        int Bathrooms,
+        string? SavedAddressId,
+        string AddressId,
+        string? RecurringTemplateId,
+        string Language,
+        bool IsGuest,
+        CancellationPolicyShown CancellationPolicyShown,
+        bool? TermsAccepted,
+        string TermsVersionAccepted) : ICustomerAuditPayload
+    {
+        public static OrderBookingEvidence From(
+            Order order,
+            Command command,
+            OrderPricingResult pricing,
+            Currency currency,
+            Address address,
+            IReadOnlyList<string> selectedExtraSlugs,
+            bool expressWaiverReserved,
+            CancellationPolicy cancellationPolicy,
+            DateTime nowUtc) => new(
+            OrderId: order.Id,
+            TotalPrice: order.TotalPrice,
+            NetPrice: order.NetAmount,
+            VatAmount: order.VatAmount,
+            AppliedVatRate: order.AppliedVatRate,
+            CurrencyCode: currency.Code,
+            CountryId: address.CountryId,
+            TierAtPurchase: order.TierAtPurchase,
+            TierDiscountAmount: order.TierDiscountAmount,
+            PromoCodeId: order.PromoCodeId,
+            PromoDiscountAmount: order.PromoDiscountAmount,
+            MembershipPlanIdAtPurchase: order.MembershipPlanIdAtPurchase,
+            MembershipDiscountAmount: order.MembershipDiscountAmount,
+            ExpressSurchargeAmount: pricing.ExpressSurchargeAmount,
+            ExpressWaivedByMembership: expressWaiverReserved,
+            CreditAppliedAmount: order.CreditAppliedAmount,
+            PaymentType: order.PaymentType,
+            CleaningDateTime: new DateTimeOffset(DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)),
+            LeadTimeHours: Math.Round((decimal)(order.CleaningDateTime - nowUtc).TotalHours, 2),
+            PackageIds: command.SelectedPackageIds.ToList(),
+            ServiceIds: command.SelectedServiceIds.ToList(),
+            ExtraSlugs: selectedExtraSlugs,
+            Rooms: order.Rooms,
+            Bathrooms: order.Bathrooms,
+            SavedAddressId: command.SavedAddressId,
+            AddressId: address.Id,
+            RecurringTemplateId: order.RecurringTemplateId,
+            Language: command.Language,
+            IsGuest: string.IsNullOrEmpty(order.UserId),
+            CancellationPolicyShown: CancellationPolicyShown.From(cancellationPolicy),
+            TermsAccepted: command.TermsAccepted,
+            TermsVersionAccepted: LegalDocumentVersions.CustomerTerms);
+    }
+
+    /// <summary>
+    /// The cancellation schedule the booking was made under: the platform figures, plus the free window
+    /// this customer actually had (a Plus window is narrower than the standard 24 h).
+    /// </summary>
+    public record CancellationPolicyShown(
+        int FreeHours,
+        int PartialHours,
+        decimal PartialRate,
+        decimal LastMinuteRate,
+        int FreeHoursForThisCustomer)
+    {
+        public static CancellationPolicyShown From(CancellationPolicy policy) => new(
+            BookingPolicy.FreeCancellationHours,
+            BookingPolicy.PartialCancellationHours,
+            BookingPolicy.PartialCancellationFeeRate,
+            BookingPolicy.LastMinuteCancellationFeeRate,
+            policy.FreeCancellationHours);
+    }
+
     public class Handler(
         ICurrencyResolutionService currencyResolutionService,
         IUserSessionProvider userSessionProvider,
@@ -686,6 +798,8 @@ public class CreateOrder
         IOrderPaymentDispatcher orderPaymentDispatcher,
         IExpressWaiverConsumer expressWaiverConsumer,
         ICreditAccountRepository creditAccountRepository,
+        ICancellationPolicyResolver cancellationPolicyResolver,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -844,6 +958,11 @@ public class CreateOrder
             // the customer already paid and the promo just doesn't get tracked.
             await orderPromoApplier.ApplyAsync(
                 command, userId, order, rawSubtotal, currency.Id, cancellationToken);
+
+            var cancellationPolicy = await cancellationPolicyResolver.ResolveForUserAsync(
+                order.UserId, cancellationToken);
+            auditContext.RecordEvidence("Order", order.Id, OrderBookingEvidence.From(
+                order, command, calc, currency, address, selectedExtraSlugs, reservation != null, cancellationPolicy, nowUtc));
 
             return BusinessResult.Success(new Response(
                 Id: order.Id,

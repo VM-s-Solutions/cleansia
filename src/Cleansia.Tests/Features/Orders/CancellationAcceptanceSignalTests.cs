@@ -107,7 +107,8 @@ public class CancellationAcceptanceSignalTests
             new CancellationPolicyResolver(_membershipRepository.Object),
             _producer.Object,
             _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            new AuditContext());
 
     private HandlePaymentNotification.Handler CreateWebhookHandler() =>
         new(
@@ -134,6 +135,7 @@ public class CancellationAcceptanceSignalTests
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
+            new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 
     private AdminOverrideOrderStatus.Handler CreateAdminOverrideHandler() =>

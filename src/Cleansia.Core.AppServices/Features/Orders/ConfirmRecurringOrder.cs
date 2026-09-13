@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -26,9 +27,23 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <para>Refuses orders that are not pending, not owned by the caller, or not linked to a template —
 /// those belong on the standard booking flow. → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
+[AuditAction("customer.order.recurring.confirm", Audience = AuditAudience.Customer, ResourceType = "Order")]
 public class ConfirmRecurringOrder
 {
     public record Command(string OrderId) : ICommand<Response>;
+
+    /// <summary>
+    /// The occurrence the customer confirmed, priced as the materializer stored it (ADR-0062 D3). On the
+    /// card flavour the row records the confirmation the customer initiated; the money moves on the webhook.
+    /// </summary>
+    public record RecurringOccurrenceConfirmationEvidence(
+        string OrderId,
+        string RecurringTemplateId,
+        decimal TotalPrice,
+        string? CurrencyCode,
+        PaymentType PaymentType,
+        DateTimeOffset CleaningDateTime,
+        decimal LeadTimeHours) : ICustomerAuditPayload;
 
     /// <summary>
     /// Both flavors return the same shape; consumers branch on
@@ -62,6 +77,7 @@ public class ConfirmRecurringOrder
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -90,13 +106,28 @@ public class ConfirmRecurringOrder
                     nameof(order.PaymentStatus), BusinessErrorMessage.OrderPaymentAlreadyPaid));
             }
 
-            return order.PaymentType switch
+            var result = order.PaymentType switch
             {
                 PaymentType.Cash => await HandleCashAsync(order, cancellationToken),
                 PaymentType.Card => await HandleCardAsync(order, sessionUserId, cancellationToken),
                 _ => BusinessResult.Failure<Response>(new Error(
                     nameof(order.PaymentType), BusinessErrorMessage.InvalidEnumValue)),
             };
+
+            if (result.IsSuccess)
+            {
+                var nowUtc = DateTime.UtcNow;
+                auditContext.RecordEvidence("Order", order.Id, new RecurringOccurrenceConfirmationEvidence(
+                    OrderId: order.Id,
+                    RecurringTemplateId: order.RecurringTemplateId,
+                    TotalPrice: order.TotalPrice,
+                    CurrencyCode: order.Currency?.Code,
+                    PaymentType: order.PaymentType,
+                    CleaningDateTime: new DateTimeOffset(DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)),
+                    LeadTimeHours: Math.Round((decimal)(order.CleaningDateTime - nowUtc).TotalHours, 2)));
+            }
+
+            return result;
         }
 
         private async Task<BusinessResult<Response>> HandleCashAsync(

@@ -33,7 +33,7 @@ public sealed class AuditContext : IAuditContext
             reason);
     }
 
-    public void RecordEvidence(string resourceType, string resourceId, object payload, string? actorUserId = null)
+    public void RecordEvidence(string resourceType, string? resourceId, object payload, string? actorUserId = null)
     {
         _snapshot = new AuditSnapshot(
             resourceType,

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -10,6 +11,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
+[AuditAction("customer.recurring.update", Audience = AuditAudience.Customer, ResourceType = "RecurringBookingTemplate")]
 public class UpdateRecurringBooking
 {
     public record Command(
@@ -177,7 +179,8 @@ public class UpdateRecurringBooking
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -197,6 +200,8 @@ public class UpdateRecurringBooking
                     BusinessErrorMessage.RecurringTemplateSavedAddressNotFound));
             }
 
+            var before = RecurringTemplateFacts.Of(existing);
+
             // Mutate in place so the template's Id survives an update. Clients
             // caching the template by id (mobile list, web facade) stay valid.
             existing.UpdateSchedule(
@@ -212,6 +217,9 @@ public class UpdateRecurringBooking
                 startsOn: command.StartsOn,
                 endsOn: command.EndsOn,
                 preferredEmployeeId: command.PreferredEmployeeId);
+
+            auditContext.RecordEvidence("RecurringBookingTemplate", existing.Id,
+                new RecurringTemplateEvidence(before, RecurringTemplateFacts.Of(existing)));
 
             var line = $"{address.Address.Street}, {address.Address.City} {address.Address.ZipCode}";
 

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
@@ -87,6 +88,7 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
             CustomerResolver(),
+            new AuditContext(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
 
     private StripeCustomerResolver CustomerResolver() =>

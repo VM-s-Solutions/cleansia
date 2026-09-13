@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -72,7 +73,8 @@ public class CancellationFeePreviewAgreementTests
             Resolver,
             _producer.Object,
             _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            new AuditContext());
 
     private GetCancellationFeePreview.Handler CreatePreviewHandler() =>
         new(

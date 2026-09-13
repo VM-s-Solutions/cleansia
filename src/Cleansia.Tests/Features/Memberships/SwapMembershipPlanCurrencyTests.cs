@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
@@ -60,6 +61,7 @@ public class SwapMembershipPlanCurrencyTests
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            new AuditContext(),
             NullLogger<SwapMembershipPlan.Handler>.Instance);
 
     [Fact]

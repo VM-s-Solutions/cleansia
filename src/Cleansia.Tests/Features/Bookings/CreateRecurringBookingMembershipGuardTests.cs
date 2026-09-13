@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.Domain.Bookings;
@@ -42,7 +43,8 @@ public class CreateRecurringBookingMembershipGuardTests
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _membershipRepository.Object,
-            _session.Object);
+            _session.Object,
+            new AuditContext());
 
     private static SavedAddress ArrangeSavedAddress()
     {

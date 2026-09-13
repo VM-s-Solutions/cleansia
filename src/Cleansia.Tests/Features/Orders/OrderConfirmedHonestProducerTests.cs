@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -105,6 +106,7 @@ public class OrderConfirmedHonestProducerTests
             _pending.Object,
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
+            new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance)
             .Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 

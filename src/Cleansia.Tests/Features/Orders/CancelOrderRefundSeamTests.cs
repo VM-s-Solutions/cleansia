@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -58,7 +59,8 @@ public class CancelOrderRefundSeamTests
             _policyResolver.Object,
             _producer.Object,
             _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            new AuditContext());
 
     private Order ArrangeCardPaidPendingOrder()
     {

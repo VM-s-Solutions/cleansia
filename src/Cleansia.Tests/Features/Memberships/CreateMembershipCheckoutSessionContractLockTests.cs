@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
@@ -81,6 +82,7 @@ public class CreateMembershipCheckoutSessionContractLockTests
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
             CustomerResolver(),
+            new AuditContext(),
             NullLogger<CreateMembershipCheckoutSession.Handler>.Instance);
 
     private StripeCustomerResolver CustomerResolver() =>

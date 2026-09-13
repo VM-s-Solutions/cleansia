@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
@@ -51,7 +52,8 @@ public class CreateDisputeHandlerTests
             typeof(CreateDispute.Handler),
             _disputeRepository.Object,
             _orderRepository.Object,
-            _session.Object)!;
+            _session.Object,
+            new AuditContext())!;
 
     /// <summary>
     /// The clean defaults to YESTERDAY. It used to default to tomorrow, which every happy-path test

@@ -123,20 +123,40 @@ public sealed class AuditEntryFactoryCustomerTests
     }
 
     /// <summary>
-    /// The ticket's own acceptance criterion: a refused checkout must not carry the country id labelled
-    /// as the membership. Uses the REAL command type so a future shape change re-checks it.
+    /// A refused checkout must not carry the country id labelled as the membership. Uses the REAL
+    /// command type and its REAL marker so a future shape change re-checks it.
     /// </summary>
     [Fact]
     public void A_Failed_CreateMembershipCheckoutSession_Row_Has_A_Null_ResourceId_Never_The_CountryId()
     {
-        var descriptor = new AuditActionDescriptor(
-            "customer.membership.subscribe", "UserMembership", Sensitive: false, Audited: true, AuditAudience.Customer);
+        var descriptor = AuditActionDescriptor.For(typeof(CreateMembershipCheckoutSession.Command));
 
         var row = Factory(CustomerSession("cust-1"))
             .CreateCustomerFailure(new CreateMembershipCheckoutSession.Command("plus", "CZ"), descriptor, BusinessErrorMessage.Required);
 
+        Assert.Equal("customer.membership.subscribe", row.Action);
         Assert.Equal("UserMembership", row.ResourceType);
         Assert.Null(row.ResourceId);
+    }
+
+    /// <summary>
+    /// The checkout-session path has no membership row yet (the webhook provisions it), so its success
+    /// evidence carries a null resource id and the row keeps the marker's type with no id.
+    /// </summary>
+    [Fact]
+    public void A_Checkout_Success_Row_With_Evidence_But_No_Membership_Yet_Keeps_A_Null_ResourceId()
+    {
+        var context = new AuditContext();
+        context.RecordEvidence("UserMembership", null, new { planCode = "plus", reconciled = false });
+        var descriptor = AuditActionDescriptor.For(typeof(CreateMembershipCheckoutSession.Command));
+
+        var row = Factory(CustomerSession("cust-1"))
+            .CreateCustomerSuccess(new CreateMembershipCheckoutSession.Command("plus", "CZ"), descriptor, context.DrainSnapshot());
+
+        Assert.True(row.Success);
+        Assert.Equal("UserMembership", row.ResourceType);
+        Assert.Null(row.ResourceId);
+        Assert.Equal("{\"planCode\":\"plus\",\"reconciled\":false}", row.PayloadJson);
     }
 
     [Fact]

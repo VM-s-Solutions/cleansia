@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -28,6 +29,7 @@ namespace Cleansia.Core.AppServices.Features.Memberships;
 /// The split is intentional and the endpoint is gated by <c>[Permission(Policy.CanManageMembership)]</c>
 /// and rate-limited. The confirmed branch is idempotent on a client-supplied idempotency token.
 /// </summary>
+[AuditAction("customer.membership.subscribe", Audience = AuditAudience.Customer, ResourceType = "UserMembership")]
 public class CreateMembershipSubscription
 {
     /// <param name="CountryId">The market the customer is subscribing in (ADR-0058 D4); null is the platform default market.</param>
@@ -77,6 +79,7 @@ public class CreateMembershipSubscription
         IStripeConfig stripeConfig,
         IMembershipTrialResolver membershipTrialResolver,
         IStripeCustomerResolver stripeCustomerResolver,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -135,6 +138,12 @@ public class CreateMembershipSubscription
                     nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
 
+            // Resolved ahead of the branch so the started-subscribe row records the same trial the confirm
+            // will grant; the rule is a pure read and both branches ask it once.
+            var trial = await membershipTrialResolver.ResolveForUserAsync(user.Id, plan, cancellationToken);
+            MembershipSubscribeEvidence Evidence(bool reconciled = false) => MembershipSubscribeEvidence.For(
+                plan, price, currency.Code, command.CountryId, trial.Days, MembershipSubscribeChannel.Subscribe, reconciled);
+
             if (command.PaymentMethodConfirmed)
             {
                 // The attempt id must be deterministic, never a per-call Guid: two concurrent/retried
@@ -142,7 +151,6 @@ public class CreateMembershipSubscription
                 // subscription instead of creating a second billable one. A re-subscribe after
                 // cancellation carries a new token, so it is correctly a new subscription.
                 var attemptId = DeriveStripeAttemptId(command.IdempotencyToken, user.Id, plan.Code, currency.Code);
-                var trial = await membershipTrialResolver.ResolveForUserAsync(user.Id, plan, cancellationToken);
                 SubscriptionResult subscription;
                 try
                 {
@@ -175,6 +183,7 @@ public class CreateMembershipSubscription
                     logger.LogInformation(
                         "Reconciled retried confirm for user {UserId}, plan {PlanCode} to existing membership {MembershipId} (Stripe sub {SubscriptionId})",
                         user.Id, plan.Code, existingForSubscription.Id, subscription.SubscriptionId);
+                    auditContext.RecordEvidence("UserMembership", existingForSubscription.Id, Evidence(reconciled: true));
                     return BusinessResult.Success(new Response(
                         MembershipId: existingForSubscription.Id,
                         SetupIntentClientSecret: string.Empty,
@@ -229,6 +238,7 @@ public class CreateMembershipSubscription
                 logger.LogInformation(
                     "Created UserMembership {MembershipId} (Stripe sub {SubscriptionId}) for user {UserId}, plan {PlanCode}",
                     membership.Id, subscription.SubscriptionId, user.Id, plan.Code);
+                auditContext.RecordEvidence("UserMembership", membership.Id, Evidence());
 
                 return BusinessResult.Success(new Response(
                     MembershipId: membership.Id,
@@ -250,6 +260,9 @@ public class CreateMembershipSubscription
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
+
+            // The subscribe was started, not confirmed: no membership row yet, so the resource id stays null.
+            auditContext.RecordEvidence("UserMembership", null, Evidence());
 
             return BusinessResult.Success(new Response(
                 MembershipId: string.Empty,

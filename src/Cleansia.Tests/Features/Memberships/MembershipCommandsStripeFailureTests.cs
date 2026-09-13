@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
@@ -85,6 +86,7 @@ public class MembershipCommandsStripeFailureTests
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
             CustomerResolver(),
+            new AuditContext(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
 
     private CreateMembershipCheckoutSession.Handler CheckoutHandler() =>
@@ -99,6 +101,7 @@ public class MembershipCommandsStripeFailureTests
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
             CustomerResolver(),
+            new AuditContext(),
             NullLogger<CreateMembershipCheckoutSession.Handler>.Instance);
 
     private StripeCustomerResolver CustomerResolver() =>
@@ -113,6 +116,7 @@ public class MembershipCommandsStripeFailureTests
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            new AuditContext(),
             NullLogger<SwapMembershipPlan.Handler>.Instance);
 
     private CancelMembershipSubscription.Handler CancelHandler() =>
@@ -120,6 +124,7 @@ public class MembershipCommandsStripeFailureTests
             _membershipRepository.Object,
             _session.Object,
             _stripe.Object,
+            new AuditContext(),
             NullLogger<CancelMembershipSubscription.Handler>.Instance);
 
     private static CreateMembershipSubscription.Command ConfirmedCommand() =>

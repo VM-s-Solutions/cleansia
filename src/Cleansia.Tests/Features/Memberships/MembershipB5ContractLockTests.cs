@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
@@ -40,6 +41,7 @@ public class MembershipB5ContractLockTests
             _membershipRepository.Object,
             _session.Object,
             _stripe.Object,
+            new AuditContext(),
             NullLogger<CancelMembershipSubscription.Handler>.Instance);
 
     private SwapMembershipPlan.Handler SwapHandler() =>
@@ -50,6 +52,7 @@ public class MembershipB5ContractLockTests
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            new AuditContext(),
             NullLogger<SwapMembershipPlan.Handler>.Instance);
 
     [Fact]

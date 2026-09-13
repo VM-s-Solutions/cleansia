@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -13,6 +14,7 @@ using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
+[AuditAction("customer.membership.subscribe", Audience = AuditAudience.Customer, ResourceType = "UserMembership")]
 public class CreateMembershipCheckoutSession
 {
     /// <param name="CountryId">The market the customer is subscribing in (ADR-0058 D4); null is the platform default market.</param>
@@ -52,6 +54,7 @@ public class CreateMembershipCheckoutSession
         IStripeConfig stripeConfig,
         IMembershipTrialResolver membershipTrialResolver,
         IStripeCustomerResolver stripeCustomerResolver,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -141,6 +144,10 @@ public class CreateMembershipCheckoutSession
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
+
+            // No membership row yet — the webhook provisions it — so the resource id stays null.
+            auditContext.RecordEvidence("UserMembership", null, MembershipSubscribeEvidence.For(
+                plan, price, currency.Code, command.CountryId, trial.Days, MembershipSubscribeChannel.Checkout));
 
             return BusinessResult.Success(new Response(url));
         }

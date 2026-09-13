@@ -81,7 +81,8 @@ public sealed class CreateOrderOperatorAgreementTests
             packagePrices.Object,
             Mock.Of<IPromoCodeService>(),
             _operators.Object,
-            _tenant.Object);
+            _tenant.Object,
+            CreateOrderTestData.Speaking(Constants.Language.English));
     }
 
     private static CreateOrder.Command AddressIn(string countryId) =>

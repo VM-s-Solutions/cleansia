@@ -244,7 +244,8 @@ public class CreateOrderPayCoverageValidatorTests
             CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.PackageId, 1000m)),
         Mock.Of<IPromoCodeService>(),
         Mock.Of<IOperatorTenantResolver>(),
-        Mock.Of<ITenantProvider>());
+        Mock.Of<ITenantProvider>(),
+        CreateOrderTestData.Speaking(Constants.Language.English));
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

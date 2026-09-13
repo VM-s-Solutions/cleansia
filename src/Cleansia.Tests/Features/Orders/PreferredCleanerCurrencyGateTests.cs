@@ -273,7 +273,8 @@ public class PreferredCleanerCurrencyGateTests
             CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)),
             new Mock<IPromoCodeService>().Object,
             Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>());
+            Mock.Of<ITenantProvider>(),
+            CreateOrderTestData.Speaking(Constants.Language.English));
 
     private ChoosePreferredCleaner.Validator ChooseValidator() =>
         new(_session.Object, _membershipRepository.Object, _orderRepository.Object, _markets);

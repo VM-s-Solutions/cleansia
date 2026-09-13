@@ -10,9 +10,10 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// nullable in the contract).
 ///
 /// <para><see cref="ResolveExact"/> is the customer arm's read (ADR-0062 D1): the <c>{ResourceType}Id</c>
-/// property only. The two fallbacks would label <c>CreateMembershipCheckoutSession.Command</c>'s
-/// <c>CountryId</c> a membership and <c>CreateDispute.Command</c>'s <c>OrderId</c> a dispute — a wrong
-/// id on an evidence row is worse than none.</para>
+/// property only, or the one property the marker named in its place. The two fallbacks would label
+/// <c>CreateMembershipCheckoutSession.Command</c>'s <c>CountryId</c> a membership and
+/// <c>CreateDispute.Command</c>'s <c>OrderId</c> a dispute — a wrong id on an evidence row is worse
+/// than none.</para>
 /// </summary>
 public static class AuditResourceResolver
 {
@@ -41,14 +42,15 @@ public static class AuditResourceResolver
         return idLike.Length == 1 ? ReadString(request, idLike[0]) : null;
     }
 
-    public static string? ResolveExact(object request, string? resourceType)
+    public static string? ResolveExact(object request, string? resourceType, string? resourceIdProperty = null)
     {
         if (string.IsNullOrWhiteSpace(resourceType))
         {
             return null;
         }
 
-        return ReadString(request, request.GetType().GetProperty($"{resourceType}Id", BindingFlags.Public | BindingFlags.Instance));
+        var propertyName = string.IsNullOrWhiteSpace(resourceIdProperty) ? $"{resourceType}Id" : resourceIdProperty;
+        return ReadString(request, request.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance));
     }
 
     private static string? ReadString(object request, PropertyInfo? property)

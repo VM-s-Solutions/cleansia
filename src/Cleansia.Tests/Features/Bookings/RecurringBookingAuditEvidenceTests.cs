@@ -86,12 +86,16 @@ public sealed class RecurringBookingAuditEvidenceTests
         Assert.Equal(7, facts.EnumerateObject().Count());
     }
 
+    /// <summary>
+    /// The three acts on an existing schedule name it <c>TemplateId</c> on the wire, so their markers
+    /// name that property for the failure row's id; a create has no template yet and names none.
+    /// </summary>
     [Theory]
-    [InlineData(typeof(CreateRecurringBooking.Command), "customer.recurring.create")]
-    [InlineData(typeof(UpdateRecurringBooking.Command), "customer.recurring.update")]
-    [InlineData(typeof(SetRecurringBookingActive.Command), "customer.recurring.set_active")]
-    [InlineData(typeof(DeleteRecurringBooking.Command), "customer.recurring.delete")]
-    public void The_Schedule_Markers_Are_Frozen_On_The_Template(Type commandType, string expectedLabel)
+    [InlineData(typeof(CreateRecurringBooking.Command), "customer.recurring.create", null)]
+    [InlineData(typeof(UpdateRecurringBooking.Command), "customer.recurring.update", "TemplateId")]
+    [InlineData(typeof(SetRecurringBookingActive.Command), "customer.recurring.set_active", "TemplateId")]
+    [InlineData(typeof(DeleteRecurringBooking.Command), "customer.recurring.delete", "TemplateId")]
+    public void The_Schedule_Markers_Are_Frozen_On_The_Template(Type commandType, string expectedLabel, string? expectedIdProperty)
     {
         var descriptor = AuditActionDescriptor.For(commandType);
 
@@ -99,6 +103,11 @@ public sealed class RecurringBookingAuditEvidenceTests
         Assert.Equal("RecurringBookingTemplate", descriptor.ResourceType);
         Assert.Equal(AuditAudience.Customer, descriptor.Audience);
         Assert.False(descriptor.AllowsAnonymousActor);
+        Assert.Equal(expectedIdProperty, descriptor.ResourceIdProperty);
+        if (expectedIdProperty is not null)
+        {
+            Assert.NotNull(commandType.GetProperty(expectedIdProperty));
+        }
     }
 
     [Fact]

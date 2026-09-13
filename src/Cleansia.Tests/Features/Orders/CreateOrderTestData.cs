@@ -4,6 +4,8 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Repositories;
+using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -34,6 +36,15 @@ internal static class CreateOrderTestData
         return currency;
     }
     public const decimal MatchingTotalPrice = 1500m;
+
+    /// <summary>The languages the platform speaks, for the validator's language rule; anything else is refused.</summary>
+    public static ILanguageRepository Speaking(params string[] codes)
+    {
+        var mock = new Mock<ILanguageRepository>();
+        mock.Setup(r => r.ExistsWithCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string code, CancellationToken _) => codes.Contains(code));
+        return mock.Object;
+    }
 
     public static AddressDto InlineAddress(string? countryId = "cz") =>
         new(

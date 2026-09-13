@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Configuration;
@@ -220,6 +221,42 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.Equal(4, payload.GetProperty("cancellationPolicyShown").GetProperty("freeHoursForThisCustomer").GetInt32());
         Assert.Equal("card", payload.GetProperty("paymentType").GetString());
         Assert.DoesNotContain("emp-favourite", snapshot!.AfterJson!);
+    }
+
+    [Fact]
+    public async Task The_Extras_Recorded_Are_The_Orders_Resolved_Slugs_Never_The_Requests_Keys()
+    {
+        const string smuggled = "not-a-slug my phone 777";
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CreateOrderInput input, CancellationToken _) =>
+            {
+                var order = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+                {
+                    Id = CreatedOrderId,
+                    UserId = input.UserId,
+                    PaymentType = input.PaymentType,
+                    TotalPrice = input.RawSubtotal,
+                    CustomerAddress = input.Address,
+                    CleaningDateTime = input.CleaningDate,
+                    TenantId = "tenant-1",
+                }, currency: Czk);
+                var windows = Extra.Create("windows", "Windows", null);
+                order.AddSelectedExtras([OrderExtra.Create(order, windows, unitPrice: 150m)]);
+                return order;
+            });
+        var command = CreateOrderTestData.ValidCommand() with
+        {
+            Extras = new Dictionary<string, bool> { [smuggled] = true, ["windows"] = true },
+        };
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var snapshot = _auditContext.DrainSnapshot();
+        Assert.Equal(["windows"], Payload(snapshot).GetProperty("extraSlugs").EnumerateArray().Select(e => e.GetString()).ToList());
+        Assert.DoesNotContain(smuggled, snapshot!.AfterJson!);
     }
 
     [Fact]

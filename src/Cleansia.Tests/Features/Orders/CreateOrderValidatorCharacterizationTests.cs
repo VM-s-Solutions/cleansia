@@ -98,7 +98,8 @@ public class CreateOrderValidatorCharacterizationTests
             packagePrices ?? PricedPackages(Czk, Eur),
             _promoCodeService.Object,
             Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>());
+            Mock.Of<ITenantProvider>(),
+            CreateOrderTestData.Speaking(Constants.Language.English));
 
     private static IServicePriceRepository PricedServices(params Currency[] currencies)
     {
@@ -139,6 +140,36 @@ public class CreateOrderValidatorCharacterizationTests
         var result = await CreateValidator().ValidateAsync(CreateOrderTestData.ValidCommand());
 
         Assert.True(result.IsValid);
+    }
+
+    /// <summary>
+    /// The booking's language reaches the receipt and the audit row; a code the platform does not
+    /// speak is refused here, the same way <c>Register</c> refuses it, so neither ever sees free text.
+    /// </summary>
+    [Theory]
+    [InlineData("not-a-language my phone 777")]
+    [InlineData("xx")]
+    public async Task An_Unknown_Language_Is_Refused_With_LanguageNotSupported(string language)
+    {
+        var command = CreateOrderTestData.ValidCommand() with { Language = language };
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors, e => e.PropertyName == nameof(CreateOrder.Command.Language));
+        Assert.Equal(BusinessErrorMessage.LanguageNotSupported, error.ErrorMessage);
+        Assert.Equal(nameof(CreateOrder.Command.Language), error.ErrorCode);
+    }
+
+    [Fact]
+    public async Task A_Null_Language_Is_Refused_As_Required_Not_Passed_Through()
+    {
+        var command = CreateOrderTestData.ValidCommand() with { Language = null! };
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        var error = Assert.Single(result.Errors, e => e.PropertyName == nameof(CreateOrder.Command.Language));
+        Assert.Equal(BusinessErrorMessage.Required, error.ErrorMessage);
     }
 
     [Fact]

@@ -299,7 +299,8 @@ public class OrderSpanCapTests
             CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)),
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>());
+            Mock.Of<ITenantProvider>(),
+            CreateOrderTestData.Speaking(Constants.Language.English));
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

@@ -194,7 +194,7 @@ public sealed class CancelOrderAuditEvidenceTests
     }
 
     [Fact]
-    public async Task A_Standard_Customer_Cancelling_An_Unaccepted_Cash_Order_Records_The_Free_Tier_The_Waiver_Release_And_No_Refund()
+    public async Task A_Standard_Customer_Cancelling_An_Unaccepted_Cash_Order_Records_The_Free_Tier_No_Refund_And_No_Waiver_Released()
     {
         _membershipRepository
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
@@ -209,12 +209,42 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.Equal(0m, payload.GetProperty("feeRate").GetDecimal());
         Assert.False(payload.GetProperty("hasBeenAccepted").GetBoolean());
         Assert.Equal(BookingPolicy.FreeCancellationHours, payload.GetProperty("freeCancellationHoursApplied").GetInt32());
-        Assert.True(payload.GetProperty("expressWaiverReleased").GetBoolean());
+        // The release was asked for (no cleaner ever took the job) and answered "no slot": the row
+        // records the answer, not the asking.
+        _expressWaiverConsumer.Verify(c => c.ReleaseForOrderAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.False(payload.GetProperty("expressWaiverReleased").GetBoolean());
         Assert.False(payload.GetProperty("refundInitiated").GetBoolean());
         Assert.Equal("cash", payload.GetProperty("paymentType").GetString());
         Assert.Equal("pending", payload.GetProperty("paymentStatus").GetString());
         Assert.True(payload.GetProperty("reasonProvided").GetBoolean());
         Assert.DoesNotContain("changed my plans", _auditContext.DrainSnapshot()?.AfterJson ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task A_Member_Cancelling_An_Unaccepted_Express_Job_Records_That_Their_Live_Waiver_Slot_Was_Released()
+    {
+        ArrangePlusMember();
+        ArrangeOrder(DateTime.UtcNow.AddHours(3), accepted: false);
+        _expressWaiverConsumer
+            .Setup(c => c.ReleaseForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, Reason: null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(Payload(_auditContext.DrainSnapshot()).GetProperty("expressWaiverReleased").GetBoolean());
+    }
+
+    [Fact]
+    public async Task An_Accepted_Job_Never_Asks_For_A_Release_And_Records_None()
+    {
+        ArrangePlusMember();
+        ArrangeOrder(DateTime.UtcNow.AddHours(3), accepted: true);
+
+        await CreateHandler().Handle(new CancelOrder.Command(OrderId, Reason: null), CancellationToken.None);
+
+        _expressWaiverConsumer.Verify(c => c.ReleaseForOrderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.False(Payload(_auditContext.DrainSnapshot()).GetProperty("expressWaiverReleased").GetBoolean());
     }
 
     [Fact]

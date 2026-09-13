@@ -93,7 +93,9 @@ public sealed class AuditEntryFactory(
             resourceType: snapshot?.ResourceType ?? descriptor.ResourceType,
             // A failure row's id is read off the request as the client sent it; clamping keeps a
             // malformed-id probe recorded instead of failing the out-of-band insert.
-            resourceId: Clamp(snapshot?.ResourceId ?? AuditResourceResolver.ResolveExact(request, descriptor.ResourceType),
+            resourceId: Clamp(
+                snapshot?.ResourceId
+                    ?? AuditResourceResolver.ResolveExact(request, descriptor.ResourceType, descriptor.ResourceIdProperty),
                 CustomerActionAudit.ResourceIdMaxLength),
             success: success,
             errorCode: Clamp(errorCode, CustomerActionAudit.ErrorCodeMaxLength),

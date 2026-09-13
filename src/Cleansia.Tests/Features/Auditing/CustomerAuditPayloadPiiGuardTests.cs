@@ -27,8 +27,13 @@ public sealed class CustomerAuditPayloadPiiGuardTests
         "(reason|description|instructions?|note|notes|comment|message|text)$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    /// <summary>
+    /// A person's contact identity, and the live secrets S6 names — a confirmation, reset, verification
+    /// or access code is a credential, not a catalogue code, and the <c>*Code</c> allow-list below must
+    /// never admit one.
+    /// </summary>
     private static readonly Regex IdentitySuffix = new(
-        "(name|email|phone|address|street|city|zip|zipcode|iban|token|secret|password)$",
+        "(name|email|phone|address|street|city|zip|zipcode|iban|token|secret|password|(confirmation|reset|verification|access)code)$",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Regex IdentifierShape = new("(Id|Ids)$", RegexOptions.Compiled);
@@ -109,8 +114,8 @@ public sealed class CustomerAuditPayloadPiiGuardTests
             .ToList();
 
         Assert.True(offenders.Count == 0,
-            "ADR-0062 D0: a customer audit row references the person by id and never reproduces them. "
-            + "Remove the member or record an identifier instead:\n  " + string.Join("\n  ", offenders));
+            "ADR-0062 D0 / S6: a customer audit row references the person by id and never reproduces them, "
+            + "and never holds a live code. Remove the member or record an identifier instead:\n  " + string.Join("\n  ", offenders));
     }
 
     [Fact]
@@ -200,9 +205,13 @@ public sealed class CustomerAuditPayloadPiiGuardTests
     [InlineData(nameof(Offender.CustomerPhone), true)]
     [InlineData(nameof(Offender.FirstName), true)]
     [InlineData(nameof(Offender.CustomerAddress), true)]
+    [InlineData(nameof(Offender.ConfirmationCode), true)]
+    [InlineData(nameof(Offender.ResetCode), true)]
     [InlineData(nameof(Offender.SavedAddressId), false)]
     [InlineData(nameof(Offender.AddressId), false)]
-    public void The_Identity_Rule_Refuses_Contact_And_Address_Names_But_Not_Their_Ids(string member, bool refused)
+    [InlineData(nameof(Offender.CurrencyCode), false)]
+    [InlineData(nameof(Offender.PlanCode), false)]
+    public void The_Identity_Rule_Refuses_Contact_Address_And_Live_Secret_Names_But_Not_Ids_Or_Catalogue_Codes(string member, bool refused)
     {
         var caught = !IdentifierShape.IsMatch(member) && (WireSurface.IsRedacted(member) || IdentitySuffix.IsMatch(member));
 
@@ -241,6 +250,10 @@ public sealed class CustomerAuditPayloadPiiGuardTests
         string CustomerAddress,
         string SavedAddressId,
         string AddressId,
+        string ConfirmationCode,
+        string ResetCode,
+        string CurrencyCode,
+        string PlanCode,
         string CancellationReason,
         string Description,
         string SpecialInstructions,

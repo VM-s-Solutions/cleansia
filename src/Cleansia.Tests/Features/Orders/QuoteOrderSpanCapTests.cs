@@ -201,7 +201,8 @@ public class QuoteOrderSpanCapTests
             CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>());
+            Mock.Of<ITenantProvider>(),
+            CreateOrderTestData.Speaking(Constants.Language.English));
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

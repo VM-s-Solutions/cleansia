@@ -14,6 +14,14 @@ public sealed class AuditActionAttribute : Attribute
 
     public string? ResourceType { get; init; }
 
+    /// <summary>
+    /// The command property holding the resource id when its wire name is not <c>{ResourceType}Id</c>
+    /// (a schedule command says <c>TemplateId</c>, and renaming that is a client contract change). Read
+    /// by the customer arm's exact resolver only, so a refused edit still records WHICH resource was
+    /// probed.
+    /// </summary>
+    public string? ResourceIdProperty { get; init; }
+
     public bool Audited { get; init; } = true;
 
     /// <summary>

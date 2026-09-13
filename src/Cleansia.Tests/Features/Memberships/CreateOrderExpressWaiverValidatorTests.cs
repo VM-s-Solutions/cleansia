@@ -68,7 +68,8 @@ public class CreateOrderExpressWaiverValidatorTests
             CataloguePriceDoubles.NoPackages(),
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>());
+            Mock.Of<ITenantProvider>(),
+            CreateOrderTestData.Speaking(Constants.Language.English));
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

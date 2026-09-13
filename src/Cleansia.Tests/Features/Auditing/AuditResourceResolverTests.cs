@@ -23,6 +23,8 @@ public sealed class AuditResourceResolverTests
 
     public sealed record CheckoutSessionCommand(string PlanCode, string? CountryId);
 
+    public sealed record ScheduleCommand(string TemplateId);
+
     [Fact]
     public void Reads_The_ResourceType_Prefixed_Id_When_The_Marker_Named_A_Resource()
     {
@@ -93,5 +95,19 @@ public sealed class AuditResourceResolverTests
     public void Exact_Returns_Null_When_The_Marker_Named_No_Resource_Type()
     {
         Assert.Null(AuditResourceResolver.ResolveExact(new OrderCommand("ORD-1"), resourceType: null));
+    }
+
+    [Fact]
+    public void Exact_Reads_The_Property_The_Marker_Named_When_The_Wire_Name_Is_Not_The_Convention()
+    {
+        Assert.Null(AuditResourceResolver.ResolveExact(new ScheduleCommand("tpl-1"), "RecurringBookingTemplate"));
+        Assert.Equal("tpl-1", AuditResourceResolver.ResolveExact(new ScheduleCommand("tpl-1"), "RecurringBookingTemplate", "TemplateId"));
+    }
+
+    [Fact]
+    public void A_Named_Property_Still_Needs_A_Resource_Type_And_Is_Still_Exact()
+    {
+        Assert.Null(AuditResourceResolver.ResolveExact(new ScheduleCommand("tpl-1"), resourceType: null, "TemplateId"));
+        Assert.Null(AuditResourceResolver.ResolveExact(new ScheduleCommand("tpl-1"), "RecurringBookingTemplate", "Id"));
     }
 }

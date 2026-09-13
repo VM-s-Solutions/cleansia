@@ -7,7 +7,8 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
-[AuditAction("customer.recurring.set_active", Audience = AuditAudience.Customer, ResourceType = "RecurringBookingTemplate")]
+[AuditAction("customer.recurring.set_active", Audience = AuditAudience.Customer, ResourceType = "RecurringBookingTemplate",
+    ResourceIdProperty = nameof(SetRecurringBookingActive.Command.TemplateId))]
 public class SetRecurringBookingActive
 {
     public record Command(string TemplateId, bool IsActive) : ICommand;

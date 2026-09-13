@@ -194,9 +194,10 @@ public class CancelOrder
             // Deliberately keyed on the order's own state, not on CancelledBy: both system sweeps append
             // a status track without calling Order.Cancel, so their orders release here with no change to
             // either sweep.
+            var expressWaiverReleased = false;
             if (!assessment.HasBeenAccepted)
             {
-                await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
+                expressWaiverReleased = await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
             }
 
             // Tell every cleaner who ACCEPTED this job that it's off — they hear nothing today.
@@ -219,7 +220,7 @@ public class CancelOrder
                 MinutesSinceBooking: Math.Round((decimal)(now - order.CreatedOn.UtcDateTime).TotalMinutes, 2),
                 FreeCancellationHoursApplied: policy.FreeCancellationHours,
                 PolicyFigures: CancellationPolicyFigures.Current(),
-                ExpressWaiverReleased: !assessment.HasBeenAccepted,
+                ExpressWaiverReleased: expressWaiverReleased,
                 RefundInitiated: refundInitiated,
                 PaymentType: order.PaymentType,
                 PaymentStatus: paymentStatusAtCancel,

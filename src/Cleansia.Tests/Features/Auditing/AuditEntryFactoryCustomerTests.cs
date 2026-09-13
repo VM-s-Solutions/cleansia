@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
@@ -15,7 +16,8 @@ namespace Cleansia.Tests.Features.Auditing;
 /// ADR-0062 D1 — the customer row's shape as the factory assembles it: subject from the session (S1: the
 /// session wins over the snapshot's <c>ActorUserId</c>), <c>ClientAudience</c> from the host that served
 /// the request (filled on an anonymous row), IP/device from the request, payload from the evidence
-/// snapshot, and the resource id from the snapshot or the EXACT <c>{ResourceType}Id</c> property only.
+/// snapshot, and the resource id from the snapshot or the EXACT <c>{ResourceType}Id</c> property only —
+/// or the one property the marker named in its place.
 /// </summary>
 public sealed class AuditEntryFactoryCustomerTests
 {
@@ -158,6 +160,38 @@ public sealed class AuditEntryFactoryCustomerTests
         Assert.Null(row.ResourceId);
         Assert.Equal("{\"planCode\":\"plus\",\"reconciled\":false}", row.PayloadJson);
     }
+
+    /// <summary>
+    /// The three schedule commands name their template <c>TemplateId</c> on the wire, not
+    /// <c>RecurringBookingTemplateId</c>; a refused edit of someone else's schedule must still record
+    /// WHICH template was probed. Uses the REAL command types and their REAL markers.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(TemplateCommands))]
+    public void A_Failed_Schedule_Row_Carries_The_Probed_Template_Id_Read_Through_The_Markers_Named_Property(object command, string expectedAction)
+    {
+        var descriptor = AuditActionDescriptor.For(command.GetType());
+
+        var row = Factory(CustomerSession("cust-1"))
+            .CreateCustomerFailure(command, descriptor, BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
+
+        Assert.Equal(expectedAction, row.Action);
+        Assert.Equal("RecurringBookingTemplate", row.ResourceType);
+        Assert.Equal("tpl-1", row.ResourceId);
+    }
+
+    public static TheoryData<object, string> TemplateCommands() => new()
+    {
+        { new DeleteRecurringBooking.Command("tpl-1"), "customer.recurring.delete" },
+        { new SetRecurringBookingActive.Command("tpl-1", IsActive: false), "customer.recurring.set_active" },
+        {
+            new UpdateRecurringBooking.Command(
+                "tpl-1", Frequency: 1, DayOfWeek: 2, TimeOfDay: "09:00", Rooms: 2, Bathrooms: 1,
+                SavedAddressId: "saved-1", SelectedServiceIds: ["svc-1"], SelectedPackageIds: [],
+                PaymentType: 1, StartsOn: DateTime.UtcNow.Date),
+            "customer.recurring.update"
+        },
+    };
 
     [Fact]
     public void A_Malformed_Client_Sent_Id_Is_Clamped_To_The_Column_So_The_Probe_Row_Still_Lands()

@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.PayConfig;
@@ -59,7 +60,8 @@ public class CreateOrder
             IPackagePriceRepository packagePriceRepository,
             IPromoCodeService promoCodeService,
             IOperatorTenantResolver operatorTenantResolver,
-            ITenantProvider tenantProvider)
+            ITenantProvider tenantProvider,
+            ILanguageRepository languageRepository)
         {
             _operatorTenantResolver = operatorTenantResolver;
             _tenantProvider = tenantProvider;
@@ -76,6 +78,13 @@ public class CreateOrder
             _orderRepository = orderRepository;
             _userMembershipRepository = userMembershipRepository;
             _userSessionProvider = userSessionProvider;
+
+            RuleFor(x => x.Language)
+                .Cascade(CascadeMode.Stop)
+                .NotNull()
+                .WithMessage(BusinessErrorMessage.Required)
+                .WithErrorCode(nameof(Command.Language))
+                .SetValidator(new LanguageValidator(languageRepository));
 
             RuleFor(x => x.PaymentType)
                 .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
@@ -670,7 +679,7 @@ public class CreateOrder
         string? CustomerApartment = null,
         string? AccessMode = null,
         // The terms tick as the client asserted it. Null is a client that sends nothing; it is recorded
-        // as "not asserted", never refused (ADR-0062 D4, Q-AUD-L4).
+        // as "not asserted", never refused (ADR-0062 D4).
         bool? TermsAccepted = null) : ICommand<Response>, IOperatorScopedRequest
     {
         // A guest's market is the inline address's country; a guest cannot name a saved address, and a
@@ -730,7 +739,6 @@ public class CreateOrder
             OrderPricingResult pricing,
             Currency currency,
             Address address,
-            IReadOnlyList<string> selectedExtraSlugs,
             bool expressWaiverReserved,
             CancellationPolicy cancellationPolicy,
             DateTime nowUtc) => new(
@@ -755,7 +763,7 @@ public class CreateOrder
             LeadTimeHours: Math.Round((decimal)(order.CleaningDateTime - nowUtc).TotalHours, 2),
             PackageIds: command.SelectedPackageIds.ToList(),
             ServiceIds: command.SelectedServiceIds.ToList(),
-            ExtraSlugs: selectedExtraSlugs,
+            ExtraSlugs: order.SelectedExtras.Select(e => e.Slug).ToList(),
             Rooms: order.Rooms,
             Bathrooms: order.Bathrooms,
             SavedAddressId: command.SavedAddressId,
@@ -962,7 +970,7 @@ public class CreateOrder
             var cancellationPolicy = await cancellationPolicyResolver.ResolveForUserAsync(
                 order.UserId, cancellationToken);
             auditContext.RecordEvidence("Order", order.Id, OrderBookingEvidence.From(
-                order, command, calc, currency, address, selectedExtraSlugs, reservation != null, cancellationPolicy, nowUtc));
+                order, command, calc, currency, address, reservation != null, cancellationPolicy, nowUtc));
 
             return BusinessResult.Success(new Response(
                 Id: order.Id,

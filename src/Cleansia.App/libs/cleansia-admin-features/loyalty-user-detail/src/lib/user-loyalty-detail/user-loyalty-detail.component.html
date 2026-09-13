@@ -8,6 +8,16 @@
         (onClick)="onBack()"
       />
       <cleansia-title [title]="headerTitle()" />
+      <cleansia-button
+        *cleansiaPermission="Policy.CanAdminExportUserData"
+        class="cleansia-user-loyalty-detail__export"
+        [label]="'pages.customer_detail.export_subject_data' | translate"
+        icon="pi pi-download"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="facade.exporting()"
+        (onClick)="exportSubjectData()"
+      />
     </div>
 
     @if (facade.accountLoading() && !facade.account()) {
@@ -179,6 +189,18 @@
           [loading]="facade.activityLoading()"
           (pageChange)="onActivityPageChange($event)"
         />
+      </cleansia-section>
+
+      <!-- Timeline -->
+      <cleansia-section
+        [title]="'pages.customer_detail.timeline.title' | translate"
+      >
+        <p class="user-loyalty-detail__timeline-description">
+          {{ 'pages.customer_detail.timeline.description' | translate }}
+        </p>
+        @if (userId(); as id) {
+        <cleansia-admin-audit-timeline [userId]="id" />
+        }
       </cleansia-section>
 
       <!-- Referral relationships -->

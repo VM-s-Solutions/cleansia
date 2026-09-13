@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TimelineComponent } from '@cleansia/admin-features/audit-log';
 import {
   AdminReferralListItem,
   CreditTransactionReason,
@@ -65,6 +66,7 @@ import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
     IssueCreditDialogComponent,
     ExpireCreditDialogComponent,
     CleansiaPermissionDirective,
+    TimelineComponent,
   ],
   templateUrl: './user-loyalty-detail.component.html',
   providers: [UserLoyaltyDetailFacade],
@@ -80,7 +82,7 @@ export class UserLoyaltyDetailComponent
 
   private readonly destroy$ = new Subject<void>();
 
-  private userId: string | null = null;
+  readonly userId = signal<string | null>(null);
   readonly userEmail = signal<string | null>(null);
 
   // One dialog reused for both grant + revoke; mode flips to drive copy/colors.
@@ -160,7 +162,7 @@ export class UserLoyaltyDetailComponent
       this.router.navigate(['/admin-user-management']);
       return;
     }
-    this.userId = id;
+    this.userId.set(id);
     // Email is optionally passed as a query param to avoid an extra fetch.
     const emailParam = this.route.snapshot.queryParamMap.get('email');
     if (emailParam) {
@@ -524,6 +526,10 @@ export class UserLoyaltyDetailComponent
       default:
         return 'pages.loyalty_user_detail.credit.reason.unknown';
     }
+  }
+
+  exportSubjectData(): void {
+    this.facade.exportSubjectData();
   }
 
   onBack(): void {

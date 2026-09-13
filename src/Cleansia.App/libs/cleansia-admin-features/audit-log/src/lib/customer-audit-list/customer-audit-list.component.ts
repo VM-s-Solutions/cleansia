@@ -12,9 +12,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
-  AdminActionAuditDto,
+  CustomerActionAuditDto,
   SortDefinition,
   SortDirection,
 } from '@cleansia/admin-services';
@@ -35,21 +35,32 @@ import {
 import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
-import { AuditLogSegmentComponent } from '../audit-log-segment/audit-log-segment.component';
-import { AuditLogFacade } from './audit-log.facade';
 import {
   buildOutcomeOptions,
-  getAuditLogTableActions,
-  getAuditLogTableColumns,
+  formatResource,
   getOutcomeClass,
   getOutcomeLabelKey,
-} from './audit-log.models';
+} from '../audit-log/audit-log.models';
+import { AuditLogSegmentComponent } from '../audit-log-segment/audit-log-segment.component';
+import {
+  buildCustomerAuditActionOptions,
+  getAuditActionLabelKey,
+} from '../customer-audit-actions';
+import { CustomerAuditListFacade } from './customer-audit-list.facade';
+import { getCustomerAuditTableDefinition } from './customer-audit-list.models';
+
+interface FilterChip {
+  key: string;
+  label: string;
+  value: string;
+}
 
 @Component({
-  selector: 'cleansia-admin-audit-log',
+  selector: 'cleansia-admin-customer-audit-list',
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     CleansiaButtonComponent,
     CleansiaCalendarComponent,
     CleansiaSelectComponent,
@@ -63,34 +74,36 @@ import {
     FormsModule,
     ReactiveFormsModule,
   ],
-  templateUrl: './audit-log.component.html',
-  providers: [AuditLogFacade],
+  templateUrl: './customer-audit-list.component.html',
+  providers: [CustomerAuditListFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AuditLogComponent implements AfterViewInit, OnDestroy {
+export class CustomerAuditListComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
-  protected readonly facade = inject(AuditLogFacade);
+  protected readonly facade = inject(CustomerAuditListFacade);
 
-  readonly outcomeTemplate =
-    viewChild<TemplateRef<AdminActionAuditDto>>('outcomeTemplate');
+  readonly userTemplate = viewChild<TemplateRef<CustomerActionAuditDto>>('userTemplate');
+  readonly resourceTemplate = viewChild<TemplateRef<CustomerActionAuditDto>>('resourceTemplate');
+  readonly outcomeTemplate = viewChild<TemplateRef<CustomerActionAuditDto>>('outcomeTemplate');
 
-  auditColumns!: TableColumn<AdminActionAuditDto>[];
-  auditActions!: TableAction<AdminActionAuditDto>[];
+  auditColumns!: TableColumn<CustomerActionAuditDto>[];
+  auditActions!: TableAction<CustomerActionAuditDto>[];
   outcomeOptions: ICleansiaSelectOption[] = [];
+  actionOptions: ICleansiaSelectOption[] = [];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
   private readonly destroy$ = new Subject<void>();
 
   filterForm = this.fb.group({
-    actorId: [''],
-    actorEmail: [''],
-    action: [''],
+    userId: [''],
+    action: [null as string | null],
     resourceType: [''],
     resourceId: [''],
+    clientAudience: [''],
     occurredFrom: [null as Date | null],
     occurredTo: [null as Date | null],
     success: [null as boolean | null],
@@ -118,13 +131,11 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
       .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => this.applyFilters());
 
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.rebuildTableDefinitions();
-        this.rebuildFilterOptions();
-        this.cd.detectChanges();
-      });
+    this.translate.onLangChange.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.rebuildTableDefinitions();
+      this.rebuildFilterOptions();
+      this.cd.detectChanges();
+    });
 
     this.facade.loadAudits();
   }
@@ -135,50 +146,58 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
   }
 
   private rebuildTableDefinitions(): void {
-    this.auditColumns = getAuditLogTableColumns(
+    const definition = getCustomerAuditTableDefinition(
+      { onView: (audit) => this.viewEntry(audit) },
       this.translate,
-      this.outcomeTemplate()
+      {
+        user: this.userTemplate(),
+        resource: this.resourceTemplate(),
+        outcome: this.outcomeTemplate(),
+      }
     );
-    this.auditActions = getAuditLogTableActions(this.translate, (audit) =>
-      this.viewEntry(audit)
-    );
+    this.auditColumns = definition.columns;
+    this.auditActions = definition.actions;
   }
 
   private rebuildFilterOptions(): void {
     this.outcomeOptions = buildOutcomeOptions(this.translate);
+    this.actionOptions = buildCustomerAuditActionOptions(this.translate);
   }
 
-  getOutcomeClass(audit: AdminActionAuditDto): string {
+  getOutcomeClass(audit: CustomerActionAuditDto): string {
     return getOutcomeClass(audit.success);
   }
 
-  getOutcomeLabelKey(audit: AdminActionAuditDto): string {
+  getOutcomeLabelKey(audit: CustomerActionAuditDto): string {
     return getOutcomeLabelKey(audit.success);
   }
 
-  viewResourceHistory(audit: AdminActionAuditDto): void {
-    if (!audit.resourceType || !audit.resourceId) return;
-    this.router.navigate([
-      CleansiaAdminRoute.AUDIT_LOG,
-      'resource',
-      audit.resourceType,
-      audit.resourceId,
-    ]);
+  formatResource(audit: CustomerActionAuditDto): string {
+    return formatResource(audit);
   }
 
-  viewEntry(audit: AdminActionAuditDto): void {
+  customerRoute(audit: CustomerActionAuditDto): string[] | null {
+    return audit.userId ? ['/customers', audit.userId] : null;
+  }
+
+  resourceHistoryRoute(audit: CustomerActionAuditDto): (string | CleansiaAdminRoute)[] | null {
+    if (!audit.resourceType || !audit.resourceId) return null;
+    return [CleansiaAdminRoute.AUDIT_LOG, 'resource', audit.resourceType, audit.resourceId];
+  }
+
+  viewEntry(audit: CustomerActionAuditDto): void {
     if (!audit.id) return;
-    this.router.navigate([CleansiaAdminRoute.AUDIT_LOG, 'entry', audit.id]);
+    this.router.navigate([CleansiaAdminRoute.AUDIT_LOG, 'customers', 'entry', audit.id]);
   }
 
   applyFilters(): void {
     const values = this.filterForm.value;
     this.facade.applyFilter({
-      actorId: emptyToUndefined(values.actorId),
-      actorEmail: emptyToUndefined(values.actorEmail),
+      userId: emptyToUndefined(values.userId),
       action: emptyToUndefined(values.action),
       resourceType: emptyToUndefined(values.resourceType),
       resourceId: emptyToUndefined(values.resourceId),
+      clientAudience: emptyToUndefined(values.clientAudience),
       occurredFrom: values.occurredFrom ?? undefined,
       occurredTo: values.occurredTo ?? undefined,
       success: values.success ?? undefined,
@@ -187,11 +206,11 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
 
   resetFilters(): void {
     this.filterForm.reset({
-      actorId: '',
-      actorEmail: '',
-      action: '',
+      userId: '',
+      action: null,
       resourceType: '',
       resourceId: '',
+      clientAudience: '',
       occurredFrom: null,
       occurredTo: null,
       success: null,
@@ -207,9 +226,7 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
     this.lastSortOrder = event.order;
     const direction =
       event.order === 1 ? SortDirection.Ascending : SortDirection.Descending;
-    this.facade.onSortChange([
-      new SortDefinition({ field: event.field, direction }),
-    ]);
+    this.facade.onSortChange([new SortDefinition({ field: event.field, direction })]);
   }
 
   onPageChange(event: PaginationState): void {
@@ -228,22 +245,26 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
     this.filterForm.patchValue({ success: value });
   }
 
+  onActionChange(value: string | null): void {
+    this.filterForm.patchValue({ action: value });
+  }
+
   removeFilterChip(key: string): void {
     switch (key) {
-      case 'actorId':
-        this.filterForm.patchValue({ actorId: '' });
-        break;
-      case 'actorEmail':
-        this.filterForm.patchValue({ actorEmail: '' });
+      case 'userId':
+        this.filterForm.patchValue({ userId: '' });
         break;
       case 'action':
-        this.filterForm.patchValue({ action: '' });
+        this.filterForm.patchValue({ action: null });
         break;
       case 'resourceType':
         this.filterForm.patchValue({ resourceType: '' });
         break;
       case 'resourceId':
         this.filterForm.patchValue({ resourceId: '' });
+        break;
+      case 'clientAudience':
+        this.filterForm.patchValue({ clientAudience: '' });
         break;
       case 'dateRange':
         this.filterForm.patchValue({ occurredFrom: null, occurredTo: null });
@@ -259,29 +280,23 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
     this.resetFilters();
   }
 
-  private buildFilterChips(): { key: string; label: string; value: string }[] {
-    const chips: { key: string; label: string; value: string }[] = [];
+  private buildFilterChips(): FilterChip[] {
+    const chips: FilterChip[] = [];
     const v = this.filterForm.value;
 
-    if (v.actorId) {
+    if (v.userId) {
       chips.push({
-        key: 'actorId',
-        label: this.translate.instant('pages.audit_log.filters.actor_id'),
-        value: v.actorId,
-      });
-    }
-    if (v.actorEmail) {
-      chips.push({
-        key: 'actorEmail',
-        label: this.translate.instant('pages.audit_log.filters.actor_email'),
-        value: v.actorEmail,
+        key: 'userId',
+        label: this.translate.instant('pages.audit_log.customers.filters.user_id'),
+        value: v.userId,
       });
     }
     if (v.action) {
+      const labelKey = getAuditActionLabelKey(v.action);
       chips.push({
         key: 'action',
-        label: this.translate.instant('pages.audit_log.filters.action'),
-        value: v.action,
+        label: this.translate.instant('pages.audit_log.customers.filters.action'),
+        value: labelKey ? this.translate.instant(labelKey) : v.action,
       });
     }
     if (v.resourceType) {
@@ -296,6 +311,13 @@ export class AuditLogComponent implements AfterViewInit, OnDestroy {
         key: 'resourceId',
         label: this.translate.instant('pages.audit_log.filters.resource_id'),
         value: v.resourceId,
+      });
+    }
+    if (v.clientAudience) {
+      chips.push({
+        key: 'clientAudience',
+        label: this.translate.instant('pages.audit_log.customers.filters.audience'),
+        value: v.clientAudience,
       });
     }
     if (v.occurredFrom || v.occurredTo) {

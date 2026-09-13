@@ -1,34 +1,34 @@
 import { Injectable, inject, signal } from '@angular/core';
 import {
-  AdminActionAuditDto,
-  AdminAuditLogClient,
+  CustomerActionAuditDto,
+  CustomerAuditClient,
   SortDefinition,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
-export interface AuditLogFilterParams {
-  actorId?: string;
-  actorEmail?: string;
+export interface CustomerAuditFilterParams {
+  userId?: string;
   action?: string;
   resourceType?: string;
   resourceId?: string;
   occurredFrom?: Date;
   occurredTo?: Date;
   success?: boolean;
+  clientAudience?: string;
 }
 
 @Injectable()
-export class AuditLogFacade extends UnsubscribeControlDirective {
-  private readonly auditClient = inject(AdminAuditLogClient);
+export class CustomerAuditListFacade extends UnsubscribeControlDirective {
+  private readonly customerAuditClient = inject(CustomerAuditClient);
 
-  readonly audits = signal<AdminActionAuditDto[]>([]);
+  readonly audits = signal<CustomerActionAuditDto[]>([]);
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
   readonly hasError = signal<boolean>(false);
 
-  private readonly currentFilter = signal<AuditLogFilterParams | null>(null);
+  private readonly currentFilter = signal<CustomerAuditFilterParams | null>(null);
   private readonly currentOffset = signal<number>(0);
   private readonly currentLimit = signal<number>(20);
   private readonly currentSort = signal<SortDefinition[] | undefined>(undefined);
@@ -39,16 +39,16 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
 
     const filter = this.currentFilter();
 
-    this.auditClient
+    this.customerAuditClient
       .getPaged(
-        filter?.actorId,
-        filter?.actorEmail,
+        filter?.userId,
         filter?.action,
         filter?.resourceType,
         filter?.resourceId,
         filter?.occurredFrom,
         filter?.occurredTo,
         filter?.success,
+        filter?.clientAudience,
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()
@@ -83,7 +83,7 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
     this.loadAudits();
   }
 
-  applyFilter(filter: AuditLogFilterParams): void {
+  applyFilter(filter: CustomerAuditFilterParams): void {
     this.currentFilter.set(filter);
     this.currentOffset.set(0);
     this.loadAudits();

@@ -78,7 +78,10 @@ export function formatTimestamp(value: Date | undefined): string {
   );
 }
 
-export function formatResource(row: AdminActionAuditDto): string {
+export function formatResource(row: {
+  resourceType?: string;
+  resourceId?: string;
+}): string {
   if (!row.resourceType) return '';
   return row.resourceId
     ? `${row.resourceType} · ${row.resourceId}`

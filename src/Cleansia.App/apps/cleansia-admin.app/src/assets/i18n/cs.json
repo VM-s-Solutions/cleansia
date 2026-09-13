@@ -96,7 +96,9 @@
       "membership_plan_edit": "Upravit plán členství",
       "data_protection": "Ochrana údajů",
       "profile": "Můj profil",
-      "customer_detail": "Zákazník"
+      "customer_detail": "Zákazník",
+      "audit_log_customers": "Akce zákazníků",
+      "audit_log_customer_entry": "Akce zákazníka"
     }
   },
   "components": {
@@ -780,7 +782,6 @@
       "history": {
         "title": "Historie zdroje",
         "description": "Vše, co se s tímto zdrojem stalo:",
-        "no_audits": "Pro tento zdroj nejsou žádné záznamy",
         "back": "Zpět na protokol akcí"
       },
       "entry": {
@@ -798,6 +799,112 @@
       },
       "drill_in": {
         "view_history": "Zobrazit historii auditu"
+      },
+      "segments": {
+        "admin": "Akce adminů",
+        "customer": "Akce zákazníků"
+      },
+      "customers": {
+        "title": "Akce zákazníků",
+        "description": "Stopa toho, co zákazníci udělali na svých účtech — objednávky, storna, reklamace, členství, souhlasy — a co k tomu platforma zaznamenala.",
+        "no_audits": "Žádné akce zákazníků nenalezeny",
+        "load_error": "Akce zákazníků se nepodařilo načíst",
+        "guest": "Host",
+        "columns": {
+          "occurred_on": "Kdy",
+          "user": "Zákazník",
+          "action": "Akce",
+          "resource": "Zdroj",
+          "audience": "Klient",
+          "outcome": "Výsledek"
+        },
+        "filters": {
+          "user": "Zákazník",
+          "user_id": "ID zákazníka",
+          "action": "Akce",
+          "audience": "Klient"
+        },
+        "entry": {
+          "title": "Akce zákazníka",
+          "description": "Co zákazník udělal, z jakého klienta a jaké důkazy si k tomu platforma uložila.",
+          "view": "Zobrazit detail",
+          "back": "Zpět",
+          "load_error": "Akci zákazníka se nepodařilo načíst",
+          "when": "Kdy",
+          "who": "Kdo",
+          "outcome": "Výsledek",
+          "audience": "Klient",
+          "ip_address": "IP adresa",
+          "device": "Zařízení",
+          "device_id": "ID zařízení",
+          "correlation_id": "Korelační ID",
+          "payload_title": "Zaznamenané důkazy",
+          "field": "Pole",
+          "value": "Hodnota",
+          "before": "Před",
+          "after": "Po",
+          "no_payload": "K této akci nebyly zaznamenány žádné důkazy",
+          "show_raw": "Zobrazit surový JSON",
+          "hide_raw": "Zobrazit jako tabulku"
+        }
+      },
+      "timeline": {
+        "load_error": "Časovou osu se nepodařilo načíst",
+        "no_entries": "Zatím nic zaznamenáno",
+        "view": "Zobrazit detail",
+        "columns": {
+          "occurred_on": "Kdy",
+          "source": "Původ",
+          "action": "Akce",
+          "resource": "Zdroj",
+          "outcome": "Výsledek"
+        },
+        "source": {
+          "customer": "Zákazník",
+          "admin": "Admin",
+          "employee": "Uklízeč"
+        }
+      },
+      "actions": {
+        "customer": {
+          "order": {
+            "create": "Objednávka vytvořena",
+            "cancel": "Objednávka stornována",
+            "recurring": {
+              "confirm": "Opakovaný termín potvrzen"
+            }
+          },
+          "dispute": {
+            "create": "Reklamace podána"
+          },
+          "account": {
+            "register": "Účet zaregistrován"
+          },
+          "consent": {
+            "grant": "Souhlas udělen",
+            "withdraw": "Souhlas odvolán"
+          },
+          "membership": {
+            "subscribe": "Členství sjednáno",
+            "swap": "Plán členství změněn",
+            "cancel": "Členství zrušeno"
+          },
+          "notification_preferences": {
+            "update": "Nastavení notifikací změněno"
+          },
+          "recurring": {
+            "create": "Opakovaná objednávka vytvořena",
+            "update": "Opakovaná objednávka upravena",
+            "set_active": "Opakovaná objednávka pozastavena nebo obnovena",
+            "delete": "Opakovaná objednávka smazána"
+          }
+        },
+        "employee": {
+          "order": {
+            "cover_requested": "Vyžádán záskok",
+            "dropped": "Zakázka odhozena"
+          }
+        }
       }
     },
     "invoice_detail": {
@@ -2336,6 +2443,15 @@
       "messages": {
         "change_password_success": "Heslo bylo úspěšně změněno"
       }
+    },
+    "customer_detail": {
+      "timeline": {
+        "title": "Časová osa",
+        "description": "Každý zaznamenaný úkon u tohoto zákazníka — jeho vlastní, adminův na jeho objednávkách, reklamacích a členství, a uklízečův na jeho zakázkách — od nejnovějšího."
+      },
+      "export_subject_data": "Exportovat data subjektu",
+      "export_success": "Export dat subjektu byl stažen a zaznamenán",
+      "export_error": "Export dat subjektu se nezdařil"
     }
   },
   "employees": {

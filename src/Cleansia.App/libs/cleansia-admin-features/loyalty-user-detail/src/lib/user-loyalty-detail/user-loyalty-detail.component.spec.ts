@@ -6,12 +6,14 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   AdminClient,
+  AdminGdprClient,
   GetReferralsByUserResponse,
   GetUserCreditCurrencyAccount,
   GetUserCreditResponse,
   GetUserLoyaltyAccountResponse,
   LoyaltyTier,
 } from '@cleansia/admin-services';
+import { TimelineComponent } from '@cleansia/admin-features/audit-log';
 import { PermissionService, SnackbarService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
 import { of } from 'rxjs';
@@ -49,11 +51,28 @@ class ExpireCreditDialogStub {
   submitForm = output<unknown>();
 }
 
+@Component({ selector: 'cleansia-admin-audit-timeline', standalone: true, template: '' })
+class TimelineStub {
+  userId = input<string | null>(null);
+  resourceType = input<string | null>(null);
+  resourceId = input<string | null>(null);
+  resourceLinks = input(true);
+}
+
 describe('UserLoyaltyDetailComponent — credit section', () => {
   let creditClient: { user: jest.Mock; issue: jest.Mock; expire: jest.Mock };
+  let gdprClient: { export: jest.Mock };
+  let grantedPolicies: Set<string>;
 
   beforeEach(async () => {
     creditClient = { user: jest.fn(), issue: jest.fn(), expire: jest.fn() };
+    gdprClient = { export: jest.fn().mockReturnValue(of(null)) };
+    grantedPolicies = new Set<string>([
+      'CanGrantLoyaltyPoints',
+      'CanIssueCustomerCredit',
+      'CanExpireCustomerCredit',
+      'CanAdminExportUserData',
+    ]);
 
     await TestBed.configureTestingModule({
       imports: [UserLoyaltyDetailComponent, TranslateModule.forRoot()],
@@ -82,7 +101,11 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
           },
         },
         { provide: SnackbarService, useValue: { showSuccess: jest.fn(), showError: jest.fn() } },
-        { provide: PermissionService, useValue: { hasPolicy: () => true } },
+        {
+          provide: PermissionService,
+          useValue: { hasPolicy: (p: string) => grantedPolicies.has(p) },
+        },
+        { provide: AdminGdprClient, useValue: gdprClient },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -97,10 +120,15 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     })
       .overrideComponent(UserLoyaltyDetailComponent, {
         remove: {
-          imports: [GrantPointsDialogComponent, IssueCreditDialogComponent, ExpireCreditDialogComponent],
+          imports: [
+            GrantPointsDialogComponent,
+            IssueCreditDialogComponent,
+            ExpireCreditDialogComponent,
+            TimelineComponent,
+          ],
         },
         add: {
-          imports: [GrantPointsDialogStub, IssueCreditDialogStub, ExpireCreditDialogStub],
+          imports: [GrantPointsDialogStub, IssueCreditDialogStub, ExpireCreditDialogStub, TimelineStub],
         },
       })
       .compileComponents();
@@ -201,5 +229,39 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     expect(el.querySelectorAll('.user-loyalty-detail__credit-account').length).toBe(0);
     expect(el.textContent).toContain('pages.loyalty_user_detail.credit.never_credited');
     expect(el.textContent).toContain('0 CZK');
+  });
+
+  const noAccount = () =>
+    GetUserCreditResponse.fromJS({
+      userId: 'user-1',
+      hasAccount: false,
+      balance: 0,
+      currencyCode: 'CZK',
+      ledger: [],
+      accounts: [],
+    });
+
+  it('embeds the timeline keyed by the route user and offers the subject export to an admin who may', () => {
+    const fixture = renderFixture(noAccount());
+
+    const timeline = fixture.debugElement.query(By.directive(TimelineStub))
+      .componentInstance as TimelineStub;
+    expect(timeline.userId()).toBe('user-1');
+
+    const exportButton = fixture.nativeElement.querySelector(
+      '.cleansia-user-loyalty-detail__export'
+    ) as HTMLElement | null;
+    expect(exportButton).toBeTruthy();
+
+    fixture.componentInstance.exportSubjectData();
+    expect(gdprClient.export).toHaveBeenCalledWith('user-1');
+  });
+
+  it('hides the subject export without CanAdminExportUserData', () => {
+    grantedPolicies.delete('CanAdminExportUserData');
+    const el = render(noAccount());
+
+    expect(el.querySelector('.cleansia-user-loyalty-detail__export')).toBeNull();
+    expect(el.querySelector('cleansia-admin-audit-timeline')).toBeTruthy();
   });
 });

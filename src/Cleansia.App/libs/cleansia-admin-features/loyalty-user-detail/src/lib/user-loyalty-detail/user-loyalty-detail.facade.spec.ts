@@ -3,10 +3,12 @@ import { Router } from '@angular/router';
 import {
   AdminClient,
   AdminCurrencyListItem,
+  AdminGdprClient,
   AdminReferralListItem,
   CreditTransactionReason,
   ExpireCustomerCreditCommand,
   ExpireCustomerCreditResponse,
+  GdprExportDto,
   GetReferralsByUserResponse,
   GrantPointsManuallyCommand,
   IssueCustomerCreditCommand,
@@ -71,6 +73,7 @@ describe('UserLoyaltyDetailFacade — referrals panel', () => {
         },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: AdminGdprClient, useValue: { export: jest.fn() } },
       ],
     });
 
@@ -209,6 +212,7 @@ describe('UserLoyaltyDetailFacade — credit', () => {
         },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: AdminGdprClient, useValue: { export: jest.fn() } },
       ],
     });
     facade = TestBed.inject(UserLoyaltyDetailFacade);
@@ -304,5 +308,78 @@ describe('UserLoyaltyDetailFacade — credit', () => {
     });
     expect(snackbar.showSuccess).toHaveBeenCalled();
     expect(creditClient.user).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('UserLoyaltyDetailFacade — subject export', () => {
+  let facade: UserLoyaltyDetailFacade;
+  let gdprClient: { export: jest.Mock };
+  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
+  let download: jest.SpyInstance;
+
+  const exportDto = GdprExportDto.fromJS({
+    exportedAt: '2026-09-13T10:00:00Z',
+    customerActions: [],
+  });
+
+  beforeEach(() => {
+    gdprClient = { export: jest.fn().mockReturnValue(of(exportDto)) };
+    snackbar = { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() };
+
+    TestBed.configureTestingModule({
+      providers: [
+        UserLoyaltyDetailFacade,
+        {
+          provide: AdminClient,
+          useValue: { adminCreditClient: { user: jest.fn().mockReturnValue(of(null)) } },
+        },
+        { provide: SnackbarService, useValue: snackbar },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: AdminGdprClient, useValue: gdprClient },
+      ],
+    });
+    facade = TestBed.inject(UserLoyaltyDetailFacade);
+    download = jest
+      .spyOn(
+        facade as unknown as { downloadJson: (d: unknown, n: string) => void },
+        'downloadJson'
+      )
+      .mockImplementation(() => undefined);
+  });
+
+  it('calls the admin export for the loaded user and downloads it as a json named by user and date', () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-09-13T22:30:00Z'));
+    facade.loadCredit('user-1');
+
+    facade.exportSubjectData();
+
+    expect(gdprClient.export).toHaveBeenCalledWith('user-1');
+    expect(download).toHaveBeenCalledWith(exportDto, 'subject-export-user-1-2026-09-13.json');
+    expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.customer_detail.export_success');
+    expect(facade.exporting()).toBe(false);
+    jest.useRealTimers();
+  });
+
+  it('surfaces the API error and downloads nothing on failure', () => {
+    const error = new Error('boom');
+    gdprClient.export.mockReturnValue(throwError(() => error));
+    facade.loadCredit('user-1');
+
+    facade.exportSubjectData();
+
+    expect(download).not.toHaveBeenCalled();
+    expect(snackbar.showApiError).toHaveBeenCalledWith(error, 'pages.customer_detail.export_error');
+    expect(facade.exporting()).toBe(false);
+  });
+
+  it('does nothing without a loaded user, and does not fire twice while an export is in flight', () => {
+    facade.exportSubjectData();
+    expect(gdprClient.export).not.toHaveBeenCalled();
+
+    facade.loadCredit('user-1');
+    facade.exporting.set(true);
+    facade.exportSubjectData();
+    expect(gdprClient.export).not.toHaveBeenCalled();
   });
 });

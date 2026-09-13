@@ -96,7 +96,9 @@
       "membership_plan_edit": "Edit Membership Plan",
       "data_protection": "Data Protection",
       "profile": "My Profile",
-      "customer_detail": "Customer"
+      "customer_detail": "Customer",
+      "audit_log_customers": "Customer actions",
+      "audit_log_customer_entry": "Customer action"
     }
   },
   "components": {
@@ -780,7 +782,6 @@
       "history": {
         "title": "Resource History",
         "description": "Everything that happened to this resource:",
-        "no_audits": "No audit entries for this resource",
         "back": "Back to Audit Log"
       },
       "entry": {
@@ -798,6 +799,112 @@
       },
       "drill_in": {
         "view_history": "View audit history"
+      },
+      "segments": {
+        "admin": "Admin actions",
+        "customer": "Customer actions"
+      },
+      "customers": {
+        "title": "Customer actions",
+        "description": "The trail of what customers did on their own accounts — bookings, cancellations, disputes, memberships, consent — and what the platform recorded about each act.",
+        "no_audits": "No customer actions found",
+        "load_error": "Failed to load the customer actions",
+        "guest": "Guest",
+        "columns": {
+          "occurred_on": "When",
+          "user": "Customer",
+          "action": "Action",
+          "resource": "Resource",
+          "audience": "Client",
+          "outcome": "Outcome"
+        },
+        "filters": {
+          "user": "Customer",
+          "user_id": "Customer ID",
+          "action": "Action",
+          "audience": "Client"
+        },
+        "entry": {
+          "title": "Customer action",
+          "description": "What the customer did, from which client, and the evidence the platform kept about it.",
+          "view": "View details",
+          "back": "Back",
+          "load_error": "Failed to load the customer action",
+          "when": "When",
+          "who": "Who",
+          "outcome": "Outcome",
+          "audience": "Client",
+          "ip_address": "IP address",
+          "device": "Device",
+          "device_id": "Device ID",
+          "correlation_id": "Correlation ID",
+          "payload_title": "Recorded evidence",
+          "field": "Field",
+          "value": "Value",
+          "before": "Before",
+          "after": "After",
+          "no_payload": "No evidence was recorded for this action",
+          "show_raw": "Show raw JSON",
+          "hide_raw": "Show as table"
+        }
+      },
+      "timeline": {
+        "load_error": "Failed to load the timeline",
+        "no_entries": "Nothing recorded yet",
+        "view": "View details",
+        "columns": {
+          "occurred_on": "When",
+          "source": "Source",
+          "action": "Action",
+          "resource": "Resource",
+          "outcome": "Outcome"
+        },
+        "source": {
+          "customer": "Customer",
+          "admin": "Admin",
+          "employee": "Cleaner"
+        }
+      },
+      "actions": {
+        "customer": {
+          "order": {
+            "create": "Booking placed",
+            "cancel": "Booking cancelled",
+            "recurring": {
+              "confirm": "Recurring occurrence confirmed"
+            }
+          },
+          "dispute": {
+            "create": "Dispute filed"
+          },
+          "account": {
+            "register": "Account registered"
+          },
+          "consent": {
+            "grant": "Consent granted",
+            "withdraw": "Consent withdrawn"
+          },
+          "membership": {
+            "subscribe": "Membership subscribed",
+            "swap": "Membership plan changed",
+            "cancel": "Membership cancelled"
+          },
+          "notification_preferences": {
+            "update": "Notification preferences updated"
+          },
+          "recurring": {
+            "create": "Recurring booking created",
+            "update": "Recurring booking updated",
+            "set_active": "Recurring booking paused or resumed",
+            "delete": "Recurring booking deleted"
+          }
+        },
+        "employee": {
+          "order": {
+            "cover_requested": "Cover requested",
+            "dropped": "Job dropped"
+          }
+        }
       }
     },
     "pay_config_management": {
@@ -2336,6 +2443,15 @@
       "messages": {
         "change_password_success": "Password changed successfully"
       }
+    },
+    "customer_detail": {
+      "timeline": {
+        "title": "Timeline",
+        "description": "Every recorded act on this customer — their own, an admin's on their orders, disputes and membership, and a cleaner's on their jobs — newest first."
+      },
+      "export_subject_data": "Export subject data",
+      "export_success": "The subject export was downloaded and recorded",
+      "export_error": "The subject export failed"
     }
   },
   "employees": {

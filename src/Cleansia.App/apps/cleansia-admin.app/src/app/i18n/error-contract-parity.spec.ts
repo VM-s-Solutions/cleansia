@@ -475,6 +475,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'validation.invalid_date',
   'validation.invalid_password',
   'validation.must_be_positive',
+  // The timeline's page cap (GetActionTimeline.Validator)
+  'validation.page_size_exceeded',
   // Platform configuration: company, countries, currencies, languages
   'company.exists_for_country',
   'company.in_use',

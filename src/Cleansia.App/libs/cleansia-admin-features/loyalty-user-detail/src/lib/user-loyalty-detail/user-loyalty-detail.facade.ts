@@ -1,8 +1,10 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
   AdminCurrencyListItem,
+  AdminGdprClient,
   AdminReferralListItem,
   CreditTransactionReason,
   GetUserCreditResponse,
@@ -10,6 +12,7 @@ import {
   GetUserLoyaltyActivityActivityItem,
   GrantPointsManuallyCommand,
   ExpireCustomerCreditCommand,
+  GdprExportDto,
   IssueCustomerCreditCommand,
   RevokePointsManuallyCommand,
 } from '@cleansia/admin-services';
@@ -44,9 +47,11 @@ export interface CreditCurrencyOption {
 @Injectable()
 export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly gdprClient = inject(AdminGdprClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly account = signal<GetUserLoyaltyAccountResponse | null>(null);
   readonly accountLoading = signal<boolean>(false);
@@ -82,6 +87,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly currencies = signal<CreditCurrencyOption[]>([]);
 
   readonly submitting = signal<boolean>(false);
+  readonly exporting = signal<boolean>(false);
 
   private currentUserId: string | null = null;
   private currentActivityOffset = 0;
@@ -376,7 +382,52 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * The admin subject export, with the customer's audit trail in it. The server records the act as an
+   * admin audit row and a GdprRequest — this only asks for the file and hands it to the browser.
+   */
+  exportSubjectData(): void {
+    const userId = this.currentUserId;
+    if (!userId || this.exporting()) return;
+
+    this.exporting.set(true);
+    this.gdprClient
+      .export(userId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showApiError(error, 'pages.customer_detail.export_error');
+          return of(null);
+        }),
+        finalize(() => this.exporting.set(false))
+      )
+      .subscribe((data: GdprExportDto | null) => {
+        if (data) {
+          this.downloadJson(data, subjectExportFileName(userId, new Date()));
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.customer_detail.export_success')
+          );
+        }
+      });
+  }
+
   navigateBack(): void {
     this.router.navigate(['/admin-user-management']);
   }
+
+  private downloadJson(data: unknown, fileName: string): void {
+    if (!this.isBrowser) return;
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+}
+
+export function subjectExportFileName(userId: string, exportedAt: Date): string {
+  return `subject-export-${userId}-${exportedAt.toISOString().slice(0, 10)}.json`;
 }

@@ -1,0 +1,14 @@
+<div class="cleansia-audit-log__segment">
+  <p-tabs [value]="active()" (valueChange)="onSegmentChange($event)">
+    <p-tablist>
+      <p-tab value="admin">
+        <i class="pi pi-shield"></i>
+        <span>{{ 'pages.audit_log.segments.admin' | translate }}</span>
+      </p-tab>
+      <p-tab value="customer">
+        <i class="pi pi-user"></i>
+        <span>{{ 'pages.audit_log.segments.customer' | translate }}</span>
+      </p-tab>
+    </p-tablist>
+  </p-tabs>
+</div>

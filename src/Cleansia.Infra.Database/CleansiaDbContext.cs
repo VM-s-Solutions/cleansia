@@ -224,7 +224,8 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 tenantProviderField,
                 typeof(ITenantProvider).GetMethod(nameof(ITenantProvider.GetCurrentTenantId))!);
 
-            // currentTenantId == null  (single-tenant / unauthenticated mode)
+            // currentTenantId == null  (no claim and no override: an anonymous request, or a job
+            // that has not yet chosen a group)
             var currentTenantNullCheck = Expression.Equal(
                 currentTenantCall,
                 Expression.Constant(null, typeof(string)));
@@ -234,11 +235,10 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 tenantIdProperty,
                 Expression.Constant(null, typeof(string)));
 
-            // Single-tenant mode: callers without a tenant claim should see
-            // entities that were also created without one. SQL's
-            // `null == null` is NULL (not true), which would otherwise hide
-            // every row in single-tenant deployments and in queue/webhook
-            // contexts where the user's TenantId happens to also be null.
+            // Callers without a tenant may see only the rows that carry none. Since ADR-0061 every
+            // stamped table is NOT NULL, so this clause matches only the two nullable envelopes
+            // (OutboxMessages, DeadLetters); it stays because SQL's `null == null` is NULL, not true,
+            // and without it a tenant-less consumer would see nothing at all.
             var singleTenantMatch = Expression.AndAlso(
                 currentTenantNullCheck,
                 entityTenantNullCheck);
@@ -250,9 +250,10 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
             //     || (currentTenantId == null && e.TenantId == null)
             //     || e.TenantId == currentTenantId.
             //
-            // The middle clause is what makes single-tenant mode work — without
-            // it, null/null is filtered out and queue functions / unauthenticated
-            // reads return zero rows even when the entity matches.
+            // Activated 2026-09-13 (ADR-0061): an anonymous request that WRITES resolves its
+            // operator from the market it names before validation (OperatorTenantScopeBehavior),
+            // and a signed-in caller's claim always wins; a tenant-less READ of a stamped table
+            // returns nothing, which is the isolation the filter exists for.
             //
             // Background jobs that need to read across tenants must still call
             // ITenantProvider.SetTenantOverride() (or use IgnoreQueryFilters)

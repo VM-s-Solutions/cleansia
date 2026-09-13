@@ -353,9 +353,9 @@ public sealed class AuditSensitiveSnapshotTests
             CustomerActions:
             [
                 new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-1", true, null,
-                    "{\"feeRate\":0.5}", "203.0.113.9", "iPhone 15", "cleansia.customer"),
+                    "{\"feeRate\":0.5}", "203.0.113.9", "iPhone 15"),
                 new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-2", false,
-                    "order.in_progress_cannot_cancel", null, "203.0.113.9", "iPhone 15", "cleansia.customer"),
+                    "order.in_progress_cannot_cancel", null, "203.0.113.9", "iPhone 15"),
             ],
             new GdprExportMetadataDto(DateTimeOffset.UtcNow, "admin:admin@cleansia.test", "JSON"));
 

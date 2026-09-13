@@ -54,20 +54,18 @@ public static class AdminExportUserData
         IAuditContext auditContext)
         : ICommandHandler<Command, GdprExportDto>
     {
-        private const string ExportScope = "Export";
-
         public async Task<BusinessResult<GdprExportDto>> Handle(Command request, CancellationToken cancellationToken)
         {
             var adminEmail = userSessionProvider.GetUserEmail() ?? GdprAuditReasons.FallbackAdminActor;
             var exportedBy = $"admin:{adminEmail}";
 
-            var auditEntry = Core.Domain.Users.GdprRequest.Create(request.UserId, ExportScope);
+            var auditEntry = Core.Domain.Users.GdprRequest.Create(request.UserId, GdprAuditReasons.ExportRequestType);
             gdprRequestRepository.Add(auditEntry);
 
             var export = await gdprExportService.BuildAsync(request.UserId, exportedBy, cancellationToken);
             auditEntry.MarkCompleted(adminEmail);
 
-            var snapshot = new GdprExportSnapshot(request.UserId, ExportScope, export.Orders.Count, export.CustomerActions.Count);
+            var snapshot = new GdprExportSnapshot(request.UserId, GdprAuditReasons.ExportRequestType, export.Orders.Count, export.CustomerActions.Count);
             auditContext.RecordChange("User", request.UserId, snapshot, snapshot);
 
             return BusinessResult.Success(export);

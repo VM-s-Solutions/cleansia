@@ -89,7 +89,7 @@ public class GdprExportService(
             .AsNoTracking()
             .Select(a => new GdprExportCustomerActionDto(
                 a.Action, a.OccurredOn, a.ResourceType, a.ResourceId, a.Success, a.ErrorCode,
-                a.PayloadJson, a.IpAddress, a.DeviceLabel, a.ClientAudience))
+                a.PayloadJson, a.IpAddress, a.DeviceLabel))
             .ToListAsync(cancellationToken);
 
         var metadata = new GdprExportMetadataDto(

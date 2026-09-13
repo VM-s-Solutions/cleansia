@@ -121,8 +121,7 @@ public record GdprExportCustomerActionDto(
     string? ErrorCode,
     string? PayloadJson,
     string? IpAddress,
-    string? DeviceLabel,
-    string ClientAudience
+    string? DeviceLabel
 );
 
 public record GdprExportMetadataDto(

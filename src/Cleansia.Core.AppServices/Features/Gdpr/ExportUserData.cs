@@ -37,7 +37,7 @@ public static class ExportUserData
                 return BusinessResult.Failure<GdprExportDto>(new Error(
                     nameof(userId), BusinessErrorMessage.UserNotFound));
 
-            var auditEntry = Core.Domain.Users.GdprRequest.Create(user.Id, "Export");
+            var auditEntry = Core.Domain.Users.GdprRequest.Create(user.Id, GdprAuditReasons.ExportRequestType);
             gdprRequestRepository.Add(auditEntry);
 
             var export = await gdprExportService.BuildAsync(user.Id, user.Email, cancellationToken);

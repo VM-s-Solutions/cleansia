@@ -195,7 +195,6 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
         Assert.True(cancelled.Success);
         Assert.Null(cancelled.ErrorCode);
         Assert.Contains("\"feeRate\": 0.5", cancelled.PayloadJson);
-        Assert.Equal(JwtAudiences.Customer, cancelled.ClientAudience);
 
         var refused = Assert.Single(actions, a => a.ResourceId == "ORD-2");
         Assert.False(refused.Success);

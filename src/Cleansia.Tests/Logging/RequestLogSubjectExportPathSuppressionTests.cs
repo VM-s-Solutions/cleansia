@@ -20,7 +20,7 @@ public class RequestLogSubjectExportPathSuppressionTests
     private const string Device = "iPhone 15 / iOS 17.4 <img src=x onerror=alert(1)>";
     private const string Payload = "{\"feeRate\":0.5,\"hasBeenAccepted\":true}";
     private const string Email = "jane.doe@example.test";
-    // Digits only: the web encoder writes "+" as +, so a literal "+420…" would not be found raw.
+    // Digits only: the web encoder writes "+" as \u002B, so a literal "+420…" would not be found raw.
     private const string Phone = "420123456789";
 
     [Theory]
@@ -66,7 +66,7 @@ public class RequestLogSubjectExportPathSuppressionTests
             CustomerActions:
             [
                 new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-1",
-                    true, null, Payload, Ip, Device, "cleansia.customer"),
+                    true, null, Payload, Ip, Device),
             ],
             new GdprExportMetadataDto(DateTimeOffset.UtcNow, "admin:admin@cleansia.test", "JSON"));
 

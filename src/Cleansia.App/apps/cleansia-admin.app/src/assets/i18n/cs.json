@@ -834,6 +834,7 @@
           "who": "Kdo",
           "outcome": "Výsledek",
           "audience": "Klient",
+          "audience_hint": "Zákaznický web a zákaznická aplikace sdílejí tento název; rozliší je zařízení.",
           "ip_address": "IP adresa",
           "device": "Zařízení",
           "device_id": "ID zařízení",

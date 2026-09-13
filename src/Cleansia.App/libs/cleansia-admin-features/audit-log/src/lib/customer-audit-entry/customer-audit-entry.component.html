@@ -72,7 +72,12 @@
         </div>
         <div class="cleansia-audit-entry__meta-item">
           <dt>{{ 'pages.audit_log.customers.entry.audience' | translate }}</dt>
-          <dd>{{ entry.clientAudience || ('pages.audit_log.entry.no_value' | translate) }}</dd>
+          <dd>
+            {{ entry.clientAudience || ('pages.audit_log.entry.no_value' | translate) }}
+            <small class="cleansia-audit-entry__meta-hint">
+              {{ 'pages.audit_log.customers.entry.audience_hint' | translate }}
+            </small>
+          </dd>
         </div>
         <div class="cleansia-audit-entry__meta-item">
           <dt>{{ 'pages.audit_log.customers.entry.ip_address' | translate }}</dt>

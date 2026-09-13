@@ -834,6 +834,7 @@
           "who": "Who",
           "outcome": "Outcome",
           "audience": "Client",
+          "audience_hint": "The customer web and the customer app share this name; the device tells them apart.",
           "ip_address": "IP address",
           "device": "Device",
           "device_id": "Device ID",

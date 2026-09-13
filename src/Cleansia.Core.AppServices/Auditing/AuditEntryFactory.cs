@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -16,9 +17,10 @@ namespace Cleansia.Core.AppServices.Auditing;
 ///
 /// <para>The customer pair (ADR-0062 D1) builds the <c>CustomerActionAudit</c> row the same way, plus
 /// the request context: <c>ClientAudience</c> is the host that served the request (never the JWT — it is
-/// null on exactly the anonymous rows that most need it), IP/device come from
-/// <see cref="IRequestMetadataProvider"/>, and the subject is the session's user id, falling back to the
-/// snapshot's <c>ActorUserId</c> only when the session has none (S1: the session wins).</para>
+/// null on exactly the anonymous rows that most need it), IP and device label come from
+/// <see cref="IRequestMetadataProvider"/>, the device id is the session's signed <c>device_id</c> claim (the
+/// header only where there is no session to bind one), and the subject is the session's user id, falling
+/// back to the snapshot's <c>ActorUserId</c> only when the session has none (S1: the session wins).</para>
 /// </summary>
 public sealed class AuditEntryFactory(
     IUserSessionProvider userSessionProvider,
@@ -88,7 +90,12 @@ public sealed class AuditEntryFactory(
             clientAudience: hostAudienceProvider.Audience,
             ipAddress: requestMetadataProvider.IpAddress,
             deviceLabel: requestMetadataProvider.DeviceLabel,
-            deviceId: requestMetadataProvider.DeviceId,
+            // The X-Device-Id header is the client's word alone, re-sendable per request; the claim is the
+            // device the token was minted for, the one device revocation acts on. A signed-in row therefore
+            // records the claim or nothing, and only an anonymous act falls back to the header.
+            deviceId: string.IsNullOrWhiteSpace(sessionUserId)
+                ? requestMetadataProvider.DeviceId
+                : userSessionProvider.GetTypedUserClaim(AuthExtensions.DeviceIdClaimType)?.Value,
             action: descriptor.Action,
             resourceType: snapshot?.ResourceType ?? descriptor.ResourceType,
             // A failure row's id is read off the request as the client sent it; clamping keeps a

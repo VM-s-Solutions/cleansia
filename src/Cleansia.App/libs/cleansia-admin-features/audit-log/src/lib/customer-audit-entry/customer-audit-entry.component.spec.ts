@@ -46,6 +46,22 @@ describe('CustomerAuditEntryComponent', () => {
     expect(el.querySelectorAll('.cleansia-audit-entry__diff tbody tr').length).toBe(1);
   });
 
+  it('says beside the client name that the customer web and app share it, the device telling them apart', () => {
+    const el = render(
+      CustomerActionAuditDetailDto.fromJS({
+        id: 'audit-1',
+        clientAudience: 'cleansia.customer',
+        action: 'customer.order.create',
+        success: true,
+        occurredOn: '2026-09-13T10:00:00Z',
+      })
+    );
+
+    const hint = el.querySelector('.cleansia-audit-entry__meta-hint');
+    expect(hint?.textContent).toContain('pages.audit_log.customers.entry.audience_hint');
+    expect(hint?.parentElement?.textContent).toContain('cleansia.customer');
+  });
+
   it('renders the payload as key/value rows with a raw JSON toggle, and no table without a payload', () => {
     const el = render(
       CustomerActionAuditDetailDto.fromJS({

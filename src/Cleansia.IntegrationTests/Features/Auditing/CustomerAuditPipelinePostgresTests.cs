@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
@@ -73,7 +74,13 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
     private static IUserSessionProvider Session(string userId, UserProfile role) =>
         new TestUserSessionProvider(userId, $"{userId}@cleansia.test", [new Claim(ClaimTypes.Role, role.ToString())]);
 
-    private static IUserSessionProvider CustomerSession() => Session(CustomerId, UserProfile.Customer);
+    // A mobile token carries the device it was minted for; the row records that claim, not the header.
+    private static IUserSessionProvider CustomerSession() =>
+        new TestUserSessionProvider(CustomerId, $"{CustomerId}@cleansia.test",
+        [
+            new Claim(ClaimTypes.Role, UserProfile.Customer.ToString()),
+            new Claim(AuthExtensions.DeviceIdClaimType, DeviceId)
+        ]);
 
     private static IUserSessionProvider AnonymousSession() => new TestUserSessionProvider([]);
 

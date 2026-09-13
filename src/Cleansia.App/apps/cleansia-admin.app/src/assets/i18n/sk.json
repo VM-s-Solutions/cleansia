@@ -834,6 +834,7 @@
           "who": "Kto",
           "outcome": "Výsledok",
           "audience": "Klient",
+          "audience_hint": "Zákaznícky web a zákaznícka aplikácia zdieľajú tento názov; rozlíši ich zariadenie.",
           "ip_address": "IP adresa",
           "device": "Zariadenie",
           "device_id": "ID zariadenia",

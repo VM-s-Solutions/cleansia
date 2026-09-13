@@ -112,6 +112,32 @@ public sealed class CustomerActionAuditRetentionTests : IDisposable
         Assert.Equal("ORD-FOUR-YEARS", survivor.ResourceId);
     }
 
+    /// <summary>
+    /// The one delete path the append-only discipline sanctions must not be the way a misconfigured
+    /// setting empties the evidence table: a window of zero puts the cutoff at "now", a negative one in
+    /// the future, and either would take every row on the next tick.
+    /// </summary>
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-5")]
+    public async Task A_Window_At_Or_Below_Zero_Falls_Back_To_The_Default_Rather_Than_Emptying_The_Table(string setting)
+    {
+        await EnsureSchemaAsync();
+        _configProvider
+            .Setup(c => c.GetTenantSettingAsync(RetentionDefaults.CustomerAuditRetentionYearsKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(setting);
+        var now = DateTimeOffset.UtcNow;
+
+        await SeedAsync(
+            Row(now.AddDays(-1), UserId, "ORD-YESTERDAY"),
+            Row(now.AddYears(-DefaultYears).AddDays(-1), UserId, "ORD-OLD"));
+
+        await RunSweepAsync(EmptyConfiguration());
+
+        var survivor = Assert.Single(await ReadRowsAsync());
+        Assert.Equal("ORD-YESTERDAY", survivor.ResourceId);
+    }
+
     [Fact]
     public async Task The_Admin_And_Employee_Tables_Are_Never_Touched()
     {

@@ -298,6 +298,18 @@ public class DataRetentionBackgroundService(
     {
         var yearsStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.CustomerAuditRetentionYearsKey, ct);
         var years = int.TryParse(yearsStr, out var y) ? y : RetentionDefaults.DefaultCustomerAuditRetentionYears;
+
+        // This is the one delete the append-only discipline sanctions, so a window of zero (cutoff =
+        // now) or less (cutoff in the future) would empty the evidence table on the next tick. A
+        // setting below the floor is a misconfiguration, not an instruction.
+        if (years <= 0)
+        {
+            logger.LogWarning(
+                "{Key} = {Years} is below the floor; the customer audit sweep uses the default {Default} years",
+                RetentionDefaults.CustomerAuditRetentionYearsKey, years, RetentionDefaults.DefaultCustomerAuditRetentionYears);
+            years = RetentionDefaults.DefaultCustomerAuditRetentionYears;
+        }
+
         var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
 
         // Per row by its own age, never anchored on the customer's last act: the anchor form kept an

@@ -19,11 +19,11 @@ public static class GrantConsent
     // IRequestMetadataProvider so the legal-audit fields can't be spoofed.
     public record Command(ConsentType ConsentType) : ICommand;
 
-    internal class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<Command>
     {
         public Validator()
         {
-            RuleFor(c => c.ConsentType).IsInEnum();
+            RuleFor(c => c.ConsentType).IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
         }
     }
 

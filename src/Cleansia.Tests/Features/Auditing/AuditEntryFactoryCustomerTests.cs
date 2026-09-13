@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.Domain.Auditing;
@@ -17,7 +18,8 @@ namespace Cleansia.Tests.Features.Auditing;
 /// session wins over the snapshot's <c>ActorUserId</c>), <c>ClientAudience</c> from the host that served
 /// the request (filled on an anonymous row), IP/device from the request, payload from the evidence
 /// snapshot, and the resource id from the snapshot or the EXACT <c>{ResourceType}Id</c> property only —
-/// or the one property the marker named in its place.
+/// or the one property the marker named in its place. The device id of a signed-in row is the session's
+/// signed <c>device_id</c> claim, never the per-request header: the header is the client's word alone.
 /// </summary>
 public sealed class AuditEntryFactoryCustomerTests
 {
@@ -26,8 +28,16 @@ public sealed class AuditEntryFactoryCustomerTests
 
     private static readonly AuditActionDescriptor CancelDescriptor = AuditActionDescriptor.For(typeof(CancelCommand));
 
-    private static IUserSessionProvider CustomerSession(string userId) =>
-        new TestUserSessionProvider(userId, $"{userId}@cleansia.test", [new Claim(ClaimTypes.Role, UserProfile.Customer.ToString())]);
+    private static IUserSessionProvider CustomerSession(string userId, string? deviceId = null)
+    {
+        var claims = new List<Claim> { new(ClaimTypes.Role, UserProfile.Customer.ToString()) };
+        if (deviceId is not null)
+        {
+            claims.Add(new Claim(AuthExtensions.DeviceIdClaimType, deviceId));
+        }
+
+        return new TestUserSessionProvider(userId, $"{userId}@cleansia.test", claims);
+    }
 
     private static IUserSessionProvider AnonymousSession() => new TestUserSessionProvider([]);
 
@@ -43,7 +53,7 @@ public sealed class AuditEntryFactoryCustomerTests
         var context = new AuditContext();
         context.RecordEvidence("Order", "ORD-1", new { feeRate = 0.5m, hasBeenAccepted = true });
         var factory = Factory(
-            CustomerSession("cust-1"),
+            CustomerSession("cust-1", deviceId: "device-abc"),
             metadata: new TestRequestMetadataProvider("203.0.113.9", "iPhone 15 / 17.4", "device-abc"));
 
         var row = factory.CreateCustomerSuccess(new CancelCommand("ORD-1"), CancelDescriptor, context.DrainSnapshot());
@@ -60,6 +70,39 @@ public sealed class AuditEntryFactoryCustomerTests
         Assert.Equal("ORD-1", row.ResourceId);
         Assert.Equal("{\"feeRate\":0.5,\"hasBeenAccepted\":true}", row.PayloadJson);
         Assert.InRange(row.OccurredOn, DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddMinutes(1));
+    }
+
+    [Fact]
+    public void A_Signed_In_Rows_Device_Id_Is_The_Sessions_Signed_Claim_Never_The_Header()
+    {
+        var row = Factory(
+                CustomerSession("cust-1", deviceId: "device-signed"),
+                metadata: new TestRequestMetadataProvider("203.0.113.9", "iPhone 15 / 17.4", "device-header"))
+            .CreateCustomerSuccess(new CancelCommand("ORD-1"), CancelDescriptor, snapshot: null);
+
+        Assert.Equal("device-signed", row.DeviceId);
+    }
+
+    [Fact]
+    public void A_Signed_In_Session_Without_A_Device_Claim_Records_No_Device_Id_Whatever_The_Header_Says()
+    {
+        var row = Factory(
+                CustomerSession("cust-1"),
+                metadata: new TestRequestMetadataProvider("203.0.113.9", "Chrome/Windows", "device-header"))
+            .CreateCustomerFailure(new CancelCommand("ORD-1"), CancelDescriptor, BusinessErrorMessage.OrderNotFound);
+
+        Assert.Null(row.DeviceId);
+    }
+
+    [Fact]
+    public void An_Anonymous_Row_Takes_The_Client_Sent_Device_Header_Because_No_Session_Binds_One()
+    {
+        var row = Factory(
+                AnonymousSession(),
+                metadata: new TestRequestMetadataProvider("203.0.113.9", "iPhone 15 / 17.4", "device-header"))
+            .CreateCustomerSuccess(new CancelCommand("ORD-1"), CancelDescriptor, snapshot: null);
+
+        Assert.Equal("device-header", row.DeviceId);
     }
 
     [Fact]

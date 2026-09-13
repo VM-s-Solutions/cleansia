@@ -16,8 +16,11 @@ namespace Cleansia.Core.Domain.Auditing;
 /// name, contact detail, address text, free text the customer typed, card data or a token. No actor
 /// email: here the actor IS the subject, and a copy would be the second uncontrolled copy ADR-0012 D4.1
 /// forbids. <see cref="UserId"/> is a bare scalar with no navigation and no FK because the row must
-/// outlive everything it names; <see cref="ClientAudience"/> is the host that served the request, filled
-/// for an anonymous act too.</para>
+/// outlive everything it names; <see cref="ClientAudience"/> is the JWT audience of the host that served
+/// the request, filled for an anonymous act too — and the customer web and the customer app share one, so
+/// it names the client family, not the host; <see cref="DeviceLabel"/> is what tells those two apart.
+/// <see cref="DeviceId"/> on a signed-in row is the session's signed claim, on an anonymous row the
+/// client's own header.</para>
 ///
 /// <para><b>Append-only, with one sanctioned mutator.</b> <see cref="Pseudonymise"/> blanks the three
 /// request-metadata columns on erasure and nothing else; the row itself stays for defence of claims and

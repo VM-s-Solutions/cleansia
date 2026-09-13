@@ -66,6 +66,7 @@
     <string name="login_subtitle">Přihlaste se pro pokračování do svého účtu</string>
     <string name="create_account">Vytvořit účet</string>
     <string name="register_subtitle">Připojte se k nám a začněte vydělávat</string>
+    <string name="register_market_label">Země, kde budete pracovat</string>
     <string name="first_name">Jméno</string>
     <string name="last_name">Příjmení</string>
     <string name="phone">Telefonní číslo</string>

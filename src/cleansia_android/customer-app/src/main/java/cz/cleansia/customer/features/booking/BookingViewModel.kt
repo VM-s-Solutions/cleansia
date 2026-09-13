@@ -310,7 +310,7 @@ class BookingViewModel @Inject constructor(
             return ReferralCodeUiState.Idle
         }
         _referralCodeState.value = ReferralCodeUiState.Validating
-        val resp = referralRepository.validate(normalized).getOrNull()
+        val resp = referralRepository.validate(normalized, marketRepository.state.value.countryId).getOrNull()
         val newState: ReferralCodeUiState = when {
             resp == null -> ReferralCodeUiState.Invalid(null)
             resp.isValid -> ReferralCodeUiState.Valid(resp.referrerFirstName)

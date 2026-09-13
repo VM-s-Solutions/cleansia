@@ -68,6 +68,7 @@
     <string name="login_subtitle">Увійдіть, щоб продовжити роботу з обліковим записом</string>
     <string name="create_account">Створити обліковий запис</string>
     <string name="register_subtitle">Приєднуйтеся до нас та починайте заробляти вже сьогодні</string>
+    <string name="register_market_label">Країна, де ви будете працювати</string>
     <string name="first_name">Ім\'я</string>
     <string name="last_name">Прізвище</string>
     <string name="phone">Номер телефону</string>

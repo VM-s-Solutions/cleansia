@@ -68,6 +68,7 @@
     <string name="login_subtitle">Войдите, чтобы продолжить работу с аккаунтом</string>
     <string name="create_account">Создать аккаунт</string>
     <string name="register_subtitle">Присоединяйтесь и начните зарабатывать уже сегодня</string>
+    <string name="register_market_label">Страна, где вы будете работать</string>
     <string name="first_name">Имя</string>
     <string name="last_name">Фамилия</string>
     <string name="phone">Номер телефона</string>

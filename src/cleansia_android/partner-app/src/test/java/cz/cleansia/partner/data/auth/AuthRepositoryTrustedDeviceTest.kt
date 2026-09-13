@@ -146,6 +146,26 @@ class AuthRepositoryTrustedDeviceTest {
         assertTrue(body, !body.contains("trustedDeviceToken"))
     }
 
+    /**
+     * `RegisterEmployee` is anonymous, so the server scopes the new account to the operator of the
+     * market it names (ADR-0061 D3). The command binds `CountryId` by ASP.NET's camel-case default,
+     * and an absent key means the default market — a null must be dropped rather than written out.
+     */
+    @Test
+    fun register_putsThePickedMarketOnTheCommandUnderTheNameTheBackendBinds() = runTest {
+        val wireJson = NetworkModule.provideJson()
+        val register = slot<RegisterEmployeeCommand>()
+        coEvery { anonymousAuthApi.authRegisterEmployee(capture(register)) } returns Response.success(Unit)
+
+        newRepository().register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", countryId = "svk-id")
+        assertEquals("svk-id", register.captured.countryId)
+        assertTrue(wireJson.encodeToString(register.captured).contains("\"countryId\":\"svk-id\""))
+
+        newRepository().register("cleaner@example.com", "pw", "Ada", "Lovelace", "en", countryId = null)
+        assertNull(register.captured.countryId)
+        assertTrue(!wireJson.encodeToString(register.captured).contains("countryId"))
+    }
+
     @Test
     fun theMarkerRidesTheLoginBodyAndNoOtherAuthRequest() = runTest {
         every { tokenStore.current() } returns storedTokens()

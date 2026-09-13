@@ -82,6 +82,11 @@ data class RegisterRequest(
      * the user's first completed order.
      */
     val referralCode: String? = null,
+    /**
+     * The market the visitor chose (ADR-0058's persisted choice); the server maps it to the operating
+     * company the account is created under (ADR-0061 D3). Absent = the default market.
+     */
+    val countryId: String? = null,
 )
 
 @Serializable
@@ -98,6 +103,8 @@ data class GoogleAuthRequest(
      * nobody agreed to.
      */
     val termsAccepted: Boolean,
+    /** The market a first sign-in provisions the account under — see [RegisterRequest.countryId]. */
+    val countryId: String? = null,
 )
 
 // The email names the account the 6-digit code was issued to — the server verifies the code ONLY

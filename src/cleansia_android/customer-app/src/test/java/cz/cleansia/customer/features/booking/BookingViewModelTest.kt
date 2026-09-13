@@ -987,7 +987,7 @@ class BookingViewModelTest {
 
     @Test
     fun validateReferralCodeNow_givenValidCode_transitionsToValidAndPersistsCode() = runTest {
-        coEvery { referralRepository.validate("FRIEND10") } returns ApiResult.Success(
+        coEvery { referralRepository.validate("FRIEND10", any()) } returns ApiResult.Success(
             ValidateReferralResponse(
                 isValid = true,
                 referrerFirstName = "Bob",
@@ -1002,8 +1002,20 @@ class BookingViewModelTest {
     }
 
     @Test
+    fun validateReferralCodeNow_namesTheChosenMarket() = runTest {
+        marketFlow.value = slovakMarket()
+        coEvery { referralRepository.validate(any(), any()) } returns ApiResult.Success(
+            ValidateReferralResponse(isValid = true, referrerFirstName = "Bob"),
+        )
+
+        newViewModel().validateReferralCodeNow("friend10")
+
+        coVerify(exactly = 1) { referralRepository.validate("FRIEND10", "svk-id") }
+    }
+
+    @Test
     fun validateReferralCodeNow_givenInvalidCode_transitionsToInvalidWithMappedError() = runTest {
-        coEvery { referralRepository.validate(any()) } returns ApiResult.Success(
+        coEvery { referralRepository.validate(any(), any()) } returns ApiResult.Success(
             ValidateReferralResponse(
                 isValid = false,
                 errorCode = "SelfReferral",

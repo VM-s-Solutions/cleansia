@@ -68,6 +68,7 @@
     <string name="login_subtitle">Prihláste sa pre pokračovanie do svojho účtu</string>
     <string name="create_account">Vytvoriť účet</string>
     <string name="register_subtitle">Pridajte sa k nám a začnite zarábať ešte dnes</string>
+    <string name="register_market_label">Krajina, kde budete pracovať</string>
     <string name="first_name">Meno</string>
     <string name="last_name">Priezvisko</string>
     <string name="phone">Telefónne číslo</string>

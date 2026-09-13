@@ -12,6 +12,9 @@ import cz.cleansia.customer.core.auth.AuthRepository
 import cz.cleansia.customer.core.auth.AuthSuccess
 import cz.cleansia.customer.core.auth.GoogleSignInController
 import cz.cleansia.customer.core.auth.GoogleSignInResult
+import cz.cleansia.customer.core.market.MarketListItem
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -64,6 +67,7 @@ class AuthViewModelTest {
     private lateinit var snackbar: SnackbarController
     private lateinit var googleSignInController: GoogleSignInController
     private lateinit var signupConsent: SignupConsentRepository
+    private lateinit var marketRepository: MarketRepository
     private lateinit var context: Context
     private lateinit var resources: Resources
 
@@ -81,8 +85,11 @@ class AuthViewModelTest {
         snackbar = mockk(relaxed = true)
         googleSignInController = mockk(relaxed = true)
         signupConsent = mockk(relaxed = true)
+        marketRepository = mockk()
         context = mockk(relaxed = true)
         resources = mockk(relaxed = true)
+
+        coEvery { marketRepository.ensureLoaded() } returns MarketState.Unavailable
 
         // register() reads the language for the confirmation email before it calls the API.
         // A relaxed mock hands back a Flow that never emits, so first() would hang forever.
@@ -109,13 +116,28 @@ class AuthViewModelTest {
         snackbar = snackbar,
         googleSignInController = googleSignInController,
         signupConsent = signupConsent,
+        marketRepository = marketRepository,
         appContext = context,
     )
 
     private fun stubRegister(result: ApiResult<Unit>) {
         coEvery {
-            authRepository.register(any(), any(), any(), any(), any(), any())
+            authRepository.register(any(), any(), any(), any(), any(), any(), any())
         } returns result
+    }
+
+    private fun persistedMarket(countryId: String) {
+        val market = MarketListItem(
+            countryId = countryId,
+            isoCode = "SVK",
+            isoAlpha2 = "SK",
+            name = "Slovakia",
+            currencyId = "cur-eur",
+            currencyCode = "EUR",
+            currencySymbol = "€",
+            isDefault = false,
+        )
+        coEvery { marketRepository.ensureLoaded() } returns MarketState.Resolved(listOf(market), market)
     }
 
     private val googlePick = GoogleSignInResult.Success(
@@ -143,8 +165,49 @@ class AuthViewModelTest {
         ),
     ) {
         coEvery {
-            authRepository.googleAuth(any(), any(), any(), any(), any(), any())
+            authRepository.googleAuth(any(), any(), any(), any(), any(), any(), any())
         } returns result
+    }
+
+    // ── the persisted market rides every anonymous identity request (ADR-0061 D3) ──
+
+    @Test
+    fun `register names the persisted market so the server scopes it to that operator`() = runTest {
+        persistedMarket("svk-id")
+        stubRegister(ApiResult.Success(Unit))
+
+        viewModel().register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.register(any(), any(), any(), any(), any(), any(), countryId = "svk-id")
+        }
+    }
+
+    @Test
+    fun `register with no market known sends none and lets the server pick the default`() = runTest {
+        stubRegister(ApiResult.Success(Unit))
+
+        viewModel().register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.register(any(), any(), any(), any(), any(), any(), countryId = null)
+        }
+    }
+
+    @Test
+    fun `a Google sign-up names the persisted market`() = runTest {
+        persistedMarket("svk-id")
+        stubGooglePicker()
+        stubGoogleAuth()
+
+        viewModel().signUpWithGoogle(context, acceptedTerms = true)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.googleAuth(any(), any(), any(), any(), any(), any(), countryId = "svk-id")
+        }
     }
 
     @Test

@@ -32,15 +32,18 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
+import cz.cleansia.core.ui.components.CleansiaDropdown
+import cz.cleansia.core.ui.components.CleansiaDropdownOption
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.ui.components.PasswordRuleList
 import cz.cleansia.partner.R
+import cz.cleansia.partner.core.market.localizedName
 
 /**
- * Partner sign-up screen — mascot → title → first/last name row → email →
- * password + rule list → confirm password + match rule → terms checkbox →
+ * Partner sign-up screen — mascot → title → market picker (when there is a choice) → first/last
+ * name row → email → password + rule list → confirm password + match rule → terms checkbox →
  * register button → footer link. No Google OAuth, no referral code.
  *
  * Success routes straight to ConfirmEmailScreen, carrying the address that
@@ -113,6 +116,18 @@ fun RegisterScreen(
             )
 
             Spacer(Modifier.height(24.dp))
+
+            if (uiState.offersAChoice) {
+                CleansiaDropdown(
+                    selectedId = uiState.selectedMarketId,
+                    options = uiState.markets.map { CleansiaDropdownOption(it.countryId, it.localizedName()) },
+                    onSelected = viewModel::onMarketChange,
+                    label = stringResource(R.string.register_market_label),
+                    enabled = !uiState.isLoading,
+                )
+
+                Spacer(Modifier.height(8.dp))
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

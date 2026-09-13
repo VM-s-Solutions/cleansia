@@ -68,6 +68,7 @@
     <string name="login_subtitle">Sign in to continue to your account</string>
     <string name="create_account">Create Account</string>
     <string name="register_subtitle">Join us and start earning today</string>
+    <string name="register_market_label">Country you will work in</string>
     <string name="first_name">First Name</string>
     <string name="last_name">Last Name</string>
     <string name="phone">Phone Number</string>

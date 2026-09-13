@@ -86,6 +86,7 @@ class AuthRepository(
         lastName: String,
         language: String,
         referralCode: String? = null,
+        countryId: String? = null,
     ): ApiResult<Unit> = safeApiCall(json) {
         api.register(
             RegisterRequest(
@@ -95,6 +96,7 @@ class AuthRepository(
                 lastName = lastName,
                 language = language,
                 referralCode = referralCode,
+                countryId = countryId,
             ),
         )
     }.map { }
@@ -121,6 +123,7 @@ class AuthRepository(
         firstName: String,
         lastName: String,
         termsAccepted: Boolean,
+        countryId: String? = null,
     ): ApiResult<AuthSuccess> = when (
         val result = safeApiCall(json) {
             api.googleAuth(
@@ -131,6 +134,7 @@ class AuthRepository(
                     firstName = firstName,
                     lastName = lastName,
                     termsAccepted = termsAccepted,
+                    countryId = countryId,
                 ),
             )
         }

@@ -1,5 +1,6 @@
 package cz.cleansia.partner.core.market
 
+import cz.cleansia.partner.api.client.MarketApi
 import cz.cleansia.partner.core.network.NoAuthRetrofit
 import dagger.Module
 import dagger.Provides

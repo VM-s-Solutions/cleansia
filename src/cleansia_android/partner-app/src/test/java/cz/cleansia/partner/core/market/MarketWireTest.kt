@@ -14,12 +14,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import cz.cleansia.partner.api.client.MarketApi as GenMarketApi
+import cz.cleansia.partner.api.model.MarketListItem as GenMarketListItem
 
 /**
  * The register form's picker is fed by this read and preselects off `isDefault`, so a silently
  * dropped or invented row is a cleaner registered with the wrong operating company (ADR-0061 D6).
- * The interface is hand-written until the partner spec carries `Market/GetOverview`; the property
- * names below are the customer spec's `MarketListItem`, restricted to what the picker renders.
  */
 class MarketWireTest {
 
@@ -44,7 +44,7 @@ class MarketWireTest {
                 .baseUrl(server.url("/"))
                 .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
                 .build()
-                .create(MarketApi::class.java)
+                .create(GenMarketApi::class.java)
             call(MarketRepository(api, json)).also { onRequest(server.takeRequest()) }
         } finally {
             server.shutdown()
@@ -52,8 +52,8 @@ class MarketWireTest {
     }
 
     @Test
-    fun marketDtoSerialNamesAreTheSpecPropertiesThePickerRenders() {
-        assertEquals(SPEC_PROPERTIES, serialNames(MarketListItem.serializer().descriptor))
+    fun marketDtoSerialNamesAreExactlyTheSpecProperties() {
+        assertEquals(SPEC_PROPERTIES, serialNames(GenMarketListItem.serializer().descriptor))
     }
 
     @Test
@@ -69,15 +69,17 @@ class MarketWireTest {
 
         assertEquals(listOf("cze-id", "svk-id"), markets.map { it.countryId })
         assertEquals(listOf("CZE", "SVK"), markets.map { it.isoCode })
+        assertEquals(listOf("Czech Republic", "Slovakia"), markets.map { it.name })
         assertEquals(listOf(true, false), markets.map { it.isDefault })
-        assertEquals("Česko", markets[0].translations?.get("cs")?.name)
         assertEquals("cze-id", markets.defaultOrFirst()?.countryId)
     }
 
     @Test
-    fun theFieldsThePickerDoesNotRenderAreIgnoredNotRefused() = runTest {
+    fun translatedNamesArriveKeyedByBareLanguageCodeAndBlankOnesAreDropped() = runTest {
         val markets = (serving(CAPTURED) { it.getMarkets() } as ApiResult.Success).data
-        assertEquals(2, markets.size)
+
+        assertEquals(mapOf("cs" to "Česko"), markets[0].translatedNames)
+        assertEquals(emptyMap<String, String>(), markets[1].translatedNames)
     }
 
     /** A row with no id cannot be sent, so the whole read is refused rather than the row invented. */
@@ -98,7 +100,19 @@ class MarketWireTest {
         (0 until descriptor.elementsCount).map { descriptor.getElementName(it) }.toSet()
 
     private companion object {
-        val SPEC_PROPERTIES = setOf("countryId", "isoCode", "isoAlpha2", "name", "translations", "isDefault")
+        val SPEC_PROPERTIES = setOf(
+            "countryId",
+            "isoCode",
+            "isoAlpha2",
+            "name",
+            "translations",
+            "currencyId",
+            "currencyCode",
+            "currencySymbol",
+            "isDefault",
+            "noShowCredit",
+            "insuranceCoverageAmount",
+        )
 
         val CAPTURED = """
             [
@@ -107,7 +121,7 @@ class MarketWireTest {
                 "isoCode": "CZE",
                 "isoAlpha2": "CZ",
                 "name": "Czech Republic",
-                "translations": { "cs": { "name": "Česko", "description": null } },
+                "translations": { "cs": { "name": "Česko", "description": null }, "sk": { "name": " " } },
                 "currencyId": "cur-czk",
                 "currencyCode": "CZK",
                 "currencySymbol": "Kč",

@@ -6,14 +6,12 @@ import java.util.Locale
 /**
  * The market's country name in the reader's language — the same rule as
  * [cz.cleansia.partner.features.profile.localizedName] on `CountryListItem`: `name` is the English
- * `Countries.Name` column, the other languages live under `translations` keyed by bare code.
+ * `Countries.Name` column, the other languages live under `translatedNames` keyed by bare code.
  */
-fun MarketListItem.localizedName(locale: Locale = Locale.getDefault()): String {
+fun Market.localizedName(locale: Locale = Locale.getDefault()): String {
     val code = SupportedLanguages.bareCode(locale.toLanguageTag())
     return code
-        ?.let { translations?.get(it) }
-        ?.name
-        ?.takeIf { it.isNotBlank() }
+        ?.let { translatedNames[it] }
         ?: name.takeIf { it.isNotBlank() }
         ?: isoCode
 }

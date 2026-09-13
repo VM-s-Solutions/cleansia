@@ -5,7 +5,7 @@ import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.partner.core.market.MarketListItem
+import cz.cleansia.partner.core.market.Market
 import cz.cleansia.partner.core.market.MarketRepository
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.settings.AppSettings
@@ -80,7 +80,7 @@ class RegisterViewModelTest {
     )
 
     private fun market(countryId: String, iso: String, name: String, isDefault: Boolean = false) =
-        MarketListItem(countryId = countryId, isoCode = iso, isoAlpha2 = iso.take(2), name = name, isDefault = isDefault)
+        Market(countryId = countryId, isoCode = iso, name = name, translatedNames = emptyMap(), isDefault = isDefault)
 
     /** Fills in a form that clears every validation branch in `register()`. */
     private fun RegisterViewModel.fillValidForm() {
@@ -250,7 +250,7 @@ class RegisterViewModelTest {
         vm.register()
         advanceUntilIdle()
 
-        assertEquals(emptyList<MarketListItem>(), vm.uiState.value.markets)
+        assertEquals(emptyList<Market>(), vm.uiState.value.markets)
         coVerify(exactly = 1) {
             authRepository.register(any(), any(), any(), any(), any(), countryId = null)
         }

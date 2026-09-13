@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.consent.SignupConsentRepository
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.R
-import cz.cleansia.partner.core.market.MarketListItem
+import cz.cleansia.partner.core.market.Market
 import cz.cleansia.partner.core.market.MarketRepository
 import cz.cleansia.partner.core.market.defaultOrFirst
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -32,7 +32,7 @@ data class RegisterUiState(
     val confirmPassword: String = "",
     val acceptTerms: Boolean = false,
     /** What `Market/GetOverview` listed; empty until read, or when the read failed. */
-    val markets: List<MarketListItem> = emptyList(),
+    val markets: List<Market> = emptyList(),
     val selectedMarketId: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null,

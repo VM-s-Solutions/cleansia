@@ -3499,6 +3499,41 @@
         }
       }
     },
+    "error.order.country_operator_mismatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto adresu obsluhuje jiná společnost Cleansia, z tohoto účtu ji proto nelze objednat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This address is served by a different Cleansia company, so it can't be booked from this account."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот адрес обслуживает другая компания Cleansia, поэтому из этой учётной записи его нельзя забронировать."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto adresu obsluhuje iná spoločnosť Cleansia, z tohto účtu ju preto nemožno objednať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цю адресу обслуговує інша компанія Cleansia, тому з цього облікового запису її не можна забронювати."
+          }
+        }
+      }
+    },
     "error.order.creation_failed": {
       "extractionState": "stale",
       "localizations": {
@@ -5628,6 +5663,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сервер тимчасово недоступний. Спробуйте пізніше."
+          }
+        }
+      }
+    },
+    "error.tenant.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto trhu zatím žádná společnost Cleansia nepůsobí."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This market isn't operated by any Cleansia company yet."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом рынке пока не работает ни одна компания Cleansia."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto trhu zatiaľ žiadna spoločnosť Cleansia nepôsobí."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На цьому ринку ще не працює жодна компанія Cleansia."
           }
         }
       }

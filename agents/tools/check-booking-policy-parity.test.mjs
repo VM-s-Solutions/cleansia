@@ -70,13 +70,13 @@ function buildFixture(overrides = {}) {
     webWeCancelRefundOnly: 'Everything back',
     webTermsCurrency: 'Prices are displayed in {{currency}} and are the final amount payable.',
     webTermsNoMarket: 'Prices are shown in the currency of the country you are booking in.',
-    androidNoShowBody: 'Nobody could take booking #%1$s, so we refunded it and added a credit towards your next clean.',
+    androidNoShowBody: 'Nobody could take booking #%1$s, so we refunded it and added %2$s credit towards your next clean.',
     androidInsured: 'Insured up to %1$s',
     androidInsuredNoFigure: 'Insured',
     androidFaq: 'Covered by insurance up to %1$s per booking.',
     androidFaqNoFigure: 'Covered by insurance.',
     androidSeasonal: null,
-    iosNoShowBody: 'Nobody could take booking #%1$@, so we refunded it and added a credit towards your next clean.',
+    iosNoShowBody: 'Nobody could take booking #%1$@, so we refunded it and added %2$@ credit towards your next clean.',
     iosInsured: 'Insured up to %1$@',
     iosInsuredNoFigure: 'Insured',
     iosFaq: 'Covered by insurance up to %1$@ per booking.',
@@ -246,7 +246,7 @@ scenario(
 scenario(
   'catches an Android push quoting the apology amount again',
   { androidNoShowBody: 'We refunded booking #%1$s and added 250 Kč credit.' },
-  { code: 1, mentions: ['android/en', 'bakes a figure in (250)', 'names a currency'] },
+  { code: 1, mentions: ['android/en', 'does not carry the %2$s placeholder', 'bakes a figure in (250)', 'names a currency'] },
 );
 scenario(
   'catches an iOS push quoting the apology amount again',
@@ -255,7 +255,7 @@ scenario(
 );
 scenario(
   'does not mistake a loc-arg slot for a figure',
-  { androidNoShowBody: 'Booking #%1$s was refunded, with a credit for next time.', iosNoShowBody: 'Booking #%1$@ was refunded, with a credit for next time.' },
+  { androidNoShowBody: 'Booking #%1$s was refunded, with %2$s credit for next time.', iosNoShowBody: 'Booking #%1$@ was refunded, with %2$@ credit for next time.' },
   { code: 0 },
 );
 scenario(

@@ -286,8 +286,9 @@ for (const locale of LOCALES) {
 }
 
 for (const [locale, dir] of Object.entries(ANDROID_DIRS)) {
-  // The push announces the credit without a figure (ADR-0025 D3 keeps the loc-arg list closed).
-  pinPlaceholderCopy(`android/${locale}`, 'notification_order_no_cleaner_refunded_body', androidString(dir, 'notification_order_no_cleaner_refunded_body'));
+  // The push carries the credit as its second loc-arg, formatted by the server in the credit's
+  // own currency (owner ruling 2026-09-13; ADR-0025 D3 widened for this one event).
+  pinPlaceholderCopy(`android/${locale}`, 'notification_order_no_cleaner_refunded_body', androidString(dir, 'notification_order_no_cleaner_refunded_body'), { placeholder: '%2$s' });
   pinPlaceholderCopy(`android/${locale}`, 'booking_trust_insured', androidString(dir, 'booking_trust_insured'), { placeholder: '%1$s' });
   pinPlaceholderCopy(`android/${locale}`, 'booking_trust_insured_no_figure', androidString(dir, 'booking_trust_insured_no_figure'));
   pinPlaceholderCopy(`android/${locale}`, 'help_faq_a3', androidString(dir, 'help_faq_a3'), { placeholder: '%1$s' });
@@ -298,7 +299,7 @@ for (const [locale, dir] of Object.entries(ANDROID_DIRS)) {
 }
 
 for (const locale of LOCALES) {
-  pinPlaceholderCopy(`ios/${locale}`, 'push.order.no_cleaner_refunded.body', iosString(iosCatalog, 'push.order.no_cleaner_refunded.body', locale));
+  pinPlaceholderCopy(`ios/${locale}`, 'push.order.no_cleaner_refunded.body', iosString(iosCatalog, 'push.order.no_cleaner_refunded.body', locale), { placeholder: '%2$@' });
   pinPlaceholderCopy(`ios/${locale}`, 'booking_trust_insured', iosString(iosCatalog, 'booking_trust_insured', locale), { placeholder: '%1$@' });
   pinPlaceholderCopy(`ios/${locale}`, 'booking_trust_insured_no_figure', iosString(iosCatalog, 'booking_trust_insured_no_figure', locale));
   pinPlaceholderCopy(`ios/${locale}`, 'help_faq_a3', iosString(iosCatalog, 'help_faq_a3', locale), { placeholder: '%1$@' });

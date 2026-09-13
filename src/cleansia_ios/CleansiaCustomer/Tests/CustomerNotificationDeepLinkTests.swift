@@ -20,6 +20,7 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
             "order.completed",
             "order.cancelled",
             "order.refunded",
+            "order.no_cleaner_refunded",
             "order.starting_soon",
             "order.preferred_offer_closed",
             "recurring.scheduled"

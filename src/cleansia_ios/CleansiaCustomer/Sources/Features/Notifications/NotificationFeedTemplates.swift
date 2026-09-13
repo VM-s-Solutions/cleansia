@@ -12,6 +12,7 @@ enum CustomerFeedEventKeys {
         "order.completed",
         "order.cancelled",
         "order.refunded",
+        "order.no_cleaner_refunded",
         "dispute.reply",
         "recurring.scheduled",
         "membership.expiring_soon",
@@ -60,6 +61,8 @@ enum NotificationFeedTemplates {
             // Feed rendering is programmatic (D5/FCH-5), so unlike the argless
             // APNs body it can show the tier from `args.tier` — Android parity.
             L10n.NotificationsInbox.loyaltyTierBody(tierLabel(args["tier"]))
+        case "order.no_cleaner_refunded":
+            String(format: L10n.localized("push.\(eventKey).body"), args["orderNumber"] ?? "", args["amount"] ?? "")
         case _ where orderNumberEvents.contains(eventKey):
             String(format: L10n.localized("push.\(eventKey).body"), args["orderNumber"] ?? "")
         default:

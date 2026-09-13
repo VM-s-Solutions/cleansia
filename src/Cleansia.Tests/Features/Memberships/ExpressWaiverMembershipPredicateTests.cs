@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
@@ -61,8 +62,6 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
         var plan = MembershipPlan.Create(
             code: "PLUS_MONTHLY",
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus_monthly",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -71,13 +70,16 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
 
         ctx.Add(Language.Create("en", "English"));
 
+        var currency = MembershipPricingMockFactory.Czk();
+        ctx.Add(currency);
+
         var user = User.CreateWithPassword(
             "pastdue@cleansia.test", "Password1!", "Past", "Due", UserProfile.Customer);
         user.Id = UserId;
         ctx.Add(user);
 
         var membership = UserMembership.Create(
-            UserId, plan.Id, "sub_pastdue", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20));
+            UserId, plan.Id, currency.Id, "sub_pastdue", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20));
         if (status != MembershipStatus.Active)
         {
             // Through the REAL writer, so the test pins production wiring rather than a field poke:

@@ -62,9 +62,9 @@ public class MembershipController(IMediator mediator) : CustomerApiController(me
     [AllowAnonymous]
     [HttpGet("GetPlans")]
     [ProducesResponseType(typeof(IReadOnlyList<GetMembershipPlans.Response>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPlans(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPlans([FromQuery] string? countryId, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(new GetMembershipPlans.Query(), cancellationToken);
+        var result = await Mediator.Send(new GetMembershipPlans.Query(countryId), cancellationToken);
         return HandleResult<IReadOnlyList<GetMembershipPlans.Response>>(result);
     }
 

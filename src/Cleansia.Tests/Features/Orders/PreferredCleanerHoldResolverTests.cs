@@ -301,6 +301,7 @@ public class PreferredCleanerHoldResolverTests
         return UserMembership.Create(
             UserId,
             membershipPlanId: "plan-plus",
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_test_preferred",
             currentPeriodStart: Now.AddDays(-10),
             currentPeriodEnd: Now.AddDays(20));

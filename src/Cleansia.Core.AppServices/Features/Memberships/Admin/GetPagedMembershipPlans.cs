@@ -15,9 +15,9 @@ using SortDirection = Cleansia.Core.Domain.Sorting.Common.SortDirection;
 namespace Cleansia.Core.AppServices.Features.Memberships.Admin;
 
 /// <summary>
-/// Admin-side paged list of membership plans (active AND inactive) with an
-/// optional active filter and a case-insensitive code/name search. Drives the
-/// Memberships admin module's plans table.
+/// Admin-side paged list of membership plans (active AND inactive) with an optional active filter and
+/// a case-insensitive code/name search. Each row shows the platform-default-currency price, null when
+/// the plan has none in it.
 /// </summary>
 public class GetPagedMembershipPlans
 {
@@ -27,7 +27,10 @@ public class GetPagedMembershipPlans
         public string? Search { get; init; }
     }
 
-    internal class Handler(IMembershipPlanRepository membershipPlanRepository)
+    internal class Handler(
+        IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
+        ICurrencyRepository currencyRepository)
         : IRequestHandler<Request, PagedData<MembershipPlanListItem>>
     {
         public async Task<PagedData<MembershipPlanListItem>> Handle(Request request, CancellationToken cancellationToken)
@@ -39,20 +42,24 @@ public class GetPagedMembershipPlans
             var filter = specification.SatisfiedBy();
 
             var total = await membershipPlanRepository.GetCountAsync(filter, cancellationToken);
-            // MapToListItem reads MonthlyEquivalentPriceCzk (a computed property), so the rows are
-            // materialized first and mapped in memory rather than projected in the query.
             var plans = await membershipPlanRepository
                 .GetPagedSort<MembershipPlanSort>(request.Offset, request.Limit, filter, ResolveSort(request))
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            var data = plans.Select(plan => plan.MapToListItem()).ToList();
+            var currency = await currencyRepository.GetDefaultAsync(cancellationToken);
+            var prices = await membershipPlanPriceRepository.GetForPlansAsync(
+                plans.Select(p => p.Id).ToList(), currency.Id, cancellationToken);
+
+            var data = plans
+                .Select(plan => plan.MapToListItem(
+                    prices.TryGetValue(plan.Id, out var price) ? price.Price : null,
+                    currency.Code))
+                .ToList();
 
             return data.MapToDto(total, request);
         }
 
-        // Preserves the historical default order: the bespoke repo ordered by
-        // BillingInterval then MonthlyPriceCzk, and the empty-sort GetPagedSort path applies none.
         private static IEnumerable<SortDefinition> ResolveSort(Request request)
         {
             var sort = request.Sort.MapToDomain().ToList();
@@ -61,7 +68,7 @@ public class GetPagedMembershipPlans
                 :
                 [
                     new SortDefinition { Field = nameof(MembershipPlan.BillingInterval), Direction = SortDirection.Ascending },
-                    new SortDefinition { Field = nameof(MembershipPlan.MonthlyPriceCzk), Direction = SortDirection.Ascending },
+                    new SortDefinition { Field = nameof(MembershipPlan.Code), Direction = SortDirection.Ascending },
                 ];
         }
     }

@@ -223,7 +223,8 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
 
             await Execute(conn,
                 "ALTER TABLE \"UserMemberships\" DROP CONSTRAINT IF EXISTS \"FK_UserMemberships_Users_UserId\";" +
-                "ALTER TABLE \"UserMemberships\" DROP CONSTRAINT IF EXISTS \"FK_UserMemberships_MembershipPlans_MembershipPlanId\";");
+                "ALTER TABLE \"UserMemberships\" DROP CONSTRAINT IF EXISTS \"FK_UserMemberships_MembershipPlans_MembershipPlanId\";" +
+                "ALTER TABLE \"UserMemberships\" DROP CONSTRAINT IF EXISTS \"FK_UserMemberships_Currencies_CurrencyId\";");
 
             await SeedSkewedDatasetAsync(conn);
             await Execute(conn, "ANALYZE \"UserMemberships\";");
@@ -331,10 +332,10 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
             string prefix, int count, string periodEnd, string cancelledAt,
             string renewalSent, string cancellationSent) =>
             "INSERT INTO \"UserMemberships\" " +
-            "(\"Id\",\"UserId\",\"MembershipPlanId\",\"StripeSubscriptionId\",\"Status\"," +
+            "(\"Id\",\"UserId\",\"MembershipPlanId\",\"CurrencyId\",\"StripeSubscriptionId\",\"Status\"," +
             "\"CurrentPeriodStart\",\"CurrentPeriodEnd\",\"CancelledAt\",\"RenewalReminderSentAt\"," +
             "\"CancellationReminderSentAt\",\"IsActive\",\"CreatedBy\",\"CreatedOn\") SELECT " +
-            $"'{prefix}-' || g, 'u-{prefix}-' || g, 'plan-1', 'sub-{prefix}-' || g, 1, " +
+            $"'{prefix}-' || g, 'u-{prefix}-' || g, 'plan-1', 'currency-czk', 'sub-{prefix}-' || g, 1, " +
             $"'{Iso(Now.AddDays(-25))}', {periodEnd}, {cancelledAt}, {renewalSent}, " +
             $"{cancellationSent}, true, 'seed', '{Iso(Now)}' " +
             $"FROM generate_series(1, {count}) AS g;";

@@ -299,14 +299,17 @@ public static class DomainSeed
         var plan = Cleansia.Core.Domain.Memberships.MembershipPlan.Create(
             code: code,
             name: "Host-test plan",
-            monthlyPriceCzk: 299m,
-            stripePriceId: "price_hosttest",
             discountPercentage: 10m,
             freeCancellationWindowHours: 24,
             allowsExpressUpgrade: true);
         if (tenantId is not null) plan.TenantId = tenantId;
         return plan;
     }
+
+    /// <summary>The plan's CZK price. The Stripe id is derived from the plan code, never a shared literal:
+    /// <c>MembershipPlanPrices.StripePriceId</c> is unique, and every host-test class seeds into the one database.</summary>
+    public static MembershipPlanPrice MembershipPlanPrice(string planId, string code = "HOSTTEST-MONTHLY", decimal price = 299m)
+        => Cleansia.Core.Domain.Memberships.MembershipPlanPrice.Create(planId, CurrencyId, price, $"price_hosttest_{code}");
 
     /// <summary>An ACTIVE <see cref="UserMembership"/> for <paramref name="ownerUserId"/> with a period
     /// that ends in the future (so <c>IsActive</c> and <c>GetActiveForUserAsync</c> resolve it). The
@@ -316,6 +319,7 @@ public static class DomainSeed
         var membership = UserMembership.Create(
             userId: ownerUserId,
             membershipPlanId: membershipPlanId,
+            currencyId: DomainSeed.CurrencyId,
             stripeSubscriptionId: "sub_hosttest",
             currentPeriodStart: DateTime.UtcNow.AddDays(-3),
             currentPeriodEnd: DateTime.UtcNow.AddDays(27));

@@ -28,6 +28,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
 {
     private const string TenantId = "tenant-sub-webhook";
     private const string PlanCode = "PLUS_MONTHLY";
+    private const string CurrencyId = "currency-czk-sub-webhook";
 
     private static string _userId = default!;
     private static string _planId = default!;
@@ -52,6 +53,27 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 Assert.Equal(MembershipStatus.Active, membership.Status);
                 Assert.Equal("sub_clean", membership.StripeSubscriptionId);
                 Assert.Equal(TenantId, membership.TenantId);
+                // The currency is read off the Stripe subscription ("czk"), mapped to the platform's row.
+                Assert.Equal(CurrencyId, membership.CurrencyId);
+            });
+    }
+
+    // ── the charge currency names no platform currency: nothing is provisioned, the event is still consumed ──
+
+    [Fact]
+    public async Task SubscriptionInACurrencyThePlatformDoesNotKnow_ProvisionsNothing()
+    {
+        await TestMethod(
+            arrange: ctx => SeedUserAndPlan(ctx, seedActiveMembership: false),
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                return await mediator.Send(SignedCreatedCommand("evt_sub_xxx", "sub_xxx", currency: "xxx"));
+            },
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsSuccess);
+                Assert.Empty(await MembershipsForUserAsync(context));
             });
     }
 
@@ -191,6 +213,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                 var cancelled = UserMembership.Create(
                     userId: _userId,
                     membershipPlanId: _planId,
+                    currencyId: CurrencyId,
                     stripeSubscriptionId: "sub_cancelled",
                     currentPeriodStart: DateTime.UtcNow.AddMonths(-2),
                     currentPeriodEnd: DateTime.UtcNow.AddMonths(-1));
@@ -216,9 +239,9 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
             });
     }
 
-    private static HandlePaymentNotification.Command SignedCreatedCommand(string eventId, string subscriptionId)
+    private static HandlePaymentNotification.Command SignedCreatedCommand(string eventId, string subscriptionId, string currency = "czk")
     {
-        var body = StripeWebhookTestPayloads.SubscriptionCreatedBody(eventId, subscriptionId, _userId, PlanCode);
+        var body = StripeWebhookTestPayloads.SubscriptionCreatedBody(eventId, subscriptionId, _userId, PlanCode, currency);
         var signature = StripeWebhookTestPayloads.Sign(body, StripeWebhookTestPayloads.ConfiguredWebhookSecret);
         return new HandlePaymentNotification.Command(body, signature);
     }
@@ -233,6 +256,12 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
     {
         context.Languages.Add(Language.Create("en", "English"));
 
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
+        currency.Id = CurrencyId;
+        currency.SetAsDefault(true);
+        context.Currencies.Add(currency);
+
         var user = User.CreateWithPassword("sub-webhook@cleansia.test", "12345678Test!", "Sub", "Scriber");
         user.ConfirmEmail();
         user.TenantId = TenantId;
@@ -242,8 +271,6 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
         var plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_test_plus",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -262,6 +289,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
             var existing = UserMembership.Create(
                 userId: _userId,
                 membershipPlanId: _planId,
+                currencyId: CurrencyId,
                 stripeSubscriptionId: "sub_existing_active",
                 currentPeriodStart: DateTime.UtcNow.AddDays(-5),
                 currentPeriodEnd: DateTime.UtcNow.AddMonths(1));

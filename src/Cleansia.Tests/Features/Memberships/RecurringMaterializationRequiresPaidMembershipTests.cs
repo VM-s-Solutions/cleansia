@@ -138,10 +138,10 @@ public class RecurringMaterializationRequiresPaidMembershipTests
     private void ArrangePaidMembership()
     {
         var plan = MembershipPlan.Create(
-            code: "PLUS_MONTHLY", name: "Plus", monthlyPriceCzk: 199m, stripePriceId: "price_plus",
+            code: "PLUS_MONTHLY", name: "Plus",
             discountPercentage: 5m, freeCancellationWindowHours: 4, allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
-            UserId, plan.Id, "sub_test", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20), null);
+            UserId, plan.Id, "currency-czk", "sub_test", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20), null);
 
         _memberships
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))

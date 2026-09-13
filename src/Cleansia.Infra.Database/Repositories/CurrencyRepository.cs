@@ -76,6 +76,13 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
         if (await Context.ExtraPrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
             return true;
 
+        // Cleansia Plus: a plan priced in the currency, and a subscription billed in it (both Restrict).
+        if (await Context.MembershipPlanPrices.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        if (await Context.UserMemberships.IgnoreQueryFilters().AnyAsync(m => m.CurrencyId == currencyId, cancellationToken))
+            return true;
+
         return false;
     }
 

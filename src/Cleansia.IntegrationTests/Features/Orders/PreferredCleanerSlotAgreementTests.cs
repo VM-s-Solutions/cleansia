@@ -176,6 +176,7 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         context.Add(UserMembership.Create(
             userId: CustomerId,
             membershipPlanId: NewPlan(context).Id,
+            currencyId: CurrencyId,
             stripeSubscriptionId: "sub_slot_agreement",
             currentPeriodStart: Now.AddDays(-10),
             currentPeriodEnd: Now.AddDays(20)));
@@ -203,8 +204,6 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 299m,
-            stripePriceId: "price_slot_agreement",
             discountPercentage: 5m,
             freeCancellationWindowHours: 48,
             allowsExpressUpgrade: true);

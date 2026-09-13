@@ -68,8 +68,6 @@ public sealed class MembershipPlanTenantCorrectnessTests : IDisposable
         var plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus_monthly",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,

@@ -3,10 +3,13 @@ using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using StripeException = Stripe.StripeException;
@@ -34,6 +37,8 @@ public class MembershipCommandsStripeFailureTests
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IStripeClient> _stripe = new();
+    private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = MarketResolution.Resolving();
 
     private readonly User _user;
     private readonly MembershipPlan _plan;
@@ -51,8 +56,6 @@ public class MembershipCommandsStripeFailureTests
         _plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: StripePriceId,
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -61,6 +64,7 @@ public class MembershipCommandsStripeFailureTests
         _planRepository
             .Setup(r => r.GetByCodeAsync(PlanCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_plan);
+        _priceRepository.PriceIn(_plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId);
 
         _membershipRepository
             .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
@@ -75,6 +79,8 @@ public class MembershipCommandsStripeFailureTests
             _userRepository.Object,
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
+            _currencyResolution.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
@@ -86,6 +92,8 @@ public class MembershipCommandsStripeFailureTests
             _userRepository.Object,
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
+            _currencyResolution.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
@@ -96,6 +104,7 @@ public class MembershipCommandsStripeFailureTests
         new(
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
@@ -119,24 +128,69 @@ public class MembershipCommandsStripeFailureTests
         var membership = UserMembership.Create(
             userId: UserId,
             membershipPlanId: _plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: SubscriptionId,
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
             .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
+        var newPlan = MembershipPlan.Create(
+            code: NewPlanCode,
+            name: "Plus Yearly",
+            discountPercentage: 10m,
+            freeCancellationWindowHours: 8,
+            allowsExpressUpgrade: true,
+            billingInterval: BillingInterval.Yearly,
+            trialPeriodDays: 0);
         _planRepository
             .Setup(r => r.GetByCodeAsync(NewPlanCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(MembershipPlan.Create(
-                code: NewPlanCode,
-                name: "Plus Yearly",
-                monthlyPriceCzk: 1990m,
-                stripePriceId: NewStripePriceId,
-                discountPercentage: 10m,
-                freeCancellationWindowHours: 8,
-                allowsExpressUpgrade: true,
-                billingInterval: BillingInterval.Yearly,
-                trialPeriodDays: 0));
+            .ReturnsAsync(newPlan);
+        _priceRepository.PriceIn(newPlan.Id, MembershipPricingMockFactory.CzkCurrencyId, NewStripePriceId, 1990m);
+    }
+
+    private static StripeException CustomerCurrencyLockRefusal() =>
+        new("You cannot combine currencies on a single customer. This customer has had a subscription, coupon, or invoice item with currency czk")
+        {
+            StripeError = new Stripe.StripeError
+            {
+                Type = "invalid_request_error",
+                Message = "You cannot combine currencies on a single customer. This customer has had a subscription, coupon, or invoice item with currency czk",
+            },
+        };
+
+    [Fact]
+    public async Task CreateSubscription_StripeRefusesASecondCurrencyOnTheCustomer_ReturnsCurrencyLocked_NotGatewayUnavailable()
+    {
+        _user.AssignStripeCustomerId(StripeCustomerId);
+        _stripe
+            .Setup(c => c.CreateSubscriptionAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(CustomerCurrencyLockRefusal());
+
+        var result = await SubscriptionHandler().Handle(ConfirmedCommand(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.MembershipStripeCustomerCurrencyLocked, result.Error!.Message);
+        _membershipRepository.Verify(r => r.Add(It.IsAny<UserMembership>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateCheckoutSession_StripeRefusesASecondCurrencyOnTheCustomer_ReturnsCurrencyLocked_NotGatewayUnavailable()
+    {
+        _user.AssignStripeCustomerId(StripeCustomerId);
+        _stripe
+            .Setup(c => c.CreateMembershipCheckoutSessionAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(CustomerCurrencyLockRefusal());
+
+        var result = await CheckoutHandler().Handle(
+            new CreateMembershipCheckoutSession.Command(PlanCode), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.MembershipStripeCustomerCurrencyLocked, result.Error!.Message);
     }
 
     [Fact]

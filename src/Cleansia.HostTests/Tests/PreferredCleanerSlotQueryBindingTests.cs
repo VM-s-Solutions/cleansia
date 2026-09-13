@@ -73,6 +73,7 @@ public sealed class PreferredCleanerSlotQueryBindingTests(HostTestPostgresFixtur
             ctx.Users.Add(customer);
 
             var plan = DomainSeed.MembershipPlan("SLOT-BINDING");
+            ctx.Add(DomainSeed.MembershipPlanPrice(plan.Id, "SLOT-BINDING"));
             ctx.Add(plan);
             ctx.Add(DomainSeed.ActiveMembership(customer.Id, plan.Id));
 

@@ -311,7 +311,7 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
         await context.CommitAsync(CancellationToken.None);
 
         var replacement = UserMembership.Create(
-            UserId, planId, "sub_expressquota_2", DateTime.UtcNow, DateTime.UtcNow.AddDays(30));
+            UserId, planId, CurrencyId, "sub_expressquota_2", DateTime.UtcNow, DateTime.UtcNow.AddDays(30));
         replacement.Id = SecondMembershipId;
         context.Add(replacement);
         await context.CommitAsync(CancellationToken.None);
@@ -364,8 +364,6 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
         var plan = MembershipPlan.Create(
             code: code,
             name: code,
-            monthlyPriceCzk: 199m,
-            stripePriceId: priceId,
             discountPercentage: 0m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -378,7 +376,7 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
         string id, string userId, string planId, string stripeSubscriptionId)
     {
         var membership = UserMembership.Create(
-            userId, planId, stripeSubscriptionId,
+            userId, planId, CurrencyId, stripeSubscriptionId,
             DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20));
         membership.Id = id;
         return membership;

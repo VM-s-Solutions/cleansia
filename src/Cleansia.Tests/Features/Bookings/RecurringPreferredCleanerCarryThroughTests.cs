@@ -152,6 +152,7 @@ public class RecurringPreferredCleanerCarryThroughTests
             .ReturnsAsync(UserMembership.Create(
                 userId: UserId,
                 membershipPlanId: "plan-plus",
+                currencyId: "currency-czk",
                 stripeSubscriptionId: "sub_1",
                 currentPeriodStart: DateTime.UtcNow.AddDays(-1),
                 currentPeriodEnd: DateTime.UtcNow.AddMonths(1)));

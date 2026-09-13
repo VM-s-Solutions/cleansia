@@ -273,14 +273,13 @@ public class ExpressSurchargeDiscountCompositionTests
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: discountPercentage,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,
             membershipPlanId: plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_1",
             currentPeriodStart: Now.AddDays(-1),
             currentPeriodEnd: Now.AddMonths(1));

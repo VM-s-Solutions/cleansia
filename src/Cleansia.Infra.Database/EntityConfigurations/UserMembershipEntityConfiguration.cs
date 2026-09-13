@@ -20,6 +20,10 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
             .IsRequired()
             .HasMaxLength(26);
 
+        builder.Property(m => m.CurrencyId)
+            .IsRequired()
+            .HasMaxLength(26);
+
         builder.Property(m => m.StripeSubscriptionId)
             .IsRequired()
             .HasMaxLength(64);
@@ -54,6 +58,13 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
         builder.HasOne(m => m.MembershipPlan)
             .WithMany()
             .HasForeignKey(m => m.MembershipPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // The currency the subscription is billed in, fixed for life. Restrict: a currency with a
+        // subscription in it cannot be deleted (CurrencyRepository.IsInUseAsync answers first).
+        builder.HasOne(m => m.Currency)
+            .WithMany()
+            .HasForeignKey(m => m.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Webhook reconciliation looks up by StripeSubscriptionId; keep unique.

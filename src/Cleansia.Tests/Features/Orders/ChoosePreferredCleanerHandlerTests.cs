@@ -44,7 +44,7 @@ public class ChoosePreferredCleanerHandlerTests
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
-                CustomerUserId, "plan-plus", "sub_choose", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+                CustomerUserId, "plan-plus", "currency-czk", "sub_choose", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
         GrantOnResolve();
     }
 

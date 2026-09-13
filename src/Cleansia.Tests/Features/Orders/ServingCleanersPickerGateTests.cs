@@ -231,6 +231,7 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
         var membership = UserMembership.Create(
             userId: CustomerId,
             membershipPlanId: "plan-plus",
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_picker",
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));

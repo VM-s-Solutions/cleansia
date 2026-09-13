@@ -237,6 +237,7 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
             {
                 var plan = DomainSeed.MembershipPlan();
                 ctx.MembershipPlans.Add(plan);
+                ctx.MembershipPlanPrices.Add(DomainSeed.MembershipPlanPrice(plan.Id));
                 ctx.UserMemberships.Add(BuildMembership(plan.Id, membership));
             }
 
@@ -266,6 +267,7 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
             return UserMembership.Create(
                 userId: CustomerId,
                 membershipPlanId: planId,
+                currencyId: DomainSeed.CurrencyId,
                 stripeSubscriptionId: "sub_recur_gate",
                 currentPeriodStart: now.AddDays(-60),
                 currentPeriodEnd: now.AddDays(-1));
@@ -274,6 +276,7 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
         var row = UserMembership.Create(
             userId: CustomerId,
             membershipPlanId: planId,
+            currencyId: DomainSeed.CurrencyId,
             stripeSubscriptionId: "sub_recur_gate",
             currentPeriodStart: now.AddDays(-3),
             currentPeriodEnd: now.AddDays(27),

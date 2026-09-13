@@ -242,10 +242,8 @@ namespace Cleansia.Infra.Database.Migrations
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    MonthlyPriceCzk = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     BillingInterval = table.Column<int>(type: "integer", nullable: false),
                     TrialPeriodDays = table.Column<int>(type: "integer", nullable: false),
-                    StripePriceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     DiscountPercentage = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
                     FreeCancellationWindowHours = table.Column<int>(type: "integer", nullable: false),
                     AllowsExpressUpgrade = table.Column<bool>(type: "boolean", nullable: false),
@@ -861,6 +859,41 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MembershipPlanPrices",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    MembershipPlanId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    StripePriceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MembershipPlanPrices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MembershipPlanPrices_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MembershipPlanPrices_MembershipPlans_MembershipPlanId",
+                        column: x => x.MembershipPlanId,
+                        principalTable: "MembershipPlans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PackagePrices",
                 columns: table => new
                 {
@@ -1449,6 +1482,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     MembershipPlanId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     StripeSubscriptionId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     CurrentPeriodStart = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -1469,6 +1503,12 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserMemberships", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserMemberships_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserMemberships_MembershipPlans_MembershipPlanId",
                         column: x => x.MembershipPlanId,
@@ -3473,6 +3513,28 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "UserMembershipId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MembershipPlanPrices_CurrencyId",
+                table: "MembershipPlanPrices",
+                column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MembershipPlanPrices_MembershipPlanId_CurrencyId",
+                table: "MembershipPlanPrices",
+                columns: new[] { "MembershipPlanId", "CurrencyId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MembershipPlanPrices_StripePriceId",
+                table: "MembershipPlanPrices",
+                column: "StripePriceId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MembershipPlanPrices_TenantId",
+                table: "MembershipPlanPrices",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MembershipPlans_Code",
                 table: "MembershipPlans",
                 column: "Code",
@@ -4131,6 +4193,11 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserMemberships_CurrencyId",
+                table: "UserMemberships",
+                column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserMemberships_MembershipPlanId",
                 table: "UserMemberships",
                 column: "MembershipPlanId");
@@ -4334,6 +4401,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "MembershipBenefitUsages");
+
+            migrationBuilder.DropTable(
+                name: "MembershipPlanPrices");
 
             migrationBuilder.DropTable(
                 name: "OrderEmployeePays");

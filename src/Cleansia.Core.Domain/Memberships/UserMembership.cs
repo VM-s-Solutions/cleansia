@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Memberships;
@@ -28,6 +29,16 @@ public class UserMembership : Auditable, ITenantEntity
     [Required]
     public string MembershipPlanId { get; private set; } = default!;
     public MembershipPlan MembershipPlan { get; private set; } = default!;
+
+    /// <summary>
+    /// The currency Stripe charges this subscription in — the market's currency when it was created,
+    /// kept for life. Never updated: Stripe refuses a currency change on a live subscription, so a plan
+    /// swap picks the target plan's price in THIS currency. The benefits it grants are currency-free
+    /// and apply to an order in any currency. → /decisions/adr-0059
+    /// </summary>
+    [Required]
+    public string CurrencyId { get; private set; } = default!;
+    public Currency Currency { get; private set; } = default!;
 
     /// <summary>
     /// Stripe subscription id (<c>sub_...</c>). Used for webhook reconciliation
@@ -140,6 +151,7 @@ public class UserMembership : Auditable, ITenantEntity
     public static UserMembership Create(
         string userId,
         string membershipPlanId,
+        string currencyId,
         string stripeSubscriptionId,
         DateTime currentPeriodStart,
         DateTime currentPeriodEnd,
@@ -148,6 +160,7 @@ public class UserMembership : Auditable, ITenantEntity
         {
             UserId = userId,
             MembershipPlanId = membershipPlanId,
+            CurrencyId = currencyId,
             StripeSubscriptionId = stripeSubscriptionId,
             Status = MembershipStatus.Active,
             CurrentPeriodStart = currentPeriodStart,

@@ -3097,19 +3097,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<decimal>("MonthlyPriceCzk")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<string>("StripePriceId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("TenantId")
                         .HasMaxLength(26)
@@ -3137,6 +3128,75 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("MembershipPlans", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Memberships.MembershipPlanPrice", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MembershipPlanId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("StripePriceId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("StripePriceId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MembershipPlanPrices_StripePriceId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("MembershipPlanId", "CurrencyId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_MembershipPlanPrices_MembershipPlanId_CurrencyId");
+
+                    b.ToTable("MembershipPlanPrices", (string)null);
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Memberships.UserMembership", b =>
                 {
                     b.Property<string>("Id")
@@ -3156,6 +3216,11 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<DateTimeOffset>("CreatedOn")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
 
                     b.Property<DateTime>("CurrentPeriodEnd")
                         .HasColumnType("timestamp with time zone");
@@ -3209,6 +3274,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
 
                     b.HasIndex("MembershipPlanId");
 
@@ -6674,8 +6741,33 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("UserMembership");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Memberships.MembershipPlanPrice", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Memberships.MembershipPlan", "MembershipPlan")
+                        .WithMany()
+                        .HasForeignKey("MembershipPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Currency");
+
+                    b.Navigation("MembershipPlan");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Memberships.UserMembership", b =>
                 {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Cleansia.Core.Domain.Memberships.MembershipPlan", "MembershipPlan")
                         .WithMany()
                         .HasForeignKey("MembershipPlanId")
@@ -6687,6 +6779,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Currency");
 
                     b.Navigation("MembershipPlan");
 

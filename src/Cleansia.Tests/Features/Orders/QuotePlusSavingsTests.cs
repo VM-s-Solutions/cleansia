@@ -106,8 +106,6 @@ public class QuotePlusSavingsTests
         MembershipPlan.Create(
             code: "PLUS_MONTHLY",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_test",
             discountPercentage: discountPercent,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,

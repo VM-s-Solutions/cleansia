@@ -25,6 +25,7 @@ public class MembershipB5ContractLockTests
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IStripeClient> _stripe = new();
+    private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
 
     public MembershipB5ContractLockTests()
     {
@@ -45,6 +46,7 @@ public class MembershipB5ContractLockTests
         new(
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),

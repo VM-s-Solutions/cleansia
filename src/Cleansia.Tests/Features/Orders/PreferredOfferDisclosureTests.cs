@@ -67,7 +67,7 @@ public class PreferredOfferDisclosureTests
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
-                CustomerUserId, "plan-plus", "sub_disclosure", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+                CustomerUserId, "plan-plus", "currency-czk", "sub_disclosure", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
     }
 
     /// <summary>

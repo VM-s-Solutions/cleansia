@@ -30,7 +30,8 @@ namespace Cleansia.Core.AppServices.Features.Memberships;
 /// </summary>
 public class CreateMembershipSubscription
 {
-    public record Command(string PlanCode, bool PaymentMethodConfirmed = false) : ICommand<Response>
+    /// <param name="CountryId">The market the customer is subscribing in (ADR-0058 D4); null is the platform default market.</param>
+    public record Command(string PlanCode, bool PaymentMethodConfirmed = false, string? CountryId = null) : ICommand<Response>
     {
         /// <summary>
         /// Client-supplied idempotency token for the confirmed-subscribe (Phase-2) path. The mobile
@@ -53,10 +54,15 @@ public class CreateMembershipSubscription
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        public Validator(ICountryRepository countryRepository)
         {
             RuleFor(x => x.PlanCode)
                 .NotEmpty().WithMessage(BusinessErrorMessage.Required);
+
+            RuleFor(x => x.CountryId)
+                .MustAsync((countryId, ct) => countryRepository.IsServicedAsync(countryId!, ct))
+                .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                .When(x => !string.IsNullOrEmpty(x.CountryId));
         }
     }
 
@@ -64,6 +70,8 @@ public class CreateMembershipSubscription
         IUserRepository userRepository,
         IUserMembershipRepository userMembershipRepository,
         IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
@@ -104,6 +112,14 @@ public class CreateMembershipSubscription
                     nameof(UserMembership), BusinessErrorMessage.MembershipAlreadyActive));
             }
 
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(command.CountryId, cancellationToken);
+            var price = await membershipPlanPriceRepository.GetForPlanAsync(plan.Id, currency.Id, cancellationToken);
+            if (price == null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.MembershipPlanNotPricedInCurrency));
+            }
+
             var stripeCustomerId = user.StripeCustomerId;
             if (string.IsNullOrEmpty(stripeCustomerId))
             {
@@ -134,13 +150,21 @@ public class CreateMembershipSubscription
                 // confirms that share it hit the same Stripe idempotency key, so Stripe replays the one
                 // subscription instead of creating a second billable one. A re-subscribe after
                 // cancellation carries a new token, so it is correctly a new subscription.
-                var attemptId = DeriveStripeAttemptId(command.IdempotencyToken, user.Id, plan.Code);
+                var attemptId = DeriveStripeAttemptId(command.IdempotencyToken, user.Id, plan.Code, currency.Code);
                 var trial = await membershipTrialResolver.ResolveForUserAsync(user.Id, plan, cancellationToken);
                 SubscriptionResult subscription;
                 try
                 {
                     subscription = await stripeClient.CreateSubscriptionAsync(
-                        stripeCustomerId, plan.StripePriceId, trial.Days, attemptId, cancellationToken);
+                        stripeCustomerId, price.StripePriceId, trial.Days, attemptId, cancellationToken);
+                }
+                catch (StripeException ex) when (StripeRefusals.IsCustomerCurrencyLocked(ex))
+                {
+                    logger.LogWarning(ex,
+                        "Stripe refused a {CurrencyCode} subscription for user {UserId}, plan {PlanCode}: the Stripe customer is locked to another currency",
+                        currency.Code, user.Id, plan.Code);
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.CountryId), BusinessErrorMessage.MembershipStripeCustomerCurrencyLocked));
                 }
                 catch (StripeException ex)
                 {
@@ -183,6 +207,7 @@ public class CreateMembershipSubscription
                 var membership = UserMembership.Create(
                     userId: user.Id,
                     membershipPlanId: plan.Id,
+                    currencyId: currency.Id,
                     stripeSubscriptionId: subscription.SubscriptionId,
                     currentPeriodStart: subscription.CurrentPeriodStart,
                     currentPeriodEnd: subscription.CurrentPeriodEnd,
@@ -248,11 +273,12 @@ public class CreateMembershipSubscription
         /// retried/double-tapped confirm yields the SAME attempt id, so Stripe replays the same
         /// subscription. When the token is null/empty (web / not-yet-updated callers), fall back to a
         /// DETERMINISTIC key from stable inputs so even those callers collapse a concurrent double-tap
-        /// rather than minting two subscriptions. Never a per-call Guid.
+        /// rather than minting two subscriptions. Never a per-call Guid. The currency is part of it so a
+        /// CZK attempt cannot replay as a EUR one.
         /// </summary>
-        private static string DeriveStripeAttemptId(string? idempotencyToken, string userId, string planCode)
+        private static string DeriveStripeAttemptId(string? idempotencyToken, string userId, string planCode, string currencyCode)
             => string.IsNullOrWhiteSpace(idempotencyToken)
-                ? $"u-{userId}-p-{planCode}"
+                ? $"u-{userId}-p-{planCode}-c-{currencyCode}"
                 : $"tok-{idempotencyToken}";
 
         /// <summary>

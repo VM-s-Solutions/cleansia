@@ -41,6 +41,7 @@ public class UserMembershipRepository(CleansiaDbContext context)
     {
         return GetDbSet()
             .Include(m => m.MembershipPlan)
+            .Include(m => m.Currency)
             // IsActive on the entity is a computed property combining Status
             // AND CurrentPeriodEnd > now. Filter both server-side so we don't
             // pull cancelled rows back into memory just to drop them.
@@ -82,12 +83,12 @@ public class MembershipPlanRepository(CleansiaDbContext context)
 
     public async Task<IReadOnlyList<MembershipPlan>> GetActivePlansAsync(CancellationToken cancellationToken)
     {
-        // Order: Monthly first so it's the default selection on the switcher;
-        // then by price ascending as a tiebreaker (handy when more plans land).
+        // Monthly first so it is the default selection on the switcher; the code is the tiebreak, since
+        // a plan's price is per currency and no single one can order the list.
         return await GetDbSet()
             .Where(p => p.IsActive)
             .OrderBy(p => p.BillingInterval)
-            .ThenBy(p => p.MonthlyPriceCzk)
+            .ThenBy(p => p.Code)
             .ToListAsync(cancellationToken);
     }
 }

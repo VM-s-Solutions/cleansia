@@ -1,18 +1,19 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Memberships.Admin.DTOs;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Memberships.Admin;
 
 /// <summary>
-/// Admin creation of a new membership plan. The Stripe Product/Price are
-/// registered out of band — <see cref="Command.StripePriceId"/> is the
-/// admin-entered Price id (we never call Stripe to create products/prices).
-/// Code is normalised to uppercase by <see cref="MembershipPlan.Create"/>;
-/// uniqueness within the tenant scope is enforced in the handler via
+/// Admin creation of a new membership plan with a price per currency. The Stripe Product/Prices are
+/// registered out of band — each <see cref="MembershipPlanPriceInput.StripePriceId"/> is the
+/// admin-entered Price id (we never call Stripe to create products/prices). Code is normalised to
+/// uppercase by <see cref="MembershipPlan.Create"/>; uniqueness is enforced in the handler via
 /// <see cref="IMembershipPlanRepository.GetByCodeAsync"/>.
 /// </summary>
 public class CreateMembershipPlan
@@ -21,8 +22,12 @@ public class CreateMembershipPlan
         string Code,
         string Name,
         BillingInterval BillingInterval,
-        decimal MonthlyPriceCzk,
-        string StripePriceId,
+        /// <summary>
+        /// One entry per currency the plan is sold in, keyed by currency code. Empty or partial is
+        /// legal — a plan unpriced in a market is "Plus is not on sale there" (ADR-0059 D4), which is
+        /// why this is NOT MustCoverAllActiveCurrencies like the catalogue.
+        /// </summary>
+        Dictionary<string, MembershipPlanPriceInput>? Prices,
         decimal DiscountPercentage,
         int FreeCancellationWindowHours,
         int TrialPeriodDays,
@@ -38,7 +43,7 @@ public class CreateMembershipPlan
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        public Validator(ICurrencyRepository currencyRepository, IMembershipPlanPriceRepository membershipPlanPriceRepository)
         {
             RuleFor(x => x.Code)
                 .Cascade(CascadeMode.Stop)
@@ -58,16 +63,11 @@ public class CreateMembershipPlan
                 .IsInEnum()
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
-            RuleFor(x => x.MonthlyPriceCzk)
-                .GreaterThanOrEqualTo(0m)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+            RuleFor(x => x.Prices)
+                .MustBeKeyedByKnownCurrencyCodes(currencyRepository);
 
-            RuleFor(x => x.StripePriceId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MaximumLength(64)
-                .WithMessage(BusinessErrorMessage.MaxLength);
+            RuleForEach(x => x.Prices)
+                .SetValidator(new MembershipPlanPriceEntryValidator(membershipPlanPriceRepository, exceptPlanId: null));
 
             RuleFor(x => x.DiscountPercentage)
                 .InclusiveBetween(0m, 100m)
@@ -87,7 +87,10 @@ public class CreateMembershipPlan
         }
     }
 
-    public class Handler(IMembershipPlanRepository membershipPlanRepository) : ICommandHandler<Command, Response>
+    public class Handler(
+        IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
+        ICurrencyRepository currencyRepository) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -101,8 +104,6 @@ public class CreateMembershipPlan
             var plan = MembershipPlan.Create(
                 code: command.Code,
                 name: command.Name,
-                monthlyPriceCzk: command.MonthlyPriceCzk,
-                stripePriceId: command.StripePriceId,
                 discountPercentage: command.DiscountPercentage,
                 freeCancellationWindowHours: command.FreeCancellationWindowHours,
                 allowsExpressUpgrade: command.AllowsExpressUpgrade,
@@ -111,6 +112,9 @@ public class CreateMembershipPlan
                 expressUpgradesPerMonth: command.ExpressUpgradesPerMonth);
 
             membershipPlanRepository.Add(plan);
+
+            await MembershipPlanPricing.UpsertAsync(
+                plan.Id, command.Prices, membershipPlanPriceRepository, currencyRepository, cancellationToken);
 
             return BusinessResult.Success(new Response(plan.Id));
         }

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Memberships.Admin.DTOs;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -7,18 +8,17 @@ using FluentValidation;
 namespace Cleansia.Core.AppServices.Features.Memberships.Admin;
 
 /// <summary>
-/// Admin edit of a membership plan's pricing + benefits. Code and
-/// BillingInterval are create-only (immutable on edit). Mutations land via the
-/// entity's UpdatePricing / UpdateBenefits methods; UpdatedBy/UpdatedOn are
-/// stamped by the SaveChanges interceptor from the user session at commit.
+/// Admin edit of a membership plan's benefits and per-currency prices. Code and BillingInterval are
+/// create-only (immutable on edit). A currency the payload does not mention keeps the row it has;
+/// removing a row is not offered — deactivate the plan instead.
 /// </summary>
 public class UpdateMembershipPlan
 {
     public record Command(
         string MembershipPlanId,
         string Name,
-        decimal MonthlyPriceCzk,
-        string StripePriceId,
+        /// <summary>One entry per currency to write, keyed by currency code; keys not sent are left as they are.</summary>
+        Dictionary<string, MembershipPlanPriceInput>? Prices,
         decimal DiscountPercentage,
         int FreeCancellationWindowHours,
         int TrialPeriodDays,
@@ -34,7 +34,10 @@ public class UpdateMembershipPlan
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IMembershipPlanRepository membershipPlanRepository)
+        public Validator(
+            IMembershipPlanRepository membershipPlanRepository,
+            ICurrencyRepository currencyRepository,
+            IMembershipPlanPriceRepository membershipPlanPriceRepository)
         {
             RuleFor(x => x.MembershipPlanId)
                 .Cascade(CascadeMode.Stop)
@@ -50,16 +53,11 @@ public class UpdateMembershipPlan
                 .MaximumLength(100)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.MonthlyPriceCzk)
-                .GreaterThanOrEqualTo(0m)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+            RuleFor(x => x.Prices)
+                .MustBeKeyedByKnownCurrencyCodes(currencyRepository);
 
-            RuleFor(x => x.StripePriceId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MaximumLength(64)
-                .WithMessage(BusinessErrorMessage.MaxLength);
+            RuleForEach(x => x.Prices)
+                .SetValidator(command => new MembershipPlanPriceEntryValidator(membershipPlanPriceRepository, command.MembershipPlanId));
 
             RuleFor(x => x.DiscountPercentage)
                 .InclusiveBetween(0m, 100m)
@@ -79,7 +77,10 @@ public class UpdateMembershipPlan
         }
     }
 
-    public class Handler(IMembershipPlanRepository membershipPlanRepository) : ICommandHandler<Command, Response>
+    public class Handler(
+        IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
+        ICurrencyRepository currencyRepository) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -91,13 +92,15 @@ public class UpdateMembershipPlan
             }
 
             plan.UpdateName(command.Name)
-                .UpdatePricing(command.MonthlyPriceCzk, command.StripePriceId)
                 .UpdateBenefits(
                     discountPercentage: command.DiscountPercentage,
                     freeCancellationWindowHours: command.FreeCancellationWindowHours,
                     allowsExpressUpgrade: command.AllowsExpressUpgrade,
                     expressUpgradesPerMonth: command.ExpressUpgradesPerMonth)
                 .UpdateTrial(command.TrialPeriodDays);
+
+            await MembershipPlanPricing.UpsertAsync(
+                plan.Id, command.Prices, membershipPlanPriceRepository, currencyRepository, cancellationToken);
 
             return BusinessResult.Success(new Response(plan.Id));
         }

@@ -3,10 +3,14 @@ using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -31,6 +35,8 @@ public class CreateMembershipSubscriptionContractLockTests
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IStripeClient> _stripe = new();
+    private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = MarketResolution.Resolving();
 
     public CreateMembershipSubscriptionContractLockTests()
     {
@@ -43,8 +49,6 @@ public class CreateMembershipSubscriptionContractLockTests
         var plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: StripePriceId,
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -53,6 +57,7 @@ public class CreateMembershipSubscriptionContractLockTests
         _planRepository
             .Setup(r => r.GetByCodeAsync(PlanCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(plan);
+        _priceRepository.PriceIn(plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId);
     }
 
     private void SetupUserWithStripeCustomer()
@@ -70,6 +75,8 @@ public class CreateMembershipSubscriptionContractLockTests
             _userRepository.Object,
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
+            _currencyResolution.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),

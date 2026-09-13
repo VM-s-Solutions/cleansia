@@ -1819,48 +1819,65 @@ SELECT '01PROMOLOYAL100000000000B', true, 'system', CURRENT_TIMESTAMP, NULL, NUL
 WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'LOYAL10' AND "TenantId" IS NULL);
 
 -- ─── Cleansia Plus membership plans ───
--- Two plans: monthly + yearly. Yearly is priced at ~15% discount per month.
--- StripePriceId values are placeholders — replace with the actual Price ids
--- from the Stripe dashboard before deploying. The monthly→yearly upgrade
--- path (SwapMembershipPlan command) reads BillingInterval to know which
--- plan is the "upgrade target".
+-- Two plans: monthly + yearly. The price and the Stripe Price id live on MembershipPlanPrices, one
+-- row per currency (ADR-0059): CZK below, nothing for EUR until the owner mints EUR Stripe Prices
+-- and the admin enters them. The monthly→yearly upgrade path (SwapMembershipPlan command) reads
+-- BillingInterval to know which plan is the "upgrade target".
 -- TrialPeriodDays is 0 on both, and the admin validators refuse anything else (T-0690, owner ruling
 -- 2026-09-08): a customer gets no Cleansia Plus benefit until they actually subscribe. A trial is by
 -- definition benefits without payment, so under that ruling it cannot exist. It gave away far more
 -- than the headline 5% discount — a trialing member could author a recurring schedule that outlives
 -- the trial, and got the widened free-cancellation window with no cap on use.
 
--- PLUS_MONTHLY — 199 Kč/month
+-- PLUS_MONTHLY
 INSERT INTO public."MembershipPlans" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
     "DeactivatedBy", "DeactivatedOn", "TenantId",
-    "Code", "Name", "MonthlyPriceCzk", "StripePriceId",
+    "Code", "Name",
     "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
     "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
 SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
-    'PLUS_MONTHLY', 'Cleansia Plus (Monthly)', 199.00, 'price_1TSiJ83KjMqxM0RBVaiKAF6r',
+    'PLUS_MONTHLY', 'Cleansia Plus (Monthly)',
     5.00, 4, true,
     1,
     1, 0
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY' AND "TenantId" IS NULL);
 
--- PLUS_YEARLY — 2030 Kč/year (≈169 Kč/month, 15% off vs monthly).
+-- PLUS_YEARLY (the annual charge is on its price row; ≈15% off vs monthly in CZK).
 INSERT INTO public."MembershipPlans" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
     "DeactivatedBy", "DeactivatedOn", "TenantId",
-    "Code", "Name", "MonthlyPriceCzk", "StripePriceId",
+    "Code", "Name",
     "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
     "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
 SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
-    'PLUS_YEARLY', 'Cleansia Plus (Annual)', 2030.00, 'price_1TSiJ83KjMqxM0RBrfMWdjrF',
+    'PLUS_YEARLY', 'Cleansia Plus (Annual)',
     5.00, 4, true,
     1,
     2, 0
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY' AND "TenantId" IS NULL);
+
+-- One price per (plan, currency). CZK only: 199 Kč/month and 2030 Kč/year against the two sandbox
+-- Stripe Prices. A currency with no row here is a market where Plus is not on sale (ADR-0059 D4).
+INSERT INTO public."MembershipPlanPrices" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+  "DeactivatedBy", "DeactivatedOn", "MembershipPlanId", "CurrencyId", "Price", "StripePriceId"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       p."Id", c."Id", v."Price", v."StripePriceId"
+FROM (VALUES
+  ('PLUS_MONTHLY',  199.00, 'price_1TSiJ83KjMqxM0RBVaiKAF6r'),
+  ('PLUS_YEARLY',  2030.00, 'price_1TSiJ83KjMqxM0RBrfMWdjrF')
+) AS v("Code", "Price", "StripePriceId")
+JOIN public."MembershipPlans" p ON p."Code" = v."Code" AND p."TenantId" IS NULL
+CROSS JOIN (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1) c
+WHERE NOT EXISTS (
+  SELECT 1 FROM public."MembershipPlanPrices" mp WHERE mp."MembershipPlanId" = p."Id" AND mp."CurrencyId" = c."Id"
+);
 
 -- ============================================================================
 -- PropertySizePresets — the per-country size ladder.

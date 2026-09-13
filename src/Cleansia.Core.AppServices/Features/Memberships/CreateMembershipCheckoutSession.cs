@@ -15,15 +15,21 @@ namespace Cleansia.Core.AppServices.Features.Memberships;
 
 public class CreateMembershipCheckoutSession
 {
-    public record Command(string PlanCode) : ICommand<Response>;
+    /// <param name="CountryId">The market the customer is subscribing in (ADR-0058 D4); null is the platform default market.</param>
+    public record Command(string PlanCode, string? CountryId = null) : ICommand<Response>;
 
     public record Response(string CheckoutUrl);
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        public Validator(ICountryRepository countryRepository)
         {
             RuleFor(x => x.PlanCode).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+
+            RuleFor(x => x.CountryId)
+                .MustAsync((countryId, ct) => countryRepository.IsServicedAsync(countryId!, ct))
+                .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                .When(x => !string.IsNullOrEmpty(x.CountryId));
 
             // There is deliberately nothing here about the return URLs. They used to be two more
             // NotEmpty rules over two caller-supplied strings that went straight to Stripe's
@@ -39,6 +45,8 @@ public class CreateMembershipCheckoutSession
         IUserRepository userRepository,
         IUserMembershipRepository userMembershipRepository,
         IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
@@ -79,6 +87,14 @@ public class CreateMembershipCheckoutSession
                     nameof(command.PlanCode), BusinessErrorMessage.MembershipAlreadyActive));
             }
 
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(command.CountryId, cancellationToken);
+            var price = await membershipPlanPriceRepository.GetForPlanAsync(plan.Id, currency.Id, cancellationToken);
+            if (price == null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.MembershipPlanNotPricedInCurrency));
+            }
+
             var stripeCustomerId = user.StripeCustomerId;
             if (string.IsNullOrEmpty(stripeCustomerId))
             {
@@ -113,12 +129,20 @@ public class CreateMembershipCheckoutSession
             {
                 url = await stripeClient.CreateMembershipCheckoutSessionAsync(
                     stripeCustomerId: stripeCustomerId,
-                    stripePriceId: plan.StripePriceId,
+                    stripePriceId: price.StripePriceId,
                     userId: user.Id,
                     membershipPlanCode: plan.Code,
                     trialPeriodDays: trial.Days,
                     idempotencyAttemptId: attemptId,
                     cancellationToken: cancellationToken);
+            }
+            catch (StripeException ex) when (StripeRefusals.IsCustomerCurrencyLocked(ex))
+            {
+                logger.LogWarning(ex,
+                    "Stripe refused a {CurrencyCode} membership checkout for user {UserId}: the Stripe customer is locked to another currency",
+                    currency.Code, user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.CountryId), BusinessErrorMessage.MembershipStripeCustomerCurrencyLocked));
             }
             catch (StripeException ex)
             {

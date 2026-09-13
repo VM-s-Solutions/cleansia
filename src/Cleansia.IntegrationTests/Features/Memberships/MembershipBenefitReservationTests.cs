@@ -33,6 +33,7 @@ public class MembershipBenefitReservationTests(PostgresContainerFixture fixture)
     private const string UserId = "user-benefit-reserve";
     private const string PlanId = "plan-benefit-reserve";
     private const string MembershipId = "membership-benefit-reserve";
+    private const string CurrencyId = "cur-czk-benefit-rsv";
     private const string PeriodKey = "C:2026-08";
     private const string OtherPeriodKey = "C:2026-09";
     private const string Email = "benefit-reserve@cleansia.test";
@@ -268,11 +269,15 @@ public class MembershipBenefitReservationTests(PostgresContainerFixture fixture)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
+        currency.Id = CurrencyId;
+        currency.SetAsDefault(true);
+        context.Currencies.Add(currency);
+
         var plan = MembershipPlan.Create(
             code: "PLUS_MONTHLY",
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus_monthly",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -287,7 +292,7 @@ public class MembershipBenefitReservationTests(PostgresContainerFixture fixture)
         context.Add(user);
 
         var membership = UserMembership.Create(
-            UserId, PlanId, "sub_benefit_reserve", NowUtc.AddDays(-10), NowUtc.AddDays(20));
+            UserId, PlanId, CurrencyId, "sub_benefit_reserve", NowUtc.AddDays(-10), NowUtc.AddDays(20));
         membership.Id = MembershipId;
         context.Add(membership);
 

@@ -32,8 +32,6 @@ public static class UserMembershipMockFactory
         var plan = MembershipPlan.Create(
             code: "PLUS_MONTHLY",
             name: "Cleansia Plus (Monthly)",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_test_plus_monthly",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
@@ -41,6 +39,7 @@ public static class UserMembershipMockFactory
         var membership = UserMembership.Create(
             userId,
             planId ?? plan.Id,
+            MembershipPricingMockFactory.CzkCurrencyId,
             $"sub_test_{userId}",
             now.AddDays(-10),
             now.AddDays(20),
@@ -49,6 +48,9 @@ public static class UserMembershipMockFactory
         typeof(UserMembership).GetProperty(nameof(UserMembership.MembershipPlan))!
             .GetSetMethod(nonPublic: true)!
             .Invoke(membership, [plan]);
+        typeof(UserMembership).GetProperty(nameof(UserMembership.Currency))!
+            .GetSetMethod(nonPublic: true)!
+            .Invoke(membership, [MembershipPricingMockFactory.Czk()]);
 
         return membership;
     }

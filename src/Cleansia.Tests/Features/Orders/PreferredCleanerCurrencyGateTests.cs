@@ -348,8 +348,6 @@ public class PreferredCleanerCurrencyGateTests
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: 10m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
@@ -357,6 +355,7 @@ public class PreferredCleanerCurrencyGateTests
         return UserMembership.Create(
             userId: UserId,
             membershipPlanId: plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_1",
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));

@@ -52,15 +52,13 @@ public class ExpressWaiverResolverTests
         var plan = MembershipPlan.Create(
             code: "PLUS_MONTHLY",
             name: "Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: allowsExpressUpgrade);
         plan.UpdateBenefits(5m, 4, allowsExpressUpgrade, expressUpgradesPerMonth);
 
         var membership = UserMembership.Create(
-            UserId, plan.Id, "sub_test", NowUtc.AddDays(-10), NowUtc.AddDays(20), trialEndsAtUtc);
+            UserId, plan.Id, "currency-czk", "sub_test", NowUtc.AddDays(-10), NowUtc.AddDays(20), trialEndsAtUtc);
         typeof(UserMembership).GetProperty(nameof(UserMembership.MembershipPlan))!
             .GetSetMethod(nonPublic: true)!
             .Invoke(membership, [plan]);

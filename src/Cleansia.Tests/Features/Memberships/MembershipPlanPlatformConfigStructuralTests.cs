@@ -57,6 +57,15 @@ public class MembershipPlanPlatformConfigStructuralTests
     }
 
     [Fact]
+    public void MembershipPlanPrice_IsPlatformConfigLikeThePlanItPrices()
+    {
+        // The anonymous GetPlans read joins the price rows; a tenant dimension there would collapse to
+        // the null-tenant slice exactly as the plan's once did.
+        Assert.True(typeof(Auditable).IsAssignableFrom(typeof(MembershipPlanPrice)));
+        Assert.False(typeof(ITenantEntity).IsAssignableFrom(typeof(MembershipPlanPrice)));
+    }
+
+    [Fact]
     public void LoyaltyTierConfig_StaysTenantScoped_NoAnonymousReadPath_AC4()
     {
         // LoyaltyTierConfig is the same shape but has NO anonymous read path, so it stays

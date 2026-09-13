@@ -224,6 +224,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
             .ReturnsAsync(UserMembership.Create(
                 userId: CustomerId,
                 membershipPlanId: "plan-plus",
+                currencyId: "currency-czk",
                 stripeSubscriptionId: "sub_slot",
                 currentPeriodStart: DateTime.UtcNow.AddDays(-1),
                 currentPeriodEnd: DateTime.UtcNow.AddMonths(1)));

@@ -141,6 +141,19 @@ public static class BusinessErrorMessage
     public const string MembershipSwapSamePlan = "membership.swap_same_plan";
 
     /// <summary>
+    /// The plan has no <c>MembershipPlanPrice</c> row in the currency the subscribe (or swap) resolved:
+    /// Plus is not on sale in that market. Absence is the gate — no row, not listed, not subscribable.
+    /// </summary>
+    public const string MembershipPlanNotPricedInCurrency = "membership.plan.not_priced_in_currency";
+
+    /// <summary>
+    /// Stripe refused to bill this Customer in a second currency ("cannot combine currencies on a
+    /// single customer"): the customer once held Plus in another currency and the platform holds one
+    /// Stripe Customer per user. Classified so the re-subscribe path is a refusal, never a 500.
+    /// </summary>
+    public const string MembershipStripeCustomerCurrencyLocked = "membership.stripe_customer_currency_locked";
+
+    /// <summary>
     /// ADR-0035 AM-8 — the member's free express upgrade was still available when the price was quoted
     /// and is not available now. Distinct from <see cref="TotalPriceNotMatch"/> on purpose: every client
     /// maps that one to a generic "the price changed" string, so the state that needs its own sentence
@@ -154,6 +167,7 @@ public static class BusinessErrorMessage
     // Membership plans — admin back-office CRUD
     public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
     public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
+    public const string MembershipPlanStripePriceAlreadyUsed = "membership.plan.stripe_price_already_used";
 
     /// <summary>
     /// A free trial is benefits without payment, and the owner ruling of 2026-09-08 (T-0690) is that no

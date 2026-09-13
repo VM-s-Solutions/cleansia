@@ -30,6 +30,7 @@ public class SwapMembershipPlan
     public class Handler(
         IUserMembershipRepository userMembershipRepository,
         IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
@@ -69,6 +70,15 @@ public class SwapMembershipPlan
                     nameof(command.NewPlanCode), BusinessErrorMessage.MembershipSwapSamePlan));
             }
 
+            // The subscription keeps its currency for life (Stripe refuses a change on a live one), so the
+            // target is the new plan's price in THAT currency — never the market the customer is browsing.
+            var price = await membershipPlanPriceRepository.GetForPlanAsync(newPlan.Id, membership.CurrencyId, cancellationToken);
+            if (price == null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.NewPlanCode), BusinessErrorMessage.MembershipPlanNotPricedInCurrency));
+            }
+
             // Fresh attempt id so A→B→A→B-style swaps each reach Stripe
             // instead of replaying the first swap's response.
             var attemptId = Guid.NewGuid().ToString("N");
@@ -77,7 +87,7 @@ public class SwapMembershipPlan
             {
                 swapped = await stripeClient.SwapSubscriptionPriceAsync(
                     membership.StripeSubscriptionId,
-                    newPlan.StripePriceId,
+                    price.StripePriceId,
                     attemptId,
                     cancellationToken);
             }

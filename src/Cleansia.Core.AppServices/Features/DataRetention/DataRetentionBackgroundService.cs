@@ -18,6 +18,7 @@ public class DataRetentionBackgroundService(
     IUserConsentRepository userConsentRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
     IUserNotificationRepository userNotificationRepository,
+    ICustomerActionAuditRepository customerActionAuditRepository,
     IAppConfigurationProvider configProvider,
     IDataRetentionConfig retentionConfig,
     IBlobContainerClientFactory blobClientFactory,
@@ -45,6 +46,7 @@ public class DataRetentionBackgroundService(
         await RunSafeAsync("WithdrawnConsents", CleanWithdrawnConsentsAsync, cancellationToken);
         await RunSafeAsync("SupersededDocuments", CleanSupersededDocumentsAsync, cancellationToken);
         await RunSafeAsync("UserNotifications", CleanUserNotificationsAsync, cancellationToken);
+        await RunSafeAsync("CustomerActionAudits", CleanCustomerActionAuditsAsync, cancellationToken);
 
         logger.LogInformation("Data retention job completed");
     }
@@ -290,5 +292,20 @@ public class DataRetentionBackgroundService(
         logger.LogInformation(
             "Deleted {Total} user notifications (window: {Days} days, cap: {Cap}/user)",
             totalDeleted, days, RetentionDefaults.MaxNotificationsPerUser);
+    }
+
+    private async Task CleanCustomerActionAuditsAsync(CancellationToken ct)
+    {
+        var yearsStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.CustomerAuditRetentionYearsKey, ct);
+        var years = int.TryParse(yearsStr, out var y) ? y : RetentionDefaults.DefaultCustomerAuditRetentionYears;
+        var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
+
+        // Per row by its own age, never anchored on the customer's last act: the anchor form kept an
+        // active customer's IP addresses for the life of the account (ADR-0062 D5). The admin and
+        // employee tables have no window (ADR-0012 D6) and this task must never reach them.
+        var totalDeleted = await customerActionAuditRepository.DeleteExpiredAsync(cutoff, RetentionDefaults.BatchSize, ct);
+
+        logger.LogInformation("Deleted {Total} customer audit rows older than {Years} years",
+            totalDeleted, years);
     }
 }

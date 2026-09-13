@@ -7,8 +7,6 @@ namespace Cleansia.Infra.Database.Repositories;
 public class CustomerActionAuditRepository(CleansiaDbContext context)
     : BaseRepository<CustomerActionAudit>(context), ICustomerActionAuditRepository
 {
-    private const int DeleteBatchSize = 100;
-
     public async Task<int> PseudonymiseForSubjectAsync(string userId, CancellationToken cancellationToken)
     {
         // Tracked, not ExecuteUpdateAsync: the blanking must ride the erasure's single commit, so a
@@ -25,7 +23,7 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
         return rows.Count;
     }
 
-    public async Task<int> DeleteExpiredAsync(DateTimeOffset cutoff, CancellationToken cancellationToken)
+    public async Task<int> DeleteExpiredAsync(DateTimeOffset cutoff, int batchSize, CancellationToken cancellationToken)
     {
         var total = 0;
 
@@ -35,7 +33,7 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
                 .Where(a => a.OccurredOn < cutoff)
                 .OrderBy(a => a.OccurredOn)
                 .Select(a => a.Id)
-                .Take(DeleteBatchSize)
+                .Take(batchSize)
                 .ToListAsync(cancellationToken);
 
             if (batch.Count == 0)

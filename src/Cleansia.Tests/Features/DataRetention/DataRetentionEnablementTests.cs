@@ -165,6 +165,7 @@ public sealed class DataRetentionEnablementTests : IDisposable
             new UserConsentRepository(ctx),
             new EmployeeDocumentRepository(ctx),
             new UserNotificationRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
             new AppConfigurationProvider(ctx),
             new DataRetentionConfig(configuration),
             _blobClientFactory.Object,

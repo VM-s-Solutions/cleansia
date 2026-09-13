@@ -18,7 +18,8 @@ public interface ICustomerActionAuditRepository : IRepository<CustomerActionAudi
 
     /// <summary>
     /// Deletes every row whose own <see cref="CustomerActionAudit.OccurredOn"/> is before the cutoff,
-    /// across tenants, in batches. Returns the number of rows deleted.
+    /// across tenants, <paramref name="batchSize"/> rows per statement until none is left. Returns the
+    /// number of rows deleted.
     /// </summary>
-    Task<int> DeleteExpiredAsync(DateTimeOffset cutoff, CancellationToken cancellationToken);
+    Task<int> DeleteExpiredAsync(DateTimeOffset cutoff, int batchSize, CancellationToken cancellationToken);
 }

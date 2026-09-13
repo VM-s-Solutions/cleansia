@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
@@ -158,7 +159,7 @@ public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) :
             act: async provider =>
             {
                 var repository = provider.GetRequiredService<ICustomerActionAuditRepository>();
-                return await repository.DeleteExpiredAsync(cutoff, CancellationToken.None);
+                return await repository.DeleteExpiredAsync(cutoff, RetentionDefaults.BatchSize, CancellationToken.None);
             },
             assert: async (CleansiaDbContext context, int deleted) =>
             {

@@ -85,6 +85,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             new UserConsentRepository(ctx),
             new EmployeeDocumentRepository(ctx),
             new UserNotificationRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
             _configProvider.Object,
             new DataRetentionConfig(new ConfigurationBuilder().Build()),
             _blobClientFactory.Object,

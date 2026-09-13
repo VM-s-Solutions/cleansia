@@ -7204,7 +7204,7 @@ export class AdminGdprClient implements IAdminGdprClient {
             })
         };
 
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
             return this.processExport(response);
         })).pipe(ObservableCatch((response: any) => {
             if (response instanceof HttpResponseBase) {
@@ -23889,6 +23889,74 @@ export interface IGdprExportConsentDto {
     withdrawnAt: Date | undefined;
 }
 
+export class GdprExportCustomerActionDto implements IGdprExportCustomerActionDto {
+    action!: string | undefined;
+    occurredOn!: Date;
+    resourceType!: string | undefined;
+    resourceId!: string | undefined;
+    success!: boolean;
+    errorCode!: string | undefined;
+    payloadJson!: string | undefined;
+    ipAddress!: string | undefined;
+    deviceLabel!: string | undefined;
+
+    constructor(data?: IGdprExportCustomerActionDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.action = Data["action"];
+            this.occurredOn = Data["occurredOn"] ? new Date(Data["occurredOn"].toString()) : undefined as any;
+            this.resourceType = Data["resourceType"];
+            this.resourceId = Data["resourceId"];
+            this.success = Data["success"];
+            this.errorCode = Data["errorCode"];
+            this.payloadJson = Data["payloadJson"];
+            this.ipAddress = Data["ipAddress"];
+            this.deviceLabel = Data["deviceLabel"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportCustomerActionDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportCustomerActionDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["action"] = this.action;
+        data["occurredOn"] = this.occurredOn ? this.occurredOn.toISOString() : undefined as any;
+        data["resourceType"] = this.resourceType;
+        data["resourceId"] = this.resourceId;
+        data["success"] = this.success;
+        data["errorCode"] = this.errorCode;
+        data["payloadJson"] = this.payloadJson;
+        data["ipAddress"] = this.ipAddress;
+        data["deviceLabel"] = this.deviceLabel;
+        return data;
+    }
+}
+
+export interface IGdprExportCustomerActionDto {
+    action: string | undefined;
+    occurredOn: Date;
+    resourceType: string | undefined;
+    resourceId: string | undefined;
+    success: boolean;
+    errorCode: string | undefined;
+    payloadJson: string | undefined;
+    ipAddress: string | undefined;
+    deviceLabel: string | undefined;
+}
+
 export class GdprExportDocumentDto implements IGdprExportDocumentDto {
     id!: string | undefined;
     fileName!: string | undefined;
@@ -23946,6 +24014,7 @@ export class GdprExportDto implements IGdprExportDto {
     documents!: GdprExportDocumentDto[] | undefined;
     invoices!: GdprExportInvoiceDto[] | undefined;
     consents!: GdprExportConsentDto[] | undefined;
+    customerActions!: GdprExportCustomerActionDto[] | undefined;
     metadata!: GdprExportMetadataDto;
 
     constructor(data?: IGdprExportDto) {
@@ -23982,6 +24051,11 @@ export class GdprExportDto implements IGdprExportDto {
                 this.consents = [] as any;
                 for (let item of Data["consents"])
                     this.consents!.push(GdprExportConsentDto.fromJS(item));
+            }
+            if (Array.isArray(Data["customerActions"])) {
+                this.customerActions = [] as any;
+                for (let item of Data["customerActions"])
+                    this.customerActions!.push(GdprExportCustomerActionDto.fromJS(item));
             }
             this.metadata = Data["metadata"] ? GdprExportMetadataDto.fromJS(Data["metadata"]) : undefined as any;
         }
@@ -24020,6 +24094,11 @@ export class GdprExportDto implements IGdprExportDto {
             for (let item of this.consents)
                 data["consents"].push(item ? item.toJSON() : undefined as any);
         }
+        if (Array.isArray(this.customerActions)) {
+            data["customerActions"] = [];
+            for (let item of this.customerActions)
+                data["customerActions"].push(item ? item.toJSON() : undefined as any);
+        }
         data["metadata"] = this.metadata ? this.metadata.toJSON() : undefined as any;
         return data;
     }
@@ -24034,6 +24113,7 @@ export interface IGdprExportDto {
     documents: GdprExportDocumentDto[] | undefined;
     invoices: GdprExportInvoiceDto[] | undefined;
     consents: GdprExportConsentDto[] | undefined;
+    customerActions: GdprExportCustomerActionDto[] | undefined;
     metadata: GdprExportMetadataDto;
 }
 

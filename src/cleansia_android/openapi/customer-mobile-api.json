@@ -1937,7 +1937,7 @@
       }
     },
     "/api/v1/Gdpr/export": {
-      "get": {
+      "post": {
         "tags": [
           "Gdpr"
         ],
@@ -7592,6 +7592,10 @@
           "accessMode": {
             "type": "string",
             "nullable": true
+          },
+          "termsAccepted": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8165,6 +8169,47 @@
         },
         "additionalProperties": false
       },
+      "GdprExportCustomerActionDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "nullable": true
+          },
+          "occurredOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resourceType": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "payloadJson": {
+            "type": "string",
+            "nullable": true
+          },
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceLabel": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "GdprExportDocumentDto": {
         "type": "object",
         "properties": {
@@ -8227,6 +8272,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GdprExportConsentDto"
+            },
+            "nullable": true
+          },
+          "customerActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportCustomerActionDto"
             },
             "nullable": true
           },

@@ -66,9 +66,22 @@ function buildFixture(overrides = {}) {
     androidTier3: '50% charge',
     iosTier2: '25% charge',
     iosTier3: '50% charge',
-    webWeCancelValue: 'Everything back + 250 CZK credit',
-    androidNoShowBody: 'Nobody could take booking #%1$s, so we refunded it and added 250 Kč credit.',
-    iosNoShowBody: 'Nobody could take booking #%1$@, so we refunded it and added 250 Kč credit.',
+    webWeCancelValue: 'Everything back + {{amount}} credit',
+    webWeCancelRefundOnly: 'Everything back',
+    webTermsCurrency: 'Prices are displayed in {{currency}} and are the final amount payable.',
+    webTermsNoMarket: 'Prices are shown in the currency of the country you are booking in.',
+    androidNoShowBody: 'Nobody could take booking #%1$s, so we refunded it and added a credit towards your next clean.',
+    androidInsured: 'Insured up to %1$s',
+    androidInsuredNoFigure: 'Insured',
+    androidFaq: 'Covered by insurance up to %1$s per booking.',
+    androidFaqNoFigure: 'Covered by insurance.',
+    androidSeasonal: null,
+    iosNoShowBody: 'Nobody could take booking #%1$@, so we refunded it and added a credit towards your next clean.',
+    iosInsured: 'Insured up to %1$@',
+    iosInsuredNoFigure: 'Insured',
+    iosFaq: 'Covered by insurance up to %1$@ per booking.',
+    iosFaqNoFigure: 'Covered by insurance.',
+    iosSeasonal: null,
     ...overrides,
   };
 
@@ -111,11 +124,16 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
               lead_value: o.webLeadValue,
               express_value: o.webExpressValue,
               we_cancel_value: o.webWeCancelValue,
+              we_cancel_value_refund_only: o.webWeCancelRefundOnly,
             },
             quote: {
               date_hint: o.webDateHint,
             },
           },
+        },
+        terms_page: {
+          section3_text: o.webTermsCurrency,
+          section3_text_no_market: o.webTermsNoMarket,
         },
       }, null, 2),
     );
@@ -127,7 +145,11 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
     <string name="booking_cancel_tier2_value">${o.androidTier2}</string>
     <string name="booking_cancel_tier3_value">${o.androidTier3}</string>
     <string name="notification_order_no_cleaner_refunded_body">${o.androidNoShowBody}</string>
-</resources>`,
+    <string name="booking_trust_insured">${o.androidInsured}</string>
+    <string name="booking_trust_insured_no_figure">${o.androidInsuredNoFigure}</string>
+    <string name="help_faq_a3">${o.androidFaq}</string>
+    <string name="help_faq_a3_no_figure">${o.androidFaqNoFigure}</string>
+${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">${o.androidSeasonal}</string>\n`}</resources>`,
     );
   }
 
@@ -141,6 +163,11 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
         booking_cancel_tier2_value: { localizations: localizations(o.iosTier2) },
         booking_cancel_tier3_value: { localizations: localizations(o.iosTier3) },
         'push.order.no_cleaner_refunded.body': { localizations: localizations(o.iosNoShowBody) },
+        booking_trust_insured: { localizations: localizations(o.iosInsured) },
+        booking_trust_insured_no_figure: { localizations: localizations(o.iosInsuredNoFigure) },
+        help_faq_a3: { localizations: localizations(o.iosFaq) },
+        help_faq_a3_no_figure: { localizations: localizations(o.iosFaqNoFigure) },
+        ...(o.iosSeasonal === null ? {} : { home_seasonal_subtitle: { localizations: localizations(o.iosSeasonal) } }),
       },
     }, null, 2),
   );
@@ -208,24 +235,43 @@ scenario('a tree whose four surfaces agree passes', {}, { code: 0 });
   }
 }
 
-// ─── 2b. The no-show apology, which is quoted as an AMOUNT rather than a percentage ─────
-// The figure is authored per currency now (Currency.NoShowCredit), so the fixture's BookingPolicy
-// carries no scalar and the three surfaces are held to the checker's interim constant instead —
-// until each copy lane flips its pin to a placeholder form and the last one deletes the constant.
+// ─── 2b. Money figures in copy come from the market (ADR-0060 D4) ─────────────────────
+// The credit and the insurance ceiling are data now; the checker pins the SHAPE of the copy — the
+// placeholder is there, no figure is baked in beside it, no currency word rides along.
 scenario(
-  'catches a home page quoting a different apology amount from the pushes',
-  { webWeCancelValue: 'Everything back + 500 CZK credit' },
-  { code: 1, mentions: ['web/en', 'does not state 250'] },
+  'catches a literal figure creeping back into the home page credit line',
+  { webWeCancelValue: 'Everything back + 250 CZK credit' },
+  { code: 1, mentions: ['web/en', 'does not carry the {{amount}} placeholder', 'bakes a figure in', 'names a currency'] },
 );
 scenario(
-  'catches an Android push still quoting the old apology amount',
-  { androidNoShowBody: 'We refunded it and added 500 Kč credit.' },
-  { code: 1, mentions: ['android/en', 'does not state 250'] },
+  'catches an Android push quoting the apology amount again',
+  { androidNoShowBody: 'We refunded booking #%1$s and added 250 Kč credit.' },
+  { code: 1, mentions: ['android/en', 'bakes a figure in (250)', 'names a currency'] },
 );
 scenario(
-  'catches an iOS push still quoting the old apology amount',
-  { iosNoShowBody: 'We refunded it and added 500 Kč credit.' },
-  { code: 1, mentions: ['ios/en', 'does not state 250'] },
+  'catches an iOS push quoting the apology amount again',
+  { iosNoShowBody: 'We refunded booking #%1$@ and added 250 Kč credit.' },
+  { code: 1, mentions: ['ios/en', 'bakes a figure in (250)'] },
+);
+scenario(
+  'does not mistake a loc-arg slot for a figure',
+  { androidNoShowBody: 'Booking #%1$s was refunded, with a credit for next time.', iosNoShowBody: 'Booking #%1$@ was refunded, with a credit for next time.' },
+  { code: 0 },
+);
+scenario(
+  'catches a terms page that names a currency instead of the placeholder',
+  { webTermsCurrency: 'Prices are displayed in CZK and are the final amount payable.' },
+  { code: 1, mentions: ['web/en', 'terms_page.section3_text', 'does not carry the {{currency}} placeholder', 'names a currency'] },
+);
+scenario(
+  'catches an insurance claim with the ceiling baked in',
+  { androidInsured: 'Insured up to 1 000 000 Kč', iosFaq: 'Covered by insurance up to 1,000,000 CZK per booking.' },
+  { code: 1, mentions: ['android/en', 'booking_trust_insured', 'ios/en', 'help_faq_a3'] },
+);
+scenario(
+  'catches the deleted seasonal card coming back',
+  { androidSeasonal: 'Window + upholstery combo — +450 CZK this month' },
+  { code: 1, mentions: ['android/en', 'home_seasonal_subtitle is back'] },
 );
 // The desc line beside the value explains WHO qualifies and carries no number on purpose; asserting
 // on it would have made the gate cry wolf on honest copy, which the header calls the worse failure.

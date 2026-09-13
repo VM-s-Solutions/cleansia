@@ -243,44 +243,68 @@ for (const locale of LOCALES) {
   }
 }
 
-// ─── 3. The no-show apology, which is still quoted as a NUMBER in copy ──────
-// The figure is DATA now — `Currency.NoShowCredit`, authored per currency (ADR-0060 D1) — so there is
-// no C# constant to pin the copy to. The three surfaces still state the CZK number by hand, and until
-// each is flipped to a placeholder / no-figure form the only property worth guarding is that they
-// still agree with each other. A checker-local constant does that; it is deliberately NOT a read of
-// the seed SQL (a multi-row VALUES list, a fragile regex, and a workflow trigger added and removed
-// within three tickets). Each of T-0715 (web), T-0717 (Android) and T-0719 (iOS) flips its own pin
-// to "placeholder present, no integer"; the last one deletes this constant.
-const INTERIM_NO_SHOW_CREDIT_CZK = 250;
-const noShow = INTERIM_NO_SHOW_CREDIT_CZK;
+// ─── 3. Money figures in copy come from the MARKET, never from the translation (ADR-0060) ────
+// The no-show credit is `Currency.NoShowCredit`, the insurance ceiling is
+// `CountryConfiguration.InsuranceCoverageAmount`, and the currency a legal page names is the chosen
+// market's — all data, none of it a constant this checker can read. What it CAN pin is the shape of
+// the copy: the placeholder is present where a figure is rendered, no integer is baked in beside it,
+// and no currency word rides along (the client formats the amount with its unit). A literal creeping
+// back into any of these keys is the drift this section catches.
+
+/** Every integer in a sentence once the loc-arg / interpolation slots are removed. */
+export function bakedAmountsIn(text) {
+  return amountsIn(String(text).replace(/\{\{\s*\w+\s*\}\}|%\d+\$[@sd]|%[@sd]/g, ''));
+}
+
+const CURRENCY_WORDS = /\bCZK\b|K\u010d|\bEUR\b|\u20ac|\bPLN\b|z\u0142|\bGBP\b|\u00a3|\bUSD\b|\$(?!\S)/;
+
+function pinPlaceholderCopy(where, key, value, { placeholder, optional = false } = {}) {
+  if (value === null || value === undefined) {
+    if (!optional) note(where, `${key} is missing`);
+    return;
+  }
+  if (placeholder && !value.includes(placeholder)) {
+    note(where, `${key} = "${value}" does not carry the ${placeholder} placeholder`);
+  }
+  const baked = bakedAmountsIn(value);
+  if (baked.length) {
+    note(where, `${key} = "${value}" bakes a figure in (${baked.join(', ')}) — the amount comes from the market`);
+  }
+  if (CURRENCY_WORDS.test(value)) {
+    note(where, `${key} = "${value}" names a currency — the client formats the unit`);
+  }
+}
 
 for (const locale of LOCALES) {
   const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
-  // The VALUE line is the one that quotes the figure; the desc beside it explains who qualifies for
-  // it and deliberately carries no number.
-  const value = web.pages?.home?.rules?.we_cancel_value;
-  if (value === undefined) {
-    note(`web/${locale}`, 'pages.home.rules.we_cancel_value is missing');
-  } else if (!amountsIn(value).includes(noShow)) {
-    note(`web/${locale}`, `pages.home.rules.we_cancel_value = "${value}" does not state ${noShow}`);
-  }
+  const rules = web.pages?.home?.rules ?? {};
+  // The VALUE line renders the market's credit; its sibling is the variant for a market with none.
+  pinPlaceholderCopy(`web/${locale}`, 'pages.home.rules.we_cancel_value', rules.we_cancel_value, { placeholder: '{{amount}}' });
+  pinPlaceholderCopy(`web/${locale}`, 'pages.home.rules.we_cancel_value_refund_only', rules.we_cancel_value_refund_only);
+  pinPlaceholderCopy(`web/${locale}`, 'terms_page.section3_text', web.terms_page?.section3_text, { placeholder: '{{currency}}' });
+  pinPlaceholderCopy(`web/${locale}`, 'terms_page.section3_text_no_market', web.terms_page?.section3_text_no_market);
 }
 
 for (const [locale, dir] of Object.entries(ANDROID_DIRS)) {
-  const body = androidString(dir, 'notification_order_no_cleaner_refunded_body');
-  if (body === null) {
-    note(`android/${locale}`, 'notification_order_no_cleaner_refunded_body is missing');
-  } else if (!amountsIn(body).includes(noShow)) {
-    note(`android/${locale}`, `the no-cleaner push does not state ${noShow}`);
+  // The push announces the credit without a figure (ADR-0025 D3 keeps the loc-arg list closed).
+  pinPlaceholderCopy(`android/${locale}`, 'notification_order_no_cleaner_refunded_body', androidString(dir, 'notification_order_no_cleaner_refunded_body'));
+  pinPlaceholderCopy(`android/${locale}`, 'booking_trust_insured', androidString(dir, 'booking_trust_insured'), { placeholder: '%1$s' });
+  pinPlaceholderCopy(`android/${locale}`, 'booking_trust_insured_no_figure', androidString(dir, 'booking_trust_insured_no_figure'));
+  pinPlaceholderCopy(`android/${locale}`, 'help_faq_a3', androidString(dir, 'help_faq_a3'), { placeholder: '%1$s' });
+  pinPlaceholderCopy(`android/${locale}`, 'help_faq_a3_no_figure', androidString(dir, 'help_faq_a3_no_figure'));
+  if (androidString(dir, 'home_seasonal_subtitle') !== null) {
+    note(`android/${locale}`, 'home_seasonal_subtitle is back — the seasonal card was deleted (ADR-0060 D2)');
   }
 }
 
 for (const locale of LOCALES) {
-  const value = iosString(iosCatalog, 'push.order.no_cleaner_refunded.body', locale);
-  if (value === null) {
-    note(`ios/${locale}`, 'push.order.no_cleaner_refunded.body is missing');
-  } else if (!amountsIn(value).includes(noShow)) {
-    note(`ios/${locale}`, `the no-cleaner push does not state ${noShow}`);
+  pinPlaceholderCopy(`ios/${locale}`, 'push.order.no_cleaner_refunded.body', iosString(iosCatalog, 'push.order.no_cleaner_refunded.body', locale));
+  pinPlaceholderCopy(`ios/${locale}`, 'booking_trust_insured', iosString(iosCatalog, 'booking_trust_insured', locale), { placeholder: '%1$@' });
+  pinPlaceholderCopy(`ios/${locale}`, 'booking_trust_insured_no_figure', iosString(iosCatalog, 'booking_trust_insured_no_figure', locale));
+  pinPlaceholderCopy(`ios/${locale}`, 'help_faq_a3', iosString(iosCatalog, 'help_faq_a3', locale), { placeholder: '%1$@' });
+  pinPlaceholderCopy(`ios/${locale}`, 'help_faq_a3_no_figure', iosString(iosCatalog, 'help_faq_a3_no_figure', locale));
+  if (iosString(iosCatalog, 'home_seasonal_subtitle', locale) !== null) {
+    note(`ios/${locale}`, 'home_seasonal_subtitle is back — the seasonal card was deleted (ADR-0060 D2)');
   }
 }
 
@@ -296,8 +320,8 @@ if (findings.length) {
   console.log(
     `booking-policy-parity: ${LOCALES.length} locale(s) × web + android + ios agree with ` +
       `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, express +${expressPct}% ` +
-      `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00, ` +
-      `no-show credit ${noShow}`,
+      `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
+      'money figures in copy come from the market',
   );
 }
 

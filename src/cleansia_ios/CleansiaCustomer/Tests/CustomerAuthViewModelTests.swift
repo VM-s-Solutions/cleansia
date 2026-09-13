@@ -16,6 +16,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
     private var snackbar: SnackbarController!
     private var referral: FakeReferralClient!
     private var signupConsent: RecordingSignupConsent!
+    private var market: CurrentValueSubject<MarketState, Never>!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
@@ -31,11 +32,13 @@ final class CustomerAuthViewModelTests: XCTestCase {
         settings = FakeAppSettingsStore()
         snackbar = SnackbarController()
         referral = FakeReferralClient()
+        market = CurrentValueSubject(.unavailable)
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
+        market = nil
         referral = nil
         snackbar = nil
         settings = nil
@@ -62,7 +65,8 @@ final class CustomerAuthViewModelTests: XCTestCase {
             signupConsent: signupConsent,
             pendingEmail: pendingEmail,
             changePasswordClient: changePassword,
-            referralClient: referral
+            referralClient: referral,
+            market: market.eraseToAnyPublisher()
         )
     }
 
@@ -280,6 +284,99 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         XCTAssertTrue(vm.signUpForm.isValid)
         XCTAssertEqual(registration.callCount, 1)
+    }
+
+    // MARK: - The chosen market
+
+    /// The persisted market names the operating company the account is created with, so every
+    /// anonymous call that provisions or looks something up carries its country.
+    func testSignUpSendsThePersistedMarketsCountry() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.lastCountryId, "svk")
+    }
+
+    func testSignUpWithNoMarketDirectorySendsNoCountrySoTheServerPicksTheDefault() async {
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.callCount, 1)
+        XCTAssertNil(registration.lastCountryId)
+    }
+
+    func testAMarketChosenAfterTheScreenOpenedIsTheOneSent() async {
+        market.send(.resolved(selected: MarketFixtures.czechia, markets: MarketFixtures.two))
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.lastCountryId, "svk")
+    }
+
+    func testSignUpWithGoogleSendsThePersistedMarketsCountry() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signUpWithGoogle()
+
+        XCTAssertEqual(social.lastGoogle?.countryId, "svk")
+    }
+
+    func testSignUpWithAppleSendsThePersistedMarketsCountry() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        provider.appleResult = .apple(.init(
+            identityToken: "apple-token", rawNonce: "raw", firstName: nil, lastName: nil
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signUpWithApple()
+
+        XCTAssertEqual(social.lastApple?.countryId, "svk")
+    }
+
+    /// A sign-in that resolves an existing account ignores the market server-side, but a first
+    /// sign-in provisions with it, and the client cannot tell the two apart before the call.
+    func testSignInWithGoogleSendsThePersistedMarketsCountryToo() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(social.lastGoogle?.countryId, "svk")
+    }
+
+    func testReferralValidationSendsThePersistedMarketsCountry() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        let vm = makeViewModel()
+
+        await vm.validateReferralCode("anna7")
+
+        XCTAssertEqual(referral.lastCountryId, "svk")
+    }
+
+    func testReferralValidationWithNoMarketDirectorySendsNoCountry() async {
+        let vm = makeViewModel()
+
+        await vm.validateReferralCode("anna7")
+
+        XCTAssertEqual(referral.callCount, 1)
+        XCTAssertNil(referral.lastCountryId)
     }
 
     func testSignUpEnforcesPasswordPolicy() async {
@@ -843,11 +940,13 @@ private final class FakeRegistrationClient: RegistrationAuthClient {
     private(set) var callCount = 0
     private(set) var lastLanguage: String?
     private(set) var lastReferralCode: String?
+    private(set) var lastCountryId: String?
 
     func register(_ request: RegisterRequest) async -> ApiResult<Bool> {
         callCount += 1
         lastLanguage = request.language
         lastReferralCode = request.referralCode
+        lastCountryId = request.countryId
         return result
     }
 }

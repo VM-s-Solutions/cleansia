@@ -48,7 +48,10 @@ extension BookingViewModel {
             return .idle
         }
         referralState = .validating
-        let resolved: ReferralCodeState = switch await referralClient.validate(code: normalized) {
+        let resolved: ReferralCodeState = switch await referralClient.validate(
+            code: normalized,
+            countryId: catalogCountryId
+        ) {
         case let .success(validation):
             if validation.isValid {
                 .valid(referrerFirstName: validation.referrerFirstName)

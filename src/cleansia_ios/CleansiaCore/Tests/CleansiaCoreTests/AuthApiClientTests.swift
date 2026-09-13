@@ -234,7 +234,9 @@ final class AuthApiClientTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
-        _ = await client.register(email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en")
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+        )
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
 
         MockURLProtocol.handler = { _ in (204, Data()) }
@@ -307,7 +309,9 @@ final class AuthApiClientTests: XCTestCase {
         let client = try makeClient(store: store)
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
-        _ = await client.register(email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en")
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+        )
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
         MockURLProtocol.handler = { _ in (204, Data()) }
         _ = await client.forgotPassword(email: "a@b.cz", language: "en")
@@ -324,7 +328,7 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         let result = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
         )
 
         guard case let .success(value) = result else { return XCTFail("expected success") }
@@ -338,7 +342,7 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         let result = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
         )
 
         guard case let .success(value) = result else { return XCTFail("expected success") }
@@ -354,11 +358,38 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         _ = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en"
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
         )
 
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register"))
         XCTAssertEqual(request.url?.path, "/api/Auth/RegisterEmployee")
+    }
+
+    /// The market rides on the registration body under the name the regenerated command declares,
+    /// and only when the app has one: an absent member is how the server is told to use the default
+    /// market, so nil must OMIT the field rather than send an explicit null.
+    func testRegisterPutsTheChosenMarketOnTheWire() async throws {
+        let client = try makeClient(store: MemTokenStore(), registerEndpoint: .customer)
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: "svk"
+        )
+
+        let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register")))
+        XCTAssertEqual(body["countryId"] as? String, "svk")
+    }
+
+    func testRegisterWithNoMarketOmitsTheFieldSoTheServerPicksTheDefault() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
+
+        _ = await client.register(
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+        )
+
+        let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "RegisterEmployee")))
+        XCTAssertFalse(body.keys.contains("countryId"))
     }
 
     func testFailureSurfacesFirstBusinessKeyFromErrorsDict() async throws {
@@ -391,6 +422,12 @@ final class AuthApiClientTests: XCTestCase {
         guard case let .failure(error) = result else { return XCTFail("expected failure") }
         XCTAssertEqual(error.code, "The Email field is required.")
         XCTAssertEqual(error.message, "Bad Request")
+    }
+
+    private func decodeBody(_ request: URLRequest) throws -> [String: Any] {
+        let data = try XCTUnwrap(MockURLProtocol.body(of: request))
+        let object = try JSONSerialization.jsonObject(with: data)
+        return try XCTUnwrap(object as? [String: Any])
     }
 
     func testAuthedNonAnonPathCarriesBearerPositiveControl() async throws {

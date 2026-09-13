@@ -95,7 +95,8 @@ struct CustomerRootView: View {
             snackbar: container.snackbar,
             signupConsent: container.signupConsent,
             pendingEmail: pendingEmail,
-            changePasswordClient: container.changePasswordClient
+            changePasswordClient: container.changePasswordClient,
+            market: container.marketStore.statePublisher
         )
     }
 

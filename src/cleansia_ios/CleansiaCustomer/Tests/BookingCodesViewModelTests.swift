@@ -1,4 +1,5 @@
 import CleansiaCore
+import Combine
 import XCTest
 @testable import CleansiaCustomer
 
@@ -31,7 +32,8 @@ final class BookingCodesViewModelTests: XCTestCase {
         extra: FakeExtraClient = FakeExtraClient(),
         promo: FakePromoCodeClient = FakePromoCodeClient(),
         referral: FakeReferralClient = FakeReferralClient(),
-        quote: FakeQuoteClient = FakeQuoteClient()
+        quote: FakeQuoteClient = FakeQuoteClient(),
+        market: MarketStore? = nil
     ) -> BookingViewModel {
         BookingViewModel(
             catalogClient: FakeCatalogClient(),
@@ -40,8 +42,36 @@ final class BookingCodesViewModelTests: XCTestCase {
             promoClient: promo,
             referralClient: referral,
             countryResolver: FakeCountryResolver(),
+            market: market?.statePublisher ?? Just(.unavailable).eraseToAnyPublisher(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
+    }
+
+    /// The referral code is looked up in the operating company the order will land with, which is
+    /// the address's country once one is picked and the browsed market before that.
+    func testTheReferralCheckNamesTheCountryTheBookingIsPricedIn() async {
+        let referral = FakeReferralClient()
+        let vm = await makeVM(referral: referral, market: MarketFixtures.resolved(selected: MarketFixtures.slovakia))
+
+        await vm.validateReferralCode("anna7")
+        XCTAssertEqual(referral.lastCountryId, "svk")
+
+        vm.update { var s = $0
+            s.countryId = "cze"
+            return s
+        }
+        await vm.validateReferralCode("anna7")
+        XCTAssertEqual(referral.lastCountryId, "cze")
+    }
+
+    func testTheReferralCheckSendsNoCountryWhenNothingHasResolvedOne() async {
+        let referral = FakeReferralClient()
+        let vm = makeVM(referral: referral)
+
+        await vm.validateReferralCode("anna7")
+
+        XCTAssertEqual(referral.callCount, 1)
+        XCTAssertNil(referral.lastCountryId)
     }
 
     /// The extras are priced for the draft's market like the rest of the catalogue, and a ticked extra

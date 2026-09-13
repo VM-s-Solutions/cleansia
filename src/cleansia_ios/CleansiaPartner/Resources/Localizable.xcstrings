@@ -18492,6 +18492,41 @@
         }
       }
     },
+    "register_market": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Země, kde budete pracovat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Country you'll work in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Страна, где вы будете работать"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krajina, kde budete pracovať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Країна, де ви працюватимете"
+          }
+        }
+      }
+    },
     "register_pw_letter": {
       "extractionState": "stale",
       "localizations": {

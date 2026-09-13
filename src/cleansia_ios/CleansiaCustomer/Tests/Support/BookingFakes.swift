@@ -80,6 +80,7 @@ final class FakeReferralClient: ReferralClient, @unchecked Sendable {
     var result: ApiResult<ReferralValidation>
     private(set) var callCount = 0
     private(set) var lastCode: String?
+    private(set) var lastCountryId: String?
 
     init(result: ApiResult<ReferralValidation> = .success(ReferralValidation(
         isValid: true,
@@ -89,9 +90,10 @@ final class FakeReferralClient: ReferralClient, @unchecked Sendable {
         self.result = result
     }
 
-    func validate(code: String) async -> ApiResult<ReferralValidation> {
+    func validate(code: String, countryId: String?) async -> ApiResult<ReferralValidation> {
         callCount += 1
         lastCode = code
+        lastCountryId = countryId
         return result
     }
 }

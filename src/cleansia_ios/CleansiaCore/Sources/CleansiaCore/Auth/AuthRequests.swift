@@ -40,6 +40,9 @@ public struct RegisterRequest: Encodable, Sendable {
     public let lastName: String
     public let language: String
     public let referralCode: String?
+    /// The market the visitor chose; absent, the server registers them with the default market's
+    /// operating company. Every market-scoped anonymous request carries the same optional member.
+    public let countryId: String?
 }
 
 /// The email names the account the 6-digit code was issued to — the server verifies the code ONLY
@@ -66,6 +69,7 @@ public struct GoogleAuthRequest: Encodable, Sendable {
     public let firstName: String
     public let lastName: String
     public let termsAccepted: Bool
+    public let countryId: String?
 }
 
 public struct AppleAuthRequest: Encodable, Sendable {
@@ -74,4 +78,5 @@ public struct AppleAuthRequest: Encodable, Sendable {
     public let firstName: String?
     public let lastName: String?
     public let termsAccepted: Bool
+    public let countryId: String?
 }

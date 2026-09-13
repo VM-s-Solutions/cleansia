@@ -79,6 +79,11 @@ final class CustomerAuthViewModel: ViewModel {
     /// gates `signUpForm.isValid`.
     @Published private(set) var referralState: ReferralCodeState = .idle
 
+    /// The market the visitor browses in. Registration, a first social sign-in and the referral
+    /// check all name its country so the account lands with the company that operates it; with no
+    /// directory they send nothing and the server picks the default market.
+    @Published private(set) var marketState: MarketState = .unavailable
+
     let outcome = PassthroughSubject<AuthOutcome, Never>()
 
     private let loginClient: LoginClient
@@ -127,7 +132,8 @@ final class CustomerAuthViewModel: ViewModel {
         signupConsent: SignupConsentRecording,
         pendingEmail: String? = nil,
         changePasswordClient: ChangePasswordClient = LiveChangePasswordClient(),
-        referralClient: ReferralClient = LiveReferralClient()
+        referralClient: ReferralClient = LiveReferralClient(),
+        market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher()
     ) {
         self.loginClient = loginClient
         self.registrationClient = registrationClient
@@ -141,6 +147,12 @@ final class CustomerAuthViewModel: ViewModel {
         self.snackbar = snackbar
         self.signupConsent = signupConsent
         self.pendingEmail = pendingEmail
+        super.init()
+        market.assign(to: &$marketState)
+    }
+
+    private var marketCountryId: String? {
+        marketState.countryId
     }
 
     var canResend: Bool {
@@ -218,7 +230,9 @@ final class CustomerAuthViewModel: ViewModel {
             return .idle
         }
         referralState = .validating
-        let resolved: ReferralCodeState = switch await referralClient.validate(code: normalized) {
+        let resolved: ReferralCodeState = switch await referralClient
+            .validate(code: normalized, countryId: marketCountryId)
+        {
         case let .success(validation):
             if validation.isValid {
                 .valid(referrerFirstName: validation.referrerFirstName)
@@ -259,7 +273,8 @@ final class CustomerAuthViewModel: ViewModel {
             firstName: signUpForm.firstName,
             lastName: signUpForm.lastName,
             language: settings.languageTag,
-            referralCode: referralCode.isEmpty ? nil : referralCode
+            referralCode: referralCode.isEmpty ? nil : referralCode,
+            countryId: marketCountryId
         )
         signUpState = .idle
 
@@ -443,7 +458,8 @@ final class CustomerAuthViewModel: ViewModel {
         switch result {
         case let .google(credential):
             await parkSignupTick(email: credential.email, accepted: termsAccepted)
-            let auth = await socialAuthClient.googleAuth(credential, termsAccepted: termsAccepted)
+            let auth = await socialAuthClient
+                .googleAuth(credential, termsAccepted: termsAccepted, countryId: marketCountryId)
             socialState = .idle
             emit(auth, fallbackEmail: credential.email)
         case let .apple(credential):
@@ -455,7 +471,8 @@ final class CustomerAuthViewModel: ViewModel {
                 email: JwtDecoder.email(of: credential.identityToken) ?? "",
                 accepted: termsAccepted
             )
-            let auth = await socialAuthClient.appleAuth(credential, termsAccepted: termsAccepted)
+            let auth = await socialAuthClient
+                .appleAuth(credential, termsAccepted: termsAccepted, countryId: marketCountryId)
             socialState = .idle
             emit(auth, fallbackEmail: "")
         case .cancelled:

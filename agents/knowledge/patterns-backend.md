@@ -225,6 +225,18 @@ values are themselves the subject's PII (profile edit), the snapshot is ids-only
 (mirrors `gdpr.user.delete`). Never set an `AdminActionAudit` to `Modified`/`Deleted` (append-only,
 init-only).
 
+**Customer-action audit is the same pipeline with an audience (ADR-0062).** A customer-facing
+`Command` opts in with `[AuditAction("customer.<domain>.<act>", Audience = AuditAudience.Customer,
+ResourceType = "Order")]` (`AllowsAnonymousActor = true` only where a guest may act; `ResourceIdProperty`
+when the id is not `{ResourceType}Id` on the command); `AuditGate.Resolve` routes the row to
+`CustomerActionAudits` for a customer session and to the admin table for an administrator running the
+same command. The handler emits ONE typed evidence record, nested beside the feature and implementing
+`ICustomerAuditPayload`, through `IAuditContext.RecordEvidence(...)` — server-side figures at the moment
+of the act, never a client-asserted money figure, never a name / contact / address / free text (the
+PII guard walks every record). Failure rows carry the error KEY via `AuditErrorCode.Resolve` on both
+tables. The roster test pins the marker set; a new marker needs its row there, its label in the five
+admin locales (`customer-audit-actions.ts`) and a rate-limit window on the customer-host action.
+
 ## Entities (from `Core.Domain/Common/`)
 
 - `IEntity` = `{ object Id; bool IsActive; }`; `IEntity<T>` narrows `Id`/`IsActive`. IDs are strings.

@@ -107,6 +107,23 @@ or `AssertComplete` fails boot). A new `audit-log` admin feature lib (facade + s
   (cleanup excludes the audit table). The **exact retention window + redaction list** is a pre-prod
   ratification item on the pre-PROD readiness checklist — not an open question.
 
+## Customer trail (ADR-0062, 2026-09-13)
+
+The same pipeline now writes a THIRD table, `CustomerActionAudits`, through an audience-aware gate:
+`AuditGate.Resolve(descriptor, session) → AuditAudience?` picks Admin / Customer / none, and a
+descriptor opts a command in with `[AuditAction("customer.order.cancel", Audience = AuditAudience.Customer,
+ResourceType = "Order")]` (`AllowsAnonymousActor = true` for guest booking and registration). Sixteen
+customer commands are marked (pinned by `CustomerAuditActionRosterTests`); each success row carries a
+typed evidence record nested beside its feature (`ICustomerAuditPayload`, walked by
+`CustomerAuditPayloadPiiGuardTests` — ids, money, enums, versions, flags, counts only). Failure rows on
+all three tables now carry the error KEY (`AuditErrorCode.Resolve`), never the field name. Enums are
+serialised by name on all three tables. Erasure blanks IP / device label / device id in the same
+commit as `User.Anonymize()` and keeps the `UserId → OrderId` link; the retention sweep deletes rows
+three years after `OccurredOn`. Reads: `api/CustomerAudit/{get-paged,get-by-id,timeline}` under
+`CanViewAuditLog`; the timeline merges the three tables by user or by resource. The admin export is an
+audited `POST` Command and both exports commit their `GdprRequest`. → `docs/decisions/adr-0062`,
+`docs/domain/roles/customer-action-audit.md`, `docs/domain/roles/audit-gate.md`.
+
 ## Status
 
 ADR-0012 **accepted** (2026-06-22). **Sequenced into Wave 9 (sprint-11.md)** as 5 audit-log tickets

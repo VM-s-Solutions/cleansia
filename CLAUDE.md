@@ -81,9 +81,9 @@ a comment that only explains *why* belongs in `docs/` with a `→ /path#anchor` 
 | Order lifecycle — the two axes, and why `Pending` is dead | `/domain/order-lifecycle` |
 | Offerability, the preferred-cleaner hold, seat allocation | `/domain/offerability` |
 | Entities and their relationships | `/domain/model` |
-| Per-component contracts (18 of them) | `/domain/roles/` |
+| Per-component contracts (25 of them) | `/domain/roles/` |
 | The ten flows, end to end | `/flows/` |
-| Why a decision was made — 52 ADRs | `/decisions/` |
+| Why a decision was made — 62 ADRs | `/decisions/` |
 | Aspire, ports, the migrator, request logging | `/architecture/local-orchestration` |
 | The S1–S12 security laws | `/architecture/security-rules` |
 

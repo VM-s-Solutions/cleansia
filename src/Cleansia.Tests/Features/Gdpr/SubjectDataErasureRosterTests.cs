@@ -269,8 +269,8 @@ public class SubjectDataErasureRosterTests
             "ADR-0062 defence-of-claims record. Its subject handle is a bare UserId that User.Anonymize keeps, so "
                 + "it is pseudonymous without a write; the three request-metadata columns (IP, device label, device "
                 + "id) ARE personal data and are blanked here. The payload holds ids, money, enums and versions only "
-                + "— a reflection guard over every ICustomerAuditPayload is the standing proof once the first payload "
-                + "exists; today no payload type exists. Each row is deleted by the retention "
+                + "— CustomerAuditPayloadPiiGuardTests walks every ICustomerAuditPayload record and is the standing "
+                + "proof. Each row is deleted by the retention "
                 + "sweep three years after its own OccurredOn; the UserId -> OrderId link is kept on purpose (ADR-0062 D5).",
             InErasure("customerActionAuditRepository.PseudonymiseForSubjectAsync")),
 

@@ -21,7 +21,12 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   and a nested `XxxFilter? Filter { get; init; }`. ✗ *Don't* use a `record Query` with inline
   `Offset`/`Limit` (found in `GetPagedPromoCodes`, `GetPagedReferrals`).
 - **A2.** Use a **`internal class Handler : IRequestHandler<Request, PagedData<TItem>>`** that returns
-  `PagedData<TItem>` **directly** (never `BusinessResult<PagedData<T>>`).
+  `PagedData<TItem>` **directly** (never `BusinessResult<PagedData<T>>`). The one declared
+  exception is `GetActionTimeline` (ADR-0062 D6): its request must name exactly one of user /
+  resource and the validation pipeline only runs for `BusinessResult` responses, so it returns
+  `BusinessResult<PagedData<T>>` behind a validator — recorded in `agents/cleanup/consistency-baseline.md`,
+  not a licence for a second one; the open Architect call is to ratify the shape or lift the pipeline's
+  `BusinessResult` constraint (which would also revive the dead `GetAllGdprRequests.Validator`).
 - **A3.** Filter via a **Specification**: `XxxSpecification.Create(...).SatisfiedBy()`. ✗ *Don't* call
   a bespoke `repo.GetPagedAdminAsync(...)` with inline params (`GetPagedPromoCodes`, `GetPagedReferrals`).
   Filter→spec via a `filter.MapToDomain()` extension is acceptable *only* when the spec is built from

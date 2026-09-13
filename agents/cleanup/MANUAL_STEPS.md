@@ -79,13 +79,15 @@ both build clean on their own; the backend test suites need the hosts stopped.
 document-lifecycle work regenerated it a third time for the two new tables — so its id has moved from
 `20260811192214` to `20260813085249` to `20260815094107` to `20260825114012` to `20260830221715`
 (owner, 2026-08-31, for the `PropertySizePresets` table), then through the multicurrency and market
-programme (`20260913080510`, T-0721) to **`20260913132759`** (T-0722 / `5a5f4681`, 2026-09-13 — the
+programme (`20260913080510`, T-0721) to `20260913132759` (T-0722 / `5a5f4681`, 2026-09-13 — the
 tenancy activation: `Tenants`, `CountryConfigurations.OperatorTenantId`, `TenantId` NOT NULL on every
 stamped table, `IX_Users_Email` global, `IX_OrderReceipts_TenantId_ReceiptNumber`,
-`IX_EmployeePayConfigs_Tenant_Scope`, `IX_LoyaltyTierConfigs_Tier`). Each regeneration was proven
+`IX_EmployeePayConfigs_Tenant_Scope`, `IX_LoyaltyTierConfigs_Tier`), then through the customer audit
+log (T-0730: `CustomerActionAudits` + `UserConsents.DocumentVersion`; T-0733: the
+`IX_EmployeeActionAudits_OrderId_CreatedOn` index) to **`20260913174821`**. Each regeneration was proven
 against a real Postgres by the integration suite; the last one also by
 `SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built database.
-**The one owed drop belongs to `20260913132759`**: a DEV database whose `__EFMigrationsHistory` records
+**The one owed drop belongs to `20260913174821`**: a DEV database whose `__EFMigrationsHistory` records
 any earlier id replays the whole create script against tables that already exist.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and

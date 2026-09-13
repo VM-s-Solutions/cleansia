@@ -70,6 +70,26 @@ need backfilling.
 
 ### Added
 
+- **Admin — a customer's money-relevant acts are on record, and support can read them.** Every
+  booking, cancellation, recurring confirmation, dispute filing, registration, consent, membership
+  subscribe/swap/cancel, notification-preference change and recurring-schedule change a customer makes
+  is recorded the moment it commits, with the figures and versions the customer was shown, the
+  outcome (or the refusal's reason) and where it came from — never their name, contact details,
+  address or free text. The admin panel lists the trail (*Audit log → Customers*), opens each entry
+  with its evidence, shows one timeline per customer that folds in the admin and cleaner acts on their
+  orders, reaches it from an order's or a dispute's history, and hands the whole trail over in the
+  subject export. Rows expire three years after the act; an erasure blanks their IP and device.
+  (ADR-0062)
+
+- **Customer — the terms you accept are recorded with their version.** Registration and the web
+  booking wizard send the terms tick to the server, which grants the two consents under the current
+  document version with the IP and device; nothing is parked in the browser any more. Nothing is
+  refused for want of a tick until the legal texts are final. (ADR-0062 D4)
+
+- **Operator — the admin subject export is itself on record.** Exporting a customer's data now
+  leaves an admin audit row and a completed GDPR request row, and the export is a `POST`; the
+  customer's own export commits its request row too.
+
 - **Operator — every account, booking, receipt, pay rate and promo code belongs to the operating
   company that serves its market, from the first row.** The platform now knows which company under
   the holding serves each market (Cleansia CZ s.r.o. serves CZ), and stamps every business record with

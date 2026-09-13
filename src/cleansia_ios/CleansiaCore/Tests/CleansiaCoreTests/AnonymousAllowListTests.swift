@@ -21,7 +21,6 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/Package/GetOverview",
         "/api/Extra/GetOverview",
         "/api/Currency/GetOverview",
-        "/api/Market/GetOverview",
         "/api/Membership/GetPlans",
         "/api/Order/Quote",
         "/api/Order/CreateOrder",
@@ -30,6 +29,17 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/Payment/CreateOrder",
         "/api/Referral/Validate"
     ]
+
+    /// Both hosts list the markets anonymously: the partner register form picks one before there
+    /// is an account, exactly like the customer's market chip.
+    private let marketDirectoryPaths = ["/api/Market/GetOverview"]
+
+    func testBothHostsAllowTheMarketDirectory() {
+        for path in marketDirectoryPaths {
+            XCTAssertTrue(AnonymousAllowList.partner.isAnonymous(path: path), "partner should allow \(path)")
+            XCTAssertTrue(AnonymousAllowList.customer.isAnonymous(path: path), "customer should allow \(path)")
+        }
+    }
 
     func testPartnerAllowsSharedAuthPaths() {
         let list = AnonymousAllowList.partner

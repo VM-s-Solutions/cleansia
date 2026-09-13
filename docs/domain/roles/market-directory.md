@@ -1,4 +1,4 @@
-# MarketDirectory — `GetMarkets` + `MarketListItem` (ADR-0058, accepted 2026-09-13)
+# MarketDirectory — `GetMarkets` + `MarketListItem` (ADR-0058, accepted 2026-09-13; amended the same day for the default-market flag)
 
 **Responsibility (one sentence):** List the markets a customer may browse in — each serviced country
 joined to its configured, **active** currency and the two per-market copy figures — and name the
@@ -12,13 +12,15 @@ validator, no `BusinessResult`: there is nothing a caller can get wrong.
 
 - `ICountryRepository.GetServicedAsync` — the candidate set (`IsServiced && IsActive`).
 - `ICountryConfigurationRepository.GetByCountryIdAsync` — the country's `DefaultCurrencyCode` and its
-  `InsuranceCoverageAmount` (ADR-0060 D2).
+  `InsuranceCoverageAmount` (ADR-0060 D2); `GetDefaultMarketAsync` — the one configuration flagged
+  `IsDefaultMarket` (owner ruling 2026-09-13, ADR-0058 amendment).
 - `ICurrencyRepository.GetByCodeAsync` / `GetDefaultAsync` — the currency row (`IsActive`, `IsDefault`,
   `NoShowCredit`, ADR-0060 D1). `GetDefaultAsync` throws for its pricing callers; here the throw is
   caught and logged as one more configuration state.
 - `ILogger` — the only side effect: a **warning** per serviced country omitted (no configuration,
-  unknown or inactive currency), an **error** when several markets share the default currency (naming
-  every candidate and the one chosen) or when none does.
+  unknown or inactive currency); an **error** when no configuration is flagged as the default market
+  or the flagged country is not listed (then the currency rule decides), when several markets share
+  the default currency (naming every candidate and the one chosen) or when none does.
 - Readers: every pre-address customer surface on three clients (ADR-0058 D5); the market selector and
   chip; the copy that interpolates `noShowCredit` / `insuranceCoverageAmount`.
 
@@ -28,10 +30,13 @@ validator, no `BusinessResult`: there is nothing a caller can get wrong.
   names a `Currency`, and that currency `IsActive`. A serviced country failing any of the three is
   **omitted and warned about** — the read is the backstop for seed-authored states the
   `SetCountryServiced` gate (`country.market_not_ready`) never saw.
-- **`isDefault`:** among the listed markets on the platform default currency — exactly one when there
-  is one; the **lowest `isoCode`** (ordinal) plus an error log when several; **none** plus an error log
-  when zero. A pre-selection, never a pricing invariant: clients fall to the first listed market and
-  always send the `countryId` they resolved.
+- **`isDefault`:** the listed market whose configuration carries **`IsDefaultMarket`** (at most one,
+  by the database; `SetDefaultMarket` moves it; CZE seeded). When nothing is flagged, or the flagged
+  country is not listed — logged as an error — the fallback rule decides: among the listed markets on
+  the platform default currency, exactly one when there is one; the **lowest `isoCode`** (ordinal)
+  plus an error log when several; **none** plus an error log when zero. A pre-selection, never a
+  pricing invariant: clients fall to the first listed market and always send the `countryId` they
+  resolved.
 - **Never throws** on a configuration state. This is the read behind `/`; a 500 here is a 500 for
   every visitor.
 - **`isoCode`** (alpha-3) is what a client persists; **`isoAlpha2`** is what the chip prints

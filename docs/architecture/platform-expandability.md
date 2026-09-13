@@ -346,7 +346,18 @@ per-record `CurrencyId`, and it is populated from the address country (orders), 
   is still served for admin-style readers). Each client resolves stored-if-listed → `isDefault` →
   first, persists the ISO code per device (the web in one cookie so SSR and the browser agree), and
   sends the market's `countryId` to the catalogue overviews, the quote, `Membership/GetPlans` and the
-  subscribe commands. Address wins from the wizard's address step on. → /product/business-rules#market
+  subscribe commands. Address wins from the wizard's address step on. `isDefault` is the configuration
+  flagged `IsDefaultMarket` (owner ruling 2026-09-13; the admin PUT moves it), the default-currency rule
+  only the logged fallback. → /product/business-rules#market
+- **SSR and the transfer cache.** The customer app's server render reads only the request (the market
+  and language cookies), and the browser reuses what the server fetched **only for anonymous own-API
+  GETs**: `CustomerAuthInterceptorFn` sends `withCredentials` solely on state-changing methods and on
+  calls made with a session, and Angular's transfer cache skips any credentialed request. So the
+  market directory, the catalogue overviews, the plans, the property sizes and the serviced countries
+  are rendered once on the server and served from the document on bootstrap for a visitor; the same
+  GET for a signed-in customer carries the cookie, is never transferred and is re-fetched — which is
+  what keeps one user's response out of another's document. A new market-aware read that must be
+  SSR-cheap has to be anonymous and credential-less; a read that varies by session must not be.
 - There is **no *currency* picker** on any customer surface — there is a **market selector**, whose
   currency follows: the customer picks a country (navbar/footer pill and quick-quote chip on the web,
   Profile → Preferences → Market and a home-tab chip on mobile), never a unit. SK and DE will share
@@ -734,6 +745,12 @@ The scaffolding is deliberately built so each axis flips on independently:
       `Market/GetOverview`, the market selector lists it and the chip can show it; VAT, tax-id
       validation, fiscal mode, invoice template and date format activate through the existing
       consumers (§3).
+   10. **Optional — flag it as the default market** (`PUT api/AdminCountry/{id}/default-market`,
+       owner ruling 2026-09-13) if the new country is what a visitor who has chosen nothing should
+       land on. One configuration carries `IsDefaultMarket` (CZE today); the PUT moves it, and refuses
+       a country that step 9 has not serviced or whose currency step 6 has not switched on. Opening
+       a second market does **not** move the default by itself — CZ stays the landing page until an
+       admin says otherwise, and promoting the default *currency* no longer moves it either.
 
    Gate 2 makes flipping `IsServiced` before step 6 impossible rather than merely pointless. From
    step 9 on, a booking at a Slovak address is quoted and charged in EUR with no client change, a
@@ -741,8 +758,9 @@ The scaffolding is deliberately built so each axis flips on independently:
    cleaners approved for SK are paid in EUR, see only EUR orders on their board, declare EUR (or
    nothing) on their payout account, and their periods close into EUR invoices. **What stays bound to
    the platform default** until someone decides otherwise: the tier floor and any promo minimum on a
-   code without a currency (§2, "What is still bound to the platform default"); promoting the default
-   also moves the default market.
+   code without a currency (§2, "What is still bound to the platform default"). The default market is
+   bound to nothing but its flag (step 10); the default-currency rule is only the logged fallback when
+   no configuration is flagged.
 3. **Multi-TENANT (the one axis that needs new infrastructure).** The `ITenantEntity` filter + JWT claim
    already scope authenticated reads. The **single missing piece** is **spoof-resistant inbound tenant
    resolution for anonymous routes** (vetted-proxy header / allow-listed host registry / SNI pinning —

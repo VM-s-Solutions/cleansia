@@ -28,7 +28,12 @@ When the **cleaner** cancels or no-shows, the customer is refunded *and* credite
 authored for the order's currency — `Currency.NoShowCredit`, 250 on a CZK order, paid into the
 customer's credit account in that currency. The credit is the apology; the refund is not. A currency
 with no figure pays no credit and sends the plain cancellation push rather than the one that promises
-one. → [Money constants](/product/business-rules#money-constants)
+one. The push that promises it, `order.no_cleaner_refunded`, **names the figure with its currency** —
+an `amount` argument formatted on the server from the credit's own currency row ("250 Kč", "10 €":
+the number with no trailing zeros, a space, the symbol, the code when there is none), placed by the
+Android and iOS bodies as their second slot (owner ruling 2026-09-13; the credit's currency is the
+credit's own, which the device cannot derive from the order).
+→ [Money constants](/product/business-rules#money-constants)
 
 ## Refund
 

@@ -58,7 +58,16 @@ sequenceDiagram
   alt no row
     API-->>C: membership.plan.not_priced_in_currency (nothing reaches Stripe)
   else row
-    API->>S: subscribe with THAT row's StripePriceId
+    API->>API: IStripeCustomerResolver: the user's Stripe Customer FOR EUR
+    alt UserStripeCustomers row for (user, EUR)
+      API->>API: that Customer
+    else legacy User.StripeCustomerId, unclaimed, and no membership in another currency
+      API->>API: adopt it — row (user, EUR) written
+    else
+      API->>S: CreateCustomer → cus_…
+      API->>API: row (user, EUR) written
+    end
+    API->>S: subscribe THAT Customer with THAT row's StripePriceId
     S-->>W: customer.subscription.created (Subscription.Currency = "eur")
     W->>W: GetByCodeAsync("EUR") → UserMembership.CurrencyId = EUR
   end
@@ -81,10 +90,26 @@ webhook confirms it off the Stripe `Subscription` object's own `currency`, and r
 code the platform does not know — and never updated. A swap therefore looks the target plan up in
 the membership's currency, never the market's, and the clients offer the annual switch only when the
 yearly plan is priced in that currency. `GetMine` labels every figure with it, whatever market the
-customer browses in now. A customer who wants Plus in another currency cancels and re-subscribes;
-Stripe's one-currency-per-Customer rule may refuse that, and the refusal is classified as
-`membership.stripe_customer_currency_locked` rather than a 500 (the DEV sandbox did not enforce it on
-2026-09-13).
+customer browses in now. A customer who wants Plus in another currency cancels and re-subscribes.
+
+**Re-subscribing in another currency works, by construction** (owner ruling 2026-09-13: *"a
+must-have"*). Stripe locks a Customer to the currency of its first invoice and refuses a subscription
+in another, so the platform holds **one Stripe Customer per currency per user** —
+`UserStripeCustomers`, unique `(UserId, CurrencyId)`, unique `StripeCustomerId`. Both subscribe
+commands resolve the Customer for the market's currency through `IStripeCustomerResolver` after the
+plan and price checks: an existing row for that currency; else the legacy `User.StripeCustomerId`,
+**adopted** (a row written) only when it has never billed a membership in another currency and no
+row already claims it — a checkout abandoned after adoption leaves a row with no membership, which is
+why the row check stands beside the membership check; else a new Stripe Customer, with a row and, if
+the user had none, the legacy field. End to end: a customer whose CZK Plus was cancelled picks the SK
+market and subscribes in EUR — the CZK membership row blocks adoption, a second Customer is created,
+the EUR subscription is born on it, and the CZK Customer keeps its history. The customer's first
+currency adopts the legacy Customer, so nothing is orphaned. The legacy field stays for one-off order
+payments. `membership.stripe_customer_currency_locked` is kept as the backstop classification for a
+Customer Stripe locked for a reason the resolver could not see, never a 500 (the DEV sandbox did not
+enforce the rule on 2026-09-13). A user is found by any of their Customer ids
+(`FindUserIdByStripeCustomerIdAsync`: the table, then the legacy column); `DeleteCurrency` answers
+`currency.in_use` for the rows; GDPR erasure deletes them with the legacy field.
 
 **The benefits are currency-free.** The discount is a percentage of the order's own subtotal; the
 window is hours; the waivers are a count. A CZK subscription serves a EUR booking without conversion.

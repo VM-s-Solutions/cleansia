@@ -31,11 +31,13 @@ GET /api/Market/GetOverview
 
 **Auth:** Anonymous — this is the read behind the landing page, before anyone signs in.
 
-**Response:** one row per market. Exactly one row is `isDefault` when one market is on the platform
-default currency; with several, the lowest `isoCode` is flagged and an error is logged; with none,
-no row is flagged and an error is logged. The read **never throws** on a configuration state: a
-serviced country with no configuration, or whose configured currency is unknown or inactive, is
-omitted and logged as a warning.
+**Response:** one row per market. The row whose country configuration carries `IsDefaultMarket` is
+`isDefault` (at most one, by the database; CZE seeded; moved by the admin PUT below). When nothing is
+flagged, or the flagged country is not listed, an error is logged and the fallback rule decides:
+exactly one row is `isDefault` when one market is on the platform default currency; with several,
+the lowest `isoCode` is flagged and an error is logged; with none, no row is flagged and an error is
+logged. The read **never throws** on a configuration state: a serviced country with no configuration,
+or whose configured currency is unknown or inactive, is omitted and logged as a warning.
 
 ```json
 [
@@ -50,7 +52,7 @@ omitted and logged as a warning.
     "currencySymbol": "Kč",
     "isDefault": true,
     "noShowCredit": 250.00,
-    "insuranceCoverageAmount": null
+    "insuranceCoverageAmount": 1000000.00
   }
 ]
 ```
@@ -60,9 +62,9 @@ omitted and logged as a warning.
 | `isoCode` | ISO 3166-1 alpha-3, `Country.IsoCode`. **What a client persists** (cookie `preferred_market` on the web, `market` / `settings.market` on mobile) — stable across the DEV reseeds that re-mint ids |
 | `isoAlpha2` | The two letters the market chip prints beside the currency code ("CZ · CZK"). Display only; nothing keys on it |
 | `currencyCode` / `currencySymbol` | The market's currency — `CountryConfiguration.DefaultCurrencyCode` resolved to its `Currency` row |
-| `isDefault` | The pre-selection for a visitor who has chosen nothing. A **pre-selection, not a pricing invariant** — a client always sends the `countryId` it resolved |
-| `noShowCredit` | `Currency.NoShowCredit` — the apology credit paid in this currency when a slot arrives with no cleaner; `null` = none is paid and the copy renders its refund-only variant |
-| `insuranceCoverageAmount` | `CountryConfiguration.InsuranceCoverageAmount` — the insurance ceiling the trust badge and FAQ state, a number in the market's currency; `null` = the no-figure copy renders |
+| `isDefault` | The pre-selection for a visitor who has chosen nothing — the flagged `CountryConfiguration.IsDefaultMarket`, else the fallback rule above. A **pre-selection, not a pricing invariant** — a client always sends the `countryId` it resolved |
+| `noShowCredit` | `Currency.NoShowCredit` — the apology credit paid in this currency when a slot arrives with no cleaner; `null` = none is paid and the copy renders its refund-only variant. CZK 250; EUR 10, PLN 40, GBP 9, USD 10 are DEV placeholders the owner replaces before activation |
+| `insuranceCoverageAmount` | `CountryConfiguration.InsuranceCoverageAmount` — the insurance ceiling the trust badge and FAQ state, a number in the market's currency; `null` = the no-figure copy renders. CZE seeded at 1 000 000; every other configuration `null` until the owner authors it |
 
 A client resolves its market as: stored code **if listed** → the `isDefault` row → the first row →
 persist. A stored value is only ever compared against the list, never rendered or sent. When this
@@ -146,10 +148,18 @@ market's currency with the same resolver the quote uses, loads the plan's price 
 currency and `UserMembership.CurrencyId` records it; the webhook confirms the currency off the Stripe
 `Subscription` object itself and refuses to provision a code the platform does not know.
 
+**Which Stripe Customer is billed:** the user's Customer **for that currency** (`UserStripeCustomers`,
+one per user per currency — Stripe locks a Customer to the currency of its first invoice). Both
+commands resolve it after the plan and price checks: an existing row for the currency; else the
+legacy `User.StripeCustomerId`, adopted when it has never billed a membership in another currency
+and no row claims it; else a new Customer (`payment.gateway_unavailable` if Stripe fails there). So a
+customer whose CZK Plus was cancelled subscribes in EUR on a second Customer, and nothing is asked
+of support. → [Loyalty and memberships](/flows/loyalty-and-memberships#plus-is-priced-per-market-end-to-end)
+
 | Refusal | When |
 |---|---|
 | `membership.plan.not_priced_in_currency` | The plan has no price row in the resolved currency — refused before any Stripe object exists |
-| `membership.stripe_customer_currency_locked` | Stripe refused the call with its "cannot combine currencies on a single customer" rule (a customer who once held Plus in another currency). Classified, never a 500. The DEV sandbox did not enforce the rule on 2026-09-13; the branch is kept for the documented rule |
+| `membership.stripe_customer_currency_locked` | Stripe refused the call with its "cannot combine currencies on a single customer" rule on a Customer the resolver could not see was locked. The **backstop**, since the per-currency Customer makes the ordinary re-subscribe never hit it. Classified, never a 500. The DEV sandbox did not enforce the rule on 2026-09-13 |
 | `membership.already_active` | The customer already has a live membership — switching market never offers a second one |
 | `country.not_serviced` | `countryId` names a country the platform does not service |
 
@@ -235,9 +245,35 @@ default currency, `null` to state no figure. The country must already have a con
 `country.configuration_missing` otherwise (creating one needs a currency, a language and a VAT rate,
 which is not this command's business). A negative amount is `MustBePositive`.
 
-`GET /api/AdminCountry/details/{countryId}` returns `insuranceCoverageAmount` and `hasConfiguration`
-alongside `isoCode`, `isoAlpha2`, `name` and `isServiced`; the admin country form disables the Market
-section with a hint while `hasConfiguration` is false.
+`GET /api/AdminCountry/details/{countryId}` returns `insuranceCoverageAmount`, `hasConfiguration` and
+`isDefaultMarket` alongside `isoCode`, `isoAlpha2`, `name` and `isServiced`; the admin country form
+disables the Market section with a hint while `hasConfiguration` is false. The paged and overview
+`CountryListItem` rows carry `isDefaultMarket` too (last field on both DTOs).
+
+---
+
+## Admin — the default market <Badge type="info" text="Admin" />
+
+```
+PUT /api/AdminCountry/{countryId}/default-market
+```
+
+**Auth:** `CanUpdateCountry` (rate-limited, `auth` policy; audited)
+
+Flags this country's configuration as **the default market** — what a customer surface pre-selects
+before any choice is made (owner ruling 2026-09-13; [ADR-0058](/decisions/adr-0058) amendment). At
+most one configuration carries the flag, held by the partial unique index
+`IX_CountryConfigurations_IsDefaultMarket_Unique`; promoting a second country **moves** the flag in
+one transaction (clear, flush, promote, flush — the `SetDefaultCurrency` shape), and promoting the
+current default is a no-op that still answers `200 { "countryId" }`. `Market/GetOverview` marks the
+flagged market `isDefault` as soon as it is listed. No body: the route id is the command.
+
+| Refusal | When |
+|---|---|
+| `country.not_found` | No such country |
+| `country.not_serviced` | The country is not switched on as serviced — a default the directory would not list is a pre-selection of nothing |
+| `country.market_not_ready` | No configuration row, a configuration naming no currency, or one whose currency is inactive — the same gate `…/serviced` applies |
+| `country.default_market_changed_concurrently` | Two admins promoted at once and this call lost the race on the index; retry or read the detail |
 
 **Related, changed by the same programme:**
 
@@ -276,7 +312,9 @@ credit. `AdminCurrencyDetailDto` and `AdminCurrencyListItem` carry it back; the 
 | `membership.stripe_customer_currency_locked` | checkout, subscribe | customer web, Android customer, iOS customer |
 | `membership.plan.stripe_price_already_used` | admin plan create/update | admin web |
 | `country.configuration_missing` | market-content PUT | admin web |
-| `country.market_not_ready` | serviced PUT | admin web |
+| `country.market_not_ready` | serviced PUT, default-market PUT | admin web |
+| `country.not_serviced` | default-market PUT (and the customer quote / subscribe paths, already catalogued there) | admin web |
+| `country.default_market_changed_concurrently` | default-market PUT | admin web |
 | `country.iso_alpha2_invalid` | country create/update | admin web |
 
 Every key is under `api.*` on the web apps (the interceptor resolves `api.${key}`), `error_*` on

@@ -3,7 +3,7 @@
 Generated from the EF Core entity configurations, not described from memory. A relationship on a
 diagram is a `HasOne(...)` declared in a configuration file; if it is not there, it is not enforced.
 
-One diagram per area, because a single picture of all 81 entities is a picture nobody reads. Entities
+One diagram per area, because a single picture of all 83 entities is a picture nobody reads. Entities
 appear in the area they are owned by, not everywhere they are referenced.
 
 ::: tip Checking the count
@@ -23,6 +23,8 @@ erDiagram
   EmployeePayoutDetails }o--o| Currency : "Currency"
   RefreshToken }o--|| User : "User"
   UserConsent }o--|| User : "User"
+  UserStripeCustomer }o--|| User : "User"
+  UserStripeCustomer }o--|| Currency : "Currency"
   EmployeeDocument }o--|| Employee : "Employee"
   DocumentDeletionRequest }o--|| EmployeeDocument : "Document"
   EmployeeDocumentRequirement }o--|| Country : "Country"
@@ -40,6 +42,7 @@ erDiagram
 | `DocumentDeletionRequest` | references `Document` (Restrict) — a cleaner's request to have a document removed, answered by an admin |
 | `EmployeeActionAudit` | — bare `EmployeeId` and `OrderId` scalars with no FK, because the act it records deletes the `OrderEmployee` row it describes and must survive an erased order |
 | `UserConsent` | references `User` |
+| `UserStripeCustomer` | references `User` (Restrict), `Currency` (Restrict); unique `(UserId, CurrencyId)` with no tenant term, unique `StripeCustomerId` — the Stripe Customer that bills this user in **one** currency. Stripe locks a Customer to the currency of its first invoice, so a user holds one per currency and can re-subscribe to Plus in a new market; `User.StripeCustomerId` stays as the legacy field one-off order payments use, adopted as the first row for a currency it has only ever billed. GDPR erasure deletes the rows; `DeleteCurrency` answers `currency.in_use` for them. → [ADR-0059](/decisions/adr-0059) amendment |
 
 ## Ordering
 
@@ -127,7 +130,10 @@ names an active `Currency` — three existing rows joined by the anonymous `Mark
 `Country` carries `IsoCode` (alpha-3, what clients persist) and `IsoAlpha2` (what the market chip
 prints); `CountryConfiguration` carries, besides the fiscal and formatting columns, `InsuranceCoverageAmount`
 — the one marketing figure in customer copy, a number in the country's currency, per country because
-a policy is written per jurisdiction, null = the copy names no figure. → [ADR-0058](/decisions/adr-0058),
+a policy is written per jurisdiction, null = the copy names no figure (CZE seeded at 1 000 000) — and
+`IsDefaultMarket`, the market a customer surface pre-selects before any choice is made: a filtered
+unique index (`IX_CountryConfigurations_IsDefaultMarket_Unique`, the `Currency.IsDefault` shape) holds
+at most one, `SetDefaultMarket` is the only writer, CZE is seeded with it. → [ADR-0058](/decisions/adr-0058),
 [ADR-0060](/decisions/adr-0060)
 
 | Entity | |
@@ -142,7 +148,7 @@ a policy is written per jurisdiction, null = the copy names no figure. → [ADR-
 | `Country` | — ; `IsoCode` alpha-3 + `IsoAlpha2` (required, two letters) |
 | `Language` | — |
 | `CompanyInfo` | references `Country` |
-| `CountryConfiguration` | references `Country`; `InsuranceCoverageAmount` (nullable) is the per-country copy figure |
+| `CountryConfiguration` | references `Country`; `InsuranceCoverageAmount` (nullable) is the per-country copy figure; `IsDefaultMarket` (filtered unique — at most one row) is the landing-page pre-selection |
 | `PropertySizePreset` | references `Country` (Restrict); unique `(CountryId, Code)` — the size chips a country's booking wizard offers |
 | `ServiceCity` | references `Country` |
 

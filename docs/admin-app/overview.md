@@ -184,6 +184,17 @@ Three of those forms author what a customer's **market** shows:
   update (`country.configuration_missing` if the row is missing). On the Service Area page the serviced
   toggle snaps back off with `country.market_not_ready` when the country's configured currency is not
   active.
+- **The default market** (owner ruling 2026-09-13) — the country a customer surface pre-selects before
+  any choice is made is the one configuration flagged `IsDefaultMarket` (CZE today; at most one, by
+  the database). The action is `PUT api/AdminCountry/{countryId}/default-market`
+  (`AdminCountryClient.defaultMarket(countryId)` on the regenerated client; permission
+  `CanUpdateCountry`): promoting another country moves the flag, promoting the current one is a no-op,
+  and a country that is not serviced or whose currency is not active is refused
+  (`country.not_serviced`, `country.market_not_ready`); a lost race answers
+  `country.default_market_changed_concurrently`. The country detail and list rows carry
+  `isDefaultMarket`. **No form control drives the action at the time of writing** — the flag rides
+  the generated client's DTOs, but the admin web country form and list neither display it nor offer
+  a button; until one lands, the client method or the API is the way to move it.
 
 → [API — markets and memberships](/api/markets-and-memberships)
 

@@ -150,6 +150,29 @@ describe('PlusPageFacade', () => {
       const command = createCheckoutSession.mock.calls[0][0] as CreateMembershipCheckoutSessionCommand;
       expect(command.countryId).toBeUndefined();
     });
+
+    // The interceptor already voices a business refusal with its own toast, and the snackbar
+    // clears its queue on every show — a second, generic toast would replace the specific one.
+    it('lets the interceptor speak for a business refusal instead of a second, generic toast', () => {
+      createCheckoutSession.mockReturnValue(
+        throwError(() => ({ errors: { PlanCode: ['membership.plan.not_priced_in_currency'] } })),
+      );
+      const snackbar = TestBed.inject(SnackbarService) as unknown as { showError: jest.Mock };
+
+      facade.startCheckout('PLUS_MONTHLY');
+
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.submitting()).toBe(false);
+    });
+
+    it('still voices a failure that carries no business key', () => {
+      createCheckoutSession.mockReturnValue(throwError(() => new Error('network')));
+      const snackbar = TestBed.inject(SnackbarService) as unknown as { showError: jest.Mock };
+
+      facade.startCheckout('PLUS_MONTHLY');
+
+      expect(snackbar.showError).toHaveBeenCalledWith('pages.plus.checkout_failed');
+    });
   });
 
   it('splits the two plans by billing interval, not by code', () => {

@@ -63,8 +63,13 @@ export const appConfig: ApplicationConfig = {
     // The cache was disabled on 2026-08-28 while GHSA-39pv-4j6c-2g6v and
     // GHSA-jhpw-976m-542j had no fix in any 19.x — cache-key collisions could
     // serve one user's response to another, and cookie auth meant every
-    // authenticated GET was eligible. Both are fixed in 20.3.25/20.3.27, so the
-    // cache is back on and the first-load re-fetch it cost is gone with it.
+    // authenticated GET was eligible. Both are fixed in 20.3.25/20.3.27 and the
+    // cache is on again — but Angular now skips any request sent with
+    // credentials, and CustomerAuthInterceptorFn marks every own-API request
+    // withCredentials for the cookie flow, so in practice no API response is
+    // transferred and the browser re-fetches on bootstrap. Making anonymous GETs
+    // credential-less would restore the transfer; that is an auth change, not a
+    // hydration one, and it is deliberately not made here.
     provideClientHydration(withEventReplay()),
     provideRouter(
       appRoutes,

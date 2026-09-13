@@ -8,7 +8,7 @@ import {
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, distinctUntilChanged, of, take, takeUntil } from 'rxjs';
@@ -104,13 +104,20 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
 
     this.membershipClient
       .createCheckoutSession(command)
-      .pipe(take(1), takeUntil(this.destroyed$), catchError(() => of(null)))
+      .pipe(
+        take(1),
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => of({ refused: extractApiErrorCode(error) !== undefined })),
+      )
       .subscribe((response) => {
-        if (response?.checkoutUrl) {
+        if (response && 'checkoutUrl' in response && response.checkoutUrl) {
           window.location.href = response.checkoutUrl;
           return;
         }
         this.submitting.set(false);
+        // A business refusal (an api.* key) is already voiced by the interceptor's toast, and the
+        // snackbar clears its queue on every show — a second, generic toast would replace it.
+        if (response && 'refused' in response && response.refused) return;
         this.snackbar.showError(this.translate.instant('pages.plus.checkout_failed'));
       });
   }

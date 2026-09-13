@@ -8,7 +8,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Countries;
 
 /// <summary>
-/// The default market is a pre-selection of a LISTED market (owner ruling 2026-09-13, Q-MARKET-01),
+/// The default market is a pre-selection of a LISTED market (owner ruling 2026-09-13),
 /// so the gate is the servicing gate plus serviced itself: a flag on a country that
 /// <c>Market/GetOverview</c> would not list is a pre-selection of nothing.
 /// </summary>

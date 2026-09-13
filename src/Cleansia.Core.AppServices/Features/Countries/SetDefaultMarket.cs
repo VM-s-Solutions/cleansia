@@ -9,7 +9,7 @@ namespace Cleansia.Core.AppServices.Features.Countries;
 
 /// <summary>
 /// Flags one country's configuration as the default market — the market a customer surface
-/// pre-selects before any choice is made (owner ruling 2026-09-13, Q-MARKET-01). Modelled on
+/// pre-selects before any choice is made (owner ruling 2026-09-13). Modelled on
 /// <c>SetDefaultCurrency</c>: clear the current flag, set the new one, in one transaction, both
 /// flushed so both rows carry their audit stamp; idempotent on the current default.
 ///

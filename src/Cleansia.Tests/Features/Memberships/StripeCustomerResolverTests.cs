@@ -10,7 +10,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Memberships;
 
 /// <summary>
-/// A Stripe Customer per currency per user (owner ruling 2026-09-13, Q-MARKET-05): Stripe locks a
+/// A Stripe Customer per currency per user (owner ruling 2026-09-13): Stripe locks a
 /// Customer to the currency of its first invoice, so the Customer a subscription is created on is
 /// resolved per currency — an existing row, else the legacy Customer when it can only ever have
 /// billed this currency, else a new Customer. The legacy field is still written on first creation.

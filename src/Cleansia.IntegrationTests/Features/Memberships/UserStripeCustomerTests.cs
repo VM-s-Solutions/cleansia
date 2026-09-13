@@ -18,7 +18,7 @@ using Npgsql;
 namespace Cleansia.IntegrationTests.Features.Memberships;
 
 /// <summary>
-/// A Stripe Customer per (user, currency) over real Postgres (owner ruling 2026-09-13, Q-MARKET-05):
+/// A Stripe Customer per (user, currency) over real Postgres (owner ruling 2026-09-13):
 /// the two uniques the migration emits, the lookup that finds a user by ANY of their Customer ids,
 /// the resolver's adopt-or-create decision against real membership rows, and the currency in-use
 /// guard.

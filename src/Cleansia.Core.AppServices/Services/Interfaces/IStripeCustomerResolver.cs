@@ -5,7 +5,7 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
 /// The Stripe Customer a subscription in <paramref name="currency"/> is created on, for both
-/// subscribe surfaces (owner ruling 2026-09-13, Q-MARKET-05). Stripe locks a Customer to the
+/// subscribe surfaces (owner ruling 2026-09-13). Stripe locks a Customer to the
 /// currency of its first invoice, so a user holds one Customer PER CURRENCY (<see cref="UserStripeCustomer"/>):
 /// <list type="number">
 /// <item>a row for (user, currency) — that Customer;</item>

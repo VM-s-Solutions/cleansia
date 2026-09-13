@@ -207,7 +207,7 @@ public static class NotificationEventCatalog
     /// money back plus credit towards the next one" are different news, and the second read as the
     /// first is the platform quietly under-selling the one apology it makes.</para>
     ///
-    /// <para><b>The amount IS an arg, with its currency.</b> Owner ruling 2026-09-13 (Q-MARKET-04)
+    /// <para><b>The amount IS an arg, with its currency.</b> Owner ruling 2026-09-13
     /// reversed the earlier position that the push states no figure: the credit is authored per
     /// currency (<c>Currency.NoShowCredit</c>, ADR-0060 D1), so the server formats it from the
     /// credit's own currency row — number, space, symbol — and the lock-screen allowlist (ADR-0025

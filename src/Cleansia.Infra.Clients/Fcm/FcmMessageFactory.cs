@@ -25,7 +25,7 @@ public static class FcmMessageFactory
     /// ONLY after its loc-keys ship in BOTH iOS apps' main-bundle catalogs (client-first rule) —
     /// enforced by <c>ApnsDisplayMapIosCatalogSyncTests</c>, which reads both <c>.xcstrings</c> off
     /// disk — and keep arg names inside the closed {orderNumber, count, amount} lock-screen allowlist
-    /// (D3, widened by one slot on owner ruling 2026-09-13, Q-MARKET-04: <c>amount</c> is a
+    /// (D3, widened by one slot on owner ruling 2026-09-13: <c>amount</c> is a
     /// server-formatted money figure with its own currency's symbol, "250 Kč", carried only by
     /// <c>order.no_cleaner_refunded</c>): internal ids and raw enum values must never render.
     /// </summary>

@@ -155,7 +155,7 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
     }
 
     /// <summary>
-    /// Owner ruling 2026-09-13 (Q-MARKET-01): the default market is an explicit flag the admin moves.
+    /// Owner ruling 2026-09-13: the default market is an explicit flag the admin moves.
     /// SVK is on EUR, not the default currency, and still becomes the pre-selection once flagged;
     /// exactly one configuration carries the flag afterwards, and both admin reads show it.
     /// </summary>

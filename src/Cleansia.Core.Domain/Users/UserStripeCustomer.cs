@@ -9,7 +9,7 @@ namespace Cleansia.Core.Domain.Users;
 /// of its first invoice and refuses a subscription in another, so a customer whose CZK Plus was
 /// cancelled could never subscribe in EUR on the one Customer <see cref="User.StripeCustomerId"/>
 /// holds. One row per (user, currency) is the mechanism that keeps re-subscribing possible (owner
-/// ruling 2026-09-13, Q-MARKET-05). The legacy field stays: it is still the Customer one-off order
+/// ruling 2026-09-13). The legacy field stays: it is still the Customer one-off order
 /// payments use, and the first row for a currency it has only ever billed adopts it.
 /// </summary>
 public class UserStripeCustomer : Auditable, ITenantEntity

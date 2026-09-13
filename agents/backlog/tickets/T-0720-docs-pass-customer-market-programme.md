@@ -64,6 +64,6 @@ orchestrator's to run.
 ## Review
 
 - Every claim checked against the tree: entities, EF configurations and the regenerated `Initial`
-  (`20260913000447`), the DTOs under `Cleansia.Core.AppServices`, the controllers on all three hosts,
+  (`20260913080510`), the DTOs under `Cleansia.Core.AppServices`, the controllers on all three hosts,
   `StripeRefusals`, the seed, the checker's pins, the web/Android/iOS membership facades and view
   models, the locale files.

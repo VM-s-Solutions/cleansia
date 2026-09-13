@@ -160,6 +160,7 @@
 | T-0718 | iOS customer — the market preference, chip and readers | M | `done` | — | shipped 2026-09-13 (144a3b07), branch fix/remove-membership-free-trial, not yet merged; `MarketPreferenceStore` + `MarketStore` + `MarketPickerView` + home chip (≥ 2 markets), readers per market, annual switch gated, plans-failed retry state; tests written, the owner's Xcode build confirms the generated names. |
 | T-0719 | iOS customer — copy per market | S | `done` | — | shipped 2026-09-13 (c3540d8b), branch fix/remove-membership-free-trial, not yet merged; `%1$@` insurance copy with no-figure twins, push body without a figure in both catalogues, seasonal section deleted; the customer catalogue carries no currency word anywhere. |
 | T-0720 | Docs pass — three ADRs accepted, living docs, roles, business rules | M | `done` | — | shipped 2026-09-13, branch fix/remove-membership-free-trial, not yet merged; ADR-0058/0059/0060 `accepted` with every lane deviation recorded, `#market` on business-rules, `api/markets-and-memberships`, two role cards, the expansion checklist with both gates; `npm run build` still to be run by the orchestrator. |
+| T-0721 | The five 2026-09-13 market rulings — default-market flag, seeded figures, push amount, Stripe Customer per currency | M | `done` | — | shipped 2026-09-13 (e3fb1227), branch fix/remove-membership-free-trial, not yet merged; `CountryConfiguration.IsDefaultMarket` under a partial unique index with `PUT api/AdminCountry/{id}/default-market`, CZE flagged and its 1 000 000 CZK ceiling seeded, placeholder apology credits on every seeded currency, `order.no_cleaner_refunded` carries the formatted `amount`, `UserStripeCustomers` gives a user one Stripe Customer per currency; `Initial` regenerated (`20260913080510`), DEV drop owed at deploy, NSwag and the mobile spec not regenerated. |
 
 > **T-0699–T-0709 filed 2026-09-10**, split out of T-0688 by a readiness audit of the multicurrency
 > programme. Every claim was re-verified against the tree that day and the ones that did not survive
@@ -170,4 +171,4 @@
 > not replace. Both are in `b269efe4`.
 
 
-*Next id: **T-0721**.*
+*Next id: **T-0722**.*

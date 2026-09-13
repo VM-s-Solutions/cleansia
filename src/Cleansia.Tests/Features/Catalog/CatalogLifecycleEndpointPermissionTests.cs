@@ -24,6 +24,7 @@ public class CatalogLifecycleEndpointPermissionTests
     [InlineData(typeof(AdminPackageController), "DeactivatePackage", Policy.CanUpdatePackage)]
     [InlineData(typeof(AdminPackageController), "ActivatePackage", Policy.CanUpdatePackage)]
     [InlineData(typeof(AdminCurrencyController), "SetDefaultCurrency", Policy.CanUpdateCurrency)]
+    [InlineData(typeof(AdminCountryController), "SetDefaultMarket", Policy.CanUpdateCountry)]
     public void LifecycleEndpoint_Reuses_The_Existing_Update_Permission(Type controller, string action, string expectedPermission)
     {
         Assert.Equal(expectedPermission, PermissionOf(controller, action));
@@ -33,6 +34,7 @@ public class CatalogLifecycleEndpointPermissionTests
     [InlineData(Policy.CanUpdateService)]
     [InlineData(Policy.CanUpdatePackage)]
     [InlineData(Policy.CanUpdateCurrency)]
+    [InlineData(Policy.CanUpdateCountry)]
     public void Reused_Permission_Still_Resolves_To_AdminOnly(string permission)
     {
         Assert.Equal(PhysicalPolicy.AdminOnly, permission.ToPhysicalPolicy());

@@ -97,7 +97,7 @@ public class CreateMembershipCheckoutSession
             }
 
             // The Customer is per currency: Stripe locks a Customer to the currency of its first invoice,
-            // so a re-subscribe in another market needs its own (owner ruling 2026-09-13, Q-MARKET-05).
+            // so a re-subscribe in another market needs its own (owner ruling 2026-09-13).
             string stripeCustomerId;
             try
             {

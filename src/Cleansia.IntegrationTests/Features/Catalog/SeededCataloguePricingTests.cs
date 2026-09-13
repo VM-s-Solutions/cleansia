@@ -244,7 +244,7 @@ public class SeededCataloguePricingTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Owner ruling 2026-09-13 (Q-MARKET-03): no seeded currency carries a null apology credit by
+    /// Owner ruling 2026-09-13: no seeded currency carries a null apology credit by
     /// accident. CZK is the ruled 250; the four not-yet-operated rows carry DEV placeholders the owner
     /// replaces on the admin currency form before activation.
     /// </summary>
@@ -264,9 +264,9 @@ public class SeededCataloguePricingTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Owner rulings 2026-09-13: CZE is the default market (Q-MARKET-01) and states the 1 000 000 CZK
-    /// insurance ceiling (Q-MARKET-02); every other configuration is unflagged and figure-less until
-    /// the owner authors that market's figure.
+    /// Owner rulings 2026-09-13: CZE is the default market and states the 1 000 000 CZK insurance
+    /// ceiling; every other configuration is unflagged and figure-less until the owner authors that
+    /// market's figure.
     /// </summary>
     [Fact]
     public async Task Czechia_Is_The_Seeded_Default_Market_With_The_Insurance_Figure_And_Nothing_Else_Is()

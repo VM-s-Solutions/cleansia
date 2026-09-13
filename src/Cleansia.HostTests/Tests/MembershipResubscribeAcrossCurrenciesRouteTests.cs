@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// Owner ruling 2026-09-13 (Q-MARKET-05), end to end on the Customer host with a recording Stripe
+/// Owner ruling 2026-09-13, end to end on the Customer host with a recording Stripe
 /// client: a customer whose CZK Plus was cancelled subscribes in EUR, and the subscription is created
 /// on a SECOND Stripe Customer minted for EUR — the legacy Customer, locked to CZK by its first
 /// invoice, is never asked to bill EUR. A later CZK subscribe adopts the legacy Customer for CZK.

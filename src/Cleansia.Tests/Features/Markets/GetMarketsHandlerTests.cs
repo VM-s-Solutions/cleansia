@@ -11,7 +11,7 @@ namespace Cleansia.Tests.Features.Markets;
 /// <summary>
 /// The market directory (ADR-0058 D1–D2). A market is a serviced country joined to its configured,
 /// ACTIVE currency; the default market is the one whose configuration carries <c>IsDefaultMarket</c>
-/// (owner ruling 2026-09-13, Q-MARKET-01), else the one on the platform default currency. This is the
+/// (owner ruling 2026-09-13), else the one on the platform default currency. This is the
 /// anonymous read behind the landing page, so every configuration state below answers with a list
 /// and a log line — never a throw.
 /// </summary>
@@ -153,7 +153,8 @@ public class GetMarketsHandlerTests
     /// <summary>
     /// Several markets on the default currency is the ordinary state once EUR is the default and two
     /// EUR countries are serviced. Exactly one is pre-selected, by lowest ISO code, and the error log
-    /// names the currency and every candidate — the owner picks explicitly from there (Q-MARKET-01).
+    /// names the currency and every candidate — the owner picks explicitly from there (owner ruling
+    /// 2026-09-13).
     /// </summary>
     [Fact]
     public async Task Several_Markets_On_The_Default_Currency_Flag_The_Lowest_Iso_Code_And_Log_An_Error()

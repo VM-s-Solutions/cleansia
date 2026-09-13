@@ -18,7 +18,7 @@ namespace Cleansia.Tests.Features.Memberships;
 
 /// <summary>
 /// Both subscribe surfaces hand Stripe the Customer the per-currency resolver answers with — never the
-/// legacy <see cref="User.StripeCustomerId"/> directly (owner ruling 2026-09-13, Q-MARKET-05) — and a
+/// legacy <see cref="User.StripeCustomerId"/> directly (owner ruling 2026-09-13) — and a
 /// Stripe failure while creating that Customer is the same gateway-unavailable refusal as before.
 /// </summary>
 public class MembershipSubscribeUsesPerCurrencyCustomerTests

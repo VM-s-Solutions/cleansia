@@ -85,7 +85,7 @@ public class CancelUnfilledOrders
     /// space, then the currency's own symbol ("250 Kč", "10 €", "9.5 zł"); the code stands in for a
     /// currency with no symbol. Formatted here rather than on the device because the figure is the
     /// credit's own currency, which the device cannot know from the order alone (owner ruling
-    /// 2026-09-13, Q-MARKET-04).
+    /// 2026-09-13).
     /// </summary>
     public static string FormatCreditAmount(decimal amount, Currency currency)
     {

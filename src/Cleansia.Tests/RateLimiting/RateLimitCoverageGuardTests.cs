@@ -276,6 +276,7 @@ public class RateLimitCoverageGuardTests
     [InlineData(typeof(Cleansia.Web.Admin.Controllers.AdminPackageController), "DeactivatePackage")]
     [InlineData(typeof(Cleansia.Web.Admin.Controllers.AdminPackageController), "ActivatePackage")]
     [InlineData(typeof(Cleansia.Web.Admin.Controllers.AdminCurrencyController), "SetDefaultCurrency")]
+    [InlineData(typeof(Cleansia.Web.Admin.Controllers.AdminCountryController), "SetDefaultMarket")]
     public void Catalog_Lifecycle_Action_Keeps_Its_Auth_Window(Type controller, string action)
     {
         Assert.Equal("auth", EffectivePolicyOf(controller.GetMethod(action)!));

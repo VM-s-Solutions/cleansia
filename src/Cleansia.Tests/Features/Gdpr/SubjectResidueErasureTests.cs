@@ -160,7 +160,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
     }
 
     /// <summary>
-    /// The per-currency Stripe Customer rows (owner ruling 2026-09-13, Q-MARKET-05) hold a Stripe id for
+    /// The per-currency Stripe Customer rows (owner ruling 2026-09-13) hold a Stripe id for
     /// the subject exactly as the legacy <c>User.StripeCustomerId</c> does; the erasure clears that
     /// field, so the rows go with it, and the bystander's stays.
     /// </summary>

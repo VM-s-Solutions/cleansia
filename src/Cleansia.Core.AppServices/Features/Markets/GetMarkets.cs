@@ -10,7 +10,7 @@ namespace Cleansia.Core.AppServices.Features.Markets;
 /// <summary>
 /// The market directory behind every pre-address customer surface (ADR-0058 D1–D2): each serviced
 /// country whose configuration names an ACTIVE currency, with the one whose configuration carries
-/// <c>IsDefaultMarket</c> flagged <c>IsDefault</c> (owner ruling 2026-09-13, Q-MARKET-01); when
+/// <c>IsDefaultMarket</c> flagged <c>IsDefault</c> (owner ruling 2026-09-13); when
 /// nothing listed is flagged, the one on the platform default currency.
 ///
 /// <para>This is the anonymous read behind the landing page, so it never throws on a configuration

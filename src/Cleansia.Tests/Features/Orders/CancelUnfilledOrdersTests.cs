@@ -360,7 +360,7 @@ public class CancelUnfilledOrdersTests
     }
 
     /// <summary>
-    /// Owner ruling 2026-09-13 (Q-MARKET-04): the push carries the credit WITH its currency, formatted
+    /// Owner ruling 2026-09-13: the push carries the credit WITH its currency, formatted
     /// from the credit's own currency row — a EUR apology says "10 €", never a CZK figure.
     /// </summary>
     [Fact]

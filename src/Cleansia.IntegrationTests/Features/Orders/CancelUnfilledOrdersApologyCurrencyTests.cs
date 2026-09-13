@@ -175,8 +175,8 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
         Assert.Equal(2, pushes.Count(b => b.Contains(NotificationEventCatalog.OrderNoCleanerRefunded)));
         Assert.Equal(1, pushes.Count(b => b.Contains(NotificationEventCatalog.OrderCancelled)));
 
-        // The push and the feed row carry the credit WITH its own currency (owner ruling 2026-09-13,
-        // Q-MARKET-04); these currencies are seeded with the code as the symbol.
+        // The push and the feed row carry the credit WITH its own currency (owner ruling 2026-09-13);
+        // these currencies are seeded with the code as the symbol.
         Assert.Single(pushes, b => b.Contains("250 CZK"));
         Assert.Single(pushes, b => b.Contains("10 NOK"));
         var feedArgs = await ctx.Set<UserNotification>()

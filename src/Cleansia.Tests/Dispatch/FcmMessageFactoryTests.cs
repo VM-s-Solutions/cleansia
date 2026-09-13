@@ -291,7 +291,7 @@ public class FcmMessageFactoryTests
     }
 
     // ── TC-PUSH-APNS-5 — S6 tripwire: lock-screen args stay inside the closed allowlist ──────
-    // {orderNumber, count} plus `amount` since owner ruling 2026-09-13 (Q-MARKET-04): a server-
+    // {orderNumber, count} plus `amount` since owner ruling 2026-09-13: a server-
     // formatted money figure with its currency's symbol, carried only by order.no_cleaner_refunded.
 
     [Fact]

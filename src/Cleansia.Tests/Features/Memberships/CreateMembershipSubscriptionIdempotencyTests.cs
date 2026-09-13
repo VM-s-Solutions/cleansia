@@ -9,7 +9,6 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities.MockDataFactories.Memberships;
-using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;

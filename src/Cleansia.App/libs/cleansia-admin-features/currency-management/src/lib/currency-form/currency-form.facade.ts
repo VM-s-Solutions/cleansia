@@ -16,6 +16,7 @@ export interface CurrencyFormData {
   symbol: string;
   name: string;
   loyaltyPointsDivisor: number | null;
+  noShowCredit: number | null;
 }
 
 @Injectable()
@@ -57,6 +58,7 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
     command.symbol = data.symbol;
     command.name = data.name;
     command.loyaltyPointsDivisor = data.loyaltyPointsDivisor ?? undefined;
+    command.noShowCredit = data.noShowCredit ?? undefined;
 
     this.adminClient.adminCurrencyClient
       .create(command)
@@ -84,6 +86,7 @@ export class CurrencyFormFacade extends UnsubscribeControlDirective {
     command.symbol = data.symbol;
     command.name = data.name;
     command.loyaltyPointsDivisor = data.loyaltyPointsDivisor ?? undefined;
+    command.noShowCredit = data.noShowCredit ?? undefined;
 
     this.adminClient.adminCurrencyClient
       .update(currencyId, command)

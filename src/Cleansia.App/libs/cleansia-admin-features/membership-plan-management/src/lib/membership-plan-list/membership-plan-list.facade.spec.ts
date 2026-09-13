@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import {
-  AdminCurrencyClient,
   AdminMembershipClient,
   DeactivateMembershipPlanResponse,
   MembershipPlanListItem,
@@ -15,7 +14,6 @@ import { BILLING_INTERVAL_WIRE } from './membership-plan-list.models';
 describe('MembershipPlanListFacade', () => {
   let facade: MembershipPlanListFacade;
   let membershipClient: { getPaged: jest.Mock; deactivate: jest.Mock };
-  let getOverviewMock: jest.Mock;
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
 
   const page = PagedDataOfMembershipPlanListItem.fromJS({
@@ -25,7 +23,9 @@ describe('MembershipPlanListFacade', () => {
         code: 'PLUS_MONTHLY',
         name: 'Cleansia Plus',
         billingInterval: BILLING_INTERVAL_WIRE.monthly,
-        monthlyPriceCzk: 199,
+        price: 199,
+        monthlyEquivalentPrice: 199,
+        currencyCode: 'CZK',
         isActive: true,
       }),
     ],
@@ -34,16 +34,12 @@ describe('MembershipPlanListFacade', () => {
 
   beforeEach(() => {
     membershipClient = { getPaged: jest.fn(), deactivate: jest.fn() };
-    getOverviewMock = jest.fn().mockReturnValue(
-      of([{ id: 'cur-eur', code: 'EUR', isDefault: true }, { id: 'cur-czk', code: 'CZK', isDefault: false }])
-    );
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
 
     TestBed.configureTestingModule({
       providers: [
         MembershipPlanListFacade,
         { provide: AdminMembershipClient, useValue: membershipClient },
-        { provide: AdminCurrencyClient, useValue: { getOverview: getOverviewMock } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
@@ -158,41 +154,12 @@ describe('MembershipPlanListFacade', () => {
     );
   });
 
-  // The plan DTO's fields are named *Czk, but the platform prices its catalogue in whatever currency
-  // is the default; the label comes from that, not from the field name.
-  describe('the price columns name the platform default currency', () => {
-    it('labels a plan price with the default currency, not with crowns', () => {
-      membershipClient.getPaged.mockReturnValue(of(page));
+  it('keeps the row currency code the DTO carries — the label never comes from a second read', () => {
+    membershipClient.getPaged.mockReturnValue(of(page));
 
-      facade.loadPlans();
+    facade.loadPlans();
 
-      expect(getOverviewMock).toHaveBeenCalledTimes(1);
-      expect(facade.defaultCurrencyCode()).toBe('EUR');
-      expect(facade.formatPrice(199)).toBe('199.00 EUR');
-      expect(facade.formatPrice(null)).toBe('—');
-    });
-
-    it('reads the currency before the page and once across reloads', () => {
-      membershipClient.getPaged.mockReturnValue(of(page));
-
-      facade.loadPlans();
-      facade.loadPlans();
-
-      expect(getOverviewMock).toHaveBeenCalledTimes(1);
-      expect(membershipClient.getPaged).toHaveBeenCalledTimes(2);
-      expect(getOverviewMock.mock.invocationCallOrder[0]).toBeLessThan(
-        membershipClient.getPaged.mock.invocationCallOrder[0]
-      );
-    });
-
-    it('prints a bare number rather than a currency it cannot name', () => {
-      getOverviewMock.mockReturnValueOnce(of([]));
-      membershipClient.getPaged.mockReturnValue(of(page));
-
-      facade.loadPlans();
-
-      expect(facade.defaultCurrencyCode()).toBeNull();
-      expect(facade.formatPrice(199)).toBe('199.00');
-    });
+    expect(facade.plans()[0].currencyCode).toBe('CZK');
+    expect(facade.plans()[0].price).toBe(199);
   });
 });

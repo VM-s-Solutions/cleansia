@@ -56,7 +56,7 @@ export class CountryManagementComponent implements AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
+  flagTemplate = viewChild<TemplateRef<CountryListItem>>('flagTemplate');
 
   countryColumns!: TableColumn<CountryListItem>[];
   countryActions!: TableAction<CountryListItem>[];

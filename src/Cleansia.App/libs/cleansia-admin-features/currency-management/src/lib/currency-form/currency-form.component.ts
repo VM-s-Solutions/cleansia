@@ -66,6 +66,9 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
     loyaltyPointsDivisor: this.fb.control<number | null>(null, [
       Validators.min(0.01),
     ]),
+    noShowCredit: this.fb.control<number | null>(null, [
+      Validators.min(0.01),
+    ]),
   });
 
   private currencyLoadEffect = effect(() => {
@@ -100,12 +103,14 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
     symbol?: string;
     name?: string;
     loyaltyPointsDivisor?: number;
+    noShowCredit?: number;
   }): void {
     this.form.patchValue({
       code: currency.code ?? '',
       symbol: currency.symbol ?? '',
       name: currency.name ?? '',
       loyaltyPointsDivisor: currency.loyaltyPointsDivisor ?? null,
+      noShowCredit: currency.noShowCredit ?? null,
     });
   }
 
@@ -121,7 +126,8 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
       code: formValue.code,
       symbol: formValue.symbol,
       name: formValue.name,
-      loyaltyPointsDivisor: this.divisorOrNull(formValue.loyaltyPointsDivisor),
+      loyaltyPointsDivisor: this.numberOrNull(formValue.loyaltyPointsDivisor),
+      noShowCredit: this.numberOrNull(formValue.noShowCredit),
     };
 
     if (this.isEditMode()) {
@@ -140,7 +146,7 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
 
   // A cleared numeric text input arrives as the empty string at runtime, which is neither
   // null nor a number the server would parse.
-  private divisorOrNull(raw: number | null): number | null {
+  private numberOrNull(raw: number | null): number | null {
     if (raw === null || (raw as unknown) === '') {
       return null;
     }

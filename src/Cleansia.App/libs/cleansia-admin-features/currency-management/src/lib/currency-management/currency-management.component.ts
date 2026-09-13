@@ -56,7 +56,7 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
+  flagTemplate = viewChild<TemplateRef<AdminCurrencyListItem>>('flagTemplate');
 
   currencyColumns!: TableColumn<AdminCurrencyListItem>[];
   currencyActions!: TableAction<AdminCurrencyListItem>[];

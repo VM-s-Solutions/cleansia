@@ -1219,7 +1219,7 @@
       "edit_title": "Edit Country",
       "basic_info": "Basic Information",
       "iso_code": "ISO Code",
-      "iso_code_placeholder": "e.g., CZ, US, DE",
+      "iso_code_placeholder": "e.g. CZE, USA, DEU",
       "name": "Country Name",
       "name_placeholder": "e.g., Czech Republic, United States, Germany",
       "messages": {
@@ -1227,8 +1227,20 @@
         "create_success": "Country created successfully",
         "create_error": "Failed to create country",
         "update_success": "Country updated successfully",
-        "update_error": "Failed to update country"
-      }
+        "update_error": "Failed to update country",
+        "market_content_success": "Market content updated successfully"
+      },
+      "iso_alpha2": "Two-letter code",
+      "iso_alpha2_placeholder": "e.g. CZ, US, DE",
+      "iso_alpha2_help": "ISO 3166-1 alpha-2. Customers see it on the market chip.",
+      "validation": {
+        "iso_alpha2_invalid": "Exactly two letters."
+      },
+      "market": "Market",
+      "insurance_coverage_amount": "Insurance coverage per booking",
+      "insurance_coverage_amount_placeholder": "Leave empty to state no figure",
+      "insurance_coverage_amount_help": "A number in the country's default currency, shown in customer copy. Empty means the copy names no figure.",
+      "market_content_unavailable": "Available once the country has a configuration."
     },
     "currency_management": {
       "title": "Currency Management",
@@ -1279,7 +1291,9 @@
         "create_error": "Failed to create currency",
         "update_success": "Currency updated successfully",
         "update_error": "Failed to update currency"
-      }
+      },
+      "no_show_credit": "No-show apology credit",
+      "no_show_credit_placeholder": "e.g. 250 for CZK — leave empty and no credit is paid in this currency"
     },
     "company_info": {
       "bank_account_number": "Bank Account Number",
@@ -2164,13 +2178,14 @@
         "code": "Code",
         "name": "Name",
         "interval": "Billing",
-        "price": "Price (CZK)",
-        "monthly_equivalent": "Monthly equiv. (CZK)",
+        "price": "Price",
+        "monthly_equivalent": "Monthly equivalent",
         "discount": "Discount",
         "trial_days": "Trial days",
         "free_cancel_window": "Free-cancel (h)",
         "express": "Express",
-        "status": "Status"
+        "status": "Status",
+        "currency": "Currency"
       },
       "interval": {
         "Monthly": "Monthly",
@@ -2201,7 +2216,7 @@
           "name": "Name",
           "interval": "Billing interval",
           "interval_immutable": "Billing interval cannot be changed after creation.",
-          "price": "Price (CZK)",
+          "price": "Price",
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Copy from the Stripe dashboard (price_...). The platform does not create Stripe prices.",
           "discount": "Discount (%)",
@@ -2214,17 +2229,22 @@
         "validation": {
           "code_invalid": "2–50 characters: letters, numbers or underscores.",
           "price_negative": "Price must be zero or more.",
-          "stripe_price_id_required": "Stripe Price id is required.",
           "discount_range": "Discount must be between 0 and 100.",
           "trial_negative": "Trial days must be zero or more.",
           "window_negative": "Window must be zero or more.",
-          "express_upgrades_negative": "Included express upgrades must be zero or more."
+          "express_upgrades_negative": "Included express upgrades must be zero or more.",
+          "price_block_half_filled": "Enter both a price and a Stripe Price id, or leave both empty to keep the plan off sale in this currency."
         },
         "submit_create": "Create plan",
         "submit_update": "Save changes",
         "success": {
           "created": "Membership plan created",
           "updated": "Membership plan updated"
+        },
+        "price_block": {
+          "active": "Active",
+          "optional": "Optional",
+          "no_currencies": "No currencies are configured, so this plan cannot be priced yet."
         }
       }
     },
@@ -2505,7 +2525,10 @@
       "not_existing_id": "Country not found",
       "not_found": "Country not found",
       "not_serviced": "This country is not serviced.",
-      "required": "A country is required."
+      "required": "A country is required.",
+      "market_not_ready": "This country cannot be switched on yet: it needs a configuration whose default currency is active.",
+      "configuration_missing": "This country has no configuration yet, so its market content cannot be saved.",
+      "iso_alpha2_invalid": "The two-letter country code must be exactly two uppercase letters."
     },
     "credit": {
       "amount_exceeds_sanity_cap": "That amount is above the limit for a single credit. Issue it in smaller amounts if it is correct.",
@@ -2603,7 +2626,8 @@
         "code_already_exists": "A plan with this code already exists.",
         "discount_out_of_range": "Discount must be between 0 and 100.",
         "not_found": "Membership plan not found.",
-        "trial_not_permitted": "Cleansia Plus benefits require an active subscription, so a free trial cannot be set. Leave the trial at 0 days."
+        "trial_not_permitted": "Cleansia Plus benefits require an active subscription, so a free trial cannot be set. Leave the trial at 0 days.",
+        "stripe_price_already_used": "That Stripe Price id is already used by another plan price."
       }
     },
     "order": {

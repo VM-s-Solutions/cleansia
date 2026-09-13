@@ -22,6 +22,7 @@ describe('CurrencyFormFacade', () => {
     symbol: 'Kč',
     name: 'Czech koruna',
     loyaltyPointsDivisor: null,
+    noShowCredit: null,
   };
 
   beforeEach(() => {
@@ -117,6 +118,29 @@ describe('CurrencyFormFacade', () => {
 
       const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
       expect(updated.toJSON().loyaltyPointsDivisor).toBe(10);
+    });
+
+    // The no-show credit is authored per currency like the divisor: absent on the wire reads as
+    // null on the server, which is "no credit in this currency".
+    it('serializes the no-show credit on create and update when typed', () => {
+      facade.createCurrency({ ...formData, noShowCredit: 250 });
+      facade.updateCurrency('cur-1', { ...formData, noShowCredit: 10 });
+
+      const created: CreateCurrencyCommand = createMock.mock.calls[0][0];
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(created.toJSON().noShowCredit).toBe(250);
+      expect(updated.toJSON().noShowCredit).toBe(10);
+    });
+
+    it('omits the no-show credit when left blank, so the server clears it', () => {
+      facade.createCurrency(formData);
+      facade.updateCurrency('cur-1', formData);
+
+      const created: CreateCurrencyCommand = createMock.mock.calls[0][0];
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(created.toJSON().noShowCredit).toBeUndefined();
+      expect(updated.toJSON().noShowCredit).toBeUndefined();
+      expect(JSON.stringify(updated)).not.toContain('noShowCredit');
     });
   });
 });

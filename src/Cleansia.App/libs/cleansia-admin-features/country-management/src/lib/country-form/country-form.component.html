@@ -32,10 +32,54 @@
 
           <div class="form-field">
             <cleansia-text-input
+              [label]="'pages.country_form.iso_alpha2' | translate"
+              formControlName="isoAlpha2"
+              [placeholder]="'pages.country_form.iso_alpha2_placeholder' | translate"
+              [required]="!isEditMode()"
+            />
+            <small class="field-help">
+              {{ 'pages.country_form.iso_alpha2_help' | translate }}
+            </small>
+            @if (
+              form.controls.isoAlpha2.touched &&
+              form.controls.isoAlpha2.errors?.['pattern']
+            ) {
+              <small class="field-error">
+                {{ 'pages.country_form.validation.iso_alpha2_invalid' | translate }}
+              </small>
+            }
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
               [label]="'pages.country_form.name' | translate"
               formControlName="name"
               [required]="true"
             />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <cleansia-section [title]="'pages.country_form.market' | translate">
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.country_form.insurance_coverage_amount' | translate"
+              formControlName="insuranceCoverageAmount"
+              dataType="number"
+              [placeholder]="
+                'pages.country_form.insurance_coverage_amount_placeholder' | translate
+              "
+              [disabled]="!marketContentEnabled()"
+            />
+            <small class="field-help">
+              {{
+                (marketContentEnabled()
+                  ? 'pages.country_form.insurance_coverage_amount_help'
+                  : 'pages.country_form.market_content_unavailable'
+                ) | translate
+              }}
+            </small>
           </div>
         </div>
       </cleansia-section>

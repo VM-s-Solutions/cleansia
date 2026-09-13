@@ -1329,7 +1329,7 @@
       "edit_title": "Upravit zemi",
       "basic_info": "Základní informace",
       "iso_code": "ISO kód",
-      "iso_code_placeholder": "např. CZ, US, DE",
+      "iso_code_placeholder": "např. CZE, USA, DEU",
       "name": "Název země",
       "name_placeholder": "např. Česká republika, Spojené státy, Německo",
       "messages": {
@@ -1337,8 +1337,20 @@
         "create_success": "Země byla úspěšně vytvořena",
         "create_error": "Nepodařilo se vytvořit zemi",
         "update_success": "Země byla úspěšně aktualizována",
-        "update_error": "Nepodařilo se aktualizovat zemi"
-      }
+        "update_error": "Nepodařilo se aktualizovat zemi",
+        "market_content_success": "Obsah trhu byl úspěšně aktualizován"
+      },
+      "iso_alpha2": "Dvoupísmenný kód",
+      "iso_alpha2_placeholder": "např. CZ, US, DE",
+      "iso_alpha2_help": "ISO 3166-1 alpha-2. Zákazníci ho vidí na štítku trhu.",
+      "validation": {
+        "iso_alpha2_invalid": "Přesně dvě písmena."
+      },
+      "market": "Trh",
+      "insurance_coverage_amount": "Pojistné krytí na jednu rezervaci",
+      "insurance_coverage_amount_placeholder": "Nechte prázdné, pokud se nemá uvádět žádná částka",
+      "insurance_coverage_amount_help": "Částka ve výchozí měně země, zobrazená v textech pro zákazníky. Prázdné znamená, že text žádnou částku neuvádí.",
+      "market_content_unavailable": "Dostupné, jakmile bude mít země konfiguraci."
     },
     "currency_management": {
       "title": "Správa měn",
@@ -1389,7 +1401,9 @@
         "create_error": "Nepodařilo se vytvořit měnu",
         "update_success": "Měna byla úspěšně aktualizována",
         "update_error": "Nepodařilo se aktualizovat měnu"
-      }
+      },
+      "no_show_credit": "Omluvný kredit za nedostavení se",
+      "no_show_credit_placeholder": "např. 250 pro CZK — pokud pole necháte prázdné, v této měně se žádný kredit nevyplácí"
     },
     "company_info": {
       "bank_account_number": "Číslo účtu",
@@ -2164,13 +2178,14 @@
         "code": "Kód",
         "name": "Název",
         "interval": "Fakturace",
-        "price": "Cena (CZK)",
-        "monthly_equivalent": "Měsíční ekvivalent (CZK)",
+        "price": "Cena",
+        "monthly_equivalent": "Měsíční ekvivalent",
         "discount": "Sleva",
         "trial_days": "Zkušební dny",
         "free_cancel_window": "Storno zdarma (h)",
         "express": "Expres",
-        "status": "Stav"
+        "status": "Stav",
+        "currency": "Měna"
       },
       "interval": {
         "Monthly": "Měsíčně",
@@ -2201,7 +2216,7 @@
           "name": "Název",
           "interval": "Fakturační období",
           "interval_immutable": "Fakturační období nelze po vytvoření změnit.",
-          "price": "Cena (CZK)",
+          "price": "Cena",
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Zkopírujte ze Stripe dashboardu (price_...). Platforma ceny ve Stripe nevytváří.",
           "discount": "Sleva (%)",
@@ -2214,17 +2229,22 @@
         "validation": {
           "code_invalid": "2–50 znaků: písmena, číslice nebo podtržítka.",
           "price_negative": "Cena musí být nula nebo vyšší.",
-          "stripe_price_id_required": "Stripe Price id je povinné.",
           "discount_range": "Sleva musí být mezi 0 a 100.",
           "trial_negative": "Počet zkušebních dnů musí být nula nebo vyšší.",
           "window_negative": "Lhůta musí být nula nebo vyšší.",
-          "express_upgrades_negative": "Počet zahrnutých expresních upgradů musí být nula nebo vyšší."
+          "express_upgrades_negative": "Počet zahrnutých expresních upgradů musí být nula nebo vyšší.",
+          "price_block_half_filled": "Zadejte cenu i Stripe Price id, nebo nechte obě pole prázdná, aby plán v této měně nebyl v prodeji."
         },
         "submit_create": "Vytvořit plán",
         "submit_update": "Uložit změny",
         "success": {
           "created": "Plán členství byl vytvořen",
           "updated": "Plán členství byl upraven"
+        },
+        "price_block": {
+          "active": "Aktivní",
+          "optional": "Nepovinné",
+          "no_currencies": "Nejsou nastaveny žádné měny, takže plán zatím nelze ocenit."
         }
       }
     },
@@ -2505,7 +2525,10 @@
       "not_existing_id": "Země nenalezena",
       "not_found": "Země nenalezena",
       "not_serviced": "V této zemi nepůsobíme.",
-      "required": "Země je povinná."
+      "required": "Země je povinná.",
+      "market_not_ready": "Tuto zemi zatím nelze zapnout: potřebuje konfiguraci, jejíž výchozí měna je aktivní.",
+      "configuration_missing": "Tato země zatím nemá konfiguraci, takže obsah trhu nelze uložit.",
+      "iso_alpha2_invalid": "Dvoupísmenný kód země musí být přesně dvě velká písmena."
     },
     "credit": {
       "amount_exceeds_sanity_cap": "Tato částka přesahuje limit pro jeden kredit. Pokud je správná, vystavte ji po menších částkách.",
@@ -2603,7 +2626,8 @@
         "code_already_exists": "Plán s tímto kódem již existuje.",
         "discount_out_of_range": "Sleva musí být mezi 0 a 100.",
         "not_found": "Plán členství nebyl nalezen.",
-        "trial_not_permitted": "Výhody Cleansia Plus vyžadují aktivní předplatné, zkušební období proto nelze nastavit. Ponechte 0 dní."
+        "trial_not_permitted": "Výhody Cleansia Plus vyžadují aktivní předplatné, zkušební období proto nelze nastavit. Ponechte 0 dní.",
+        "stripe_price_already_used": "Toto Stripe Price id už používá cena jiného plánu."
       }
     },
     "order": {

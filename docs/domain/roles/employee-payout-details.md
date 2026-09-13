@@ -94,8 +94,8 @@ not hold, is refused at *approval*, the last point before the transfer is keyed 
   cannot take the workforce off the job board by being unloaded.**
 - **How it is displayed or masked.** Masking, the owner-or-admin read authorization and the audited
   admin **reveal command** are the read contract's job (D8), not the entity's. It does not know that
-  `LastRevealedAt`/`RevealCount` exist to make the reveal auditable by `AdminMutationGate` — it just
-  holds them.
+  `LastRevealedAt`/`RevealCount` exist to make the reveal auditable by the admin arm of
+  [`AuditGate`](./audit-gate) (`AdminMutationGate` until ADR-0062 renamed it) — it just holds them.
 - **That it is being erased.** `GdprDeletionService` removes it by id; the entity has no
   `Anonymize()` of its own and the parent's cannot reach it.
 

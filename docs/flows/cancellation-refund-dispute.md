@@ -35,6 +35,20 @@ Android and iOS bodies as their second slot (owner ruling 2026-09-13; the credit
 credit's own, which the device cannot derive from the order).
 → [Money constants](/product/business-rules#money-constants)
 
+**The cancel is written down as the server priced it.** `CancelOrder` is marked
+`customer.order.cancel` ([ADR-0062](/decisions/adr-0062)): the row that rides its commit carries the
+tier, the fee rate and amount, the refund amount, the notice given in hours, the minutes since booking,
+whether a cleaner had already accepted (the fact the fee turns on, and one that drop/cover hard-deletes
+so it cannot be reconstructed later), the free window applied (Plus or standard), the policy figures at
+that moment, whether an express-waiver slot was actually released, whether a refund was initiated,
+and that a reason was given — the reason's text stays on the order. The preview the customer saw is
+**not** sent back and would not be stored if it were: a row holding "the customer says they were shown
+0 %" is their claim, not our evidence; the server's figures at the click plus the deterministic preview
+are the proof. A refused cancel is a row too, outside the rolled-back transaction, with the key —
+`order.already_cancelled`, `order.in_progress_cannot_cancel` — and, for a customer cancelling someone
+else's order, `order.not_found` with the probed order's id, visible only from that order's history.
+→ [What is recorded about a customer](/product/business-rules#customer-record)
+
 ## Refund
 
 A refund is bounded by what is left, and the bound is computed rather than trusted:
@@ -60,6 +74,21 @@ cannot explain.
 Chargebacks arrive as Stripe events and are **reflected onto the linked dispute**, not onto the
 order's payment status.
 
+**Filing one is recorded against the order, then the dispute.** `CreateDispute` is marked
+`customer.dispute.create` with `Order` as its resource, so a filing that is refused — against a clean
+that has not started (`dispute.cleaning_not_started`), while another dispute is open on the order, or
+naming a line the order does not have — leaves a failure row on the *order* with the key; a filing
+that succeeds re-labels its row to the new dispute and records the reason (an enum), the hours since
+completion against the 24 h window (a late filing is accepted — the window decides what is promised,
+not what is heard — and the row shows on which side of it the filing fell), the window shown, the
+description's length and line count — never the text, which lives on the dispute under its own
+erasure verdict — and the order total and currency.
+Dispute messages and evidence uploads write no audit row: their own rows are durable and carry author
+and time, and the admin's resource history reads the dispute by id. Everything an admin does to the
+dispute afterwards — resolve, refund, escalate — is on the same timeline from the admin table, and a
+cleaner's drop or cover request on the order from the employee table, so *View audit history* on the
+dispute or the order shows the three interleaved, newest first.
+
 ## Edge cases
 
 | Case | What happens |
@@ -68,6 +97,6 @@ order's payment status.
 | Stripe refund call fails | No status change. The order is not left claiming a refund that never happened. |
 | Refund requested twice | The second resolves to the existing row rather than issuing again. |
 | Cancel after the cleaner is on the way | Allowed; the fee ladder decides the cost. |
-| Cancel by someone who does not own the order | Refused — the handler checks `order.UserId`. |
+| Cancel by someone who does not own the order | Refused — the handler checks `order.UserId`. The probe is recorded: a failure row on the caller with `order.not_found` and the probed order as its resource. |
 | Dispute resolved outside the guard | Cannot happen from application code; the checker fails the build. |
 | Express waiver used, then the order cancelled | The consumed benefit slot is forfeited or released by rule, not silently kept. |

@@ -50,7 +50,10 @@ from the market, not from the translation; a market with no figure gets the sent
 **Loyalty and referrals** — earn points, move through tiers, share a referral code, redeem promo codes.
 
 **Account and privacy** — saved addresses, notification preferences, five languages, data export and
-account erasure.
+account erasure. The export carries the customer's own conduct record — every booking, cancellation,
+dispute filing, membership change and consent, with the figures the platform showed them at the time
+— and the version of the terms they accepted is written down at sign-up, by the server, alongside the
+consent. → [What is recorded about a customer](/product/business-rules#customer-record)
 
 ## Cleaner (partner)
 
@@ -111,6 +114,19 @@ there), site-wide push campaigns, email templates.
 **Oversight** — an append-only audit log of privileged actions, including the ones that failed, plus
 revenue and payroll reporting — one currency per report, never a sum across two — and GDPR request
 handling.
+
+**The customer trail** — the audit log has a second segment, *Customer actions*: what customers did
+on their own accounts (booking, cancelling, filing a dispute, subscribing to, swapping or cancelling
+Plus, editing a recurring schedule, changing notification preferences, registering, granting or
+withdrawing consent) with the outcome, the client it came from and, on the entry page, the evidence the
+platform kept — the fee tier and policy figures at a cancel, the price breakdown and the terms version
+at a booking, the before/after of a preference change — as a key/value table with a raw-JSON toggle.
+Refused attempts are in it too, with the reason. A resource's history (from the *View audit history*
+link on an order or a dispute) interleaves the customer's rows with the admin's and the cleaner's on
+one timeline, newest first, with a source badge on each; a customer's page (`/customers/:id`) has the
+same timeline for that person and an **Export subject data** button that downloads their whole GDPR
+export — an act that is itself recorded. → [What is recorded about a customer](/product/business-rules#customer-record),
+[ADR-0062](/decisions/adr-0062)
 
 ## Across all of it
 

@@ -3,7 +3,7 @@
 Generated from the EF Core entity configurations, not described from memory. A relationship on a
 diagram is a `HasOne(...)` declared in a configuration file; if it is not there, it is not enforced.
 
-One diagram per area, because a single picture of all 84 entities is a picture nobody reads. Entities
+One diagram per area, because a single picture of all 85 entities is a picture nobody reads. Entities
 appear in the area they are owned by, not everywhere they are referenced.
 
 ::: tip Checking the count
@@ -29,14 +29,14 @@ more countries**: `CountryConfiguration.OperatorTenantId` (nullable, FK Restrict
 map. Null means nobody serves that market — `Market/GetOverview` does not list it and an anonymous
 write naming it is refused `tenant.not_found`.
 
-**Every stamped row carries its operator.** 46 entities implement `ITenantEntity`; the `TenantId`
-column is **NOT NULL** on 44 of them and nullable only on `OutboxMessage` and `DeadLetter` (an envelope
+**Every stamped row carries its operator.** 47 entities implement `ITenantEntity`; the `TenantId`
+column is **NOT NULL** on 45 of them and nullable only on `OutboxMessage` and `DeadLetter` (an envelope
 may have no tenant). The value is written at commit time from the ambient tenant — the JWT claim, the
 market's operator for an anonymous write, the user's tenant on a token mint, the row's own tenant in a
 job — and the database refuses a row with none. **There is no foreign key from a stamped table to
 `Tenants`**: a tenant id enters the system at exactly two points, the operator map (which is FK'd) and
 the claim (minted from a row that was itself stamped through the map), and the closure is proven by
-`SeededDatabaseHasNoOrphanTenantRowsTests` rather than by 44 constraints. Tenantless `Auditable`
+`SeededDatabaseHasNoOrphanTenantRowsTests` rather than by 45 constraints. Tenantless `Auditable`
 tables (`CountryConfiguration`, `Service`, …) still carry a nullable `TenantId` column by inheritance;
 it is dead — unfiltered, unstamped, meaning nothing.
 
@@ -71,8 +71,9 @@ erDiagram
 | `EmployeeDocument` | references `Employee`, `PreviousVersion` |
 | `EmployeeDocumentRequirement` | references `Country` (Restrict); unique `(CountryId, DocumentType)` — which document types a country requires of a cleaner |
 | `DocumentDeletionRequest` | references `Document` (Restrict) — a cleaner's request to have a document removed, answered by an admin |
-| `EmployeeActionAudit` | — bare `EmployeeId` and `OrderId` scalars with no FK, because the act it records deletes the `OrderEmployee` row it describes and must survive an erased order |
-| `UserConsent` | references `User` |
+| `EmployeeActionAudit` | — bare `EmployeeId` and `OrderId` scalars with no FK, because the act it records deletes the `OrderEmployee` row it describes and must survive an erased order; indexed `(OrderId, CreatedOn DESC)` for the admin timeline that reads it by order ([ADR-0062](/decisions/adr-0062) D6) |
+| `CustomerActionAudit` | — bare `UserId` scalar with no FK (null for a guest act), because the row must outlive everything it names; `ClientAudience`, `IpAddress`, `DeviceLabel`, `DeviceId` are the request context, `PayloadJson` (jsonb) the typed evidence a handler emitted, `ErrorCode` the refusal key on a failure row. `TenantId` NOT NULL. Append-only — `Pseudonymise()` (erasure blanks the three request-metadata columns) is the one mutator; indexed `(TenantId, OccurredOn DESC)`, `(UserId, OccurredOn DESC)`, `(ResourceType, ResourceId)`, `(OccurredOn)` for the three-year-per-row retention scan → [ADR-0062](/decisions/adr-0062), [`customer-action-audit`](/domain/roles/customer-action-audit) |
+| `UserConsent` | references `User`; one row per `(UserId, ConsentType)` — the **current state**, overwritten on regrant, with `DocumentVersion` (`varchar(32)`, nullable) naming the text accepted (`"2026-09-draft"` from `LegalDocumentVersions`; null on rows granted before versioning and on consent types with no document; stamped only for a `Customer` subject). The history of grants and withdrawals is the `customer.consent.*` rows in `CustomerActionAudit` → [ADR-0062](/decisions/adr-0062) D4 |
 | `UserStripeCustomer` | references `User` (Restrict), `Currency` (Restrict); unique `(UserId, CurrencyId)` with no tenant term, unique `StripeCustomerId` — the Stripe Customer that bills this user in **one** currency. Stripe locks a Customer to the currency of its first invoice, so a user holds one per currency and can re-subscribe to Plus in a new market; `User.StripeCustomerId` stays as the legacy field one-off order payments use, adopted as the first row for a currency it has only ever billed. GDPR erasure deletes the rows; `DeleteCurrency` answers `currency.in_use` for them. → [ADR-0059](/decisions/adr-0059) amendment |
 
 ## Ordering

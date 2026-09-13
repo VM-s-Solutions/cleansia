@@ -158,6 +158,7 @@ export default withMermaid(
               { text: "ADR-0059 — Cleansia Plus is priced per market", link: '/decisions/adr-0059' },
               { text: "ADR-0060 — Money figures in copy come from the market, not the…", link: '/decisions/adr-0060' },
               { text: "ADR-0061 — Tenancy is active from day one: one tenant per…", link: '/decisions/adr-0061' },
+              { text: "ADR-0062 — A customer's actions are recorded for incident defence…", link: '/decisions/adr-0062' },
             ],
           },
         ],

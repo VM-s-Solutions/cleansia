@@ -54,6 +54,29 @@ re-prices the whole selection server-side and refuses on disagreement. The amoun
 is `ToMinorUnits(order.TotalPrice)` read from the persisted, server-computed value — the client cannot
 influence it at any point, which is why the payment webhook does not need to reconcile the amount.
 
+## The booking leaves a row, and so does a refused one
+
+`CreateOrder` is marked `customer.order.create` ([ADR-0062](/decisions/adr-0062)), so the same commit
+that creates the order writes a `CustomerActionAudit` row carrying what the server priced and showed:
+the price breakdown, the discounts and the express state, the line items by id, the cleaning time and
+lead time, the cancellation policy figures as shown (with this customer's free window), the terms
+tick and the terms version in force, the client it came from, the IP and device — never the name,
+the address text or the instructions. A guest booking writes the same row with no user; it is the
+case the row exists for, and it is reachable later only by the order, never by a person.
+
+A refused booking is a row too, written outside the transaction that was rolled back: the wrong
+quoted total is `order.total_price.not_match`, an express waiver whose quota ran out is its own key,
+a country another company serves is `order.country_operator_mismatch`. An anonymous refusal carries
+the caller's IP and is bounded by the same `auth` window as the request. Two refusals leave no row
+because nothing exists yet to stamp them with: a country that is not a market
+(`country.not_serviced`) and a market nobody operates (`tenant.not_found`) are refused before the
+operator is resolved, and the failure sink logs one warning instead of writing a row with no tenant.
+→ [What is recorded about a customer](/product/business-rules#customer-record)
+
+*(The order wizard's terms tick is collected and gates the review step, but the generated customer
+client does not carry `termsAccepted` on the create-order command yet, so today the booking row
+records it as not asserted. The register form does send it.)*
+
 ## Responsive quote previews
 
 The home calculator requests its quote immediately. Booking groups rapid selection changes into a
@@ -86,7 +109,9 @@ lead time and the express window still apply to the exact selected instant, incl
 | 2–4 h lead time | Accepted with a **+20 %** express surcharge, unless a Plus waiver applies. |
 | Booked span over 24 h | Refused. See [why that bound exists](/product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars). |
 | A package **and** a service the package includes | Charged twice, performed twice, takes twice as long. Owner ruling — not a bug, and not to be de-duplicated. |
-| Guest, no account | Allowed. The order is keyed on the email address, and the customer later finds it via order lookup. |
+| Guest, no account | Allowed. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. |
+| An unknown language code on the booking | Refused (`CreateOrder.Validator` carries the `LanguageValidator`, the `Register` idiom) — the audit row records `language`, and an unrecognised code is not evidence of anything. No shipped client sends one outside the five seeded codes. |
+| A recurring occurrence confirmed | One `customer.order.recurring.confirm` row: the order, the template, the price and currency, the payment type, the cleaning time and lead time. A schedule created, edited, paused/resumed or deleted writes a `customer.recurring.*` row with the schedule facts before and after. |
 
 ## Recurring bookings
 

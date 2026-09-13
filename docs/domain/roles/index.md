@@ -10,7 +10,9 @@ catalogues.
 
 | Component | |
 |---|---|
+| **[AuditGate (ADR-0012 D3 + ADR-0062 D1, accepted 2026-09-13)](./audit-gate)** | **Responsibility (one sentence):** Say which audit table, if any, a request belongs to — the admin table for any `Command` an Administrator runs, the customer table for a marked `Command` a Customer (or an allowed anonymous caller) runs, none for everything else — so both audit behaviors answer identically |
 | **[Role](./booking-price-summary)** | **✅ BUILT on both mobile clients** — iOS |
+| **[CustomerActionAudit (ADR-0062, accepted 2026-09-13)](./customer-action-audit)** | **Responsibility (one sentence):** Record that a customer did one money-relevant thing — with the figures and versions they were shown, the request context, and the outcome — as a row that outlives the account, the order and the erasure |
 | **[Role](./dead-letter-record)** | Introduced by **ADR-0002 D3** (the poison floor: persist + alert + ack, never re-process) |
 | **[Role](./employee-payout-details)** | Introduced by **ADR-0034** (`docs/decisions/adr-0034 |
 | **[Role](./express-waiver-resolver)** | **✅ BUILT. The "NOT YET BUILT" banner below is stale and is corrected here rather than deleted, so |

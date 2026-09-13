@@ -68,6 +68,39 @@ the handler's `IAuditContext` snapshot), a snapshot carrying **raw subject PII**
 best-effort *success*-audit are ADR-0012 violations (the success row must ride the action's commit;
 only *failures* are written out-of-band and must never re-throw into the caller's error).
 
+**The customer trail (ADR-0062).** The same two behaviors, through the second arm of `AuditGate`,
+write a `CustomerActionAudit` row for a `Command` that carries `[AuditAction("customer.…", Audience =
+AuditAudience.Customer, ResourceType = …)]` when the caller is a `Customer` — or anonymous, but only
+on the two markers that say `AllowsAnonymousActor` (`Register`, guest `CreateOrder`). Opt-in, not
+opt-out: sixteen commands are marked, and an unmarked customer command leaves no row on purpose
+(ADR-0045 D13 — no collection just in case). **What a customer row may hold:** identifiers, money,
+enums (by name), versions and the request context — `ClientAudience` (the serving host's audience,
+never read off the JWT), `IpAddress`, `DeviceLabel`, and a `DeviceId` that on a signed-in row is the
+session's **signed `device_id` claim**, never the `X-Device-Id` header (the same rule as ADR-0026: the
+adversary is the client). **What it may never hold:** a name, contact detail, address text, free text
+the customer typed (`*Reason`, `*Description`, `*Instructions`, `*Note` are refused by name; a
+dispute's description is recorded as a length), card data, a token or a live code (`ConfirmationCode`,
+`ResetCode`, … are refused by name), or `preferredEmployeeId` (the erasure nulls it on purpose). The
+payload is a typed `ICustomerAuditPayload` record the handler emits through
+`IAuditContext.RecordEvidence(...)`; `CustomerAuditPayloadPiiGuardTests` walks every one by reflection
+and fails the build naming the record and the member. **The failure row's `ErrorCode` is the
+`BusinessErrorMessage` key** (`order.in_progress_cannot_cancel`, `order.total_price.not_match`), never the field
+name or the `ValidationError` sentinel — on both arms (`AuditErrorCode.Resolve`). **An anonymous
+refusal writes a failure row carrying the caller's IP**: a refused `Register` or guest `CreateOrder`
+lands out-of-band with `UserId = null`, bounded by the same `auth` rate-limit window that bounds the
+request (10 requests per minute per real client IP — every route that dispatches a marked command is
+`[EnableRateLimiting]`, pinned by `RateLimitCoverageGuardTests`); a refusal raised before the market's
+operator is resolved has no tenant to be stamped with and is skipped with one warning, never written
+with none. **Append-only, with one sanctioned mutator:** `Pseudonymise()` blanks the three
+request-metadata columns on erasure and nothing else — no code path calls `Remove`, `Deactivate` or
+touches `IsActive` on the type (`CustomerActionAuditImmutabilityTests`); each row is deleted by the
+retention sweep three years after its own act, and the sweep never reaches the admin or employee
+tables. **The admin subject export is itself audited:** `AdminExportUserData` is a `Command` marked
+`gdpr.user.export` (Sensitive), so dumping another person's whole record leaves an `AdminActionAudit`
+row with a count-only snapshot and commits its `GdprRequest` — a PII egress that used to leave no
+record at all. → [ADR-0062](/decisions/adr-0062), [`customer-action-audit`](/domain/roles/customer-action-audit),
+[`audit-gate`](/domain/roles/audit-gate)
+
 **Token lifetime (ADR-0024).** The access-token TTL on a host that issues device-bound sessions is a
 security bound, not a tuning knob — changing `AccessTokenExpMinutes` on a mobile host requires a
 superseding ADR (it *is* the device-revocation latency; pinned by TC-REVOKE-TTL-4's raw-file test).
@@ -146,8 +179,13 @@ this shape for any new per-user side-effect window — do not hand-roll an un-pa
 
 **Partitioning is not coverage.** A correctly partitioned policy applied to *some* endpoints does not
 satisfy S5 for the money/side-effect endpoints that carry **no** `[EnableRateLimiting]` at all —
-those remain S5 gaps (tracked as `BSP-4d`; verified-uncovered today include
-`Web.Customer/MembershipController.CreateCheckoutSession` and the Partner payroll controllers).
+those remain S5 gaps (tracked as `BSP-4d`). *(The sentence that used to stand here named
+`Web.Customer/MembershipController.CreateCheckoutSession` as verified-uncovered; it has carried
+`[EnableRateLimiting("auth")]` since before ADR-0062 was drafted, and the ADR made the check
+mechanical: every customer-host action that dispatches a command marked `Audience = Customer` — a
+row-writer, so an unlimited route would be a storage amplifier — must carry `[EnableRateLimiting]`,
+pinned by `Cleansia.Tests/RateLimiting/RateLimitCoverageGuardTests.cs`. The Partner payroll controllers
+are outside that guard and are the remaining named gap.)*
 
 ## S6 — Logging hygiene (no PII above Debug)
 
@@ -198,7 +236,7 @@ Three tools, and picking the wrong one is the usual mistake:
 |---|---|
 | A named field whose name says what it holds (`*email`, `*phone*`, `*firstName`, `birthDate`) | `ContactIdentityFieldRegex` — matched by **shape**, not enumerated, so the next `contactEmail` is covered without anyone remembering |
 | A named credential (`clientSecret`, `ephemeralKey`, `blobUrl`) | `SensitiveFieldRegex` — literal names; **values are unbounded**, so collapsing one frees window and can unmask what follows |
-| Free text no name can reach (`Notes`, `Description`, `ReviewNotes`, `HolderName`) | `IsSensitivePath` — wholesale route suppression |
+| Free text no name can reach (`Notes`, `Description`, `ReviewNotes`, `HolderName`) | `IsSensitivePath` — wholesale route suppression. The customer audit routes are on it (`/customeraudit/`, all three — list, entry, timeline): an entry carries the subject's `payloadJson`, `ipAddress` and a client-controlled `deviceLabel`, none of which a name list reaches (ADR-0062 D6; `RequestLogCustomerAuditPathSuppressionTests`) |
 
 Keep the two regexes **separate**. They redact identically but they do not free window identically, and
 merging them makes `RedactionUnmaskedFreeTextGuardTests` report every string member of every DTO as

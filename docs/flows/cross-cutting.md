@@ -15,6 +15,7 @@ filters scope reads automatically. A row gets its tenant at commit time from wha
 | An anonymous request that writes (register, social sign-up, guest booking, promo request, referral check) | the **market** it names (`countryId`, or the default market) → that market's operator, set by `OperatorTenantScopeBehavior` before validation. A country that is not a market is `country.not_serviced`; a market nobody operates is `tenant.not_found` |
 | A request that authenticates a user (login, refresh, social sign-in, email confirm) | the user being authenticated — `TokenService` adopts it before the `RefreshToken` is written, replacing the market's operator on a social sign-in of an existing account |
 | A system job or webhook | the row it read — see below |
+| An audit row (admin or customer) | the same ambient tenant as the act it records, stamped by the audit writer (success) or the out-of-band failure sink — so the row and the `Order`/`User` it describes agree by construction. A customer refusal raised *before* an anonymous request's operator is resolved (`country.not_serviced`, `tenant.not_found`) has none, and the sink skips it with one warning rather than writing an orphan ([ADR-0062](/decisions/adr-0062) D7) |
 
 **System jobs carry no JWT**, which makes them the interesting case. They read across tenants
 deliberately, and when they *write* they must group by tenant, set the override per group, and commit

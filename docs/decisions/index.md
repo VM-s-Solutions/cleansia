@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**61 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**62 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -40,7 +40,10 @@ flowchart LR
   class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0050 old
 ```
 
-Grey nodes are superseded in whole or in part.
+Grey nodes are superseded in whole or in part. Not every later record replaces an earlier one:
+[ADR-0062](./adr-0062) **extends** [ADR-0012](./adr-0012) — the admin audit gate gains a second,
+opt-in arm for customer acts and every sentence about the admin table stays true — so there is no
+arrow between them.
 
 ## All records
 
@@ -107,6 +110,7 @@ Grey nodes are superseded in whole or in part.
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
 | **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
 | **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company | `accepted` |
+| **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

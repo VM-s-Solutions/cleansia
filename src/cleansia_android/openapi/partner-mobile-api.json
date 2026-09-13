@@ -7269,6 +7269,9 @@
               "$ref": "#/components/schemas/Translation"
             },
             "nullable": true
+          },
+          "isDefaultMarket": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

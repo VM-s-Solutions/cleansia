@@ -1221,6 +1221,10 @@ export interface IAdminCountryClient {
     /**
      * @return OK
      */
+    defaultMarket(countryId: string): Observable<SetDefaultMarketResponse>;
+    /**
+     * @return OK
+     */
     fieldLabels(countryId: string): Observable<GetCountryFieldLabelsCountryFieldLabelsDto>;
 }
 
@@ -1780,6 +1784,88 @@ export class AdminCountryClient implements IAdminCountryClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = UpdateCountryMarketContentResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    defaultMarket(countryId: string): Observable<SetDefaultMarketResponse> {
+        let url = this.baseUrl + "/api/AdminCountry/{countryId}/default-market";
+        if (countryId === undefined || countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' must be defined.");
+        url = url.replace("{countryId}", encodeURIComponent("" + countryId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDefaultMarket(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDefaultMarket(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<SetDefaultMarketResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<SetDefaultMarketResponse>;
+        }));
+    }
+
+    protected processDefaultMarket(response: HttpResponseBase): Observable<SetDefaultMarketResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = SetDefaultMarketResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -18584,6 +18670,7 @@ export class CountryDetailDto implements ICountryDetailDto {
     isServiced!: boolean;
     insuranceCoverageAmount!: number | undefined;
     hasConfiguration!: boolean;
+    isDefaultMarket!: boolean;
 
     constructor(data?: ICountryDetailDto) {
         if (data) {
@@ -18603,6 +18690,7 @@ export class CountryDetailDto implements ICountryDetailDto {
             this.isServiced = Data["isServiced"];
             this.insuranceCoverageAmount = Data["insuranceCoverageAmount"];
             this.hasConfiguration = Data["hasConfiguration"];
+            this.isDefaultMarket = Data["isDefaultMarket"];
         }
     }
 
@@ -18622,6 +18710,7 @@ export class CountryDetailDto implements ICountryDetailDto {
         data["isServiced"] = this.isServiced;
         data["insuranceCoverageAmount"] = this.insuranceCoverageAmount;
         data["hasConfiguration"] = this.hasConfiguration;
+        data["isDefaultMarket"] = this.isDefaultMarket;
         return data;
     }
 }
@@ -18634,6 +18723,7 @@ export interface ICountryDetailDto {
     isServiced: boolean;
     insuranceCoverageAmount: number | undefined;
     hasConfiguration: boolean;
+    isDefaultMarket: boolean;
 }
 
 export class CountryListItem implements ICountryListItem {
@@ -18642,6 +18732,7 @@ export class CountryListItem implements ICountryListItem {
     isoAlpha2!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
+    isDefaultMarket!: boolean;
 
     constructor(data?: ICountryListItem) {
         if (data) {
@@ -18665,6 +18756,7 @@ export class CountryListItem implements ICountryListItem {
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
+            this.isDefaultMarket = Data["isDefaultMarket"];
         }
     }
 
@@ -18688,6 +18780,7 @@ export class CountryListItem implements ICountryListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["isDefaultMarket"] = this.isDefaultMarket;
         return data;
     }
 }
@@ -18698,6 +18791,7 @@ export interface ICountryListItem {
     isoAlpha2: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
+    isDefaultMarket: boolean;
 }
 
 export class CreateAdminUserCommand implements ICreateAdminUserCommand {
@@ -31015,6 +31109,42 @@ export class SetDefaultCurrencyResponse implements ISetDefaultCurrencyResponse {
 
 export interface ISetDefaultCurrencyResponse {
     currencyId: string | undefined;
+}
+
+export class SetDefaultMarketResponse implements ISetDefaultMarketResponse {
+    countryId!: string | undefined;
+
+    constructor(data?: ISetDefaultMarketResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+        }
+    }
+
+    static fromJS(data: any): SetDefaultMarketResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetDefaultMarketResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        return data;
+    }
+}
+
+export interface ISetDefaultMarketResponse {
+    countryId: string | undefined;
 }
 
 export class SortDefinition implements ISortDefinition {

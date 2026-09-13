@@ -7952,6 +7952,7 @@ export class CountryListItem implements ICountryListItem {
     isoAlpha2!: string | undefined;
     name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
+    isDefaultMarket!: boolean;
 
     constructor(data?: ICountryListItem) {
         if (data) {
@@ -7975,6 +7976,7 @@ export class CountryListItem implements ICountryListItem {
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
+            this.isDefaultMarket = Data["isDefaultMarket"];
         }
     }
 
@@ -7998,6 +8000,7 @@ export class CountryListItem implements ICountryListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["isDefaultMarket"] = this.isDefaultMarket;
         return data;
     }
 }
@@ -8008,6 +8011,7 @@ export interface ICountryListItem {
     isoAlpha2: string | undefined;
     name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
+    isDefaultMarket: boolean;
 }
 
 export class CreateDisputeCommand implements ICreateDisputeCommand {

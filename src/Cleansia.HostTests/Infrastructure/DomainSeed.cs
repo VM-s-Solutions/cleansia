@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Documents;
@@ -332,5 +333,29 @@ public static class DomainSeed
             currentPeriodEnd: DateTime.UtcNow.AddDays(27));
         if (tenantId is not null) membership.TenantId = tenantId;
         return membership;
+    }
+
+    /// <summary>A customer audit row with the three request-metadata columns and a payload filled, so a
+    /// read that must withhold them has something to withhold. <c>OccurredOn</c> is settable because the
+    /// timeline orders by it and a single seed commit would otherwise tie every row.</summary>
+    public static CustomerActionAudit CustomerAudit(
+        string id, string? userId, string tenantId,
+        string resourceType = "Order", string resourceId = "order-1",
+        string? payloadJson = "{\"feeRate\":0.5,\"hasBeenAccepted\":true}",
+        DateTimeOffset? occurredOn = null)
+    {
+        var row = CustomerActionAudit.Create(
+            userId: userId, clientAudience: "cleansia.customer", ipAddress: "203.0.113.9",
+            deviceLabel: "iPhone 15 / iOS 17.4", deviceId: "device-1", action: "customer.order.cancel",
+            resourceType: resourceType, resourceId: resourceId, success: true, errorCode: null,
+            payloadJson: payloadJson, correlationId: null);
+        row.Id = id;
+        row.TenantId = tenantId;
+        if (occurredOn is not null)
+        {
+            typeof(CustomerActionAudit).GetProperty(nameof(CustomerActionAudit.OccurredOn))!.SetValue(row, occurredOn);
+        }
+
+        return row;
     }
 }

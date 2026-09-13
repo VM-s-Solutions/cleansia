@@ -459,8 +459,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.insufficient_privileges',
   'auth.invalid_refresh_token',
   'auth.refresh_token_reused',
-  // Audit log detail
+  // Audit log detail (admin and customer), and the three-source timeline
   'audit.not_found',
+  'audit.timeline.filter_required',
   // Field-level rules every admin form posts through
   'common.invalid_enum_value',
   'common.max_length',
@@ -754,8 +755,9 @@ describe('error-contract parity (admin app)', () => {
       expect([...(surface.keys.get('payroll.invoice.not_approved') ?? [])]).toContain(
         'AdminInvoiceController -> EmployeePayroll/MarkInvoicePaid.cs'
       );
-      expect([...(surface.keys.get('audit.not_found') ?? [])]).toEqual([
+      expect([...(surface.keys.get('audit.not_found') ?? [])].sort()).toEqual([
         'AdminAuditLogController -> Auditing/GetAdminActionAuditById.cs',
+        'CustomerAuditController -> Auditing/GetCustomerActionAuditById.cs',
       ]);
     });
 

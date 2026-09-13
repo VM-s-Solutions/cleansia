@@ -603,4 +603,6 @@ public static class BusinessErrorMessage
 
     // Admin action audit log
     public const string AuditNotFound = "audit.not_found";
+    /// <summary>The timeline is keyed by exactly one of a user or a (resource type, resource id) pair.</summary>
+    public const string TimelineFilterRequired = "audit.timeline.filter_required";
 }

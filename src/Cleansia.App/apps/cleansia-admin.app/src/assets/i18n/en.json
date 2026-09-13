@@ -2491,7 +2491,10 @@
       "not_found": "Admin user not found"
     },
     "audit": {
-      "not_found": "Audit entry not found."
+      "not_found": "Audit entry not found.",
+      "timeline": {
+        "filter_required": "The timeline needs exactly one key: a user, or a resource type together with its id."
+      }
     },
     "auth": {
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",

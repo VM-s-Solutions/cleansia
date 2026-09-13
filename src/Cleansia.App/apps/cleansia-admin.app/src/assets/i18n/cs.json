@@ -2491,7 +2491,10 @@
       "not_found": "Administrátor nenalezen"
     },
     "audit": {
-      "not_found": "Záznam auditu nebyl nalezen."
+      "not_found": "Záznam auditu nebyl nalezen.",
+      "timeline": {
+        "filter_required": "Časová osa vyžaduje právě jeden klíč: uživatele, nebo typ zdroje spolu s jeho id."
+      }
     },
     "auth": {
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",

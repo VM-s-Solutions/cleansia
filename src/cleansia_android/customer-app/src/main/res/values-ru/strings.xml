@@ -165,8 +165,6 @@
     <string name="home_milestone_title_v2">%1$s — Прогресс к следующему уровню</string>
 
     <!-- Home — seasonal -->
-    <string name="home_seasonal_title">Сезон весенней уборки</string>
-    <string name="home_seasonal_subtitle">Окна + обивка комбо — в этом месяце +450 CZK</string>
 
     <!-- Home — quick actions -->
     <string name="home_quick_book">Заказать</string>
@@ -515,7 +513,8 @@
     <string name="help_faq_q2">Что делать, если меня нет дома, когда придёт клинер?</string>
     <string name="help_faq_a2">Добавьте инструкции по доступу при бронировании (напр. код от двери, место ключа). Клинеры ждут до 15 минут; если мы не сможем связаться, бронирование может быть отменено.</string>
     <string name="help_faq_q3">Застрахованы ли клинеры и проверены?</string>
-    <string name="help_faq_a3">Да. Все клинеры Cleansia проверены и застрахованы до 1 000 000 CZK на бронирование.</string>
+    <string name="help_faq_a3">Да. Все клинеры Cleansia проверены и застрахованы до %1$s на бронирование.</string>
+    <string name="help_faq_a3_no_figure">Да. Все клинеры Cleansia проверены и застрахованы.</string>
     <string name="help_faq_q4">Как перенести время?</string>
     <string name="help_faq_a4">Во вкладке Заказы откройте предстоящее бронирование и нажмите \"Перенести\". Бесплатный перенос за 12 часов до уборки.</string>
     <string name="help_faq_q5">Что входит в стандартную уборку?</string>
@@ -597,7 +596,8 @@
     <!-- Booking — save address -->
     <string name="booking_save_address">Сохранить этот адрес</string>
     <string name="booking_set_as_default">Сделать основным</string>
-    <string name="booking_trust_insured">Застраховано до 1М CZK</string>
+    <string name="booking_trust_insured">Застраховано до %1$s</string>
+    <string name="booking_trust_insured_no_figure">Застраховано</string>
     <string name="booking_trust_vetted">Проверенные клинеры</string>
 
     <string name="booking_pick_service">Выберите услугу</string>
@@ -1202,7 +1202,7 @@
     <string name="notification_order_refunded_title">Возврат средств</string>
     <string name="notification_order_refunded_body">Возврат за заказ #%1$s обрабатывается.</string>
     <string name="notification_order_no_cleaner_refunded_title">Свободных уборщиков не нашлось</string>
-    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и добавили 250 Kč бонусов на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и добавили бонус на следующую уборку. Простите.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>
     <string name="notification_dispute_reply_body">У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать.</string>
     <string name="notification_recurring_scheduled_title">Подтвердите завтрашнюю уборку</string>

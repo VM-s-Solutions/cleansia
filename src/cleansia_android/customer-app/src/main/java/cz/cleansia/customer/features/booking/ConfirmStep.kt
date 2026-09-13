@@ -95,6 +95,7 @@ fun ConfirmStep(
     // resolves — the quote's own once it lands, the catalogue's default before — so the summary,
     // the sheet footer and the catalogue-sum fallback can never disagree.
     val currencyCode by bookingVm.displayCurrencyCode.collectAsStateWithLifecycle()
+    val insuranceCoverage by viewModel.insuranceCoverage.collectAsStateWithLifecycle()
     val effectiveDiscount by bookingVm.effectiveDiscount.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
@@ -390,7 +391,9 @@ fun ConfirmStep(
         ) {
             TrustBadge(
                 Icons.Outlined.Shield,
-                stringResource(R.string.booking_trust_insured),
+                insuranceCoverage?.let { coverage ->
+                    stringResource(R.string.booking_trust_insured, formatOrderPrice(coverage.amount, coverage.currencyCode))
+                } ?: stringResource(R.string.booking_trust_insured_no_figure),
                 Modifier.weight(1f).fillMaxHeight(),
             )
             Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))

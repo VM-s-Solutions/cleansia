@@ -32,7 +32,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.LocationOn
@@ -378,8 +377,6 @@ fun HomeTab(
                 }
             }
 
-            // 7. Seasonal suggestion
-            SeasonalCard(onBook = onBookCleaning)
             // Trailing inset reserves room for the floating island bottom nav so
             // the last card isn't hidden behind it. ~96dp pill height + 12dp gap.
             Spacer(Modifier.height(108.dp))
@@ -1267,55 +1264,6 @@ private fun MilestoneProgressCard(account: LoyaltyAccountDto) {
             ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-/* ── 7. Seasonal tip ── */
-
-@Composable
-private fun SeasonalCard(onBook: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
-            .clickable(onClick = onBook)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Outlined.CalendarToday,
-                null,
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.home_seasonal_title),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                stringResource(R.string.home_seasonal_subtitle),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Icon(
-            Icons.AutoMirrored.Outlined.ArrowForward,
-            null,
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(18.dp),
         )
     }
 }

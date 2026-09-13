@@ -51,3 +51,9 @@ val MarketState.offersAChoice: Boolean
 /** The platform-default currency's code, as the directory states it; null when no listed market carries it. */
 val MarketState.defaultCurrencyCode: String?
     get() = (this as? MarketState.Resolved)?.markets?.firstOrNull { it.isDefault }?.currencyCode
+
+/** An insurance ceiling with the unit it is stated in (ADR-0060 D2); formatted on device, never a literal. */
+data class InsuranceCoverage(val amount: Double, val currencyCode: String)
+
+val MarketListItem.insuranceCoverage: InsuranceCoverage?
+    get() = insuranceCoverageAmount?.let { InsuranceCoverage(it, currencyCode) }

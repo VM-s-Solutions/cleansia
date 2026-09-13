@@ -165,8 +165,6 @@
     <string name="home_milestone_title_v2">%1$s — Pokrok k ďalšej úrovni</string>
 
     <!-- Home — seasonal -->
-    <string name="home_seasonal_title">Sezóna jarného upratovania</string>
-    <string name="home_seasonal_subtitle">Kombinácia okien + čalúnenia — tento mesiac +450 Kč</string>
 
     <!-- Home — quick actions -->
     <string name="home_quick_book">Rezervovať</string>
@@ -515,7 +513,8 @@
     <string name="help_faq_q2">Čo ak nebudem doma, keď príde upratovačka?</string>
     <string name="help_faq_a2">Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačky čakajú až 15 minút; ak vás nemôžeme zastihnúť, rezervácia môže byť zrušená.</string>
     <string name="help_faq_q3">Sú upratovačky poistené a preverené?</string>
-    <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú preverené a poistené až do výšky 1 000 000 Kč na rezerváciu.</string>
+    <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú preverené a poistené až do výšky %1$s na rezerváciu.</string>
+    <string name="help_faq_a3_no_figure">Áno. Všetky upratovačky Cleansia sú preverené a poistené.</string>
     <string name="help_faq_q4">Ako zmením termín?</string>
     <string name="help_faq_a4">V záložke Objednávky otvorte nadchádzajúcu rezerváciu a klepnite na \"Zmeniť termín\". Zmena zdarma až 12 hodín pred upratovaním.</string>
     <string name="help_faq_q5">Čo je zahrnuté v štandardnom upratovaní?</string>
@@ -597,7 +596,8 @@
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložiť túto adresu</string>
     <string name="booking_set_as_default">Nastaviť ako predvolenú</string>
-    <string name="booking_trust_insured">Poistené až do 1M Kč</string>
+    <string name="booking_trust_insured">Poistené až do %1$s</string>
+    <string name="booking_trust_insured_no_figure">Poistené</string>
     <string name="booking_trust_vetted">Preverené upratovačky</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
@@ -1202,7 +1202,7 @@
     <string name="notification_order_refunded_title">Vrátenie peňazí</string>
     <string name="notification_order_refunded_body">Vaše vrátenie peňazí za rezerváciu #%1$s sa spracováva.</string>
     <string name="notification_order_no_cleaner_refunded_title">Žiadny upratovač nebol k dispozícii</string>
-    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit 250 Kč na ďalšie upratovanie. Ospravedlňujeme sa.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit na ďalšie upratovanie. Ospravedlňujeme sa.</string>
     <string name="notification_dispute_reply_title">Podpora odpovedala</string>
     <string name="notification_dispute_reply_body">Máte novú správu k vašej reklamácii. Ťuknutím si ju prečítate.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zajtrajšie upratovanie</string>

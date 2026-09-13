@@ -167,8 +167,6 @@
     <string name="home_milestone_title_v2">%1$s — Progress to next tier</string>
 
     <!-- Home — seasonal -->
-    <string name="home_seasonal_title">Spring deep clean season</string>
-    <string name="home_seasonal_subtitle">Window + upholstery combo — +450 CZK this month</string>
 
     <!-- Home — quick actions -->
     <string name="home_quick_book">Book</string>
@@ -522,7 +520,8 @@
     <string name="help_faq_q2">What if I\'m not home when the cleaner arrives?</string>
     <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). Cleaners wait up to 15 minutes; if we can\'t reach you, the booking may be cancelled.</string>
     <string name="help_faq_q3">Are cleaners insured and vetted?</string>
-    <string name="help_faq_a3">Yes. All Cleansia cleaners are background-checked and covered by insurance up to 1,000,000 CZK per booking.</string>
+    <string name="help_faq_a3">Yes. All Cleansia cleaners are background-checked and covered by insurance up to %1$s per booking.</string>
+    <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are background-checked and covered by insurance.</string>
     <string name="help_faq_q4">How do I reschedule?</string>
     <string name="help_faq_a4">From the Orders tab, open the upcoming booking and tap \"Reschedule\". Free rescheduling up to 12 hours before the cleaning.</string>
     <string name="help_faq_q5">What\'s included in a standard cleaning?</string>
@@ -608,7 +607,8 @@
     <!-- Booking — save address -->
     <string name="booking_save_address">Save this address</string>
     <string name="booking_set_as_default">Set as default</string>
-    <string name="booking_trust_insured">Insured up to 1M CZK</string>
+    <string name="booking_trust_insured">Insured up to %1$s</string>
+    <string name="booking_trust_insured_no_figure">Insured</string>
     <string name="booking_trust_vetted">Background-checked cleaners</string>
 
     <string name="booking_pick_service">Pick a service</string>
@@ -1231,7 +1231,7 @@
     <string name="notification_order_refunded_title">Refund on its way</string>
     <string name="notification_order_refunded_body">Your refund for booking #%1$s is being processed.</string>
     <string name="notification_order_no_cleaner_refunded_title">No cleaner was available</string>
-    <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added a credit towards your next clean. Sorry.</string>
     <string name="notification_dispute_reply_title">Support replied</string>
     <string name="notification_dispute_reply_body">You have a new message about your dispute. Tap to read.</string>
     <string name="notification_recurring_scheduled_title">Confirm tomorrow\'s cleaning</string>

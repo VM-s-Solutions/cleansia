@@ -165,8 +165,6 @@
     <string name="home_milestone_title_v2">%1$s — Pokrok k další úrovni</string>
 
     <!-- Home — seasonal -->
-    <string name="home_seasonal_title">Sezóna jarního úklidu</string>
-    <string name="home_seasonal_subtitle">Kombinace oken + čalounění — tento měsíc +450 Kč</string>
 
     <!-- Home — quick actions -->
     <string name="home_quick_book">Rezervovat</string>
@@ -518,7 +516,8 @@
     <string name="help_faq_q2">Co když nebudu doma, když uklízeč přijde?</string>
     <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeči čekají až 15 minut; pokud vás nemůžeme zastihnout, rezervace může být zrušena.</string>
     <string name="help_faq_q3">Jsou uklízeči pojištěni a prověřeni?</string>
-    <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni do výše 1 000 000 Kč na rezervaci.</string>
+    <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni do výše %1$s na rezervaci.</string>
+    <string name="help_faq_a3_no_figure">Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni.</string>
     <string name="help_faq_q4">Jak změním termín?</string>
     <string name="help_faq_a4">V záložce Objednávky otevřete nadcházející rezervaci a klepněte na \"Změnit termín\". Změna zdarma až 12 hodin před úklidem.</string>
     <string name="help_faq_q5">Co je zahrnuto ve standardním úklidu?</string>
@@ -600,7 +599,8 @@
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložit tuto adresu</string>
     <string name="booking_set_as_default">Nastavit jako výchozí</string>
-    <string name="booking_trust_insured">Pojištěno až do 1M Kč</string>
+    <string name="booking_trust_insured">Pojištěno až do %1$s</string>
+    <string name="booking_trust_insured_no_figure">Pojištěno</string>
     <string name="booking_trust_vetted">Prověření uklízeči</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
@@ -1205,7 +1205,7 @@
     <string name="notification_order_refunded_title">Vrácení peněz na cestě</string>
     <string name="notification_order_refunded_body">Vaše vrácení peněz za rezervaci #%1$s se zpracovává.</string>
     <string name="notification_order_no_cleaner_refunded_title">Žádný uklízeč nebyl k dispozici</string>
-    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit 250 Kč na příští úklid. Omlouváme se.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit na příští úklid. Omlouváme se.</string>
     <string name="notification_dispute_reply_title">Podpora odpověděla</string>
     <string name="notification_dispute_reply_body">Máte novou zprávu k vaší reklamaci. Klepněte pro přečtení.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zítřejší úklid</string>

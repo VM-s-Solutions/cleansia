@@ -53,3 +53,24 @@ nobody operates ⇒ `tenant.not_found` and zero rows, a non-market ⇒ `country.
 `tenant.not_found`, the promo envelope), `OperatorTenantScopeBehaviorOrderTests` (DI order, a claim
 skips the resolver, the two refusals, the roster of exactly the marked requests),
 `OperatorTenantResolverTests`.
+
+## Review
+
+Second pass, 2026-09-13, against the acceptance criteria on the tree at `e5a45de3`. Every criterion
+already has its named test; nothing was added. Sabotages, each restored byte-exact (`git diff --quiet`)
+before the next:
+
+- `OperatorTenantScopeBehavior`: `tenant.not_found` swapped for `country.not_serviced` →
+  `OperatorTenantScopeBehaviorOrderTests` 1 red / 6 green.
+- `OperatorTenantScopeBehavior`: the claim step-aside removed (`|| GetCurrentTenantId() is not null`)
+  → same class, 1 red.
+- `FluentValidationExtensions`: the scope behaviour registered after `ValidationPipelineBehavior` →
+  same class, 1 red.
+- `RequestPromoCode.Handler`: the envelope's tenant back to `null` → `RequestPromoCodeTests` 1 red.
+
+Validators grep: `CountryId` appears in `Register`, `RegisterEmployee`, `GoogleAuth`, `AppleAuth`,
+`RequestPromoCode`, `ValidateReferral` only on the record parameter and its comment — no rule.
+Guest `CreateOrder` naming Slovakia lands in the Slovak company in
+`CreateOrderCallerCurrencyTests.A_Guest_Booking_At_A_Slovak_Address_Lands_In_Slovakias_Operating_Company`
+(beside the other `CreateOrder` Postgres cases rather than in `AnonymousWriterLandsInMarketOperatorTests`).
+Suites: Cleansia.Tests 4887, IntegrationTests 351, HostTests 183, green.

@@ -451,7 +451,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // than provisioned, so the partner surface can return it too.
   'auth.social_account_not_found',
   'auth.too_many_attempts',
-  // Shared field-level rules
+  // Shared field-level rules; the enum key is the consent grant/withdraw validators' refusal of an
+  // unknown ConsentType, and GrantConsent is routed on the partner hosts too (ADR-0062 D4)
+  'common.invalid_enum_value',
   'common.max_length',
   'common.required',
   // Order lifecycle the cleaner drives: take → on the way → start → cash → complete

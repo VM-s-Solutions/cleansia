@@ -77,18 +77,13 @@ const VIOLATION_CLASSES = [
  *     bought nothing (the shell already holds the library) while making Nx read the whole library
  *     as lazy. Registering the 404 eagerly, as the admin app already did, closed the class.
  *
- * The one below is what is left, and it is still a decision rather than an import rewrite:
+ *   - `deep-relative-import` x1 — CLOSED (08b1432c): `invoice-management` no longer reaches into
+ *     `employee-management`'s source for the reject dialog.
  *
- *   - `deep-relative-import` x1 — `invoice-management` reaches into `employee-management`'s source
- *     through `../../../../` for the reject dialog, which that lib's barrel does not export. The
- *     fix is a decision between widening that barrel and moving the dialog to `shared/components`.
- *
- * Neither is a cross-scope or untagged violation: the workspace holds ZERO of both, which is the
+ * The recorded set is empty: the workspace holds ZERO violations of every class, which is the
  * number this gate exists to hold at zero.
  */
-const KNOWN = [
-    { file: "libs/cleansia-admin-features/invoice-management/src/lib/invoice-detail/invoice-detail.facade.ts", class: "deep-relative-import", count: 1 },
-];
+const KNOWN = [];
 
 /**
  * The workspace held 1340 lintable files when this floor was set. A run that walks a small

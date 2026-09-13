@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Features.Markets;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Exceptions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -30,6 +31,8 @@ public class GetMarketsHandlerTests
             .ReturnsAsync((CountryConfiguration?)null);
         _currencies.Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Currency?)null);
+        _currencies.Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new EntityNotFoundException("Default Currency was not found"));
     }
 
     private Currency Currency(string code, bool isActive = true, bool isDefault = false, decimal? noShowCredit = null)
@@ -40,6 +43,11 @@ public class GetMarketsHandlerTests
         currency.SetAsDefault(isDefault);
         currency.SetNoShowCredit(noShowCredit);
         _currencies.Setup(r => r.GetByCodeAsync(code, It.IsAny<CancellationToken>())).ReturnsAsync(currency);
+        if (isDefault)
+        {
+            _currencies.Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>())).ReturnsAsync(currency);
+        }
+
         return currency;
     }
 
@@ -155,10 +163,10 @@ public class GetMarketsHandlerTests
 
     /// <summary>
     /// The default currency's country is not serviced: nothing is flagged, the list still answers,
-    /// and the clients fall to the first listed market.
+    /// the clients fall to the first listed market, and the error names the currency nobody is on.
     /// </summary>
     [Fact]
-    public async Task No_Market_On_The_Default_Currency_Flags_Nothing_And_Logs_An_Error()
+    public async Task No_Market_On_The_Default_Currency_Flags_Nothing_And_Logs_An_Error_Naming_It()
     {
         Currency("CZK", isDefault: true);
         Currency("EUR");
@@ -168,7 +176,26 @@ public class GetMarketsHandlerTests
 
         var slovakia = Assert.Single(markets);
         Assert.False(slovakia.IsDefault);
-        Assert.Single(_log, e => e.Level == LogLevel.Error);
+        var error = Assert.Single(_log, e => e.Level == LogLevel.Error);
+        Assert.Contains("CZK", error.Message);
+    }
+
+    /// <summary>
+    /// No currency is the platform default at all. <c>GetDefaultAsync</c> throws on that state for its
+    /// pricing callers; the landing page still answers, with one error saying so.
+    /// </summary>
+    [Fact]
+    public async Task No_Default_Currency_At_All_Flags_Nothing_And_Logs_One_Error()
+    {
+        Currency("EUR");
+        Market("Slovakia", "SVK", "SK", "EUR");
+
+        var markets = await Run();
+
+        var slovakia = Assert.Single(markets);
+        Assert.False(slovakia.IsDefault);
+        var error = Assert.Single(_log, e => e.Level == LogLevel.Error);
+        Assert.Contains("no default currency", error.Message);
     }
 
     [Fact]

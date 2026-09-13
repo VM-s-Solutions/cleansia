@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Features.Markets.DTOs;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -70,7 +72,7 @@ public class GetMarkets
                 }
             }
 
-            var defaultMarket = ChooseDefault(onDefaultCurrency);
+            var defaultMarket = await ChooseDefaultAsync(onDefaultCurrency, cancellationToken);
             if (defaultMarket is not null)
             {
                 markets[markets.IndexOf(defaultMarket)] = defaultMarket with { IsDefault = true };
@@ -86,12 +88,22 @@ public class GetMarkets
         /// the log names every candidate. None is a serviced-country gap: nothing is flagged and the
         /// clients fall to the first listed market.
         /// </summary>
-        private MarketListItem? ChooseDefault(List<MarketListItem> onDefaultCurrency)
+        private async Task<MarketListItem?> ChooseDefaultAsync(List<MarketListItem> onDefaultCurrency, CancellationToken cancellationToken)
         {
             if (onDefaultCurrency.Count == 0)
             {
-                logger.LogError(
-                    "No listed market is on the platform default currency; no market is flagged as the default");
+                var defaultCurrency = await GetDefaultCurrencyOrNullAsync(cancellationToken);
+                if (defaultCurrency is null)
+                {
+                    logger.LogError("The platform has no default currency; no market is flagged as the default");
+                }
+                else
+                {
+                    logger.LogError(
+                        "No listed market is on the platform default currency {CurrencyCode}; no market is flagged as the default",
+                        defaultCurrency.Code);
+                }
+
                 return null;
             }
 
@@ -105,6 +117,22 @@ public class GetMarkets
                 "{Count} listed markets share the platform default currency {CurrencyCode} ({Candidates}); {Chosen} is flagged as the default by lowest ISO code",
                 ordered.Count, ordered[0].CurrencyCode, string.Join(", ", ordered.Select(m => m.IsoCode)), ordered[0].IsoCode);
             return ordered[0];
+        }
+
+        /// <summary>
+        /// <see cref="ICurrencyRepository.GetDefaultAsync"/> throws for its pricing callers, where a
+        /// missing default is fatal; here it is one more configuration state to log.
+        /// </summary>
+        private async Task<Currency?> GetDefaultCurrencyOrNullAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await currencyRepository.GetDefaultAsync(cancellationToken);
+            }
+            catch (EntityNotFoundException)
+            {
+                return null;
+            }
         }
     }
 }

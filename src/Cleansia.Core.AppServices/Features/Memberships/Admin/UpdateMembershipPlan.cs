@@ -54,7 +54,9 @@ public class UpdateMembershipPlan
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(x => x.Prices)
-                .MustBeKeyedByKnownCurrencyCodes(currencyRepository);
+                .Cascade(CascadeMode.Stop)
+                .MustBeKeyedByKnownCurrencyCodes(currencyRepository)
+                .MustNotRepeatAStripePriceId();
 
             RuleForEach(x => x.Prices)
                 .SetValidator(command => new MembershipPlanPriceEntryValidator(membershipPlanPriceRepository, command.MembershipPlanId));

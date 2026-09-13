@@ -26,7 +26,7 @@ public class CreateMembershipPlanValidatorTests
             .Setup(r => r.GetAll())
             .Returns(new[] { MembershipPricingMockFactory.Czk(), MembershipPricingMockFactory.Eur() }.AsQueryable().BuildMock());
         _priceRepository
-            .Setup(r => r.IsStripePriceIdUsedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsStripePriceIdUsedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
     }
 
@@ -110,7 +110,7 @@ public class CreateMembershipPlanValidatorTests
     public async Task AStripePriceIdAlreadyChargingAnotherPlan_Fails_StripePriceAlreadyUsed()
     {
         _priceRepository
-            .Setup(r => r.IsStripePriceIdUsedAsync("price_A", null, It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsStripePriceIdUsedAsync("price_A", null, "CZK", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await Validator().ValidateAsync(Valid(new Dictionary<string, MembershipPlanPriceInput>
@@ -120,6 +120,33 @@ public class CreateMembershipPlanValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.MembershipPlanStripePriceAlreadyUsed);
+    }
+
+    [Fact]
+    public async Task TheSameStripePriceIdTwiceInOnePayload_Fails_StripePriceAlreadyUsed()
+    {
+        var result = await Validator().ValidateAsync(Valid(new Dictionary<string, MembershipPlanPriceInput>
+        {
+            ["CZK"] = new(199m, "price_shared"),
+            ["EUR"] = new(7.99m, "price_shared"),
+        }));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateMembershipPlan.Command.Prices)
+            && e.ErrorMessage == BusinessErrorMessage.MembershipPlanStripePriceAlreadyUsed);
+    }
+
+    [Fact]
+    public async Task TwoCurrenciesOnTwoStripePrices_Passes()
+    {
+        var result = await Validator().ValidateAsync(Valid(new Dictionary<string, MembershipPlanPriceInput>
+        {
+            ["CZK"] = new(199m, "price_czk"),
+            ["EUR"] = new(7.99m, "price_eur"),
+        }));
+
+        Assert.True(result.IsValid);
     }
 
     [Theory]

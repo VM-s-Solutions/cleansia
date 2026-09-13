@@ -38,6 +38,31 @@ public static class MembershipPlanPricing
     }
 
     /// <summary>
+    /// No two entries name the same Stripe Price. A Stripe Price is single-currency, so it belongs to
+    /// exactly one row; the per-entry check against the database cannot see the sibling entries of the
+    /// same payload, and the unique index would refuse them at commit as a raw 23505.
+    /// </summary>
+    public static IRuleBuilderOptions<T, Dictionary<string, MembershipPlanPriceInput>?> MustNotRepeatAStripePriceId<T>(
+        this IRuleBuilder<T, Dictionary<string, MembershipPlanPriceInput>?> ruleBuilder)
+    {
+        return ruleBuilder
+            .Must(prices =>
+            {
+                if (prices is null || prices.Count == 0)
+                {
+                    return true;
+                }
+
+                var stripePriceIds = prices.Values
+                    .Select(p => p.StripePriceId)
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .ToList();
+                return stripePriceIds.Distinct(StringComparer.Ordinal).Count() == stripePriceIds.Count;
+            })
+            .WithMessage(BusinessErrorMessage.MembershipPlanStripePriceAlreadyUsed);
+    }
+
+    /// <summary>
     /// One row per currency the form sent, created or updated; currencies the payload does not mention
     /// keep whatever row they have (the package idiom). An unknown code is skipped — the validator has
     /// already refused it.

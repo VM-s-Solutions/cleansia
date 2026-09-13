@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
@@ -91,6 +92,32 @@ public class MembershipPlanPerMarketTests(PostgresContainerFixture fixture) : Ba
                 return Task.CompletedTask;
             },
             transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Stripe_Price_Is_Used_By_Every_Row_But_The_Plans_Own_Row_In_That_Currency()
+    {
+        await TestMethod(
+            arrange: ctx => SeedAsync(ctx),
+            act: async provider =>
+            {
+                var prices = provider.GetRequiredService<IMembershipPlanPriceRepository>();
+                return (
+                    OwnRow: await prices.IsStripePriceIdUsedAsync("price_monthly_czk", MonthlyId, "CZK", CancellationToken.None),
+                    SamePlanOtherCurrency: await prices.IsStripePriceIdUsedAsync("price_monthly_czk", MonthlyId, "EUR", CancellationToken.None),
+                    OtherPlan: await prices.IsStripePriceIdUsedAsync("price_monthly_czk", YearlyId, "CZK", CancellationToken.None),
+                    Create: await prices.IsStripePriceIdUsedAsync("price_monthly_czk", null, null, CancellationToken.None),
+                    Unused: await prices.IsStripePriceIdUsedAsync("price_nowhere", null, null, CancellationToken.None));
+            },
+            assert: (CleansiaDbContext _, (bool OwnRow, bool SamePlanOtherCurrency, bool OtherPlan, bool Create, bool Unused) r) =>
+            {
+                Assert.False(r.OwnRow);
+                Assert.True(r.SamePlanOtherCurrency);
+                Assert.True(r.OtherPlan);
+                Assert.True(r.Create);
+                Assert.False(r.Unused);
+                return Task.CompletedTask;
+            });
     }
 
     [Fact]

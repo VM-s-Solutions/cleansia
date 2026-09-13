@@ -10,7 +10,8 @@ namespace Cleansia.Tests.Features.Memberships.Admin;
 
 /// <summary>
 /// The update validator applies the same price-entry rules as create, with one difference that
-/// matters: a Stripe Price id already on THIS plan's own row is not "used by another plan".
+/// matters: a Stripe Price id already on THIS plan's row in THIS currency is the row keeping its
+/// id, not a collision — while the same id on the plan's other currency, or twice in one payload, is.
 /// </summary>
 public class UpdateMembershipPlanValidatorTests
 {
@@ -27,7 +28,7 @@ public class UpdateMembershipPlanValidatorTests
             .Setup(r => r.GetAll())
             .Returns(new[] { MembershipPricingMockFactory.Czk(), MembershipPricingMockFactory.Eur() }.AsQueryable().BuildMock());
         _priceRepository
-            .Setup(r => r.IsStripePriceIdUsedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsStripePriceIdUsedAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
     }
 
@@ -49,22 +50,55 @@ public class UpdateMembershipPlanValidatorTests
     }
 
     [Fact]
-    public async Task TheDuplicateCheck_ExcludesThePlanItself()
+    public async Task TheDuplicateCheck_ExcludesOnlyThePlansOwnRowInThatCurrency()
     {
         var result = await Validator().ValidateAsync(Valid(new Dictionary<string, MembershipPlanPriceInput>
         {
             ["CZK"] = new(199m, "price_czk"),
+            ["EUR"] = new(7.99m, "price_eur"),
         }));
 
         Assert.True(result.IsValid);
-        _priceRepository.Verify(r => r.IsStripePriceIdUsedAsync("price_czk", PlanId, It.IsAny<CancellationToken>()), Times.Once);
+        _priceRepository.Verify(r => r.IsStripePriceIdUsedAsync("price_czk", PlanId, "CZK", It.IsAny<CancellationToken>()), Times.Once);
+        _priceRepository.Verify(r => r.IsStripePriceIdUsedAsync("price_eur", PlanId, "EUR", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AStripePriceIdOnThePlansOtherCurrency_Fails_StripePriceAlreadyUsed()
+    {
+        _priceRepository
+            .Setup(r => r.IsStripePriceIdUsedAsync("price_czk", PlanId, "EUR", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await Validator().ValidateAsync(Valid(new Dictionary<string, MembershipPlanPriceInput>
+        {
+            ["EUR"] = new(7.99m, "price_czk"),
+        }));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.MembershipPlanStripePriceAlreadyUsed);
+    }
+
+    [Fact]
+    public async Task TheSameStripePriceIdTwiceInOnePayload_Fails_StripePriceAlreadyUsed_BeforeTheDatabaseIsAsked()
+    {
+        var result = await Validator().ValidateAsync(Valid(new Dictionary<string, MembershipPlanPriceInput>
+        {
+            ["CZK"] = new(199m, "price_shared"),
+            ["EUR"] = new(7.99m, "price_shared"),
+        }));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(UpdateMembershipPlan.Command.Prices)
+            && e.ErrorMessage == BusinessErrorMessage.MembershipPlanStripePriceAlreadyUsed);
     }
 
     [Fact]
     public async Task AStripePriceIdOnAnotherPlan_Fails_StripePriceAlreadyUsed()
     {
         _priceRepository
-            .Setup(r => r.IsStripePriceIdUsedAsync("price_A", PlanId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsStripePriceIdUsedAsync("price_A", PlanId, "CZK", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await Validator().ValidateAsync(Valid(new Dictionary<string, MembershipPlanPriceInput>

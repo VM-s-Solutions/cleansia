@@ -37,9 +37,11 @@ public class MembershipPlanPriceRepository(CleansiaDbContext context)
             .ToListAsync(cancellationToken);
     }
 
-    public Task<bool> IsStripePriceIdUsedAsync(string stripePriceId, string? exceptPlanId, CancellationToken cancellationToken)
+    public Task<bool> IsStripePriceIdUsedAsync(string stripePriceId, string? exceptPlanId, string? exceptCurrencyCode, CancellationToken cancellationToken)
     {
         return GetDbSet()
-            .AnyAsync(p => p.StripePriceId == stripePriceId && (exceptPlanId == null || p.MembershipPlanId != exceptPlanId), cancellationToken);
+            .AnyAsync(p => p.StripePriceId == stripePriceId
+                && (exceptPlanId == null || p.MembershipPlanId != exceptPlanId || p.Currency!.Code != exceptCurrencyCode),
+                cancellationToken);
     }
 }

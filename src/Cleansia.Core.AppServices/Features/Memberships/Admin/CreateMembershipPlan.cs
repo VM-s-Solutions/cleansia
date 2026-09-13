@@ -64,7 +64,9 @@ public class CreateMembershipPlan
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
             RuleFor(x => x.Prices)
-                .MustBeKeyedByKnownCurrencyCodes(currencyRepository);
+                .Cascade(CascadeMode.Stop)
+                .MustBeKeyedByKnownCurrencyCodes(currencyRepository)
+                .MustNotRepeatAStripePriceId();
 
             RuleForEach(x => x.Prices)
                 .SetValidator(new MembershipPlanPriceEntryValidator(membershipPlanPriceRepository, exceptPlanId: null));

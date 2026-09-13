@@ -13,6 +13,10 @@ public interface IMembershipPlanPriceRepository : IRepository<MembershipPlanPric
     /// <summary>Every currency's row for one plan, with <see cref="MembershipPlanPrice.Currency"/> loaded — the admin detail.</summary>
     Task<IReadOnlyList<MembershipPlanPrice>> GetAllForPlanAsync(string planId, CancellationToken cancellationToken);
 
-    /// <summary>Whether a row on any OTHER plan than <paramref name="exceptPlanId"/> already carries this Stripe Price.</summary>
-    Task<bool> IsStripePriceIdUsedAsync(string stripePriceId, string? exceptPlanId, CancellationToken cancellationToken);
+    /// <summary>
+    /// Whether any row OTHER than <paramref name="exceptPlanId"/>'s row in <paramref name="exceptCurrencyCode"/>
+    /// already carries this Stripe Price — another plan's row, or the same plan's row in another currency.
+    /// A null <paramref name="exceptPlanId"/> excepts nothing (create).
+    /// </summary>
+    Task<bool> IsStripePriceIdUsedAsync(string stripePriceId, string? exceptPlanId, string? exceptCurrencyCode, CancellationToken cancellationToken);
 }

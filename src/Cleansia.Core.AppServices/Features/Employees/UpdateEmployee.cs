@@ -244,7 +244,7 @@ public class UpdateEmployee
             // The validator only gates on Consent == true; GDPR Art. 7(1) requires us to be able to
             // DEMONSTRATE the consent, so the grant is persisted on the same unit of work as the
             // profile it belongs to. Re-saving an already-consented profile is a no-op.
-            await consentService.TryGrantAsync(employee.UserId, ConsentType.DataProcessing, cancellationToken);
+            await consentService.TryGrantAsync(employee.UserId, ConsentType.DataProcessing, documentVersion: null, cancellationToken);
 
             return BusinessResult.Success(new Response(employee.Id));
         }

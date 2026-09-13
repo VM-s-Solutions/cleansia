@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -7,6 +8,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Gdpr;
 
+[AuditAction("customer.consent.withdraw", Audience = AuditAudience.Customer, ResourceType = "User")]
 public static class WithdrawConsent
 {
     public record Command(ConsentType ConsentType) : ICommand;
@@ -19,9 +21,10 @@ public static class WithdrawConsent
         }
     }
 
-    internal class Handler(
+    public class Handler(
         IUserSessionProvider userSessionProvider,
-        IUserConsentRepository userConsentRepository)
+        IUserConsentRepository userConsentRepository,
+        IAuditContext auditContext)
         : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
@@ -36,6 +39,8 @@ public static class WithdrawConsent
                     nameof(Command.ConsentType), BusinessErrorMessage.ConsentNotFound));
 
             consent.Withdraw();
+
+            auditContext.RecordEvidence("User", userId, new ConsentEvidence(request.ConsentType, consent.DocumentVersion));
 
             return BusinessResult.Success();
         }

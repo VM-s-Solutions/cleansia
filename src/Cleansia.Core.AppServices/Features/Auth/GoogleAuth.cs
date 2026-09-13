@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -60,7 +61,8 @@ public class GoogleAuth
         ITokenService tokenService,
         ICartRepository cartRepository,
         IUserRepository userRepository,
-        IHostAudienceProvider hostAudience)
+        IHostAudienceProvider hostAudience,
+        IConsentService consentService)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
@@ -143,6 +145,12 @@ public class GoogleAuth
 
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
+
+            // Reached only with the tick asserted. These two rows are the registration proof: the
+            // command carries no audit marker because one would also record every social sign-in
+            // (ADR-0062 D3), so the consent rides the same flush as the account.
+            await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService, LegalDocumentVersions.CustomerTerms, cancellationToken);
+            await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy, LegalDocumentVersions.CustomerPrivacy, cancellationToken);
 
             // The resolve-by-email fallback above and this insert cross a snapshot boundary with no
             // lock, so the global Email UNIQUE index is what actually arbitrates two simultaneous

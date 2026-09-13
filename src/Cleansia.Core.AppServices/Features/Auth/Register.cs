@@ -1,10 +1,12 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
@@ -16,6 +18,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
+[AuditAction("customer.account.register", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class Register
 {
     public class Validator : BaseAuthValidator<Command>
@@ -72,17 +75,32 @@ public class Register
         // after the user is created — bad codes do NOT block registration.
         string? ReferralCode = null,
         // The market the visitor registers with; null is the default market (ADR-0061 D3).
-        string? CountryId = null)
+        string? CountryId = null,
+        // The terms tick as the client asserted it. Null is an older client that sends nothing; it is
+        // recorded as "not asserted", never refused (ADR-0062 D4, Q-AUD-L4).
+        bool? TermsAccepted = null)
         : ICommand, IOperatorScopedRequest;
+
+    public record RegistrationEvidence(
+        string Method,
+        string Language,
+        bool ReferralCodePresent,
+        bool? TermsAccepted,
+        string TermsVersion,
+        string PrivacyVersion) : ICustomerAuditPayload;
 
     public class Handler(
         ICartRepository cartRepository,
         IUserRepository userRepository,
         IReferralService referralService,
         IPendingDispatch pending,
+        IConsentService consentService,
+        IAuditContext auditContext,
         ILogger<Handler> logger)
         : ICommandHandler<Command>
     {
+        private const string EmailMethod = "Email";
+
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             // Same resolution the validator proved: a non-null row here is unconfirmed and in this market.
@@ -118,6 +136,24 @@ public class Register
                 // Re-registration: user exists but hasn't confirmed — refresh the code
                 rawConfirmationToken = userEntity.UpdateConfirmationCode();
             }
+
+            if (command.TermsAccepted == true)
+            {
+                await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService, LegalDocumentVersions.CustomerTerms, cancellationToken);
+                await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy, LegalDocumentVersions.CustomerPrivacy, cancellationToken);
+            }
+
+            auditContext.RecordEvidence(
+                "User",
+                userEntity.Id,
+                new RegistrationEvidence(
+                    EmailMethod,
+                    command.Language,
+                    !string.IsNullOrWhiteSpace(command.ReferralCode),
+                    command.TermsAccepted,
+                    LegalDocumentVersions.CustomerTerms,
+                    LegalDocumentVersions.CustomerPrivacy),
+                actorUserId: userEntity.Id);
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 

@@ -32,7 +32,12 @@ public class UserConsent : Auditable, ITenantEntity
     [MaxLength(32)]
     public string? DocumentVersion { get; private set; }
 
-    public static UserConsent Grant(string userId, ConsentType consentType, string? ipAddress, string? userAgent)
+    public static UserConsent Grant(
+        string userId,
+        ConsentType consentType,
+        string? ipAddress,
+        string? userAgent,
+        string? documentVersion = null)
         => new()
         {
             UserId = userId,
@@ -40,7 +45,8 @@ public class UserConsent : Auditable, ITenantEntity
             IsGranted = true,
             GrantedAt = DateTimeOffset.UtcNow,
             IpAddress = ipAddress,
-            UserAgent = userAgent
+            UserAgent = userAgent,
+            DocumentVersion = documentVersion
         };
 
     public UserConsent Withdraw()
@@ -50,13 +56,21 @@ public class UserConsent : Auditable, ITenantEntity
         return this;
     }
 
-    public UserConsent Regrant(string? ipAddress, string? userAgent)
+    public UserConsent Regrant(string? ipAddress, string? userAgent, string? documentVersion = null)
     {
         IsGranted = true;
         GrantedAt = DateTimeOffset.UtcNow;
         WithdrawnAt = null;
         IpAddress = ipAddress;
         UserAgent = userAgent;
+        DocumentVersion = documentVersion;
         return this;
     }
+
+    /// <summary>
+    /// A re-acceptance of a newer document on a row that is already granted. The row stays the truth
+    /// about now; the audit trail is the history (ADR-0062 D4).
+    /// </summary>
+    public UserConsent AcceptVersion(string documentVersion, string? ipAddress, string? userAgent)
+        => Regrant(ipAddress, userAgent, documentVersion);
 }

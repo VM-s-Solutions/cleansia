@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -49,7 +50,7 @@ public class RegistrationEmailDispatchTests
 
         var handler = new Register.Handler(
             _cartRepository.Object, _userRepository.Object, referralService.Object, _pending,
-            NullLogger<Register.Handler>.Instance);
+            new Mock<IConsentService>().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
 
         var result = await handler.Handle(
             new Register.Command(Email, "Password1!@abc", "John", "Doe", Language), CancellationToken.None);

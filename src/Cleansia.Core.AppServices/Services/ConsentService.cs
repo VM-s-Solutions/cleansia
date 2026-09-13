@@ -9,7 +9,7 @@ public class ConsentService(
     IRequestMetadataProvider requestMetadata,
     IUserConsentRepository userConsentRepository) : IConsentService
 {
-    public async Task<bool> TryGrantAsync(string userId, ConsentType consentType, CancellationToken cancellationToken)
+    public async Task<bool> TryGrantAsync(string userId, ConsentType consentType, string? documentVersion, CancellationToken cancellationToken)
     {
         var existing = await userConsentRepository.GetByUserAndTypeAsync(userId, consentType, cancellationToken);
 
@@ -20,16 +20,22 @@ public class ConsentService(
 
         if (existing is null)
         {
-            userConsentRepository.Add(UserConsent.Grant(userId, consentType, ipAddress, userAgent));
+            userConsentRepository.Add(UserConsent.Grant(userId, consentType, ipAddress, userAgent, documentVersion));
             return true;
         }
 
-        if (existing.IsGranted)
+        if (!existing.IsGranted)
+        {
+            existing.Regrant(ipAddress, userAgent, documentVersion);
+            return true;
+        }
+
+        if (documentVersion is null || existing.DocumentVersion == documentVersion)
         {
             return false;
         }
 
-        existing.Regrant(ipAddress, userAgent);
+        existing.AcceptVersion(documentVersion, ipAddress, userAgent);
         return true;
     }
 }

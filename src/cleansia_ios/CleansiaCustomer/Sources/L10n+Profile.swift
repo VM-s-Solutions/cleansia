@@ -34,6 +34,10 @@ extension L10n {
             localized("profile_row_language")
         }
 
+        static var rowMarket: String {
+            localized("profile_row_market")
+        }
+
         static var rowAppearance: String {
             localized("profile_row_appearance")
         }
@@ -222,6 +226,10 @@ extension L10n {
 
         static var languageSystem: String {
             localized("preferences_language_system")
+        }
+
+        static var market: String {
+            localized("profile_row_market")
         }
 
         static var appearance: String {

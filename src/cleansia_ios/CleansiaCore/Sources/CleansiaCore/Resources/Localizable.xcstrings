@@ -2765,6 +2765,76 @@
         }
       }
     },
+    "error.membership.plan.not_priced_in_currency": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento plán není v měně vašeho trhu dostupný."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This plan isn't available in your market's currency."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот план недоступен в валюте вашего рынка."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento plán nie je v mene vášho trhu dostupný."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей план недоступний у валюті вашого ринку."
+          }
+        }
+      }
+    },
+    "error.membership.stripe_customer_currency_locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše fakturace Plus je už nastavená v jiné měně. Pro změnu kontaktujte podporu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Plus billing is already set up in another currency. Contact support to change it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата Plus уже настроена в другой валюте. Чтобы изменить её, обратитесь в поддержку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša fakturácia Plus je už nastavená v inej mene. Pre zmenu kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата Plus уже налаштована в іншій валюті. Щоб її змінити, зверніться до підтримки."
+          }
+        }
+      }
+    },
     "error.membership.swap_same_plan": {
       "extractionState": "manual",
       "localizations": {

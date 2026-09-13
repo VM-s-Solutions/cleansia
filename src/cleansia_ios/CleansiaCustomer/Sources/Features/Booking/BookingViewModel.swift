@@ -19,6 +19,9 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var extrasState: UiState<[CatalogExtra]> = .loading
     @Published private(set) var membership: MembershipSnapshot?
     @Published private(set) var expressWaiverStatus: ExpressWaiverStatus = .none
+    /// The market the customer browses in — what the catalogue and the quote are priced for until
+    /// an address decides otherwise.
+    @Published private(set) var marketState: MarketState = .unavailable
 
     @Published private(set) var currentStep = 1
 
@@ -59,6 +62,7 @@ final class BookingViewModel: ViewModel {
         paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
         countryResolver: CountryResolver = LiveCountryResolver(),
         tokenStore: TokenStore = CustomerBookingTokenStore.shared,
+        market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher(),
         isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
         scheduler: AnySchedulerOf<DispatchQueue> = .main
@@ -78,8 +82,15 @@ final class BookingViewModel: ViewModel {
         self.quoteDebounce = quoteDebounce
         self.scheduler = scheduler
         super.init()
+        market.assign(to: &$marketState)
         startQuoteWatcher()
         startMarketWatcher()
+    }
+
+    /// Address > chosen market > default: the address's country once one is picked, the chosen
+    /// market before that, and nothing (the platform default) when no market resolved.
+    var catalogCountryId: String? {
+        state.countryId ?? marketState.countryId
     }
 
     var isFirstStep: Bool {
@@ -205,24 +216,25 @@ final class BookingViewModel: ViewModel {
 
     private func fetchCatalog() async {
         catalogState = .loading
-        let countryId = state.countryId
+        let countryId = catalogCountryId
         switch await catalogClient.loadCatalog(countryId: countryId) {
         case let .success(catalog):
             catalogState = .loaded(catalog)
-            if state.countryId != countryId {
-                reloadCatalogForMarket(state.countryId)
+            if catalogCountryId != countryId {
+                reloadCatalogForMarket(catalogCountryId)
             }
         case let .failure(error):
             catalogState = .error(error)
         }
     }
 
-    /// The address step decides the market: the catalogue is re-read priced for that country and
-    /// the draft keeps only what it still lists. The catalogue on screen stays until the new one
-    /// lands (or the reload fails), the way a re-quote keeps the previous total.
+    /// The address step decides the market, and the chosen market does before there is an address:
+    /// the catalogue is re-read priced for that country and the draft keeps only what it still
+    /// lists. The catalogue on screen stays until the new one lands (or the reload fails), the way a
+    /// re-quote keeps the previous total.
     private func startMarketWatcher() {
-        $state
-            .map(\.countryId)
+        Publishers.CombineLatest($state.map(\.countryId), $marketState.map(\.countryId))
+            .map { address, market in address ?? market }
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] countryId in
@@ -283,7 +295,7 @@ final class BookingViewModel: ViewModel {
 
     func loadExtras() async {
         if case .loaded = extrasState { return }
-        switch await extraClient.loadExtras(countryId: state.countryId) {
+        switch await extraClient.loadExtras(countryId: catalogCountryId) {
         case let .success(extras):
             extrasState = .loaded(extras.sorted { $0.displayOrder < $1.displayOrder })
             let listed = Set(extras.map(\.slug))
@@ -377,8 +389,8 @@ final class BookingViewModel: ViewModel {
     }
 
     private func startQuoteWatcher() {
-        $state
-            .map(\.quoteRequest)
+        Publishers.CombineLatest($state, $marketState.map(\.countryId).removeDuplicates())
+            .map { state, marketCountryId in state.quoteRequest(marketCountryId: marketCountryId) }
             .removeDuplicates()
             .debounce(for: quoteDebounce, scheduler: scheduler)
             .sink { [weak self] request in
@@ -419,7 +431,8 @@ final class BookingViewModel: ViewModel {
 }
 
 extension BookingState {
-    var quoteRequest: QuoteRequest {
+    /// The quote is priced for the address's country once there is one, else the chosen market's.
+    func quoteRequest(marketCountryId: String?) -> QuoteRequest {
         QuoteRequest(
             serviceIds: selectedServiceIds.sorted(),
             packageIds: selectedPackageIds.sorted(),
@@ -427,7 +440,7 @@ extension BookingState {
             rooms: rooms,
             bathrooms: bathrooms,
             cleaningDate: selectedInstant,
-            countryId: countryId
+            countryId: countryId ?? marketCountryId
         )
     }
 }

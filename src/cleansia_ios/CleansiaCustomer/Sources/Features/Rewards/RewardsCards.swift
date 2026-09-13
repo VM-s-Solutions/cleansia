@@ -4,7 +4,7 @@ import SwiftUI
 struct TierLadderCard: View {
     let tiers: [TierInfo]
     let current: LoyaltyTier
-    let currencyCode: String?
+    let floor: TierFloorLabel
 
     private var sorted: [TierInfo] {
         tiers.sorted { $0.tier < $1.tier }
@@ -22,7 +22,7 @@ struct TierLadderCard: View {
             } else {
                 ForEach(sorted, id: \.tier) { tierInfo in
                     if let tier = LoyaltyTier(value: tierInfo.tier) {
-                        TierLadderRow(tierInfo: tierInfo, tier: tier, current: current, currencyCode: currencyCode)
+                        TierLadderRow(tierInfo: tierInfo, tier: tier, current: current, floor: floor)
                     }
                 }
             }
@@ -34,14 +34,14 @@ private struct TierLadderRow: View {
     let tierInfo: TierInfo
     let tier: LoyaltyTier
     let current: LoyaltyTier
-    let currencyCode: String?
+    let floor: TierFloorLabel
 
     private var discountText: String {
-        switch LoyaltyPresentation.discountSummary(tierInfo) {
+        switch LoyaltyPresentation.discountSummary(tierInfo, floorApplies: floor.applies) {
         case .noDiscount: L10n.Rewards.noDiscountYet
         case let .basic(percent): L10n.Rewards.discountBasic(percent)
         case let .minOrder(percent, minOrder):
-            L10n.Rewards.discountMinOrder(percent, OrdersFormat.price(Double(minOrder), currencyCode: currencyCode))
+            L10n.Rewards.discountMinOrder(percent, OrdersFormat.price(Double(minOrder), currencyCode: floor.currencyCode))
         }
     }
 

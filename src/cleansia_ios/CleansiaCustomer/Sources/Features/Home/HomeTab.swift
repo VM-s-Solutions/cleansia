@@ -3,7 +3,7 @@ import CleansiaCustomerApi
 import SwiftUI
 
 /// The customer Home tab — a section-for-section port of `HomeTab.kt:217-307`:
-/// address bar + bell, smart upsell carousel, order-again/trust strip,
+/// address bar + market chip + bell, smart upsell carousel, order-again/trust strip,
 /// recurring schedules (Plus), popular packages, recent bookings, loyalty
 /// milestone, seasonal card, behind the first-paint skeleton gate.
 struct HomeTab: View {
@@ -12,6 +12,7 @@ struct HomeTab: View {
     private let notificationFeedClient: NotificationFeedClient
     let onBookCleaning: () -> Void
     let onOpenAddressManager: () -> Void
+    let onOpenMarket: () -> Void
     let onOrderClick: (String) -> Void
     let onSeeAllOrders: () -> Void
     let onSubscribePlus: () -> Void
@@ -33,12 +34,14 @@ struct HomeTab: View {
         loyaltyRepository: LoyaltyRepository,
         membershipRepository: MembershipRepository,
         savedAddressRepository: SavedAddressRepository,
+        marketStore: MarketStore,
         notificationBadge: NotificationBadgeModel,
         notificationFeedClient: NotificationFeedClient,
         bookingVM: BookingViewModel,
         snackbar: SnackbarController,
         onBookCleaning: @escaping () -> Void,
         onOpenAddressManager: @escaping () -> Void,
+        onOpenMarket: @escaping () -> Void,
         onOrderClick: @escaping (String) -> Void,
         onSeeAllOrders: @escaping () -> Void,
         onSubscribePlus: @escaping () -> Void,
@@ -55,6 +58,7 @@ struct HomeTab: View {
             loyaltyRepository: loyaltyRepository,
             membershipRepository: membershipRepository,
             savedAddressRepository: savedAddressRepository,
+            marketStore: marketStore,
             catalogSource: bookingVM,
             snackbar: snackbar
         ))
@@ -62,6 +66,7 @@ struct HomeTab: View {
         self.notificationFeedClient = notificationFeedClient
         self.onBookCleaning = onBookCleaning
         self.onOpenAddressManager = onOpenAddressManager
+        self.onOpenMarket = onOpenMarket
         self.onOrderClick = onOrderClick
         self.onSeeAllOrders = onSeeAllOrders
         self.onSubscribePlus = onSubscribePlus
@@ -103,6 +108,7 @@ struct HomeTab: View {
         // watermarks. SwiftUI restarts a `.task` every time it re-presents the
         // tab root, so the gate — not the hook — is what keeps a tab tap free.
         .task { await vm.refreshStaleSources() }
+        .task { await vm.refreshMarket() }
         .task { await vm.refreshCatalogIfNeeded() }
         .task { await notificationBadge.refresh() }
         .task { await vm.refreshRecurring() }
@@ -121,8 +127,10 @@ struct HomeTab: View {
             VStack(alignment: .leading, spacing: 0) {
                 AddressTopBar(
                     displayedAddress: vm.displayedAddress?.oneLine,
+                    market: vm.marketChip,
                     unreadBadge: notificationBadge.badgeLabel,
                     onAddressTap: onOpenAddressManager,
+                    onMarketTap: onOpenMarket,
                     onNotificationTap: { showNotifications = true }
                 )
                 Spacer().frame(height: Spacing.xs)
@@ -214,18 +222,24 @@ struct HomeTab: View {
     }
 }
 
-/// "Cleaning at / <address> ▾" + the notification bell (`AddressTopBar`,
+/// "Cleaning at / <address> ▾" + the market chip + the notification bell (`AddressTopBar`,
 /// `HomeTab.kt:313-365`). The bell opens the notifications inbox and carries
 /// the unread badge ("99+" capped, hidden at zero — FD-AC5); the
 /// row is center-aligned so the bell sits mid-height against the two-line
 /// address block, matching Android's `verticalAlignment = CenterVertically`.
 /// The pin leading and the bell's visible-disc trailing both land on the
 /// `Spacing.ml` content gutter shared by the cards below.
+///
+/// The chip is the market the prices below are stated in and opens the same picker Preferences
+/// does — one tap from a price to the control that changes its unit. It is drawn only when there
+/// is a choice to make; with one market or none the row is exactly the shipped one.
 private struct AddressTopBar: View {
     @Environment(\.locale) private var locale
     let displayedAddress: String?
+    let market: Market?
     let unreadBadge: String?
     let onAddressTap: () -> Void
+    let onMarketTap: () -> Void
     let onNotificationTap: () -> Void
 
     var body: some View {
@@ -255,6 +269,10 @@ private struct AddressTopBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+
+            if let market {
+                MarketChip(market: market, onTap: onMarketTap)
+            }
 
             Button(action: onNotificationTap) {
                 Image(systemName: "bell")
@@ -291,17 +309,63 @@ private struct AddressTopBar: View {
     }
 }
 
+/// `CleansiaChip`'s geometry, drawn as what it is here: a button that navigates, never a selected
+/// state to announce. A 3 pt vertical hit inset lifts the 38 pt pill to the 44 pt target without
+/// moving a pixel of it.
+private struct MarketChip: View {
+    @Environment(\.locale) private var locale
+    let market: Market
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Text(verbatim: market.chipLabel)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+                .lineLimit(1)
+                .padding(.horizontal, Spacing.s)
+                .padding(.vertical, Spacing.xs)
+                .background(CleansiaColors.surface, in: Capsule())
+                .overlay(Capsule().stroke(CleansiaColors.outlineVariant, lineWidth: 1))
+                .padding(.vertical, 3)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: L10n.Market.chipA11y(market.localizedName(for: locale), market.currencyCode)))
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
 #if DEBUG
     struct AddressTopBar_Previews: PreviewProvider {
         static var previews: some View {
             VStack(spacing: 0) {
                 AddressTopBar(
                     displayedAddress: "Zenklova 6, Praha",
+                    market: Market(
+                        countryId: "cze",
+                        isoCode: "CZE",
+                        isoAlpha2: "CZ",
+                        name: "Czechia",
+                        translations: [:],
+                        currencyCode: "CZK",
+                        isDefault: true,
+                        noShowCredit: 250,
+                        insuranceCoverageAmount: nil
+                    ),
                     unreadBadge: "3",
                     onAddressTap: {},
+                    onMarketTap: {},
                     onNotificationTap: {}
                 )
-                AddressTopBar(displayedAddress: nil, unreadBadge: nil, onAddressTap: {}, onNotificationTap: {})
+                AddressTopBar(
+                    displayedAddress: nil,
+                    market: nil,
+                    unreadBadge: nil,
+                    onAddressTap: {},
+                    onMarketTap: {},
+                    onNotificationTap: {}
+                )
             }
             .background(CleansiaColors.background)
             .previewLayout(.sizeThatFits)

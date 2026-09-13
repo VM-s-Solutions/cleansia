@@ -2,6 +2,18 @@ import Foundation
 
 extension L10n {
     enum Membership {
+        static var notAvailableInMarket: String {
+            localized("plus_not_available_in_market")
+        }
+
+        static var plansLoadFailed: String {
+            localized("membership_plans_load_failed")
+        }
+
+        static func currencyLockedIn(_ currencyCode: String) -> String {
+            format("membership_currency_locked_in", currencyCode)
+        }
+
         static var plusTitle: String {
             localized("membership_plus_title")
         }

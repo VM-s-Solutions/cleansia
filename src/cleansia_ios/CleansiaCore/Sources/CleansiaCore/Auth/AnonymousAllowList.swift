@@ -38,6 +38,7 @@ public struct AnonymousAllowList: Sendable {
         "/api/package/getoverview",
         "/api/extra/getoverview",
         "/api/currency/getoverview",
+        "/api/market/getoverview",
         "/api/membership/getplans",
         "/api/order/quote",
         "/api/order/createorder",

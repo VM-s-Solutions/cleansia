@@ -4,9 +4,15 @@ import Foundation
 
 protocol MembershipManagementClient: Sendable {
     func getMine() async -> ApiResult<MyMembership>
-    func getPlans() async -> ApiResult<[MembershipPlan]>
-    func subscribe(planCode: String, paymentMethodConfirmed: Bool, idempotencyToken: String) async
-        -> ApiResult<SubscriptionSetup>
+    /// `countryId` is the market the plans are priced for; nil is the platform default.
+    func getPlans(countryId: String?) async -> ApiResult<[MembershipPlan]>
+    /// `countryId` is the market whose currency the subscription is created in, for its whole life.
+    func subscribe(
+        planCode: String,
+        paymentMethodConfirmed: Bool,
+        countryId: String?,
+        idempotencyToken: String
+    ) async -> ApiResult<SubscriptionSetup>
     func cancel() async -> ApiResult<Date?>
     func swapPlan(newPlanCode: String) async -> ApiResult<Void>
 }
@@ -18,20 +24,22 @@ struct LiveMembershipManagementClient: MembershipManagementClient {
         }
     }
 
-    func getPlans() async -> ApiResult<[MembershipPlan]> {
+    func getPlans(countryId: String?) async -> ApiResult<[MembershipPlan]> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerMembershipAPI.membershipGetPlans().map { try $0.toDomain() }
+            try await CustomerMembershipAPI.membershipGetPlans(countryId: countryId).map { try $0.toDomain() }
         }
     }
 
     func subscribe(
         planCode: String,
         paymentMethodConfirmed: Bool,
+        countryId: String?,
         idempotencyToken: String
     ) async -> ApiResult<SubscriptionSetup> {
         let command = CreateMembershipSubscriptionCommand(
             planCode: planCode,
             paymentMethodConfirmed: paymentMethodConfirmed,
+            countryId: countryId,
             idempotencyToken: idempotencyToken
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
@@ -64,7 +72,11 @@ struct LiveMembershipManagementClient: MembershipManagementClient {
 /// The quota pair stays optional all the way to `ExpressWaiverStatus`. The server states three
 /// shapes — *null = no membership, 0 = exhausted or trialing* — and a resolver that cannot tell
 /// which says nothing rather than picking one.
-private extension GetMyMembershipResponse {
+///
+/// The money trio stays optional too: `price` is null without a membership and when the plan's row
+/// in the membership's currency has been deleted, and a figure this screen never prints beside its
+/// own unit is worse than none.
+extension GetMyMembershipResponse {
     func toDomain() throws -> MyMembership {
         try MyMembership(
             hasMembership: hasMembership.require("hasMembership"),
@@ -78,7 +90,10 @@ private extension GetMyMembershipResponse {
             billingInterval: billingInterval,
             expressUpgradesPerMonth: expressUpgradesPerMonth,
             expressUpgradesRemaining: expressUpgradesRemaining,
-            trialEndsAtUtc: trialEndsAtUtc
+            trialEndsAtUtc: trialEndsAtUtc,
+            price: price,
+            monthlyEquivalentPrice: monthlyEquivalentPrice,
+            currencyCode: currencyCode
         )
     }
 }
@@ -87,8 +102,9 @@ private extension GetMyMembershipResponse {
 /// purchase the customer is never offered rather than a shorter list — and every number here is
 /// printed on the card they choose from. A coerced `price` of `0` advertises a paid plan as free,
 /// and `billingInterval` decides annual-versus-monthly, so a default there re-labels the whole
-/// screen.
-private extension GetMembershipPlansResponse {
+/// screen. `currencyCode` is the unit every one of those figures is printed with, and a plan priced
+/// per market has no other source for it.
+extension GetMembershipPlansResponse {
     func toDomain() throws -> MembershipPlan {
         try MembershipPlan(
             code: code.requireNonBlank("code"),
@@ -100,7 +116,8 @@ private extension GetMembershipPlansResponse {
             freeCancellationWindowHours: freeCancellationWindowHours.require("freeCancellationWindowHours"),
             allowsExpressUpgrade: allowsExpressUpgrade.require("allowsExpressUpgrade"),
             trialPeriodDays: trialPeriodDays.require("trialPeriodDays"),
-            savingsPercentVsMonthly: savingsPercentVsMonthly.require("savingsPercentVsMonthly")
+            savingsPercentVsMonthly: savingsPercentVsMonthly.require("savingsPercentVsMonthly"),
+            currencyCode: currencyCode.requireNonBlank("currencyCode")
         )
     }
 }

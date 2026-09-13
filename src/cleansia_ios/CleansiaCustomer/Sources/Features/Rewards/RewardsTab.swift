@@ -15,6 +15,7 @@ struct RewardsTab: View {
         loyaltyRepository: LoyaltyRepository,
         referralRepository: RewardsReferralRepository,
         catalogSource: BookingViewModel,
+        marketStore: MarketStore,
         snackbar: SnackbarController,
         onOpenActivity: @escaping () -> Void
     ) {
@@ -22,6 +23,7 @@ struct RewardsTab: View {
             loyaltyRepository: loyaltyRepository,
             referralRepository: referralRepository,
             catalogSource: catalogSource,
+            marketStore: marketStore,
             snackbar: snackbar
         ))
         self.onOpenActivity = onOpenActivity
@@ -92,7 +94,7 @@ struct RewardsContentView: View {
                 TierHeroCard(tier: currentTier, account: content.account)
                 ProgressCard(account: content.account)
                 CurrentPerksCard(perks: content.account.currentPerks)
-                TierLadderCard(tiers: content.tiers, current: currentTier, currencyCode: vm.currencyCode)
+                TierLadderCard(tiers: content.tiers, current: currentTier, floor: vm.tierFloor)
 
                 if let referral = content.referral, !referral.code.isEmpty {
                     InviteFriendsCard(referral: referral, onCopyCode: onCopyCode)

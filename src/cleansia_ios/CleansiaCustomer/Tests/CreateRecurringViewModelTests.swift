@@ -52,6 +52,49 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertTrue(vm.isValid)
     }
 
+    /// The Android form's per-step gate, step for step: the schedule, the selection, the address and
+    /// the start. Its conjunction is what the one-page form submits on.
+    func testCanAdvanceGatesEachStepLikeAndroid() async {
+        let (vm, _) = makeVM(addressClient: {
+            let client = FakeRecurringSavedAddressClient()
+            client.result = .success([])
+            return client
+        }())
+        await vm.load()
+        XCTAssertTrue(vm.canAdvance(step: 1), "the default 10:00 satisfies the schedule step")
+        XCTAssertFalse(vm.canAdvance(step: 2))
+        XCTAssertFalse(vm.canAdvance(step: 3))
+        XCTAssertFalse(vm.canAdvance(step: 4))
+
+        vm.setTimeOfDay("  ")
+        XCTAssertFalse(vm.canAdvance(step: 1))
+        vm.setTimeOfDay("09:30")
+        XCTAssertTrue(vm.canAdvance(step: 1))
+
+        vm.togglePackage("p-1")
+        XCTAssertTrue(vm.canAdvance(step: 2))
+        vm.togglePackage("p-1")
+        vm.toggleService("s-1")
+        XCTAssertTrue(vm.canAdvance(step: 2))
+
+        vm.setSavedAddressId("addr-1")
+        XCTAssertFalse(vm.canAdvance(step: 3), "an address without a start date does not advance")
+        vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        XCTAssertTrue(vm.canAdvance(step: 3))
+        XCTAssertTrue(vm.isValid)
+    }
+
+    func testIsValidIsTheConjunctionOfEveryStep() {
+        var state = CreateRecurringFormState()
+        state.savedAddressId = "addr-1"
+        state.selectedServiceIds = ["s-1"]
+        state.startsOn = Date(timeIntervalSince1970: 1_780_000_000)
+        XCTAssertTrue(state.isValid)
+
+        state.timeOfDay = ""
+        XCTAssertFalse(state.isValid, "a blank time fails step 1 and therefore the form")
+    }
+
     func testSubmitSuccessReturnsTrueAndCallsCreateOnce() async {
         let (vm, client) = makeVM()
         await vm.load()
@@ -309,6 +352,32 @@ final class CreateRecurringViewModelTests: XCTestCase {
     }
 
     // MARK: - Edit mode
+
+    /// A template is pruned against its market's catalogue on first load, the way Android's
+    /// `followMarket` prunes it: a pick the catalogue no longer lists would be refused at submit.
+    func testEditingPrunesWhatTheTemplatesMarketNoLongerOffersWithANotice() async {
+        let template = RecurringFixtures.template(selectedServiceIds: ["s-1", "retired"])
+        let (vm, _) = makeVM(editing: template)
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(events, [.selectionPrunedForMarket])
+        XCTAssertTrue(vm.isValid)
+    }
+
+    func testEditingATemplateTheMarketFullyOffersRaisesNoNotice() async {
+        let (vm, _) = makeVM(editing: RecurringFixtures.template())
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(events, [])
+    }
 
     func testEditingSeedsTheFormFromTheTemplate() async {
         let template = RecurringFixtures.template(frequency: 2)

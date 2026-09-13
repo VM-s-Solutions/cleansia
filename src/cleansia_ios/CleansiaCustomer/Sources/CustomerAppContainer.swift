@@ -92,6 +92,10 @@ final class CustomerAppContainer: AppContainer {
     let membershipRepository: MembershipRepository
     let recurringRepository: RecurringBookingRepository
 
+    /// The market the customer browses in — a device preference beside the language, not a session
+    /// cache: it is neither wiped on sign-out nor synced to the server.
+    let marketStore: MarketStore
+
     let disputeRepository: DisputeRepository
 
     let savedAddressRepository: SavedAddressRepository
@@ -122,6 +126,9 @@ final class CustomerAppContainer: AppContainer {
         apiBaseURL: URL = AppConfig.apiBaseURL
     ) {
         let sessionScopedCaches = SessionScopedCacheRegistry()
+        let settings = UserDefaultsAppSettingsStore()
+        let marketStore = MarketStore(client: LiveMarketClient(), preference: settings)
+        self.marketStore = marketStore
         let authStack = CustomerAuthSpine.make(
             apiBaseURL: apiBaseURL,
             sessionScopedCaches: sessionScopedCaches
@@ -135,7 +142,10 @@ final class CustomerAppContainer: AppContainer {
         let referralRepository = RewardsReferralRepository(client: LiveRewardsReferralClient())
         self.loyaltyRepository = loyaltyRepository
         self.referralRepository = referralRepository
-        let membershipRepository = MembershipRepository(client: LiveMembershipManagementClient())
+        let membershipRepository = MembershipRepository(
+            client: LiveMembershipManagementClient(),
+            market: marketStore.statePublisher
+        )
         let recurringRepository = RecurringBookingRepository(client: LiveRecurringBookingClient())
         self.membershipRepository = membershipRepository
         self.recurringRepository = recurringRepository
@@ -162,6 +172,7 @@ final class CustomerAppContainer: AppContainer {
             apiBaseURL: apiBaseURL,
             snackbar: snackbar,
             sessionScopedCaches: sessionScopedCaches,
+            appSettings: settings,
             makeAuthSpine: { _ in authStack.spine },
             makeApiClient: { seams in CustomerMobileApiClient(baseURL: seams.apiBaseURL) }
         )

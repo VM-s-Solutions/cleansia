@@ -15553,6 +15553,111 @@
         }
       }
     },
+    "plus_not_available_in_market": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus zatím není na vašem trhu k dispozici"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus is not available in your market yet"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus пока недоступен на вашем рынке"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus zatiaľ nie je na vašom trhu k dispozícii"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus поки що недоступний на вашому ринку"
+          }
+        }
+      }
+    },
+    "membership_plans_load_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plány Plus se nepodařilo načíst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't load the Plus plans."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить планы Plus."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plány Plus sa nepodarilo načítať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося завантажити плани Plus."
+          }
+        }
+      }
+    },
+    "membership_currency_locked_in": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše fakturace Plus je nastavená v %1$@. Pro změnu kontaktujte podporu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Plus billing is set up in %1$@. Contact support to change it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата Plus настроена в валюте %1$@. Чтобы изменить её, обратитесь в поддержку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša fakturácia Plus je nastavená v %1$@. Pre zmenu kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата Plus налаштована у валюті %1$@. Щоб її змінити, зверніться до підтримки."
+          }
+        }
+      }
+    },
     "membership_plus_title": {
       "extractionState": "stale",
       "localizations": {
@@ -25318,6 +25423,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Довідка та підтримка"
+          }
+        }
+      }
+    },
+    "profile_row_market": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trh"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Market"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рынок"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trh"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ринок"
+          }
+        }
+      }
+    },
+    "market_chip_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trh: %1$@, ceny v %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Market: %1$@, prices in %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рынок: %1$@, цены в %2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trh: %1$@, ceny v %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ринок: %1$@, ціни в %2$@"
           }
         }
       }

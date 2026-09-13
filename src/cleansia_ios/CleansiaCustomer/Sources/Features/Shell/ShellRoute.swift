@@ -22,6 +22,7 @@ enum ShellRoute: Hashable, Codable {
     case notifications
     case security
     case language
+    case market
     case appearance
     case help
     case deleteAccount

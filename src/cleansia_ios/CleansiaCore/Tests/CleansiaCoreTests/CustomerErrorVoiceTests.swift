@@ -91,7 +91,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth +38 more",
         "company.not_found": "ReceiptService",
         "country.not_existing_id": "AddSavedAddress, UpdateSavedAddress",
-        "country.not_serviced": "OrderAddressResolver, QuoteOrder, QuotePlusSavings",
+        "country.not_serviced": "CreateMembershipSubscription, OrderAddressResolver, QuoteOrder, QuotePlusSavings",
         "country.required": "OrderAddressResolver",
         "currency.invalid": "CreateOrder, QuoteOrder",
         "device.invalid_platform": "RegisterDevice",
@@ -119,6 +119,9 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "membership.not_found": "CancelMembershipSubscription, SwapMembershipPlan",
         "membership.plan.not_found":
             "CreateMembershipCheckoutSession, CreateMembershipSubscription, SwapMembershipPlan",
+        "membership.plan.not_priced_in_currency":
+            "CreateMembershipCheckoutSession, CreateMembershipSubscription, SwapMembershipPlan",
+        "membership.stripe_customer_currency_locked": "CreateMembershipCheckoutSession, CreateMembershipSubscription",
         "membership.swap_same_plan": "SwapMembershipPlan",
         "order.address_exactly_one_required": "CreateOrder",
         "order.already_cancelled": "CancellationAssessor",

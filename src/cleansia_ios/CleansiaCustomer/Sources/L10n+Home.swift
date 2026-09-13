@@ -138,4 +138,10 @@ extension L10n {
             localized("home_seasonal_subtitle")
         }
     }
+
+    enum Market {
+        static func chipA11y(_ marketName: String, _ currencyCode: String) -> String {
+            format("market_chip_a11y", marketName, currencyCode)
+        }
+    }
 }

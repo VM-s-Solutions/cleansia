@@ -84,7 +84,7 @@ extension BookingViewModel {
     /// `BookingQuote?` discarded a populated `ApiError` one frame before
     /// `submit` could hand it to the sheet.
     func resolvedQuote(for current: BookingState) async -> ApiResult<BookingQuote> {
-        let request = current.quoteRequest
+        let request = current.quoteRequest(marketCountryId: marketState.countryId)
         if let cached = quoteState.quote, lastQuoteRequest == request {
             return .success(cached)
         }

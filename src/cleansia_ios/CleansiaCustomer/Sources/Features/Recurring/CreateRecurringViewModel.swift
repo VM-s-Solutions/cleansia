@@ -14,11 +14,22 @@ struct CreateRecurringFormState: Equatable {
     var paymentType = 1
     var startsOn: Date?
 
+    static let totalSteps = 3
+
+    /// The Android form's per-step gate (`CreateRecurringViewModel.kt` `canAdvance`): the schedule
+    /// (1), the selection (2), the address and the start (3). The one-page form here reads the
+    /// conjunction, so both platforms refuse the same incomplete form.
+    func canAdvance(step: Int) -> Bool {
+        switch step {
+        case 1: !timeOfDay.isBlank
+        case 2: !selectedServiceIds.isEmpty || !selectedPackageIds.isEmpty
+        case 3: !savedAddressId.isBlank && startsOn != nil
+        default: false
+        }
+    }
+
     var isValid: Bool {
-        !savedAddressId.isBlank
-            && (!selectedServiceIds.isEmpty || !selectedPackageIds.isEmpty)
-            && startsOn != nil
-            && !timeOfDay.isBlank
+        (1 ... Self.totalSteps).allSatisfy(canAdvance)
     }
 
     init() {}
@@ -140,15 +151,23 @@ final class CreateRecurringViewModel: ViewModel {
     }
 
     /// The addresses come first so the catalogue is read once, priced for the seeded address's market,
-    /// and the prefill last so the order's picks are pruned against that catalogue.
+    /// and the prefill last so the order's picks are pruned against that catalogue. A template being
+    /// edited is pruned the same way: what its market no longer lists would be refused at submit.
     func load() async {
         if case let .success(addresses) = await addressClient.getMine() {
             apply(addresses)
         }
         await fetchCatalog()
+        if isCatalogForSelectedMarket, let catalog = catalogState.loadedValue {
+            pruneSelection(notListedIn: catalog)
+        }
         if let sourceOrderId {
             await prefill(from: sourceOrderId)
         }
+    }
+
+    func canAdvance(step: Int) -> Bool {
+        formState.canAdvance(step: step)
     }
 
     /// A retry lands the first catalogue the selection has ever been checked against: the market

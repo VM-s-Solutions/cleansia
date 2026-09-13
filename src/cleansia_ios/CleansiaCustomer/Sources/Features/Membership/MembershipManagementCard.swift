@@ -10,12 +10,7 @@ struct MembershipManagementCard: View {
     @State private var showSwitchDialog = false
 
     private var yearlyPlan: MembershipPlan? {
-        vm.plans.first { $0.isAnnual }
-    }
-
-    private var showSwitchCta: Bool {
-        guard let m = vm.current, m.hasMembership, !m.cancelRequested, m.billingInterval == 1 else { return false }
-        return yearlyPlan != nil
+        vm.annualSwitchPlan
     }
 
     var body: some View {
@@ -32,7 +27,7 @@ struct MembershipManagementCard: View {
                 ActiveCard(
                     membership: membership,
                     cancelEnabled: !vm.submitState.isSubmitting && !membership.cancelRequested,
-                    switchSavings: showSwitchCta ? Int(yearlyPlan?.savingsPercentVsMonthly ?? 0) : nil,
+                    switchSavings: yearlyPlan.map { Int($0.savingsPercentVsMonthly) },
                     onCancel: { showCancelDialog = true },
                     onSwitch: { showSwitchDialog = true }
                 )
@@ -60,7 +55,7 @@ struct MembershipManagementCard: View {
                 onConfirm: { confirmSwitch(yearlyPlan) },
                 onDismiss: { showSwitchDialog = false },
                 message: L10n.Membership.switchDialogMessage(
-                    MembershipFormat.price(yearlyPlan.price, currencyCode: vm.currencyCode)
+                    MembershipFormat.price(yearlyPlan.price, currencyCode: yearlyPlan.currencyCode)
                 ),
                 dismissLabel: L10n.Membership.back
             )

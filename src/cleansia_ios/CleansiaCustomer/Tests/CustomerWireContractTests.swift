@@ -256,6 +256,75 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(gallery.beforeCount, 0)
     }
 
+    // MARK: the Plus plans — priced per market, so every figure travels with its unit
+
+    private func planPayload() -> GetMembershipPlansResponse {
+        GetMembershipPlansResponse(
+            code: "PLUS_MONTHLY",
+            name: "Monthly",
+            price: 199,
+            monthlyEquivalentPrice: 199,
+            billingInterval: 1,
+            discountPercentage: 5,
+            freeCancellationWindowHours: 4,
+            allowsExpressUpgrade: true,
+            expressUpgradesPerMonth: 2,
+            trialPeriodDays: 0,
+            savingsPercentVsMonthly: 0,
+            currencyCode: "CZK"
+        )
+    }
+
+    func testAFullyPopulatedPlanMapsWithItsCurrency() throws {
+        let plan = try planPayload().toDomain()
+        XCTAssertEqual(plan.price, 199)
+        XCTAssertEqual(plan.currencyCode, "CZK")
+        XCTAssertEqual(plan.billingInterval, 1)
+    }
+
+    /// A plan without its unit would be printed with a unit guessed for it, and one without its
+    /// money would be advertised as free.
+    func testABrokenPlanIsRefusedRatherThanPricedOrLabelledByGuess() {
+        for (field, break_) in [
+            ("price", { (dto: inout GetMembershipPlansResponse) in dto.price = nil }),
+            ("monthlyEquivalentPrice", { dto in dto.monthlyEquivalentPrice = nil }),
+            ("billingInterval", { dto in dto.billingInterval = nil }),
+            ("currencyCode", { dto in dto.currencyCode = nil }),
+            ("currencyCode", { dto in dto.currencyCode = "" })
+        ] {
+            var payload = planPayload()
+            break_(&payload)
+            assertRefused(field) { try payload.toDomain() }
+        }
+    }
+
+    // MARK: my membership — its own price and currency, for the life of the subscription
+
+    func testAMembershipMapsItsOwnPriceAndCurrency() throws {
+        let membership = try GetMyMembershipResponse(
+            hasMembership: true,
+            planCode: "PLUS_MONTHLY",
+            planName: "Cleansia Plus",
+            price: 199,
+            cancelRequested: false,
+            billingInterval: 1,
+            monthlyEquivalentPrice: 199,
+            currencyCode: "CZK"
+        ).toDomain()
+        XCTAssertEqual(membership.price, 199)
+        XCTAssertEqual(membership.monthlyEquivalentPrice, 199)
+        XCTAssertEqual(membership.currencyCode, "CZK")
+    }
+
+    /// `price` is null without a membership and when the plan's row in that currency is gone; neither
+    /// is a broken wire, so the snapshot still maps and the figures are simply not printed.
+    func testAMembershipWithoutAPriceRowStillMaps() throws {
+        let membership = try GetMyMembershipResponse(hasMembership: false, cancelRequested: false).toDomain()
+        XCTAssertFalse(membership.hasMembership)
+        XCTAssertNil(membership.price)
+        XCTAssertNil(membership.currencyCode)
+    }
+
     // MARK: the express-waiver quota — a claim, not a number
 
     /// The one case where the coerced value is the OPPOSITE of what the server's null means:

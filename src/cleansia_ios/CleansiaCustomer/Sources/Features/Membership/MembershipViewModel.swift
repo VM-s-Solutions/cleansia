@@ -6,11 +6,10 @@ import Foundation
 final class MembershipViewModel: ViewModel {
     @Published private(set) var current: MyMembership?
     @Published private(set) var plans: [MembershipPlan] = []
+    /// The plans priced for the chosen market. `.loaded([])` is Plus not on sale in that market —
+    /// no price and no button, never a zero.
+    @Published private(set) var plansState: UiState<[MembershipPlan]> = .loading
     @Published private(set) var submitState: ActionState = .idle
-    /// Neither the membership nor a plan arrives with a currency — `monthlyPriceCzk` is the wire name,
-    /// not a label — so every amount here is labelled with the platform default, which the catalogue
-    /// overview names. Nil until that overview has loaded, when the figure renders unlabelled.
-    @Published private(set) var currencyCode: String?
 
     private let repository: MembershipRepository
     private let snackbar: SnackbarController
@@ -20,7 +19,6 @@ final class MembershipViewModel: ViewModel {
 
     init(
         repository: MembershipRepository,
-        catalogSource: BookingViewModel,
         snackbar: SnackbarController,
         isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable
     ) {
@@ -30,9 +28,7 @@ final class MembershipViewModel: ViewModel {
         super.init()
         repository.$current.assign(to: &$current)
         repository.$plans.assign(to: &$plans)
-        catalogSource.$catalogState
-            .map { $0.loadedValue?.defaultCurrencyCode }
-            .assign(to: &$currencyCode)
+        repository.$plansState.assign(to: &$plansState)
     }
 
     /// Fail-closed gate: the Subscribe CTA is hidden AND the
@@ -56,6 +52,22 @@ final class MembershipViewModel: ViewModel {
 
     func refresh() async {
         await repository.refresh()
+    }
+
+    func reloadPlans() async {
+        await repository.refreshPlans()
+    }
+
+    /// The annual switch is offered only when the plan's price can be stated in the subscription's
+    /// own currency: a swap charges the plan's row in THAT currency, whatever market is chosen, so a
+    /// price labelled with another market's code would name a figure the customer is not charged.
+    var annualSwitchPlan: MembershipPlan? {
+        guard let membership = current, membership.hasMembership, !membership.cancelRequested,
+              membership.billingInterval == 1,
+              let yearly = plans.first(where: \.isAnnual),
+              yearly.currencyCode == membership.currencyCode
+        else { return nil }
+        return yearly
     }
 
     /// Phase 1 — request a SetupIntent. Mints ONE idempotency token for this
@@ -82,10 +94,23 @@ final class MembershipViewModel: ViewModel {
                 intentKind: .setup
             ))
         case let .failure(error):
-            snackbar.showApiError(error)
+            report(error)
             return .failed
         }
     }
+
+    /// Stripe keeps one currency per Customer for life, so a second subscription in another
+    /// currency is refused; the refusal names the currency the billing is locked to when the
+    /// membership snapshot knows it, and says only "another currency" when it does not.
+    private func report(_ error: ApiError) {
+        if error.code == Self.currencyLockedKey, let currencyCode = current?.currencyCode {
+            snackbar.showError(L10n.Membership.currencyLockedIn(currencyCode))
+        } else {
+            snackbar.showApiError(error)
+        }
+    }
+
+    static let currencyLockedKey = "membership.stripe_customer_currency_locked"
 
     /// Phase 2 — called after PaymentSheet returns `.completed`. Replays the
     /// SAME token minted at Phase 1 so the backend collapses double-taps onto a
@@ -108,7 +133,7 @@ final class MembershipViewModel: ViewModel {
             await repository.refresh()
             return .subscribed(membershipId: setup.membershipId)
         case let .failure(error):
-            snackbar.showApiError(error)
+            report(error)
             return .failed
         }
     }

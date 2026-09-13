@@ -24,11 +24,10 @@ struct CustomerShellView: View {
         self.preferences = preferences
         self.onSignedOut = onSignedOut
         self.onNeedsOnboarding = onNeedsOnboarding
-        let bookingVM = BookingViewModel()
+        let bookingVM = BookingViewModel(market: container.marketStore.statePublisher)
         _bookingVM = StateObject(wrappedValue: bookingVM)
         _membershipVM = StateObject(wrappedValue: MembershipViewModel(
             repository: container.membershipRepository,
-            catalogSource: bookingVM,
             snackbar: container.snackbar
         ))
         _profileVM = StateObject(wrappedValue: ProfileViewModel(
@@ -135,14 +134,13 @@ struct CustomerShellView: View {
         async let loyalty = container.loyaltyRepository.refresh()
         async let referrals = container.referralRepository.refresh()
         async let membership = container.membershipRepository.refresh()
-        async let plans = container.membershipRepository.refreshPlans()
         async let addresses = container.savedAddressRepository.refresh()
         async let recurring = container.recurringRepository.refresh()
-        async let catalog: Void = bookingVM.loadCatalog()
+        async let marketReaders: Void = prefetchMarketReaders()
         // The gate refreshes the profile itself (`MainShell.kt:157-181` — once
         // per shell entry, on the fresh server snapshot, never a stale cache).
         async let needsOnboarding = profileVM.needsOnboarding()
-        _ = await (orders, loyalty, referrals, membership, plans, addresses, recurring, catalog)
+        _ = await (orders, loyalty, referrals, membership, addresses, recurring, marketReaders)
         // The order-detail hero's 63-frame cleaning mascot is the app's costliest decode. Warm it here, at shell
         // entry — seconds to minutes ahead of any tap into a detail, from the list, Home or a push deep
         // link — whenever the customer has a clean in flight to open.
@@ -157,6 +155,15 @@ struct CustomerShellView: View {
             return
         }
         await raiseReviewPromptIfDue()
+    }
+
+    /// The catalogue and the plans are priced for the chosen market, so they wait for the directory
+    /// (the launch read, joined here) rather than fetching for the default and again for the market.
+    private func prefetchMarketReaders() async {
+        await container.marketStore.refreshIfStale()
+        async let catalog: Void = bookingVM.loadCatalog()
+        async let plans = container.membershipRepository.refreshPlans()
+        _ = await (catalog, plans)
     }
 
     /// Ask for a review of the most recently finished clean, once. Runs AFTER the awaited fan-out
@@ -188,12 +195,14 @@ struct CustomerShellView: View {
                 loyaltyRepository: container.loyaltyRepository,
                 membershipRepository: container.membershipRepository,
                 savedAddressRepository: container.savedAddressRepository,
+                marketStore: container.marketStore,
                 notificationBadge: container.notificationBadge,
                 notificationFeedClient: container.notificationFeedClient,
                 bookingVM: bookingVM,
                 snackbar: snackbar,
                 onBookCleaning: openBooking,
                 onOpenAddressManager: { model.isAddressManagerPresented = true },
+                onOpenMarket: { model.path.append(ShellRoute.market) },
                 onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
                 onSeeAllOrders: model.openOrders,
                 onSubscribePlus: { model.path.append(ShellRoute.subscribePlus) },
@@ -232,6 +241,7 @@ struct CustomerShellView: View {
                 loyaltyRepository: container.loyaltyRepository,
                 referralRepository: container.referralRepository,
                 catalogSource: bookingVM,
+                marketStore: container.marketStore,
                 snackbar: snackbar,
                 onOpenActivity: { model.path.append(ShellRoute.rewardsActivity) }
             )
@@ -242,6 +252,7 @@ struct CustomerShellView: View {
                 profileVM: profileVM,
                 membershipVM: membershipVM,
                 preferences: preferences,
+                marketStore: container.marketStore,
                 avatarCache: container.avatarCache,
                 onOpen: { model.path.append($0) },
                 onSignOut: signOut
@@ -364,6 +375,8 @@ extension CustomerShellView {
             )
         case .language:
             LanguagePickerView(preferences: preferences, onSelected: { model.pop() })
+        case .market:
+            MarketPickerView(market: container.marketStore, onSelected: { model.pop() })
         case .appearance:
             AppearancePickerView(preferences: preferences, onSelected: { model.pop() })
         case .help:
@@ -427,7 +440,6 @@ extension CustomerShellView {
     private var subscribePlus: some View {
         SubscribePlusScreen(
             repository: container.membershipRepository,
-            catalogSource: bookingVM,
             snackbar: snackbar,
             paymentSheet: StripePaymentController(),
             onBack: { model.pop() },

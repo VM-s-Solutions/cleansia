@@ -11,15 +11,110 @@ final class BookingViewModelTests: XCTestCase {
         catalog: FakeCatalogClient = FakeCatalogClient(),
         quote: FakeQuoteClient = FakeQuoteClient(),
         country: FakeCountryResolver = FakeCountryResolver(),
+        market: MarketStore? = nil,
         scheduler: TestScheduler<DispatchQueue.SchedulerTimeType, DispatchQueue.SchedulerOptions>
     ) -> BookingViewModel {
         BookingViewModel(
             catalogClient: catalog,
             quoteClient: quote,
             countryResolver: country,
+            market: market?.statePublisher ?? Just(.unavailable).eraseToAnyPublisher(),
             quoteDebounce: .milliseconds(400),
             scheduler: scheduler.eraseToAnyScheduler()
         )
+    }
+
+    // MARK: The chosen market, before there is an address
+
+    func testTheCatalogueIsPricedForTheChosenMarketBeforeThereIsAnAddress() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.slovak))
+        let market = await MarketFixtures.resolved(selected: MarketFixtures.slovakia)
+        let vm = makeVM(catalog: catalog, market: market, scheduler: .dispatch)
+
+        await vm.loadCatalog()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["svk"])
+        XCTAssertEqual(vm.catalogCountryId, "svk")
+    }
+
+    func testSwitchingTheMarketReloadsTheCatalogueForIt() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let market = await MarketFixtures.resolved()
+        let vm = makeVM(catalog: catalog, market: market, scheduler: .dispatch)
+        await vm.loadCatalog()
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze"])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        market.select(isoCode: "SVK")
+        await drainQuote()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
+        XCTAssertEqual(vm.displayCurrencyCode, "EUR")
+    }
+
+    /// Address > market: the address's country prices the booking, and a market chosen afterwards
+    /// leaves the booking alone.
+    func testTheAddressOverridesTheMarketAndALaterMarketSwitchLeavesTheBookingAlone() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let market = await MarketFixtures.resolved(selected: MarketFixtures.slovakia)
+        let vm = makeVM(catalog: catalog, market: market, scheduler: .dispatch)
+        await vm.loadCatalog()
+        XCTAssertEqual(catalog.requestedCountryIds, ["svk"])
+
+        vm.update { var s = $0
+            s.countryId = "cze"
+            return s
+        }
+        await drainQuote()
+        XCTAssertEqual(catalog.requestedCountryIds, ["svk", "cze"])
+        XCTAssertEqual(vm.catalogCountryId, "cze")
+
+        market.select(isoCode: "CZE")
+        market.select(isoCode: "SVK")
+        await drainQuote()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["svk", "cze"], "the booking's address decides, not the chip")
+    }
+
+    func testTheQuoteCarriesTheChosenMarketUntilAnAddressDecides() async {
+        let quote = FakeQuoteClient()
+        let market = await MarketFixtures.resolved(selected: MarketFixtures.slovakia)
+        let scheduler = TestScheduler.dispatch
+        let vm = makeVM(quote: quote, market: market, scheduler: scheduler)
+
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drainQuote()
+        XCTAssertEqual(quote.requests.last?.countryId, "svk")
+
+        vm.update { var s = $0
+            s.countryId = "cze"
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drainQuote()
+        XCTAssertEqual(quote.requests.last?.countryId, "cze")
+    }
+
+    func testWithoutADirectoryTheCatalogueAndTheQuoteCarryNoCountry() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let quote = FakeQuoteClient()
+        let market = await MarketFixtures.unavailable()
+        let scheduler = TestScheduler.dispatch
+        let vm = makeVM(catalog: catalog, quote: quote, market: market, scheduler: scheduler)
+        await vm.loadCatalog()
+        vm.update { var s = $0
+            s.selectedServiceIds = ["s-1"]
+            return s
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await drainQuote()
+
+        XCTAssertEqual(catalog.requestedCountryIds, [nil])
+        XCTAssertEqual(quote.requests.last?.countryId, nil)
     }
 
     func testStartsOnStepOne() {

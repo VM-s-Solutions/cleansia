@@ -36,6 +36,15 @@ public protocol AppSettingsStore: AnyObject {
     func setTheme(_ theme: Theme)
 }
 
+/// The market a customer browses in, remembered beside the language as the country's ISO code. A
+/// stored code is only ever compared against the market directory, never rendered or sent; nil is
+/// "follow the directory's default".
+public protocol MarketPreferenceStore: AnyObject {
+    var marketIsoCode: String? { get }
+    func setMarket(isoCode: String)
+    func clearMarket()
+}
+
 public extension AppSettingsStore {
     func hasSeenOnboarding(userId _: String) -> Bool {
         hasSeenOnboarding
@@ -46,7 +55,7 @@ public extension AppSettingsStore {
     }
 }
 
-public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Sendable {
+public final class UserDefaultsAppSettingsStore: AppSettingsStore, MarketPreferenceStore, @unchecked Sendable {
     public static let supportedLanguageTags = ["en", "cs", "sk", "uk", "ru"]
     private static let defaultLanguageTag = "en"
 
@@ -54,6 +63,7 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
         static let onboardingSeen = "settings.onboarding_seen"
         static let promptAnswered = "settings.prompt_answered"
         static let language = "settings.language"
+        static let market = "settings.market"
         static let theme = "settings.theme"
     }
 
@@ -130,6 +140,23 @@ public final class UserDefaultsAppSettingsStore: AppSettingsStore, @unchecked Se
 
     public func clearLanguage() {
         defaults.removeObject(forKey: Key.language)
+    }
+
+    public var marketIsoCode: String? {
+        guard let stored = defaults.string(forKey: Key.market), !stored.isBlank else { return nil }
+        return stored
+    }
+
+    public func setMarket(isoCode: String) {
+        if isoCode.isBlank {
+            clearMarket()
+        } else {
+            defaults.set(isoCode, forKey: Key.market)
+        }
+    }
+
+    public func clearMarket() {
+        defaults.removeObject(forKey: Key.market)
     }
 
     public var theme: Theme {

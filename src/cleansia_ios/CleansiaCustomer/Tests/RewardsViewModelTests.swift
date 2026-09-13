@@ -7,7 +7,8 @@ final class RewardsViewModelTests: XCTestCase {
     private func makeVM(
         _ loyalty: FakeLoyaltyClient,
         _ referral: FakeRewardsReferralClient,
-        catalogSource: BookingViewModel = BookingViewModel(catalogClient: FakeCatalogClient())
+        catalogSource: BookingViewModel = BookingViewModel(catalogClient: FakeCatalogClient()),
+        marketStore: MarketStore = MarketStore(client: FakeMarketClient(), preference: FakeMarketPreferenceStore())
     ) -> (RewardsViewModel, LoyaltyRepository, RewardsReferralRepository) {
         let loyaltyRepo = LoyaltyRepository(client: loyalty)
         let referralRepo = RewardsReferralRepository(client: referral)
@@ -15,24 +16,39 @@ final class RewardsViewModelTests: XCTestCase {
             loyaltyRepository: loyaltyRepo,
             referralRepository: referralRepo,
             catalogSource: catalogSource,
+            marketStore: marketStore,
             snackbar: SnackbarController()
         )
         return (vm, loyaltyRepo, referralRepo)
     }
 
-    /// The tier floor is a platform-default-currency figure, so the ladder labels it with the code the
-    /// catalogue overview names as the default — not the market the last booking was priced in.
-    func testTheTierFloorIsLabelledWithTheCataloguesDefaultCurrency() async {
+    /// The tier floor is a platform-default-currency figure. Without a directory the ladder labels it
+    /// with the code the catalogue overview names as the default — not the market the last booking
+    /// was priced in.
+    func testWithoutADirectoryTheTierFloorIsLabelledWithTheCataloguesDefaultCurrency() async {
         let catalog = BookingViewModel(catalogClient: FakeCatalogClient(
             result: .success(CatalogFixtures.catalog(currencyCode: "EUR", defaultCurrencyCode: "CZK"))
         ))
-        let (vm, _, _) = makeVM(FakeLoyaltyClient(), FakeRewardsReferralClient(), catalogSource: catalog)
-        XCTAssertNil(vm.currencyCode)
+        let market = await MarketFixtures.unavailable()
+        let (vm, _, _) = makeVM(FakeLoyaltyClient(), FakeRewardsReferralClient(), catalogSource: catalog, marketStore: market)
+        XCTAssertEqual(vm.tierFloor, .applies(currencyCode: nil))
 
         await catalog.loadCatalog()
 
-        XCTAssertEqual(vm.currencyCode, "CZK")
-        XCTAssertTrue(OrdersFormat.price(1000, currencyCode: vm.currencyCode).hasSuffix(" Kč"))
+        XCTAssertEqual(vm.tierFloor, .applies(currencyCode: "CZK"))
+        XCTAssertTrue(OrdersFormat.price(1000, currencyCode: vm.tierFloor.currencyCode).hasSuffix(" Kč"))
+    }
+
+    /// The floor is enforced only on orders in the default currency, so it is stated only in a market
+    /// on that currency — and omitted, not relabelled, elsewhere.
+    func testTheTierFloorFollowsTheChosenMarket() async {
+        let market = await MarketFixtures.resolved()
+        let (vm, _, _) = makeVM(FakeLoyaltyClient(), FakeRewardsReferralClient(), marketStore: market)
+        XCTAssertEqual(vm.tierFloor, .applies(currencyCode: "CZK"))
+
+        market.select(isoCode: "SVK")
+
+        XCTAssertEqual(vm.tierFloor, .notApplicable)
     }
 
     func testLoadSurfacesLoadedWithTierProgressAndPerks() async {

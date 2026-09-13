@@ -101,9 +101,8 @@ booking. Two consequences follow. A preferred cleaner named on the template (`Cr
 `UpdateRecurringBooking`) must be paid in that currency as well as have a completed order with the
 customer — one key, `order.preferred_employee.not_eligible`, for both terms — because a cleaner paid in
 another currency would never see an occurrence on their board. And every recurring wizard -- web,
-Android and iOS -- reads the catalogue for the country of whichever saved address is chosen (before an
-address is picked the two mobile forms read the chosen market; the web one still reads the platform
-default), then trims any selected service or package the new list no
+Android and iOS -- reads the catalogue for the country of whichever saved address is chosen, and for
+the chosen market before an address is picked, then trims any selected service or package the new list no
 longer offers (with a notice to the customer), like the one-off wizard — otherwise the server would refuse the quote as
 `order.selected_services.invalid` / `order.selected_package.invalid` for an entry with no price in that
 market. → [Business rules — order currency](/product/business-rules#price-stages)

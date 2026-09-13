@@ -70,14 +70,6 @@ public class Constants
         public const string English = "en";
     }
 
-    public class Currency
-    {
-        // CZK is the platform's primary fiat — fallback when an order/receipt
-        // didn't capture a currency record. Multi-currency is supported via
-        // the Currency entity; this is just the safety-net string default.
-        public const string Czk = "CZK";
-    }
-
     public class PayoutInvoice
     {
         // Days from issue to "datum splatnosti". A platform payment policy, not a legal minimum —

@@ -556,7 +556,7 @@ class does NOT touch currency or country**, because currency display was never p
 
 | Location | Hardcoded? | Nature |
 |---|---|---|
-| `Constants.Currency.Czk = "CZK"` | declared, **no reader** — no render or register path falls back to it | dead constant |
+| `Constants.Currency.Czk` | **deleted 2026-09-13** — it had no reader; nothing falls back to a string default | gone |
 | `CurrencyResolutionService` — a named country's currency | **no fallback** — a serviced country with no `CountryConfiguration`, a blank `DefaultCurrencyCode` or a code naming no `Currency` row throws `InvalidOperationException` (owner ruling 2026-09-12); only a null country reads the platform default | fails closed |
 | `ReceiptService.cs` — the fiscal request's currency | **no fallback** — a receipt whose order has no resolved currency is recorded as a failed fiscal attempt, never registered as CZK | fails closed |
 | `ReceiptService.cs` — the fiscal regime and the receipt-number counter scope | **no fallback** — an order whose country cannot be resolved is refused on the same landing (recorded failed attempt, retried by the job), never declared to the Czech authority; the counter resolves an empty provider key to the `DEFAULT` issuer scope, not `cz-eet2` | fails closed |

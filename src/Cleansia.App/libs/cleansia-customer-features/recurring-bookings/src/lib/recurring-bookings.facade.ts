@@ -21,6 +21,7 @@ import {
   selectCustomerPackagesCatalogue,
   selectCustomerServices,
   selectCustomerServicesCatalogue,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
@@ -124,12 +125,17 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     initialValue: { packages: [] as PackageListItem[], countryId: null as string | null },
   });
 
+  /** The chosen market, which prices the form until a saved address names a country. */
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null as string | null,
+  });
   /**
    * The chosen saved address's country, which decides the currency the schedule is priced in —
-   * and with it which catalogue entries can be offered at all.
+   * and with it which catalogue entries can be offered at all. Before an address is chosen the
+   * chosen market stands in, the same precedence the one-off wizard and both mobile forms apply.
    */
   private readonly addressCountryId = computed<string | null>(() =>
-    this.countryOf(this.formData().savedAddressId),
+    this.countryOf(this.formData().savedAddressId) ?? this.marketCountryId(),
   );
   /**
    * Whether the lists on screen are the ones priced for the address — the only lists a selection
@@ -346,7 +352,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
   /**
    * The catalogue is priced per market and the server withholds what has no price in the
-   * address country's currency, so it is read for the platform default first and again for every
+   * address country's currency, so it is read for the chosen market first and again for every
    * country the chosen saved address names. A selection the new list no longer offers would make
    * the server refuse the quote outright, so it is trimmed to the new list — with a word to the
    * customer — once that list has landed.
@@ -384,7 +390,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.store.dispatch(loadCustomerPackages(countryId));
   }
 
-  /** A list priced for the platform default never trims: nothing was ever picked outside it. */
+  /** Only a list priced for the country the form is priced in may trim the selection. */
   private pricedForAddress(countryId: string | null): boolean {
     return countryId !== null && countryId === this.addressCountryId();
   }

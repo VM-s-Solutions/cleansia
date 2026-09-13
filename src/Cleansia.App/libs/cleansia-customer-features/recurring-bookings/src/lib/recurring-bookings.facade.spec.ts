@@ -18,6 +18,7 @@ import {
   selectCustomerPackagesCatalogue,
   selectCustomerServices,
   selectCustomerServicesCatalogue,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
 import { Action } from '@ngrx/store';
@@ -97,6 +98,7 @@ describe('RecurringBookingsFacade', () => {
     store.overrideSelector(selectCustomerPackages, []);
     store.overrideSelector(selectCustomerServicesCatalogue, { services: [], countryId: null });
     store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
+    store.overrideSelector(selectMarketCountryId, null);
     facade = TestBed.inject(RecurringBookingsFacade);
   });
 
@@ -117,6 +119,18 @@ describe('RecurringBookingsFacade', () => {
       expect(dispatch).toHaveBeenCalledWith(loadCustomerPackages(null));
       const dispatched = dispatch.mock.calls.map(([action]) => action as unknown as Action);
       expect(dispatched.filter((action) => action.type === loadCustomerServices.type)).toHaveLength(1);
+    });
+
+    it('prices the form for the chosen market before an address is chosen', async () => {
+      store.overrideSelector(selectMarketCountryId, 'svk');
+      store.refreshState();
+      const dispatch = jest.spyOn(store, 'dispatch');
+
+      await facade.initialize();
+      TestBed.flushEffects();
+
+      expect(dispatch).toHaveBeenCalledWith(loadCustomerServices('svk'));
+      expect(dispatch).toHaveBeenCalledWith(loadCustomerPackages('svk'));
     });
 
     it("re-reads services and packages for the chosen address's country", async () => {

@@ -239,7 +239,9 @@ fun SubscribePlusScreen(
                                         } else {
                                             PaymentSheet.GooglePayConfiguration.Environment.Test
                                         },
-                                        countryCode = market.selectedOrNull?.isoAlpha2 ?: "CZ",
+                                        // The MERCHANT's country (Stripe's meaning of this field): Cleansia
+                                        // s.r.o. is Czech whichever market the customer shops in.
+                                        countryCode = "CZ",
                                         // A SetupIntent carries no currency, so this is what the Google Pay
                                         // sheet shows and what gates it: the currency the plan is sold in.
                                         currencyCode = selectedPlan?.currencyCode,

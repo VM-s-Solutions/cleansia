@@ -64,8 +64,8 @@ class MembershipCurrencyBindingTest {
             subscribe.contains("currencyCode = selectedPlan?.currencyCode"),
         )
         assertTrue(
-            "the Google Pay country no longer follows the market",
-            subscribe.contains("countryCode = market.selectedOrNull?.isoAlpha2"),
+            "the Google Pay country is the merchant's, not the shopper's market",
+            subscribe.contains("countryCode = \"CZ\"") && !subscribe.contains("countryCode = market"),
         )
         assertTrue(
             "the subscribe screen reads the catalogue default again",

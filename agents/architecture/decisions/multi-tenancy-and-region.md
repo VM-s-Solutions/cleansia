@@ -1,5 +1,11 @@
 # Multi-tenancy and multi-region — how the two axes compose (living decision note)
 
+> **Superseded in part, 2026-09-13.** This note predates the customer-market programme. What it says about
+> CZK-only plans, a customer with no market, or copy that states a money figure is no longer true: see
+> [ADR-0058](../../../docs/decisions/adr-0058.md) (the chosen market), [ADR-0059](../../../docs/decisions/adr-0059.md)
+> (Plus priced per market) and [ADR-0060](../../../docs/decisions/adr-0060.md) (money figures come from the market).
+
+
 > Companion to the **immutable** ADR-0017
 > (`docs/decisions/adr-0017.md`). The ADR
 > is the frozen decision; this file is the evolving composition note — the verified tenancy facts, the

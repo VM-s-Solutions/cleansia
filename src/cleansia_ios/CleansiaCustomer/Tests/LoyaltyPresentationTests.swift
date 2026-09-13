@@ -71,13 +71,19 @@ final class LoyaltyPresentationTests: XCTestCase {
         )
 
         let noneFlagged = MarketState.resolved(selected: MarketFixtures.slovakia, markets: [MarketFixtures.slovakia])
-        XCTAssertEqual(LoyaltyPresentation.tierFloor(market: noneFlagged, catalogDefaultCurrencyCode: "CZK"), .notApplicable)
+        XCTAssertEqual(
+            LoyaltyPresentation.tierFloor(market: noneFlagged, catalogDefaultCurrencyCode: "CZK"),
+            .notApplicable
+        )
 
         XCTAssertEqual(
             LoyaltyPresentation.tierFloor(market: .unavailable, catalogDefaultCurrencyCode: "CZK"),
             .applies(currencyCode: "CZK")
         )
-        XCTAssertEqual(LoyaltyPresentation.tierFloor(market: .loading, catalogDefaultCurrencyCode: nil), .applies(currencyCode: nil))
+        XCTAssertEqual(
+            LoyaltyPresentation.tierFloor(market: .loading, catalogDefaultCurrencyCode: nil),
+            .applies(currencyCode: nil)
+        )
     }
 
     func testTierStatusRelativeToCurrent() {

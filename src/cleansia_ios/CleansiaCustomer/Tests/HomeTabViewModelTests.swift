@@ -49,7 +49,10 @@ final class HomeTabViewModelTests: XCTestCase {
         marketStore: MarketStore? = nil,
         catalog: FakeCatalogClient = FakeCatalogClient()
     ) -> HomeTabViewModel {
-        let marketStore = marketStore ?? MarketStore(client: FakeMarketClient(), preference: FakeMarketPreferenceStore())
+        let marketStore = marketStore ?? MarketStore(
+            client: FakeMarketClient(),
+            preference: FakeMarketPreferenceStore()
+        )
         return HomeTabViewModel(
             orderRepository: orderRepository,
             recurringRepository: RecurringBookingRepository(client: FakeRecurringBookingClient()),
@@ -65,13 +68,13 @@ final class HomeTabViewModelTests: XCTestCase {
     // MARK: The market chip
 
     func testTheChipShowsTheChosenMarketOnlyWhenThereIsAChoice() async {
-        let two = makeViewModel(marketStore: await MarketFixtures.resolved(selected: MarketFixtures.slovakia))
+        let two = await makeViewModel(marketStore: MarketFixtures.resolved(selected: MarketFixtures.slovakia))
         XCTAssertEqual(two.marketChip?.chipLabel, "SK · EUR")
 
-        let one = makeViewModel(marketStore: await MarketFixtures.resolved(MarketFixtures.one))
+        let one = await makeViewModel(marketStore: MarketFixtures.resolved(MarketFixtures.one))
         XCTAssertNil(one.marketChip)
 
-        let none = makeViewModel(marketStore: await MarketFixtures.unavailable())
+        let none = await makeViewModel(marketStore: MarketFixtures.unavailable())
         XCTAssertNil(none.marketChip)
     }
 

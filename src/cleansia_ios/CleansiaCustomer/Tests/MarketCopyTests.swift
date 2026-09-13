@@ -26,8 +26,8 @@ final class MarketCopyTests: XCTestCase {
     }
 
     func testTheFaqAnswerFollowsTheSameRule() {
-        let stated = InsuranceCopy.faqAnswer(MarketMoney(amount: 50_000, currencyCode: "EUR"))
-        XCTAssertEqual(stated, L10n.Help.faqA3(OrdersFormat.price(50_000, currencyCode: "EUR")))
+        let stated = InsuranceCopy.faqAnswer(MarketMoney(amount: 50000, currencyCode: "EUR"))
+        XCTAssertEqual(stated, L10n.Help.faqA3(OrdersFormat.price(50000, currencyCode: "EUR")))
         XCTAssertTrue(stated.contains("€"), stated)
 
         let unstated = InsuranceCopy.faqAnswer(nil)
@@ -51,12 +51,15 @@ final class MarketCopyTests: XCTestCase {
     /// The push announces the credit as different news from a plain cancellation, and states no
     /// amount: the figure is on the credit screen, where it arrives with its currency.
     func testTheNoCleanerPushAnnouncesACreditWithoutAFigureInBothCatalogs() throws {
-        for (app, strings) in [("customer", try customerStrings()), ("partner", try partnerStrings())] {
+        for (app, strings) in try [("customer", customerStrings()), ("partner", partnerStrings())] {
             for locale in Self.locales {
                 let value = try value(of: "push.order.no_cleaner_refunded.body", locale, in: strings)
                 let withoutSlot = value.replacingOccurrences(of: "%1$@", with: "")
                 XCTAssertTrue(value.contains("#%1$@"), "\(app)/\(locale) lost the order-number slot: \(value)")
-                XCTAssertNil(withoutSlot.rangeOfCharacter(from: .decimalDigits), "\(app)/\(locale) states a figure: \(value)")
+                XCTAssertNil(
+                    withoutSlot.rangeOfCharacter(from: .decimalDigits),
+                    "\(app)/\(locale) states a figure: \(value)"
+                )
                 XCTAssertFalse(matches(Self.currencyWord, value), "\(app)/\(locale) names a currency: \(value)")
             }
         }

@@ -109,7 +109,9 @@ final class MarketStoreTests: XCTestCase {
 
     func testConcurrentRefreshesShareOneRead() async {
         let (store, client, _) = MarketFixtures.store()
-        client.gate = { for _ in 0 ..< 3 { await Task.yield() } }
+        client.gate = { for _ in 0 ..< 3 {
+            await Task.yield()
+        } }
 
         async let first: Void = store.refresh()
         async let second: Void = store.refresh()
@@ -160,7 +162,10 @@ final class MarketStoreTests: XCTestCase {
     func testThePickerRowNamesTheMarketInTheCustomersLanguageWithItsCurrency() {
         XCTAssertEqual(MarketPickerLabel.row(MarketFixtures.czechia, locale: Locale(identifier: "cs")), "Česko · CZK")
         XCTAssertEqual(MarketPickerLabel.row(MarketFixtures.czechia, locale: Locale(identifier: "en")), "Czechia · CZK")
-        XCTAssertEqual(MarketPickerLabel.row(MarketFixtures.slovakia, locale: Locale(identifier: "uk")), "Slovakia · EUR")
+        XCTAssertEqual(
+            MarketPickerLabel.row(MarketFixtures.slovakia, locale: Locale(identifier: "uk")),
+            "Slovakia · EUR"
+        )
     }
 
     func testTheInsuranceCeilingIsStatedInTheCountrysCurrencyOrNotAtAll() async {

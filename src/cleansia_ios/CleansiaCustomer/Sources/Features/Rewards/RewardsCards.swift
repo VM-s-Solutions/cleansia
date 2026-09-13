@@ -41,7 +41,10 @@ private struct TierLadderRow: View {
         case .noDiscount: L10n.Rewards.noDiscountYet
         case let .basic(percent): L10n.Rewards.discountBasic(percent)
         case let .minOrder(percent, minOrder):
-            L10n.Rewards.discountMinOrder(percent, OrdersFormat.price(Double(minOrder), currencyCode: floor.currencyCode))
+            L10n.Rewards.discountMinOrder(
+                percent,
+                OrdersFormat.price(Double(minOrder), currencyCode: floor.currencyCode)
+            )
         }
     }
 

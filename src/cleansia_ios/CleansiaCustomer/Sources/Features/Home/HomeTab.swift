@@ -328,7 +328,10 @@ private struct MarketChip: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: L10n.Market.chipA11y(market.localizedName(for: locale), market.currencyCode)))
+        .accessibilityLabel(Text(verbatim: L10n.Market.chipA11y(
+            market.localizedName(for: locale),
+            market.currencyCode
+        )))
         .accessibilityAddTraits(.isButton)
     }
 }

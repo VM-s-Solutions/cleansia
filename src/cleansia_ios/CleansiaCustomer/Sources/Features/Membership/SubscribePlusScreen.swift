@@ -285,10 +285,13 @@ private struct HeroBlock: View {
         let isAnnual = plan.isAnnual
         if trialDays > 0 {
             VStack(spacing: Spacing.xs) {
-                Text(L10n.Membership.heroTrialPrice(MembershipFormat.price(0, currencyCode: plan.currencyCode), trialDays))
-                    .cleansiaFont(CleansiaTypography.headlineLarge)
-                    .foregroundColor(.white)
-                    .lineLimit(1)
+                Text(L10n.Membership.heroTrialPrice(
+                    MembershipFormat.price(0, currencyCode: plan.currencyCode),
+                    trialDays
+                ))
+                .cleansiaFont(CleansiaTypography.headlineLarge)
+                .foregroundColor(.white)
+                .lineLimit(1)
                 Text(isAnnual
                     ? L10n.Membership.heroThenPriceYear(regularPrice)
                     : L10n.Membership.heroThenPrice(regularPrice))

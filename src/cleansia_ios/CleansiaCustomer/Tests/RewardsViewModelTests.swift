@@ -30,7 +30,12 @@ final class RewardsViewModelTests: XCTestCase {
             result: .success(CatalogFixtures.catalog(currencyCode: "EUR", defaultCurrencyCode: "CZK"))
         ))
         let market = await MarketFixtures.unavailable()
-        let (vm, _, _) = makeVM(FakeLoyaltyClient(), FakeRewardsReferralClient(), catalogSource: catalog, marketStore: market)
+        let (vm, _, _) = makeVM(
+            FakeLoyaltyClient(),
+            FakeRewardsReferralClient(),
+            catalogSource: catalog,
+            marketStore: market
+        )
         XCTAssertEqual(vm.tierFloor, .applies(currencyCode: nil))
 
         await catalog.loadCatalog()

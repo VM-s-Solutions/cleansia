@@ -62,7 +62,8 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
         var factory = new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin));
         var writer = new DbContextAuditWriter(context, new FixedTenantProvider(TestTenants.Default));
         var sink = new OutOfBandAuditFailureSink(
-            new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default));
+            new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default),
+            NullLogger<OutOfBandAuditFailureSink>.Instance);
 
         var handler = new AdminDeleteUserAccount.Handler(session, deletionService, auditContext);
         var audit = new AuditLogBehavior<AdminDeleteUserAccount.Command, BusinessResult>(

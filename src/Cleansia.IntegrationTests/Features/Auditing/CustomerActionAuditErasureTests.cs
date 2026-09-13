@@ -26,7 +26,7 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 /// blanking is a tracked write riding the erasure's single commit, an erasure whose commit throws leaves
 /// every row exactly as it was: the trail is never blanked for a customer who still exists.</para>
 ///
-/// <para>Also covers the retention delete the repository exposes for T-AUD-7: per row, by its own age,
+/// <para>Also covers the retention delete the repository exposes for the retention task: per row, by its own age,
 /// across tenants, and never the admin or employee tables.</para>
 /// </summary>
 [Collection("PostgresCollection")]
@@ -101,8 +101,9 @@ public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) :
                     CancellationToken.None);
                 Assert.True(result.IsSuccess);
 
-                // Every erasure write is tracked and unsaved at this point; a row the commit cannot take
-                // (ActorId over its 26-char column) makes the single SaveChangesAsync throw.
+                // The pseudonymisation and User.Anonymize() are staged after the refresh-token revoke's own
+                // commit and are unsaved here; a row the commit cannot take (ActorId over its 26-char column)
+                // makes the single SaveChangesAsync throw.
                 context.AdminActionAudits.Add(new AdminActionAudit
                 {
                     ActorId = new string('x', 40),

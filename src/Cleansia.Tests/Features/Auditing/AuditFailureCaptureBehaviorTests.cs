@@ -20,10 +20,11 @@ namespace Cleansia.Tests.Features.Auditing;
 /// action shapes the inner AuditLogBehavior structurally cannot see.
 ///   • A validation reject (a short-circuited BusinessResult failure that never reached UnitOfWork/AuditLog)
 ///     writes a Success=false row out-of-band whose ErrorCode is the FIRST rule's key, not the
-///     ValidationError sentinel (Q-AUD-O2, both arms — ADR-0062 D1).
+///     ValidationError sentinel — both arms, the admin one on the owner's default (ADR-0062 D1).
 ///   • A commit-throw (an exception propagating from the OUTER UnitOfWork after the inner AuditLog returned
 ///     a success) writes a Success=false row out-of-band, then rethrows.
-///   • The gate is identical to the inner behavior (admin Command only); a query / non-admin produces no row.
+///   • The gate is AuditGate.Resolve, shared with the inner behavior: admin Commands (opt-out) and
+///     customer-marked Commands (opt-in); a Query, an Employee or an unmarked non-admin Command produces no row.
 ///   • The shared IAuditContext latch prevents double-writing a failure the inner behavior already recorded.
 ///   • Best-effort: a sink that throws is swallowed and never changes the error returned to the admin.
 /// </summary>

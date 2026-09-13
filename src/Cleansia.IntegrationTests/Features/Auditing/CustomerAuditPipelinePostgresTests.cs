@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Outbox;
@@ -18,6 +19,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Respawn;
@@ -26,16 +28,19 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 
 /// <summary>
 /// ADR-0062 D1/D7 (Verification #3) against a REAL Postgres DbContext — the customer arm of the shipped
-/// pipeline, driven by two throw-away marked test commands (no production command is marked here; that
-/// is T-AUD-2/3's work). The production nesting is reproduced by hand exactly as
-/// <see cref="AuditLogBehaviorPostgresTests"/> does for the admin arm:
-/// AuditFailureCapture (outer) → Validation → UnitOfWork → AuditLog (inner) → handler.
+/// pipeline, driven by throw-away marked test commands (no production command is marked here; the
+/// production commands are marked in a later ticket). The production nesting is reproduced by hand
+/// exactly as <see cref="AuditLogBehaviorPostgresTests"/> does for the admin arm:
+/// AuditFailureCapture (outer) → OperatorTenantScope → Validation → UnitOfWork → AuditLog (inner) → handler.
 ///
 /// <para>What it proves: a Customer's success row rides the action's commit with the tenant stamped and
 /// the request context filled; a rolled-back action leaves no row; a handler refusal and a validation
 /// reject each leave one out-of-band row whose <c>ErrorCode</c> is the KEY; the latch keeps it to one; an
 /// Employee lands nowhere; an Administrator lands in the admin table; an anonymous caller lands in the
-/// customer table only where the marker allows it, with <c>ClientAudience</c> filled.</para>
+/// customer table only where the marker allows it, with <c>ClientAudience</c> filled. For an anonymous
+/// market-scoped act the tenant is the operator <c>OperatorTenantScopeBehavior</c> resolved before
+/// validation — and a refusal raised BEFORE that resolution has no tenant at all: the sink skips that
+/// row with one Warning instead of losing it to a NOT NULL violation logged as an error per probe.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
@@ -54,6 +59,9 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
 
     [AuditAction("customer.test.guest_act", Audience = AuditAudience.Customer, ResourceType = "Order", AllowsAnonymousActor = true)]
     public sealed record GuestActCommand(string OrderId) : IRequest<BusinessResult>;
+
+    [AuditAction("customer.test.guest_market_act", Audience = AuditAudience.Customer, ResourceType = "Order", AllowsAnonymousActor = true)]
+    public sealed record GuestMarketActCommand(string OrderId, string? CountryId) : IRequest<BusinessResult>, IOperatorScopedRequest;
 
     private sealed class Run
     {
@@ -74,8 +82,11 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
             session ?? CustomerSession(),
             new FixedTenantProvider(TestTenants.Default));
 
-    private IAuditFailureSink Sink() =>
-        new OutOfBandAuditFailureSink(new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default));
+    private IAuditFailureSink Sink(ITenantProvider? tenantProvider = null, ILogger<OutOfBandAuditFailureSink>? logger = null) =>
+        new OutOfBandAuditFailureSink(
+            new SingleDbScopeFactory(Fixture.GetConnectionString()),
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default),
+            logger ?? NullLogger<OutOfBandAuditFailureSink>.Instance);
 
     private static AuditEntryFactory Factory(Run run) =>
         new(run.Session, new TestRequestMetadataProvider(Ip, DeviceLabel, DeviceId), new HostAudienceProvider(run.Audience));
@@ -124,6 +135,44 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
             ct1 => validation.Handle(command,
                 ct2 => unitOfWork.Handle(command,
                     ct3 => audit.Handle(command, handler, ct3), ct2), ct1),
+            CancellationToken.None);
+    }
+
+    // The production nesting of an anonymous MARKET-scoped request: the operator scope resolves the ambient
+    // tenant between the outer failure capture and validation. ONE tenant provider is shared by the scope
+    // behavior, the sink and the writer, as the request scope shares it in production.
+    private async Task<BusinessResult> RunMarketPipelineAsync<TRequest>(
+        CleansiaDbContext context,
+        Run run,
+        TRequest command,
+        ITenantProvider tenantProvider,
+        OperatorResolution resolution,
+        IValidator<TRequest> validator,
+        RequestHandlerDelegate<BusinessResult> handler,
+        List<(LogLevel Level, string Message)> behaviorEntries,
+        List<(LogLevel Level, string Message)> sinkEntries)
+        where TRequest : IRequest<BusinessResult>
+    {
+        var sink = Sink(tenantProvider, new CapturingLogger<OutOfBandAuditFailureSink>(sinkEntries));
+        var factory = Factory(run);
+        var writer = new DbContextAuditWriter(context, tenantProvider);
+
+        var failureCapture = new AuditFailureCaptureBehavior<TRequest, BusinessResult>(
+            run.Session, run.AuditContext, sink, factory,
+            new CapturingLogger<AuditFailureCaptureBehavior<TRequest, BusinessResult>>(behaviorEntries));
+        var operatorScope = new OperatorTenantScopeBehavior<TRequest, BusinessResult>(tenantProvider, new FixedOperatorResolver(resolution));
+        var validation = new ValidationPipelineBehavior<TRequest, BusinessResult>(
+            [validator], NullLogger<ValidationPipelineBehavior<TRequest, BusinessResult>>.Instance);
+        var unitOfWork = new UnitOfWorkPipelineBehavior<TRequest, BusinessResult>(context);
+        var audit = new AuditLogBehavior<TRequest, BusinessResult>(
+            run.Session, run.AuditContext, writer, sink, factory,
+            new CapturingLogger<AuditLogBehavior<TRequest, BusinessResult>>(behaviorEntries));
+
+        return await failureCapture.Handle(command,
+            ct1 => operatorScope.Handle(command,
+                ct2 => validation.Handle(command,
+                    ct3 => unitOfWork.Handle(command,
+                        ct4 => audit.Handle(command, handler, ct4), ct3), ct2), ct1),
             CancellationToken.None);
     }
 
@@ -396,6 +445,67 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
         Assert.Equal(0, await AdminRowCount(verify));
     }
 
+    // ── the anonymous market-scoped act and its tenant ─────────────────────────
+
+    [Fact]
+    public async Task An_Anonymous_Refusal_Raised_Before_The_Operator_Is_Resolved_Is_Skipped_With_One_Warning_Not_Lost_As_An_Error()
+    {
+        await ResetAsync();
+        var run = new Run { Session = AnonymousSession() };
+        var ambientTenant = new FixedTenantProvider(null);
+        var behaviorEntries = new List<(LogLevel Level, string Message)>();
+        var sinkEntries = new List<(LogLevel Level, string Message)>();
+
+        await using (var ctx = NewContext(run.Session))
+        {
+            var result = await RunMarketPipelineAsync(ctx, run, new GuestMarketActCommand("ORD-1", "XX"), ambientTenant,
+                OperatorResolution.NotAMarket, new PassingValidator<GuestMarketActCommand>(), ActionThatAddsAnOutboxRow(ctx),
+                behaviorEntries, sinkEntries);
+
+            Assert.True(result.IsFailure);
+            Assert.Equal(BusinessErrorMessage.CountryNotServiced, ((IValidationResult)result).Errors.Single().Message);
+        }
+
+        await using var verify = NewContext();
+        Assert.Empty(await CustomerRows(verify));
+        Assert.Equal(0, await OutboxCount(verify));
+        Assert.DoesNotContain(behaviorEntries, e => e.Level == LogLevel.Error);
+        var warning = Assert.Single(sinkEntries);
+        Assert.Equal(LogLevel.Warning, warning.Level);
+        Assert.Contains("customer.test.guest_market_act", warning.Message);
+        Assert.Contains(BusinessErrorMessage.CountryNotServiced, warning.Message);
+    }
+
+    [Fact]
+    public async Task An_Anonymous_Refusal_Raised_After_The_Operator_Is_Resolved_Is_Stamped_With_That_Operator()
+    {
+        await ResetAsync();
+        var run = new Run { Session = AnonymousSession() };
+        var ambientTenant = new FixedTenantProvider(null);
+        var behaviorEntries = new List<(LogLevel Level, string Message)>();
+        var sinkEntries = new List<(LogLevel Level, string Message)>();
+
+        await using (var ctx = NewContext(run.Session))
+        {
+            var result = await RunMarketPipelineAsync(ctx, run, new GuestMarketActCommand("ORD-1", "CZE"), ambientTenant,
+                new OperatorResolution(true, TestTenants.Default), new RejectingValidator<GuestMarketActCommand>(), ActionThatAddsAnOutboxRow(ctx),
+                behaviorEntries, sinkEntries);
+
+            Assert.True(result.IsFailure);
+        }
+
+        await using var verify = NewContext();
+        var row = Assert.Single(await CustomerRows(verify));
+        Assert.False(row.Success);
+        Assert.Equal(BusinessErrorMessage.TotalPriceNotMatch, row.ErrorCode);
+        Assert.Null(row.UserId);
+        Assert.Equal(TestTenants.Default, row.TenantId);
+        Assert.Equal(JwtAudiences.Customer, row.ClientAudience);
+        Assert.Equal(0, await OutboxCount(verify));
+        Assert.Empty(sinkEntries);
+        Assert.DoesNotContain(behaviorEntries, e => e.Level == LogLevel.Error);
+    }
+
     [Fact]
     public async Task A_Registration_Style_Act_Carries_The_Snapshots_ActorUserId_When_The_Session_Has_None()
     {
@@ -462,5 +572,18 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;
+    }
+
+    private sealed class FixedOperatorResolver(OperatorResolution resolution) : IOperatorTenantResolver
+    {
+        public Task<OperatorResolution> ResolveAsync(string? countryId, CancellationToken cancellationToken) => Task.FromResult(resolution);
+    }
+
+    private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries) : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => entries.Add((logLevel, formatter(state, exception)));
     }
 }

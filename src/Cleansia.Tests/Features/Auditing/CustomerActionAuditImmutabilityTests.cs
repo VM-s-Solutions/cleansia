@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Database.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Tests.Features.Auditing;
 
@@ -12,15 +13,19 @@ namespace Cleansia.Tests.Features.Auditing;
 /// <c>IRepository&lt;T&gt;</c> hands every repository <c>Remove</c>/<c>RemoveRange</c>/<c>Deactivate</c>/
 /// <c>DeactivateRange</c>, and <c>BaseEntity.IsActive</c> is a public setter. So this walks the compiled
 /// IL of the three assemblies that can touch the table and asserts that no method body invokes one of
-/// those four on the customer repository or the entity's <c>DbSet</c>, that no method body which handles
-/// a <c>CustomerActionAudit</c> reads or sets <c>IsActive</c>, and that the one sanctioned mutator,
-/// <see cref="CustomerActionAudit.Pseudonymise"/>, is called from the erasure walk and nowhere else.
+/// those four on the customer repository or the entity's <c>DbSet</c>, nor reaches the row through the
+/// context itself (<c>DbContext.Remove&lt;T&gt;</c> is a generic METHOD on a non-generic type, and
+/// <c>RemoveRange(params object[])</c> / <c>Entry(object)</c> carry no type at all — the latter are
+/// flagged when the calling method handles a <c>CustomerActionAudit</c>), that no method body which
+/// handles a <c>CustomerActionAudit</c> reads or sets <c>IsActive</c>, and that the one sanctioned
+/// mutator, <see cref="CustomerActionAudit.Pseudonymise"/>, is called from the erasure walk and nowhere
+/// else.
 ///
 /// <para>IL rather than source text because a call site is a fact about the compiled program: a helper,
 /// a lambda or a generic method reaches the same member without the type's name ever appearing on the
 /// line. The walk resolves every <c>call</c>/<c>callvirt</c>/<c>newobj</c>/<c>ldftn</c>/<c>ldtoken</c>
 /// operand through the declaring module, so a member reached through a generic instantiation over
-/// <c>CustomerActionAudit</c> resolves to that instantiation.</para>
+/// <c>CustomerActionAudit</c> — a type's or a method's — resolves to that instantiation.</para>
 /// </summary>
 public sealed class CustomerActionAuditImmutabilityTests
 {
@@ -34,6 +39,9 @@ public sealed class CustomerActionAuditImmutabilityTests
     private static readonly string[] ForbiddenRepositoryMembers =
         ["Remove", "RemoveRange", "Deactivate", "DeactivateRange"];
 
+    private static readonly string[] ForbiddenContextMembers =
+        ["Remove", "RemoveRange", "Update", "UpdateRange", "Entry"];
+
     private sealed record CallSite(MethodBase Caller, MethodBase Callee)
     {
         public override string ToString() => $"{Caller.DeclaringType?.FullName}.{Caller.Name} -> {Callee.DeclaringType?.Name}.{Callee.Name}";
@@ -45,8 +53,7 @@ public sealed class CustomerActionAuditImmutabilityTests
     public void No_Call_Site_Removes_Or_Deactivates_A_Customer_Audit_Row()
     {
         var offenders = Sites.Value
-            .Where(site => ForbiddenRepositoryMembers.Contains(site.Callee.Name)
-                           && TargetsTheCustomerTable(site.Callee.DeclaringType))
+            .Where(site => RemovesOrDeactivatesThroughTheRepository(site) || ReachesTheRowThroughTheContext(site))
             .Select(site => site.ToString())
             .Distinct()
             .Order()
@@ -127,6 +134,24 @@ public sealed class CustomerActionAuditImmutabilityTests
         }
 
         return $"{type.FullName}.{method.Name}";
+    }
+
+    private static bool RemovesOrDeactivatesThroughTheRepository(CallSite site) =>
+        ForbiddenRepositoryMembers.Contains(site.Callee.Name)
+        && TargetsTheCustomerTable(site.Callee.DeclaringType);
+
+    private static bool ReachesTheRowThroughTheContext(CallSite site)
+    {
+        if (!ForbiddenContextMembers.Contains(site.Callee.Name)
+            || site.Callee.DeclaringType is not { } declaringType
+            || !typeof(DbContext).IsAssignableFrom(declaringType))
+        {
+            return false;
+        }
+
+        return site.Callee.IsGenericMethod
+            ? site.Callee.GetGenericArguments().Contains(typeof(CustomerActionAudit))
+            : References(site.Caller, typeof(CustomerActionAudit));
     }
 
     private static bool TargetsTheCustomerTable(Type? declaringType)

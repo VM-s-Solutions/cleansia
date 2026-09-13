@@ -2,6 +2,7 @@ using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Infra.Database.Auditing;
 
@@ -14,21 +15,36 @@ namespace Cleansia.Infra.Database.Auditing;
 /// still in scope) and stamped onto the row — neither audit row is <c>Auditable</c>, so
 /// <c>CommitAsync</c> would not stamp it. The behavior wraps this call and swallows: a failure here never
 /// changes the error returned to the caller (D2.2).
+///
+/// <para>A row with no ambient tenant is not written (ADR-0062 D7). The one request shape that reaches
+/// here without one is an anonymous market-scoped act refused BEFORE <c>OperatorTenantScopeBehavior</c>
+/// resolved its operator — <c>country.not_serviced</c> / <c>tenant.not_found</c> — and there is no tenant
+/// that row could truthfully carry: the column is NOT NULL, so the insert would fail and the refusal
+/// would surface as one error log with a stack trace per probe. It is skipped with one Warning instead.</para>
 /// </summary>
 public sealed class OutOfBandAuditFailureSink(
     IServiceScopeFactory serviceScopeFactory,
-    ITenantProvider tenantProvider) : IAuditFailureSink
+    ITenantProvider tenantProvider,
+    ILogger<OutOfBandAuditFailureSink> logger) : IAuditFailureSink
 {
     public Task RecordFailureAsync(AdminActionAudit entry, CancellationToken cancellationToken) =>
-        WriteAsync(entry, cancellationToken);
+        WriteAsync(entry, entry.Action, entry.ErrorCode, cancellationToken);
 
     public Task RecordFailureAsync(CustomerActionAudit entry, CancellationToken cancellationToken) =>
-        WriteAsync(entry, cancellationToken);
+        WriteAsync(entry, entry.Action, entry.ErrorCode, cancellationToken);
 
-    private async Task WriteAsync<TEntry>(TEntry entry, CancellationToken cancellationToken)
+    private async Task WriteAsync<TEntry>(TEntry entry, string action, string? errorCode, CancellationToken cancellationToken)
         where TEntry : BaseEntity, ITenantEntity
     {
         entry.TenantId ??= tenantProvider.GetCurrentTenantId();
+        if (entry.TenantId is null)
+        {
+            logger.LogWarning(
+                "Out-of-band audit-failure row for action {Action} ({ErrorCode}) has no ambient tenant and was not recorded.",
+                action,
+                errorCode);
+            return;
+        }
 
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();

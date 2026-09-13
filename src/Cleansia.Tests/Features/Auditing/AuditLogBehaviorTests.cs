@@ -16,11 +16,12 @@ namespace Cleansia.Tests.Features.Auditing;
 
 /// <summary>
 /// ADR-0012 D2/D2.1/D2.2/D3 — the AuditLogBehavior gate + write paths, unit level.
-///   • TC-AUDIT-GATE: only an admin Command is audited; a non-admin mutation and any Query produce no row.
+///   • TC-AUDIT-GATE: the gate is AuditGate.Resolve, shared with the outer behavior: admin Commands (opt-out)
+///     and customer-marked Commands (opt-in); a Query, an Employee or an unmarked non-admin Command produces no row.
 ///   • Success: the row is added to the scoped DbContext (via IAuditWriter) — atomic with the action.
 ///   • TC-AUDIT-FAILURE (business): a failure result writes a Success=false row out-of-band (the sink),
 ///     NOT to the scoped writer (the UoW won't commit it). The row's ErrorCode is the refusal KEY
-///     (Error.Message), not the field name in Error.Code — Q-AUD-O2, both arms (ADR-0062 D1).
+///     (Error.Message), not the field name in Error.Code — both arms, the admin one on the owner's default (ADR-0062 D1).
 ///   • The customer arm (ADR-0062 D1): a Customer running a customer-marked Command lands in the
 ///     customer table; an Employee lands nowhere; an Administrator running it lands in the admin table.
 ///   • TC-AUDIT-FAILURE (exception): the failure row is written out-of-band then the exception rethrows;

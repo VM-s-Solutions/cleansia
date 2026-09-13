@@ -122,7 +122,8 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
     }
 
     private IAuditFailureSink Sink() =>
-        new OutOfBandAuditFailureSink(new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default));
+        new OutOfBandAuditFailureSink(new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default),
+            NullLogger<OutOfBandAuditFailureSink>.Instance);
 
     private static async Task<int> AuditRowCount(CleansiaDbContext ctx) =>
         await ctx.AdminActionAudits.IgnoreQueryFilters().CountAsync();
@@ -250,7 +251,8 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
         Assert.False(audit.Success);
         // ValidationPipelineBehavior collapses the rule failures into the ValidationResult sentinel
         // (BusinessResult.Error == IValidationResult.ValidationError); the recorded ErrorCode is the
-        // FIRST rule's key, read off IValidationResult.Errors (Q-AUD-O2, ADR-0062 D1).
+        // FIRST rule's key, read off IValidationResult.Errors — the admin arm adopted the key on the
+        // owner's default (ADR-0062 D1).
         Assert.Equal(BusinessErrorMessage.OrderNotFound, audit.ErrorCode);
         Assert.Equal("AdminRefundOrder", audit.Action);
         // The action transaction never committed (the handler never ran).

@@ -97,7 +97,7 @@ public class RequestPromoCode
                 new QueueEnvelope<SendEmailMessage>(
                     MessageKeys.Email(EmailType.PromoCode, code, MessageKeys.HashCode(code)),
                     // The consumer scopes itself from the envelope; with no tenant it would read every
-                    // stamped table empty (ADR-0061 CH-4).
+                    // stamped table empty (ADR-0061 D3).
                     tenantProvider.GetCurrentTenantId(),
                     new SendEmailMessage(
                         EmailType.PromoCode,

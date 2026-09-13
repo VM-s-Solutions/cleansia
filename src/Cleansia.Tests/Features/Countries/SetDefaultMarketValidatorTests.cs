@@ -9,8 +9,9 @@ namespace Cleansia.Tests.Features.Countries;
 
 /// <summary>
 /// The default market is a pre-selection of a LISTED market (owner ruling 2026-09-13),
-/// so the gate is the servicing gate plus serviced itself: a flag on a country that
-/// <c>Market/GetOverview</c> would not list is a pre-selection of nothing.
+/// so the gate is the servicing gate plus serviced itself plus an operating company: a flag on a
+/// country that <c>Market/GetOverview</c> would not list is a pre-selection of nothing, and the
+/// operator resolver scopes every anonymous write naming no market to the flagged country's operator.
 /// </summary>
 public class SetDefaultMarketValidatorTests
 {
@@ -33,10 +34,10 @@ public class SetDefaultMarketValidatorTests
     private SetDefaultMarket.Validator Validator() =>
         new(_countries.Object, _configurations.Object, _currencies.Object);
 
-    private void ArrangeConfiguration(string currencyCode, bool? currencyIsActive)
+    private void ArrangeConfiguration(string currencyCode, bool? currencyIsActive, string? operatorTenantId = "cleansia-cz")
     {
         _configurations.Setup(r => r.GetByCountryIdAsync(CountryId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CountryConfiguration.Create(CountryId, currencyCode, "en", 0.2m));
+            .ReturnsAsync(CountryConfiguration.Create(CountryId, currencyCode, "en", 0.2m).AssignOperator(operatorTenantId));
 
         if (currencyIsActive is { } active)
         {
@@ -94,6 +95,17 @@ public class SetDefaultMarketValidatorTests
     public async Task A_Country_Whose_Currency_Is_Inactive_Is_Not_Ready()
     {
         ArrangeConfiguration("EUR", currencyIsActive: false);
+
+        var result = await Validator().ValidateAsync(new SetDefaultMarket.Command(CountryId));
+
+        Assert.False(result.IsValid);
+        Assert.Equal(BusinessErrorMessage.CountryMarketNotReady, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Market_Nobody_Operates_Is_Not_Ready()
+    {
+        ArrangeConfiguration("CZK", currencyIsActive: true, operatorTenantId: null);
 
         var result = await Validator().ValidateAsync(new SetDefaultMarket.Command(CountryId));
 

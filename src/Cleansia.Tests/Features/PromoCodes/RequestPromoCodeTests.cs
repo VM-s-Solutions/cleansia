@@ -128,7 +128,7 @@ public class RequestPromoCodeTests
 
     /// <summary>
     /// The e-mail consumer scopes itself from the envelope's tenant before it reads anything stamped;
-    /// with none it would read every stamped table empty (ADR-0061 CH-4). The envelope carries the
+    /// with none it would read every stamped table empty (ADR-0061 D3). The envelope carries the
     /// operator the scope behaviour resolved for the request.
     /// </summary>
     [Fact]

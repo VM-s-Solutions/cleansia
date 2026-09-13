@@ -1891,7 +1891,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("ServiceId", "PackageId");
 
                     b.HasIndex("TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_EmployeePayConfigs_Tenant_Scope");
 
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId"), false);
 

@@ -59,7 +59,6 @@ public interface IUserRepository : IRepository<User, string>
     /// </summary>
     Task<User?> GetByGoogleIdIgnoringTenantAsync(string googleId, CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
     /// <summary>
     /// The legacy 128-bit confirm link, opened anonymously against a tenant-stamped row: the hash is the
     /// pin (ADR-0051 bypass-and-re-pin, ADR-0061 D4).

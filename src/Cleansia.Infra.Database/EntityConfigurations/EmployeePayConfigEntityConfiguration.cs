@@ -114,8 +114,12 @@ public class EmployeePayConfigEntityConfiguration : AuditableEntityConfiguration
         // term two operators could not both hold a platform default (EmployeeId NULL) for the same
         // service and currency. Per-employee rows are unaffected — an EmployeeId is unique across
         // tenants.
+        //
+        // Named, because the five-column default overruns Postgres's 63-character identifier limit and
+        // a 23505 would cite a truncated "..._PackageId_~".
         builder.HasIndex(e => new { e.TenantId, e.EmployeeId, e.ServiceId, e.PackageId, e.CurrencyId })
             .IsUnique()
-            .AreNullsDistinct(false);
+            .AreNullsDistinct(false)
+            .HasDatabaseName("IX_EmployeePayConfigs_Tenant_Scope");
     }
 }

@@ -14,8 +14,6 @@ public class ConfirmUserEmailValidatorTests
     {
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
-        mockRepo.Setup(r => r.ExistsWithConfirmationCodeAsync(null, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
         var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
         var command = new ConfirmUserEmail.Command(null);
 
@@ -33,8 +31,6 @@ public class ConfirmUserEmailValidatorTests
     {
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
-        mockRepo.Setup(r => r.ExistsWithConfirmationCodeAsync(string.Empty, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
         var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
         var command = new ConfirmUserEmail.Command(string.Empty);
 

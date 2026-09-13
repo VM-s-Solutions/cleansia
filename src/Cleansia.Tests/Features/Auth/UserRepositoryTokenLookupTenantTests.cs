@@ -7,8 +7,8 @@ namespace Cleansia.Tests.Features.Auth;
 /// for system triggers and the anonymous identity paths (login, register pre-check, social, the legacy
 /// confirm link — each pinned by a secret or by the globally unique email, ADR-0061 D4/D5.1), plus the
 /// login-lockout / reset-budget charges that must land for tenant-stamped accounts on anonymous
-/// requests. This source-level guard pins that the filtered confirm-token existence check stays inside
-/// the global filter and that <c>IgnoreQueryFilters</c> appears only in the enumerated bypass methods.
+/// requests. This source-level guard pins that <c>IgnoreQueryFilters</c> appears only in the enumerated
+/// bypass methods.
 /// </summary>
 public class UserRepositoryTokenLookupTenantTests
 {
@@ -31,16 +31,6 @@ public class UserRepositoryTokenLookupTenantTests
     // "IgnoreQueryFilters" can't trip the assertion; only a real invocation counts.
     private const string IgnoreCall = @"\.IgnoreQueryFilters\(";
 
-    // The filtered confirm-token existence check does not call IgnoreQueryFilters().
-    [Fact]
-    public void ConfirmationCode_Existence_Check_Does_Not_Ignore_Tenant_Filter()
-    {
-        var source = ReadRepositorySource();
-
-        var body = ExtractMethodBody(source, "ExistsWithConfirmationCodeAsync");
-        Assert.False(Regex.IsMatch(body, IgnoreCall), "ExistsWithConfirmationCodeAsync must not call IgnoreQueryFilters()");
-    }
-
     // The legacy confirm link is opened anonymously against a stamped row (ADR-0061 D4): the read MUST
     // bypass, and the server-issued 128-bit hash is the pin.
     [Fact]
@@ -53,7 +43,7 @@ public class UserRepositoryTokenLookupTenantTests
     }
 
     // IgnoreQueryFilters() is only CALLED in the enumerated bypass methods (the named cross-tenant /
-    // anonymous-login lookups and the anonymous lockout/reset-budget charges), never the confirm flows.
+    // anonymous-login lookups and the anonymous lockout/reset-budget charges).
     // Adding a bypass anywhere else must consciously extend this list.
     [Fact]
     public void IgnoreQueryFilters_Is_Confined_To_The_Enumerated_Bypass_Methods()
@@ -78,7 +68,6 @@ public class UserRepositoryTokenLookupTenantTests
                 "TryChargeResetPasswordCodeAttemptAsync",
                 // The OTP confirm branch resolves the account by email (anonymous), so its budget
                 // charge must land for tenant-stamped accounts too — mirrors the reset charge above.
-                // The confirm-token existence check stays filtered (the test above).
                 "TryChargeConfirmationCodeAttemptAsync",
             }
             .Sum(method => Regex.Matches(ExtractMethodBody(source, method), IgnoreCall).Count);

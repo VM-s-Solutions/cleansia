@@ -14,8 +14,10 @@ namespace Cleansia.Core.AppServices.Features.Countries;
 /// flushed so both rows carry their audit stamp; idempotent on the current default.
 ///
 /// <para>The gate is the one <c>SetCountryServiced</c> applies when a country is switched on, plus
-/// serviced itself: a default market that <c>Market/GetOverview</c> would not list is a pre-selection
-/// of nothing.</para>
+/// serviced itself, plus an operating company: a default market that <c>Market/GetOverview</c> would
+/// not list is a pre-selection of nothing, and the operator resolver scopes every anonymous write that
+/// names no market to the flagged country's operator (ADR-0061 D3) — a default nobody operates would
+/// fail them all with <c>tenant.not_found</c>.</para>
 /// </summary>
 public class SetDefaultMarket
 {
@@ -39,6 +41,8 @@ public class SetDefaultMarket
                 .MustAsync(async (id, ct) => await countryRepository.IsServicedAsync(id, ct))
                 .WithMessage(BusinessErrorMessage.CountryNotServiced)
                 .MustAsync(async (id, ct) => await MarketIsReadyAsync(id, ct))
+                .WithMessage(BusinessErrorMessage.CountryMarketNotReady)
+                .MustAsync(async (id, ct) => await MarketHasOperatorAsync(id, ct))
                 .WithMessage(BusinessErrorMessage.CountryMarketNotReady);
 
             async Task<bool> MarketIsReadyAsync(string countryId, CancellationToken ct)
@@ -51,6 +55,12 @@ public class SetDefaultMarket
 
                 var currency = await currencyRepository.GetByCodeAsync(configuration.DefaultCurrencyCode, ct);
                 return currency is { IsActive: true };
+            }
+
+            async Task<bool> MarketHasOperatorAsync(string countryId, CancellationToken ct)
+            {
+                var configuration = await countryConfigurationRepository.GetByCountryIdAsync(countryId, ct);
+                return configuration?.OperatorTenantId is not null;
             }
         }
     }

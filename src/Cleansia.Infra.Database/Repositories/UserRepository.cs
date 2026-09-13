@@ -101,17 +101,9 @@ public class UserRepository(CleansiaDbContext context)
             .FirstOrDefaultAsync(user => user.GoogleId == googleId, cancellationToken);
     }
 
-    // The confirmation token is stored as a SHA-256 hash, so the incoming RAW
-    // token is hashed and matched against the stored hash. Stays inside the global tenant filter
-    // (no IgnoreQueryFilters).
-    public Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default)
-    {
-        var tokenHash = SecurityTokens.Hash(token);
-        return GetDbSet().AnyAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
-    }
-
     // The legacy confirm link is opened anonymously while the row it confirms is tenant-stamped
-    // (ADR-0061 D4); the server-issued hash is the pin.
+    // (ADR-0061 D4); the token is stored as a SHA-256 hash, so the incoming RAW token is hashed and
+    // the server-issued hash is the pin.
     public Task<User?> GetByConfirmationCodeIgnoringTenantAsync(string token, CancellationToken cancellationToken = default)
     {
         var tokenHash = SecurityTokens.Hash(token);

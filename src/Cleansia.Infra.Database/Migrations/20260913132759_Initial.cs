@@ -3346,16 +3346,16 @@ namespace Cleansia.Infra.Database.Migrations
                 columns: new[] { "ServiceId", "PackageId" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmployeePayConfigs_TenantId",
-                table: "EmployeePayConfigs",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmployeePayConfigs_TenantId_EmployeeId_ServiceId_PackageId_~",
+                name: "IX_EmployeePayConfigs_Tenant_Scope",
                 table: "EmployeePayConfigs",
                 columns: new[] { "TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId" },
                 unique: true)
                 .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayConfigs_TenantId",
+                table: "EmployeePayConfigs",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeePayoutDetails_BankCountryId",

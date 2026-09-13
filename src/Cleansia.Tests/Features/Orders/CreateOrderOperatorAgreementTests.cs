@@ -16,7 +16,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// ADR-0061 D6 — tenant and currency are two reads of one country. The order's currency is the
 /// service address's country's; its tenant is the ambient one (the claim, or for a guest the operator
 /// the scope behaviour resolved). This rule refuses the booking when the address's country is
-/// operated by another company than the ambient tenant, for guests and customers alike (CH-3), and it
+/// operated by another company than the ambient tenant, for guests and customers alike (D6), and it
 /// keys on the OPERATOR, not the country: one company serving two countries books either.
 /// </summary>
 public sealed class CreateOrderOperatorAgreementTests

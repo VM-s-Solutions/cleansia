@@ -183,10 +183,21 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
         Assert.Equal([SvkId], flagged);
     }
 
+    /// <summary>
+    /// The three ways a serviced country is not a market: no configuration, a configured currency that
+    /// is not switched on, and nobody operating it (ADR-0061 D2) — the last would leave the operator
+    /// resolver's default pointing at a market the directory does not list.
+    /// </summary>
     [Fact]
     public async Task An_unready_country_cannot_become_the_default_market_and_the_flag_stays_put()
     {
         await SeedDevShapeAsync();
+        await SeedAsync(ctx =>
+        {
+            ctx.Countries.Add(NewCountry(DeuId, "Germany", "DEU", "DE", isServiced: true));
+            ctx.CountryConfigurations.Add(CountryConfiguration.Create(DeuId, "CZK", "de", 0.19m));
+            return Task.CompletedTask;
+        });
         var admin = AdminClient(AdminToken());
 
         var noConfiguration = await admin.PutAsJsonAsync($"/api/AdminCountry/{PolId}/default-market", new { });
@@ -194,6 +205,9 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
 
         var inactiveCurrency = await admin.PutAsJsonAsync($"/api/AdminCountry/{SvkId}/default-market", new { });
         await HttpAssert.RejectedAsync(inactiveCurrency, BusinessErrorMessage.CountryMarketNotReady);
+
+        var noOperator = await admin.PutAsJsonAsync($"/api/AdminCountry/{DeuId}/default-market", new { });
+        await HttpAssert.RejectedAsync(noOperator, BusinessErrorMessage.CountryMarketNotReady);
 
         var flagged = await QueryAsync(ctx => ctx.CountryConfigurations.IgnoreQueryFilters().Where(c => c.IsDefaultMarket).Select(c => c.CountryId).ToListAsync());
         Assert.Equal([CzeId], flagged);

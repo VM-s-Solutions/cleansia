@@ -108,6 +108,23 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
         Assert.Equal("\"IsActive\" = TRUE", index.GetFilter());
     }
 
+    /// <summary>
+    /// The five-column pay-config key is the one whose EF default name overruns Postgres's 63-character
+    /// identifier limit. A 23505 names the index that fired, and a truncated <c>..._PackageId_~</c> is
+    /// not a name anyone can read off the log line or grep for.
+    /// </summary>
+    [Fact]
+    public void The_Pay_Config_Scope_Index_Carries_A_Readable_Name()
+    {
+        using var ctx = NewContext();
+        var index = FindIndex(
+            ctx,
+            typeof(EmployeePayConfig),
+            ["TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId"]);
+
+        Assert.Equal("IX_EmployeePayConfigs_Tenant_Scope", index.GetDatabaseName());
+    }
+
 
     /// <summary>
     /// Unique indexes whose nullable column is removed from the index by a FILTER, so declaring

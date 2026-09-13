@@ -153,7 +153,7 @@ public class CreateOrder
             // disagree (a customer of one operator booking an address another operates; a guest whose
             // request named no country while the address resolves to another market), and an order
             // stamped with a tenant its own account cannot list is the outcome this refuses.
-            // UNCONDITIONAL — guest and authenticated alike (ADR-0061 CH-3).
+            // UNCONDITIONAL — guest and authenticated alike (ADR-0061 D6).
             RuleFor(x => x)
                 .MustAsync(AddressCountryIsOperatedByAmbientTenantAsync)
                 .WithMessage(BusinessErrorMessage.OrderCountryOperatorMismatch)

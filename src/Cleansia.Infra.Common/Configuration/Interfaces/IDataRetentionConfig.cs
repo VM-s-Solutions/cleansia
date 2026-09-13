@@ -3,8 +3,9 @@ namespace Cleansia.Infra.Common.Configuration.Interfaces;
 /// <summary>
 /// The master switch for the GDPR data-retention sweep (section <c>DataRetention</c>). The sweep deletes or
 /// anonymises personal data the platform may no longer keep — expired user codes, stale devices, old GDPR
-/// requests, customer PII on completed orders, withdrawn consents, superseded documents and notifications —
-/// so it is a compliance clock rather than a housekeeping preference.
+/// requests, customer PII on completed orders, withdrawn consents, superseded documents, notifications and
+/// customer action-audit rows three years after their own act — so it is a compliance clock rather than a
+/// housekeeping preference.
 ///
 /// <para><b>Absence must mean ON.</b> This switch previously lived in a database table of feature flags,
 /// whose lookup resolved a missing row to <c>false</c>. No migration ever inserted the row and the only

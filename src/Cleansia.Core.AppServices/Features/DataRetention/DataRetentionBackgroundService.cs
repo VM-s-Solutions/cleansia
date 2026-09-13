@@ -31,7 +31,7 @@ public class DataRetentionBackgroundService(
 
         // The default lives in code, where an empty database cannot silence it. This gate used to read a
         // row from a FeatureFlags table that no migration ever inserted, and a missing row resolved to
-        // "off" — so on every deployed database all seven tasks below had never run once (T-0685). That
+        // "off" — so on every deployed database none of the tasks below had ever run once (T-0685). That
         // table is gone entirely (T-0689): once this switch left it, it gated nothing at all.
         if (!retentionConfig.Enabled)
         {
@@ -303,7 +303,7 @@ public class DataRetentionBackgroundService(
         // Per row by its own age, never anchored on the customer's last act: the anchor form kept an
         // active customer's IP addresses for the life of the account (ADR-0062 D5). The admin and
         // employee tables have no window (ADR-0012 D6) and this task must never reach them.
-        var totalDeleted = await customerActionAuditRepository.DeleteExpiredAsync(cutoff, RetentionDefaults.BatchSize, ct);
+        var totalDeleted = await customerActionAuditRepository.DeleteExpiredAsync(cutoff, ct);
 
         logger.LogInformation("Deleted {Total} customer audit rows older than {Years} years",
             totalDeleted, years);

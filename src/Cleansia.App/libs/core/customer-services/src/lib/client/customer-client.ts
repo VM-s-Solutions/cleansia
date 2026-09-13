@@ -7241,6 +7241,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
     firstName!: string | undefined;
     lastName!: string | undefined;
     termsAccepted!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IAppleAuthCommand) {
         if (data) {
@@ -7258,6 +7259,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
             this.termsAccepted = Data["termsAccepted"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -7275,6 +7277,7 @@ export class AppleAuthCommand implements IAppleAuthCommand {
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
         data["termsAccepted"] = this.termsAccepted;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -7285,6 +7288,7 @@ export interface IAppleAuthCommand {
     firstName: string | undefined;
     lastName: string | undefined;
     termsAccepted: boolean;
+    countryId: string | undefined;
 }
 
 export enum AppliedDiscountSource {
@@ -11080,6 +11084,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
     firstName!: string | undefined;
     lastName!: string | undefined;
     termsAccepted!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IGoogleAuthCommand) {
         if (data) {
@@ -11098,6 +11103,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
             this.termsAccepted = Data["termsAccepted"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -11116,6 +11122,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
         data["termsAccepted"] = this.termsAccepted;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -11127,6 +11134,7 @@ export interface IGoogleAuthCommand {
     firstName: string | undefined;
     lastName: string | undefined;
     termsAccepted: boolean;
+    countryId: string | undefined;
 }
 
 export class GrantConsentCommand implements IGrantConsentCommand {
@@ -14074,6 +14082,7 @@ export class RegisterCommand implements IRegisterCommand {
     lastName!: string | undefined;
     language!: string | undefined;
     referralCode!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IRegisterCommand) {
         if (data) {
@@ -14092,6 +14101,7 @@ export class RegisterCommand implements IRegisterCommand {
             this.lastName = Data["lastName"];
             this.language = Data["language"];
             this.referralCode = Data["referralCode"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -14110,6 +14120,7 @@ export class RegisterCommand implements IRegisterCommand {
         data["lastName"] = this.lastName;
         data["language"] = this.language;
         data["referralCode"] = this.referralCode;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -14121,6 +14132,7 @@ export interface IRegisterCommand {
     lastName: string | undefined;
     language: string | undefined;
     referralCode: string | undefined;
+    countryId: string | undefined;
 }
 
 export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
@@ -14250,6 +14262,7 @@ export interface IRequestPasswordChangeCommand {
 export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
     email!: string | undefined;
     languageCode!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IRequestPromoCodeCommand) {
         if (data) {
@@ -14264,6 +14277,7 @@ export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
         if (Data) {
             this.email = Data["email"];
             this.languageCode = Data["languageCode"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -14278,6 +14292,7 @@ export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
         data = typeof data === 'object' ? data : {};
         data["email"] = this.email;
         data["languageCode"] = this.languageCode;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -14285,6 +14300,7 @@ export class RequestPromoCodeCommand implements IRequestPromoCodeCommand {
 export interface IRequestPromoCodeCommand {
     email: string | undefined;
     languageCode: string | undefined;
+    countryId: string | undefined;
 }
 
 export class RequestPromoCodeResponse implements IRequestPromoCodeResponse {
@@ -15868,6 +15884,7 @@ export interface IValidatePromoCodeResponse {
 
 export class ValidateReferralQuery implements IValidateReferralQuery {
     code!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IValidateReferralQuery) {
         if (data) {
@@ -15881,6 +15898,7 @@ export class ValidateReferralQuery implements IValidateReferralQuery {
     init(Data?: any) {
         if (Data) {
             this.code = Data["code"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -15894,12 +15912,14 @@ export class ValidateReferralQuery implements IValidateReferralQuery {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["code"] = this.code;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
 
 export interface IValidateReferralQuery {
     code: string | undefined;
+    countryId: string | undefined;
 }
 
 export class ValidateReferralResponse implements IValidateReferralResponse {

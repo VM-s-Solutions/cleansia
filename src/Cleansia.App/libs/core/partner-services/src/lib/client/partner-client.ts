@@ -9768,6 +9768,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
     firstName!: string | undefined;
     lastName!: string | undefined;
     termsAccepted!: boolean;
+    countryId!: string | undefined;
 
     constructor(data?: IGoogleAuthCommand) {
         if (data) {
@@ -9786,6 +9787,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
             this.termsAccepted = Data["termsAccepted"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -9804,6 +9806,7 @@ export class GoogleAuthCommand implements IGoogleAuthCommand {
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
         data["termsAccepted"] = this.termsAccepted;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -9815,6 +9818,7 @@ export interface IGoogleAuthCommand {
     firstName: string | undefined;
     lastName: string | undefined;
     termsAccepted: boolean;
+    countryId: string | undefined;
 }
 
 export class GrantConsentCommand implements IGrantConsentCommand {
@@ -12828,6 +12832,7 @@ export class RegisterEmployeeCommand implements IRegisterEmployeeCommand {
     firstName!: string | undefined;
     lastName!: string | undefined;
     language!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IRegisterEmployeeCommand) {
         if (data) {
@@ -12845,6 +12850,7 @@ export class RegisterEmployeeCommand implements IRegisterEmployeeCommand {
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
             this.language = Data["language"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -12862,6 +12868,7 @@ export class RegisterEmployeeCommand implements IRegisterEmployeeCommand {
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
         data["language"] = this.language;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -12872,6 +12879,7 @@ export interface IRegisterEmployeeCommand {
     firstName: string | undefined;
     lastName: string | undefined;
     language: string | undefined;
+    countryId: string | undefined;
 }
 
 export class RegisterCommand implements IRegisterCommand {
@@ -12881,6 +12889,7 @@ export class RegisterCommand implements IRegisterCommand {
     lastName!: string | undefined;
     language!: string | undefined;
     referralCode!: string | undefined;
+    countryId!: string | undefined;
 
     constructor(data?: IRegisterCommand) {
         if (data) {
@@ -12899,6 +12908,7 @@ export class RegisterCommand implements IRegisterCommand {
             this.lastName = Data["lastName"];
             this.language = Data["language"];
             this.referralCode = Data["referralCode"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -12917,6 +12927,7 @@ export class RegisterCommand implements IRegisterCommand {
         data["lastName"] = this.lastName;
         data["language"] = this.language;
         data["referralCode"] = this.referralCode;
+        data["countryId"] = this.countryId;
         return data;
     }
 }
@@ -12928,6 +12939,7 @@ export interface IRegisterCommand {
     lastName: string | undefined;
     language: string | undefined;
     referralCode: string | undefined;
+    countryId: string | undefined;
 }
 
 export class RegistrationCompletionStatus implements IRegistrationCompletionStatus {

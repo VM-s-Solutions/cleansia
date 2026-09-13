@@ -8571,6 +8571,10 @@
           },
           "termsAccepted": {
             "type": "boolean"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10245,6 +10249,10 @@
           "language": {
             "type": "string",
             "nullable": true
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10273,6 +10281,10 @@
             "nullable": true
           },
           "referralCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryId": {
             "type": "string",
             "nullable": true
           }

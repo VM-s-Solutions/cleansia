@@ -127,11 +127,17 @@ object NotificationTemplates {
             "order.completed",
             "order.cancelled",
             "order.refunded",
-            "order.no_cleaner_refunded",
             "order.assignment_cancelled",
             "recurring.scheduled" -> {
                 val orderNumber = args["orderNumber"].orEmpty()
                 context.getString(bodyRes, orderNumber)
+            }
+            // The credit figure arrives already formatted by the server in the credit's own
+            // currency ("250 Kč", "10 €"); the device only places it.
+            "order.no_cleaner_refunded" -> {
+                val orderNumber = args["orderNumber"].orEmpty()
+                val amount = args["amount"].orEmpty()
+                context.getString(bodyRes, orderNumber, amount)
             }
             "loyalty.tier_upgrade" -> {
                 // Body carries a localized tier name. The wire `tier` arg is the

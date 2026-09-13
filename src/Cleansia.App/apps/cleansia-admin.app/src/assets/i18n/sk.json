@@ -1155,15 +1155,20 @@
       "edit_country": "Upraviť krajinu",
       "delete_country": "Odstrániť krajinu",
       "delete_confirm": "Naozaj chcete odstrániť túto krajinu? Môže to ovplyvniť existujúce dáta.",
+      "set_default_market": "Nastaviť ako predvolený trh",
+      "set_default_market_confirm": "Nastaviť {{name}} ako predvolený trh? Návštevníci ho uvidia, kým si nevyberú krajinu.",
+      "default_market": "Predvolený trh",
       "no_countries": "Žiadne krajiny",
       "columns": {
         "iso_code": "ISO kód",
         "name": "Názov",
+        "default_market": "Predvolený trh",
         "actions": "Akcie"
       },
       "messages": {
         "load_error": "Nepodarilo sa načítať krajiny",
         "delete_success": "Krajina bola úspešne odstránená",
+        "set_default_market_success": "Predvolený trh bol zmenený",
         "delete_error": "Nepodarilo sa odstrániť krajinu"
       }
     },
@@ -2527,6 +2532,7 @@
       "not_serviced": "V tejto krajine nepôsobíme.",
       "required": "Krajina je povinná.",
       "market_not_ready": "Túto krajinu zatiaľ nie je možné zapnúť: potrebuje konfiguráciu, ktorej predvolená mena je aktívna.",
+      "default_market_changed_concurrently": "Predvolený trh medzitým zmenil niekto iný. Obnovte stránku a skúste to znova",
       "configuration_missing": "Táto krajina zatiaľ nemá konfiguráciu, takže obsah trhu nie je možné uložiť.",
       "iso_alpha2_invalid": "Dvojpísmenový kód krajiny musí byť presne dve veľké písmená."
     },

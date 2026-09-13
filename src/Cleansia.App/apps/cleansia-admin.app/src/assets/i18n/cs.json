@@ -1265,15 +1265,20 @@
       "edit_country": "Upravit zemi",
       "delete_country": "Smazat zemi",
       "delete_confirm": "Opravdu chcete smazat tuto zemi? Toto může ovlivnit existující data.",
+      "set_default_market": "Nastavit jako výchozí trh",
+      "set_default_market_confirm": "Nastavit {{name}} jako výchozí trh? Návštěvníci jej uvidí, dokud si nevyberou zemi.",
+      "default_market": "Výchozí trh",
       "no_countries": "Žádné země nenalezeny",
       "columns": {
         "iso_code": "ISO kód",
         "name": "Název",
+        "default_market": "Výchozí trh",
         "actions": "Akce"
       },
       "messages": {
         "load_error": "Nepodařilo se načíst země",
         "delete_success": "Země byla úspěšně smazána",
+        "set_default_market_success": "Výchozí trh byl změněn",
         "delete_error": "Nepodařilo se smazat zemi"
       }
     },
@@ -2527,6 +2532,7 @@
       "not_serviced": "V této zemi nepůsobíme.",
       "required": "Země je povinná.",
       "market_not_ready": "Tuto zemi zatím nelze zapnout: potřebuje konfiguraci, jejíž výchozí měna je aktivní.",
+      "default_market_changed_concurrently": "Výchozí trh mezitím změnil někdo jiný. Obnovte stránku a zkuste to znovu",
       "configuration_missing": "Tato země zatím nemá konfiguraci, takže obsah trhu nelze uložit.",
       "iso_alpha2_invalid": "Dvoupísmenný kód země musí být přesně dvě velká písmena."
     },

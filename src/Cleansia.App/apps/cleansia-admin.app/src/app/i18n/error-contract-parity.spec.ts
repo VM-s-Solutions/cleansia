@@ -435,6 +435,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   // A country switches on only once its configuration names an active currency; its market content
   // needs that configuration row: AdminCountryController.SetCountryServiced / UpdateCountryMarketContent.
   'country.configuration_missing',
+  // The default market moves through AdminCountryController.SetDefaultMarket; a stale flag loses.
+  'country.default_market_changed_concurrently',
   'country.in_use',
   'country.iso_alpha2_invalid',
   'country.iso_code_already_exists',

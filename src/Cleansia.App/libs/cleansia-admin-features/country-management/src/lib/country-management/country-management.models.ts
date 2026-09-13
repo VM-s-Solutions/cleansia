@@ -91,13 +91,50 @@ export function getCountryFlagCode(isoCode: string | undefined): string {
   return lowerCode;
 }
 
+export const COUNTRY_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
+  'country.not_found': 'api.country.not_found',
+  'country.not_serviced': 'api.country.not_serviced',
+  'country.market_not_ready': 'api.country.market_not_ready',
+  'country.default_market_changed_concurrently':
+    'api.country.default_market_changed_concurrently',
+};
+
+export const COUNTRY_FALLBACK_ERROR_KEY = 'api.common.error_occurred';
+
+export function resolveCountryErrorKey(error: unknown): string {
+  const apiError = error as {
+    result?: { detail?: string; title?: string };
+    response?: string;
+  };
+  let code = apiError?.result?.detail || apiError?.result?.title;
+
+  if (!code && apiError?.response) {
+    try {
+      const parsed = JSON.parse(apiError.response) as {
+        detail?: string;
+        title?: string;
+      };
+      code = parsed.detail || parsed.title;
+    } catch {
+      code = undefined;
+    }
+  }
+
+  if (code && COUNTRY_ERROR_KEY_MAP[code]) {
+    return COUNTRY_ERROR_KEY_MAP[code];
+  }
+  return COUNTRY_FALLBACK_ERROR_KEY;
+}
+
 export function getCountryTableDefinition(
   defs: {
     onEdit: (row: CountryListItem) => void;
     onDelete: (row: CountryListItem) => void;
+    onSetDefaultMarket: (row: CountryListItem) => void;
   },
   translate: TranslateService,
-  flagTemplate?: TemplateRef<CountryListItem>
+  flagTemplate?: TemplateRef<CountryListItem>,
+  defaultMarketTemplate?: TemplateRef<CountryListItem>
 ): { columns: TableColumn<CountryListItem>[]; actions: TableAction<CountryListItem>[] } {
   return {
     columns: [
@@ -121,7 +158,15 @@ export function getCountryTableDefinition(
         field: 'name',
         header: translate.instant('pages.country_management.columns.name'),
         sortable: true,
-        width: '55%',
+        width: '40%',
+      },
+      {
+        id: 'isDefaultMarket',
+        field: 'isDefaultMarket',
+        header: translate.instant('pages.country_management.columns.default_market'),
+        sortable: false,
+        width: '15%',
+        customTemplate: defaultMarketTemplate,
       },
     ],
     actions: [
@@ -130,6 +175,15 @@ export function getCountryTableDefinition(
         tooltip: translate.instant('pages.country_management.edit_country'),
         color: 'warning',
         onClick: (row: CountryListItem) => defs.onEdit(row),
+      },
+      {
+        // The list item does not say whether the country is serviced, so the star is offered on
+        // every non-default row and the server's country.not_serviced refusal surfaces as a toast.
+        icon: 'pi pi-star',
+        tooltip: translate.instant('pages.country_management.set_default_market'),
+        color: 'info',
+        onClick: (row: CountryListItem) => defs.onSetDefaultMarket(row),
+        visible: (row: CountryListItem) => !row.isDefaultMarket,
       },
       {
         icon: 'pi pi-trash',

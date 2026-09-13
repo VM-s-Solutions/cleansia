@@ -1155,15 +1155,20 @@
       "edit_country": "Edit Country",
       "delete_country": "Delete Country",
       "delete_confirm": "Are you sure you want to delete this country? This may affect existing data.",
+      "set_default_market": "Set as default market",
+      "set_default_market_confirm": "Set {{name}} as the default market? Visitors will see it until they pick a country.",
+      "default_market": "Default market",
       "no_countries": "No countries found",
       "columns": {
         "iso_code": "ISO Code",
         "name": "Name",
+        "default_market": "Default market",
         "actions": "Actions"
       },
       "messages": {
         "load_error": "Failed to load countries",
         "delete_success": "Country deleted successfully",
+        "set_default_market_success": "Default market updated",
         "delete_error": "Failed to delete country"
       }
     },
@@ -2527,6 +2532,7 @@
       "not_serviced": "This country is not serviced.",
       "required": "A country is required.",
       "market_not_ready": "This country cannot be switched on yet: it needs a configuration whose default currency is active.",
+      "default_market_changed_concurrently": "The default market was changed by someone else. Refresh and try again",
       "configuration_missing": "This country has no configuration yet, so its market content cannot be saved.",
       "iso_alpha2_invalid": "The two-letter country code must be exactly two uppercase letters."
     },

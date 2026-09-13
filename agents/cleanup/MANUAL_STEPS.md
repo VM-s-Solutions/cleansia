@@ -77,8 +77,16 @@ both build clean on their own; the backend test suites need the hosts stopped.
 
 `MS-1` regenerated the single `Initial` migration, `MS-6` regenerated it again, and the partner
 document-lifecycle work regenerated it a third time for the two new tables — so its id has moved from
-`20260811192214` to `20260813085249` to `20260815094107` to `20260825114012` to **`20260830221715`**
-(owner, 2026-08-31, for the `PropertySizePresets` table). The regenerated migration was proven against a real Postgres by the integration suite: 200/200.
+`20260811192214` to `20260813085249` to `20260815094107` to `20260825114012` to `20260830221715`
+(owner, 2026-08-31, for the `PropertySizePresets` table), then through the multicurrency and market
+programme (`20260913080510`, T-0721) to **`20260913132759`** (T-0722 / `5a5f4681`, 2026-09-13 — the
+tenancy activation: `Tenants`, `CountryConfigurations.OperatorTenantId`, `TenantId` NOT NULL on every
+stamped table, `IX_Users_Email` global, `IX_OrderReceipts_TenantId_ReceiptNumber`,
+`IX_EmployeePayConfigs_Tenant_Scope`, `IX_LoyaltyTierConfigs_Tier`). Each regeneration was proven
+against a real Postgres by the integration suite; the last one also by
+`SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built database.
+**The one owed drop belongs to `20260913132759`**: a DEV database whose `__EFMigrationsHistory` records
+any earlier id replays the whole create script against tables that already exist.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every
@@ -87,7 +95,9 @@ whose `__EFMigrationsHistory` records the **old** id will try to replay the whol
 tables that already exist — failing the `migrate-database` job every other deploy job depends on.
 
 **Action:** drop the DEV database, then deploy. Pre-production, so there is no data to preserve; the
-seed repopulates it (`sql-scripts/insert_seed_data.sql`).
+seed repopulates it (`sql-scripts/insert_seed_data.sql` — which now inserts the `Tenants` row first and
+stamps every seeded business row `cleansia-cz`; a database seeded by any earlier script has `NULL`
+tenants that the NOT NULL columns would refuse, which is one more reason the drop is not optional).
 
 **One script to run by hand alongside it:** `sql-scripts/seed/insert_email_template_translations_promo_code.sql`.
 Nothing under `seed/` is run by a workflow — the auto-seed reads only the root

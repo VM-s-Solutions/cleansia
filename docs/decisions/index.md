@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**60 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**61 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -34,8 +34,10 @@ flowchart LR
   A0049[ADR-0049] --> A0045[ADR-0045]
   A0053[ADR-0053] --> A0037[ADR-0037]
   A0057[ADR-0057] --> A0037[ADR-0037]
+  A0061[ADR-0061] --> A0050[ADR-0050]
+  A0061[ADR-0061] --> A0017[ADR-0017]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
-  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045 old
+  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0050 old
 ```
 
 Grey nodes are superseded in whole or in part.
@@ -93,7 +95,7 @@ Grey nodes are superseded in whole or in part.
 | **[ADR-0047](./adr-0047)** | A server redacted field is rendered off its own… | `accepted` |
 | **[ADR-0048](./adr-0048)** | A generated dto is refused at the repository… | `accepted` |
 | **[ADR-0049](./adr-0049)** | A disclosure block is withheld by the server when… | `accepted` |
-| **[ADR-0050](./adr-0050)** | A dormant tenant column arbitrates nothing the… | `proposed` |
+| **[ADR-0050](./adr-0050)** | A dormant tenant column arbitrates nothing the… ⟲ | `accepted` (as amended) |
 | **[ADR-0051](./adr-0051)** | A reads tenancy posture is decided by the write… | `proposed` |
 | **[ADR-0052](./adr-0052)** | A cleaners own deletion files a request; only an admin… | `proposed` |
 | **[ADR-0053](./adr-0053)** | The live-commitment cap is one admins decision about one… | `accepted` |
@@ -104,6 +106,7 @@ Grey nodes are superseded in whole or in part.
 | **[ADR-0058](./adr-0058)** | A customer's market is chosen, remembered, and overridden by the address | `accepted` |
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
 | **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
+| **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

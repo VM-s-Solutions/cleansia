@@ -194,13 +194,16 @@ at startup. Without a binding the worker process aborts.
 services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider("cleansia.functions"));
 ```
 
-## 4. EF tenant filter — null/null case
+## 4. EF tenant filter — a consumer with no tenant reads nothing
 
-`null = null` in SQL is `NULL` (not `true`), which would hide every row in
-single-tenant deployments and queue/webhook contexts. The global query
-filter at `CleansiaDbContext.ApplyTenantQueryFilters` has an explicit
-`(currentTenantId == null && e.TenantId == null)` branch to make
-single-tenant mode work.
+The Functions host has no JWT, so `GetCurrentTenantId()` is `null` until a consumer sets the override
+from the envelope it is processing (`SendEmailHandler`, the push producers). Since ADR-0061 every
+stamped row carries a non-null `TenantId`, so the filter's `(currentTenantId == null && e.TenantId ==
+null)` branch matches nothing here: a consumer that forgets its override reads an **empty** set — a
+user with no device, an order with no rows — and a producer that writes under no tenant fails `23502`.
+Set the override from the envelope's tenant before the first tenanted read; the envelope carries it
+because the producer passed `tenantProvider.GetCurrentTenantId()` (or the row's own tenant) when it
+enqueued. → [Cross-cutting concerns — tenancy](/flows/cross-cutting#tenancy)
 
 ## 5. Emulator setup
 

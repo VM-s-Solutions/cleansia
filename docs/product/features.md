@@ -118,5 +118,8 @@ handling.
 - **Three web apps and four native apps** — customer, partner and admin on the web; customer and
   partner on both Android and iOS.
 - **Fiscal receipts** with a reconciliation and retry path when issuance fails.
-- **Multi-tenancy** present in the schema and dormant in production; see
-  [Cross-cutting concerns](/flows/cross-cutting#tenancy).
+- **One operating company per market, from the first row.** Every account, order, receipt, pay rate
+  and promo code belongs to the company under the holding that serves its market — Cleansia CZ s.r.o.
+  today — and a second company is a seed row and a country assignment, not code. One email is one
+  identity across the holding. → [Business rules — the market](/product/business-rules#market),
+  [Cross-cutting concerns](/flows/cross-cutting#tenancy)

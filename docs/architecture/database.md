@@ -166,7 +166,7 @@ public class Order : Auditable, ITenantEntity
     public DateTime CleaningDateTime { get; private set; }
     public decimal TotalPrice { get; private set; }
     public string CurrencyId { get; private set; }       // FK Restrict; named by the caller, never derived from the address
-    public string? TenantId { get; private set; }        // null = single-tenant mode
+    public string? TenantId { get; private set; }        // NOT NULL in the DB: the operating company; set at commit
 
     // Child collections
     public IReadOnlyCollection<OrderService> SelectedServices { get; }
@@ -277,7 +277,7 @@ Because the FKs restrict, `DeleteCurrency` asks `ICurrencyRepository.IsInUseAsyn
 | `EmployeeInvoice` | A period's payout invoice for one cleaner **in one currency** — unique on `(EmployeeId, PayPeriodId, CurrencyId)`, so a cleaner whose pay spans two currencies in a period holds two invoices |
 | `EmployeeDocument` | Uploaded employee documents (contracts, IDs) |
 | `EmployeePayoutDetails` | ADR-0034 — the cleaner's bank destination. **Its own table**, one row per cleaner, `(TenantId, EmployeeId)` unique with `NULLS NOT DISTINCT`. Never `Include`d on a list query. Carries a nullable `CurrencyId` (FK Restrict): the currency the cleaner declares the account holds |
-| `EmployeePayConfig` | Pay rates per service/package **in one currency**; nullable `EmployeeId` = per-employee override, `null` = the platform-wide default. Unique on `(EmployeeId, ServiceId, PackageId, CurrencyId)` with `NULLS NOT DISTINCT` and **no filter** — every row carries a null by construction (one config per service *or* per package, never both), so a filtered nulls-distinct index rejected nothing while excluding the platform-wide rows `CalculateOrderPay` reads with no `ORDER BY` |
+| `EmployeePayConfig` | Pay rates per service/package **in one currency**; nullable `EmployeeId` = per-employee override, `null` = the platform-wide default **of one operating company** (the rows are stamped — pay rates are the operator's money). Unique `IX_EmployeePayConfigs_Tenant_Scope` on `(TenantId, EmployeeId, ServiceId, PackageId, CurrencyId)` with `NULLS NOT DISTINCT` and **no filter** — every row carries a null by construction (one config per service *or* per package, never both), so a filtered nulls-distinct index rejected nothing while excluding the platform-wide rows `CalculateOrderPay` reads with no `ORDER BY`; the leading tenant term is what lets two operators each hold a default for the same service and currency |
 | `CreditAccount` / `CreditTransaction` | A customer's credit balance, one account per `(UserId, CurrencyId)` (unique), with an append-only ledger. `Balance` is stored, not summed, because the spend is a conditional `UPDATE … WHERE Balance >= amount` |
 | `MembershipPlan` / `UserMembership` | Cleansia Plus plans and enrolments |
 | `MembershipBenefitUsage` | ADR-0035 — the metered-benefit ledger. Two indexes, and confusing them is the trap: `IX_MembershipBenefitUsages_Slot` on `(TenantId, UserId, BenefitKind, PeriodKey, SlotOrdinal)` is unique, `NULLS NOT DISTINCT`, filtered to live rows, and **is the sole arbiter of the reservation race** — the `SlotOrdinal` column is what lets a quota be N rather than 1. `IX_MembershipBenefitUsages_Quota`, the same key **without** `SlotOrdinal`, is **not unique**; it only serves the remaining-count read |
@@ -286,19 +286,31 @@ Because the FKs restrict, `DeleteCurrency` asks `ICurrencyRepository.IsInUseAsyn
 
 ::: danger A unique index over a nullable column enforces nothing unless it says so
 Postgres treats NULLs as DISTINCT, so a unique index containing a nullable column admits unlimited
-duplicates while that column is null — and single-tenant mode **is** `TenantId = null`, which is
-production. `.AreNullsDistinct(false)` is what makes such an index an arbiter, and **14 indexes now
-carry it**.
+duplicates while that column is null. `.AreNullsDistinct(false)` is what makes such an index an
+arbiter, and **13 indexes carry it in the emitted DDL** (`grep -n NullsDistinct …Initial.cs`).
 
-Six were added on 2026-09-05, after a guard was rewritten from a hand-listed roster into a sweep of
-the whole model and found them: `EmployeePayConfig`, `LoyaltyTierConfig`, `LoyaltyTransaction`,
-`PromoCode`, `ReferralCode` and `TenantConfiguration`. Each had read as enforcing while enforcing
-nothing. A seventh, `FeatureFlag`, was on that list until T-0689 deleted the table outright.
+**`TenantId` is no longer the nullable column that matters.** Since ADR-0061 D8 (2026-09-13) the
+column is NOT NULL on every stamped table — only `OutboxMessages` and `DeadLetters` keep it nullable —
+so the tenant term of a `(TenantId, …)` index can never be the null that disarms it. The option is
+kept on those ten indexes anyway, because the model guard reads the option, not the column, and the
+other nullable terms (`EmployeeId`, `ServiceId`, `PackageId`) still need it. Two indexes *gained* a
+tenant term on activation so that two operators can coexist — `OrderReceipts (TenantId, ReceiptNumber)`
+(the number comes from a per-operator `FiscalCounter`) and `IX_EmployeePayConfigs_Tenant_Scope` — and
+one lost it: `Users (Email)` is globally unique with no tenant term, because one email is one identity
+across the holding (ADR-0061 D5.1). `LoyaltyTierConfig` left the list with its tenant — it is
+tenantless now, unique on `Tier`.
+
+Six of the thirteen were added on 2026-09-05, after a guard was rewritten from a hand-listed roster
+into a sweep of the whole model and found them: `EmployeePayConfig`, `LoyaltyTransaction`, `PromoCode`,
+`ReferralCode`, `TenantConfiguration` (and `LoyaltyTierConfig`, since reclassified). Each had read as
+enforcing while enforcing nothing. Another, `FeatureFlag`, was on that list until T-0689 deleted the
+table outright.
 
 **You do not need to remember to add it.** `NullsNotDistinctIndexModelTests` walks every unique index
 in the model, and one carrying a nullable column must either declare `NULLS NOT DISTINCT`, be filtered
 so the null cannot appear (`EmployeeInvoice`, `Order`'s recurring-template index), or be named as a
-deliberate exception (`UserMembership`, a backstop behind an authoritative read).
+deliberate exception (`UserMembership`, a backstop behind an authoritative read). `TenantIdRequiredModelTests`
+is its twin for the column itself: every `ITenantEntity` is required except the two named exemptions.
 
 Two shapes are worth knowing. `LoyaltyTransaction` keeps **both** a tenant term and a filter: the key
 is a caller-supplied token, so a bare global index would read a cross-tenant collision as a replay,
@@ -314,8 +326,9 @@ sequence. The receipt number is allocated from the `FiscalCounter` table, never 
 rows.
 
 `FiscalCounter` is tenant-scoped (`ITenantEntity`) and keyed by the unique index
-`(TenantId, Year, IssuerScope)` — declared `NULLS NOT DISTINCT` so a single-tenant (null `TenantId`)
-deployment collapses onto one counter row per `(Year, IssuerScope)`. `FiscalCounterRepository
+`(TenantId, Year, IssuerScope)` — one counter row per operating company, year and issuer scope, which
+is why `OrderReceipts` is unique on `(TenantId, ReceiptNumber)` rather than on the number alone: two
+operators' first receipts of a year are the same string by construction. `FiscalCounterRepository
 .AllocateNextAsync` performs a single atomic
 `INSERT … ON CONFLICT (…) DO UPDATE SET Value = Value + 1 RETURNING Value`. Postgres row-locks the
 conflicting tuple, so N concurrent allocations for one scope return N distinct contiguous numbers.

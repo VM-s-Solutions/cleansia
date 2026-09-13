@@ -502,9 +502,10 @@ throws, because the seed configures every serviced country and a gap is a deploy
 ## The market a customer browses in {#market}
 
 Before there is a service address, every customer surface has a **market**: a serviced country whose
-configuration names an active currency, listed by the anonymous `Market/GetOverview` read
-([ADR-0058](/decisions/adr-0058), owner ruling 2026-09-12: *"customer-chosen market, defaulting to
-CZ"*). The rules, in precedence order:
+configuration names an active currency **and an operating company**, listed by the anonymous
+`Market/GetOverview` read ([ADR-0058](/decisions/adr-0058), owner ruling 2026-09-12: *"customer-chosen
+market, defaulting to CZ"*; [ADR-0061](/decisions/adr-0061) for the company). The rules, in precedence
+order:
 
 1. **The service address wins.** From the wizard's address step on, for a recurring schedule's saved
    address, for an existing order: the address's country decides, exactly as above, and a market
@@ -517,8 +518,10 @@ CZ"*). The rules, in precedence order:
 3. **Else the default market** — the one country configuration flagged `IsDefaultMarket` (owner
    ruling 2026-09-13; CZE today, seeded). At most one row carries the flag, held by a partial unique
    index; an admin moves it with `PUT api/AdminCountry/{id}/default-market`, which refuses a country
-   that is not serviced or whose configured currency is not active (`country.not_serviced`,
-   `country.market_not_ready`) — a default the directory would not list is a pre-selection of nothing.
+   that is not serviced, whose configured currency is not active, or that no operating company serves
+   (`country.not_serviced`, `country.market_not_ready`) — a default the directory would not list is a
+   pre-selection of nothing, and a default nobody operates would refuse every registration that names
+   no market.
    When nothing is flagged, or the flagged country is not listed, an error is logged and the older
    rule decides: the market on the platform default currency, the lowest ISO code among several, none
    when there is none (then the first listed market is pre-selected). A pre-selection, not a pricing
@@ -545,11 +548,36 @@ the no-show credit (per currency) and the insurance ceiling (per country), both 
 the terms page states the market's currency code; a market with no figure gets the copy variant that
 names none. The parity checker fails any locale that types a figure back in.
 
-**Opening a market is data, gated twice:** the currency needs a loyalty divisor before
-`ActivateCurrency` accepts it (`currency.loyalty_divisor_missing`), and a country cannot be switched
-on as serviced until its configuration names an **active** currency (`country.market_not_ready`) —
-otherwise the wizard would offer an address the quote cannot price. Plus prices and the copy figures
-are optional steps. → [Platform expandability — the expansion path](/architecture/platform-expandability#expansion-path)
+**A market has an operating company** (owner ruling 2026-09-13, [ADR-0061](/decisions/adr-0061):
+*"We'll make a holding company and more companies under it for each region"*). Each market is served
+by exactly one company under the holding — Cleansia CZ s.r.o. serves CZ today — and one company may
+serve several markets. A market nobody serves is not listed by `Market/GetOverview`, cannot be flagged
+the default, and refuses every anonymous write that names it (`tenant.not_found`). What belongs to the
+company, from the first write:
+
+- **A registration belongs to the market's company.** Register, Google/Apple sign-up, a promo-code
+  request and a referral check name the market (`countryId`); with none named, the default market.
+  A cleaner registers with a market too, and must be approved for a work country that market's
+  company serves (`employee.work_country_operator_mismatch`).
+- **An order belongs to the company that serves its address's country** — the same country that decides
+  its currency, so the two can never disagree. A customer of one company booking an address another
+  company serves is refused (`order.country_operator_mismatch`), guest or signed in: the order would be
+  invisible to the account that placed it. **Cross-company booking on one account is refused until two
+  companies exist**; whether it then becomes a feature is the owner's call (Q-TENANCY-01).
+- **One email is one identity across the holding.** An email registered with any company is registered
+  with Cleansia; a second registration with the same email in another market is refused
+  (`user.existing_email`), and an unconfirmed account can be re-registered only in the market it was
+  created in. Login, password reset and social sign-in find the one account wherever it lives.
+- **A company's money stays its own:** its receipts number from its own counter, its pay rates and promo
+  codes are its own, and a site-wide campaign reaches its own customers only.
+
+**Opening a market is data, gated twice** — three times when a *new* company will serve it: the
+currency needs a loyalty divisor before `ActivateCurrency` accepts it
+(`currency.loyalty_divisor_missing`); a country cannot be switched on as serviced until its
+configuration names an **active** currency (`country.market_not_ready`) — otherwise the wizard would
+offer an address the quote cannot price; and it is listed, and usable by a visitor, only once a company
+is assigned to it. Plus prices and the copy figures are optional steps. → [Platform expandability — the
+expansion path](/architecture/platform-expandability#expansion-path)
 
 The pricing calculator returns a **raw subtotal before any user-level discount** — tier, membership or
 promo. The **express surcharge is already folded in**, because the surcharge is a property of the

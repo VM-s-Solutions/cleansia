@@ -204,12 +204,18 @@ thing that proves the model and the schema agree.
 
 Four things that look like bugs, are not, and have each cost a session:
 
-- **A unique index containing `TenantId` enforces nothing in single-tenant mode.** `TenantId` is
-  nullable and Postgres treats NULLs as distinct, so `(TenantId, …)` admits unlimited duplicates while
-  it is null — which is production today. No design may use such an index as its only concurrency
-  arbiter. `.AreNullsDistinct(false)` is shipped on five tables, but adding it to an **existing** index
-  means regenerating `Initial` and **dropping DEV**, and it fails on pre-existing duplicates.
-  → `/architecture/security-rules`
+- **`TenantId` is NOT NULL on every stamped table, and `NULL` is not a tenant.** A tenant is an
+  operating company under the holding (`Tenants`, one row: `cleansia-cz`); every `ITenantEntity` row
+  carries one from its first write, except `OutboxMessages` and `DeadLetters`. Two traps this closed,
+  and how: a `(TenantId, …)` unique index used to enforce nothing because Postgres treats NULLs as
+  distinct — now the tenant term can never be null, the thirteen sole-arbiter indexes are
+  `NULLS NOT DISTINCT` in the emitted DDL anyway, and a model sweep fails any new unique index over a
+  nullable column that is not; and a `NULL`-stamped row used to vanish from every tenanted reader —
+  now a writer that forgets its market fails `23502` in DEV instead of orphaning rows. The one
+  nullable `TenantId` you will still see is the **dead inherited column on tenantless `Auditable`
+  tables** (`CountryConfiguration`, `Service`, …): unfiltered, unstamped, meaning nothing. An anonymous
+  request names a **market** (`countryId`), never a tenant; the server maps market → operator.
+  → `/architecture/security-rules`, `/decisions/adr-0061`
 
 - **System jobs run with no JWT context.** Query with `GetQueryableIgnoringTenant()`, then
   `SetTenantOverride` per tenant group and commit **inside** the loop — rows are stamped from the

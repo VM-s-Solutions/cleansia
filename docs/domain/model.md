@@ -3,7 +3,7 @@
 Generated from the EF Core entity configurations, not described from memory. A relationship on a
 diagram is a `HasOne(...)` declared in a configuration file; if it is not there, it is not enforced.
 
-One diagram per area, because a single picture of all 83 entities is a picture nobody reads. Entities
+One diagram per area, because a single picture of all 84 entities is a picture nobody reads. Entities
 appear in the area they are owned by, not everywhere they are referenced.
 
 ::: tip Checking the count
@@ -12,6 +12,37 @@ migration is regenerated rather than stacked, so it always reflects the current 
 was 70 for long enough to be wrong by six before anyone noticed, and then 76 for long enough to be wrong
 by five, which is why the check is written down rather than the number being trusted.
 :::
+
+## Tenancy — who a row belongs to
+
+```mermaid
+erDiagram
+  CountryConfiguration }o--o| Tenant : "OperatorTenant"
+```
+
+**A tenant is an operating company under the holding** — the legal entity that contracts the customer,
+employs the cleaner, issues the receipt and pays the payout ([ADR-0061](/decisions/adr-0061)). `Tenant`
+is a three-column registry (`Id varchar(26)`, assigned not generated — `cleansia-cz`; `Name`;
+`IsActive`), written only by the seed; there is no repository, no DTO and no admin surface until a
+second company exists. **A country is served by at most one operator and an operator serves one or
+more countries**: `CountryConfiguration.OperatorTenantId` (nullable, FK Restrict, indexed) is the whole
+map. Null means nobody serves that market — `Market/GetOverview` does not list it and an anonymous
+write naming it is refused `tenant.not_found`.
+
+**Every stamped row carries its operator.** 46 entities implement `ITenantEntity`; the `TenantId`
+column is **NOT NULL** on 44 of them and nullable only on `OutboxMessage` and `DeadLetter` (an envelope
+may have no tenant). The value is written at commit time from the ambient tenant — the JWT claim, the
+market's operator for an anonymous write, the user's tenant on a token mint, the row's own tenant in a
+job — and the database refuses a row with none. **There is no foreign key from a stamped table to
+`Tenants`**: a tenant id enters the system at exactly two points, the operator map (which is FK'd) and
+the claim (minted from a row that was itself stamped through the map), and the closure is proven by
+`SeededDatabaseHasNoOrphanTenantRowsTests` rather than by 44 constraints. Tenantless `Auditable`
+tables (`CountryConfiguration`, `Service`, …) still carry a nullable `TenantId` column by inheritance;
+it is dead — unfiltered, unstamped, meaning nothing.
+
+| Entity | |
+|---|---|
+| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` only |
 
 ## Identity and access
 
@@ -32,11 +63,11 @@ erDiagram
 
 | Entity | |
 |---|---|
-| `User` | references `PreferredLanguage` |
-| `Employee` | references `Nationality`, `User`, `WorkCountry` |
+| `User` | references `PreferredLanguage`; unique `Email` (`citext`) **with no tenant term** — one identity per email across the holding ([ADR-0061](/decisions/adr-0061) D5.1); `TenantId` NOT NULL is the operating company the account belongs to, the market's operator at registration |
+| `Employee` | references `Nationality`, `User`, `WorkCountry` — at approval the work country's operator must be the admin's own tenant (`employee.work_country_operator_mismatch`) |
 | `RefreshToken` | references `User` |
 | `Device` | references `User` |
-| `EmployeePayoutDetails` | references `BankCountry`, `Currency` (nullable, Restrict — the currency the cleaner declares the account holds), `Employee` (Cascade); unique `(TenantId, EmployeeId)` with nulls not distinct |
+| `EmployeePayoutDetails` | references `BankCountry`, `Currency` (nullable, Restrict — the currency the cleaner declares the account holds), `Employee` (Cascade); unique `(TenantId, EmployeeId)`, nulls not distinct |
 | `EmployeeDocument` | references `Employee`, `PreviousVersion` |
 | `EmployeeDocumentRequirement` | references `Country` (Restrict); unique `(CountryId, DocumentType)` — which document types a country requires of a cleaner |
 | `DocumentDeletionRequest` | references `Document` (Restrict) — a cleaner's request to have a document removed, answered by an admin |
@@ -87,7 +118,7 @@ that any order was ever priced in cannot be deleted. → [Business rules](/produ
 | `OrderPhoto` | references `CapturedBy`, `Order` |
 | `OrderNote` | references `Order` |
 | `OrderIssue` | references `Order` |
-| `OrderReceipt` | references `Language` |
+| `OrderReceipt` | references `Language`; unique `(TenantId, ReceiptNumber)`, nulls not distinct — the number comes from a per-operator `FiscalCounter`, so two operators' first receipts of a year are the same string and the tenant term is what keeps them apart |
 | `Address` | — |
 | `RecurringBookingTemplate` | references `User` |
 | `SavedAddress` | references `Address`, `User` |
@@ -133,8 +164,10 @@ prints); `CountryConfiguration` carries, besides the fiscal and formatting colum
 a policy is written per jurisdiction, null = the copy names no figure (CZE seeded at 1 000 000) — and
 `IsDefaultMarket`, the market a customer surface pre-selects before any choice is made: a filtered
 unique index (`IX_CountryConfigurations_IsDefaultMarket_Unique`, the `Currency.IsDefault` shape) holds
-at most one, `SetDefaultMarket` is the only writer, CZE is seeded with it. → [ADR-0058](/decisions/adr-0058),
-[ADR-0060](/decisions/adr-0060)
+at most one, `SetDefaultMarket` is the only writer, CZE is seeded with it — and **`OperatorTenantId`**,
+the operating company that serves the market (see [Tenancy](#tenancy-who-a-row-belongs-to)); a market
+with none is not listed and cannot be flagged the default. → [ADR-0058](/decisions/adr-0058),
+[ADR-0060](/decisions/adr-0060), [ADR-0061](/decisions/adr-0061)
 
 | Entity | |
 |---|---|
@@ -147,8 +180,8 @@ at most one, `SetDefaultMarket` is the only writer, CZE is seeded with it. → [
 | `Currency` | — ; `NoShowCredit` (nullable) is the per-currency apology credit |
 | `Country` | — ; `IsoCode` alpha-3 + `IsoAlpha2` (required, two letters) |
 | `Language` | — |
-| `CompanyInfo` | references `Country` |
-| `CountryConfiguration` | references `Country`; `InsuranceCoverageAmount` (nullable) is the per-country copy figure; `IsDefaultMarket` (filtered unique — at most one row) is the landing-page pre-selection |
+| `CompanyInfo` | references `Country`; **stamped** — it is the operator's legal issuer identity on every receipt and invoice, so each operating company holds its own row |
+| `CountryConfiguration` | references `Country`, `OperatorTenant` (nullable, Restrict — the company that serves this market); `InsuranceCoverageAmount` (nullable) is the per-country copy figure; `IsDefaultMarket` (filtered unique — at most one row) is the landing-page pre-selection. Tenantless: a per-country fact |
 | `PropertySizePreset` | references `Country` (Restrict); unique `(CountryId, Code)` — the size chips a country's booking wizard offers |
 | `ServiceCity` | references `Country` |
 
@@ -179,7 +212,7 @@ that money was ever recorded in cannot be deleted. → [Pay and payouts](/flows/
 | `OrderEmployeePay` | references `Currency` (Restrict), `EmployeeInvoice` (nullable, SetNull), `Employee`, `Order`; unique `(OrderId, EmployeeId)` |
 | `EmployeeInvoice` | references `Country`, `Currency` (Restrict), `Employee`, `Language`; unique `(EmployeeId, PayPeriodId, CurrencyId)`, unique `InvoiceNumber`, unique filtered `VariableSymbol` |
 | `PayPeriod` | — |
-| `EmployeePayConfig` | references `Currency`, `Employee`, `Package`, `Service` |
+| `EmployeePayConfig` | references `Currency`, `Employee`, `Package`, `Service`; unique `IX_EmployeePayConfigs_Tenant_Scope` on `(TenantId, EmployeeId, ServiceId, PackageId, CurrencyId)`, nulls not distinct — the tenant term is what lets two operators each hold a platform default (`EmployeeId` null) for the same service and currency |
 | `CreditAccount` | references `User` (Restrict); `CurrencyId` is a plain column with **no declared foreign key**; unique `(UserId, CurrencyId)` |
 | `CreditTransaction` | references `Account` (Cascade); unique `IdempotencyKey` — unfiltered and with no tenant term, because this is money and the backstop has to fire |
 | `Refund` | references `Dispute`, `Order`, `Receipt` |
@@ -214,10 +247,10 @@ membership is tenant-scoped. → [ADR-0059](/decisions/adr-0059)
 |---|---|
 | `LoyaltyAccount` | references `User` |
 | `LoyaltyTransaction` | — |
-| `LoyaltyTierConfig` | — |
+| `LoyaltyTierConfig` | — ; **tenantless** since [ADR-0061](/decisions/adr-0061) D7 — the brand's programme, sold identically by every operator (the `MembershipPlan` sibling); unique `Tier` |
 | `ReferralCode` | references `User` |
 | `Referral` | references `FirstQualifyingOrder`, `ReferralCode`, `Referred`, `Referrer` |
-| `PromoCode` | references `Currency` |
+| `PromoCode` | references `Currency`; stamped — a code gives away the operator's money, and a sitewide campaign fans out to its operator's users only |
 | `PromoCodeRedemption` | references `Order`, `PromoCode`, `User` |
 | `MembershipPlan` | — (no price column) |
 | `MembershipPlanPrice` | references `MembershipPlan` (Cascade), `Currency` (Restrict); unique `(MembershipPlanId, CurrencyId)` with no tenant term, unique `StripePriceId` |

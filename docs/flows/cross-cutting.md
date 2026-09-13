@@ -4,8 +4,17 @@ Things that belong to no single flow and are documented once rather than repeate
 
 ## Tenancy
 
-Every tenant-scoped entity carries a `TenantId`, and EF global query filters scope reads
-automatically. A JWT carries the tenant claim.
+A tenant is an **operating company** under the holding ([ADR-0061](/decisions/adr-0061)); each market
+is served by one (`CountryConfiguration.OperatorTenantId`), and every tenant-scoped entity carries a
+`TenantId` that is **NOT NULL** — the database refuses a business row with no owner. EF global query
+filters scope reads automatically. A row gets its tenant at commit time from whatever is ambient:
+
+| Who is writing | Where the tenant comes from |
+|---|---|
+| An authenticated request | the JWT's `tenant_id` claim, minted from the user's own row |
+| An anonymous request that writes (register, social sign-up, guest booking, promo request, referral check) | the **market** it names (`countryId`, or the default market) → that market's operator, set by `OperatorTenantScopeBehavior` before validation. A country that is not a market is `country.not_serviced`; a market nobody operates is `tenant.not_found` |
+| A request that authenticates a user (login, refresh, social sign-in, email confirm) | the user being authenticated — `TokenService` adopts it before the `RefreshToken` is written, replacing the market's operator on a social sign-in of an existing account |
+| A system job or webhook | the row it read — see below |
 
 **System jobs carry no JWT**, which makes them the interesting case. They read across tenants
 deliberately, and when they *write* they must group by tenant, set the override per group, and commit
@@ -28,10 +37,13 @@ flowchart LR
 > therefore stamps every group with whichever tenant happened to be processed last. Committing inside
 > the loop is what makes the override mean anything.
 
-⚠️ **A unique index containing `TenantId` enforces nothing while `TenantId` is null.** Postgres treats
-NULLs as distinct, so `(TenantId, …)` admits unlimited duplicates in single-tenant mode — which is
-production today. No design may use such an index as its only concurrency arbiter; the ones that need
-to arbitrate declare `NULLS NOT DISTINCT`.
+⚠️ **A job that forgets its override does not read someone else's rows — it reads nothing, and writes
+a `23502`.** The filter's `null == null` clause matches nothing on a stamped table now that the column
+is NOT NULL, so a sweep with no ambient tenant sees an empty set and a commit with none is refused by
+the database. That is the loud direction on purpose; the fix is the override-per-row shape above, never
+a default tenant. A unique index containing `TenantId` fires unconditionally on the tenant term; the
+ones that arbitrate a race on another nullable term still declare `NULLS NOT DISTINCT`
+(→ [Security rules — S8](/architecture/security-rules#s8-tenant-isolation-correctness)).
 
 ## The outbox
 

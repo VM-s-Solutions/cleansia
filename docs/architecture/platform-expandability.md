@@ -23,10 +23,22 @@
 > **Currency-display (§7c) shipped too, on 2026-09-13** — as ADR-0059, with the customer-market
 > programme (ADR-0058, ADR-0060). §2 "Customer surfaces", §5, §7c and §8 describe that state.
 >
+> ### Tenancy was ACTIVATED on 2026-09-13 (ADR-0061)
+>
+> The tenancy axis below used to read *"forward-compat scaffolding, not operational"*. It is
+> operational: a tenant is an **operating company** under the holding (`Tenants`, one row —
+> `cleansia-cz`), each market is mapped to the company that serves it
+> (`CountryConfiguration.OperatorTenantId`), `TenantId` is **NOT NULL** on every stamped table, and every
+> anonymous write resolves its operator from the market it names. §0's row, §1 and §8 step 3 are
+> rewritten to that state; the classification doctrine (§1's three buckets, §6) is unchanged in
+> substance and gains ADR-0061 D7's one-sentence rule. The *"spoof-resistant inbound tenant resolution"*
+> §8 used to name as the missing piece was never built and is not needed: an anonymous request names a
+> **market**, not a tenant, and the server maps it.
+>
 > **Architect verdict (this pass):** the wider three-axis picture **CONFIRMS** ADR-0001 Addendum A1's
 > Option-A ruling for T-0113 and broadens it into a general entity-classification rule (§6). It does
-> **not revise** A1. Only one ground-truth correction was needed: there are **40** `ITenantEntity`
-> entities, not 41 (§1).
+> **not revise** A1. Only one ground-truth correction was needed at the time: there were **40** `ITenantEntity`
+> entities, not 41 (46 today — §1 carries the current list).
 >
 > ### The currency axis was rewritten 2026-09-12
 >
@@ -46,7 +58,7 @@ Cleansia has **three independent expansion axes**, each at a different maturity 
 
 | Axis | Mechanism in code | Actually used today? | Verdict |
 |---|---|---|---|
-| **Tenancy** | `ITenantEntity` on 40 entities + EF global query filter + JWT `tenant_id` | **No** — runs effectively single-tenant (`TenantId = null` everywhere) | **Forward-compat scaffolding** |
+| **Tenancy** | `Tenants` registry (seed-only) + `CountryConfiguration.OperatorTenantId` (market → operating company) + `ITenantEntity` on 46 entities with `TenantId` **NOT NULL** + EF global query filter + JWT `tenant_id` + `OperatorTenantScopeBehavior` for anonymous writes | **Yes** — one operating company (`cleansia-cz`) serving one market; every business row carries it from its first write (ADR-0061, 2026-09-13) | **Real mechanism, single-operator operation — a second company is six data steps, no code** |
 | **Currency** | `Currency` platform entity (Code/Symbol/Name/IsDefault/IsActive/LoyaltyPointsDivisor) + per-currency price rows (`ServicePrices`/`PackagePrices`/`ExtraPrices`) + per-record `CurrencyId` on every money-carrying row; **nothing converts** | **Partially** — the whole path is live (order currency from the service address's country, cleaner currency from the work country, per-currency pay coverage, a board scoped to the cleaner's currency, one payout invoice per currency), but CZK is the only active currency; EUR is seeded switched off with no prices | **Real mechanism, single-currency operation — adding a market is data, not code** |
 | **Region/Country** | `Country` + `CountryConfiguration` + `CountryInvoiceConfig` platform entities, keyed by `CountryId` | **Partially** — config seeded for ~10 countries; consumed by VAT/tax-id/fiscal/invoice code; but only CZE is `IsServiced` | **Real mechanism, single-country operation** |
 
@@ -55,8 +67,10 @@ currency the platform decides is derived from a country through one chain
 (`CountryConfiguration.DefaultCurrencyCode` → `Currency`): an order's from its service address's
 country, a cleaner's from their work country. Nothing else decides one — not the customer, not the
 caller (a `currencyId` on the wire is checked against the address, never trusted), not the tenant.
-Country is independent of tenant; tenant is independent of both. There is no
-place in the code where currency is derived from tenant, or where country is derived from tenant.
+**Tenant is downstream of country too, by the same read**: the operating company of a row is the
+operator of the country the transaction is legally in (`CountryConfiguration.OperatorTenantId`), which
+is why an order's tenant and its currency can never disagree — they are two facts read from one row.
+Nothing derives currency from tenant, and nothing derives country from tenant; the arrow runs one way.
 
 **The classification rule (the doctrine):** an entity is **platform config** if it is shared catalog/
 reference data read on `[AllowAnonymous]` paths (or otherwise global); **tenant-scoped** only if it is
@@ -67,49 +81,69 @@ country-keyed (e.g. `CountryConfiguration`), but a single entity should not be b
 
 ---
 
-## 1. Axis 1 — Multi-TENANCY (forward-compat scaffolding, not operational)
+## 1. Axis 1 — Multi-TENANCY (active since 2026-09-13 — ADR-0061)
 
-**Mechanism (real):**
-- **40 domain entity classes** implement `ITenantEntity` — file-verified by exact-string count of
-  `: Auditable, ITenantEntity` across `Cleansia.Core.Domain` (verified sample: `Order`, `Employee`,
-  `Service`, `Package`, `Extra`, `ServiceCity`, `ServiceCategory`, `MembershipPlan`, `LoyaltyTierConfig`,
-  `PromoCode`, `EmployeePayConfig`, `EmployeeInvoice`, plus the per-tenant key/value store
-  `TenantConfiguration : Auditable, ITenantEntity`).
-  - **Count correction (was "41"):** the orchestrator's ground truth said 41; the real number is **40**.
-    The 41st `ITenantEntity` text occurrence is `Common/ITenantEntity.cs` — the **interface declaration
-    itself**, not an entity. Separately, `ProcessedStripeEvent : BaseEntity` deliberately does **not**
-    implement `ITenantEntity` (`ProcessedStripeEventRepository.cs:13` notes the global filter does not
-    apply to it) — the Stripe idempotency ledger is correctly platform-global, not tenant-scoped. So the
-    canonical number is **40 tenant-scoped entity classes**.
-- EF global query filter auto-scopes reads: `CleansiaDbContext.ApplyTenantQueryFilters`
-  (`CleansiaDbContext.cs:111-179`). The filter is:
+**What a tenant is:** an **operating company** under the holding — the legal entity that contracts the
+customer, employs the cleaner, issues the receipt and pays the payout (owner ruling 2026-09-13: *"We'll
+make a holding company and more companies under it for each region"*). A country is served by at most
+one operator; an operator serves one or more countries.
+
+**Mechanism (real, and running):**
+- **`Tenants`** — a three-column registry (`Id varchar(26)` assigned not generated, `Name`, `IsActive`),
+  seed-only, one row (`cleansia-cz`, "Cleansia CZ s.r.o."). No repository, no DTO, no admin surface.
+- **`CountryConfiguration.OperatorTenantId`** — the market → operator map (nullable, FK Restrict,
+  indexed). CZE → `cleansia-cz`; every other configured country → nobody, and a market nobody serves
+  is not listed by `Market/GetOverview`, cannot be flagged the default, and refuses anonymous writes
+  (`tenant.not_found`).
+- **46 domain entity classes** implement `ITenantEntity` (`grep -rn ", ITenantEntity" src/Cleansia.Core.Domain`),
+  and the `TenantId` column is **NOT NULL** on 44 of them — only `OutboxMessage` and `DeadLetter` stay
+  nullable (an envelope may have no tenant). The CLR property stays `string?` because the value is
+  written at commit time. `LoyaltyTierConfig` left the interface on activation (the brand's programme,
+  the `MembershipPlan` sibling); `ProcessedStripeEvent : BaseEntity` deliberately never implemented it
+  (the Stripe idempotency ledger is platform-global).
+- EF global query filter auto-scopes reads: `CleansiaDbContext.ApplyTenantQueryFilters`. The filter is:
   `tenantProvider == null  ||  (currentTenantId == null && e.TenantId == null)  ||  e.TenantId == currentTenantId`.
-  The **middle clause** is what makes single-tenant mode work — without it `null == null` is SQL `NULL`
-  (not true) and every row would be filtered out.
-- `TenantProvider` resolves the tenant **only** from the JWT `tenant_id` claim or an explicit
-  `_override`. `SetTenantOverride` is used **only by background services** iterating tenants
-  (recurring/cleanup/payments/fiscal/pay-period). **There is no inbound host/subdomain
-  tenant-resolution middleware for web requests.**
+  The **middle clause now matches nothing** on a stamped table — a reader with no tenant reads an
+  empty set, the safe direction — and is kept because three ADRs pin the filter diff-empty.
+- `TenantProvider` resolves the tenant from the JWT `tenant_id` claim or an explicit override, and the
+  override has **three** writers, each for one reason: `OperatorTenantScopeBehavior` (an anonymous
+  request that writes names a **market** — `countryId`, or the default market — and gets that market's
+  operator before validation runs; `country.not_serviced` for a non-market, `tenant.not_found` for a
+  market nobody operates), `TokenService` / `RefreshToken.Handler` (a request that authenticates a user
+  adopts the user's tenant before writing the `RefreshToken`), and background services / webhooks
+  (per row or per tenant group, committing inside the loop). **There is no inbound host/subdomain
+  tenant-resolution middleware for web requests, and there will not be** — the request names a market,
+  never a tenant (S1).
+- **Tenant, country and currency agree by construction** — read from the same country — and two
+  validators refuse the cases that could break it: `order.country_operator_mismatch` (a customer or
+  guest booking an address another company serves) and `employee.work_country_operator_mismatch` (an
+  admin approving a cleaner for a country their company does not serve).
+- **One identity per email across the holding**: `Users (Email)` is globally unique with no tenant term.
 
-**Operational reality:** the app runs **effectively single-tenant**. Seed data writes `TenantId = NULL`
-on every tenant-scoped row (e.g. `ServiceCities … TenantId … NULL`, `MembershipPlans … TenantId … NULL`).
-With no live second tenant, the null-slice **is** the only tenant, so the filter is correct today by
-coincidence of single-tenancy, not by design intent for anonymous routes. CLAUDE.md states the contract:
-"Backward compatible: null TenantId = single-tenant mode."
+**Operational reality:** one operating company, one market. Every seeded business row — `CompanyInfo`,
+the platform-default `EmployeePayConfigs`, the three `PromoCodes`, the dev admin — is stamped
+`cleansia-cz`; the seed inserts the `Tenants` row first and `SeededDatabaseHasNoOrphanTenantRowsTests`
+proves closure (zero `NULL`s, every tenant in `Tenants`, an operator on the default market).
+`SecondTenantIsolationHostTests` seeds a second company whole and proves a CZ admin sees none of it.
 
-**Consequence (the bug class):** any `[AllowAnonymous]` route reading an `ITenantEntity` is correct
-**only** while single-tenant. With no JWT, `GetCurrentTenantId()` is null → filter collapses to
-`TenantId == null`. The day a second tenant exists: (1) the anonymous read returns only the null-tenant
-slice (wrong/empty), and (2) any `TenantId == null` "shared" row leaks to every tenant's anonymous page.
-This is exactly T-0113 (`MembershipPlan`) and its four siblings.
+**The bug class §1 used to name — an `[AllowAnonymous]` route reading an `ITenantEntity` — is closed
+from both sides.** The anonymous catalogues are tenantless (T-0113 and the siblings, §7a/§7b), and the
+anonymous *writers* have a tenant before their first read (the scope behaviour). What remains is the
+classification rule, now stated in one sentence (ADR-0061 D7):
 
-**The 40 entities sorted into three buckets (the classification this doctrine acts on):**
+> A table is **stamped** when its rows are created by or for one operator's customers, cleaners or
+> money — or when the row *is* the operator's own legal or financial configuration (its issuer
+> identity, its pay rates, its fiscal counter, its campaigns). It is **tenantless** when it is the
+> brand's catalogue or programme definition that every operator sells identically, or a per-country
+> fact.
+
+**The 46 entities sorted into three buckets (the classification this doctrine acts on):**
 
 | Bucket | Count | Members | Verdict |
 |---|---|---|---|
-| **1 — Genuinely tenant-owned** (private per-operator operational data; correct as `ITenantEntity`) | 33 | Order, OrderNote, OrderIssue, OrderReview, OrderStatusTrack, OrderPhoto, OrderReceipt, OrderEmployeePay, User, Employee, EmployeeDocument, Address, SavedAddress, Cart, RefreshToken, UserConsent, GdprRequest, UserNotificationPreferences, Device, Dispute, RecurringBookingTemplate, UserMembership, LoyaltyAccount, LoyaltyTransaction, PromoCode, PromoCodeRedemption, ReferralCode, Referral, PayPeriod, EmployeePayConfig, EmployeeInvoice, CompanyInfo, LoyaltyTierConfig | **Keep `ITenantEntity`.** (CompanyInfo + LoyaltyTierConfig are tenant-*level config* but genuinely vary per operator and are reached only behind `tenant_id`-bearing JWTs — they stay.) |
-| **2 — Catalog/config that is tenant-scoped-but-shouldn't-be** (the T-0113 + sibling-catalog class) | 6 | **Service, ServiceCategory, Package, Extra, ServiceCity, MembershipPlan** | **Drop `ITenantEntity` → platform config** (Option A). `[AllowAnonymous]` + `ITenantEntity` is the bug; correct today only by single-tenant coincidence. |
-| **3 — Infra** (tenancy is the entity's whole purpose) | 1 | **TenantConfiguration** (per-tenant key/value store) | **Keep `ITenantEntity`.** Never anonymous; exists to hold per-tenant overrides. |
+| **1 — Genuinely operator-owned** (one company's customers, cleaners, money, or its own legal/financial configuration) | 43 | Order, OrderNote, OrderIssue, OrderReview, OrderStatusTrack, OrderPhoto, OrderReceipt, OrderEmployeePay, User, Employee, EmployeeDocument, DocumentDeletionRequest, Address, SavedAddress, Cart, RefreshToken, UserConsent, GdprRequest, UserNotification, UserNotificationPreferences, Device, LiveActivityToken, Dispute, Refund, RecurringBookingTemplate, UserMembership, MembershipBenefitUsage, UserStripeCustomer, CreditAccount, LoyaltyAccount, LoyaltyTransaction, PromoCode, PromoCodeRedemption, ReferralCode, Referral, PayPeriod, EmployeePayConfig, EmployeePayoutDetails, EmployeeInvoice, FiscalCounter, CompanyInfo, AdminActionAudit, EmployeeActionAudit | **`ITenantEntity`, NOT NULL.** (`CompanyInfo` is the s.r.o. itself; the pay defaults and promo codes are the operator's money; the two audit tables are per operator by ADR-0012.) |
+| **2 — The brand's catalogue and programme, and per-country facts** | — | **Service, ServiceCategory, Package, Extra, ServiceCity, MembershipPlan, MembershipPlanPrice, LoyaltyTierConfig**, `Country*`, `Currency`, `PropertySizePreset`, `EmployeeDocumentRequirement`, `Email*Translation`, … | **Tenantless** (`Auditable` if admin-edited, `BaseEntity` if seed-only), each saying why in a one-line comment naming its sibling. `LoyaltyTierConfig` joined this bucket on activation. |
+| **3 — Infra** | 3 | **TenantConfiguration** (per-tenant key/value store — no writer, no rows, Q-TENANCY-04), **OutboxMessage**, **DeadLetter** (stamped when the envelope has a tenant; the two nullable exemptions) | **Keep `ITenantEntity`.** |
 
 (`ProcessedStripeEvent` is the deliberate **platform-global ledger** outside all three buckets — correctly
 `: BaseEntity`, never tenant-scoped, with `IgnoreQueryFilters()` as belt-and-braces. It is precedent, not
@@ -510,7 +544,12 @@ Country, Language}**, **mobile = {Service, Package, Extra, MembershipPlan}**.
 | `Language/GetOverview` (**web only**) | Language | **No** (`Language.cs:6`) | No | none | **CORRECT (platform config)** |
 | `Order/Lookup`+`LookupBatch` (web+mobile) | Order (+Service/Package) | Yes | Yes but **credentialed** by `DisplayOrderNumber`+`CustomerEmail` (`LookupOrder.cs:51-53`) | collapse fails it **shut** (hides), cannot enumerate | **CREDENTIALED — different risk class (this is the backlog's "BSP-9" / T-0123 LookupBatch item)** |
 | `Order/Quote` (web+mobile) | Service/Package/Extra (pricing) | Yes | Yes — loads catalog by id (`OrderPricingCalculator.cs:41-48`) | resolves only null-slice catalog when pricing anonymously | **BUG — catalog batch (pricing path), PANEL-MISSED** |
-| `Referral/Validate` (web+mobile) | ReferralCode + User | Yes (`ReferralCode.cs:14`, `User.cs:12`) | Yes (`ValidateReferral.cs:43-52`) | validates only null-tenant codes/users at sign-up | **BUG — anon tenant-scoped read, PANEL-MISSED** |
+| `Referral/Validate` (web+mobile) | ReferralCode + User | Yes (`ReferralCode.cs:14`, `User.cs:12`) | Yes (`ValidateReferral.cs:43-52`) | validates only null-tenant codes/users at sign-up | **BUG — anon tenant-scoped read, PANEL-MISSED** → **CLOSED 2026-09-13 (ADR-0061 D3):** the request is `IOperatorScopedRequest`; it names a market (`countryId`, default market when absent) and reads that market operator's codes |
+
+> **The table above is the 2026-06 analysis and is kept as the record.** Every row marked BUG is
+> closed: the catalogue batch by making the entities tenantless (§7a/§7b), `Referral/Validate` by
+> the market scope. The "collapse" column describes a null-tenant world that no longer exists — an
+> anonymous request that reads a stamped table now has a tenant before its first read, or is refused.
 
 **Two reads the catalog batch must NOT forget (both are anonymous reads of `ITenantEntity` data the
 original prose did not enumerate):**
@@ -595,15 +634,23 @@ default, not because they name it.
 
 Decide along the orthogonal axes:
 
-1. **Platform config vs tenant-scoped:**
-   - **Platform config** (NOT `ITenantEntity`) if it is *shared catalog / reference data*, especially if
-     read on **any `[AllowAnonymous]` path**. Precedent: `Currency`, `Language`, `Country`.
-   - **Tenant-scoped** (`ITenantEntity`) only if it is *private per-operator data behind authenticated,
-     `tenant_id`-bearing routes*. Precedent: `Order`, `Employee`, `EmployeeInvoice`, `PromoCode`.
-   - **Hard rule (ADR-0001 Addendum A1, D-A1.1):** an entity must **never** be both `[AllowAnonymous]`
-     **and** `ITenantEntity` with no spoof-resistant inbound tenant-resolution. Today no such resolution
-     exists (the `Host` header is client-controlled → S3), so anonymous catalogs **must** be platform
-     config.
+1. **Platform config vs tenant-scoped (ADR-0061 D7 is the sentence; the rest is precedent):**
+   - **Platform config** (NOT `ITenantEntity`) if it is *the brand's catalogue or programme definition
+     that every operating company sells identically, or a per-country fact*. Precedent: `Currency`,
+     `Language`, `Country`, `Service`, `MembershipPlan`, `LoyaltyTierConfig`. Say why in a one-line
+     comment naming the sibling.
+   - **Tenant-scoped** (`ITenantEntity`, `TenantId` NOT NULL) if its rows are *created by or for one
+     operating company's customers, cleaners or money — or the row is the company's own legal or
+     financial configuration* (its issuer identity, its pay rates, its fiscal counter, its campaigns).
+     Precedent: `Order`, `Employee`, `EmployeeInvoice`, `PromoCode`, `CompanyInfo`, `EmployeePayConfig`.
+     The sort: does a scenario exist in which two companies legitimately hold *different* rows for the
+     same key? Yes ⇒ stamped; no ⇒ platform config.
+   - **Hard rule (ADR-0001 Addendum A1 D-A1.1, restated after ADR-0061):** an anonymous request may
+     touch an `ITenantEntity` only through the market scope — the request implements
+     `IOperatorScopedRequest`, names a `countryId`, and `OperatorTenantScopeBehavior` gives it the
+     market operator's tenant before validation. An anonymous *read* of a stamped table with no market
+     and no secret pin is still the bug class A1 named; anonymous catalogues stay platform config
+     because they are the brand's, not because resolution is missing.
 2. **Country-keyed?** Add a `CountryId` (platform-config, keyed by country) when the data varies by
    legal/fiscal jurisdiction (VAT, tax-id format, fiscal mode, invoice template). Precedent:
    `CountryConfiguration`, `CountryInvoiceConfig`. This is **independent** of axis 1 — country-keyed
@@ -665,7 +712,7 @@ path; if yes it joins the batch, if no it stays untouched (parity with the `Loya
 
 **Marching order (per ADR-0001 Addendum A1 D-A1.4):** apply the **same Option-A treatment** — drop
 `ITenantEntity`, make them platform config, swap any `(TenantId, …)` unique indexes to drop `TenantId`.
-They are the same bug class as MembershipPlan and correct today only by single-tenant coincidence. Keep
+They were the same bug class as MembershipPlan, correct at the time only because every row was `NULL`. Keep
 them in **their own batch** (do NOT fold into T-0113 — scope discipline avoids the double-fix collision
 the T-0113 ticket itself warns of). One doctrine (this doc + A1 D-A1.1) governs both; cross-reference it.
 
@@ -703,12 +750,13 @@ the T-0113 ticket itself warns of). One doctrine (this doc + A1 D-A1.1) governs 
 
 ---
 
-## 8. The expansion path (single-tenant → multi-tenant → multi-region/currency, WITHOUT a rewrite) {#expansion-path}
+## 8. The expansion path (one operator → a second market → a second operating company → multi-region, WITHOUT a rewrite) {#expansion-path}
 
 The scaffolding is deliberately built so each axis flips on independently:
 
-1. **Today — single everything.** One implicit tenant (`TenantId = null`), CZK the default and the only
-   active currency, CZE serviced. All mechanisms present and exercised on the single-value path.
+1. **Today — one of everything, and every mechanism live.** One operating company (`cleansia-cz`,
+   stamped on every business row), CZK the default and the only active currency, CZE the only serviced
+   country and the default market. All mechanisms present and exercised on the single-value path.
 2. **Multi-COUNTRY and multi-CURRENCY are one step, and the order inside it matters.** A market is a
    country plus its currency, and switching one on is data, not code. What opening SK (or PL) actually
    takes, in the order that keeps every intermediate state refusing cleanly rather than half-working:
@@ -748,30 +796,63 @@ The scaffolding is deliberately built so each axis flips on independently:
    10. **Optional — flag it as the default market** (`PUT api/AdminCountry/{id}/default-market`,
        owner ruling 2026-09-13) if the new country is what a visitor who has chosen nothing should
        land on. One configuration carries `IsDefaultMarket` (CZE today); the PUT moves it, and refuses
-       a country that step 9 has not serviced or whose currency step 6 has not switched on. Opening
-       a second market does **not** move the default by itself — CZ stays the landing page until an
-       admin says otherwise, and promoting the default *currency* no longer moves it either.
+       a country that step 9 has not serviced, whose currency step 6 has not switched on, or that no
+       operating company serves (step 11 — `country.market_not_ready` in every case). Opening a second
+       market does **not** move the
+       default by itself — CZ stays the landing page until an admin says otherwise, and promoting the
+       default *currency* no longer moves it either.
+   11. **Assign the operating company — gate 3** (`CountryConfiguration.OperatorTenantId`, ADR-0061 D2).
+       Until a company serves the country it is **not listed** by `Market/GetOverview` however serviced
+       and priced it is, cannot be the default, and every anonymous write naming it is refused
+       `tenant.not_found`. If the **existing** company will serve it, this is one value on the
+       configuration row (`'cleansia-cz'`) and the market is open. If a **new** company will, see
+       step 3. The seed or a SQL script writes it; no admin form does until a second operator exists.
 
-   Gate 2 makes flipping `IsServiced` before step 6 impossible rather than merely pointless. From
-   step 9 on, a booking at a Slovak address is quoted and charged in EUR with no client change, a
-   customer who chooses the SK market browses the EUR-priced catalogue before entering any address,
-   cleaners approved for SK are paid in EUR, see only EUR orders on their board, declare EUR (or
-   nothing) on their payout account, and their periods close into EUR invoices. **What stays bound to
-   the platform default** until someone decides otherwise: the tier floor and any promo minimum on a
-   code without a currency (§2, "What is still bound to the platform default"). The default market is
-   bound to nothing but its flag (step 10); the default-currency rule is only the logged fallback when
-   no configuration is flagged.
-3. **Multi-TENANT (the one axis that needs new infrastructure).** The `ITenantEntity` filter + JWT claim
-   already scope authenticated reads. The **single missing piece** is **spoof-resistant inbound tenant
-   resolution for anonymous routes** (vetted-proxy header / allow-listed host registry / SNI pinning —
-   never the raw `Host` header). This is *unavoidable the day ANY anonymous catalog goes per-tenant*, so
-   building it later loses nothing — which is exactly why T-0113/the catalogs drop `ITenantEntity` now
-   rather than half-build resolution for a zero-row table.
+   Gate 2 makes flipping `IsServiced` before step 6 impossible rather than merely pointless, and gate
+   3 makes a serviced market invisible until someone is legally on the hook for it. From step 11 on, a
+   booking at a Slovak address is quoted and charged in EUR with no client change, a customer who
+   chooses the SK market browses the EUR-priced catalogue before entering any address, cleaners
+   approved for SK are paid in EUR, see only EUR orders on their board, declare EUR (or nothing) on
+   their payout account, and their periods close into EUR invoices — all under whichever company
+   step 11 named. **What stays bound to the platform default** until someone decides otherwise: the
+   tier floor and any promo minimum on a code without a currency (§2, "What is still bound to the
+   platform default"). The default market is bound to nothing but its flag (step 10); the
+   default-currency rule is only the logged fallback when no configuration is flagged.
+3. **A second OPERATING COMPANY (ADR-0061 D12 — six data steps, no code).** Tenancy is live, so the
+   question is no longer "how do we turn it on" but "what does the second company cost". In order,
+   with the two that are genuinely per company named as such:
+   1. **A `Tenants` seed row** — `('cleansia-sk', 'Cleansia SK s.r.o.')`. There is no admin writer; the
+      ticket that onboards the company adds the row and decides whether one is needed after it.
+   2. **`OperatorTenantId = 'cleansia-sk'` on the country's configuration** (step 11 above, with the new
+      id). The country must already be a market — steps 1–9.
+   3. **A `CompanyInfo` row stamped `cleansia-sk`** — the legal issuer on every receipt and invoice.
+      Without it receipts and payout invoices in that market have no issuer; this is genuinely per
+      company, not "nothing else".
+   4. **The first admin of the new company, by SQL** — `CreateAdminUser` stamps the *creating* admin's
+      tenant, and no holding-level admin exists (an admin sees, edits and audits one company's rows).
+      This is the named reason the **holding-level cross-tenant view** is the next tenancy ticket,
+      filed when the second company is real, not before.
+   5. **Pay defaults for the new market, entered by that admin** through the existing pay-config
+      screen, in the market's currency, in their own tenant (`IX_EmployeePayConfigs_Tenant_Scope` is
+      what lets two companies each hold a default for the same service and currency).
+   6. **The clients send the chosen market** on register, Google/Apple sign-up, promo request and
+      referral check (T-0728 — `countryId` on the six anonymous requests; the partner apps gain a
+      market picker that reads `Market/GetOverview`, not `Country/GetServiced`, because the latter still
+      lists a serviced country nobody operates). Required **before** the second market opens, or its
+      visitors register into `cleansia-cz`; not a go-live gate for the first.
 
-**The doctrine that keeps this rewrite-free:** keep **anonymous-readable catalogs as platform config**
-(not tenant-scoped) until the day the product genuinely needs per-tenant catalogs — and on that day,
-build the spoof-resistant resolver once and re-tenant. Currency and country need no such gate because
-they were never tenant-coupled.
+   Nothing else: no schema, no host, no filter, no job, no webhook change. What a customer of one
+   company sees of the other: nothing — a CZ account booking an SK address is refused
+   (`order.country_operator_mismatch`) rather than given an order it cannot list, and cross-company
+   booking on one account is the owner's call for that day (Q-TENANCY-01). One email is one identity
+   across both companies.
+
+**The doctrine that keeps this rewrite-free:** keep **the brand's catalogues and programmes as platform
+config** (tenantless) and **the operator's customers, cleaners, money and legal configuration stamped**
+(ADR-0061 D7) — sort the next table by that sentence, not by which route reads it. An anonymous request
+names a **market**, never a tenant, so no inbound tenant-resolution middleware is needed on any axis.
+Currency and country need no such gate because they were never tenant-coupled; tenant is downstream of
+country by the same read that decides currency.
 
 > **Reversal cost is NOT uniform across the six catalogs (corrected per architect panel, file-verified).**
 > "Symmetric and cheap" is true **only for `MembershipPlan`** — zero rows at launch, `(TenantId, Code)` →
@@ -812,9 +893,11 @@ they were never tenant-coupled.
 Recorded by the authoring architect on top of ADR-0001 Addendum A1, having verified every load-bearing
 premise against real code. This is the single scannable sign-off.
 
-1. **Current-state map (3 axes):** done — §0 table + §1/§2/§3. **Tenancy = forward-compat scaffolding**
-   (40 `ITenantEntity` entities, EF filter, JWT claim — but no inbound resolution, every row null-tenant,
-   one implicit tenant). **Currency = real per-currency-price mechanism, single-currency operation**
+1. **Current-state map (3 axes):** done — §0 table + §1/§2/§3. **Tenancy = real mechanism,
+   single-operator operation** (as rewritten 2026-09-13 for ADR-0061: a `Tenants` registry, a
+   market → operating-company map, 46 `ITenantEntity` entities with `TenantId` NOT NULL, the EF filter,
+   the JWT claim, and an anonymous write scoped by the market it names — one company today).
+   **Currency = real per-currency-price mechanism, single-currency operation**
    (platform `Currency` with `IsActive` as the market switch, prices authored per currency in sibling
    row tables, per-record `CurrencyId` on every money-carrying row; the order currency resolved from
    the service address's **country** and the cleaner's from the work **country**, never from a person
@@ -823,15 +906,19 @@ premise against real code. This is the single scannable sign-off.
    `Country`/`CountryConfiguration`/`CountryInvoiceConfig` drive live VAT/tax-id/fiscal/invoice; only CZE
    `IsServiced`). The three axes are **orthogonal** (§4).
 2. **Entity classification rule:** done — §6. Platform-config (incl. country-keyed) vs tenant-scoped vs
-   currency-bearing, with the hard rule: **never `[AllowAnonymous]` + `ITenantEntity` without
-   spoof-resistant resolution** (which does not exist today). The 40 are bucketed 33/6/1 in §1.
+   currency-bearing, with the hard rule as it stands after ADR-0061: **an anonymous request that
+   touches an `ITenantEntity` names a market and is scoped to its operator before validation** (the
+   `IOperatorScopedRequest` marker); a tenantless table is one the brand defines identically for every
+   operator. The 46 are bucketed 43/–/3 in §1.
 3. **Expansion path (no rewrite):** done — §8. single → a new market (one data step: currency row,
    country's `DefaultCurrencyCode` + alpha-2, divisor, prices, pay configs, switch the currency on,
    optionally Plus prices and market content, flip `IsServiced` behind the readiness gate — no code;
-   the customer picks the market from the selector, ADR-0058) → multi-tenant
-   (**the one new piece of infra = spoof-resistant inbound tenant resolution** — vetted-proxy header /
-   host-allow-list / SNI pinning, never the raw `Host`). Everything else (filter, claim, write-stamping,
-   per-currency price rows, per-record currency, country config) is reused as-is.
+   the customer picks the market from the selector, ADR-0058; **assign the operating company** —
+   gate 3, ADR-0061) → a second operating company (six data steps, ADR-0061 D12 — no infra: the
+   request names a market and the server maps it, so the "spoof-resistant inbound tenant resolution"
+   this item used to name as the one new piece was never built and is not needed). Everything else
+   (filter, claim, write-stamping, per-currency price rows, per-record currency, country config) is
+   reused as-is.
 4. **T-0113 Option A — CONFIRMED, not revised.** The broader view *strengthens* A1: dropping
    `MembershipPlan.ITenantEntity` → platform config puts it in the same bucket as Currency/Language/
    Country, is currency-neutral (plans are CZK-only by design, no `CurrencyId`, currency was never

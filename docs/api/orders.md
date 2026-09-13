@@ -149,6 +149,18 @@ POST /api/Order/CreateOrder
 pricing. The server re-prices in that currency and compares against `totalPrice`, so a total quoted
 in another market fails as `order.total_price.not_match`.
 
+**The order belongs to the operating company that serves the address's country** — the same country
+that decides its currency ([ADR-0061](/decisions/adr-0061) D6). A guest request is scoped to that
+company from `customerAddress.countryId` before validation (the market it names; a request with no
+address country lands the default market's company); a signed-in customer's company is their own. In
+both cases the address country's company must be the one the request is scoped to, or create refuses
+`order.country_operator_mismatch` on `CustomerAddress` — an order stamped with a company its own
+account cannot list is the outcome this prevents. With one company serving every market the rule
+never fires; it exists for the day a second one does, and cross-company booking on one account is the
+owner's call for that day. `country.not_serviced` (the address names a country that is not a market)
+and `tenant.not_found` (a market nobody operates) are the two refusals the scope itself can raise,
+before any other rule.
+
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
 | `Cash` | `1` | Receipt queued. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
@@ -185,6 +197,8 @@ failure is reported:
 
 | Rule | Error key |
 |---|---|
+| Exactly one of `customerAddress` / `savedAddressId` | `order.address_exactly_one_required` |
+| The address country's operating company is the one this request is scoped to (the claim, or the market a guest named) — unconditional, guest and signed-in alike | `order.country_operator_mismatch` — error code `CustomerAddress` |
 | A named `currencyId` equals the service address's country's currency; omitted/null = that currency | `currency.invalid` |
 | The address country's currency is offerable — switched on AND priced (`ICurrencyRepository.IsOfferableAsync`) | `currency.invalid` |
 | At least one service or package | `order.empty` |
@@ -544,10 +558,18 @@ GET /api/Order/GetById?id=order-id
 Looks up an order by order number and email (for anonymous tracking).
 
 ```
-GET /api/Order/Lookup?orderNumber=CLN-2026-001&email=jane@example.com
+GET /api/Order/Lookup?displayOrderNumber=CLN-2026-001&email=jane@example.com&confirmationCode=ABC123
 ```
 
 **Auth:** Anonymous (rate-limited: 10 requests/minute per IP)
+
+**No `countryId`, on purpose.** The read is keyed on a secret — the six-character confirmation code
+delivered only in the confirmation e-mail, checked in the same predicate as the number and the e-mail
+so a wrong code and a non-existent order are indistinguishable — and it searches **across operating
+companies**, so a guest who booked under one company finds the order without knowing which company
+that was. The secret is the pin ([ADR-0051](/decisions/adr-0051) bypass-and-re-pin cell,
+[ADR-0061](/decisions/adr-0061) D3). `LookupBatch` below is the same posture keyed on the order's
+ULID, which the browser only has because it placed the order.
 
 ---
 

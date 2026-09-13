@@ -445,8 +445,8 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   (a2) *A change-tracked write is invisible to every **DB-read** guard over it for the rest of the unit
   of work* (AM-4/AM-5) — the mirror of seam law 3. Converting a self-committing write to a tracked one
   disarms its idempotency/uniqueness pre-reads until the commit; the duplicate then surfaces as a
-  `DbUpdateException` that rolls back the whole unit of work, or (nulls-distinct index, NULL tenant)
-  does not surface at all. Deviating form: **a repository method that stages an entity while its
+  `DbUpdateException` that rolls back the whole unit of work, or (a nulls-distinct index over a nullable
+  non-tenant term — the tenant term is NOT NULL since ADR-0061) does not surface at all. Deviating form: **a repository method that stages an entity while its
   caller's idempotency guard is a plain `DbSet` query.** Fix by making the guard `.Local`-first, or by
   *pinning* single-invocation with a test — a call-graph accident is not a safety property.
   (b) *A `catch` that logs and continues is admissible only over an operation that **normally
@@ -461,18 +461,29 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   in `roles/post-commit-effects.md`.
 
 - **Tenant-scoped unique indexes: `NULLS NOT DISTINCT` is decided by the index's JOB, not by a
-  majority (ADR-0035 AM-6, ADR-0034 D1.3, ADR-0038 §D5.2 — all `accepted`).** Single-tenant mode *is*
-  `TenantId == null` and PostgreSQL treats NULLs in a UNIQUE index as distinct, so on the platform's
-  default deployment a tenant-scoped unique index either fires or it does not, and which one is not a
-  style question:
+  majority (ADR-0035 AM-6, ADR-0034 D1.3, ADR-0038 §D5.2, ADR-0061 D9 — all `accepted`).**
+  PostgreSQL treats NULLs in a UNIQUE index as distinct, so a unique index over a nullable column either
+  fires or it does not, and which one is not a style question. **Since ADR-0061 D8 (2026-09-13) `TenantId`
+  is NOT NULL on every stamped table**, so the *tenant* term can no longer be the null that disarms an
+  index — the question now lives on the other nullable terms (`EmployeeId`, `ServiceId`, `PackageId`,
+  `IdempotencyKey`), and the option is kept on the tenant-keyed indexes anyway because the guard reads the
+  option, not the column, and a roster that lies is worse than a redundant annotation:
   - **Sole arbiter of a concurrent claim ⇒ `.AreNullsDistinct(false)` is mandatory.** No read can
     arbitrate a race, so the index is the only thing between two simultaneous claims and it has to
-    actually fire. Live instances: `FiscalCounters`, `MembershipBenefitUsages`,
-    `PromoCodeRedemptions`, `EmployeePayoutDetails`, `LiveActivityTokens`, `Users` (the account email —
-    see the arming note below, whose DDL half is still owed).
+    actually fire. Live instances in the emitted DDL (13): `FiscalCounters`, `MembershipBenefitUsages`,
+    `PromoCodeRedemptions`, `EmployeePayoutDetails`, `LiveActivityTokens`, `LoyaltyTransactions`,
+    `PromoCodes`, `ReferralCodes`, `TenantConfigurations`, `OrderReceipts` (gained its tenant term on
+    activation — the number comes from a per-tenant counter), `EmployeePayConfigs`
+    (`IX_EmployeePayConfigs_Tenant_Scope`, gained its tenant term on activation), `DisputeLines`,
+    `OrderReviewLines`.
   - **Backstop behind an authoritative app-level assert ⇒ nulls-distinct is fine.** The invariant is a
-    state you can read and assert on before writing. Live instances: `UserMemberships` (at most one
-    active row per user), `LoyaltyTransactions` (the serial-replay fast-path read).
+    state you can read and assert on before writing. Live instance: `UserMemberships` (at most one
+    active row per user) — the one `(TenantId, …)` index whose liveness activation changed, and both its
+    writers own the `23505` (ADR-0061 D9).
+  - **Not a tenant-scoped index at all, by decision: `Users (Email)`.** Global, no tenant term, no option
+    needed (`Email` is NOT NULL). One identity per email across the holding (ADR-0061 D5.1, superseding
+    ADR-0050 D1/D4), because every anonymous identity read resolves by email ignoring the tenant and a
+    per-operator scope would make login ambiguous. It left the roster with its tenant term.
 
   **Which bullet you are on is decided by one question, not by how the pre-check reads
   (ADR-0050 §D1/§CH-3):** *is there a lock, an `ON CONFLICT`, or a serializable boundary between the
@@ -488,20 +499,16 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   migration since day one, so "we don't do that here" is a false invariant, and a confidently-wrong
   comment is worse than none because it stops the next reviewer checking.
 
-  **Arming a sole arbiter is TWO artifacts, and the model is not the DDL — `Users (TenantId, Email)`
-  is the worked example.** `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:95-97`
-  states that DB-level uniqueness, *not* the app pre-check, is what closes the register/update TOCTOU
-  race, and all four `User`-creating writers (`Register`, `RegisterEmployee`, `CreateAdminUser`, social
-  provisioning) are read-then-insert with no lock — so by the test above the index is the arbiter. It
-  shipped for months as `.IsUnique()` alone, admitting unlimited duplicate `(NULL, email)` rows, which is
-  the exact "confidently-wrong comment" form named above. `:112-114` now carries
-  `.AreNullsDistinct(false)` (ADR-0050 D1), **but the emitted DDL does not yet**: the option only reaches
-  Postgres through the owner-run `Initial` regen, which is gated on a duplicate census (ADR-0050 §D3 —
-  the index cannot be created over pre-existing duplicates). **So a model assertion goes green the moment
-  the builder call lands and says nothing about the database** — do not read one as evidence of the
-  other. **ADR-0050 is `proposed`**
-  (`docs/decisions/adr-0050.md:3`).
-  **Retires when:** that status line stops reading `proposed`.
+  **Arming a sole arbiter is TWO artifacts, and the model is not the DDL — `Users` was the worked
+  example.** `UserEntityConfiguration.cs` used to state that DB-level uniqueness, *not* the app pre-check,
+  is what closes the register/update TOCTOU race, while the index it said that of was `(TenantId, Email)`
+  `.IsUnique()` alone — admitting unlimited duplicate `(NULL, email)` rows for months, the exact
+  "confidently-wrong comment" form named above. ADR-0050 D1 armed it in the *model*; the *DDL* only
+  followed with the next `Initial` regen; and ADR-0061 D5.1 then replaced the whole index with a global
+  `IX_Users_Email` (2026-09-13, accepted as amended). **The lesson outlives the instance: a model
+  assertion goes green the moment the builder call lands and says nothing about the database** — do not
+  read one as evidence of the other; `grep -n "NullsDistinct" src/Cleansia.Infra.Database/Migrations/*Initial.cs`
+  is the evidence.
 
   **Arming one also creates a new failure mode, and it ships in the same change or not at all.** The
   losing racer stops silently inserting a duplicate and starts raising `23505` at commit — a 500 where
@@ -519,16 +526,20 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   > caller was ever that shape. Do not reintroduce it — widen the flush's scope and you have a design
   > problem the name would only paper over.
 
-  **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs` (theory +
-  negative control), run by `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` —
-  **`T1-CI`** over the **five indexes on its `[InlineData]` roster** (`FiscalCounter`,
-  `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`, `User`), **baseline 0**: all
-  five green today. It asserts the **EF model only** — SQLite cannot express the option, so the DDL half
-  is the reviewer's, per the emitted-DDL rule above. The roster is **hand-maintained** and is therefore a
-  closed roster — a new sole-arbiter index is not caught until someone adds a row, and
-  `LiveActivityTokens` is named in the first bullet above without being on it. The mapping half is
-  **`T1-CI`**, **baseline 0**, over `src/Cleansia.Tests/Features/Auth/UserEmailRaceMappingTests.cs`
-  (all four writers) and `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`.
+  **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs`, run by
+  `.github/workflows/backend-ci.yml` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, in two
+  layers: a **ten-row `[InlineData]` roster** over the tenant-keyed sole arbiters (`FiscalCounter`,
+  `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`, `LoyaltyTransaction`,
+  `PromoCode`, `ReferralCode`, `TenantConfiguration`, `OrderReceipt`, `EmployeePayConfig`) with
+  `UserMemberships` as the negative control, **and a roster-free sweep** over every unique index in
+  `ctx.Model` — one carrying a nullable column must declare the option, be filtered so the null cannot
+  appear, or be named in the test's own exception list, which may only shrink. The hand roster therefore
+  no longer fails open. It asserts the **EF model only** — SQLite cannot express the option, so the DDL
+  half is the reviewer's, per the emitted-DDL rule above. The mapping half is **`T1-CI`**, **baseline
+  0**, over `src/Cleansia.Tests/Features/Auth/UserEmailRaceMappingTests.cs` (all four writers) and
+  `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`. The tenant column itself is guarded by
+  `TenantIdRequiredModelTests` (roster-free, every `ITenantEntity` is `IsNullable == false` except the two
+  exemptions) and `TenantIdNotNullEnforcedTests` (a real `23502`).
 
 - **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
   (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release

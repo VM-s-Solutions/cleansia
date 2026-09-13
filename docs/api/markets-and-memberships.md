@@ -14,11 +14,16 @@ writes that author a market's prices and figures. The rules behind every endpoin
 
 ## The market, in one paragraph
 
-A **market** is a serviced country whose configuration names an **active** currency. A customer
-chooses one (remembered per device, defaulting to the market on the platform default currency) and
-every surface that has no service address yet reads it: the catalogue overviews, the quote, the Plus
-plans, the subscribe commands and the copy figures. The address, once there is one, wins. The market
-reaches the API only as `countryId` — there is no header and no session field.
+A **market** is a serviced country whose configuration names an **active** currency **and an operating
+company** (`CountryConfiguration.OperatorTenantId`, [ADR-0061](/decisions/adr-0061)). A customer
+chooses one (remembered per device, defaulting to the flagged default market) and every surface that
+has no service address yet reads it: the catalogue overviews, the quote, the Plus plans, the subscribe
+commands and the copy figures. The address, once there is one, wins. The market reaches the API only as
+`countryId` — there is no header and no session field, and **there is no `tenantId` on any wire**: an
+anonymous request that writes names its market and the server maps market → company. Which anonymous
+requests carry `countryId` for that reason, and what they refuse, is in
+[Authentication](/api/authentication#the-market-on-anonymous-requests) and
+[Orders](/api/orders#createorder).
 → [Business rules — the market](/product/business-rules#market)
 
 ---
@@ -37,7 +42,12 @@ flagged, or the flagged country is not listed, an error is logged and the fallba
 exactly one row is `isDefault` when one market is on the platform default currency; with several,
 the lowest `isoCode` is flagged and an error is logged; with none, no row is flagged and an error is
 logged. The read **never throws** on a configuration state: a serviced country with no configuration,
-or whose configured currency is unknown or inactive, is omitted and logged as a warning.
+or whose configured currency is unknown or inactive, is omitted and logged as a warning; a serviced,
+configured, currency-active country that **no operating company serves** (`OperatorTenantId` null) is
+omitted and logged as an **error** — it is a seed defect, since every anonymous write naming it would
+fail `tenant.not_found`, and the picker must not offer it. This — not `Country/GetServiced`, which
+still lists such a country — is the read any registration picker must use, because a cleaner registers
+with a market and is held to its company at approval.
 
 ```json
 [
@@ -272,7 +282,7 @@ flagged market `isDefault` as soon as it is listed. No body: the route id is the
 |---|---|
 | `country.not_found` | No such country |
 | `country.not_serviced` | The country is not switched on as serviced — a default the directory would not list is a pre-selection of nothing |
-| `country.market_not_ready` | No configuration row, a configuration naming no currency, or one whose currency is inactive — the same gate `…/serviced` applies |
+| `country.market_not_ready` | No configuration row, a configuration naming no currency, one whose currency is inactive — the same gate `…/serviced` applies — or one with no operating company (`OperatorTenantId` null): a default nobody operates would refuse every registration that names no market ([ADR-0061](/decisions/adr-0061) D2) |
 | `country.default_market_changed_concurrently` | Two admins promoted at once and this call lost the race on the index; retry or read the detail |
 
 **Related, changed by the same programme:**
@@ -313,9 +323,12 @@ credit. `AdminCurrencyDetailDto` and `AdminCurrencyListItem` carry it back; the 
 | `membership.plan.stripe_price_already_used` | admin plan create/update | admin web |
 | `country.configuration_missing` | market-content PUT | admin web |
 | `country.market_not_ready` | serviced PUT, default-market PUT | admin web |
-| `country.not_serviced` | default-market PUT (and the customer quote / subscribe paths, already catalogued there) | admin web |
+| `country.not_serviced` | default-market PUT (and the customer quote / subscribe paths, already catalogued there); **since ADR-0061** also `Auth/Register`, `Auth/RegisterEmployee`, `Auth/GoogleAuth`, `Auth/AppleAuth`, `PromoCode/Request`, `Referral/Validate` and guest `Order/CreateOrder` when the named market is not one | admin web; customer web, Android customer, iOS customer; partner web, Android partner, iOS partner (register / social) |
 | `country.default_market_changed_concurrently` | default-market PUT | admin web |
 | `country.iso_alpha2_invalid` | country create/update | admin web |
+| `tenant.not_found` | the same seven anonymous requests, when the named (or default) market has **no operating company** — a configuration defect the directory never lists, so a client that resolved its market from `Market/GetOverview` cannot produce it | customer web, Android customer, iOS customer; partner web, Android partner, iOS partner |
+| `order.country_operator_mismatch` | `Order/CreateOrder` — the address's country is served by another operating company than the one the request is scoped to | customer web, Android customer, iOS customer |
+| `employee.work_country_operator_mismatch` | `Employee/Approve` — the work country's operating company is not the approving admin's | admin web |
 
 Every key is under `api.*` on the web apps (the interceptor resolves `api.${key}`), `error_*` on
 Android and `error.*` on iOS, in all five locales; the parity specs pin the rosters.

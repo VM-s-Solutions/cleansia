@@ -157,6 +157,7 @@ export default withMermaid(
               { text: "ADR-0058 — A customer's market is chosen, remembered, and…", link: '/decisions/adr-0058' },
               { text: "ADR-0059 — Cleansia Plus is priced per market", link: '/decisions/adr-0059' },
               { text: "ADR-0060 — Money figures in copy come from the market, not the…", link: '/decisions/adr-0060' },
+              { text: "ADR-0061 — Tenancy is active from day one: one tenant per…", link: '/decisions/adr-0061' },
             ],
           },
         ],

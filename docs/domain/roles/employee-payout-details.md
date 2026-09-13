@@ -7,9 +7,10 @@
 > EF owned type (the repo has zero `OwnsOne`/`OwnsMany`).
 > **Cardinality one per employee**, enforced by a unique index on
 > `(TenantId, EmployeeId) .AreNullsDistinct(false)` **plus an app-level create-or-update guard** — the
-> reversible form of "several destinations, one primary". Nulls-not-distinct is required because
-> `TenantId` is nullable and Postgres would otherwise treat every single-tenant row as unique; it is
-> precedented (`FiscalCounterEntityConfiguration.cs:28`, `LiveActivityTokenConfiguration.cs:28`).
+> reversible form of "several destinations, one primary". Nulls-not-distinct was what made the index
+> fire while every row carried `TenantId = null`; since ADR-0061 D8 the column is NOT NULL and the
+> option is kept because the model guard reads it (`consistency.md` §*"Tenant-scoped unique indexes"*).
+> Precedented (`FiscalCounterEntityConfiguration.cs`, `LiveActivityTokenConfiguration.cs`).
 > **Mutated in place** — exempt from ADR-0007 D1's `Deactivate` default; erasure **deletes**.
 > **Amended 2026-09-12 (T-0708) — `CurrencyId`**, the currency the account **holds**: nullable, FK to
 > `Currency` with `ON DELETE RESTRICT`. Declared by the cleaner, never derived — a bank's country does

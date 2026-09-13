@@ -70,6 +70,35 @@ need backfilling.
 
 ### Added
 
+- **Operator — every account, booking, receipt, pay rate and promo code belongs to the operating
+  company that serves its market, from the first row.** The platform now knows which company under
+  the holding serves each market (Cleansia CZ s.r.o. serves CZ), and stamps every business record with
+  it as it is written — an anonymous registration, sign-up or guest booking is filed under the company
+  of the market it names, or the default market when it names none. A second company is a seed row, a
+  country assignment, a company record, a first admin and its pay rates — no code. A market nobody
+  serves is not offered to anyone. (ADR-0061)
+
+- **Customer — one email is one account across the holding.** Registering an email that any Cleansia
+  company already holds is refused, an unconfirmed account can be re-registered only in the market it
+  was created in, and sign-in, password reset and Google/Apple find the one account wherever it lives.
+  (ADR-0061)
+
+- **Customer — a booking at an address another Cleansia company serves is refused** rather than filed
+  where your account cannot see it. With one company today the refusal never fires; it is the rule for
+  the day there are two. **Admin — a cleaner cannot be approved for a work country another company
+  serves.** (ADR-0061)
+
+- **API consumer — `countryId` on six anonymous requests.** `Auth/Register`, `Auth/RegisterEmployee`,
+  `Auth/GoogleAuth`, `Auth/AppleAuth`, `PromoCode/Request` and `Referral/Validate` accept an optional
+  `countryId` (the market); absent means the default market, so existing clients are unaffected. Two
+  refusals can now come back from them: `country.not_serviced` (not a market) and `tenant.not_found`
+  (a market no company serves). The regenerated clients carry the field; sending the chosen market is
+  a later change, before a second market opens. (ADR-0061)
+
+- **Operator — before the next DEV deploy, drop the DEV database.** The `Initial` migration was
+  regenerated again (`20260913132759`) and every business table's `TenantId` is now NOT NULL; the
+  seed repopulates it. One drop, owed once, at deploy time.
+
 - **Customer — you choose the market you browse in.** A market selector sits beside the language
   switcher in the web navbar and footer and under Profile → Preferences → Market on Android and iOS,
   and a "CZ · CZK" chip beside the home quick quote opens the same selector. The choice is remembered

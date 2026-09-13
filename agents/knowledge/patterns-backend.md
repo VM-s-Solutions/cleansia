@@ -996,8 +996,11 @@ counter and never a derived count.
   `generate_series(0, @max-1)` + `NOT EXISTS` + `ORDER BY g LIMIT 1` + `ON CONFLICT DO NOTHING` +
   `RETURNING <col> AS "Value"`. A count derives an *occupied* ordinal after a non-maximal release —
   the claim then loses to its own index forever while the read path still says "1 left"; `MAX+1` never
-  re-uses a hole at all. Send a nullable `TenantId` as an **explicit `NpgsqlDbType.Text`** parameter
-  (`42P08` fires only in single-tenant mode and survives a tenanted test run).
+  re-uses a hole at all. Send `TenantId` as an **explicit `NpgsqlDbType.Text`** parameter: a bare
+  parameter used in two positions is typed by inference, and a null value has no type to infer
+  (`42P08`). The tenant is never null on a stamped table since ADR-0061, so the failure no longer has a
+  production path — the explicit type stays because raw SQL is typed by the caller, not the model, and
+  the CLR property is still `string?`.
 - **⚠️ Add an INDEPENDENT cardinality bound in the SAME statement — the smallest-free-ordinal
   derivation does not imply the cap.** "A full quota yields no candidate ordinal" holds only while the
   quota is **invariant across the period**. The moment the quota can be edited or swapped mid-period
@@ -1641,15 +1644,23 @@ ticket after the first three were fixed.
 
 Two isolation axes meet in this codebase, and they live in **different layers** — keep them there.
 
-- **Tenancy = an APP concern, and it already exists.** Tenant rows are isolated **logically** by the
-  global query filter in `CleansiaDbContext.ApplyTenantQueryFilters` (applied to every
-  `ITenantEntity` — `{ string? TenantId }`), driven by the `tenant_id` JWT claim resolved by
-  `TenantProvider`. The filter body is exactly
+- **Tenancy = an APP concern, and it is active.** A tenant is an operating company under the holding
+  (`Tenants`, seed-only; `CountryConfiguration.OperatorTenantId` maps each market to the company that
+  serves it — ADR-0061). Tenant rows are isolated **logically** by the global query filter in
+  `CleansiaDbContext.ApplyTenantQueryFilters` (applied to every `ITenantEntity` — `{ string? TenantId }`
+  in C#, **NOT NULL** in the database on every stamped table but `OutboxMessages` / `DeadLetters`),
+  driven by the `tenant_id` JWT claim resolved by `TenantProvider`. The filter body is exactly
   `tenantProvider == null || (currentTenantId == null && e.TenantId == null) || e.TenantId == currentTenantId`
-  — design-time bypass, the single-tenant `null/null` middle clause, then the multi-tenant happy path.
-  Cross-tenant work (background jobs, anonymous webhooks) is **explicit**: `tenantProvider.SetTenantOverride(...)`
-  or `IgnoreQueryFilters` (see the webhook/`IgnoreQueryFilters` memory notes). **This is the proven path;
-  do not move tenancy to infra (DB-per-tenant / schema-per-tenant) and do not touch the filter.**
+  — design-time bypass, a middle clause that **matches nothing on a stamped table** (a reader with no
+  tenant reads nothing; the clause is kept because three ADRs pin the filter diff-empty), then the
+  happy path. **An anonymous request has no tenant until something gives it one**: a request that
+  writes names a market (`IOperatorScopedRequest.CountryId`, null = the default market) and
+  `OperatorTenantScopeBehavior` sets the market operator's override before validation; a token mint
+  adopts the user's tenant (`TokenService`); a job or webhook **must** set the override from the row it
+  read, per row or per tenant group, and commit inside the loop — a job that forgets reads nothing and
+  writes a `23502`. Cross-tenant *reads* are explicit: `GetQueryableIgnoringTenant()` / `IgnoreQueryFilters`
+  plus a caller-bound re-pin (S8). **This is the proven path; do not move tenancy to infra
+  (DB-per-tenant / schema-per-tenant) and do not touch the filter.**
 - **Region = an INFRA/config concern, and it is net-new.** Region answers *"which physical
   deployment/DB does this request hit?"* — it never answers *"whose rows is this?"* There is **no
   region concept in the domain or data model** (the only geography is `CountryConfiguration`, the

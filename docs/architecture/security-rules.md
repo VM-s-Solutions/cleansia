@@ -27,6 +27,14 @@ clients send empty, backend overwrites), be commented as server-enriched, and be
 controller from the JWT **before** `Mediator.Send`. Anonymous endpoints should need no `UserId` at
 all.
 
+**A request names a market, never a tenant.** An anonymous request that writes a tenanted row carries an
+optional `countryId` (`IOperatorScopedRequest`) — a market it could equally pass to `Order/Quote` — and
+the server maps market → operating company from `CountryConfiguration.OperatorTenantId`, a column only
+the seed writes (ADR-0061 D3). There is no `tenantId` on any wire, no header, no cookie; a request that
+carries a `tenant_id` claim is never re-scoped by the field. A visitor choosing which operator to
+register with is the public site working as intended; a client naming a tenant would be S1's exact
+failure, and the shape of the API makes it impossible to express.
+
 **An identity a client cannot know is not an authorization check.** A self-write that authorizes by
 comparing the session user to a *client-supplied* id passes only for callers that already know the
 answer, so it protects nothing and silently locks out any client that cannot guess it. `MyProfileDto`
@@ -258,13 +266,34 @@ a deterministic server-side fallback. Reference: `CreateMembershipSubscription.D
 
 ## S8 — Tenant isolation correctness
 
-Every entity holding user-scoped data implements `ITenantEntity`; the global EF query filter then
-auto-scopes reads. When adding an entity, ask "could two tenants both have rows here?" — if yes,
-`ITenantEntity`; if no (true platform config), document why it isn't. Unique indexes on
-tenant-scoped tables are `(TenantId, X)`, not `(X)` — `Code` is unique *per tenant*. The global
-filter applies to `Set<T>()` reads but **not** to raw SQL (`FromSqlRaw`/`ExecuteSqlRaw`),
-`IQueryable` exposed from the wrong layer, or joins where only one side carries the filter — audit
-those paths.
+A tenant is an **operating company** under the holding (ADR-0061): `Tenants` is the registry (one row,
+`cleansia-cz`, seed-only), `CountryConfiguration.OperatorTenantId` maps each market to the company
+that serves it, and **every stamped table's `TenantId` is NOT NULL** — the only nullable ones are the
+two infra exemptions, `OutboxMessages` and `DeadLetters`. `NULL` is not a tenant and never was one that
+production ran on. Every entity holding one operator's customers, cleaners or money implements
+`ITenantEntity`; the global EF query filter then auto-scopes reads. When adding an entity, ask "could two
+operators legitimately hold *different* rows here for the same key?" — if yes, `ITenantEntity`; if no
+(the brand's catalogue or programme, or a per-country fact), it is tenantless and says why in a one-line
+comment naming its sibling (`LoyaltyTierConfig` names `MembershipPlan`). Unique indexes on stamped tables
+are `(TenantId, X)`, not `(X)` — `Code` is unique *per operator* — with one deliberate exception:
+`Users (Email)` is **global**, because one email is one identity across the holding (ADR-0061 D5.1;
+every anonymous identity read already resolved by email ignoring the tenant, so a per-operator scope
+would make login ambiguous). The global filter applies to `Set<T>()` reads but **not** to raw SQL
+(`FromSqlRaw`/`ExecuteSqlRaw`), `IQueryable` exposed from the wrong layer, or joins where only one side
+carries the filter — audit those paths.
+
+**How a row gets its tenant, and the two standing guards.** An authenticated request's tenant is the
+`tenant_id` claim. An anonymous request that writes names a market (S1 above) and
+`OperatorTenantScopeBehavior` sets the market's operator as the ambient tenant before validation runs;
+a request that authenticates a user (`TokenService`, `RefreshToken`) adopts that user's tenant before it
+writes; a job or webhook derives the tenant of every row it writes from the row it read. `CommitAsync`
+stamps every `Added` `ITenantEntity` from whatever is ambient at commit time, and the database refuses a
+row with none (`23502`). The two guards that stand over all of it, both in `backend-ci.yml` with no
+`continue-on-error`: **`SeededDatabaseHasNoOrphanTenantRowsTests`** (the seed applied to the
+migration-built database leaves zero `NULL` tenants on stamped tables, every tenant in `Tenants`, and an
+operator on the default market) and **`SecondTenantIsolationHostTests`** (a second operating company
+seeded whole — customer, cleaner, order, receipt, pay default, promo code, membership — and a CZ admin
+who lists none of it and 404s on every by-id read; every JWT minted carries `tenant_id`).
 
 ### The one question that decides every bypass (ADR-0051)
 
@@ -277,27 +306,31 @@ question first and the form second.
 |  | **Read under a tenant claim** | **Read with no claim (anonymous / job)** |
 |---|---|---|
 | **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68` |
-| **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150` | **symmetric → FILTERED.** `src/Cleansia.Infra.Database/Repositories/UserRepository.cs:105-118`; the register / resend admission pre-checks |
+| **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150`; **the legacy confirm read** `UserRepository.GetByConfirmationCodeIgnoringTenantAsync` (written under the market's operator by `Register`, read anonymously from the link — pinned by the code hash); **the register / resend / admin-create pre-checks** (`GetByEmailIgnoringTenantAsync` / `ExistsWithEmailIgnoringTenantAsync` — pinned by the global `IX_Users_Email`, deliberately across the holding: one email is one identity); `Order/Lookup` and `LookupBatch` (`GetQueryableIgnoringTenant()`, pinned by `ConfirmationCode` + `CustomerEmail`) | **symmetric → FILTERED.** Since ADR-0061 D3 every anonymous write runs under the market operator's override, so this cell holds the reads a request makes of rows *it* wrote in the same scope — the promo `GetByCodeAsync` pre-check under `RequestPromoCode`, `ValidateReferral`'s `(TenantId, Code)` read |
 
 **Two things this is deliberately NOT.** *"The endpoint is anonymous"* is not the test — the bottom-right
-cell is anonymous and stays filtered, and widening the register/resend pre-checks across tenants
-re-creates the cross-tenant existence oracle the composite index was chosen to remove
-(`UserEntityConfiguration.cs:99-105`). *"The key is an unguessable secret"* is not the test either —
-`GetByConfirmationCodeAsync` and `GetByTokenHashAsync` key on the same kind of SHA-256 hash and land on
-**opposite** sides, because their cells differ. A secret makes a bypass *safe*; it never makes one
+cell is anonymous and stays filtered because the scope behaviour gave it a tenant. *(The sentence that
+used to stand here — that widening the register/resend pre-checks across tenants "re-creates the
+cross-tenant existence oracle the composite index was chosen to remove" — is superseded by ADR-0061
+D5.1: under one brand and one holding, "this email is registered with Cleansia" is the oracle every
+register endpoint already is, and the composite index bought nothing the login path did not give away.)*
+*"The key is an unguessable secret"* is not the test either — `GetByConfirmationCodeIgnoringTenantAsync`
+and `GetByTokenHashAsync` key on the same kind of SHA-256 hash and both bypass *because their cells are
+asymmetric*, not because the key is secret. A secret makes a bypass *safe*; it never makes one
 *necessary*.
 
 **The re-pin may not be an appeal to a uniqueness property the schema does not enforce.** Permitted pins:
-an unguessable server-issued secret, the caller's own id from their JWT, or a row id read out of an
-already-pinned row. *Not* permitted: "the email is unique across the platform" — email uniqueness is
-`(TenantId, Email)` by design and, while `TenantId` is dormant, is enforced by nothing at all until the
-owner-run migration emits `NULLS NOT DISTINCT` (`consistency.md` §*"Tenant-scoped unique indexes"*, the
-`Users` arming note; the C# builder call has landed and the DDL has not). Where the true pin is a
-**caller obligation** the method cannot verify (`GetActiveByUserIdAsync`'s "the `UserId` comes from the
-caller's own JWT"), say so in those words rather than dressing it as an invariant.
+an unguessable server-issued secret, the caller's own id from their JWT, a row id read out of an
+already-pinned row — and, since ADR-0061 D5.1, **the email**, because `IX_Users_Email` is unique with no
+tenant term and `Email` is NOT NULL, so the schema enforces exactly what the pin claims (the sentence
+that used to forbid it here described `(TenantId, Email)` under a dormant `TenantId`, which no longer
+exists). Where the true pin is a **caller obligation** the method cannot verify
+(`GetActiveByUserIdAsync`'s "the `UserId` comes from the caller's own JWT"), say so in those words rather
+than dressing it as an invariant.
 
 **Enforced by:** `src/Cleansia.Tests/Features/Auth/UserRepositoryTokenLookupTenantTests.cs` (bypass
-sites confined to an enumerated roster; confirm-family pinned filtered) +
+sites confined to an enumerated roster; the confirm family and the register pre-checks pinned on the
+bypass side since ADR-0061) +
 `src/Cleansia.Tests/Features/Auth/EmployeeRepositoryTenantTokenLookupTests.cs` (the write-authenticated /
 read-anonymous cell, seeded with a **non-null** tenant so it can fail), both run by
 `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, over
@@ -311,14 +344,17 @@ with `grep -rn "IgnoreQueryFilters(\|GetQueryableIgnoringTenant()" src/Cleansia.
 **Retires when:** that status line stops reading `proposed`.
 
 **Anonymous-write / authenticated-read asymmetry (the silent-zero-rows trap).** A row written on an
-**anonymous** path (no tenant claim → stamped `TenantId = null`) but later read/updated on an
-**authenticated** request (JWT carries `tenant_id`) is **hidden by the global filter** — the
-write silently matches zero rows and the side effect (confirm an order, revoke a token) never happens.
-Same class as the *tenant-ignoring-read-on-webhook-paths* memory note. The fix on the read side:
-`IgnoreQueryFilters()` **plus an explicit caller-scoped predicate** that re-pins the surface — never
-just clearing the filter. Pin by an unguessable secret (`TokenHash`) or the caller's own `UserId` from
-the JWT, so the read finds the caller's own null-stamped rows without widening across tenants
-(preserves S1/S3). References: the order webhook existence check `ExistsIgnoringTenantAsync` (T-0245);
+**anonymous** path but later read/updated on an **authenticated** request (JWT carries `tenant_id`) is
+**hidden by the global filter** whenever the two ambient tenants differ — the write silently matches
+zero rows and the side effect (confirm an order, revoke a token) never happens. Since ADR-0061 the
+anonymous write is stamped with the *market's operator* (or the *authenticating user's* tenant on a
+token mint), so the two agree far more often than they used to — but a guest who booked under operator
+A and later signs in with an account under operator B, or a token minted for a user before their tenant
+was known, is the same trap with a real value instead of `NULL`. Same class as the
+*tenant-ignoring-read-on-webhook-paths* memory note. The fix on the read side: `IgnoreQueryFilters()`
+**plus an explicit caller-scoped predicate** that re-pins the surface — never just clearing the filter.
+Pin by an unguessable secret (`TokenHash`) or the caller's own `UserId` from the JWT, so the read finds
+the caller's own rows without widening across tenants (preserves S1/S3). References: the order webhook existence check `ExistsIgnoringTenantAsync` (T-0245);
 the refresh-token revoke/rotate reads `RefreshTokenRepository.GetByTokenHashAsync` /
 `GetActiveByUserIdAsync` / `RevokeChainAsync` (T-0236).
 
@@ -328,9 +364,11 @@ the refresh-token revoke/rotate reads `RefreshTokenRepository.GetByTokenHashAsyn
 `GetByIdAsync`, which narrows to `TenantId == null` and resolves **nothing** for a tenanted row. The
 guard reads `if (x is null) return;`, so the job's *effect* still happens and only its *bookkeeping*
 silently doesn't. **A sweep must be tenant-ignoring on BOTH sides of the loop, not just the selection**
-— audit the write-back of every `GetQueryableIgnoringTenant()` sweep, and the pattern is invisible in
-single-tenant mode, so **the pinning test must seed a non-null `TenantId`** (a fixture wired
-`tenantId: null` proves nothing here). Reference: `NewJobsDigestService.StampWatermarkAsync` →
+— audit the write-back of every `GetQueryableIgnoringTenant()` sweep. The pattern was invisible while
+every row was `NULL`; since ADR-0061 every fixture seeds a real tenant by default (`cleansia-cz`), so a
+job's tenant-scoped read against a stamped row returns nothing in the test exactly as it would in
+production — **the pinning test must still seed a non-null `TenantId`**, and it now does unless someone
+writes `null` on purpose. Reference: `NewJobsDigestService.StampWatermarkAsync` →
 `GetByIdIgnoringTenantAsync`, which left the watermark frozen and re-notified tenanted cleaners on every
 sweep, forever (T-0529). *(`EmployeeRepository.GetByUserEmailIgnoringTenantAsync` (T-0361) used to be
 listed here and is **not** an instance of this case — it has no loop, no write-back and no sweep. It is

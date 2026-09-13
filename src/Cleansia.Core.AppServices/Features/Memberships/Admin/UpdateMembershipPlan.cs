@@ -59,7 +59,10 @@ public class UpdateMembershipPlan
                 .MustNotRepeatAStripePriceId();
 
             RuleForEach(x => x.Prices)
-                .SetValidator(command => new MembershipPlanPriceEntryValidator(membershipPlanPriceRepository, command.MembershipPlanId));
+                .SetValidator(command => new MembershipPlanPriceEntryValidator(membershipPlanPriceRepository)
+                {
+                    ExceptPlanId = command.MembershipPlanId,
+                });
 
             RuleFor(x => x.DiscountPercentage)
                 .InclusiveBetween(0m, 100m)

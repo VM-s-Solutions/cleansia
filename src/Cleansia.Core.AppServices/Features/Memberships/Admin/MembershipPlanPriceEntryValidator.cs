@@ -13,7 +13,14 @@ namespace Cleansia.Core.AppServices.Features.Memberships.Admin;
 /// </summary>
 public class MembershipPlanPriceEntryValidator : AbstractValidator<KeyValuePair<string, MembershipPlanPriceInput>>
 {
-    public MembershipPlanPriceEntryValidator(IMembershipPlanPriceRepository membershipPlanPriceRepository, string? exceptPlanId)
+    /// <summary>
+    /// The plan being updated, whose own row in the entry's currency may keep its Stripe id; null on
+    /// create. A property rather than a constructor argument because the assembly scan registers every
+    /// validator with the container, and a <c>string</c> parameter cannot be resolved there.
+    /// </summary>
+    public string? ExceptPlanId { get; init; }
+
+    public MembershipPlanPriceEntryValidator(IMembershipPlanPriceRepository membershipPlanPriceRepository)
     {
         RuleFor(x => x.Value.Price)
             .GreaterThanOrEqualTo(0m)
@@ -26,7 +33,7 @@ public class MembershipPlanPriceEntryValidator : AbstractValidator<KeyValuePair<
             .MaximumLength(64)
             .WithMessage(BusinessErrorMessage.MaxLength)
             .MustAsync(async (entry, stripePriceId, cancellationToken) =>
-                !await membershipPlanPriceRepository.IsStripePriceIdUsedAsync(stripePriceId, exceptPlanId, entry.Key, cancellationToken))
+                !await membershipPlanPriceRepository.IsStripePriceIdUsedAsync(stripePriceId, ExceptPlanId, entry.Key, cancellationToken))
             .WithMessage(BusinessErrorMessage.MembershipPlanStripePriceAlreadyUsed);
     }
 }

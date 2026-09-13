@@ -73,5 +73,9 @@ list and had no timeline and no export.
   with source badges), `entry/:auditId`; `TimelineComponent` reused on `/customers/:userId` with the
   export button; `CUSTOMER_AUDIT_ACTIONS` catalogue pinned by `customer-audit-actions.spec.ts`.
 - 2026-09-13 — docs lane, ground-truth: AC1's customer link from order/dispute detail is not in the
-  tree (only the pre-existing *View audit history* link). Reported, not absorbed; ADR-0062
-  §Consequences names it.
+  tree (only the pre-existing *View audit history* link).
+- 2026-09-14 — AC1 closed as amended: `OrderItem` / `DisputeDetails` are served to the partner hosts
+  too, so a `CustomerUserId` on them would hand the customer's identifier to cleaners. Instead the
+  resource history (the *View audit history* link on both screens) shows **who** acted on each row,
+  and a customer actor links to `/customers/:userId` (`buildTimelineActorRoute`, spec pinned, five
+  locales). ADR-0062 §Consequences records the reasoning.

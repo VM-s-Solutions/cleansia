@@ -30,6 +30,16 @@
   </span>
 </ng-template>
 
+<ng-template #actorTemplate let-item>
+  @if (actorRoute(item); as route) {
+  <a class="cleansia-audit-link" [routerLink]="route">{{ item.actorId }}</a>
+  } @else if (item.actorId) {
+  {{ item.actorId }}
+  } @else {
+  {{ 'pages.audit_log.customers.guest' | translate }}
+  }
+</ng-template>
+
 <ng-template #resourceTemplate let-item>
   @if (resourceHistoryRoute(item); as route) {
   <a class="cleansia-audit-link" [routerLink]="route">{{ formatResource(item) }}</a>

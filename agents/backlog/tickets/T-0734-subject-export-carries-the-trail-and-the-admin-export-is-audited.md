@@ -64,9 +64,6 @@ own `ExportUserData` had the identical uncommitted-`GdprRequest` defect (Q-AUD-O
   `POST api/v1/Gdpr/export`. Both exports commit their `GdprRequest` (Q-AUD-O3 default, named). The
   roster's `Why` for `GdprRequest` ("IS the erasure's own audit record") is now also true for exports.
   Reported, not absorbed: the consent section of the export still omits IP/UA.
-- 2026-09-14 — **client regen NOT done for the verb change** (docs lane, ground-truthing): both
-  generated web clients still issue the export as `GET` (`admin-client.ts` `exportUserData`,
-  `customer-client.ts` `export` — `this.http.request("get", …)`), so the admin data-protection export,
-  the T-0735 *Export subject data* button and the customer web's own export hit a route the servers no
-  longer serve until `generate-admin-client` + `generate-customer-client` run. Owed by the
-  orchestrator's batched regen after the phase; the AC7 verb tests are green server-side.
+- 2026-09-14 — the batched regen (`2dfa61c2`) turned both generated web clients' export calls into
+  `POST` (`admin-client.ts`, `customer-client.ts`, `partner-client.ts`) and put the `customerActions`
+  section on the wire type; both mobile specs re-dumped in the same commit.

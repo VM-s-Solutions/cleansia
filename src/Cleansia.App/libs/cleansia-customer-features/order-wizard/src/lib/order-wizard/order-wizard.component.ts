@@ -1222,9 +1222,9 @@ export class OrderWizardComponent implements OnInit {
         return;
       }
       this.labelError.set(null);
-      await this.facade.submitOrder({ label });
+      await this.facade.submitOrder({ label }, this.acceptedTerms());
       return;
     }
-    await this.facade.submitOrder(null);
+    await this.facade.submitOrder(null, this.acceptedTerms());
   }
 }

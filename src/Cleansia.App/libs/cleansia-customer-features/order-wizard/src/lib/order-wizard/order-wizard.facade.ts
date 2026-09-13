@@ -805,7 +805,16 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     return this.savedAddress.saveCurrentAddressAsSaved(label);
   }
 
-  async submitOrder(saveAddress?: { label: string } | null): Promise<void> {
+  /**
+   * `termsAccepted` is the ONE client-asserted member on the create command: the server cannot
+   * observe a tick, so it records the customer's own assertion against themselves (ADR-0062 D4).
+   * It is sent only when the box was shown AND ticked; an account that already consented sees no
+   * box and asserts nothing new.
+   */
+  async submitOrder(
+    saveAddress?: { label: string } | null,
+    termsAccepted = false,
+  ): Promise<void> {
     const data = this.formData();
     if (!data.cleaningDate) return;
 
@@ -900,6 +909,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     command.language =
       this.translate.currentLang || this.translate.getDefaultLang();
     command.promoCode = promoCodeToSend;
+    command.termsAccepted = termsAccepted ? true : undefined;
     // Empty becomes undefined rather than '': the backend treats null and empty
     // alike, and undefined keeps the property out of the JSON entirely. Trimmed
     // because a whitespace-only note is not a note.

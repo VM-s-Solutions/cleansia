@@ -856,6 +856,7 @@
         "columns": {
           "occurred_on": "Коли",
           "source": "Джерело",
+          "actor": "Хто",
           "action": "Дія",
           "resource": "Ресурс",
           "outcome": "Результат"

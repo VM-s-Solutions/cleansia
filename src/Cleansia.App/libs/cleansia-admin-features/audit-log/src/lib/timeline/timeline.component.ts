@@ -31,6 +31,7 @@ import {
 } from '../audit-log/audit-log.models';
 import { TimelineFacade } from './timeline.facade';
 import {
+  buildTimelineActorRoute,
   buildTimelineEntryRoute,
   getTimelineSourceClass,
   getTimelineSourceLabelKey,
@@ -63,6 +64,7 @@ export class TimelineComponent implements AfterViewInit, OnDestroy {
   readonly resourceLinks = input<boolean>(true);
 
   readonly sourceTemplate = viewChild<TemplateRef<TimelineEntryDto>>('sourceTemplate');
+  readonly actorTemplate = viewChild<TemplateRef<TimelineEntryDto>>('actorTemplate');
   readonly resourceTemplate = viewChild<TemplateRef<TimelineEntryDto>>('resourceTemplate');
   readonly outcomeTemplate = viewChild<TemplateRef<TimelineEntryDto>>('outcomeTemplate');
 
@@ -109,6 +111,8 @@ export class TimelineComponent implements AfterViewInit, OnDestroy {
       this.translate,
       {
         source: this.sourceTemplate(),
+        // A customer's own page names the person in its title; only a resource history needs the column.
+        actor: this.userId() ? undefined : this.actorTemplate(),
         resource: this.resourceTemplate(),
         outcome: this.outcomeTemplate(),
       }
@@ -146,6 +150,10 @@ export class TimelineComponent implements AfterViewInit, OnDestroy {
 
   formatResource(entry: TimelineEntryDto): string {
     return formatResource(entry);
+  }
+
+  actorRoute(entry: TimelineEntryDto): string[] | null {
+    return buildTimelineActorRoute(entry);
   }
 
   resourceHistoryRoute(entry: TimelineEntryDto): (string | CleansiaAdminRoute)[] | null {

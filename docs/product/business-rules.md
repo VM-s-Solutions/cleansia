@@ -626,9 +626,10 @@ trail.
 
 **Registration records the consent, server-side, in the same commit.** When the register form (or a
 Google/Apple sign-up) sends the terms tick, the server grants `TermsOfService` and `PrivacyPolicy`
-with the version, the IP and the device — nothing is parked in the browser any more. A client that
-sends no tick — every shipped mobile build, and the web order wizard until its generated client carries
-the field — is recorded as **not asserted** (`null`), and **nothing is refused for want of a tick**
+with the version, the IP and the device — nothing is parked in the browser any more. The web order
+wizard sends its tick the same way, only when the box was shown and ticked (an account that already
+consented sees no box). A client that sends no tick — every shipped mobile build — is recorded as
+**not asserted** (`null`), and **nothing is refused for want of a tick**
 (Q-AUD-L4 default: record only, refuse nothing, until the legal texts are final; then a validator rule
 per path, web first).
 

@@ -73,9 +73,9 @@ because nothing exists yet to stamp them with: a country that is not a market
 operator is resolved, and the failure sink logs one warning instead of writing a row with no tenant.
 → [What is recorded about a customer](/product/business-rules#customer-record)
 
-*(The order wizard's terms tick is collected and gates the review step, but the generated customer
-client does not carry `termsAccepted` on the create-order command yet, so today the booking row
-records it as not asserted. The register form does send it.)*
+The wizard's terms tick gates the review step and rides `termsAccepted` on the create command when
+the box was shown and ticked; an account that already consented sees no box and the row records
+"not asserted", as it does for every mobile build.
 
 ## Responsive quote previews
 

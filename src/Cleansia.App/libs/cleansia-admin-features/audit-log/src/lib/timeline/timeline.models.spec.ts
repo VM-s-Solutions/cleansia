@@ -1,6 +1,7 @@
 import { TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
 import { CleansiaAdminRoute } from '@cleansia/services';
 import {
+  buildTimelineActorRoute,
   buildTimelineEntryRoute,
   getTimelineSourceClass,
   getTimelineSourceLabelKey,
@@ -24,6 +25,21 @@ describe('timeline models', () => {
       'entry',
       'row-1',
     ]);
+  });
+
+  it("links a customer row's actor to the customer page and no one else's", () => {
+    expect(
+      buildTimelineActorRoute(TimelineEntryDto.fromJS({ source: TimelineSource.Customer, actorId: 'u-1', id: 'row-1' }))
+    ).toEqual(['/customers', 'u-1']);
+    expect(
+      buildTimelineActorRoute(TimelineEntryDto.fromJS({ source: TimelineSource.Customer, actorId: undefined, id: 'row-1' }))
+    ).toBeNull();
+    expect(
+      buildTimelineActorRoute(TimelineEntryDto.fromJS({ source: TimelineSource.Admin, actorId: 'a-1', id: 'row-1' }))
+    ).toBeNull();
+    expect(
+      buildTimelineActorRoute(TimelineEntryDto.fromJS({ source: TimelineSource.Employee, actorId: 'e-1', id: 'row-1' }))
+    ).toBeNull();
   });
 
   it('gives an employee row no detail route — the badge is all there is', () => {

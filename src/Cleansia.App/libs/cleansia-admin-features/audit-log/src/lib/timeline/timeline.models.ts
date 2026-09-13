@@ -8,6 +8,7 @@ import { getAuditActionLabelKey } from '../customer-audit-actions';
 
 export interface TimelineTemplates {
   source?: TemplateRef<TimelineEntryDto>;
+  actor?: TemplateRef<TimelineEntryDto>;
   resource?: TemplateRef<TimelineEntryDto>;
   outcome?: TemplateRef<TimelineEntryDto>;
 }
@@ -36,18 +37,30 @@ export function getTimelineTableDefinition(
         width: '12%',
         customTemplate: templates.source,
       },
+      // Only the resource history shows who acted: on a customer's own page the actor is the page.
+      ...(templates.actor
+        ? [
+            {
+              id: 'actor',
+              field: 'actorId',
+              header: translate.instant('pages.audit_log.timeline.columns.actor'),
+              width: '16%',
+              customTemplate: templates.actor,
+            },
+          ]
+        : []),
       {
         id: 'action',
         field: 'action',
         header: translate.instant('pages.audit_log.timeline.columns.action'),
-        width: '28%',
+        width: '24%',
         getValue: (row: TimelineEntryDto) => formatActionLabel(row.action, translate),
       },
       {
         id: 'resource',
         field: 'resourceType',
         header: translate.instant('pages.audit_log.timeline.columns.resource'),
-        width: '24%',
+        width: '20%',
         customTemplate: templates.resource,
       },
       {
@@ -94,6 +107,17 @@ export function buildTimelineEntryRoute(
     default:
       return null;
   }
+}
+
+/**
+ * A customer row's actor is a customer, and the customer page holds their whole trail — the entry
+ * point from an order's or a dispute's history to the person (ADR-0062 D6). Admin and cleaner
+ * actors have their own tables; the row only names them.
+ */
+export function buildTimelineActorRoute(entry: TimelineEntryDto): string[] | null {
+  return entry.source === TimelineSource.Customer && entry.actorId
+    ? ['/customers', entry.actorId]
+    : null;
 }
 
 export function getTimelineSourceLabelKey(source: TimelineSource): string {

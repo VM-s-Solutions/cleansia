@@ -856,6 +856,7 @@
         "columns": {
           "occurred_on": "Kedy",
           "source": "Pôvod",
+          "actor": "Kto",
           "action": "Akcia",
           "resource": "Zdroj",
           "outcome": "Výsledok"

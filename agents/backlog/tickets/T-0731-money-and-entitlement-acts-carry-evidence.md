@@ -100,10 +100,7 @@ customer was shown at the click — so a dispute is answered from the row, not r
   across three client trees); the PII guard's identity leg refuses
   `(Confirmation|Reset|Verification|Access)Code` by name. The 13-collaborator `CreateOrder.Handler` is
   unchanged (static builder + injected `ICancellationPolicyResolver`).
-- 2026-09-13 — **client regen NOT complete for this ticket's field** (docs lane, ground-truthing at
-  the end of the programme): the regenerated customer client carries `termsAccepted` on `Register`,
-  `GoogleAuth` and `AppleAuth` but **not** on `CreateOrderCommand`, and the mobile spec's
-  `CreateOrder_Command` has no `termsAccepted` either. The web order wizard therefore collects the tick
-  and sends nothing; every booking row records `termsAccepted: null`. A `generate-customer-client` +
-  `refresh-mobile-spec.sh customer` regen and the wizard's one-line send are owed — the orchestrator's
-  batched regen after the phase.
+- 2026-09-14 — the batched regen (`2dfa61c2`) put `termsAccepted` on `CreateOrderCommand` and on the
+  mobile spec's `CreateOrder_Command`; the web wizard now sends `true` when its box was shown and
+  ticked and nothing otherwise (`OrderWizardFacade.submitOrder`, spec pinned). Mobile builds still
+  send nothing → `null`, as the NOT list intends.

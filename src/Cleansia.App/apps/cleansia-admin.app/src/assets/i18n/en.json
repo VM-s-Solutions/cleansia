@@ -856,6 +856,7 @@
         "columns": {
           "occurred_on": "When",
           "source": "Source",
+          "actor": "Who",
           "action": "Action",
           "resource": "Resource",
           "outcome": "Outcome"

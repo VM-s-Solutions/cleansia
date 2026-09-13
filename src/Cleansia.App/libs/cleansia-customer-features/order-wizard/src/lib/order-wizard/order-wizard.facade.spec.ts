@@ -975,6 +975,19 @@ describe('OrderWizardFacade', () => {
       expect(command.specialInstructions).toBe('Gate code 1234, dog is friendly');
     });
 
+    it('asserts the terms tick on the command only when the box was ticked', async () => {
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+
+      await facade.submitOrder(null, true);
+      expect(orderClient.createOrder.mock.calls[0][0].termsAccepted).toBe(true);
+
+      await facade.submitOrder(null, false);
+      expect(orderClient.createOrder.mock.calls[1][0].termsAccepted).toBeUndefined();
+
+      await facade.submitOrder();
+      expect(orderClient.createOrder.mock.calls[2][0].termsAccepted).toBeUndefined();
+    });
+
     it('omits special instructions entirely when the customer typed none', async () => {
       facade.updateFormData({
         paymentType: PaymentType.Cash,

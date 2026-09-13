@@ -1015,11 +1015,11 @@
         ></textarea>
 
         <!--
-          The same two documents the sign-up tick names. Today the tick only
-          gates the review step: nothing is parked client-side (a booking does
-          not require an account) and nothing is sent yet. It rides
-          `termsAccepted` on the create-order command once the generated client
-          carries that field, and the server records it (ADR-0062 D4).
+          The same two documents the sign-up tick names. The tick gates the
+          review step and rides `termsAccepted` on the create-order command,
+          where the server records it on the booking's audit row (ADR-0062 D4);
+          nothing is parked client-side, because a booking does not require an
+          account.
 
           Not asked of an account that has already granted both. Owner ruling,
           2026-09-03: re-consenting to the same two documents on every order is

@@ -43,3 +43,22 @@ so), the existing-SK-Google-user row in `AnonymousWriterLandsInMarketOperatorTes
 `UsersEmailGloballyUniqueTests` (TC-TEN-EMAIL, both halves), `SecretKeyedAnonymousReadsTests`
 (TC-TEN-LOOKUP, TC-TEN-CONFIRM), `TokenServiceAdoptsUserTenantTests`, the `Register` and
 `CreateAdminUser` validator cases.
+
+## Review
+
+Second pass, 2026-09-13, against the acceptance criteria on the tree at `e5a45de3`. Every criterion
+already has its named test; nothing was added. Sabotages, each restored byte-exact before the next:
+
+- `UserRepository.GetByConfirmationCodeIgnoringTenantAsync`: `.IgnoreQueryFilters()` removed →
+  `UserRepositoryTokenLookupTenantTests` 1 red / 2 green (the roster mutation check the AC asks for).
+- `Register.Validator`: the same-market comparison on the unconfirmed branch removed →
+  `RegisterValidatorTests` 1 red / 27 green (the register pre-check mutation check).
+- `TokenService`: the `SetTenantOverride(user.TenantId)` removed → `TokenServiceAdoptsUserTenantTests`
+  1 red / 1 green.
+- `LookupOrder.Handler`: `GetQueryableIgnoringTenant()` back to `GetQueryable()` →
+  `LookupOrderSecretTests` 8 red.
+
+The `CreateAdminUser` cross-company case is
+`AdminUserProfileFieldsTests.When_Create_Email_Is_Held_In_Another_Operator_Then_Validation_Fails_With_AdminUserEmailExists`;
+that surface keeps its existing key `admin_user.email_exists` rather than `ExistingUserWithEmail`.
+Suites: Cleansia.Tests 4887, IntegrationTests 351, HostTests 183, green.

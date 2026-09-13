@@ -64,12 +64,13 @@ export const appConfig: ApplicationConfig = {
     // GHSA-jhpw-976m-542j had no fix in any 19.x — cache-key collisions could
     // serve one user's response to another, and cookie auth meant every
     // authenticated GET was eligible. Both are fixed in 20.3.25/20.3.27 and the
-    // cache is on again — but Angular now skips any request sent with
-    // credentials, and CustomerAuthInterceptorFn marks every own-API request
-    // withCredentials for the cookie flow, so in practice no API response is
-    // transferred and the browser re-fetches on bootstrap. Making anonymous GETs
-    // credential-less would restore the transfer; that is an auth change, not a
-    // hydration one, and it is deliberately not made here.
+    // cache is on again. Angular now skips any request sent with credentials, so
+    // what is transferred is decided by CustomerAuthInterceptorFn: an anonymous
+    // GET (catalogue overviews, market, plans, property sizes, serviced
+    // countries) goes credential-less and is served from the document on
+    // bootstrap; the same GET with a session carries the cookie, is never
+    // transferred, and is re-fetched by the browser — which is the property the
+    // advisory needed.
     provideClientHydration(withEventReplay()),
     provideRouter(
       appRoutes,

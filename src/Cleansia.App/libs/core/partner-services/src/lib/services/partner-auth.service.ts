@@ -58,12 +58,17 @@ export class PartnerAuthService {
     return this.partnerClient.authClient.login(command);
   }
 
+  /**
+   * `countryId` is the market the account is opened with — the operating company an anonymous
+   * request lands in (ADR-0061 D3); null means "let the server pick its default market".
+   */
   register(
     email: string,
     password: string,
     firstName: string,
     lastName: string,
-    referralCode?: string
+    referralCode?: string,
+    countryId?: string | null
   ): Observable<boolean> {
     const command = new RegisterCommand();
     command.email = email;
@@ -72,6 +77,7 @@ export class PartnerAuthService {
     command.lastName = lastName;
     command.language = this.currentLanguage();
     command.referralCode = referralCode;
+    command.countryId = countryId ?? undefined;
 
     // The endpoint answers 200 with no body (T-0665): the bool it used to return was `true` on
     // every success path, because failures arrive as errors. Success is therefore "it did not
@@ -83,7 +89,8 @@ export class PartnerAuthService {
     email: string,
     password: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    countryId?: string | null
   ): Observable<boolean> {
     const command = new RegisterEmployeeCommand();
     command.email = email;
@@ -91,6 +98,7 @@ export class PartnerAuthService {
     command.firstName = firstName;
     command.lastName = lastName;
     command.language = this.currentLanguage();
+    command.countryId = countryId ?? undefined;
 
     return this.partnerClient.authClient.registerEmployee(command).pipe(map(() => true));
   }
@@ -123,7 +131,8 @@ export class PartnerAuthService {
     googleId: string,
     email: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
     const command = new GoogleAuthCommand();
     command.token = token;
@@ -131,6 +140,7 @@ export class PartnerAuthService {
     command.email = email;
     command.firstName = firstName;
     command.lastName = lastName;
+    command.countryId = countryId ?? undefined;
 
     return this.partnerClient.authClient.googleAuth(command).pipe(
       map((authResult: JwtTokenResponse) => {

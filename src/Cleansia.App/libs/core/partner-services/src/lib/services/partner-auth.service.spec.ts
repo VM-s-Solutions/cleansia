@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AUTH_COOKIE_KEYS } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { PartnerClient } from '../client/base-client';
 import {
   ConsentType,
@@ -134,6 +134,24 @@ describe('PartnerAuthService command payloads', () => {
       firstName: 'Jan',
       lastName: 'Novak',
     });
+  });
+
+  // The market is the operating company the anonymous request lands in (ADR-0061 D3);
+  // a cleaner registers with the market an admin will later hold them to (D6).
+  it.each<[string, string, () => Observable<unknown>]>([
+    ['register', 'register', () => service.register('a@b.cz', 'pw', 'Jan', 'Novak', undefined, 'svk-id')],
+    ['employee register', 'registerEmployee', () => service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', 'svk-id')],
+    ['google auth', 'googleAuth', () => service.authenticateWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', 'svk-id')],
+  ])('sends the chosen market on %s', (_, method, call) => {
+    call().subscribe();
+
+    expect(sentBody(method)['countryId']).toBe('svk-id');
+  });
+
+  it('sends no market on employee register when none is chosen, so the server picks its default', () => {
+    service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', null).subscribe();
+
+    expect(sentBody('registerEmployee')['countryId']).toBeUndefined();
   });
 
   it('posts an empty token on logout — the refresh token is cookie-carried', () => {

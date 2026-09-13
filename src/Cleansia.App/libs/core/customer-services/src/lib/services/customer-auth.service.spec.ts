@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AUTH_COOKIE_KEYS } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
 import { ConsentType, GrantConsentCommand } from '../client/customer-client';
 import { CustomerAuthService } from './customer-auth.service';
@@ -200,6 +200,31 @@ describe('CustomerAuthService command payloads', () => {
     call().subscribe(() => (loggedInWhenResumed = service.isLoggedIn()));
 
     expect(loggedInWhenResumed).toBe(true);
+  });
+
+  // The market is the operator the anonymous request lands in (ADR-0061 D3); the
+  // service takes it from the caller because the store that holds the choice
+  // sits above this library.
+  it.each<[string, string, () => Observable<unknown>]>([
+    ['register', 'register', () => service.register('a@b.cz', 'pw', 'Jan', 'Novak', undefined, 'svk-id')],
+    ['google signup', 'googleAuth', () => service.signUpWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', 'svk-id')],
+    ['google sign-in', 'googleAuth', () => service.signInWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', 'svk-id')],
+    ['apple signup', 'appleAuth', () => service.signUpWithApple('idtok', 'raw-nonce', 'Jan', undefined, 'svk-id')],
+    ['apple sign-in', 'appleAuth', () => service.signInWithApple('idtok', 'raw-nonce', undefined, undefined, 'svk-id')],
+  ])('sends the chosen market on %s', (_, method, call) => {
+    call().subscribe();
+
+    expect(sentBody(authClient, method)['countryId']).toBe('svk-id');
+  });
+
+  it.each<[string, string, () => Observable<unknown>]>([
+    ['register', 'register', () => service.register('a@b.cz', 'pw', 'Jan', 'Novak', undefined, null)],
+    ['google signup', 'googleAuth', () => service.signUpWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', null)],
+    ['apple signup', 'appleAuth', () => service.signUpWithApple('idtok', 'raw-nonce', 'Jan', undefined, null)],
+  ])('sends no market on %s when none is chosen, so the server picks its default', (_, method, call) => {
+    call().subscribe();
+
+    expect(sentBody(authClient, method)['countryId']).toBeUndefined();
   });
 
   it('sends the email and language on forgot password', () => {

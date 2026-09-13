@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CustomerAuthService } from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { provideMockStore } from '@ngrx/store/testing';
@@ -62,7 +63,9 @@ describe('LoginFacade (customer)', () => {
     TestBed.configureTestingModule({
       providers: [
         LoginFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: 'svk-id' }],
+        }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
         { provide: SnackbarService, useValue: snackbar },
@@ -72,6 +75,33 @@ describe('LoginFacade (customer)', () => {
     });
 
     facade = TestBed.inject(LoginFacade);
+  });
+
+  // The same GoogleAuth / AppleAuth endpoint serves signup and sign-in, and an
+  // anonymous request always names its market (ADR-0061 D3).
+  it('signs in with Google in the persisted market', () => {
+    facade.googleLogin(CREDENTIAL);
+
+    expect(authService.signInWithGoogle).toHaveBeenCalledWith(
+      CREDENTIAL,
+      'google-subject',
+      'jan@example.com',
+      'Jan',
+      'Novák',
+      'svk-id'
+    );
+  });
+
+  it('signs in with Apple in the persisted market', () => {
+    facade.appleLogin('id-token', 'raw-nonce');
+
+    expect(authService.signInWithApple).toHaveBeenCalledWith(
+      'id-token',
+      'raw-nonce',
+      undefined,
+      undefined,
+      'svk-id'
+    );
   });
 
   function fillValid(): void {
@@ -119,7 +149,8 @@ describe('LoginFacade (customer)', () => {
       'id-token',
       'raw-nonce',
       'Jan',
-      'Novák'
+      'Novák',
+      'svk-id'
     );
     expect(authService.setSession).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalled();

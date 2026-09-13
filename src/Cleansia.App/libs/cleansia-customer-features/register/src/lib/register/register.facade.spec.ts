@@ -10,8 +10,9 @@ import {
   ValidateReferralQuery,
   ValidateReferralResponse,
 } from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
-import { provideMockStore } from '@ngrx/store/testing';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 import { RegisterFacade } from './register.facade';
@@ -55,7 +56,9 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
     TestBed.configureTestingModule({
       providers: [
         RegisterFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: null }],
+        }),
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: CustomerAuthService, useValue: authService },
         { provide: CustomerClient, useValue: { referralClient } },
@@ -151,8 +154,124 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
       'Heslo1234',
       'Jan',
       'Novák',
-      'ABC12'
+      'ABC12',
+      null
     );
+  });
+});
+
+describe('RegisterFacade — the chosen market', () => {
+  let facade: RegisterFacade;
+  let store: MockStore;
+  let referralClient: { validate: jest.Mock };
+  let authService: {
+    register: jest.Mock;
+    signUpWithGoogle: jest.Mock;
+    signUpWithApple: jest.Mock;
+    setSession: jest.Mock;
+  };
+
+  const EMAIL = 'jan@example.com';
+  const CREDENTIAL = [
+    'header',
+    btoa(JSON.stringify({ sub: 'google-subject', email: EMAIL, given_name: 'Jan', family_name: 'Novák' })),
+    'signature',
+  ].join('.');
+
+  function fillForm(): void {
+    facade.formGroup.patchValue({
+      firstName: 'Jan',
+      lastName: 'Novák',
+      email: EMAIL,
+      password: 'Heslo1234',
+      confirmPassword: 'Heslo1234',
+      terms: true,
+    });
+  }
+
+  beforeEach(() => {
+    referralClient = {
+      validate: jest.fn().mockReturnValue(of(ValidateReferralResponse.fromJS({ isValid: true }))),
+    };
+    authService = {
+      register: jest.fn().mockReturnValue(of(true)),
+      signUpWithGoogle: jest.fn().mockReturnValue(of({ email: EMAIL })),
+      signUpWithApple: jest.fn().mockReturnValue(of({ email: EMAIL })),
+      setSession: jest.fn(),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        RegisterFacade,
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: 'svk-id' }],
+        }),
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: CustomerAuthService, useValue: authService },
+        { provide: CustomerClient, useValue: { referralClient } },
+        {
+          provide: SnackbarService,
+          useValue: { showError: jest.fn(), showApiError: jest.fn(), showSuccessTranslated: jest.fn() },
+        },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+      ],
+    });
+
+    facade = TestBed.inject(RegisterFacade);
+    store = TestBed.inject(MockStore);
+  });
+
+  // The market the visitor is browsing is the operating company the account is
+  // opened with (ADR-0061 D3); every anonymous call the form makes names it.
+  it('registers with the persisted market', () => {
+    fillForm();
+
+    facade.register();
+
+    expect(authService.register).toHaveBeenCalledWith(EMAIL, 'Heslo1234', 'Jan', 'Novák', undefined, 'svk-id');
+  });
+
+  it('signs up with Google in the persisted market', () => {
+    fillForm();
+
+    facade.googleRegister(CREDENTIAL);
+
+    expect(authService.signUpWithGoogle).toHaveBeenCalledWith(
+      CREDENTIAL,
+      'google-subject',
+      EMAIL,
+      'Jan',
+      'Novák',
+      'svk-id'
+    );
+  });
+
+  it('signs up with Apple in the persisted market', () => {
+    fillForm();
+
+    facade.appleRegister('id-token', 'raw-nonce', 'Jan', 'Novák');
+
+    expect(authService.signUpWithApple).toHaveBeenCalledWith('id-token', 'raw-nonce', 'Jan', 'Novák', 'svk-id');
+  });
+
+  it('validates a referral code against the persisted market', async () => {
+    await facade.validateReferralCodeNow('abc12');
+
+    const query = referralClient.validate.mock.calls[0][0];
+    expect(query).toBeInstanceOf(ValidateReferralQuery);
+    expect(query.toJSON()).toEqual({ code: 'ABC12', countryId: 'svk-id' });
+  });
+
+  it('names no market when none resolved, so the server falls back to its default', async () => {
+    store.overrideSelector(selectMarketCountryId, null);
+    store.refreshState();
+    fillForm();
+
+    facade.register();
+    await facade.validateReferralCodeNow('abc12');
+
+    expect(authService.register).toHaveBeenCalledWith(EMAIL, 'Heslo1234', 'Jan', 'Novák', undefined, null);
+    expect(referralClient.validate.mock.calls[0][0].toJSON()).toEqual({ code: 'ABC12' });
   });
 });
 
@@ -178,7 +297,9 @@ describe('RegisterFacade — Sign in with Apple', () => {
     TestBed.configureTestingModule({
       providers: [
         RegisterFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: null }],
+        }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
         { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
@@ -204,7 +325,8 @@ describe('RegisterFacade — Sign in with Apple', () => {
       'id-token',
       'raw-nonce',
       'Jan',
-      'Novák'
+      'Novák',
+      null
     );
     expect(authService.setSession).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalled();
@@ -281,7 +403,9 @@ describe('RegisterFacade — the consent ticked at signup', () => {
     TestBed.configureTestingModule({
       providers: [
         RegisterFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: null }],
+        }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
         {
@@ -430,7 +554,9 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
     TestBed.configureTestingModule({
       providers: [
         RegisterFacade,
-        provideMockStore(),
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: null }],
+        }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
         {

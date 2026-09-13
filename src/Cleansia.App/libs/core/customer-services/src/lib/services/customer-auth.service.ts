@@ -59,12 +59,18 @@ export class CustomerAuthService {
     return this.customerClient.authClient.login(command);
   }
 
+  /**
+   * `countryId` is the market the account is opened with — the operating company an anonymous
+   * request lands in (ADR-0061 D3). The caller reads it from the market store, which sits above
+   * this library; null means "let the server pick its default market".
+   */
   register(
     email: string,
     password: string,
     firstName: string,
     lastName: string,
-    referralCode?: string
+    referralCode?: string,
+    countryId?: string | null
   ): Observable<boolean> {
     const command = new RegisterCommand();
     command.email = email;
@@ -75,6 +81,7 @@ export class CustomerAuthService {
     command.referralCode = referralCode?.trim()
       ? referralCode.trim().toUpperCase()
       : undefined;
+    command.countryId = countryId ?? undefined;
 
     // 200 with no body since T-0665 — the bool was always `true`, failures come through as
     // errors. Success is "it did not throw", matching logout() in this same service.
@@ -117,9 +124,10 @@ export class CustomerAuthService {
     googleId: string,
     email: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
-    return this.googleAuth(token, googleId, email, firstName, lastName, true);
+    return this.googleAuth(token, googleId, email, firstName, lastName, true, countryId);
   }
 
   signInWithGoogle(
@@ -127,27 +135,30 @@ export class CustomerAuthService {
     googleId: string,
     email: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
-    return this.googleAuth(token, googleId, email, firstName, lastName, false);
+    return this.googleAuth(token, googleId, email, firstName, lastName, false, countryId);
   }
 
   signUpWithApple(
     identityToken: string,
     rawNonce: string,
     firstName?: string,
-    lastName?: string
+    lastName?: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
-    return this.appleAuth(identityToken, rawNonce, firstName, lastName, true);
+    return this.appleAuth(identityToken, rawNonce, firstName, lastName, true, countryId);
   }
 
   signInWithApple(
     identityToken: string,
     rawNonce: string,
     firstName?: string,
-    lastName?: string
+    lastName?: string,
+    countryId?: string | null
   ): Observable<JwtTokenResponse> {
-    return this.appleAuth(identityToken, rawNonce, firstName, lastName, false);
+    return this.appleAuth(identityToken, rawNonce, firstName, lastName, false, countryId);
   }
 
   private googleAuth(
@@ -156,7 +167,8 @@ export class CustomerAuthService {
     email: string,
     firstName: string,
     lastName: string,
-    termsAccepted: boolean
+    termsAccepted: boolean,
+    countryId: string | null | undefined
   ): Observable<JwtTokenResponse> {
     const command = new GoogleAuthCommand();
     command.token = token;
@@ -165,6 +177,7 @@ export class CustomerAuthService {
     command.firstName = firstName;
     command.lastName = lastName;
     command.termsAccepted = termsAccepted;
+    command.countryId = countryId ?? undefined;
 
     return this.customerClient.authClient.googleAuth(command).pipe(
       map((authResult: JwtTokenResponse) => {
@@ -183,7 +196,8 @@ export class CustomerAuthService {
     rawNonce: string,
     firstName: string | undefined,
     lastName: string | undefined,
-    termsAccepted: boolean
+    termsAccepted: boolean,
+    countryId: string | null | undefined
   ): Observable<JwtTokenResponse> {
     const command = new AppleAuthCommand();
     command.identityToken = identityToken;
@@ -191,6 +205,7 @@ export class CustomerAuthService {
     command.firstName = firstName;
     command.lastName = lastName;
     command.termsAccepted = termsAccepted;
+    command.countryId = countryId ?? undefined;
 
     return this.customerClient.authClient.appleAuth(command).pipe(
       map((authResult: JwtTokenResponse) => {

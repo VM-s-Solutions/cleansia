@@ -10,7 +10,7 @@ import {
   SignupConsentService,
   ValidateReferralQuery,
 } from '@cleansia/customer-services';
-import { loadCustomerUser } from '@cleansia/customer-stores';
+import { loadCustomerUser, selectMarketCountryId } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
@@ -44,6 +44,12 @@ export class RegisterFacade extends UnsubscribeControlDirective {
 
   formGroup = this.createFormGroup();
 
+  // The market the visitor is browsing is the operating company the account is opened with
+  // (ADR-0061 D3); every anonymous call the form makes names it.
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null,
+  });
+
   readonly termsAccepted = toSignal(
     this.termsControl.valueChanges.pipe(map(() => this.isTermsTicked())),
     { initialValue: false }
@@ -75,6 +81,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
 
     const query = new ValidateReferralQuery();
     query.code = normalized;
+    query.countryId = this.marketCountryId() ?? undefined;
 
     try {
       const resp = await firstValueFrom(
@@ -135,7 +142,14 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     // raw value (when non-empty) and let the backend silently skip on failure.
     const trimmedReferral = (referralCode as string | undefined)?.trim();
     this.authService
-      .register(email, password, firstName, lastName, trimmedReferral || undefined)
+      .register(
+        email,
+        password,
+        firstName,
+        lastName,
+        trimmedReferral || undefined,
+        this.marketCountryId()
+      )
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
@@ -160,7 +174,14 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     const { sub: googleId, email, given_name: firstName, family_name: lastName } = decoded;
 
     this.authService
-      .signUpWithGoogle(credential, googleId, email, firstName || '', lastName || '')
+      .signUpWithGoogle(
+        credential,
+        googleId,
+        email,
+        firstName || '',
+        lastName || '',
+        this.marketCountryId()
+      )
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
@@ -191,7 +212,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     if (!this.isTermsTicked()) return this.socialSignUpBlocked();
 
     this.authService
-      .signUpWithApple(identityToken, rawNonce, firstName, lastName)
+      .signUpWithApple(identityToken, rawNonce, firstName, lastName, this.marketCountryId())
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {

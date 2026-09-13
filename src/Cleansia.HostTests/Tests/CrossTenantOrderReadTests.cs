@@ -32,8 +32,8 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class CrossTenantOrderReadTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = HostTestTenants.A;
+    private const string TenantB = HostTestTenants.B;
 
     [Fact]
     public async Task Cross_tenant_get_order_by_id_is_refused_by_the_existence_validator()

@@ -44,7 +44,7 @@ public class RegistrationEmailDispatchTests
     [Fact]
     public async Task Register_Enqueues_Confirmation_Email_With_Deterministic_Key()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
         var referralService = new Mock<IReferralService>();
 
         var handler = new Register.Handler(
@@ -71,7 +71,7 @@ public class RegistrationEmailDispatchTests
     [Fact]
     public async Task RegisterEmployee_Enqueues_Confirmation_Email()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
         var employeeRepository = new Mock<IEmployeeRepository>();
 
         var handler = new RegisterEmployee.Handler(
@@ -90,7 +90,7 @@ public class RegistrationEmailDispatchTests
     public async Task ResendConfirmationEmail_Enqueues_Confirmation_Email()
     {
         var user = User.CreateWithPassword(Email, "Password1!@abc", "John", "Doe");
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var handler = new ResendConfirmationEmail.Handler(_userRepository.Object, _pending);
 

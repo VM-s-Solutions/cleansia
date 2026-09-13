@@ -5,6 +5,7 @@ using Cleansia.Config.Services.UserRevocation;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
@@ -233,6 +234,7 @@ public static class ServiceExtensions
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
         services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<IOrderAddressResolver, OrderAddressResolver>();
+        services.AddScoped<IOperatorTenantResolver, OperatorTenantResolver>();
         services.AddScoped<IOrderPromoApplier, OrderPromoApplier>();
         services.AddScoped<IOrderLateReferralAcceptor, OrderLateReferralAcceptor>();
         services.AddScoped<IOrderPaymentDispatcher, OrderPaymentDispatcher>();

@@ -38,7 +38,7 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
     private const string CleanerId = "employee-precleaning";
 
     private readonly SqliteConnection _connection;
-    private readonly FixedTenantProvider _tenantProvider = new(null);
+    private readonly FixedTenantProvider _tenantProvider = new(TestTenants.Default);
 
     public PreCleaningReminderSweepTests()
     {

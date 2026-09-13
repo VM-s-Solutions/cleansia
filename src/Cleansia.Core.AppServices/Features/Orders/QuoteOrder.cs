@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -32,7 +33,7 @@ public class QuoteOrder
         /// explicitly; null with no currency is the platform default, which is what a quote taken
         /// before the address step gets.
         /// </summary>
-        string? CountryId = null) : ICommand<Response>;
+        string? CountryId = null) : ICommand<Response>, IOperatorScopedRequest;
 
     /// <summary>
     /// Quote response. <see cref="TotalPrice"/> is the undiscounted total INCLUDING any express surcharge

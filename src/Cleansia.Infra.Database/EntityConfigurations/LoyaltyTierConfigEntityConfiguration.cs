@@ -29,14 +29,9 @@ public class LoyaltyTierConfigEntityConfiguration : AuditableEntityConfiguration
             .IsRequired()
             .HasMaxLength(2000);
 
-        // One config per tier per tenant.
-        // One config per tier per tenant. NULLS NOT DISTINCT because single-tenant mode IS
-        // TenantId = null: without it the constraint reads as enforcing while admitting N rows per
-        // tier. No application writer exists today, which is exactly why it is worth fixing now —
-        // both readers are FirstOrDefault, so the first writer added would inherit an unordered pick
-        // between two thresholds and two discount percentages.
-        builder.HasIndex(c => new { c.TenantId, c.Tier })
-            .IsUnique()
-            .AreNullsDistinct(false);
+        // One config per tier, platform-wide (ADR-0061 D7). Both readers are FirstOrDefault, so a
+        // second row per tier would be an unordered pick between two thresholds.
+        builder.HasIndex(c => c.Tier)
+            .IsUnique();
     }
 }

@@ -66,13 +66,12 @@ public class MembershipPlanPlatformConfigStructuralTests
     }
 
     [Fact]
-    public void LoyaltyTierConfig_StaysTenantScoped_NoAnonymousReadPath_AC4()
+    public void LoyaltyTierConfig_IsTenantless_TheBrandsProgramme_AC4()
     {
-        // LoyaltyTierConfig is the same shape but has NO anonymous read path, so it stays
-        // ITenantEntity (untouched by this ticket). This pins that decision: if someone drops the
-        // interface from LoyaltyTierConfig too, that is a SEPARATE decision and this test catches it.
-        Assert.True(
+        // The brand's loyalty programme, sold identically by every operating company — the
+        // MembershipPlan sibling (ADR-0061 D7). Seeded once, read by every tenant.
+        Assert.False(
             typeof(ITenantEntity).IsAssignableFrom(typeof(LoyaltyTierConfig)),
-            "LoyaltyTierConfig must remain ITenantEntity — it has no anonymous read path, so the platform-config carve-out does not apply.");
+            "LoyaltyTierConfig is platform config (ADR-0061 D7): the tier thresholds and discounts are the brand's, not an operator's.");
     }
 }

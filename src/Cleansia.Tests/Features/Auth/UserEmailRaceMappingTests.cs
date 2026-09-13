@@ -18,8 +18,8 @@ namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
 /// ADR-0050 §D2 — the four <see cref="User"/>-creating writers all read-then-insert with no lock, so
-/// once <c>IX_Users_TenantId_Email</c> is armed with <c>NULLS NOT DISTINCT</c> the loser of a
-/// simultaneous registration stops silently creating a second row and starts raising 23505. Each writer
+/// under the global <c>IX_Users_Email</c> (ADR-0061 D5.1) the loser of a simultaneous registration
+/// stops silently creating a second row and starts raising 23505. Each writer
 /// flushes its own insert and maps that violation to the business error its own pre-check would have
 /// produced; without the mapping the fix would trade a silent duplicate for an unhandled 500, which is
 /// the worse user-facing outcome.
@@ -132,7 +132,7 @@ public class UserEmailRaceMappingTests
     [Fact]
     public async Task Register_Maps_The_Email_Unique_Violation_To_ExistingUserWithEmail()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
         CommitThrows(UniqueViolation());
 
         var result = await NewRegisterHandler().Handle(RegisterCommand(), CancellationToken.None);
@@ -149,7 +149,7 @@ public class UserEmailRaceMappingTests
     public async Task Register_Does_Not_Flush_On_The_Re_Registration_Path()
     {
         var existing = User.CreateWithPassword(Email, Password, "John", "Doe");
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
 
         var result = await NewRegisterHandler().Handle(RegisterCommand(), CancellationToken.None);
 
@@ -162,7 +162,7 @@ public class UserEmailRaceMappingTests
     [Fact]
     public async Task RegisterEmployee_Maps_The_Email_Unique_Violation_To_ExistingUserWithEmail()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
         CommitThrows(UniqueViolation());
 
         var result = await NewRegisterEmployeeHandler().Handle(RegisterEmployeeCommand(), CancellationToken.None);
@@ -225,7 +225,7 @@ public class UserEmailRaceMappingTests
     [Fact]
     public async Task Every_Writer_Flushes_Its_Insert_Once_On_The_Happy_Path()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
 
         Assert.True((await NewRegisterHandler().Handle(RegisterCommand(), CancellationToken.None)).IsSuccess);
         Assert.True((await NewRegisterEmployeeHandler().Handle(RegisterEmployeeCommand(), CancellationToken.None)).IsSuccess);

@@ -21,7 +21,7 @@ public sealed class AdminActionAuditModelMetadataTests
         using var ctx = new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
         var entityType = ctx.Model.FindEntityType(typeof(AdminActionAudit));
         Assert.NotNull(entityType);
@@ -98,11 +98,11 @@ public sealed class AdminActionAuditModelMetadataTests
     }
 
     [Fact]
-    public void TenantId_IsNullable_WithMaxLength26()
+    public void TenantId_IsRequired_WithMaxLength26()
     {
         var property = GetEntityType().FindProperty(nameof(AdminActionAudit.TenantId));
         Assert.NotNull(property);
-        Assert.True(property!.IsNullable);
+        Assert.False(property!.IsNullable);
         Assert.Equal(26, property.GetMaxLength());
     }
 

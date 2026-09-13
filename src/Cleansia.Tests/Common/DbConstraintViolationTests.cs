@@ -16,7 +16,7 @@ namespace Cleansia.Tests.Common;
 /// </summary>
 public class DbConstraintViolationTests
 {
-    private const string EmailIndex = "IX_Users_TenantId_Email";
+    private const string EmailIndex = "IX_Users_Email";
     private const string OtherIndex = "IX_Carts_UserId";
 
     private static DbUpdateException Wrap(Exception inner) => new("commit failed", inner);

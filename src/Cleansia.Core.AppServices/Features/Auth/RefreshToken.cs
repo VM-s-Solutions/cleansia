@@ -49,6 +49,7 @@ public class RefreshToken
         IEmployeeRepository employeeRepository,
         IRequestMetadataProvider requestMetadata,
         IJwtSettings jwtSettings,
+        ITenantProvider tenantProvider,
         TimeProvider timeProvider)
         : ICommandHandler<Command, JwtTokenResponse>
     {
@@ -92,6 +93,13 @@ public class RefreshToken
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
+            }
+
+            // The rotated RefreshToken row is stamped at the flush below; the request is anonymous, so
+            // the tenant is the user's (ADR-0061 D4).
+            if (!string.IsNullOrEmpty(user.TenantId))
+            {
+                tenantProvider.SetTenantOverride(user.TenantId);
             }
 
             // Persist the rotation only now that every accept/reject gate has passed — a rejected

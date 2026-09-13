@@ -51,7 +51,7 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private async Task SeedMembershipAsync(MembershipStatus status)
@@ -103,7 +103,7 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
         var resolver = new ExpressWaiverResolver(
             new UserMembershipRepository(ctx),
             new MembershipBenefitUsageRepository(
-                ctx, new FixedTenantProvider(null), new TestUserSessionProvider("system", "s@x.test")),
+                ctx, new FixedTenantProvider(TestTenants.Default), new TestUserSessionProvider("system", "s@x.test")),
             periodKeys.Object);
 
         var nowUtc = DateTime.UtcNow;

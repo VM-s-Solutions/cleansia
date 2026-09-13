@@ -28,8 +28,8 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class Ac13CrossTenantMembershipWriteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = HostTestTenants.A;
+    private const string TenantB = HostTestTenants.B;
 
     private sealed record Arranged(string OwnerId, string OwnerEmail);
 

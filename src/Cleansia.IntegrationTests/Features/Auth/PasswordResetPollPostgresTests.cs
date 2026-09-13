@@ -95,7 +95,7 @@ public class PasswordResetPollPostgresTests : BaseIntegrationTest
 
     private async Task SeedAsync()
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(TestTenants.Default);
 
         ctx.Add(Language.Create("en", "English"));
 
@@ -162,7 +162,7 @@ public class PasswordResetPollPostgresTests : BaseIntegrationTest
         // A cutoff newer than every reset instant leaves nothing in the horizon.
         var cutoff = Now.AddMinutes(1);
 
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(TestTenants.Default);
         var repo = new RefreshTokenRepository(ctx);
 
         var result = await repo.GetPasswordResetsSinceAsync(cutoff, CancellationToken.None);

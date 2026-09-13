@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260913080510_Initial")]
+    [Migration("20260913115255_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -86,6 +86,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -147,6 +148,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -226,6 +228,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -345,6 +348,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(500)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -458,6 +462,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
 
+                    b.Property<string>("OperatorTenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.Property<int?>("PayoutScheme")
                         .HasColumnType("integer");
 
@@ -539,6 +547,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_CountryConfigurations_IsDefaultMarket_Unique")
                         .HasFilter("\"IsDefaultMarket\" = true");
+
+                    b.HasIndex("OperatorTenantId");
 
                     b.HasIndex("TenantId");
 
@@ -655,6 +665,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -719,6 +730,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -932,6 +944,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(10)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -1020,6 +1033,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -1248,6 +1262,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -1341,6 +1356,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -1717,6 +1733,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -1851,6 +1868,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -1875,10 +1893,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("ServiceId", "PackageId");
 
-                    b.HasIndex("EmployeeId", "ServiceId", "PackageId", "CurrencyId")
+                    b.HasIndex("TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId")
                         .IsUnique();
 
-                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("EmployeeId", "ServiceId", "PackageId", "CurrencyId"), false);
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId"), false);
 
                     b.ToTable("EmployeePayConfigs");
                 });
@@ -1991,6 +2009,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -2077,6 +2096,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasDefaultValue(1);
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -2396,6 +2416,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -2464,6 +2485,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -2550,10 +2572,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.HasIndex("TenantId", "Tier")
+                    b.HasIndex("Tier")
                         .IsUnique();
-
-                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Tier"), false);
 
                     b.ToTable("LoyaltyTierConfigs", (string)null);
                 });
@@ -2609,6 +2629,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -2702,6 +2723,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -2784,6 +2806,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -2880,6 +2903,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -2940,6 +2964,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -3016,6 +3041,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -3268,6 +3294,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(64)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -3403,6 +3430,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -3516,6 +3544,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -3881,6 +3910,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -4069,6 +4099,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -4129,6 +4160,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -4279,6 +4311,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -4349,6 +4382,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("jsonb");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -4486,17 +4520,20 @@ namespace Cleansia.Infra.Database.Migrations
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderStatusTrack", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTimeOffset>("CreatedOn")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeactivatedBy")
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
@@ -4515,10 +4552,13 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<DateTimeOffset?>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
@@ -4526,6 +4566,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("OrderStatusHistory");
                 });
@@ -4871,6 +4913,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(255)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -4933,6 +4976,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -5059,6 +5103,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -5080,14 +5125,16 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("OrderId")
                         .IsUnique();
 
-                    b.HasIndex("ReceiptNumber")
-                        .IsUnique()
-                        .HasDatabaseName("IX_OrderReceipts_ReceiptNumber");
-
                     b.HasIndex("TenantId");
 
                     b.HasIndex("OrderId", "LanguageId")
                         .HasDatabaseName("IX_OrderReceipts_Order_Language");
+
+                    b.HasIndex("TenantId", "ReceiptNumber")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrderReceipts_TenantId_ReceiptNumber");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "ReceiptNumber"), false);
 
                     b.ToTable("OrderReceipts", (string)null);
                 });
@@ -5348,6 +5395,25 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("ServicePrices");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Tenancy.Tenant", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tenants", (string)null);
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Users.Address", b =>
                 {
                     b.Property<string>("Id")
@@ -5399,6 +5465,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("citext");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -5448,6 +5515,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -5646,6 +5714,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(500)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -5773,6 +5842,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(11)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -5847,6 +5917,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -5934,6 +6005,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -6023,6 +6095,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -6165,6 +6238,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(64)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -6183,6 +6257,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("ConfirmationCode")
                         .HasFilter("\"ConfirmationCode\" IS NOT NULL");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.HasIndex("GoogleId")
                         .HasFilter("\"GoogleId\" IS NOT NULL");
 
@@ -6195,11 +6272,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasFilter("\"ResetPasswordCode\" IS NOT NULL");
 
                     b.HasIndex("TenantId");
-
-                    b.HasIndex("TenantId", "Email")
-                        .IsUnique();
-
-                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Email"), false);
 
                     b.ToTable("Users");
                 });
@@ -6242,6 +6314,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -6309,6 +6382,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(64)");
 
                     b.Property<string>("TenantId")
+                        .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -6371,7 +6445,14 @@ namespace Cleansia.Infra.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Cleansia.Core.Domain.Tenancy.Tenant", "OperatorTenant")
+                        .WithMany()
+                        .HasForeignKey("OperatorTenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Country");
+
+                    b.Navigation("OperatorTenant");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Configuration.PropertySizePreset", b =>

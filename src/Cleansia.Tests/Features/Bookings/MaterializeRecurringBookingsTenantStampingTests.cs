@@ -97,23 +97,6 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         Assert.Equal(TenantB, await StatusTrackTenantOfAsync("tmpl-b"));
     }
 
-    /// <summary>
-    /// A legacy null-tenant template processed after a tenanted one must not inherit the override the
-    /// previous iteration set — the mirror of the clear-before-set half of the shape.
-    /// </summary>
-    [Fact]
-    public async Task A_Legacy_Null_Tenant_Template_Following_A_Tenanted_One_Stays_Null()
-    {
-        await SeedAsync(
-            Template("tmpl-a", "user-a", "saved-a", TenantA),
-            Template("tmpl-legacy", "user-legacy", "saved-legacy", tenantId: null));
-
-        await RunSweepAsync();
-
-        Assert.Equal(TenantA, await OrderTenantOfAsync("tmpl-a"));
-        Assert.Null(await OrderTenantOfAsync("tmpl-legacy"));
-    }
-
     private async Task<string?> OrderTenantOfAsync(string templateId)
     {
         await using var ctx = NewContext();

@@ -91,6 +91,8 @@ public static class BusinessErrorMessage
     public const string AddressLabelRequired = "address.label_required";
     public const string SavedAddressAlreadyExists = "address.already_exists";
     public const string OrderAddressExactlyOneRequired = "order.address_exactly_one_required";
+    /// <summary>The service address is served by another operating company than the caller's (ADR-0061 D6).</summary>
+    public const string OrderCountryOperatorMismatch = "order.country_operator_mismatch";
     public const string EmptyOrder = "order.empty";
     public const string InvalidSelectedPackage = "order.selected_package.invalid";
     public const string InvalidSelectedServices = "order.selected_services.invalid";
@@ -231,6 +233,8 @@ public static class BusinessErrorMessage
     /// sitting in the queue.
     /// </summary>
     public const string EmployeeDocumentsNotApproved = "employee.documents_not_approved";
+    /// <summary>The work country is operated by another company than the approving admin's (ADR-0061 D6).</summary>
+    public const string EmployeeWorkCountryOperatorMismatch = "employee.work_country_operator_mismatch";
     // RETAINED deliberately. No production code emits this any more (order actions now
     // use EmployeeNotApproved), but it is referenced by negative-assert tests proving it is NOT emitted,
     // and its "employee.documents_missing" locale key is STILL used by the frontend registration flow —
@@ -352,6 +356,8 @@ public static class BusinessErrorMessage
     public const string CountryInUse = "country.in_use";
     public const string CountryNotServiced = "country.not_serviced";
     public const string CountryRequired = "country.required";
+    /// <summary>The named (or default) market has no operating company behind it — a seed defect, not user input (ADR-0061 D3).</summary>
+    public const string TenantNotFound = "tenant.not_found";
     /// <summary>Two upper-case letters (ISO 3166-1 alpha-2), the form the market chip prints.</summary>
     public const string CountryIsoAlpha2Invalid = "country.iso_alpha2_invalid";
     /// <summary>Servicing a country needs a configuration whose default currency is switched on (ADR-0058 D7 gate 2).</summary>

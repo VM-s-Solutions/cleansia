@@ -42,7 +42,7 @@ public sealed class SavedAddressRepositorySoftDeleteTests : IDisposable
         return new CleansiaDbContext(
             options,
             NewSession(),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private async Task<(string ActiveId, string DeactivatedId)> SeedOneActiveOneDeactivatedAsync(bool deactivatedIsDefault)
@@ -122,9 +122,9 @@ public sealed class SavedAddressRepositorySoftDeleteTests : IDisposable
         Assert.NotNull(row.DeactivatedOn);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

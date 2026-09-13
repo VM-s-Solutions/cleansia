@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Receipts;
@@ -12,10 +14,11 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace Cleansia.Tests.Infrastructure;
 
 /// <summary>
-/// Single-tenant mode <b>is</b> <c>TenantId == null</c>, and PostgreSQL treats NULLs in a UNIQUE index
-/// as distinct — so a tenant-scoped unique index that is the sole arbiter of a concurrent claim does
-/// not fire at all in the platform's default deployment unless it is declared NULLS NOT DISTINCT
-/// (ADR-0035 AM-6, ADR-0034 D1.3, ADR-0038 §D5.2).
+/// PostgreSQL treats NULLs in a UNIQUE index as distinct — so a tenant-scoped unique index that is the
+/// sole arbiter of a concurrent claim fires only if it is declared NULLS NOT DISTINCT (ADR-0035 AM-6,
+/// ADR-0034 D1.3, ADR-0038 §D5.2). TenantId is NOT NULL on every stamped table since ADR-0061 D8, so
+/// the option is vacuous on the tenant term — it is kept because this roster reads the option, not
+/// the column, and the non-tenant nullable terms (EmployeeId, ServiceId, PackageId) still need it.
 ///
 /// <para>The option is one builder call and one annotation, invisible in a diff and silently
 /// consequence-free in every SQLite test. This asserts it on each index that must have it, so dropping
@@ -55,7 +58,12 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     [InlineData(typeof(PromoCodeRedemption), new[] { "TenantId", "PromoCodeId", "UserId", "SlotOrdinal" })]
     [InlineData(typeof(MembershipBenefitUsage),
         new[] { "TenantId", "UserId", "BenefitKind", "PeriodKey", "SlotOrdinal" })]
-    [InlineData(typeof(User), new[] { "TenantId", "Email" })]
+    [InlineData(typeof(LoyaltyTransaction), new[] { "TenantId", "IdempotencyKey" })]
+    [InlineData(typeof(PromoCode), new[] { "TenantId", "Code" })]
+    [InlineData(typeof(ReferralCode), new[] { "TenantId", "Code" })]
+    [InlineData(typeof(TenantConfiguration), new[] { "TenantId", "Key" })]
+    [InlineData(typeof(OrderReceipt), new[] { "TenantId", "ReceiptNumber" })]
+    [InlineData(typeof(EmployeePayConfig), new[] { "TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId" })]
     public void A_Sole_Arbiter_Unique_Index_Is_Declared_Nulls_Not_Distinct(Type entityClrType, string[] columns)
     {
         using var ctx = NewContext();

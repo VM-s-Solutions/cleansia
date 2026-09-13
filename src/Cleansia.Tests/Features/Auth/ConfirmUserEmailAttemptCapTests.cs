@@ -33,7 +33,7 @@ public class ConfirmUserEmailAttemptCapTests
     private static Mock<IUserRepository> RepoResolvingByHash(User user)
     {
         var repo = new Mock<IUserRepository>();
-        repo.Setup(r => r.GetByConfirmationCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.GetByConfirmationCodeIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string raw, CancellationToken _) =>
                 user.ConfirmationCode == SecurityTokens.Hash(raw) ? user : null);
         return repo;

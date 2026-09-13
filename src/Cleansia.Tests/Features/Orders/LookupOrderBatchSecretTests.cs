@@ -59,7 +59,7 @@ public class LookupOrderBatchSecretTests
     }
 
     private void SeedOrders(params Order[] orders) =>
-        _orderRepository.Setup(r => r.GetQueryable()).Returns(orders.AsQueryable().BuildMock());
+        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant()).Returns(orders.AsQueryable().BuildMock());
 
     private LookupOrderBatch.Handler CreateHandler() => new(_orderRepository.Object);
 
@@ -79,7 +79,7 @@ public class LookupOrderBatchSecretTests
 
         Assert.True(result.IsSuccess);
         Assert.Empty(result.Value!.Orders);
-        _orderRepository.Verify(r => r.GetQueryable(), Times.Never);
+        _orderRepository.Verify(r => r.GetQueryableIgnoringTenant(), Times.Never);
     }
 
     [Fact]

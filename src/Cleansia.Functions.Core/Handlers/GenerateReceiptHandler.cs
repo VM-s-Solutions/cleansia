@@ -118,7 +118,7 @@ public class GenerateReceiptHandler(
                 {
                     // ADR-0004 D-F4.1(b) — DB backstop. Two concurrent first-deliveries can both pass the
                     // guard above and both attempt this claim commit. A unique index makes the loser throw
-                    // PG 23505 — on EITHER IX_OrderReceipts_OrderId OR IX_OrderReceipts_ReceiptNumber.
+                    // PG 23505 — on EITHER IX_OrderReceipts_OrderId OR IX_OrderReceipts_TenantId_ReceiptNumber.
                     // Treat that as ALREADY-CLAIMED and collapse to an ACK: the winner owns the single
                     // row, the single register, and the single email; the loser must NOT throw (no poison
                     // loop) and its rolled-back transaction returns the allocated number to the pool.
@@ -187,7 +187,7 @@ public class GenerateReceiptHandler(
     /// ADR-0004 D-F4.1(b) — true when the <see cref="DbUpdateException"/> was caused by a Postgres
     /// unique-constraint violation (SQLSTATE 23505): the existing unique index rejecting a concurrent
     /// loser's claim insert, on EITHER <c>IX_OrderReceipts_OrderId</c> OR
-    /// <c>IX_OrderReceipts_ReceiptNumber</c>. Either is "already-claimed" → ack, not poison. Detected
+    /// <c>IX_OrderReceipts_TenantId_ReceiptNumber</c>. Either is "already-claimed" → ack, not poison. Detected
     /// provider-agnostically by duck-typing the inner exception's public <c>SqlState</c> property (this
     /// library carries no hard Npgsql reference), walking the whole inner chain because EF may wrap the
     /// provider exception more than one level deep. Mirrors

@@ -69,7 +69,7 @@ public class ConfirmUserEmailSecurityTests
     private static Mock<IUserRepository> RepoResolvingByHash(params User[] users)
     {
         var repo = new Mock<IUserRepository>();
-        repo.Setup(r => r.GetByConfirmationCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        repo.Setup(r => r.GetByConfirmationCodeIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string raw, CancellationToken _) =>
                 users.FirstOrDefault(u => u.ConfirmationCode == SecurityTokens.Hash(raw)));
         repo.Setup(r => r.GetByEmailIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

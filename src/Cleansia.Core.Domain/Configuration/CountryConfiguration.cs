@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Fiscal.Abstractions;
 
 namespace Cleansia.Core.Domain.Configuration;
@@ -113,6 +114,17 @@ public class CountryConfiguration : Auditable
     /// invariant: <c>GetMarkets</c> falls back to the default-currency rule when nothing is flagged.
     /// </summary>
     public bool IsDefaultMarket { get; private set; }
+
+    /// <summary>
+    /// The operating company that serves this market (ADR-0061 D2). Null means nobody does: GetMarkets
+    /// does not list the country and an anonymous write naming it fails <c>tenant.not_found</c>.
+    /// Seed-written; no admin writer until a second operator exists. Sits beside the future HomeRegion
+    /// seam (ADR-0017 D2/D3).
+    /// </summary>
+    [MaxLength(26)]
+    public string? OperatorTenantId { get; private set; }
+
+    public Tenant? OperatorTenant { get; private set; }
 
     public static CountryConfiguration Create(
         string countryId,
@@ -227,6 +239,12 @@ public class CountryConfiguration : Auditable
     public CountryConfiguration SetAsDefaultMarket(bool isDefaultMarket)
     {
         IsDefaultMarket = isDefaultMarket;
+        return this;
+    }
+
+    public CountryConfiguration AssignOperator(string? tenantId)
+    {
+        OperatorTenantId = tenantId;
         return this;
     }
 }

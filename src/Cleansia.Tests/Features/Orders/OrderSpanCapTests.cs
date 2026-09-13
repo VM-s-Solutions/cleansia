@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -296,7 +297,9 @@ public class OrderSpanCapTests
             // The validator prices what the COMMAND selects, which is the shared fixture's ids.
             CataloguePriceDoubles.Services(Czk, (CreateOrderTestData.ServiceId, 500m, 100m)),
             CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)),
-            Mock.Of<IPromoCodeService>());
+            Mock.Of<IPromoCodeService>(),
+            Mock.Of<IOperatorTenantResolver>(),
+            Mock.Of<ITenantProvider>());
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

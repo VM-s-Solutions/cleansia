@@ -41,7 +41,7 @@ public sealed class LiveActivityTokenRepositoryStaleSweepTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private static LiveActivityToken Token(string? orderId, DateTimeOffset lastUpdatedAt)
@@ -78,9 +78,9 @@ public sealed class LiveActivityTokenRepositoryStaleSweepTests : IDisposable
         Assert.Equal("ORDER-OLD", row.OrderId);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

@@ -52,7 +52,7 @@ public sealed class DisputeRepositoryOpenDisputeTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private async Task SeedAsync(DisputeStatus status)

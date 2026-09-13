@@ -56,7 +56,15 @@ RETURN ulid;
 END;
 $inner$ LANGUAGE plpgsql;
 
--- 2. LANGUAGES
+-- 2. TENANTS
+-- The operating companies under the holding (ADR-0061 D1). The first is the Czech s.r.o.; every
+-- stamped row below carries its id, and the CZE configuration names it as the market's operator.
+-- A second company is a second row here plus an OperatorTenantId on its country's configuration.
+INSERT INTO public."Tenants" ("Id", "IsActive", "Name")
+VALUES ('cleansia-cz', true, 'Cleansia CZ s.r.o.')
+ON CONFLICT ("Id") DO NOTHING;
+
+-- 2b. LANGUAGES
 INSERT INTO public."Languages" (
   "Id", "IsActive", "Code", "Name"
 )
@@ -827,7 +835,8 @@ CROSS JOIN (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1) c
 -- 24x error in what a cleaner is paid. BulkCreateEmployeePayConfigs joins the same way for the same
 -- reason. The rate is the JUNIOR template's multiplier (0.5), the same number that command uses for
 -- that grade — a starting point the admin tunes per entry or per cleaner, not a pricing decision made
--- in a seed file.
+-- in a seed file. Pay rates are the operator's money, so the rows are stamped with the operating
+-- company (ADR-0061 D7); an admin of another company reads and writes its own defaults.
 INSERT INTO public."EmployeePayConfigs" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
@@ -836,7 +845,7 @@ INSERT INTO public."EmployeePayConfigs" (
   "Description", "CurrencyId", "MinimumPay", "MaximumPay"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-       NULL, NULL, sp."ServiceId", NULL,
+       'cleansia-cz', NULL, sp."ServiceId", NULL,
        ROUND(sp."BasePrice" * 0.5, 2), ROUND(sp."PerRoomPrice" * 0.5, 2), 0, 0,
        'Platform-wide default (junior template)',
        sp."CurrencyId",
@@ -852,7 +861,7 @@ INSERT INTO public."EmployeePayConfigs" (
   "Description", "CurrencyId", "MinimumPay", "MaximumPay"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-       NULL, NULL, NULL, pp."PackageId",
+       'cleansia-cz', NULL, NULL, pp."PackageId",
        ROUND(pp."Price" * 0.5, 2), 0, 0, 0,
        'Platform-wide default (junior template)',
        pp."CurrencyId",
@@ -1046,6 +1055,9 @@ WHERE "CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'
 -- that market's figure on the admin country form (SVK's EUR figure is still his to write).
 -- "IsDefaultMarket" is what a customer surface pre-selects before any choice is made (Q-MARKET-01):
 -- exactly one row carries it (partial unique index), CZE today; SetDefaultMarket moves it.
+-- "OperatorTenantId" is the operating company that serves the market (ADR-0061 D2). Only CZE has one;
+-- a country whose row is NULL here is not listed by GetMarkets and refuses anonymous writes with
+-- tenant.not_found until a company is assigned to it.
 INSERT INTO public."CountryConfigurations" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
@@ -1056,7 +1068,7 @@ INSERT INTO public."CountryConfigurations" (
   "RegistrationNumberLabel", "RegistrationNumberFormat", "RegistrationNumberRequired",
   "VatNumberLabel", "VatNumberFormat", "VatNumberRequired",
   "DefaultPaymentGateway", "PayoutScheme",
-  "InsuranceCoverageAmount", "IsDefaultMarket"
+  "InsuranceCoverageAmount", "IsDefaultMarket", "OperatorTenantId"
 )
 VALUES
   -- Czech Republic — IČO (company ID) mandatory, DIČ (VAT ID) optional
@@ -1067,7 +1079,7 @@ VALUES
    'IČO', '^\d{8}$', true,
    'DIČ', '^CZ\d{8,10}$', false,
    'Stripe', 1,
-   1000000.00, true),
+   1000000.00, true, 'cleansia-cz'),
 
   -- Slovakia — IČO mandatory, IČ DPH (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1077,7 +1089,7 @@ VALUES
    'IČO', '^\d{8}$', true,
    'IČ DPH', '^SK\d{10}$', false,
    'Stripe', 1,
-   NULL, false),
+   NULL, false, NULL),
 
   -- Poland — NIP mandatory, EU VAT optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1087,7 +1099,7 @@ VALUES
    'NIP', '^\d{10}$', true,
    'VAT UE', '^PL\d{10}$', false,
    'Stripe', NULL,
-   NULL, false),
+   NULL, false, NULL),
 
   -- Germany — Steuernummer mandatory, USt-IdNr optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1097,7 +1109,7 @@ VALUES
    'Steuernummer', '^\d{10,13}$', true,
    'USt-IdNr', '^DE\d{9}$', false,
    'Stripe', NULL,
-   NULL, false),
+   NULL, false, NULL),
 
   -- Austria — Firmenbuchnummer mandatory, UID (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1107,7 +1119,7 @@ VALUES
    'Firmenbuchnummer', '^[A-Z]?\d{1,6}[a-z]?$', true,
    'UID-Nummer', '^ATU\d{8}$', false,
    'Stripe', NULL,
-   NULL, false),
+   NULL, false, NULL),
 
   -- United Kingdom — UTR mandatory, VAT number optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1117,7 +1129,7 @@ VALUES
    'UTR', '^\d{10}$', true,
    'VAT Number', '^GB\d{9}$', false,
    'Stripe', NULL,
-   NULL, false),
+   NULL, false, NULL),
 
   -- France — SIRET mandatory, TVA intracommunautaire optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1127,7 +1139,7 @@ VALUES
    'SIRET', '^\d{14}$', true,
    'TVA', '^FR[A-Z0-9]{2}\d{9}$', false,
    'Stripe', NULL,
-   NULL, false),
+   NULL, false, NULL),
 
   -- Italy — Codice Fiscale mandatory, Partita IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1137,7 +1149,7 @@ VALUES
    'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$', true,
    'Partita IVA', '^IT\d{11}$', false,
    'Stripe', NULL,
-   NULL, false),
+   NULL, false, NULL),
 
   -- Spain — NIF mandatory, NIF-IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1147,7 +1159,7 @@ VALUES
    'NIF', '^[A-Z]\d{7}[A-Z0-9]$', true,
    'NIF-IVA', '^ES[A-Z0-9]\d{7}[A-Z0-9]$', false,
    'Stripe', NULL,
-   NULL, false),
+   NULL, false, NULL),
 
   -- United States — EIN mandatory, no separate VAT
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1157,7 +1169,7 @@ VALUES
    'EIN', '^\d{2}-\d{7}$', true,
    NULL, NULL, false,
    'Stripe', NULL,
-   NULL, false);
+   NULL, false, NULL);
 
 -- ============================================================
 -- EMPLOYEE DOCUMENT REQUIREMENTS
@@ -1198,8 +1210,10 @@ ON CONFLICT ("CountryId", "DocumentType") DO NOTHING;
 -- ============================================================
 -- COMPANY INFO
 -- ============================================================
+-- The legal issuer on every receipt and invoice — literally the operating company, so the row is
+-- stamped with it (ADR-0061 D7). A second company seeds its own row under its own tenant id.
 INSERT INTO public."CompanyInfo" (
-    "Id", "LegalName", "TradingName", "Tagline",
+    "Id", "TenantId", "LegalName", "TradingName", "Tagline",
     "RegistrationNumber", "VatNumber", "IsVatPayer",
     "Street", "City", "ZipCode", "CountryId",
     "Phone", "Email", "Website",
@@ -1208,6 +1222,7 @@ INSERT INTO public."CompanyInfo" (
 )
 VALUES (
     generate_ulid()::TEXT,
+    'cleansia-cz',
     'Cleansia s.r.o.',
     'CLEANSIA',
     'Professional Cleaning Services',
@@ -1715,51 +1730,51 @@ VALUES
 -- LOYALTY TIER CONFIGS (Phase A defaults)
 -- ============================================================
 -- Idempotent inserts: each row is keyed by Tier so re-runs are safe.
--- TenantId NULL = single-tenant default (matches existing seed entries).
+-- The brand's programme, sold identically by every operating company: no tenant (ADR-0061 D7).
 -- DiscountPercent stored as a fraction in [0, 1] (e.g. 0.05 = 5%).
 INSERT INTO public."LoyaltyTierConfigs" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
-    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "DeactivatedBy", "DeactivatedOn",
     "Tier", "LifetimePointsThreshold", "DiscountPercent",
     "MinimumOrderAmountForDiscount", "PerksJson"
 )
-SELECT '01LTYBRONZE000000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01LTYBRONZE000000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     1, 0, 0.0000, NULL,
     '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"}]'
-WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 1 AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 1);
 
 INSERT INTO public."LoyaltyTierConfigs" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
-    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "DeactivatedBy", "DeactivatedOn",
     "Tier", "LifetimePointsThreshold", "DiscountPercent",
     "MinimumOrderAmountForDiscount", "PerksJson"
 )
-SELECT '01LTYSILVER000000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01LTYSILVER000000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     2, 500, 0.0500, 1000.00,
     '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_5_above_1000"}]'
-WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 2 AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 2);
 
 INSERT INTO public."LoyaltyTierConfigs" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
-    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "DeactivatedBy", "DeactivatedOn",
     "Tier", "LifetimePointsThreshold", "DiscountPercent",
     "MinimumOrderAmountForDiscount", "PerksJson"
 )
-SELECT '01LTYGOLD0000000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01LTYGOLD0000000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     3, 2000, 0.1000, NULL,
     '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_10"},{"icon":"support","labelKey":"loyalty.perks.priority_support"}]'
-WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 3 AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 3);
 
 INSERT INTO public."LoyaltyTierConfigs" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
-    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "DeactivatedBy", "DeactivatedOn",
     "Tier", "LifetimePointsThreshold", "DiscountPercent",
     "MinimumOrderAmountForDiscount", "PerksJson"
 )
-SELECT '01LTYPLATINUM0000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01LTYPLATINUM0000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     4, 5000, 0.1200, 1000.00,
     '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
-WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 4 AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 4);
 
 -- LOY-003 — keep the seed in sync with the live tier values. Idempotent
 -- UPDATE so re-running the seed against an existing DB picks up the new
@@ -1769,18 +1784,18 @@ WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 4 AND
 UPDATE public."LoyaltyTierConfigs"
    SET "DiscountPercent" = 0.0500,
        "MinimumOrderAmountForDiscount" = 1000.00
- WHERE "Tier" = 2 AND "TenantId" IS NULL;
+ WHERE "Tier" = 2;
 
 UPDATE public."LoyaltyTierConfigs"
    SET "DiscountPercent" = 0.1000,
        "MinimumOrderAmountForDiscount" = 1000.00
- WHERE "Tier" = 3 AND "TenantId" IS NULL;
+ WHERE "Tier" = 3;
 
 UPDATE public."LoyaltyTierConfigs"
    SET "DiscountPercent" = 0.1200,
        "MinimumOrderAmountForDiscount" = 1000.00,
        "PerksJson" = '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
- WHERE "Tier" = 4 AND "TenantId" IS NULL;
+ WHERE "Tier" = 4;
 
 -- ============================================================
 -- PROMO CODES (Phase B seed)
@@ -1788,7 +1803,7 @@ UPDATE public."LoyaltyTierConfigs"
 -- Idempotent inserts keyed on Code (which is unique per tenant).
 -- Type: 1 = PercentDiscount (uses DiscountPercent), 2 = FixedDiscount (uses DiscountAmount + CurrencyId).
 -- DiscountPercent stored as fraction in [0, 1] — backend renders as percentage.
--- All single-tenant defaults (TenantId NULL).
+-- A code gives away the operating company's money, so each is stamped with it (ADR-0061 D7).
 
 -- WELCOME15 — 15% off first booking, no minimum, single-use per user.
 INSERT INTO public."PromoCodes" (
@@ -1798,11 +1813,11 @@ INSERT INTO public."PromoCodes" (
     "MinimumOrderAmount", "MaxRedemptionsPerUser", "GlobalMaxRedemptions",
     "CurrentRedemptionsCount", "ValidFrom", "ValidUntil", "Description"
 )
-SELECT '01PROMOWELCOME150000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01PROMOWELCOME150000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'cleansia-cz',
     'WELCOME15', 1, 0.1500, NULL, NULL,
     NULL, 1, NULL,
     0, NULL, NULL, 'Welcome offer — 15% off the first booking. Single-use per user.'
-WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'WELCOME15' AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'WELCOME15' AND "TenantId" = 'cleansia-cz');
 
 -- SPRING20 — 20% off bookings >= 1500 CZK, single-use per user.
 INSERT INTO public."PromoCodes" (
@@ -1812,11 +1827,11 @@ INSERT INTO public."PromoCodes" (
     "MinimumOrderAmount", "MaxRedemptionsPerUser", "GlobalMaxRedemptions",
     "CurrentRedemptionsCount", "ValidFrom", "ValidUntil", "Description"
 )
-SELECT '01PROMOSPRING20000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01PROMOSPRING20000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'cleansia-cz',
     'SPRING20', 1, 0.2000, NULL, NULL,
     1500.00, 1, NULL,
     0, NULL, NULL, 'Seasonal — 20% off bookings of 1500 CZK or more.'
-WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'SPRING20' AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'SPRING20' AND "TenantId" = 'cleansia-cz');
 
 -- LOYAL10 — 10% off bookings >= 800 CZK, repeatable up to 5 times per user.
 -- Useful for return-customer marketing pushes.
@@ -1827,11 +1842,11 @@ INSERT INTO public."PromoCodes" (
     "MinimumOrderAmount", "MaxRedemptionsPerUser", "GlobalMaxRedemptions",
     "CurrentRedemptionsCount", "ValidFrom", "ValidUntil", "Description"
 )
-SELECT '01PROMOLOYAL100000000000B', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01PROMOLOYAL100000000000B', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'cleansia-cz',
     'LOYAL10', 1, 0.1000, NULL, NULL,
     800.00, 5, NULL,
     0, NULL, NULL, 'Return-customer offer — 10% off bookings of 800 CZK or more, up to 5 uses per user.'
-WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'LOYAL10' AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'LOYAL10' AND "TenantId" = 'cleansia-cz');
 
 -- ─── Cleansia Plus membership plans ───
 -- Two plans: monthly + yearly. The price and the Stripe Price id live on MembershipPlanPrices, one
@@ -1959,8 +1974,8 @@ WHERE ps."CountryId" = co."Id" AND ps."Code" NOT LIKE '%\_%';
 -- locking the seeded admin out.
 --
 -- Profile 100 = Administrator, AuthenticationType 1 = Internal (email + password, not Google/Apple).
--- TenantId NULL is the single-tenant default; IX_Users_TenantId_Email is NULLS NOT DISTINCT, so the
--- guard below really does prevent a duplicate rather than merely appearing to.
+-- TenantId is the operating company (ADR-0061 D5); the column is NOT NULL and IX_Users_Email is
+-- globally unique, so the guard below really does prevent a duplicate rather than merely appearing to.
 --
 -- THE GUARD IS "NO USERS AT ALL", not "this email is free". That is deliberate. The app's seeder can
 -- only run in Development, and execute-sql.yml now refuses this file against PRO — but a fixture
@@ -1982,7 +1997,7 @@ SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP,
        'Dev', 'Administrator',
        100, 1, true,
        0, 0, 0,
-       'en', NULL
+       'en', 'cleansia-cz'
 WHERE NOT EXISTS (SELECT 1 FROM public."Users");
 
 -- Constraints are checked at COMMIT when using SET CONSTRAINTS ALL DEFERRED

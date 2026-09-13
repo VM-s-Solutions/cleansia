@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Employees;
 
@@ -149,7 +150,8 @@ public class ApproveEmployeePayCoverageTests
 
         return new(
             _employees.Object, _countries.Object, _services.Object, _packages.Object,
-            _payConfigs.Object, _documentRequirements.Object, _currencyResolution.Object);
+            _payConfigs.Object, _documentRequirements.Object, _currencyResolution.Object,
+            Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>());
     }
 
     private ApproveEmployee.Handler CreateHandler()

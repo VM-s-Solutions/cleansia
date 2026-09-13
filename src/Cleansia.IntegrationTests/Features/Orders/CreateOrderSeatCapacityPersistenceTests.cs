@@ -133,7 +133,7 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
-        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default));
 
         context.Add(ServiceCity.Create(CountryId, City));
 

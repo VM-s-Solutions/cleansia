@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -198,7 +199,9 @@ public class QuoteOrderSpanCapTests
             OrderMarketDoubles.Trading(Czk),
             CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
             CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
-            Mock.Of<IPromoCodeService>());
+            Mock.Of<IPromoCodeService>(),
+            Mock.Of<IOperatorTenantResolver>(),
+            Mock.Of<ITenantProvider>());
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

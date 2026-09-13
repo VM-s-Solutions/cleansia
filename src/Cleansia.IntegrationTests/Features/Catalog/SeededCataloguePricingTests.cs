@@ -78,7 +78,7 @@ public class SeededCataloguePricingTests : IAsyncLifetime
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(_dataSource).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private static string ReadCanonicalSeedScript()
     {

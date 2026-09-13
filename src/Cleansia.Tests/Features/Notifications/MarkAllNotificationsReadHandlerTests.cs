@@ -39,7 +39,7 @@ public sealed class MarkAllNotificationsReadHandlerTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private static UserNotification Row(string eventKey, DateTimeOffset createdOn)
     {

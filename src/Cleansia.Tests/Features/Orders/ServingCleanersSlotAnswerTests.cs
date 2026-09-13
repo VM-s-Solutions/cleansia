@@ -216,7 +216,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider());
+            new FixedTenantProvider(TestTenants.Default));
 
     private void ArrangeActiveMembership() =>
         _membershipRepository
@@ -294,9 +294,9 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
         await ctx.CommitAsync(CancellationToken.None);
     }
 
-    private sealed class FixedTenantProvider : ITenantProvider
+    private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
-        private string? _tenantId;
+        private string? _tenantId = tenantId;
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;

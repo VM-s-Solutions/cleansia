@@ -10,7 +10,7 @@ namespace Cleansia.Tests.Features.Markets;
 
 /// <summary>
 /// The market directory (ADR-0058 D1–D2). A market is a serviced country joined to its configured,
-/// ACTIVE currency; the default market is the one whose configuration carries <c>IsDefaultMarket</c>
+/// ACTIVE currency and an operating company (ADR-0061 D2); the default market is the one whose configuration carries <c>IsDefaultMarket</c>
 /// (owner ruling 2026-09-13), else the one on the platform default currency. This is the
 /// anonymous read behind the landing page, so every configuration state below answers with a list
 /// and a log line — never a throw.
@@ -57,7 +57,7 @@ public class GetMarketsHandlerTests
 
     private Country Market(
         string name, string iso3, string iso2, string? currencyCode, decimal? insurance = null,
-        bool isDefaultMarket = false, bool isServiced = true)
+        bool isDefaultMarket = false, bool isServiced = true, string? operatorTenantId = "cleansia-cz")
     {
         var country = Country.Create(name, iso3, iso2, isServiced);
         country.Id = $"country-{iso3}";
@@ -71,6 +71,7 @@ public class GetMarketsHandlerTests
             var configuration = CountryConfiguration.Create(country.Id, currencyCode, "en", 0.2m);
             configuration.UpdateMarketContent(insurance);
             configuration.SetAsDefaultMarket(isDefaultMarket);
+            configuration.AssignOperator(operatorTenantId);
             _configurations.Setup(r => r.GetByCountryIdAsync(country.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(configuration);
             if (isDefaultMarket)
@@ -118,6 +119,26 @@ public class GetMarketsHandlerTests
         Assert.Equal(["CZE"], markets.Select(m => m.IsoCode));
         var warning = Assert.Single(_log, e => e.Level == LogLevel.Warning);
         Assert.Contains("SVK", warning.Message);
+    }
+
+    /// <summary>
+    /// A market nobody operates would fail every anonymous write naming it with tenant.not_found, so the
+    /// directory must not offer it, and must not choose it as the default (ADR-0061 D2).
+    /// </summary>
+    [Fact]
+    public async Task A_Market_With_No_Operating_Company_Is_Omitted_Logged_As_An_Error_And_Never_The_Default()
+    {
+        Currency("CZK", isDefault: true);
+        Currency("EUR");
+        Market("Czechia", "CZE", "CZ", "CZK", isDefaultMarket: true, operatorTenantId: null);
+        Market("Slovakia", "SVK", "SK", "EUR");
+
+        var markets = await Run();
+
+        Assert.Equal(["SVK"], markets.Select(m => m.IsoCode));
+        var error = Assert.Single(_log, e => e.Level == LogLevel.Error && e.Message.Contains("no operating company"));
+        Assert.Contains("CZE", error.Message);
+        Assert.DoesNotContain(markets, m => m.IsDefault && m.IsoCode == "CZE");
     }
 
     [Fact]

@@ -102,11 +102,11 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     }
 
     [Fact]
-    public async Task Single_Tenant_Rows_Stay_Visible_To_Both_Variants()
+    public async Task The_Callers_Own_Tenants_Rows_Are_Visible_To_Both_Variants()
     {
-        await SeedAssignedOrderInSlotAsync("ovl-tenant-null", tenantId: null);
+        await SeedAssignedOrderInSlotAsync("ovl-tenant-own", tenantId: TestTenants.Default);
 
-        Assert.True(await ProbeScopedAsync(callerTenantId: null));
+        Assert.True(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
         Assert.True(await ProbeIgnoringTenantAsync(callerTenantId: null));
     }
 
@@ -122,11 +122,11 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     {
         await SeedAssignedOrderInSlotAsync(
             "ovl-floor-longest",
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: SlotStart.AddMinutes(-(LongestProducibleOrderMinutes - 45)),
             estimatedMinutes: LongestProducibleOrderMinutes);
 
-        Assert.True(await ProbeScopedAsync(callerTenantId: null));
+        Assert.True(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
     }
 
     /// <summary>The floor's edge is inclusive — an order starting exactly on it is still evaluated.</summary>
@@ -135,11 +135,11 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     {
         await SeedAssignedOrderInSlotAsync(
             "ovl-floor-edge",
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: ProbeStart.AddHours(-Order.MaxOrderSpanHours),
             estimatedMinutes: (Order.MaxOrderSpanHours * 60) + 30);
 
-        Assert.True(await ProbeScopedAsync(callerTenantId: null));
+        Assert.True(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
     }
 
     /// <summary>
@@ -155,11 +155,11 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     {
         await SeedAssignedOrderInSlotAsync(
             "ovl-floor-beyond",
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: ProbeStart.AddHours(-Order.MaxOrderSpanHours).AddMinutes(-1),
             estimatedMinutes: (Order.MaxOrderSpanHours * 60) + 30);
 
-        Assert.False(await ProbeScopedAsync(callerTenantId: null));
+        Assert.False(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
     }
 
     private CleansiaDbContext NewContext(string? tenantId) =>
@@ -175,7 +175,7 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
         DateTime? cleaningDateTime = null,
         int estimatedMinutes = 120)
     {
-        await using (var schema = NewContext(tenantId: null))
+        await using (var schema = NewContext(tenantId: TestTenants.Default))
         {
             await schema.Database.EnsureCreatedAsync();
         }
@@ -194,7 +194,7 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using var verify = NewContext(tenantId: null);
+        await using var verify = NewContext(tenantId: TestTenants.Default);
         var stamped = await verify.Set<Order>().IgnoreQueryFilters().FirstAsync(o => o.Id == orderId);
         Assert.Equal(tenantId, stamped.TenantId);
     }

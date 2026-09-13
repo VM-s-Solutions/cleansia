@@ -35,7 +35,7 @@ public class RegisterEmployeeProfileUpgradeTests
     public async Task Existing_Unconfirmed_Customer_Is_Upgraded_To_Employee_Profile()
     {
         var user = User.CreateWithPassword(Email, Password, "John", "Doe");
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 
@@ -50,7 +50,7 @@ public class RegisterEmployeeProfileUpgradeTests
     public async Task Existing_Unconfirmed_Administrator_Is_Not_Downgraded()
     {
         var user = User.CreateWithPassword(Email, Password, "John", "Doe", UserProfile.Administrator);
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 
@@ -61,7 +61,7 @@ public class RegisterEmployeeProfileUpgradeTests
     [Fact]
     public async Task Fresh_User_Is_Created_With_Employee_Profile()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 

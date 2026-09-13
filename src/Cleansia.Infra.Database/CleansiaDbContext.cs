@@ -26,6 +26,7 @@ using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -320,6 +321,9 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<DisputeMessage> DisputeMessages { get; set; }
     public virtual DbSet<DisputeEvidence> DisputeEvidence { get; set; }
     public virtual DbSet<TenantConfiguration> TenantConfigurations { get; set; }
+
+    /// <summary>The operating companies every stamped row points at (ADR-0061 D1). Seed-only.</summary>
+    public virtual DbSet<Tenant> Tenants { get; set; }
     public virtual DbSet<CountryConfiguration> CountryConfigurations { get; set; }
 
     /// <summary>

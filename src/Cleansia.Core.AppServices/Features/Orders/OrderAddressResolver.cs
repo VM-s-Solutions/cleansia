@@ -55,7 +55,7 @@ public sealed class OrderAddressResolver(
         if (!string.IsNullOrEmpty(command.SavedAddressId))
         {
             var saved = await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken);
-            if (saved == null || (!string.IsNullOrEmpty(userId) && saved.UserId != userId))
+            if (saved == null || string.IsNullOrEmpty(userId) || saved.UserId != userId)
             {
                 return null;
             }
@@ -91,12 +91,9 @@ public sealed class OrderAddressResolver(
         if (!string.IsNullOrEmpty(command.SavedAddressId))
         {
             var saved = await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken);
-            if (saved == null)
-            {
-                return OrderAddressResolution.Fail(new Error(
-                    nameof(command.SavedAddressId), BusinessErrorMessage.NotFound));
-            }
-            if (!string.IsNullOrEmpty(userId) && saved.UserId != userId)
+            // A saved address belongs to a signed-in account. A guest has none, so a guest naming one is
+            // naming somebody else's; NotFound, the same answer a wrong id or another user's id gets.
+            if (saved == null || string.IsNullOrEmpty(userId) || saved.UserId != userId)
             {
                 return OrderAddressResolution.Fail(new Error(
                     nameof(command.SavedAddressId), BusinessErrorMessage.NotFound));

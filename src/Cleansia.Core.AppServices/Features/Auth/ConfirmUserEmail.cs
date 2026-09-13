@@ -132,14 +132,16 @@ public class ConfirmUserEmail
     // The single account-resolution seam BOTH the validator and the handler use (a validator/handler
     // query divergence is an NRE factory — see the RefreshToken post-mortem).
     //   - OTP: by email, anonymous path → tenant-ignoring (same posture as the ChangePassword reset
-    //     flow; email uniqueness is per-tenant, and the hash compare disambiguates in practice).
-    //   - Legacy 128-bit token: by code hash alone — safe only because 128 bits cannot be guessed
-    //     into someone else's account; kept so in-flight pre-OTP emails still confirm.
+    //     flow; email is one identity across the holding, ADR-0061 D5.1).
+    //   - Legacy 128-bit token: by code hash alone, tenant-ignoring — the link is clicked anonymously
+    //     while the row it confirms is stamped (ADR-0061 D4), and the pin is the server-issued hash,
+    //     which 128 bits cannot be guessed into someone else's account. Kept so in-flight pre-OTP
+    //     emails still confirm.
     private static Task<User?> Resolve(IUserRepository userRepository, Command command, CancellationToken cancellationToken)
     {
         if (!IsOtp(command.Code))
         {
-            return userRepository.GetByConfirmationCodeAsync(command.Code, cancellationToken);
+            return userRepository.GetByConfirmationCodeIgnoringTenantAsync(command.Code, cancellationToken);
         }
 
         return string.IsNullOrEmpty(command.Email)

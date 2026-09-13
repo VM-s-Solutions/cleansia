@@ -329,7 +329,7 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {

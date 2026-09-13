@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Markets.DTOs;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Exceptions;
@@ -9,9 +10,9 @@ namespace Cleansia.Core.AppServices.Features.Markets;
 
 /// <summary>
 /// The market directory behind every pre-address customer surface (ADR-0058 D1–D2): each serviced
-/// country whose configuration names an ACTIVE currency, with the one whose configuration carries
-/// <c>IsDefaultMarket</c> flagged <c>IsDefault</c> (owner ruling 2026-09-13); when
-/// nothing listed is flagged, the one on the platform default currency.
+/// country whose configuration names an ACTIVE currency and an operating company (ADR-0061 D2), with
+/// the one whose configuration carries <c>IsDefaultMarket</c> flagged <c>IsDefault</c> (owner ruling
+/// 2026-09-13); when nothing listed is flagged, the one on the platform default currency.
 ///
 /// <para>This is the anonymous read behind the landing page, so it never throws on a configuration
 /// state: a serviced country that fails the join is omitted and logged, and the default-market
@@ -20,6 +21,42 @@ namespace Cleansia.Core.AppServices.Features.Markets;
 public class GetMarkets
 {
     public record Request : IRequest<IReadOnlyList<MarketListItem>>;
+
+    public sealed record Market(CountryConfiguration Configuration, Currency Currency);
+
+    /// <summary>
+    /// The three predicates that make a serviced country a market (ADR-0058 D1): a configuration that
+    /// names a currency, and that currency switched on. Shared with <c>OperatorTenantResolver</c> so
+    /// the directory and the anonymous scope answer "is this a market?" from one place. Null when it
+    /// is not; the reason is logged, not returned — it is a configuration state, not user input.
+    /// </summary>
+    public static async Task<Market?> ResolveMarketAsync(
+        Country country,
+        ICountryConfigurationRepository countryConfigurationRepository,
+        ICurrencyRepository currencyRepository,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        var configuration = await countryConfigurationRepository.GetByCountryIdAsync(country.Id, cancellationToken);
+        if (string.IsNullOrWhiteSpace(configuration?.DefaultCurrencyCode))
+        {
+            logger.LogWarning(
+                "Market {IsoCode} is serviced but has no configuration naming a currency; it is not listed",
+                country.IsoCode);
+            return null;
+        }
+
+        var currency = await currencyRepository.GetByCodeAsync(configuration.DefaultCurrencyCode, cancellationToken);
+        if (currency is null || !currency.IsActive)
+        {
+            logger.LogWarning(
+                "Market {IsoCode} is serviced but its configured currency {CurrencyCode} is {State}; it is not listed",
+                country.IsoCode, configuration.DefaultCurrencyCode, currency is null ? "unknown" : "inactive");
+            return null;
+        }
+
+        return new Market(configuration, currency);
+    }
 
     public class Handler(
         ICountryRepository countryRepository,
@@ -35,21 +72,22 @@ public class GetMarkets
 
             foreach (var country in countries)
             {
-                var configuration = await countryConfigurationRepository.GetByCountryIdAsync(country.Id, cancellationToken);
-                if (string.IsNullOrWhiteSpace(configuration?.DefaultCurrencyCode))
+                var resolved = await ResolveMarketAsync(
+                    country, countryConfigurationRepository, currencyRepository, logger, cancellationToken);
+                if (resolved is null)
                 {
-                    logger.LogWarning(
-                        "Market {IsoCode} is serviced but has no configuration naming a currency; it is not listed",
-                        country.IsoCode);
                     continue;
                 }
 
-                var currency = await currencyRepository.GetByCodeAsync(configuration.DefaultCurrencyCode, cancellationToken);
-                if (currency is null || !currency.IsActive)
+                var (configuration, currency) = resolved;
+
+                // A market nobody operates is a seed defect, not a market: every anonymous write naming
+                // it would fail tenant.not_found, so the picker must not offer it (ADR-0061 D2).
+                if (configuration.OperatorTenantId is null)
                 {
-                    logger.LogWarning(
-                        "Market {IsoCode} is serviced but its configured currency {CurrencyCode} is {State}; it is not listed",
-                        country.IsoCode, configuration.DefaultCurrencyCode, currency is null ? "unknown" : "inactive");
+                    logger.LogError(
+                        "Market {IsoCode} is serviced, configured and currency-active but no operating company serves it; it is not listed",
+                        country.IsoCode);
                     continue;
                 }
 

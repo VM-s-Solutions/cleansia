@@ -41,7 +41,7 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private async Task ResetAsync()
@@ -123,7 +123,7 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
             new CreditAccountRepository(ctx),
             new NoRefunds(),
             new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
-            new FixedTenantProvider(tenantId: null),
+            new FixedTenantProvider(TestTenants.Default),
             ctx,
             NullLogger<CancelUnfilledOrders.Handler>.Instance);
 

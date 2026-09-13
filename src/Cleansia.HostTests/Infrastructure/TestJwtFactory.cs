@@ -11,7 +11,8 @@ namespace Cleansia.HostTests.Infrastructure;
 /// <c>TokenService.GenerateAccessToken</c> + <c>AuthExtensions.SetClaims</c> emit (HMAC-SHA256 over
 /// <c>JwtSettings:Secret</c>, issuer <c>cleansia</c>, the host's audience, and the
 /// <see cref="ClaimTypes.NameIdentifier"/> / <see cref="ClaimTypes.Email"/> / <see cref="ClaimTypes.Role"/>
-/// / <c>tenant_id</c> / <c>employee_id</c> claims). Because it carries the genuine claims, the host's
+/// / <c>tenant_id</c> / <c>employee_id</c> claims; the tenant defaults to <see cref="HostTestTenants.Default"/>,
+/// the company every seeded row lands in). Because it carries the genuine claims, the host's
 /// real <c>AddJwt</c> bearer validation accepts it and the real <c>AddCleansiaAuthorization</c>
 /// policies + the handler's <c>IUserSessionProvider</c>/<c>OrderAccessService</c> see the true caller —
 /// so the test exercises the full auth + authz pipeline, not a stubbed principal.
@@ -31,7 +32,7 @@ public static class TestJwtFactory
         string email,
         UserProfile profile,
         string? employeeId = null,
-        string? tenantId = null)
+        string? tenantId = HostTestTenants.Default)
     {
         var claims = new List<Claim>
         {

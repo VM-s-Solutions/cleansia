@@ -44,7 +44,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private async Task<(string ActiveServiceId, string RetiredServiceId, string ActivePackageId, string RetiredPackageId)> SeedAsync()
@@ -173,9 +173,9 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         Assert.Contains(all, p => p.Id == retiredPackageId);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

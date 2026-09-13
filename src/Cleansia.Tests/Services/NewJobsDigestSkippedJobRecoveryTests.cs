@@ -165,7 +165,7 @@ public sealed class NewJobsDigestSkippedJobRecoveryTests : IDisposable
 
     private async Task<SweepOutcome> RunSweepAsync()
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
 
         var pushes = new List<Dictionary<string, string>>();
         var producer = new Mock<INotificationProducer>();
@@ -207,7 +207,7 @@ public sealed class NewJobsDigestSkippedJobRecoveryTests : IDisposable
 
     private async Task<DateTimeOffset?> ReadWatermarkAsync()
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
         var employee = await ctx.Set<Employee>()
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -220,12 +220,12 @@ public sealed class NewJobsDigestSkippedJobRecoveryTests : IDisposable
         IReadOnlyCollection<(string Id, DateTime CleaningDateTime)>? commitments = null,
         bool muted = false)
     {
-        await using (var schema = NewContext(tenantId: null))
+        await using (var schema = NewContext(tenantId: TestTenants.Default))
         {
             await schema.Database.EnsureCreatedAsync();
         }
 
-        await using var seed = NewContext(tenantId: null);
+        await using var seed = NewContext(tenantId: TestTenants.Default);
 
         var user = User.CreateWithPassword(
             "recovery.cleaner@cleansia.test", "Test-password-1!", "Rita", "Recovery", UserProfile.Employee);
@@ -264,7 +264,7 @@ public sealed class NewJobsDigestSkippedJobRecoveryTests : IDisposable
 
     private async Task CancelCommitmentAsync(string orderId, DateTimeOffset cancelledAt)
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
         var order = await ctx.Set<Order>()
             .IgnoreQueryFilters()
             .Include(o => o.OrderStatusHistory)

@@ -38,7 +38,7 @@ public sealed class CatalogInUseCartGuardTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private async Task<(string CartedServiceId, string FreeServiceId, string CartedPackageId, string FreePackageId)> SeedAsync()
@@ -118,9 +118,9 @@ public sealed class CatalogInUseCartGuardTests : IDisposable
         Assert.False(inUse);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

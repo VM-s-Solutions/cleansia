@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -20,12 +21,15 @@ public class Register
     public class Validator : BaseAuthValidator<Command>
     {
         private readonly IUserRepository _userRepository;
+        private readonly ITenantProvider _tenantProvider;
 
         public Validator(
             IUserRepository userRepository,
-            ILanguageRepository languageRepository)
+            ILanguageRepository languageRepository,
+            ITenantProvider tenantProvider)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _tenantProvider = tenantProvider;
 
             AddEmailRules(command => command.Email);
             AddFirstNameRules(command => command.FirstName);
@@ -45,10 +49,15 @@ public class Register
                 .SetValidator(new LanguageValidator(languageRepository));
         }
 
+        // One identity per email across the holding (ADR-0061 D5.1): the pre-check ignores the tenant
+        // so the refusal is a 400 before the flush rather than a mapped 23505 after it. An unconfirmed
+        // row may be re-registered (the handler refreshes its code) only in the market this request
+        // was scoped to — a visitor never silently re-registers into a company they did not choose.
         private async Task<bool> UserWithEmailNotExistsAsync(string email, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
-            return user is null || !user.IsEmailConfirmed;
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+            return user is null
+                || (!user.IsEmailConfirmed && user.TenantId == _tenantProvider.GetCurrentTenantId());
         }
     }
 
@@ -61,8 +70,10 @@ public class Register
         // Optional referral code entered by the customer at signup. Empty
         // when the user signed up directly. Validated + accepted server-side
         // after the user is created — bad codes do NOT block registration.
-        string? ReferralCode = null)
-        : ICommand;
+        string? ReferralCode = null,
+        // The market the visitor registers with; null is the default market (ADR-0061 D3).
+        string? CountryId = null)
+        : ICommand, IOperatorScopedRequest;
 
     public class Handler(
         ICartRepository cartRepository,
@@ -74,7 +85,8 @@ public class Register
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
-            var userEntity = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            // Same resolution the validator proved: a non-null row here is unconfirmed and in this market.
+            var userEntity = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
             // Email the RAW token; the entity persists only its hash. The raw is
             // surfaced by CreateWithPassword (transient RawConfirmationToken) and returned by
             // UpdateConfirmationCode — never read back off the persisted (hashed) column.
@@ -87,9 +99,9 @@ public class Register
                 cartRepository.Add(Cart.CreateWithUser(userEntity));
 
                 // The validator's pre-check and this insert cross a snapshot boundary with no lock, so
-                // (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous registrations
-                // (ADR-0050). FLUSH here and own the loser's 23505: the pipeline commit runs after this
-                // handler returns, where the same violation can only surface as a 500 (S7b).
+                // the global Email UNIQUE index is what actually arbitrates two simultaneous registrations
+                // (ADR-0050 D2, ADR-0061 D5.1). FLUSH here and own the loser's 23505: the pipeline commit
+                // runs after this handler returns, where the same violation can only surface as a 500 (S7b).
                 try
                 {
                     await userRepository.CommitAsync(cancellationToken);

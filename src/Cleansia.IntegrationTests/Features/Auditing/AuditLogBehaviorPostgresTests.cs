@@ -44,7 +44,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
     private CleansiaDbContext NewContext() =>
         new(new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(Fixture.GetConnectionString()).Options,
             AdminSession(),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private static IUserSessionProvider AdminSession() =>
         new TestUserSessionProvider("admin-1", "admin@cleansia.test",
@@ -120,7 +120,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
     }
 
     private IAuditFailureSink Sink() =>
-        new OutOfBandAuditFailureSink(new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(null));
+        new OutOfBandAuditFailureSink(new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default));
 
     private static async Task<int> AuditRowCount(CleansiaDbContext ctx) =>
         await ctx.AdminActionAudits.IgnoreQueryFilters().CountAsync();
@@ -144,7 +144,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
 
         await using (var ctx = NewContext())
         {
-            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(null));
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
             var result = await RunThroughPipelineAsync(ctx, writer, Sink(), ct =>
             {
                 ctx.OutboxMessages.Add(OutboxMessage.Create(QueueNames.GenerateReceipt, "receipt:ORD-1", "{}", null));
@@ -193,7 +193,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
 
         await using (var ctx = NewContext())
         {
-            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(null));
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
             var result = await RunThroughPipelineAsync(ctx, writer, Sink(), ct =>
                 Task.FromResult(BusinessResult.Failure(new Error("refund.too_large", "exceeds total"))));
             Assert.True(result.IsFailure);
@@ -213,7 +213,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
 
         await using (var ctx = NewContext())
         {
-            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(null));
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 RunThroughPipelineAsync(ctx, writer, Sink(),
                     _ => Task.FromException<BusinessResult>(new InvalidOperationException("boom"))));
@@ -232,7 +232,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
 
         await using (var ctx = NewContext())
         {
-            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(null));
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
             var result = await RunThroughFullPipelineAsync(ctx, writer, Sink(), new RejectingValidator(), ct =>
             {
                 // The handler must never run on a validation reject — proves the row came from the
@@ -311,7 +311,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
                 ? new CleansiaDbContext(
                     new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(connectionString).Options,
                     new TestUserSessionProvider("admin-1", "admin@cleansia.test"),
-                    new FixedTenantProvider(null))
+                    new FixedTenantProvider(TestTenants.Default))
                 : null;
     }
 

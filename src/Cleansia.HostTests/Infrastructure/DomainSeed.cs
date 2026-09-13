@@ -14,9 +14,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.HostTests.Infrastructure;
 
 /// <summary>
-/// Builds the entity graphs the authz ACs need, written through a real host DbContext. All builders
-/// leave <c>TenantId</c> null (single-tenant) unless a <paramref name="tenantId"/> is supplied (the
-/// cross-tenant AC). Reference data (Country / Currency / Language) is created on demand and de-duped.
+/// Builds the entity graphs the authz ACs need, written through a real host DbContext. A builder stamps
+/// <c>TenantId</c> only when one is supplied (the cross-tenant ACs); otherwise the row is stamped at
+/// commit by <see cref="AuthzHostTestBase.SeedAsync"/> with <see cref="HostTestTenants.Default"/>.
+/// Reference data (Country / Currency / Language / the CZ market and its operator) is created on demand
+/// and de-duped.
 /// </summary>
 public static class DomainSeed
 {
@@ -51,9 +53,14 @@ public static class DomainSeed
 
         // A cleaner is paid in the currency of the country they work in, and the resolver throws for a
         // country with no configuration; every approved cleaner below works in this country.
+        // The market's operating company (ADR-0061 D2): an anonymous register / guest booking with no
+        // country resolves to this market and lands in HostTestTenants.Default.
         if (!await ctx.CountryConfigurations.IgnoreQueryFilters().AnyAsync(c => c.CountryId == CountryId))
         {
-            ctx.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m));
+            ctx.CountryConfigurations.Add(
+                CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m)
+                    .AssignOperator(HostTestTenants.Default)
+                    .SetAsDefaultMarket(true));
         }
     }
 

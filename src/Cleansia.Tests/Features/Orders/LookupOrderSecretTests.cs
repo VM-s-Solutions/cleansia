@@ -71,7 +71,7 @@ public class LookupOrderSecretTests
     }
 
     private void SeedOrder(Order order) =>
-        _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant()).Returns(new[] { order }.AsQueryable().BuildMock());
 
     private LookupOrder.Handler CreateHandler() => new(_orderRepository.Object);
 

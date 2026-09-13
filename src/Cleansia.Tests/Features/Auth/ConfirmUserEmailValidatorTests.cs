@@ -72,7 +72,7 @@ public class ConfirmUserEmailValidatorTests
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
         const string validCode = "validCode";
-        mockRepo.Setup(r => r.GetByConfirmationCodeAsync(validCode, It.IsAny<CancellationToken>()))
+        mockRepo.Setup(r => r.GetByConfirmationCodeIgnoringTenantAsync(validCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMockFactory.Generate(new UserMockFactory.UserPartial { ConfirmationCode = validCode, ConfirmationCodeExpiresAt = DateTimeOffset.UtcNow }));
         mockRepo.Setup(r => r.TryChargeConfirmationCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -95,7 +95,7 @@ public class ConfirmUserEmailValidatorTests
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
         const string validCode = "validCode";
-        mockRepo.Setup(r => r.GetByConfirmationCodeAsync(validCode, It.IsAny<CancellationToken>()))
+        mockRepo.Setup(r => r.GetByConfirmationCodeIgnoringTenantAsync(validCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMockFactory.Generate(new UserMockFactory.UserPartial { ConfirmationCode = validCode, ConfirmationCodeExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15) }));
         mockRepo.Setup(r => r.TryChargeConfirmationCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);

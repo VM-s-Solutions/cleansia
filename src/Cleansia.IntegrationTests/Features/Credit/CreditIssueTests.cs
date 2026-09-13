@@ -34,7 +34,7 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private async Task ResetAsync()

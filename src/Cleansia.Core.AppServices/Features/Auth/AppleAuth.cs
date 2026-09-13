@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -59,8 +60,12 @@ public class AppleAuth
         string RawNonce,
         string? FirstName,
         string? LastName,
-        bool TermsAccepted = false)
-        : ICommand<JwtTokenResponse>;
+        bool TermsAccepted = false,
+        // The market a first sign-in provisions into; null is the default market (ADR-0061 D3). An
+        // existing account keeps its own operator: TokenService re-scopes to it before the token is
+        // minted.
+        string? CountryId = null)
+        : ICommand<JwtTokenResponse>, IOperatorScopedRequest;
 
     public class Handler(
         IAppleTokenVerifier appleTokenVerifier,
@@ -119,7 +124,7 @@ public class AppleAuth
                 // Apple login from binding into an existing password (Internal) OR Google account that
                 // shares this verified email (the verified-email-collision takeover Google's hardening
                 // closed). A sub-matched account keeps its stored email untouched: rewriting it would
-                // collide with the (TenantId, Email) unique index and silently merge two accounts.
+                // collide with the global Email unique index and silently merge two accounts.
                 // The rejection names the provider the colliding account ACTUALLY uses (the same switch
                 // the password login uses) — telling a Google user to "sign in with your email and
                 // password" sends them to a dead end. No extra disclosure: the caller already holds a
@@ -192,8 +197,8 @@ public class AppleAuth
             cartRepository.Add(Cart.CreateWithUser(userEntity));
 
             // The resolve-by-email fallback above and this insert cross a snapshot boundary with no
-            // lock, so (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous
-            // provisionings of the same verified address (ADR-0050). FLUSH here and own the loser's
+            // lock, so the global Email UNIQUE index is what actually arbitrates two simultaneous
+            // provisionings of the same verified address (ADR-0050 D2). FLUSH here and own the loser's
             // 23505 — and do it BEFORE minting a JWT, so no token is issued for a row that was rejected.
             try
             {

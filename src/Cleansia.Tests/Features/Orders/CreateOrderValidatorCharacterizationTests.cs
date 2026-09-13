@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -95,7 +96,9 @@ public class CreateOrderValidatorCharacterizationTests
             OrderMarketDoubles.Trading(Czk, ("cz", Czk), (Slovakia, Eur), (Hungary, Huf)),
             servicePrices ?? PricedServices(Czk, Eur),
             packagePrices ?? PricedPackages(Czk, Eur),
-            _promoCodeService.Object);
+            _promoCodeService.Object,
+            Mock.Of<IOperatorTenantResolver>(),
+            Mock.Of<ITenantProvider>());
 
     private static IServicePriceRepository PricedServices(params Currency[] currencies)
     {

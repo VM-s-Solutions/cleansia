@@ -32,7 +32,7 @@ public sealed class CatalogInUseTemplateGuardTests : IDisposable
 
     public void Dispose() => _connection.Dispose();
 
-    private CleansiaDbContext NewContext(string? tenantId = null)
+    private CleansiaDbContext NewContext(string? tenantId = TestTenants.Default)
     {
         var options = new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseSqlite(_connection)

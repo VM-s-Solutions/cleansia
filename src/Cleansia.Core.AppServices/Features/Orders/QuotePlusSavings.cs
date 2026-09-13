@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -40,7 +41,7 @@ public static class QuotePlusSavings
         IEnumerable<string>? SelectedExtraSlugs = null,
         DateTime? CleaningDate = null,
         /// <summary>The service address's country -- see <see cref="QuoteOrder.Command.CountryId"/>.</summary>
-        string? CountryId = null) : IQuery<Response>;
+        string? CountryId = null) : IQuery<Response>, IOperatorScopedRequest;
 
     public record Response(
         /// <summary>What the plan's discount is worth on this basket, in the charge currency.</summary>

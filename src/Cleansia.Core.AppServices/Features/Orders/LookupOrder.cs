@@ -68,7 +68,10 @@ public class LookupOrder
     {
         public async Task<BusinessResult<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var order = await orderRepository.GetQueryable()
+            // An anonymous read keyed on a secret (ADR-0051's bypass-and-re-pin cell): a guest who booked
+            // under operator A must find the order without knowing which operator that was, so the read
+            // ignores the tenant and the (number, email, code) predicate below is the pin.
+            var order = await orderRepository.GetQueryableIgnoringTenant()
                 .Include(o => o.Currency)
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.SelectedServices)

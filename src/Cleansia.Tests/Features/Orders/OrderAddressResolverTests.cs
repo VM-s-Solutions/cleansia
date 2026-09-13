@@ -87,6 +87,34 @@ public class OrderAddressResolverTests
         Assert.Equal(BusinessErrorMessage.NotFound, result.Failure!.Message);
     }
 
+    /// <summary>
+    /// A guest has no account and so no saved addresses; a SavedAddressId on a guest booking can only
+    /// name another customer's row. Refused as NotFound — the same answer a wrong id or another
+    /// user's id gets — on both the address read and the country read the validator takes first.
+    /// </summary>
+    [Fact]
+    public async Task SavedAddress_NamedByAGuest_ReturnsNotFound()
+    {
+        ArrangeSavedAddress("saved-1", ownerUserId: "some-customer");
+        var command = CreateOrderTestData.ValidCommand(savedAddressId: "saved-1");
+
+        var result = await CreateResolver().ResolveAsync(command, userId: string.Empty, CancellationToken.None);
+
+        Assert.Null(result.Address);
+        Assert.Equal(BusinessErrorMessage.NotFound, result.Failure!.Message);
+    }
+
+    [Fact]
+    public async Task CountryOf_SavedAddress_NamedByAGuest_IsNull()
+    {
+        ArrangeSavedAddress("saved-1", ownerUserId: "some-customer",
+            resolved: AddressMockFactory.Generate(new AddressMockFactory.AddressPartial { CountryId = "sk" }));
+        var command = CreateOrderTestData.ValidCommand(savedAddressId: "saved-1");
+
+        Assert.Null(await CreateResolver().ResolveCountryIdAsync(command, userId: null, CancellationToken.None));
+        Assert.Null(await CreateResolver().ResolveCountryIdAsync(command, userId: string.Empty, CancellationToken.None));
+    }
+
     [Fact]
     public async Task SavedAddress_CountryNoLongerServiced_ReturnsCountryNotServiced()
     {

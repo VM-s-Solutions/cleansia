@@ -23,8 +23,8 @@ public sealed class UserRepositoryTenantLoginLockoutTests : IDisposable
     private const string Tenant = "tenant-1";
     private const string TenantUserId = "user-tenant";
     private const string TenantEmail = "tenant-user@cleansia.test";
-    private const string NullTenantUserId = "user-null";
-    private const string NullTenantEmail = "null-user@cleansia.test";
+    private const string DefaultTenantUserId = "user-default";
+    private const string DefaultTenantEmail = "default-user@cleansia.test";
 
     private readonly SqliteConnection _connection;
 
@@ -48,19 +48,19 @@ public sealed class UserRepositoryTenantLoginLockoutTests : IDisposable
     }
 
     /// <summary>
-    /// Seeds one null-tenant user (single-tenant baseline) and one tenant-stamped user. The tenant
-    /// user is committed under a tenant-carrying context so <c>CommitAsync</c> stamps its TenantId —
-    /// exactly what a migrated multi-tenant account looks like.
+    /// Seeds one user of the default operating company and one of another tenant. Each is committed
+    /// under its tenant's context so <c>CommitAsync</c> stamps its TenantId — exactly what two
+    /// companies' accounts look like (ADR-0061 D8: every row is stamped).
     /// </summary>
     private async Task SeedAsync()
     {
-        await using (var ctx = NewContext(tenantId: null))
+        await using (var ctx = NewContext(TestTenants.Default))
         {
             await ctx.Database.EnsureCreatedAsync();
             ctx.Add(Language.Create("en", "English"));
 
-            var nullTenantUser = User.CreateWithPassword(NullTenantEmail, "Passw0rd!", "Null", "Tenant");
-            nullTenantUser.Id = NullTenantUserId;
+            var nullTenantUser = User.CreateWithPassword(DefaultTenantEmail, "Passw0rd!", "Null", "Tenant");
+            nullTenantUser.Id = DefaultTenantUserId;
             ctx.Add(nullTenantUser);
 
             await ctx.CommitAsync(CancellationToken.None);
@@ -99,15 +99,15 @@ public sealed class UserRepositoryTenantLoginLockoutTests : IDisposable
     }
 
     [Fact]
-    public async Task GetByEmailIgnoringTenantAsync_AnonymousRequest_StillFindsTheNullTenantUser()
+    public async Task GetByEmailIgnoringTenantAsync_AnonymousRequest_StillFindsTheDefaultTenantUser()
     {
         await SeedAsync();
 
         await using var ctx = NewContext(tenantId: null);
-        var user = await new UserRepository(ctx).GetByEmailIgnoringTenantAsync(NullTenantEmail, CancellationToken.None);
+        var user = await new UserRepository(ctx).GetByEmailIgnoringTenantAsync(DefaultTenantEmail, CancellationToken.None);
 
         Assert.NotNull(user);
-        Assert.Equal(NullTenantUserId, user.Id);
+        Assert.Equal(DefaultTenantUserId, user.Id);
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class UserRepositoryTenantLoginLockoutTests : IDisposable
         var repository = new UserRepository(ctx);
 
         Assert.True(await repository.ExistsWithEmailIgnoringTenantAsync(TenantEmail, CancellationToken.None));
-        Assert.True(await repository.ExistsWithEmailIgnoringTenantAsync(NullTenantEmail, CancellationToken.None));
+        Assert.True(await repository.ExistsWithEmailIgnoringTenantAsync(DefaultTenantEmail, CancellationToken.None));
         Assert.False(await repository.ExistsWithEmailIgnoringTenantAsync("nobody@cleansia.test", CancellationToken.None));
     }
 
@@ -152,16 +152,16 @@ public sealed class UserRepositoryTenantLoginLockoutTests : IDisposable
     }
 
     [Fact]
-    public async Task RecordFailedLoginAsync_AnonymousRequest_StillIncrementsTheNullTenantUser()
+    public async Task RecordFailedLoginAsync_AnonymousRequest_StillIncrementsTheDefaultTenantUser()
     {
         await SeedAsync();
 
         await using (var ctx = NewContext(tenantId: null))
         {
-            await new UserRepository(ctx).RecordFailedLoginAsync(NullTenantEmail, DateTimeOffset.UtcNow, CancellationToken.None);
+            await new UserRepository(ctx).RecordFailedLoginAsync(DefaultTenantEmail, DateTimeOffset.UtcNow, CancellationToken.None);
         }
 
-        var user = await LoadIgnoringFiltersAsync(NullTenantUserId);
+        var user = await LoadIgnoringFiltersAsync(DefaultTenantUserId);
         Assert.Equal(1, user.FailedLoginAttempts);
     }
 

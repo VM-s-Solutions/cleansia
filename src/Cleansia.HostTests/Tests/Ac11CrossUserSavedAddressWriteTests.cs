@@ -25,8 +25,8 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class Ac11CrossUserSavedAddressWriteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = HostTestTenants.A;
+    private const string TenantB = HostTestTenants.B;
 
     private sealed record Arranged(string OwnerId, string OwnerEmail, string SavedAddressId);
 

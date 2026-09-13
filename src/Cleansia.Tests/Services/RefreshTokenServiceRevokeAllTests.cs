@@ -48,7 +48,7 @@ public sealed class RefreshTokenServiceRevokeAllTests : IDisposable
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider(UserId, "user@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private static RefreshTokenService NewService(CleansiaDbContext ctx)
@@ -193,9 +193,9 @@ public sealed class RefreshTokenServiceRevokeAllTests : IDisposable
         Assert.Equal("tok-web", rotated.ReplacedByTokenId);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

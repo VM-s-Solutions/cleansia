@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
@@ -34,6 +35,8 @@ public class CreateOrder
         private readonly IServicePriceRepository _servicePriceRepository;
         private readonly IPackagePriceRepository _packagePriceRepository;
         private readonly IPromoCodeService _promoCodeService;
+        private readonly IOperatorTenantResolver _operatorTenantResolver;
+        private readonly ITenantProvider _tenantProvider;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -48,8 +51,12 @@ public class CreateOrder
             ICurrencyResolutionService currencyResolutionService,
             IServicePriceRepository servicePriceRepository,
             IPackagePriceRepository packagePriceRepository,
-            IPromoCodeService promoCodeService)
+            IPromoCodeService promoCodeService,
+            IOperatorTenantResolver operatorTenantResolver,
+            ITenantProvider tenantProvider)
         {
+            _operatorTenantResolver = operatorTenantResolver;
+            _tenantProvider = tenantProvider;
             _packageRepository = packageRepository;
             _serviceRepository = serviceRepository;
             _payConfigRepository = payConfigRepository;
@@ -139,6 +146,18 @@ public class CreateOrder
                 .Must(cmd => (cmd.CustomerAddress != null) ^ (!string.IsNullOrEmpty(cmd.SavedAddressId)))
                 .WithMessage(BusinessErrorMessage.OrderAddressExactlyOneRequired)
                 .WithName(nameof(Command.CustomerAddress));
+
+            // TENANT AND CURRENCY ARE TWO READS OF ONE COUNTRY (ADR-0061 D6): the order's currency is
+            // the service address's country's, and its tenant is the ambient one — the claim, or for a
+            // guest the operator the scope behaviour resolved from the request's market. The two can
+            // disagree (a customer of one operator booking an address another operates; a guest whose
+            // request named no country while the address resolves to another market), and an order
+            // stamped with a tenant its own account cannot list is the outcome this refuses.
+            // UNCONDITIONAL — guest and authenticated alike (ADR-0061 CH-3).
+            RuleFor(x => x)
+                .MustAsync(AddressCountryIsOperatedByAmbientTenantAsync)
+                .WithMessage(BusinessErrorMessage.OrderCountryOperatorMismatch)
+                .WithErrorCode(nameof(Command.CustomerAddress));
 
             // The pay-coverage and price terms mirror OrderFactory's backstops so the customer gets a
             // 400 instead of a 500. They reuse the existing selection codes deliberately: the booking
@@ -356,6 +375,47 @@ public class CreateOrder
             => !await CurrencyMatchesAddressCountryAsync(command, command, context, cancellationToken);
 
         private const string OrderCurrencyIdKey = "createOrder.orderCurrencyId";
+        private const string OrderCountryIdKey = "createOrder.orderCountryId";
+
+        /// <summary>
+        /// A country the command does not determine is refused by the handler's address resolver with
+        /// its own code; this rule only judges a resolved market. Both sides null (no market, no
+        /// ambient tenant) is the design-time shape, not a production one.
+        /// </summary>
+        private async Task<bool> AddressCountryIsOperatedByAmbientTenantAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var countryId = await ResolveOrderCountryIdAsync(command, context, cancellationToken);
+            if (countryId is null)
+            {
+                return true;
+            }
+
+            var resolution = await _operatorTenantResolver.ResolveAsync(countryId, cancellationToken);
+            return resolution.OperatorTenantId == _tenantProvider.GetCurrentTenantId();
+        }
+
+        /// <summary>
+        /// The service address's country, resolved ONCE per validation and cached beside the currency:
+        /// the currency rule and the operator rule must judge the same country or the invariant they
+        /// protect is only an argument.
+        /// </summary>
+        private async Task<string?> ResolveOrderCountryIdAsync(
+            Command command, ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            if (context.RootContextData.TryGetValue(OrderCountryIdKey, out var cached))
+            {
+                return cached as string;
+            }
+
+            var countryId = await _orderAddressResolver.ResolveCountryIdAsync(
+                command, _userSessionProvider.GetUserId(), cancellationToken);
+            context.RootContextData[OrderCountryIdKey] = countryId!;
+            return countryId;
+        }
 
         /// <summary>
         /// THE ORDER'S CURRENCY IS THE SERVICE ADDRESS'S COUNTRY'S (owner ruling 2026-09-12) -- the same
@@ -374,8 +434,7 @@ public class CreateOrder
                 return id;
             }
 
-            var countryId = await _orderAddressResolver.ResolveCountryIdAsync(
-                command, _userSessionProvider.GetUserId(), cancellationToken);
+            var countryId = await ResolveOrderCountryIdAsync(command, context, cancellationToken);
             var currency = await _currencyResolutionService.ResolveCurrencyForCountryAsync(
                 countryId, cancellationToken);
             context.RootContextData[OrderCurrencyIdKey] = currency.Id;
@@ -603,7 +662,13 @@ public class CreateOrder
         /// </summary>
         string? CustomerFloor = null,
         string? CustomerApartment = null,
-        string? AccessMode = null) : ICommand<Response>;
+        string? AccessMode = null) : ICommand<Response>, IOperatorScopedRequest
+    {
+        // A guest's market is the inline address's country; a guest cannot name a saved address, and a
+        // request with no country lands in the default market (ADR-0061 D3). The validator's operator
+        // rule is what makes the resolver's country agree with this one.
+        string? IOperatorScopedRequest.CountryId => CustomerAddress?.CountryId;
+    }
 
     public record Response(
         string Id,

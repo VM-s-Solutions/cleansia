@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Employees;
 
@@ -123,7 +124,8 @@ public class ApproveEmployeeDocumentGateTests
 
         var validator = new ApproveEmployee.Validator(
             _employees.Object, _countries.Object, _services.Object, _packages.Object,
-            _payConfigs.Object, _requirements.Object, currencyResolution.Object);
+            _payConfigs.Object, _requirements.Object, currencyResolution.Object,
+            Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>());
 
         var result = await validator.ValidateAsync(
             new ApproveEmployee.Command(EmployeeId, CountryId), CancellationToken.None);

@@ -42,7 +42,7 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
         var options = new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseSqlite(_connection)
             .Options;
-        return new CleansiaDbContext(options, NewSession(), new NullTenantProvider());
+        return new CleansiaDbContext(options, NewSession(), new DefaultTenantProvider());
     }
 
     private async Task SeedOrderWithChargebackAsync(decimal totalPrice, decimal chargebackAmount)
@@ -143,9 +143,9 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
         Assert.Equal(600m, consumed);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

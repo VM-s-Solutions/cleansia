@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Cleansia.Core.AppServices;
 using Cleansia.Core.AppServices.Behaviors;
+using Cleansia.Core.AppServices.Tenancy;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +24,9 @@ public static class FluentValidationExtensions
         //   • PostCommitDispatch: it drains IPendingDispatch and puts messages on the wire ONLY after the
         //     inner pipeline returns a committed success — never before the commit (the F2/SEC-W1 fix),
         //     never on a commit-throw (the guard is unreached).
+        //   • OperatorTenantScope (ADR-0061 D3) is OUTER to Validation: the validators' filtered
+        //     pre-checks are the first tenanted reads of an anonymous market-scoped request, so the
+        //     market's operator must be the ambient tenant before they run.
         //   • Validation is OUTER to UnitOfWork: a failing validator returns the failure result
         //     without calling next(), so control never reaches the UoW commit on a rejected command.
         //   • AuditLog (ADR-0012 D2) is INNER to UnitOfWork: its next() (the handler) returns before
@@ -32,6 +36,7 @@ public static class FluentValidationExtensions
         // A re-swap that breaks this order is caught by the pipeline-order unit test (verify #4).
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditFailureCaptureBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PostCommitDispatchBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(OperatorTenantScopeBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnitOfWorkPipelineBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditLogBehavior<,>));

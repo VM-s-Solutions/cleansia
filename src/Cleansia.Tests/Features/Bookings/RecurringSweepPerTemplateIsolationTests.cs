@@ -324,7 +324,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
 
     private async Task SeedAsync(params string[] templateIds)
     {
-        _tenantProvider.ClearTenantOverride();
+        _tenantProvider.SetTenantOverride(TestTenants.Default);
 
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
@@ -380,7 +380,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
 
     private sealed class MutableTenantProvider : ITenantProvider
     {
-        private string? _tenantId;
+        private string? _tenantId = TestTenants.Default;
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;

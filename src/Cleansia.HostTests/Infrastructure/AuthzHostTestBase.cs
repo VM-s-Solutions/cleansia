@@ -72,12 +72,15 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     /// <summary>
     /// Run <paramref name="seed"/> against a real host's <see cref="CleansiaDbContext"/> scope and
     /// commit. The Partner host is used by default — any host's scope writes the same shared DB.
-    /// Seeding runs OUTSIDE an HTTP request, so the tenant provider returns null and entities are
-    /// stamped with a null TenantId unless the seed sets one explicitly (used by the cross-tenant AC).
+    /// Seeding runs OUTSIDE an HTTP request, so the ambient tenant is set to
+    /// <see cref="HostTestTenants.Default"/> for the commit: every stamped table is NOT NULL
+    /// (ADR-0061 D8), and a row the seed did not stamp explicitly (the cross-tenant ACs do) lands there —
+    /// the same company the default <see cref="TestJwtFactory"/> token carries.
     /// </summary>
     protected async Task SeedAsync(Func<CleansiaDbContext, Task> seed)
     {
         using var scope = PartnerHost.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(HostTestTenants.Default);
         var ctx = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
         await seed(ctx);
         await ctx.CommitAsync(CancellationToken.None);

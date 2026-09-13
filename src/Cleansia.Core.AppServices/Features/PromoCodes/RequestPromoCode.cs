@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
@@ -49,7 +50,11 @@ public class RequestPromoCode
         }
     }
 
-    public record Command(string Email, string LanguageCode = Constants.Language.English) : ICommand<Response>;
+    // CountryId is the market the code is issued in; null is the default market (ADR-0061 D3).
+    public record Command(
+        string Email,
+        string LanguageCode = Constants.Language.English,
+        string? CountryId = null) : ICommand<Response>, IOperatorScopedRequest;
 
     /// <summary>
     /// Deliberately carries no code. The code reaches the visitor by e-mail and
@@ -60,7 +65,8 @@ public class RequestPromoCode
 
     public class Handler(
         IPromoCodeRepository promoCodeRepository,
-        IPendingDispatch pendingDispatch) : ICommandHandler<Command, Response>
+        IPendingDispatch pendingDispatch,
+        ITenantProvider tenantProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -90,7 +96,9 @@ public class RequestPromoCode
                 QueueNames.SendEmail,
                 new QueueEnvelope<SendEmailMessage>(
                     MessageKeys.Email(EmailType.PromoCode, code, MessageKeys.HashCode(code)),
-                    null,
+                    // The consumer scopes itself from the envelope; with no tenant it would read every
+                    // stamped table empty (ADR-0061 CH-4).
+                    tenantProvider.GetCurrentTenantId(),
                     new SendEmailMessage(
                         EmailType.PromoCode,
                         email,

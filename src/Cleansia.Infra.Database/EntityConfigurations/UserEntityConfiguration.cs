@@ -89,15 +89,14 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Identity-lookup indexes. UNIQUE on Email — citext, so natively case-insensitive.
-        // DB-level uniqueness, NOT the app pre-check, is what closes the register/update TOCTOU race.
-        //
-        // Scope is (TenantId, Email), never global Email: a global unique index made tenant B's
-        // registration 500 on an unhandled 23505 when tenant A already held the address — a
-        // cross-tenant existence oracle. → /architecture/security-rules
-        builder.HasIndex(u => new { u.TenantId, u.Email })
-            .IsUnique()
-            .AreNullsDistinct(false);
+        // Identity-lookup indexes. UNIQUE on Email, globally: one identity per email across the holding
+        // (ADR-0061 D5.1) — citext, so natively case-insensitive. Every anonymous identity read (login,
+        // lockout, reset, OTP confirm, social link-by-email) resolves by email ignoring the tenant, so a
+        // per-tenant scope would make login ambiguous the day a second operator opens. DB-level
+        // uniqueness, NOT the app pre-check, is what closes the register TOCTOU race; the four writers
+        // own the 23505 (ADR-0050 D2). → /architecture/security-rules
+        builder.HasIndex(u => u.Email)
+            .IsUnique();
 
         // Non-unique indexes on the remaining nullable lookup columns. Each is FILTERED/PARTIAL
         // (WHERE "Col" IS NOT NULL, using the real PascalCase Postgres column names) so the (typically

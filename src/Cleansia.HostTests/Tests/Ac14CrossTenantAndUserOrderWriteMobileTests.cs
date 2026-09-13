@@ -26,8 +26,8 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class Ac14CrossTenantAndUserOrderWriteMobileTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = HostTestTenants.A;
+    private const string TenantB = HostTestTenants.B;
 
     [Fact]
     public async Task Cross_tenant_take_order_on_mobile_host_is_rejected_and_leaves_the_order_unassigned()

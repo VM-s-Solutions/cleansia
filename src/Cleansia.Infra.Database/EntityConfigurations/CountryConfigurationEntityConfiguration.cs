@@ -107,5 +107,19 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
             .IsUnique()
             .HasFilter("\"IsDefaultMarket\" = true")
             .HasDatabaseName("IX_CountryConfigurations_IsDefaultMarket_Unique");
+
+        // The country -> operating company map (ADR-0061 D2): one operator serves many countries, so
+        // the index is non-unique. The FK is the only one into Tenants — the resolver reads this
+        // column, and every other TenantId in the system descends from it or from a claim minted
+        // off a row it stamped.
+        builder.Property(e => e.OperatorTenantId)
+            .HasMaxLength(26);
+
+        builder.HasOne(e => e.OperatorTenant)
+            .WithMany()
+            .HasForeignKey(e => e.OperatorTenantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(e => e.OperatorTenantId);
     }
 }

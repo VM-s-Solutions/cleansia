@@ -133,7 +133,7 @@ public sealed class DataRetentionEnablementTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {

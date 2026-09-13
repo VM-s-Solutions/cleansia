@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Tests.Features.Orders;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Memberships;
 
@@ -65,7 +66,9 @@ public class CreateOrderExpressWaiverValidatorTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             CataloguePriceDoubles.NoServices(),
             CataloguePriceDoubles.NoPackages(),
-            Mock.Of<IPromoCodeService>());
+            Mock.Of<IPromoCodeService>(),
+            Mock.Of<IOperatorTenantResolver>(),
+            Mock.Of<ITenantProvider>());
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

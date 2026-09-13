@@ -17,6 +17,7 @@ public class TokenService(
     IRefreshTokenService refreshTokenService,
     IEmployeeRepository employeeRepository,
     IRequestMetadataProvider requestMetadata,
+    ITenantProvider tenantProvider,
     TimeProvider timeProvider)
     : ITokenService
 {
@@ -34,6 +35,16 @@ public class TokenService(
         }
 
         user.RecordLogin(timeProvider.GetUtcNow());
+
+        // Every token mint runs on an anonymous request, so the RefreshToken row added below would be
+        // stamped with no tenant. The row belongs to the user being authenticated — which is also what
+        // the JWT will say (ADR-0061 D4). This deliberately REPLACES the market operator the scope
+        // behaviour set on a social sign-in: an existing account keeps its own operator, whichever
+        // market the request named. Nothing stamped is added between the two overrides.
+        if (!string.IsNullOrEmpty(user.TenantId))
+        {
+            tenantProvider.SetTenantOverride(user.TenantId);
+        }
 
         var employeeId = await ResolveEmployeeIdAsync(user, cancellationToken);
         var accessToken = GenerateAccessToken(user, employeeId, audience, requestMetadata.DeviceId);

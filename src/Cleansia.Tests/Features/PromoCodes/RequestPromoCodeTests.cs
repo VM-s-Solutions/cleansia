@@ -27,7 +27,7 @@ public class RequestPromoCodeTests
     private readonly Mock<IPromoCodeRepository> _promoCodes = new();
     private readonly IPendingDispatch _pending = new InMemoryPendingDispatch();
 
-    private RequestPromoCode.Handler CreateHandler() => new(_promoCodes.Object, _pending);
+    private RequestPromoCode.Handler CreateHandler() => new(_promoCodes.Object, _pending, Mock.Of<ITenantProvider>());
 
     private static SendEmailMessage SoleMessage(IPendingDispatch pending)
     {
@@ -120,10 +120,32 @@ public class RequestPromoCodeTests
         var first = SoleMessage(_pending);
 
         var second = new InMemoryPendingDispatch();
-        await new RequestPromoCode.Handler(_promoCodes.Object, second)
+        await new RequestPromoCode.Handler(_promoCodes.Object, second, Mock.Of<ITenantProvider>())
             .Handle(new RequestPromoCode.Command("  VISITOR@Example.COM "), CancellationToken.None);
 
         Assert.Equal(first.Code, SoleMessage(second).Code);
+    }
+
+    /// <summary>
+    /// The e-mail consumer scopes itself from the envelope's tenant before it reads anything stamped;
+    /// with none it would read every stamped table empty (ADR-0061 CH-4). The envelope carries the
+    /// operator the scope behaviour resolved for the request.
+    /// </summary>
+    [Fact]
+    public async Task The_outbox_envelope_carries_the_ambient_operator()
+    {
+        _promoCodes
+            .Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PromoCode?)null);
+        var tenant = new Mock<ITenantProvider>();
+        tenant.Setup(t => t.GetCurrentTenantId()).Returns("cleansia-sk");
+
+        await new RequestPromoCode.Handler(_promoCodes.Object, _pending, tenant.Object)
+            .Handle(new RequestPromoCode.Command(Email), CancellationToken.None);
+
+        var drained = Assert.Single(_pending.Drain());
+        var envelope = JsonSerializer.Deserialize<QueueEnvelope<SendEmailMessage>>(drained.Body, WireJson);
+        Assert.Equal("cleansia-sk", envelope!.TenantId);
     }
 
     [Fact]
@@ -136,7 +158,7 @@ public class RequestPromoCodeTests
         await CreateHandler().Handle(new RequestPromoCode.Command(Email), CancellationToken.None);
 
         var other = new InMemoryPendingDispatch();
-        await new RequestPromoCode.Handler(_promoCodes.Object, other)
+        await new RequestPromoCode.Handler(_promoCodes.Object, other, Mock.Of<ITenantProvider>())
             .Handle(new RequestPromoCode.Command("someone.else@example.com"), CancellationToken.None);
 
         Assert.NotEqual(SoleMessage(_pending).Code, SoleMessage(other).Code);

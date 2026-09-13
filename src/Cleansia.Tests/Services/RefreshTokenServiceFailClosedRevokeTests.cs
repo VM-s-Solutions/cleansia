@@ -60,7 +60,7 @@ public sealed class RefreshTokenServiceFailClosedRevokeTests : IDisposable
         return new CleansiaDbContext(
             builder.Options,
             new TestUserSessionProvider(UserId, $"{UserId}@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
     }
 
     private static RefreshTokenService NewService(CleansiaDbContext ctx, IUnitOfWork? unitOfWork = null)
@@ -357,9 +357,9 @@ public sealed class RefreshTokenServiceFailClosedRevokeTests : IDisposable
         }
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

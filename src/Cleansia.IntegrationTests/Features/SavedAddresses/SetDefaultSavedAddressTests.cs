@@ -50,7 +50,7 @@ public class SetDefaultSavedAddressTests(PostgresContainerFixture fixture) : Bas
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider(UserId, "saved-default@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private async Task ResetAsync()

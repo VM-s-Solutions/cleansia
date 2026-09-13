@@ -167,6 +167,27 @@ public class AdminUserProfileFieldsTests
         Assert.True(result.IsValid);
     }
 
+    /// <summary>
+    /// One identity per email across the holding (ADR-0061 D5.1): an address held by a user of another
+    /// operating company is refused by the tenant-ignoring pre-check, as a 400, not by a mapped 23505.
+    /// </summary>
+    [Fact]
+    public async Task When_Create_Email_Is_Held_In_Another_Operator_Then_Validation_Fails_With_AdminUserEmailExists()
+    {
+        _userRepository
+            .Setup(r => r.ExistsWithEmailIgnoringTenantAsync("taken@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var validator = new CreateAdminUser.Validator(_userRepository.Object, _languageRepository.Object);
+
+        var result = await validator.ValidateAsync(new CreateAdminUser.Command(
+            "taken@example.com", "Password1", "First", "Last", null,
+            BirthDate: null,
+            PreferredLanguageCode: null));
+
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.AdminUserEmailExists);
+        _userRepository.Verify(r => r.GetAll(), Times.Never);
+    }
+
     [Fact]
     public async Task When_Create_BirthDate_Is_Not_In_The_Past_Then_Validation_Fails_With_DateMustBeInPast()
     {

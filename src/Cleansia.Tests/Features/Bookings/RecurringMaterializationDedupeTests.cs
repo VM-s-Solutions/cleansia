@@ -189,6 +189,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
 
     private async Task CancelFirstOccurrenceAsync()
     {
+        _tenantProvider.SetTenantOverride(TestTenants.Default);
         await using var ctx = NewContext();
         var order = await ctx.Orders
             .IgnoreQueryFilters()
@@ -345,7 +346,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
 
     private async Task SeedAsync()
     {
-        _tenantProvider.ClearTenantOverride();
+        _tenantProvider.SetTenantOverride(TestTenants.Default);
 
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
@@ -395,7 +396,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
 
     private sealed class MutableTenantProvider : ITenantProvider
     {
-        private string? _tenantId;
+        private string? _tenantId = TestTenants.Default;
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;

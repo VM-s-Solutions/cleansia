@@ -89,7 +89,7 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
                 .UseNpgsql(Fixture.GetConnectionString())
                 .Options,
             new TestUserSessionProvider("seat-race", "seat-race@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private static Task<Order> LoadWithAssignmentsAsync(CleansiaDbContext context, string orderId) =>
         context.Orders

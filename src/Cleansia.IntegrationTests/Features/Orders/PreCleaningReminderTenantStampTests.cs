@@ -26,9 +26,8 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// looks exactly like a delivery bug.
 ///
 /// <para>Against real PostgreSQL, because tenancy here is enforced by a global query filter compiled
-/// into SQL and by NULL semantics that SQLite does not share — a legacy single-tenant order carries
-/// <c>TenantId IS NULL</c>, and "NULL stays NULL rather than inheriting the previous group's tenant" is
-/// a claim about the provider, not about C#.</para>
+/// into SQL — "each group's rows carry its own tenant rather than the previous group's" is a claim
+/// about the provider, not about C#. Three operators, three groups, every row stamped (ADR-0061 D8).</para>
 ///
 /// <para>The schema is built from the live EF model via EnsureCreated on a dedicated database (NOT the
 /// shared migration-applied one) so it exercises the <c>PreCleaningReminderSentAt</c> column this
@@ -40,6 +39,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
 {
     private const string TenantA = "tenant-a";
     private const string TenantB = "tenant-b";
+    private const string TenantC = "tenant-c";
     private const string CountryId = "country-cz-reminder";
     private const string CurrencyId = "currency-czk-reminder";
 
@@ -126,7 +126,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         await cmd.ExecuteNonQueryAsync();
     }
 
-    private async Task SeedDueOrderAsync(string key, string userId, string? tenantId)
+    private async Task SeedDueOrderAsync(string key, string userId, string tenantId)
     {
         var orderId = $"ord-{key}";
         var order = Order.Create(
@@ -151,10 +151,11 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
         // A cleaner is committed to this job, which is the half of "Confirmed" the reminder needs and
         // the half that status alone does not carry. Inserted as a bare row: the sweep asks only whether
         // an assignment EXISTS, and a full employee graph would add nothing but fixtures.
-        _tenantProvider.ClearTenantOverride();
+        _tenantProvider.SetTenantOverride(tenantId);
         await using var ctx = NewContext();
         ctx.Orders.Add(order);
         await ctx.CommitAsync(CancellationToken.None);
+        _tenantProvider.ClearTenantOverride();
         await ctx.Database.ExecuteSqlRawAsync(
             "INSERT INTO \"OrderEmployees\" (\"Id\", \"OrderId\", \"EmployeeId\", \"IsActive\", \"SeatOrdinal\") VALUES ({0}, {1}, {2}, true, 0)",
             $"oe-{key}", orderId, $"emp-{key}");
@@ -181,7 +182,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
     {
         await SeedDueOrderAsync("pre-a", "user-tenant-a", TenantA);
         await SeedDueOrderAsync("pre-b", "user-tenant-b", TenantB);
-        await SeedDueOrderAsync("pre-legacy", "user-legacy", tenantId: null);
+        await SeedDueOrderAsync("pre-c", "user-tenant-c", TenantC);
 
         var response = await RunSweepAsync();
 
@@ -199,7 +200,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
                  {
                      ("user-tenant-a", TenantA),
                      ("user-tenant-b", TenantB),
-                     ("user-legacy", (string?)null),
+                     ("user-tenant-c", TenantC),
                  })
         {
             var reminder = Assert.Single(reminders, r => r.MessageKey.Contains(userId, StringComparison.Ordinal));
@@ -254,7 +255,7 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
     {
         await SeedDueOrderAsync("pre-c1", "user-tenant-a", TenantA);
         await SeedDueOrderAsync("pre-c2", "user-tenant-b", TenantB);
-        await SeedDueOrderAsync("pre-c3", "user-legacy", tenantId: null);
+        await SeedDueOrderAsync("pre-c3", "user-tenant-c", TenantC);
 
         _tenantProvider.ClearTenantOverride();
         await using var ctx = NewContext();

@@ -49,7 +49,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
     private CleansiaDbContext NewContext() =>
         new(new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(Fixture.GetConnectionString()).Options,
             AdminSession(),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     // The production nesting for the success path: UnitOfWork (outer, the single commit) → AuditLog
     // (inner, drains the handler snapshot and adds the audit row to the same scoped context) → handler.
@@ -58,9 +58,9 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
         var session = AdminSession();
         var auditContext = new AuditContext();
         var factory = new AuditEntryFactory(session);
-        var writer = new DbContextAuditWriter(context, new FixedTenantProvider(null));
+        var writer = new DbContextAuditWriter(context, new FixedTenantProvider(TestTenants.Default));
         var sink = new OutOfBandAuditFailureSink(
-            new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(null));
+            new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default));
 
         var handler = new AdminDeleteUserAccount.Handler(session, deletionService, auditContext);
         var audit = new AuditLogBehavior<AdminDeleteUserAccount.Command, BusinessResult>(
@@ -163,7 +163,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
                 ? new CleansiaDbContext(
                     new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(connectionString).Options,
                     new TestUserSessionProvider("admin-1", "admin@cleansia.test"),
-                    new FixedTenantProvider(null))
+                    new FixedTenantProvider(TestTenants.Default))
                 : null;
     }
 

@@ -109,7 +109,12 @@ public class EmployeePayConfigEntityConfiguration : AuditableEntityConfiguration
         // so without it Postgres treats the tuples as distinct and the index enforces nothing.
         // NullsNotDistinctIndexModelTests walks every unique index in the model and fails any that
         // drops it, which is what would catch this if a future edit reformats the chain.
-        builder.HasIndex(e => new { e.EmployeeId, e.ServiceId, e.PackageId, e.CurrencyId })
+        //
+        // TENANTID LEADS THE KEY (ADR-0061 D9): pay rates are the operator's money, and without the
+        // term two operators could not both hold a platform default (EmployeeId NULL) for the same
+        // service and currency. Per-employee rows are unaffected — an EmployeeId is unique across
+        // tenants.
+        builder.HasIndex(e => new { e.TenantId, e.EmployeeId, e.ServiceId, e.PackageId, e.CurrencyId })
             .IsUnique()
             .AreNullsDistinct(false);
     }

@@ -15,10 +15,11 @@ public class AdminActionAuditConfiguration : BaseEntityConfiguration<AdminAction
         // BaseEntityConfiguration maps only the key; TenantId + its filter live on
         // AuditableEntityConfiguration, which this entity does not inherit. The global query
         // filter is applied generically in CleansiaDbContext.ApplyTenantQueryFilters for any
-        // ITenantEntity; the property itself must still be mapped here.
+        // ITenantEntity; the property itself must still be mapped here, NOT NULL like every other
+        // stamped table (ADR-0061 D8).
         builder.Property(e => e.TenantId)
             .HasMaxLength(26)
-            .IsRequired(false);
+            .IsRequired();
 
         builder.Property(e => e.ActorId)
             .IsRequired()

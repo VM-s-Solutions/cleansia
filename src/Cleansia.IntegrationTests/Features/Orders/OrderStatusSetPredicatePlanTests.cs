@@ -295,7 +295,7 @@ public sealed class OrderStatusSetPredicatePlanTests(OrderStatusSetPredicatePlan
                     .AddInterceptors(_interceptor)
                     .Options,
                 new TestUserSessionProvider("system", "system@cleansia.test"),
-                new NullTenantProvider());
+                new DefaultTenantProvider());
 
         private const string DropOrderForeignKeys = """
             DO $$
@@ -351,13 +351,13 @@ public sealed class OrderStatusSetPredicatePlanTests(OrderStatusSetPredicatePlan
             "\"PaymentStatus\",\"TotalPrice\",\"NetAmount\",\"VatAmount\",\"EstimatedTime\"," +
             "\"EmployeePayCalculated\",\"RequiredEmployees\",\"MaxEmployees\",\"ConfirmationCode\"," +
             "\"StripeSessionId\",\"CurrencyId\",\"CurrentStatus\",\"IsActive\"," +
-            "\"CreatedBy\",\"CreatedOn\") SELECT " +
+            "\"CreatedBy\",\"CreatedOn\",\"TenantId\") SELECT " +
             $"'{idPrefix}-' || g, 'Cust ' || g, 'c' || g || '@x.test', '+420' || g, 'addr-1', " +
             "'ORD-' || g, 2, 1, " + cleaningSql + ", 2, " +
             "2, 1200, 1000, 200, 120, " +
             "false, 1, 1, 'CONF' || g, " +
             "'sess-' || g, 'czk', " + statusSql + ", true, " +
-            $"'seed', '{Iso(WindowStart)}'::timestamptz FROM generate_series(1, {count}) AS g;";
+            $"'seed', '{Iso(WindowStart)}'::timestamptz, '{TestTenants.Default}' FROM generate_series(1, {count}) AS g;";
 
         private static async Task Execute(NpgsqlConnection conn, string sql)
         {
@@ -374,9 +374,9 @@ public sealed class OrderStatusSetPredicatePlanTests(OrderStatusSetPredicatePlan
         private static string Iso(DateTime value) =>
             value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss.ffffffZ", CultureInfo.InvariantCulture);
 
-        private sealed class NullTenantProvider : ITenantProvider
+        private sealed class DefaultTenantProvider : ITenantProvider
         {
-            public string? GetCurrentTenantId() => null;
+            public string? GetCurrentTenantId() => TestTenants.Default;
             public void SetTenantOverride(string tenantId) { }
             public void ClearTenantOverride() { }
         }

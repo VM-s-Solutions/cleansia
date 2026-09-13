@@ -52,7 +52,7 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     public async Task InitializeAsync()
     {

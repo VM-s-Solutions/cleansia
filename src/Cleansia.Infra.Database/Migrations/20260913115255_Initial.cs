@@ -20,7 +20,7 @@ namespace Cleansia.Infra.Database.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     ActorId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     ActorEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     ActorProfile = table.Column<int>(type: "integer", nullable: false),
@@ -137,7 +137,7 @@ namespace Cleansia.Infra.Database.Migrations
                     OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Action = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -183,7 +183,7 @@ namespace Cleansia.Infra.Database.Migrations
                     IssuerScope = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Value = table.Column<long>(type: "bigint", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -346,7 +346,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ClosedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -423,7 +423,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -434,6 +434,19 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TenantConfigurations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Tenants",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tenants", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -449,7 +462,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Longitude = table.Column<double>(type: "double precision", precision: 9, scale: 6, nullable: true),
                     CountryId = table.Column<string>(type: "character varying(26)", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -492,7 +505,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Iban = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     Swift = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -505,55 +518,6 @@ namespace Cleansia.Infra.Database.Migrations
                     table.PrimaryKey("PK_CompanyInfo", x => x.Id);
                     table.ForeignKey(
                         name: "FK_CompanyInfo_Countries_CountryId",
-                        column: x => x.CountryId,
-                        principalTable: "Countries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CountryConfigurations",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CountryId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    DefaultCurrencyCode = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
-                    DefaultLanguageCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    DateFormat = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    TimeZoneId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    PhonePrefix = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    StandardVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: false),
-                    ReducedVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
-                    TaxIdLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    TaxIdFormat = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    RegistrationNumberLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    RegistrationNumberFormat = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    RegistrationNumberRequired = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    VatNumberLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    VatNumberFormat = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    VatNumberRequired = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    DefaultPaymentGateway = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    LegalRequirementsJson = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
-                    FiscalEnforcementMode = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    PayoutScheme = table.Column<int>(type: "integer", nullable: true),
-                    RefundStripeFeeRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
-                    RefundStripeFixedFee = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    InsuranceCoverageAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    IsDefaultMarket = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CountryConfigurations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CountryConfigurations_Countries_CountryId",
                         column: x => x.CountryId,
                         principalTable: "Countries",
                         principalColumn: "Id",
@@ -694,7 +658,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ValidUntil = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -840,7 +804,7 @@ namespace Cleansia.Infra.Database.Migrations
                     PreferredLanguageCode = table.Column<string>(type: "citext", maxLength: 5, nullable: true),
                     StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -959,13 +923,69 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CountryConfigurations",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CountryId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    DefaultCurrencyCode = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    DefaultLanguageCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    DateFormat = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    TimeZoneId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    PhonePrefix = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    StandardVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: false),
+                    ReducedVatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
+                    TaxIdLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    TaxIdFormat = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    RegistrationNumberLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    RegistrationNumberFormat = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    RegistrationNumberRequired = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    VatNumberLabel = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    VatNumberFormat = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    VatNumberRequired = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DefaultPaymentGateway = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    LegalRequirementsJson = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
+                    FiscalEnforcementMode = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    PayoutScheme = table.Column<int>(type: "integer", nullable: true),
+                    RefundStripeFeeRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
+                    RefundStripeFixedFee = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    InsuranceCoverageAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    IsDefaultMarket = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    OperatorTenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CountryConfigurations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CountryConfigurations_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CountryConfigurations_Tenants_OperatorTenantId",
+                        column: x => x.OperatorTenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Carts",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     UserId = table.Column<string>(type: "character varying(26)", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -994,7 +1014,7 @@ namespace Cleansia.Infra.Database.Migrations
                     CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     ExpiresOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1025,7 +1045,7 @@ namespace Cleansia.Infra.Database.Migrations
                     LastActiveAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     NotificationsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1077,7 +1097,7 @@ namespace Cleansia.Infra.Database.Migrations
                     PreferredCurrencyCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     Availability = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1124,7 +1144,7 @@ namespace Cleansia.Infra.Database.Migrations
                     CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1154,7 +1174,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Token = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
                     LastUpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1184,7 +1204,7 @@ namespace Cleansia.Infra.Database.Migrations
                     TierAchievedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     CompletedBookingsCount = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1265,7 +1285,7 @@ namespace Cleansia.Infra.Database.Migrations
                     PreCleaningReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CurrentStatus = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1322,7 +1342,7 @@ namespace Cleansia.Infra.Database.Migrations
                     LastMaterializedFor = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     SelectedPackageIds = table.Column<string>(type: "text", nullable: false),
                     SelectedServiceIds = table.Column<string>(type: "text", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1350,7 +1370,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Code = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     TimesUsed = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1388,7 +1408,7 @@ namespace Cleansia.Infra.Database.Migrations
                     RememberMe = table.Column<bool>(type: "boolean", nullable: true),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1419,7 +1439,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Floor = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     Apartment = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1457,7 +1477,7 @@ namespace Cleansia.Infra.Database.Migrations
                     IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
                     UserAgent = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1493,7 +1513,7 @@ namespace Cleansia.Infra.Database.Migrations
                     CancellationReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     TrialEndsAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1543,7 +1563,7 @@ namespace Cleansia.Infra.Database.Migrations
                     RecurringScheduled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     NewJobsAvailable = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1572,7 +1592,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ArgsJson = table.Column<string>(type: "jsonb", nullable: false),
                     ReadOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1600,7 +1620,7 @@ namespace Cleansia.Infra.Database.Migrations
                     CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1792,7 +1812,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ReviewedByUserId = table.Column<string>(type: "text", nullable: true),
                     ReviewedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1852,7 +1872,7 @@ namespace Cleansia.Infra.Database.Migrations
                     CancelledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CancelledBy = table.Column<string>(type: "text", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1912,7 +1932,7 @@ namespace Cleansia.Infra.Database.Migrations
                     MinimumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     MaximumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1971,7 +1991,7 @@ namespace Cleansia.Infra.Database.Migrations
                     LastRevealedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RevealCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2018,7 +2038,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ResolvedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     StripeDisputeId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2057,7 +2077,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2151,7 +2171,7 @@ namespace Cleansia.Infra.Database.Migrations
                     IsResolved = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     ResolvedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2179,7 +2199,7 @@ namespace Cleansia.Infra.Database.Migrations
                     EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Content = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2243,7 +2263,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Height = table.Column<int>(type: "integer", nullable: true),
                     Notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2294,7 +2314,7 @@ namespace Cleansia.Infra.Database.Migrations
                     FiscalAcknowledged = table.Column<bool>(type: "boolean", nullable: false),
                     FiscalAcknowledgedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2330,7 +2350,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Comment = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     Tags = table.Column<string>(type: "jsonb", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2382,17 +2402,17 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "OrderStatusHistory",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
                     Sequence = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true),
-                    CreatedBy = table.Column<string>(type: "text", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
@@ -2418,7 +2438,7 @@ namespace Cleansia.Infra.Database.Migrations
                     RedeemedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     SlotOrdinal = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2465,7 +2485,7 @@ namespace Cleansia.Infra.Database.Migrations
                     PointsAwardedToReferred = table.Column<int>(type: "integer", nullable: true),
                     PointsAwardedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2515,7 +2535,7 @@ namespace Cleansia.Infra.Database.Migrations
                     UserMembershipId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     ReservedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2559,7 +2579,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ReviewedByUserId = table.Column<string>(type: "text", nullable: true),
                     ReviewedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2602,7 +2622,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ApprovedBy = table.Column<string>(type: "text", nullable: true),
                     EmployeeInvoiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2782,7 +2802,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ConfirmedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     WindowOverrideReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2962,6 +2982,11 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "IsDefaultMarket",
                 unique: true,
                 filter: "\"IsDefaultMarket\" = true");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CountryConfigurations_OperatorTenantId",
+                table: "CountryConfigurations",
+                column: "OperatorTenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CountryConfigurations_TenantId",
@@ -3306,13 +3331,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmployeePayConfigs_EmployeeId_ServiceId_PackageId_CurrencyId",
-                table: "EmployeePayConfigs",
-                columns: new[] { "EmployeeId", "ServiceId", "PackageId", "CurrencyId" },
-                unique: true)
-                .Annotation("Npgsql:NullsDistinct", false);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_EmployeePayConfigs_PackageId",
                 table: "EmployeePayConfigs",
                 column: "PackageId");
@@ -3331,6 +3349,13 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_EmployeePayConfigs_TenantId",
                 table: "EmployeePayConfigs",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayConfigs_TenantId_EmployeeId_ServiceId_PackageId_~",
+                table: "EmployeePayConfigs",
+                columns: new[] { "TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeePayoutDetails_BankCountryId",
@@ -3479,11 +3504,10 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LoyaltyTierConfigs_TenantId_Tier",
+                name: "IX_LoyaltyTierConfigs_Tier",
                 table: "LoyaltyTierConfigs",
-                columns: new[] { "TenantId", "Tier" },
-                unique: true)
-                .Annotation("Npgsql:NullsDistinct", false);
+                column: "Tier",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_LoyaltyTransactions_LoyaltyAccountId_OccurredOn",
@@ -3739,15 +3763,16 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderReceipts_ReceiptNumber",
-                table: "OrderReceipts",
-                column: "ReceiptNumber",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_OrderReceipts_TenantId",
                 table: "OrderReceipts",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReceipts_TenantId_ReceiptNumber",
+                table: "OrderReceipts",
+                columns: new[] { "TenantId", "ReceiptNumber" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderReviewLines_OrderReviewId_ServiceId_PackageId",
@@ -3863,6 +3888,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_OrderStatusHistory_OrderId",
                 table: "OrderStatusHistory",
                 column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderStatusHistory_TenantId",
+                table: "OrderStatusHistory",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutboxMessages_NextAttemptAt_Pending",
@@ -4325,6 +4355,12 @@ namespace Cleansia.Infra.Database.Migrations
                 filter: "\"ConfirmationCode\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_GoogleId",
                 table: "Users",
                 column: "GoogleId",
@@ -4351,13 +4387,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Users_TenantId",
                 table: "Users",
                 column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Users_TenantId_Email",
-                table: "Users",
-                columns: new[] { "TenantId", "Email" },
-                unique: true)
-                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserStripeCustomers_CurrencyId",
@@ -4561,6 +4590,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Carts");
+
+            migrationBuilder.DropTable(
+                name: "Tenants");
 
             migrationBuilder.DropTable(
                 name: "CreditAccounts");

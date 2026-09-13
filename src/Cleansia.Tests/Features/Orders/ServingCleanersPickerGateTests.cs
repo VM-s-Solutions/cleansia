@@ -207,7 +207,7 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
         return new CleansiaDbContext(
             options.Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private GetMyServingCleaners.Handler NewHandler(CleansiaDbContext ctx) =>

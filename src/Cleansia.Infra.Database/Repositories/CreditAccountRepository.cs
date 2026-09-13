@@ -73,11 +73,13 @@ public class CreditAccountRepository(CleansiaDbContext context)
         // An account may not exist yet: credit can only reach an order through one, but a customer
         // whose account was created and then erased still needs somewhere for the money to land. This
         // is the one part of a return that goes through the tracked graph, and it is followed by an
-        // explicit flush so the raw statement below has a row to update.
+        // explicit flush so the raw statement below has a row to update. The flush is CommitAsync, not
+        // SaveChangesAsync: the commit is where the new row's TenantId is stamped, and the column is
+        // NOT NULL (ADR-0061 D8) — a bare save would 23502.
         var account = await EnsureForUserAsync(userId, currencyId, cancellationToken);
         if (context.Entry(account).State == EntityState.Added)
         {
-            await context.SaveChangesAsync(cancellationToken);
+            await context.CommitAsync(cancellationToken);
         }
 
         // ONE STATEMENT, mirroring TryDebitAsync, and for a second reason on top of the shared one.

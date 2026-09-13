@@ -56,11 +56,10 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet().AnyAsync(user => user.Email == email, cancellationToken);
     }
 
-    // Login / lockout / password-reset run on ANONYMOUS requests (no tenant claim), so the global
-    // tenant filter narrows every read to TenantId == null and a tenant-stamped account could never
-    // log in. IgnoreQueryFilters(); the caller-supplied email is the scope. Registration keeps the
-    // filtered lookups — email uniqueness is per-tenant (the (TenantId, Email) unique index), so its
-    // duplicate pre-check must stay tenant-scoped.
+    // Login / lockout / password-reset / registration pre-checks run on ANONYMOUS requests, so the
+    // global tenant filter would narrow every read to the ambient tenant and a stamped account in
+    // another operating company would be invisible. IgnoreQueryFilters(); the caller-supplied email is
+    // the scope, and it is one identity across the holding (IX_Users_Email, ADR-0061 D5.1).
     public Task<User?> GetByEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default)
     {
         return GetDbSet()
@@ -104,17 +103,21 @@ public class UserRepository(CleansiaDbContext context)
 
     // The confirmation token is stored as a SHA-256 hash, so the incoming RAW
     // token is hashed and matched against the stored hash. Stays inside the global tenant filter
-    // (no IgnoreQueryFilters) — a hashed token must not match cross-tenant.
+    // (no IgnoreQueryFilters).
     public Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default)
     {
         var tokenHash = SecurityTokens.Hash(token);
         return GetDbSet().AnyAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
     }
 
-    public Task<User?> GetByConfirmationCodeAsync(string token, CancellationToken cancellationToken = default)
+    // The legacy confirm link is opened anonymously while the row it confirms is tenant-stamped
+    // (ADR-0061 D4); the server-issued hash is the pin.
+    public Task<User?> GetByConfirmationCodeIgnoringTenantAsync(string token, CancellationToken cancellationToken = default)
     {
         var tokenHash = SecurityTokens.Hash(token);
-        return GetDbSet().FirstOrDefaultAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
     }
 
     public IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate)

@@ -48,7 +48,7 @@ public sealed class UserIdentityLookupIndexTests
         using var ctx = new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
         var entityType = ctx.Model.FindEntityType(typeof(User));
         Assert.NotNull(entityType);
@@ -69,30 +69,29 @@ public sealed class UserIdentityLookupIndexTests
         index.Properties.Count == propertyNames.Length
         && index.Properties.Select(p => p.Name).SequenceEqual(propertyNames);
 
-    // Exactly ONE unique index over (TenantId, Email) (S8).
-    // Uniqueness is PER-TENANT: User is an ITenantEntity and the app-layer checks run inside the tenant
-    // filter, so a global Email unique index let tenant B 500 on tenant A's email (cross-tenant oracle)
-    // and barred the same person across tenants. citext keeps the Email component case-insensitive.
+    // Exactly ONE unique index over Email, GLOBAL (ADR-0061 D5.1): one identity per email across the
+    // holding. Every anonymous identity read (login, lockout, reset, OTP, social link) resolves by email
+    // ignoring the tenant, so a per-tenant scope would make login ambiguous the day a second operating
+    // company opens. citext keeps it case-insensitive.
     [Fact]
-    public void Email_HasExactlyOneTenantScopedUniqueIndex()
+    public void Email_HasExactlyOneGlobalUniqueIndex()
     {
         var user = GetUserEntityType();
 
         var emailIndexes = user.GetIndexes()
-            .Where(ix => IsCompositeIndexOn(ix, nameof(User.TenantId), nameof(User.Email)))
+            .Where(ix => IsSingleColumnIndexOn(ix, nameof(User.Email)))
             .ToList();
 
         Assert.Single(emailIndexes);
         Assert.True(
             emailIndexes[0].IsUnique,
-            "User email uniqueness must be the COMPOSITE (TenantId, Email) UNIQUE index (S8): "
-            + "per-tenant uniqueness matches the tenant-filtered app pre-check and closes the "
-            + "same-tenant register/update TOCTOU race without leaking across tenants.");
+            "User email uniqueness must be the GLOBAL Email UNIQUE index (ADR-0061 D5.1): the anonymous "
+            + "identity reads resolve by email ignoring the tenant, so the constraint must be global too.");
 
-        // And there must be NO global single-column unique index on Email left behind.
+        // And there must be NO per-tenant composite unique index on Email left behind.
         Assert.DoesNotContain(
             user.GetIndexes(),
-            ix => IsSingleColumnIndexOn(ix, nameof(User.Email)) && ix.IsUnique);
+            ix => IsCompositeIndexOn(ix, nameof(User.TenantId), nameof(User.Email)));
     }
 
     [Theory]
@@ -141,14 +140,14 @@ public sealed class UserIdentityLookupIndexTests
         var user = GetUserEntityType();
 
         var emailUnique = user.GetIndexes()
-            .Any(ix => IsCompositeIndexOn(ix, nameof(User.TenantId), nameof(User.Email)) && ix.IsUnique);
+            .Any(ix => IsSingleColumnIndexOn(ix, nameof(User.Email)) && ix.IsUnique);
 
         Assert.True(
             emailUnique,
-            "A UNIQUE DB index over (TenantId, Email) is the real guarantee — "
-            + "the second same-tenant same-email insert must raise a unique violation. The "
-            + "ExistsWithEmailAsync app pre-check stays as a fast-path UX message, but it is NOT the "
-            + "constraint.");
+            "A UNIQUE DB index over Email is the real guarantee — "
+            + "the second same-email insert, in any tenant, must raise a unique violation. The "
+            + "ExistsWithEmailIgnoringTenantAsync app pre-check stays as a fast-path UX message, but it is "
+            + "NOT the constraint.");
     }
 
     // The four User-creating writers map this index's 23505 to a business error by NAME (ADR-0050 D2),
@@ -161,7 +160,7 @@ public sealed class UserIdentityLookupIndexTests
         var user = GetUserEntityType();
 
         var index = user.GetIndexes()
-            .Single(ix => IsCompositeIndexOn(ix, nameof(User.TenantId), nameof(User.Email)));
+            .Single(ix => IsSingleColumnIndexOn(ix, nameof(User.Email)));
 
         Assert.True(index.IsUnique);
     }

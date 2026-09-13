@@ -287,7 +287,7 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
                     .AddInterceptors(_interceptor)
                     .Options,
                 new TestUserSessionProvider("system", "system@cleansia.test"),
-                new NullTenantProvider());
+                new DefaultTenantProvider());
 
         /// <summary>
         /// Thousands of rows INSIDE each partial filter but outside the date band — that is what forces
@@ -334,10 +334,10 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
             "INSERT INTO \"UserMemberships\" " +
             "(\"Id\",\"UserId\",\"MembershipPlanId\",\"CurrencyId\",\"StripeSubscriptionId\",\"Status\"," +
             "\"CurrentPeriodStart\",\"CurrentPeriodEnd\",\"CancelledAt\",\"RenewalReminderSentAt\"," +
-            "\"CancellationReminderSentAt\",\"IsActive\",\"CreatedBy\",\"CreatedOn\") SELECT " +
+            "\"CancellationReminderSentAt\",\"IsActive\",\"CreatedBy\",\"CreatedOn\",\"TenantId\") SELECT " +
             $"'{prefix}-' || g, 'u-{prefix}-' || g, 'plan-1', 'currency-czk', 'sub-{prefix}-' || g, 1, " +
             $"'{Iso(Now.AddDays(-25))}', {periodEnd}, {cancelledAt}, {renewalSent}, " +
-            $"{cancellationSent}, true, 'seed', '{Iso(Now)}' " +
+            $"{cancellationSent}, true, 'seed', '{Iso(Now)}', '{TestTenants.Default}' " +
             $"FROM generate_series(1, {count}) AS g;";
 
         private static async Task Execute(NpgsqlConnection conn, string sql)
@@ -362,9 +362,9 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
                 string? subject, CancellationToken cancellationToken) => Task.CompletedTask;
         }
 
-        private sealed class NullTenantProvider : ITenantProvider
+        private sealed class DefaultTenantProvider : ITenantProvider
         {
-            public string? GetCurrentTenantId() => null;
+            public string? GetCurrentTenantId() => TestTenants.Default;
             public void SetTenantOverride(string tenantId) { }
             public void ClearTenantOverride() { }
         }

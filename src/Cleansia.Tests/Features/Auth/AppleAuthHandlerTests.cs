@@ -281,7 +281,7 @@ public class AppleAuthHandlerTests
     }
 
     // The sub is the stable identity, so it wins over the email — and the matched account KEEPS its
-    // stored email (rewriting it would collide with the (TenantId, Email) unique index and silently
+    // stored email (rewriting it would collide with the global Email unique index and silently
     // merge accounts when the user switches between a relay address and their real one).
     [Fact]
     public async Task AppleId_Match_Wins_Over_Email_And_Does_Not_Rewrite_The_Stored_Email()

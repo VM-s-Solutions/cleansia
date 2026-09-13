@@ -35,7 +35,7 @@ public class OutboxClaimPostgresTests : BaseIntegrationTest
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private static OutboxMessage Pending(string orderId) =>

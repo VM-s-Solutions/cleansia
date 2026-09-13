@@ -250,6 +250,89 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
             transactional: false);
     }
 
+    /// <summary>
+    /// TC-TEN-MISMATCH-1 (ADR-0061 D6). Slovakia handed to a second operating company: the CZ customer's
+    /// booking at the Slovak address is refused on the address with the operator key and nothing is
+    /// written. The Slovak booking above, under one company serving both countries, is the negative
+    /// case — the rule keys on the operator, not the country.
+    /// </summary>
+    [Fact]
+    public async Task A_Customer_Booking_A_Country_Another_Company_Operates_Is_Refused_And_Writes_Nothing()
+    {
+        await TestMethod(
+            setup: ConfigureCustomerSession,
+            arrange: SeedWithSlovakiaOperatedBySecondCompanyAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(BuildCommand(Slovakia, currencyId: null, EurServicePrice + EurPackagePrice)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.False(result.IsSuccess);
+                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
+                var failure = Assert.Single(validation.Errors, e => e.Message == BusinessErrorMessage.OrderCountryOperatorMismatch);
+                Assert.Equal(nameof(CreateOrder.Command.CustomerAddress), failure.Code);
+                Assert.Empty(await context.Orders.IgnoreQueryFilters().ToListAsync());
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// A GUEST booking names its market through the address (ADR-0061 D3): the scope behaviour resolves
+    /// Slovakia's operator before validation, the order and its address land in that company, and the
+    /// agreement rule passes because tenant and currency were read from the same country.
+    /// </summary>
+    [Fact]
+    public async Task A_Guest_Booking_At_A_Slovak_Address_Lands_In_Slovakias_Operating_Company()
+    {
+        await TestMethod(
+            setup: ConfigureGuestSession,
+            arrange: SeedWithSlovakiaOperatedBySecondCompanyAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(BuildCommand(Slovakia, currencyId: null, EurServicePrice + EurPackagePrice)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, $"CreateOrder failed with: {string.Join("; ", (result as IValidationResult)?.Errors.Select(e => $"{e.Code}={e.Message}") ?? [result.Error?.Message])}");
+                var order = await context.Orders.IgnoreQueryFilters()
+                    .Include(o => o.CustomerAddress)
+                    .SingleAsync(o => o.Id == result.Value.Id);
+                Assert.Equal(TestTenants.Second, order.TenantId);
+                Assert.Equal(TestTenants.Second, order.CustomerAddress.TenantId);
+                Assert.Equal(Eur, order.CurrencyId);
+                Assert.Empty(await context.Orders.IgnoreQueryFilters().Where(o => o.TenantId == TestTenants.Default).ToListAsync());
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// Slovakia handed to the second company, which brings its own EUR pay defaults: pay rates are the
+    /// operator's (ADR-0061 D7), and the pay-coverage gate reads them through the filter, so the second
+    /// company must hold rates of its own for a booking in its market to be admitted (D12 step 5).
+    /// </summary>
+    private static async Task SeedWithSlovakiaOperatedBySecondCompanyAsync(CleansiaDbContext context)
+    {
+        await SeedAsync(context);
+        var slovakia = await context.CountryConfigurations.SingleAsync(c => c.CountryId == Slovakia);
+        slovakia.AssignOperator(TestTenants.Second);
+        foreach (var eurRate in await context.EmployeePayConfigs.IgnoreQueryFilters().Where(c => c.CurrencyId == Eur).ToListAsync())
+        {
+            eurRate.TenantId = TestTenants.Second;
+        }
+
+        await context.CommitAsync(CancellationToken.None);
+    }
+
+    private static Task ConfigureGuestSession(IServiceCollection services)
+    {
+        services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => new TestUserSessionProvider(
+            new TestClaimsPrincipalUser(new ClaimsPrincipal(new ClaimsIdentity())))));
+        // No claim and no override: the anonymous path, where the scope behaviour is what sets the tenant.
+        services.Replace(ServiceDescriptor.Scoped<ITenantProvider>(sp =>
+            new TenantProvider(sp.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>())));
+        services.Replace(ServiceDescriptor.Singleton<IOrderChannelProvider>(
+            _ => new OrderChannelProvider(OrderChannel.Mobile)));
+        services.Replace(ServiceDescriptor.Scoped<IAddressGeocoder, NoopAddressGeocoder>());
+        return Task.CompletedTask;
+    }
+
     private static readonly Dictionary<string, string> CityOf = new()
     {
         [Czechia] = "Praha",
@@ -304,7 +387,9 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
             country.Id = id;
             context.Countries.Add(country);
             context.Add(ServiceCity.Create(id, CityOf[id]));
-            context.CountryConfigurations.Add(CountryConfiguration.Create(id, code, lang, 0.20m));
+            // One operating company serving every seeded country: the operator rule keys on the
+            // operator, not the country, so a CZ caller may book the Slovak address (ADR-0061 D6).
+            context.CountryConfigurations.Add(CountryConfiguration.Create(id, code, lang, 0.20m).AssignOperator(TestTenants.Default));
         }
 
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");
@@ -362,6 +447,8 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
         user.ConfirmEmail();
         context.Add(user);
 
+        // The guest case seeds where the provider answers null; every other case is a no-op here.
+        StampUnstampedAdded(context, TestTenants.Default);
         await context.CommitAsync(CancellationToken.None);
     }
 

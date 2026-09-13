@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -24,7 +25,9 @@ public class ApproveEmployee
             IPackageRepository packageRepository,
             IEmployeePayConfigRepository payConfigRepository,
             IEmployeeDocumentRequirementRepository documentRequirementRepository,
-            ICurrencyResolutionService currencyResolutionService)
+            ICurrencyResolutionService currencyResolutionService,
+            IOperatorTenantResolver operatorTenantResolver,
+            ITenantProvider tenantProvider)
         {
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -123,7 +126,14 @@ public class ApproveEmployee
                 .MustAsync(countryRepository.ExistsAsync)
                     .WithMessage(BusinessErrorMessage.CountryNotFound)
                 .MustAsync(countryRepository.IsServicedAsync)
-                    .WithMessage(BusinessErrorMessage.CountryNotServiced);
+                    .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                // The cleaner is employed by the operating company of the country they work in, and
+                // the employee row is loaded through the filter, so its tenant IS the admin's claim: the
+                // work country's operator must be that claim (ADR-0061 D6).
+                .MustAsync(async (workCountryId, cancellationToken) =>
+                    (await operatorTenantResolver.ResolveAsync(workCountryId, cancellationToken)).OperatorTenantId
+                    == tenantProvider.GetCurrentTenantId())
+                    .WithMessage(BusinessErrorMessage.EmployeeWorkCountryOperatorMismatch);
 
             When(x => !string.IsNullOrEmpty(x.Notes), () =>
             {

@@ -4,10 +4,12 @@ using Cleansia.Core.Domain.Common;
 namespace Cleansia.Core.Domain.Loyalty;
 
 /// <summary>
-/// Per-tenant configuration for a single <see cref="LoyaltyTier"/>. One row per
-/// tier per tenant — seeded on tenant creation, editable by admin (Phase L4).
+/// The brand's configuration for a single <see cref="LoyaltyTier"/>: one row per tier, seeded,
+/// editable by admin (Phase L4).
 /// </summary>
-public class LoyaltyTierConfig : Auditable, ITenantEntity
+// Tenantless on purpose (ADR-0061 D7): the brand's programme, sold identically by every operator —
+// the MembershipPlan sibling.
+public class LoyaltyTierConfig : Auditable
 {
     [Required]
     public LoyaltyTier Tier { get; private set; }

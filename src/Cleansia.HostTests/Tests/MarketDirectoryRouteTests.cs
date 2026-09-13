@@ -63,8 +63,8 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
             NewCountry(SvkId, "Slovakia", "SVK", "SK", isServiced: true),
             NewCountry(PolId, "Poland", "POL", "PL", isServiced: true));
         ctx.CountryConfigurations.AddRange(
-            CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m).SetAsDefaultMarket(true),
-            CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m));
+            CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m).AssignOperator(HostTestTenants.Default).SetAsDefaultMarket(true),
+            CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m).AssignOperator(HostTestTenants.Default));
         return Task.CompletedTask;
     });
 
@@ -116,9 +116,9 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
                 NewCountry(DeuId, "Germany", "DEU", "DE", isServiced: true),
                 NewCountry(CzeId, "Czechia", "CZE", "CZ", isServiced: true));
             ctx.CountryConfigurations.AddRange(
-                CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m),
-                CountryConfiguration.Create(DeuId, "EUR", "de", 0.19m),
-                CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m));
+                CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m).AssignOperator(HostTestTenants.Default),
+                CountryConfiguration.Create(DeuId, "EUR", "de", 0.19m).AssignOperator(HostTestTenants.Default),
+                CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m).AssignOperator(HostTestTenants.Default));
             return Task.CompletedTask;
         });
 
@@ -142,8 +142,8 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
                 NewCountry(CzeId, "Czechia", "CZE", "CZ", isServiced: false),
                 NewCountry(SvkId, "Slovakia", "SVK", "SK", isServiced: true));
             ctx.CountryConfigurations.AddRange(
-                CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m),
-                CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m));
+                CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m).AssignOperator(HostTestTenants.Default),
+                CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m).AssignOperator(HostTestTenants.Default));
             return Task.CompletedTask;
         });
 

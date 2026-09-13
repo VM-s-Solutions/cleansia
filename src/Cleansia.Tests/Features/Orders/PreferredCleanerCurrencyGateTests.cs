@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -270,7 +271,9 @@ public class PreferredCleanerCurrencyGateTests
             _markets,
             CataloguePriceDoubles.Services(Czk, (CreateOrderTestData.ServiceId, 500m, 100m)),
             CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)),
-            new Mock<IPromoCodeService>().Object);
+            new Mock<IPromoCodeService>().Object,
+            Mock.Of<IOperatorTenantResolver>(),
+            Mock.Of<ITenantProvider>());
 
     private ChoosePreferredCleaner.Validator ChooseValidator() =>
         new(_session.Object, _membershipRepository.Object, _orderRepository.Object, _markets);

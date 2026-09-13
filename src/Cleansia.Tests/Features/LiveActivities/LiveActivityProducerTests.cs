@@ -109,7 +109,7 @@ public class LiveActivityProducerTests
         await using var ctx = new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
         await ctx.Database.EnsureCreatedAsync();
 
         ctx.Add(Language.Create("en", "English")); // the User's PreferredLanguageCode FK target
@@ -210,9 +210,9 @@ public class LiveActivityProducerTests
         Assert.Equal(allowed, actual);
     }
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        public string? GetCurrentTenantId() => null;
+        public string? GetCurrentTenantId() => TestTenants.Default;
         public void SetTenantOverride(string tenantId) { }
         public void ClearTenantOverride() { }
     }

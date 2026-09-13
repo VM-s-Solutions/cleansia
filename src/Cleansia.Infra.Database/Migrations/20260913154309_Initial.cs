@@ -106,6 +106,32 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CustomerActionAudits",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    ClientAudience = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    DeviceLabel = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
+                    DeviceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    Action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ResourceType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    ResourceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    Success = table.Column<bool>(type: "boolean", nullable: false),
+                    ErrorCode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    PayloadJson = table.Column<string>(type: "jsonb", nullable: true),
+                    CorrelationId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomerActionAudits", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DeadLetters",
                 columns: table => new
                 {
@@ -1476,6 +1502,7 @@ namespace Cleansia.Infra.Database.Migrations
                     WithdrawnAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
                     UserAgent = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    DocumentVersion = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -3051,6 +3078,28 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CustomerActionAudits_OccurredOn",
+                table: "CustomerActionAudits",
+                column: "OccurredOn");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomerActionAudits_ResourceType_ResourceId",
+                table: "CustomerActionAudits",
+                columns: new[] { "ResourceType", "ResourceId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomerActionAudits_TenantId_OccurredOn",
+                table: "CustomerActionAudits",
+                columns: new[] { "TenantId", "OccurredOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomerActionAudits_UserId_OccurredOn",
+                table: "CustomerActionAudits",
+                columns: new[] { "UserId", "OccurredOn" },
+                descending: new[] { false, true });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DeadLetters_DeadLetteredAt",
                 table: "DeadLetters",
                 column: "DeadLetteredAt");
@@ -4437,6 +4486,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "CreditTransactions");
+
+            migrationBuilder.DropTable(
+                name: "CustomerActionAudits");
 
             migrationBuilder.DropTable(
                 name: "DeadLetters");

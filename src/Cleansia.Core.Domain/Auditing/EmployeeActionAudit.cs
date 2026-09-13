@@ -11,10 +11,13 @@ namespace Cleansia.Core.Domain.Auditing;
 /// who acted", and writing cleaner rows into it would make the sentence false while mixing them into
 /// the admin audit-log screen.</para>
 ///
-/// <para><b>Nothing in the ADR-0012 pipeline can write this row.</b> <c>AdminMutationGate</c> requires
-/// the Administrator role claim, so a partner-app command produces no audit row at all. Rows here are
-/// added explicitly by a handler through <see cref="Repositories.IEmployeeActionAuditRepository"/>,
-/// which rides the UnitOfWork's single commit. Do not wire this into <c>AuditLogBehavior</c>.</para>
+/// <para><b>The pipeline does not write this row, by decision.</b> <c>AuditGate</c> has two arms — the
+/// Administrator role (ADR-0012) and an opted-in customer act (ADR-0062) — and ADR-0062 D1/D2 keeps the
+/// employee table handler-written on purpose: its two acts have no refusal branch worth a row, so the
+/// out-of-band failure capture the pipeline exists for buys nothing here. A partner-app command
+/// therefore produces no pipeline row at all. Rows are added explicitly by a handler through
+/// <see cref="Repositories.IEmployeeActionAuditRepository"/>, which rides the UnitOfWork's single
+/// commit. Do not wire this into <c>AuditLogBehavior</c>.</para>
 ///
 /// <para><b>Why it exists.</b> <c>Order.UnassignEmployee</c> hard-deletes the <c>OrderEmployee</c> row
 /// — load-bearing, because the unique seat index is unfiltered and a released ordinal frees itself by

@@ -7,9 +7,17 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// type, resolved once from its <c>[AuditAction]</c> marker (frozen) or, when unmarked, from the
 /// normalized type name. Pure: no session, no domain state. The normalized name strips a trailing
 /// <c>Command</c> and unwraps a nested <c>Command</c> record to its declaring type
-/// (<c>AdminRefundOrder.Command</c> -&gt; <c>AdminRefundOrder</c>).
+/// (<c>AdminRefundOrder.Command</c> -&gt; <c>AdminRefundOrder</c>). <see cref="Audience"/> and
+/// <see cref="AllowsAnonymousActor"/> are copied from the marker (ADR-0062 D1); an unmarked command is an
+/// admin-audience one.
 /// </summary>
-public sealed record AuditActionDescriptor(string Action, string? ResourceType, bool Sensitive, bool Audited)
+public sealed record AuditActionDescriptor(
+    string Action,
+    string? ResourceType,
+    bool Sensitive,
+    bool Audited,
+    AuditAudience Audience = AuditAudience.Admin,
+    bool AllowsAnonymousActor = false)
 {
     public static AuditActionDescriptor For(Type requestType)
     {
@@ -24,7 +32,9 @@ public sealed record AuditActionDescriptor(string Action, string? ResourceType, 
             label,
             marker?.ResourceType,
             marker?.Sensitive ?? false,
-            marker?.Audited ?? true);
+            marker?.Audited ?? true,
+            marker?.Audience ?? AuditAudience.Admin,
+            marker?.AllowsAnonymousActor ?? false);
     }
 
     private static string NormalizeTypeName(Type requestType)

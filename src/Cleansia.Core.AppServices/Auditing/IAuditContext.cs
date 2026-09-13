@@ -11,11 +11,19 @@ public interface IAuditContext
 {
     void RecordChange(string resourceType, string resourceId, object before, object after, string? reason = null);
 
+    /// <summary>
+    /// ADR-0062 D1 — the customer-side twin of <see cref="RecordChange"/>: one typed evidence record, no
+    /// diff, no reason. <paramref name="actorUserId"/> exists for the acts whose actor does not exist
+    /// until the handler creates them (registration): the session has no user id, the row must carry
+    /// the new one. When the session does carry one, the session wins.
+    /// </summary>
+    void RecordEvidence(string resourceType, string resourceId, object payload, string? actorUserId = null);
+
     AuditSnapshot? DrainSnapshot();
 
     /// <summary>
     /// Per-request latch shared by the inner <c>AuditLogBehavior</c> and the outer
-    /// <c>AuditFailureCaptureBehavior</c> so a failed admin action is recorded out-of-band exactly once.
+    /// <c>AuditFailureCaptureBehavior</c> so a failed action is recorded out-of-band exactly once.
     /// The inner behavior owns the failures it can see (a business failure the handler returned); the
     /// outer behavior owns the two it structurally cannot (a validation reject short-circuited outer to
     /// the inner behavior, and a commit-throw raised after the inner behavior already returned). Whichever

@@ -1,9 +1,12 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities;
 using MediatR;
@@ -16,7 +19,8 @@ namespace Cleansia.Tests.Features.Auditing;
 /// ADR-0012 D2.1/D2.2 — the OUTERMOST AuditFailureCaptureBehavior: the backstop for the two failed-admin-
 /// action shapes the inner AuditLogBehavior structurally cannot see.
 ///   • A validation reject (a short-circuited BusinessResult failure that never reached UnitOfWork/AuditLog)
-///     writes a Success=false row out-of-band.
+///     writes a Success=false row out-of-band whose ErrorCode is the FIRST rule's key, not the
+///     ValidationError sentinel (Q-AUD-O2, both arms — ADR-0062 D1).
 ///   • A commit-throw (an exception propagating from the OUTER UnitOfWork after the inner AuditLog returned
 ///     a success) writes a Success=false row out-of-band, then rethrows.
 ///   • The gate is identical to the inner behavior (admin Command only); a query / non-admin produces no row.
@@ -28,6 +32,9 @@ public sealed class AuditFailureCaptureBehaviorTests
     public sealed record AdminRefundOrderCommand(string OrderId) : IRequest<BusinessResult>;
 
     public sealed record GetPagedAuditsQuery : IRequest<BusinessResult>;
+
+    [AuditAction("customer.order.create", Audience = AuditAudience.Customer, ResourceType = "Order", AllowsAnonymousActor = true)]
+    public sealed record CustomerCreateOrderCommand(string OrderId) : IRequest<BusinessResult>;
 
     private readonly Mock<IAuditFailureSink> _sink = new();
 
@@ -44,7 +51,7 @@ public sealed class AuditFailureCaptureBehaviorTests
         new(session,
             auditContext ?? new AuditContext(),
             _sink.Object,
-            new AuditEntryFactory(session),
+            new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
             NullLogger<AuditFailureCaptureBehavior<TRequest, BusinessResult>>.Instance);
 
     private static RequestHandlerDelegate<BusinessResult> Returns(BusinessResult result) => _ => Task.FromResult(result);
@@ -53,13 +60,13 @@ public sealed class AuditFailureCaptureBehaviorTests
     public async Task A_Validation_Reject_Of_An_Admin_Command_Writes_A_Success_False_Row_OutOfBand()
     {
         var behavior = Behavior<AdminRefundOrderCommand>(Session(UserProfile.Administrator));
-        var rejected = BusinessResult.Failure(new Error("validation.required", "UserId is required"));
+        var rejected = ValidationResult.WithErrors([new Error("OrderId", BusinessErrorMessage.Required)]);
 
         var result = await behavior.Handle(new AdminRefundOrderCommand("ORD-1"), Returns(rejected), CancellationToken.None);
 
         Assert.Same(rejected, result);
         _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
-            !a.Success && a.ErrorCode == "validation.required" && a.Action == "AdminRefundOrder"),
+            !a.Success && a.ErrorCode == BusinessErrorMessage.Required && a.Action == "AdminRefundOrder"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -123,6 +130,45 @@ public sealed class AuditFailureCaptureBehaviorTests
         await behavior.Handle(new AdminRefundOrderCommand("ORD-1"),
             Returns(BusinessResult.Failure(new Error("refund.too_large", "exceeds total"))), CancellationToken.None);
 
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // ── the customer arm (ADR-0062 D1) ────────────────────────────────────────
+
+    [Fact]
+    public async Task A_Validation_Reject_Of_A_Customer_Command_Writes_A_Customer_Row_With_The_First_Rules_Key()
+    {
+        var session = new TestUserSessionProvider("cust-1", "cust@cleansia.test", [new Claim(ClaimTypes.Role, UserProfile.Customer.ToString())]);
+        var behavior = Behavior<CustomerCreateOrderCommand>(session);
+        var rejected = ValidationResult.WithErrors(
+        [
+            new Error("TotalPrice", BusinessErrorMessage.TotalPriceNotMatch),
+            new Error("CurrencyId", BusinessErrorMessage.Required)
+        ]);
+
+        var result = await behavior.Handle(new CustomerCreateOrderCommand("ORD-1"), Returns(rejected), CancellationToken.None);
+
+        Assert.Same(rejected, result);
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<CustomerActionAudit>(a =>
+            !a.Success && a.ErrorCode == BusinessErrorMessage.TotalPriceNotMatch && a.UserId == "cust-1" && a.Action == "customer.order.create"),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task An_Anonymous_Validation_Reject_Is_Recorded_Only_Where_The_Marker_Allows_A_Guest()
+    {
+        var anonymous = new TestUserSessionProvider([]);
+        var rejected = ValidationResult.WithErrors([new Error("TotalPrice", BusinessErrorMessage.TotalPriceNotMatch)]);
+
+        await Behavior<CustomerCreateOrderCommand>(anonymous)
+            .Handle(new CustomerCreateOrderCommand("ORD-1"), Returns(rejected), CancellationToken.None);
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<CustomerActionAudit>(a => a.UserId == null && a.ClientAudience == JwtAudiences.Admin),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        await Behavior<AdminRefundOrderCommand>(anonymous)
+            .Handle(new AdminRefundOrderCommand("ORD-1"), Returns(rejected), CancellationToken.None);
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Once);
         _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 

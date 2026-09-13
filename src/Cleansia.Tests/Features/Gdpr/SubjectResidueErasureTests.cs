@@ -204,6 +204,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
             new UserNotificationRepository(ctx),
             new DeadLetterRepository(ctx),
             new OutboxMessageRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
             _refreshTokenService.Object,
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,

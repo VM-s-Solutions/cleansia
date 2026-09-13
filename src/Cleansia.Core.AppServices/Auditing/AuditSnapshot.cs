@@ -5,4 +5,5 @@ public sealed record AuditSnapshot(
     string? ResourceId,
     string? BeforeJson,
     string? AfterJson,
-    string? Reason);
+    string? Reason,
+    string? ActorUserId = null);

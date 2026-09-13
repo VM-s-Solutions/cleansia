@@ -16,6 +16,9 @@ public sealed class AuditActionDescriptorTests
     [AuditAction(Audited = false)]
     public sealed record OptedOutCommand : ICommandShape;
 
+    [AuditAction("customer.order.create", Audience = AuditAudience.Customer, ResourceType = "Order", AllowsAnonymousActor = true)]
+    public sealed record CustomerMarkedCommand : ICommandShape;
+
     public sealed class NestingHost
     {
         [AuditAction("admin.user.create")]
@@ -38,6 +41,26 @@ public sealed class AuditActionDescriptorTests
         Assert.False(descriptor.Sensitive);
         Assert.True(descriptor.Audited);
         Assert.Null(descriptor.ResourceType);
+    }
+
+    [Fact]
+    public void Unmarked_And_Admin_Marked_Commands_Are_The_Admin_Audience_And_Refuse_Anonymous_Actors()
+    {
+        Assert.Equal(AuditAudience.Admin, AuditActionDescriptor.For(typeof(AdminRefundOrderCommand)).Audience);
+        Assert.Equal(AuditAudience.Admin, AuditActionDescriptor.For(typeof(MarkedRefundCommand)).Audience);
+        Assert.False(AuditActionDescriptor.For(typeof(AdminRefundOrderCommand)).AllowsAnonymousActor);
+        Assert.False(AuditActionDescriptor.For(typeof(MarkedRefundCommand)).AllowsAnonymousActor);
+    }
+
+    [Fact]
+    public void A_Customer_Marker_Copies_Audience_And_AllowsAnonymousActor_From_The_Marker()
+    {
+        var descriptor = AuditActionDescriptor.For(typeof(CustomerMarkedCommand));
+
+        Assert.Equal("customer.order.create", descriptor.Action);
+        Assert.Equal(AuditAudience.Customer, descriptor.Audience);
+        Assert.True(descriptor.AllowsAnonymousActor);
+        Assert.Equal("Order", descriptor.ResourceType);
     }
 
     [Fact]

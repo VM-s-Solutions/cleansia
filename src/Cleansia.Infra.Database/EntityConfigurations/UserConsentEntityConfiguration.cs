@@ -23,6 +23,9 @@ public class UserConsentEntityConfiguration : AuditableEntityConfiguration<UserC
         builder.Property(e => e.UserAgent)
             .HasMaxLength(500);
 
+        builder.Property(e => e.DocumentVersion)
+            .HasMaxLength(32);
+
         builder.HasOne(e => e.User)
             .WithMany()
             .HasForeignKey(e => e.UserId)

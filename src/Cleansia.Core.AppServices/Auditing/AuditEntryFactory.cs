@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Security.Claims;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -12,8 +13,17 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// by the success path (the behavior) and the failure path (the out-of-band sink) so both shapes agree
 /// on actor/action/resource/correlation. Holds no domain math — the before/after, if any, comes from the
 /// handler's pre-redacted snapshot.
+///
+/// <para>The customer pair (ADR-0062 D1) builds the <c>CustomerActionAudit</c> row the same way, plus
+/// the request context: <c>ClientAudience</c> is the host that served the request (never the JWT — it is
+/// null on exactly the anonymous rows that most need it), IP/device come from
+/// <see cref="IRequestMetadataProvider"/>, and the subject is the session's user id, falling back to the
+/// snapshot's <c>ActorUserId</c> only when the session has none (S1: the session wins).</para>
 /// </summary>
-public sealed class AuditEntryFactory(IUserSessionProvider userSessionProvider)
+public sealed class AuditEntryFactory(
+    IUserSessionProvider userSessionProvider,
+    IRequestMetadataProvider requestMetadataProvider,
+    IHostAudienceProvider hostAudienceProvider)
 {
     private const string SystemActor = "System";
 
@@ -25,6 +35,16 @@ public sealed class AuditEntryFactory(IUserSessionProvider userSessionProvider)
     public AdminActionAudit CreateFailure(object request, AuditActionDescriptor descriptor, string? errorCode)
     {
         return Build(request, descriptor, success: false, errorCode, snapshot: null);
+    }
+
+    public CustomerActionAudit CreateCustomerSuccess(object request, AuditActionDescriptor descriptor, AuditSnapshot? snapshot)
+    {
+        return BuildCustomer(request, descriptor, success: true, errorCode: null, snapshot);
+    }
+
+    public CustomerActionAudit CreateCustomerFailure(object request, AuditActionDescriptor descriptor, string? errorCode)
+    {
+        return BuildCustomer(request, descriptor, success: false, errorCode, snapshot: null);
     }
 
     private AdminActionAudit Build(
@@ -53,6 +73,36 @@ public sealed class AuditEntryFactory(IUserSessionProvider userSessionProvider)
             CorrelationId = ResolveCorrelationId()
         };
     }
+
+    private CustomerActionAudit BuildCustomer(
+        object request,
+        AuditActionDescriptor descriptor,
+        bool success,
+        string? errorCode,
+        AuditSnapshot? snapshot)
+    {
+        var sessionUserId = userSessionProvider.GetUserId();
+
+        return CustomerActionAudit.Create(
+            userId: string.IsNullOrWhiteSpace(sessionUserId) ? snapshot?.ActorUserId : sessionUserId,
+            clientAudience: hostAudienceProvider.Audience,
+            ipAddress: requestMetadataProvider.IpAddress,
+            deviceLabel: requestMetadataProvider.DeviceLabel,
+            deviceId: requestMetadataProvider.DeviceId,
+            action: descriptor.Action,
+            resourceType: snapshot?.ResourceType ?? descriptor.ResourceType,
+            // A failure row's id is read off the request as the client sent it; clamping keeps a
+            // malformed-id probe recorded instead of failing the out-of-band insert.
+            resourceId: Clamp(snapshot?.ResourceId ?? AuditResourceResolver.ResolveExact(request, descriptor.ResourceType),
+                CustomerActionAudit.ResourceIdMaxLength),
+            success: success,
+            errorCode: Clamp(errorCode, CustomerActionAudit.ErrorCodeMaxLength),
+            payloadJson: snapshot?.AfterJson,
+            correlationId: ResolveCorrelationId());
+    }
+
+    private static string? Clamp(string? value, int maxLength) =>
+        value is { Length: var length } && length > maxLength ? value[..maxLength] : value;
 
     private UserProfile ResolveActorProfile()
     {

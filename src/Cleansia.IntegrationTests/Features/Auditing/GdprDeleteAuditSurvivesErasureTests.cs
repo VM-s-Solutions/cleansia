@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -7,6 +8,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Auditing;
@@ -57,7 +59,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
     {
         var session = AdminSession();
         var auditContext = new AuditContext();
-        var factory = new AuditEntryFactory(session);
+        var factory = new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin));
         var writer = new DbContextAuditWriter(context, new FixedTenantProvider(TestTenants.Default));
         var sink = new OutOfBandAuditFailureSink(
             new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default));

@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -7,6 +8,7 @@ using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities;
 using MediatR;
@@ -244,7 +246,7 @@ public sealed class EmployeeUserAuditCoverageTests
             "partner-1", "partner@cleansia.test",
             [new Claim(ClaimTypes.Role, UserProfile.Employee.ToString())]);
         var behavior = new AuditLogBehavior<RejectEmployee.Command, BusinessResult>(
-            session, new AuditContext(), writer.Object, sink.Object, new AuditEntryFactory(session),
+            session, new AuditContext(), writer.Object, sink.Object, new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
             NullLogger<AuditLogBehavior<RejectEmployee.Command, BusinessResult>>.Instance);
 
         await behavior.Handle(

@@ -6,8 +6,11 @@ namespace Cleansia.Core.Domain.Auditing;
 /// row rides that single <c>SaveChangesAsync</c> and is atomic with the action. The impl lives in
 /// Infra.Database (it needs the scoped <c>CleansiaDbContext</c>); the behavior depends only on this
 /// abstraction so it never references the DbContext. It does NOT save — saving is the UoW's job.
+/// The customer overload (ADR-0062 D1) is the same seam for the customer table.
 /// </summary>
 public interface IAuditWriter
 {
     void Add(AdminActionAudit entry);
+
+    void Add(CustomerActionAudit entry);
 }

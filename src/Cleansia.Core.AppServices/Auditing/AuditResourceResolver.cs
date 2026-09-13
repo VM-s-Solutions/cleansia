@@ -8,6 +8,11 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// type), then a conventional <c>Id</c>, then the single <c>*Id</c> string/Ulid-shaped property. Returns
 /// null when nothing conventional resolves — the audit row is still written (the resource id is
 /// nullable in the contract).
+///
+/// <para><see cref="ResolveExact"/> is the customer arm's read (ADR-0062 D1): the <c>{ResourceType}Id</c>
+/// property only. The two fallbacks would label <c>CreateMembershipCheckoutSession.Command</c>'s
+/// <c>CountryId</c> a membership and <c>CreateDispute.Command</c>'s <c>OrderId</c> a dispute — a wrong
+/// id on an evidence row is worse than none.</para>
 /// </summary>
 public static class AuditResourceResolver
 {
@@ -15,13 +20,10 @@ public static class AuditResourceResolver
     {
         var type = request.GetType();
 
-        if (!string.IsNullOrWhiteSpace(resourceType))
+        var typed = ResolveExact(request, resourceType);
+        if (typed is not null)
         {
-            var typed = ReadString(request, type.GetProperty($"{resourceType}Id", BindingFlags.Public | BindingFlags.Instance));
-            if (typed is not null)
-            {
-                return typed;
-            }
+            return typed;
         }
 
         var idProperty = type.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance);
@@ -37,6 +39,16 @@ public static class AuditResourceResolver
             .ToArray();
 
         return idLike.Length == 1 ? ReadString(request, idLike[0]) : null;
+    }
+
+    public static string? ResolveExact(object request, string? resourceType)
+    {
+        if (string.IsNullOrWhiteSpace(resourceType))
+        {
+            return null;
+        }
+
+        return ReadString(request, request.GetType().GetProperty($"{resourceType}Id", BindingFlags.Public | BindingFlags.Instance));
     }
 
     private static string? ReadString(object request, PropertyInfo? property)

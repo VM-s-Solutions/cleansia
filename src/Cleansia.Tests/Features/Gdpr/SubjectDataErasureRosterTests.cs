@@ -262,6 +262,15 @@ public class SubjectDataErasureRosterTests
                 + "that they held the seat — and it carries two ids and an enum, no name, contact or "
                 + "free text."),
 
+        [typeof(Core.Domain.Auditing.CustomerActionAudit)] = new(
+            Verdict.AnonymizedInPlace,
+            "ADR-0062 defence-of-claims record. Its subject handle is a bare UserId that User.Anonymize keeps, so "
+                + "it is pseudonymous without a write; the three request-metadata columns (IP, device label, device "
+                + "id) ARE personal data and are blanked here. The payload holds ids, money, enums and versions only "
+                + "— CustomerAuditPayloadPiiGuardTests is the standing proof. Each row is deleted by the retention "
+                + "sweep three years after its own OccurredOn; the UserId -> OrderId link is kept on purpose (ADR-0062 D5).",
+            InErasure("customerActionAuditRepository.PseudonymiseForSubjectAsync")),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeeInvoice)] = new(
             Verdict.RetainedByPolicy,
             "ADR-0007 D4 financial record. The erasure refuses to run at all while one is Pending, Approved "

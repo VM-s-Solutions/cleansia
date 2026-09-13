@@ -25,6 +25,13 @@ public class UserConsent : Auditable, ITenantEntity
     [MaxLength(500)]
     public string? UserAgent { get; private set; }
 
+    /// <summary>
+    /// The dated version string of the document accepted (ADR-0062 D4). Null on rows granted before
+    /// versioning existed and on consent types that have no document.
+    /// </summary>
+    [MaxLength(32)]
+    public string? DocumentVersion { get; private set; }
+
     public static UserConsent Grant(string userId, ConsentType consentType, string? ipAddress, string? userAgent)
         => new()
         {

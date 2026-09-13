@@ -34,6 +34,7 @@ public class GdprDeletionService(
     IUserNotificationRepository userNotificationRepository,
     IDeadLetterRepository deadLetterRepository,
     IOutboxMessageRepository outboxMessageRepository,
+    ICustomerActionAuditRepository customerActionAuditRepository,
     IRefreshTokenService refreshTokenService,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
@@ -409,6 +410,14 @@ public class GdprDeletionService(
 
         // The per-currency Stripe Customer ids go with the legacy one Anonymize() clears.
         await userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct);
+
+        // The customer's own conduct record stays for defence of claims (ADR-0062 D5) — the subject id is
+        // pseudonymous once the User row below is anonymized — but the IP address, device label and
+        // device id on each row are personal data and are blanked. A tracked walk, not a set-based
+        // update, placed AFTER the refresh-token revoke above: that revoke commits the unit of work
+        // mid-erasure, and the blanking must land in the same commit as the User row's anonymization —
+        // never a blanked trail for a customer who still exists.
+        await customerActionAuditRepository.PseudonymiseForSubjectAsync(user.Id, ct);
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);

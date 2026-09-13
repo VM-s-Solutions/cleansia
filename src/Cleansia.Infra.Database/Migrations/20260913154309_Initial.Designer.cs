@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260913132759_Initial")]
+    [Migration("20260913154309_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -108,6 +108,90 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasDatabaseName("IX_AdminActionAudits_TenantId_OccurredOn");
 
                     b.ToTable("AdminActionAudits", (string)null);
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Auditing.CustomerActionAudit", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ClientAudience")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("DeviceLabel")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("OccurredOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ResourceId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ResourceType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OccurredOn")
+                        .HasDatabaseName("IX_CustomerActionAudits_OccurredOn");
+
+                    b.HasIndex("ResourceType", "ResourceId")
+                        .HasDatabaseName("IX_CustomerActionAudits_ResourceType_ResourceId");
+
+                    b.HasIndex("TenantId", "OccurredOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_CustomerActionAudits_TenantId_OccurredOn");
+
+                    b.HasIndex("UserId", "OccurredOn")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_CustomerActionAudits_UserId_OccurredOn");
+
+                    b.ToTable("CustomerActionAudits", (string)null);
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Auditing.EmployeeActionAudit", b =>
@@ -6300,6 +6384,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DocumentVersion")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.Property<DateTimeOffset?>("GrantedAt")
                         .HasColumnType("timestamp with time zone");

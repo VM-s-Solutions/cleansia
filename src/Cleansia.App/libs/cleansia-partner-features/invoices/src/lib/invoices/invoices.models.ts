@@ -9,7 +9,7 @@ export interface InvoicesActions {
 
 export function getInvoicesTableDefinition(
   actions: InvoicesActions,
-  statusTemplate?: TemplateRef<any>
+  statusTemplate?: TemplateRef<EmployeeInvoice>
 ): { columns: TableColumn<EmployeeInvoice>[]; actions: TableAction<EmployeeInvoice>[] } {
   return {
     columns: [

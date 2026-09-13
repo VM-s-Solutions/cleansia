@@ -63,7 +63,7 @@ export class InvoicesComponent implements AfterViewInit {
   protected readonly facade = inject(InvoicesFacade);
   private readonly translate = inject(TranslateService);
 
-  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+  statusTemplate = viewChild<TemplateRef<EmployeeInvoice>>('statusTemplate');
   invoicesHelpCard = viewChild<CleansiaHelpCardComponent>('invoicesHelpCard');
 
   invoicesColumns!: TableColumn<EmployeeInvoice>[];
@@ -210,7 +210,7 @@ export class InvoicesComponent implements AfterViewInit {
 
   removeFilterChip(chipKey: string): void {
     if (chipKey === 'statuses') {
-      const resetValues: Record<string, any> = { statuses: [] };
+      const resetValues: Record<string, boolean | number[]> = { statuses: [] };
       this.invoiceStatusOptions.forEach((opt) => {
         resetValues[`status_${opt.value}`] = false;
       });

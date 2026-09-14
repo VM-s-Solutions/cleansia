@@ -128,8 +128,9 @@ public class ConfirmUserEmail
     /// keeps the old code-only wire shape so existing clients and in-flight emails stay valid.</param>
     public record Command(string Code, string? Email = null) : ICommand<JwtTokenResponse>, IOperatorScopedRequest
     {
-        // The confirmation names no market, so its refusal row is stamped with the default market's
-        // operator — the same answer a registration that names none gets. Off the wire.
+        // The confirmation names no market: a refusal that resolved no account is stamped with the default
+        // market's operator (ADR-0061 D3), and one on a known account is re-stamped by the failure sink
+        // with that account's operator. Off the wire.
         string? IOperatorScopedRequest.CountryId => null;
     }
 

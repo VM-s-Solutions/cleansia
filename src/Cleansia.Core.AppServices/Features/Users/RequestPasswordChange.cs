@@ -86,8 +86,9 @@ public class RequestPasswordChange
         string Language = Constants.Language.English)
         : ICommand, IOperatorScopedRequest
     {
-        // The request names no market, so its refusal row is stamped with the default market's operator —
-        // the same answer a registration that names none gets. Off the wire.
+        // The request names no market: a refusal for an unknown address is stamped with the default market's
+        // operator (ADR-0061 D3), and a refusal on a known account is re-stamped by the failure sink with
+        // that account's operator. Off the wire.
         string? IOperatorScopedRequest.CountryId => null;
     }
 

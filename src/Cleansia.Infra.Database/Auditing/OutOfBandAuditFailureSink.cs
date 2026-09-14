@@ -18,9 +18,11 @@ namespace Cleansia.Infra.Database.Auditing;
 /// changes the error returned to the caller (D2.2).
 ///
 /// <para>A customer row that names an account is stamped with that account's operating company (ADR-0062
-/// D7), read here past the tenant filter because the request is anonymous: its ambient tenant is the
-/// default market's operator, which is the right stamp for an unknown address and the wrong one for a
-/// second operator's customer refused a sign-in. A row that names nobody keeps the ambient stamp.</para>
+/// D7). The read runs for every subject-named customer row and is decisive only when a validator or
+/// handler named the subject on an anonymous request: there the ambient tenant is the default market's
+/// operator, the right stamp for an unknown address and the wrong one for a second operator's customer
+/// refused a sign-in, and the filter would hide that account. For a signed-in subject the read returns
+/// the operator the session claim was minted from. A row that names nobody keeps the ambient stamp.</para>
 ///
 /// <para>A row with no tenant from either source is not written. The one request shape that reaches
 /// here without one is an anonymous market-scoped act refused BEFORE <c>OperatorTenantScopeBehavior</c>

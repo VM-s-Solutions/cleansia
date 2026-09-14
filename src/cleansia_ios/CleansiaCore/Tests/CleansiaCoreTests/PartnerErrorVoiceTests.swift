@@ -74,6 +74,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "common.max_length": "AddOrderNote, BaseAuthValidator, ReportOrderIssue +7 more",
         "common.required": "AddOrderNote, BaseAuthValidator, CompleteOrder +37 more",
         "company.not_found": "ReceiptService",
+        "consent.terms_not_accepted": "Register",
         "country.not_existing_id": "UpdateAddressInfo, UpdateEmployee, UpdateIdentificationInfo",
         "country.not_serviced": "OperatorTenantScopeBehavior, UpdateAddressInfo, UpdateEmployee",
         "currency.not_found": "GetPeriodPays",

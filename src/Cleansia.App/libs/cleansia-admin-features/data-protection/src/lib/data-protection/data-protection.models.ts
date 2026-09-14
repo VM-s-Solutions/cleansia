@@ -61,7 +61,7 @@ export function getGdprRequestTableDefinition(
   defs: {
     onFulfil: (row: GdprRequestDto) => void;
     onRetry: (row: GdprRequestDto) => void;
-    isRetrying: (row: GdprRequestDto) => boolean;
+    retrying: () => boolean;
   },
   translate: TranslateService,
   permissions: PermissionService,
@@ -166,7 +166,7 @@ export function getGdprRequestTableDefinition(
           (row.status === GdprRequestStatus.Failed ||
             row.status === GdprRequestStatus.Processing) &&
           permissions.hasPolicy(Policy.CanAdminDeleteUserAccount),
-        disabled: (row) => defs.isRetrying(row),
+        disabled: () => defs.retrying(),
         onClick: defs.onRetry,
       },
     ],

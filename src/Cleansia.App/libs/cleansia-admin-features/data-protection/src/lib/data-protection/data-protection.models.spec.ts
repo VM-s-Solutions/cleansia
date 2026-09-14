@@ -47,7 +47,7 @@ describe('data-protection models', () => {
       const defs = {
         onFulfil: jest.fn(),
         onRetry: jest.fn(),
-        isRetrying: jest.fn(() => retrying),
+        retrying: jest.fn(() => retrying),
       };
       const { actions } = getGdprRequestTableDefinition(
         defs,
@@ -91,10 +91,16 @@ describe('data-protection models', () => {
       expect(retry.visible?.(row(GdprRequestStatus.Failed))).toBe(false);
     });
 
-    it('is disabled while that row is being retried', () => {
+    it('is disabled on every row while any retry is in flight, like the Erase button', () => {
       const { retry, defs } = build(true, true);
-      expect(retry.disabled?.(row(GdprRequestStatus.Failed))).toBe(true);
-      expect(defs.isRetrying).toHaveBeenCalled();
+      expect(retry.disabled?.(row(GdprRequestStatus.Failed, 'Deletion', 'req-1'))).toBe(true);
+      expect(retry.disabled?.(row(GdprRequestStatus.Failed, 'Deletion', 'req-2'))).toBe(true);
+      expect(defs.retrying).toHaveBeenCalled();
+    });
+
+    it('is enabled when no retry is in flight', () => {
+      const { retry } = build(true, false);
+      expect(retry.disabled?.(row(GdprRequestStatus.Failed))).toBe(false);
     });
 
     it('hands the clicked row to the retry callback', () => {

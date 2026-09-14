@@ -96,7 +96,7 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
 
     this.statusControl.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe((status) => this.facade.selectStatus(status ?? null));
+      .subscribe((status) => this.facade.selectStatus(status));
 
     this.facade.loadRequests();
   }
@@ -220,7 +220,7 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
       {
         onFulfil: (row) => this.confirmFulfil(row),
         onRetry: (row) => this.confirmRetry(row),
-        isRetrying: (row) => this.facade.isRetrying(row.id),
+        retrying: () => this.facade.retrying(),
       },
       this.translate,
       this.permissions,

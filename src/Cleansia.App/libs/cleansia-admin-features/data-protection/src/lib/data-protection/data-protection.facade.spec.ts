@@ -146,6 +146,65 @@ describe('DataProtectionFacade', () => {
       );
     });
 
+    it('passes the zero-valued Pending status rather than dropping it as falsy', () => {
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
+
+      facade.selectStatus(GdprRequestStatus.Pending);
+
+      expect(facade.status()).toBe(GdprRequestStatus.Pending);
+      expect(gdprClient.requests).toHaveBeenLastCalledWith(
+        GdprRequestStatus.Pending,
+        undefined,
+        0,
+        20
+      );
+    });
+
+    it('drops a response the filter has already moved past, so the newer rows stay', () => {
+      const older = new Subject<PagedDataOfGdprRequestDto>();
+      const newer = new Subject<PagedDataOfGdprRequestDto>();
+      gdprClient.requests
+        .mockReturnValueOnce(older.asObservable())
+        .mockReturnValueOnce(newer.asObservable());
+      const failedRow = GdprRequestDto.fromJS({
+        id: 'req-failed',
+        status: GdprRequestStatus.Failed,
+      });
+      const staleRow = GdprRequestDto.fromJS({
+        id: 'req-stale',
+        status: GdprRequestStatus.Completed,
+      });
+
+      facade.loadRequests();
+      facade.selectStatus(GdprRequestStatus.Failed);
+      newer.next(pagedRequests([failedRow], 1));
+      newer.complete();
+      older.next(pagedRequests([staleRow], 7));
+      older.complete();
+
+      expect(facade.requests()).toEqual([failedRow]);
+      expect(facade.totalRecords()).toBe(1);
+    });
+
+    it('drops a response the page has already moved past, so the newer rows stay', () => {
+      const older = new Subject<PagedDataOfGdprRequestDto>();
+      const newer = new Subject<PagedDataOfGdprRequestDto>();
+      gdprClient.requests
+        .mockReturnValueOnce(older.asObservable())
+        .mockReturnValueOnce(newer.asObservable());
+      const secondPageRow = GdprRequestDto.fromJS({ id: 'req-page-2' });
+      const staleRow = GdprRequestDto.fromJS({ id: 'req-stale' });
+
+      facade.loadRequests();
+      facade.onPageChange(20, 20);
+      newer.next(pagedRequests([secondPageRow], 21));
+      newer.complete();
+      older.next(pagedRequests([staleRow], 21));
+      older.complete();
+
+      expect(facade.requests()).toEqual([secondPageRow]);
+    });
+
     it('clearing the status filter asks for every status again', () => {
       gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
       facade.selectStatus(GdprRequestStatus.Failed);
@@ -308,7 +367,7 @@ describe('DataProtectionFacade', () => {
         'pages.data_protection.requests.retry_success'
       );
       expect(gdprClient.requests).toHaveBeenCalledTimes(1);
-      expect(facade.isRetrying('req-1')).toBe(false);
+      expect(facade.retrying()).toBe(false);
     });
 
     it('surfaces the refusal and still re-reads the list, so a row the job already completed leaves the screen', () => {
@@ -324,16 +383,15 @@ describe('DataProtectionFacade', () => {
       );
       expect(snackbar.showSuccess).not.toHaveBeenCalled();
       expect(gdprClient.requests).toHaveBeenCalledTimes(1);
-      expect(facade.isRetrying('req-1')).toBe(false);
+      expect(facade.retrying()).toBe(false);
     });
 
-    it('marks only the row in flight while the retry runs', () => {
+    it('reports a retry in flight while the call runs', () => {
       requestsClient.retryDeletion.mockReturnValue(new Subject<void>());
 
       facade.retryDeletion('req-1');
 
-      expect(facade.isRetrying('req-1')).toBe(true);
-      expect(facade.isRetrying('req-2')).toBe(false);
+      expect(facade.retrying()).toBe(true);
     });
 
     it('ignores a second retry while one is in flight', () => {

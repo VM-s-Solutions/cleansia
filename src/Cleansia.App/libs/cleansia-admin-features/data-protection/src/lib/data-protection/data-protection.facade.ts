@@ -32,7 +32,7 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
   readonly totalRecords = signal<number>(0);
   readonly hasError = signal<boolean>(false);
   readonly status = signal<GdprRequestStatus | null>(null);
-  readonly retryingRequestId = signal<string | null>(null);
+  readonly retrying = signal<boolean>(false);
 
   readonly consents = signal<UserConsentDto[]>([]);
   readonly consentsUserId = signal<string | null>(null);
@@ -48,12 +48,14 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
   loadRequests(): void {
     this.loading.set(true);
     this.hasError.set(false);
+    const requested = this.status();
+    const offset = this.currentOffset;
 
     this.gdprClient
       .requests(
-        this.status() ?? undefined,
+        requested ?? undefined,
         this.currentSort,
-        this.currentOffset,
+        offset,
         this.currentLimit
       )
       .pipe(
@@ -69,7 +71,12 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
-        if (response) {
+        // Drop a response the filter or the page has already moved past.
+        if (
+          response &&
+          this.status() === requested &&
+          this.currentOffset === offset
+        ) {
           this.requests.set(response.data ?? []);
           this.totalRecords.set(response.total ?? 0);
         }
@@ -91,14 +98,10 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
     this.loadRequests();
   }
 
-  isRetrying(requestId: string | undefined): boolean {
-    return !!requestId && this.retryingRequestId() === requestId;
-  }
-
   retryDeletion(requestId: string): void {
-    if (this.retryingRequestId()) return;
+    if (this.retrying()) return;
 
-    this.retryingRequestId.set(requestId);
+    this.retrying.set(true);
     this.requestsClient
       .retryDeletion(requestId)
       .pipe(
@@ -110,7 +113,7 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
           );
           return of('error' as const);
         }),
-        finalize(() => this.retryingRequestId.set(null))
+        finalize(() => this.retrying.set(false))
       )
       .subscribe((result) => {
         if (result !== 'error') {

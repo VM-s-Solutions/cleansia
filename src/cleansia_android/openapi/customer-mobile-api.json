@@ -8238,6 +8238,22 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true
+          },
+          "documentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "legalDocumentId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

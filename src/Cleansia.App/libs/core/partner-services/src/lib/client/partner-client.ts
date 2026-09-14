@@ -8813,6 +8813,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
     isGranted!: boolean;
     grantedAt!: Date | undefined;
     withdrawnAt!: Date | undefined;
+    ipAddress!: string | undefined;
+    userAgent!: string | undefined;
+    documentVersion!: string | undefined;
+    legalDocumentId!: string | undefined;
 
     constructor(data?: IGdprExportConsentDto) {
         if (data) {
@@ -8830,6 +8834,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
             this.isGranted = Data["isGranted"];
             this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
             this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
+            this.ipAddress = Data["ipAddress"];
+            this.userAgent = Data["userAgent"];
+            this.documentVersion = Data["documentVersion"];
+            this.legalDocumentId = Data["legalDocumentId"];
         }
     }
 
@@ -8847,6 +8855,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
         data["isGranted"] = this.isGranted;
         data["grantedAt"] = this.grantedAt ? this.grantedAt.toISOString() : undefined as any;
         data["withdrawnAt"] = this.withdrawnAt ? this.withdrawnAt.toISOString() : undefined as any;
+        data["ipAddress"] = this.ipAddress;
+        data["userAgent"] = this.userAgent;
+        data["documentVersion"] = this.documentVersion;
+        data["legalDocumentId"] = this.legalDocumentId;
         return data;
     }
 }
@@ -8857,6 +8869,10 @@ export interface IGdprExportConsentDto {
     isGranted: boolean;
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
+    ipAddress: string | undefined;
+    userAgent: string | undefined;
+    documentVersion: string | undefined;
+    legalDocumentId: string | undefined;
 }
 
 export class GdprExportCustomerActionDto implements IGdprExportCustomerActionDto {

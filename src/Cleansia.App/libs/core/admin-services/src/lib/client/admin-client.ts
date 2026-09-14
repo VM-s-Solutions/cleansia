@@ -7157,6 +7157,11 @@ export interface IAdminGdprClient {
      */
     export(userId: string): Observable<GdprExportDto>;
     /**
+     * @param orderId (optional) 
+     * @return OK
+     */
+    incidentFile(userId: string, orderId?: string | undefined): Observable<FileResponse>;
+    /**
      * @return OK
      */
     deleteAccount(userId: string): Observable<void>;
@@ -7165,12 +7170,13 @@ export interface IAdminGdprClient {
      */
     consents(userId: string): Observable<UserConsentDto[]>;
     /**
+     * @param status (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    requests(sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfGdprRequestDto>;
+    requests(status?: GdprRequestStatus | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfGdprRequestDto>;
 }
 
 @Injectable({
@@ -7231,6 +7237,76 @@ export class AdminGdprClient implements IAdminGdprClient {
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = GdprExportDto.fromJS(resultData200);
             return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param orderId (optional) 
+     * @return OK
+     */
+    incidentFile(userId: string, orderId?: string | undefined): Observable<FileResponse> {
+        let url = this.baseUrl + "/api/v1/AdminGdpr/incident-file/{userId}?";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url = url.replace("{userId}", encodeURIComponent("" + userId));
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "orderId=" + encodeURIComponent("" + orderId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processIncidentFile(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processIncidentFile(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<FileResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<FileResponse>;
+        }));
+    }
+
+    protected processIncidentFile(response: HttpResponseBase): Observable<FileResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return ObservableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: Headers });
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -7352,13 +7428,18 @@ export class AdminGdprClient implements IAdminGdprClient {
     }
 
     /**
+     * @param status (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    requests(sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfGdprRequestDto> {
+    requests(status?: GdprRequestStatus | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfGdprRequestDto> {
         let url = this.baseUrl + "/api/v1/AdminGdpr/requests?";
+        if (status === null)
+            throw new globalThis.Error("The parameter 'status' cannot be null.");
+        else if (status !== undefined)
+            url += "Status=" + encodeURIComponent("" + status) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -7420,6 +7501,77 @@ export class AdminGdprClient implements IAdminGdprClient {
             let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
             return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IRequestsClient {
+    /**
+     * @return OK
+     */
+    retryDeletion(requestId: string): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class RequestsClient implements IRequestsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    retryDeletion(requestId: string): Observable<void> {
+        let url = this.baseUrl + "/api/v1/AdminGdpr/requests/{requestId}/retry-deletion";
+        if (requestId === undefined || requestId === null)
+            throw new globalThis.Error("The parameter 'requestId' must be defined.");
+        url = url.replace("{requestId}", encodeURIComponent("" + requestId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRetryDeletion(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRetryDeletion(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processRetryDeletion(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -24141,6 +24293,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
     isGranted!: boolean;
     grantedAt!: Date | undefined;
     withdrawnAt!: Date | undefined;
+    ipAddress!: string | undefined;
+    userAgent!: string | undefined;
+    documentVersion!: string | undefined;
+    legalDocumentId!: string | undefined;
 
     constructor(data?: IGdprExportConsentDto) {
         if (data) {
@@ -24158,6 +24314,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
             this.isGranted = Data["isGranted"];
             this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
             this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
+            this.ipAddress = Data["ipAddress"];
+            this.userAgent = Data["userAgent"];
+            this.documentVersion = Data["documentVersion"];
+            this.legalDocumentId = Data["legalDocumentId"];
         }
     }
 
@@ -24175,6 +24335,10 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
         data["isGranted"] = this.isGranted;
         data["grantedAt"] = this.grantedAt ? this.grantedAt.toISOString() : undefined as any;
         data["withdrawnAt"] = this.withdrawnAt ? this.withdrawnAt.toISOString() : undefined as any;
+        data["ipAddress"] = this.ipAddress;
+        data["userAgent"] = this.userAgent;
+        data["documentVersion"] = this.documentVersion;
+        data["legalDocumentId"] = this.legalDocumentId;
         return data;
     }
 }
@@ -24185,6 +24349,10 @@ export interface IGdprExportConsentDto {
     isGranted: boolean;
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
+    ipAddress: string | undefined;
+    userAgent: string | undefined;
+    documentVersion: string | undefined;
+    legalDocumentId: string | undefined;
 }
 
 export class GdprExportCustomerActionDto implements IGdprExportCustomerActionDto {

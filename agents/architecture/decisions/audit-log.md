@@ -124,6 +124,52 @@ three years after `OccurredOn`. Reads: `api/CustomerAudit/{get-paged,get-by-id,t
 audited `POST` Command and both exports commit their `GdprRequest`. → `docs/decisions/adr-0062`,
 `docs/domain/roles/customer-action-audit.md`, `docs/domain/roles/audit-gate.md`.
 
+## The follow-up batch (owner rulings 2026-09-14, T-0738 … T-0748)
+
+The owner ruled on all nine ADR-0062 questions and eight review findings the day after acceptance;
+ADR-0062 carries a dated *"As amended"* block per decision and a §Rulings table, and ADR-0063 is new.
+What changed in the shape this note tracks:
+
+- **The gate is host-aware.** `AuditGate.Resolve(request, descriptor, session, hostAudience)`: an
+  anonymous act lands in the customer table only when the serving host's audience is
+  `JwtAudiences.Customer`. Nine markers carry `AllowsAnonymousActor` (`Register`, `CreateOrder`, the
+  four sign-ins, `ConfirmUserEmail`, the two password-reset commands), every one on an
+  `IOperatorScopedRequest` — the session commands with an explicit off-the-wire `CountryId => null`
+  so their refusal row has an operator; their success row is stamped with the account's operator
+  (`TokenService` adopts it before the confirmation check; the reset handlers adopt it themselves).
+- **The roster is 25 commands / 21 labels.** Session acts (`customer.session.login` with
+  `LoginEvidence`, `.logout`, `customer.password.reset_requested/.reset_completed`,
+  `customer.account.email_confirmed`) and the customer's own export (`customer.gdpr.export`) joined.
+  `IAuditContext.DeclineSuccessRow()` lets a handler whose marked command took a branch the marker
+  does not describe (a social sign-in that provisioned) withhold the success row; refusals are still
+  recorded. `RecordEvidence` accepts a null payload for an act whose only evidence is that it
+  happened and to whom.
+- **Admin refusals carry the resource.** `AdminCancelOrder` (`order.cancel`), `AdminReassignOrder`
+  (`order.reassign`), `UpdateDisputeStatus` (`dispute.status.update`) and `AddDisputeMessage`
+  (`dispute.message.add`) gained a labelled `ResourceType`, so the resource timeline and the list's
+  `resourceId` filter find a refused admin act on an order.
+- **Validators run for every request type.** `ValidationPipelineBehavior`'s `BusinessResult`
+  constraint is gone; `GetActionTimeline` is a canonical `PagedData<T>` query again and the out-of-band
+  failure row records the first rule's key on the thrown arm too.
+- **Two more audited admin acts, one of them a PDF.** `gdpr.user.incident_file`
+  (`ExportCustomerIncidentFile`, snapshot incl. the SHA-256 of the file's data section) and
+  `gdpr.user.delete.retry` (`AdminRetryUserDeletion`, keyed on the `GdprRequest` row). The retry
+  sweep's own dispatch has no session and lands nowhere — the request row is the timer's record.
+- **A parallel out-of-band sink for erasures.** `ErasureFailureCaptureBehavior` (outer to the unit of
+  work, like `AuditFailureCaptureBehavior`) + `OutOfBandGdprDeletionFailureSink` write a `Failed`
+  `GdprRequest` in a scope of its own when the walk throws or is refused after it began; deliberately
+  not coupled to the audit sink. Pipeline order (outer → inner) is now
+  `AuditFailureCapture → ErasureFailureCapture → PostCommitDispatch → OperatorTenantScope → Validation → UnitOfWork → AuditLog → Handler`.
+- **The terms version is a stored, dated document** (ADR-0063): `RegistrationEvidence` and
+  `OrderBookingEvidence` still carry the version string, now `yyyy-MM-dd`; `ConsentEvidence` too.
+- **Erasure is one commit** (the refresh-token revoke is staged, not self-committed) and cannot
+  reach a guest's rows by order (`Order.UserId` is never attached later — Q-GDPR-01 for the e-mail
+  lever); the dispute text is kept three years under `Dispute.TextRetainedUntil`.
+- **Open after the batch:** Q-GDPR-01 (guest rows by e-mail), Q-GDPR-02 (a dispute section in the
+  JSON export), Q-AUD-O4 (name the refused account on a failed sign-in); T-0748 (roles beyond
+  Administrator) filed open. The label an Administrator's own sign-out carries in the admin table
+  (`customer.session.logout`, the marker's frozen label) is a ratification question.
+
 ## Status
 
 ADR-0012 **accepted** (2026-06-22). **Sequenced into Wave 9 (sprint-11.md)** as 5 audit-log tickets

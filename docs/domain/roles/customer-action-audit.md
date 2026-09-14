@@ -1,9 +1,9 @@
-# CustomerActionAudit (ADR-0062, accepted 2026-09-13)
+# CustomerActionAudit (ADR-0062, accepted 2026-09-13, amended 2026-09-14)
 
-**Responsibility (one sentence):** Record that a customer did one money-relevant thing — with the
-figures and versions they were shown, the request context it came from, and whether it succeeded or
-was refused — as a row that outlives the account, the order and the erasure, so a dispute can be
-answered from the record rather than from memory.
+**Responsibility (one sentence):** Record that a customer did one money-relevant or account-relevant
+thing — with the figures and versions they were shown, the request context it came from, and whether
+it succeeded or was refused — as a row that outlives the account, the order and the erasure, so a
+dispute or an account-takeover claim can be answered from the record rather than from memory.
 
 > Introduced by **[ADR-0062](/decisions/adr-0062)** D1/D3/D5. `Cleansia.Core.Domain/Auditing/CustomerActionAudit.cs`,
 > `: BaseEntity, ITenantEntity` — **not** `Auditable` (the ADR-0012 D6 reasoning: an audit row has no
@@ -12,20 +12,32 @@ answered from the record rather than from memory.
 > ADR-0012 pipeline — the inner `AuditLogBehavior` (success rides the action's commit; a handler-returned
 > failure goes out-of-band) and the outer `AuditFailureCaptureBehavior` (validation reject, thrown
 > handler, commit-throw — out-of-band, exactly once) — through the customer arm of
-> [`AuditGate`](./audit-gate). Sixteen commands are marked; the label roster is pinned by
-> `CustomerAuditActionRosterTests`.
+> [`AuditGate`](./audit-gate). **25 commands are marked (21 labels, nine of them anonymous-capable)**:
+> the sixteen money and entitlement acts of the first version, the session acts the owner ruled in on
+> 2026-09-14 (`customer.session.login` on `Login`/`MobileLogin`/`GoogleAuth`/`AppleAuth`,
+> `customer.session.logout`, `customer.password.reset_requested`/`.reset_completed`,
+> `customer.account.email_confirmed`) and the customer's own export (`customer.gdpr.export`). The
+> roster is pinned by `CustomerAuditActionRosterTests`, which also guards that every anonymous-capable
+> marker sits on an `IOperatorScopedRequest`.
 
 ## Collaborators
 
 - **The evidence record** — a nested `record … : ICustomerAuditPayload` beside the command
   (`OrderCancellationEvidence`, `OrderBookingEvidence`, `DisputeFilingEvidence`, `RegistrationEvidence`,
-  `MembershipSubscribeEvidence`, … ; `ConsentEvidence` is top-level because two features share it). The
+  `MembershipSubscribeEvidence`, `LogoutEvidence`, `EmailConfirmationEvidence`, `GdprExportEvidence`, … ;
+  `ConsentEvidence` and `LoginEvidence` are top-level because several features share them). The
   handler emits it through `IAuditContext.RecordEvidence(resourceType, resourceId, payload, actorUserId?)`
   and `AuditEntryFactory` serialises it into `PayloadJson` (camelCase, **enums by name**). Success rows
-  only; a failure row has no payload. `CustomerAuditPayloadPiiGuardTests` walks every implementation
-  by reflection: no contact-identity name, no free-text name (`*Reason`, `*Description`, `*Instructions`,
-  `*Note`), no live-secret name (`ConfirmationCode`, `ResetCode`, …), every `string` on the allow-list
-  (ids, codes, versions, a handful of labels).
+  only; a failure row has no payload; a session act whose only evidence is that it happened and to whom
+  (a completed password reset) passes `payload: null` and still names the subject through
+  `actorUserId` — the anonymous session cannot. `CustomerAuditPayloadPiiGuardTests` walks every
+  implementation by reflection: no contact-identity name, no free-text name (`*Reason`, `*Description`,
+  `*Instructions`, `*Note`), no live-secret name (`ConfirmationCode`, `ResetCode`, …), every `string`
+  on the allow-list (ids, codes, versions, a handful of labels — `ClientAudience` is a bounded label).
+- **`IAuditContext.DeclineSuccessRow()`** — a marked command whose handler took a branch the marker
+  does not describe declines the success row: the social sign-ins on their **provisioning** branch (a
+  registration's proof is the consent rows it writes, not a `customer.session.login`). The failure arms
+  do not read it — a refusal on either branch is still recorded.
 - **`IRequestMetadataProvider`** (through the factory) — the IP address and device label. The device
   id comes from the **session's signed `device_id` claim** on a signed-in row and from the `X-Device-Id`
   header only on an anonymous one (the header is the client's word alone; the claim is the device the
@@ -45,8 +57,11 @@ answered from the record rather than from memory.
   (`CreateDispute` marks `Order`, its success row says `Dispute`).
 - **`ITenantProvider`** (through `DbContextAuditWriter` / `OutOfBandAuditFailureSink`) — `TenantId ??=
   GetCurrentTenantId()` at write time: the `tenant_id` claim, or the market's operator that
-  `OperatorTenantScopeBehavior` set for an anonymous act. A refusal raised before any operator exists
-  cannot be stamped and is skipped with one warning.
+  `OperatorTenantScopeBehavior` set for an anonymous act (the session acts name no market and carry an
+  explicit `CountryId => null`, so their refusal row lands under the default market's operator), or
+  the **account's own** operator that `TokenService` / the reset handlers adopt before a session act's
+  success row is stamped (ADR-0061 D4 as amended). A refusal raised before any operator exists cannot
+  be stamped and is skipped with one warning.
 - **`ICustomerActionAuditRepository`** — `Add`, reads, **`PseudonymiseForSubjectAsync`** (the erasure:
   a tracked, tenant-ignoring load and `Pseudonymise()` on each row, riding the erasure's single commit —
   never `ExecuteUpdateAsync`, which would commit outside it) and **`DeleteExpiredAsync(cutoff)`** (the
@@ -57,9 +72,15 @@ answered from the record rather than from memory.
   `retention.customer_audit.years`, default **3**, a value at or below zero refused with a warning.
 - **`GdprExportService`** — reads every row of the subject into the export's `customerActions` section
   (both the self-export and the admin export).
+- **`IncidentFileService`** ([`incident-file`](./incident-file)) — prints the subject's rows (and, scoped
+  to an order, the guest rows on it) in the PDF's trail section, each payload flattened to a two-column
+  table.
 - **`GetPagedCustomerActionAudits` / `GetCustomerActionAuditById` / `GetActionTimeline`** — the admin
   readers, behind `CanViewAuditLog`; the list DTO has no payload, IP or device, the detail DTO has them
-  and no tenant.
+  and no tenant. `GetActionTimeline` is a canonical `PagedData<T>` query again (its validator runs
+  because validators now run for every request type); its user arm unions the orders that still name
+  the user with `ProvenOrderIds` — the orders the subject's own successful acts named — so an erased
+  subject's timeline keeps the admin and cleaner rows on their orders.
 
 ## Does NOT know
 
@@ -94,10 +115,16 @@ answered from the record rather than from memory.
 - **A refusal is a row.** A handler-returned failure, a validation reject, a thrown handler and a
   commit-throw each leave exactly one out-of-band row with the refusal **key** (`AuditErrorCode`), and a
   rolled-back success leaves none (`CustomerAuditPipelinePostgresTests`).
-- **An anonymous row is bounded.** Only `Register` and guest `CreateOrder` carry
-  `AllowsAnonymousActor`; every customer-host action that dispatches a marked command is
-  `[EnableRateLimiting]` (`RateLimitCoverageGuardTests`), so an unauthenticated caller writes at most
-  the `auth` window's ten rows a minute per real IP.
+- **An anonymous row is bounded, and lands only on a customer host.** Nine commands carry
+  `AllowsAnonymousActor` (`Register`, guest `CreateOrder`, the four sign-ins, `ConfirmUserEmail`, the
+  two password-reset commands); every customer-host action that dispatches a marked command is
+  `[EnableRateLimiting]` (`RateLimitCoverageGuardTests`, anti-vacuous by label), so an unauthenticated
+  caller writes at most the `auth` window's ten rows a minute per real IP; and the gate writes an
+  anonymous act only when the serving host is a customer host, so a cleaner's confirmation on a partner
+  host lands nowhere (`AuditGateTests`, host tests on the customer, partner and admin hosts).
+- **A refusal for an unknown address names nobody and carries no address.** `UserId`, `ResourceId`
+  and `PayloadJson` are all null on it (`SessionAuditTests`). A refused sign-in on a *known* account is
+  `UserId = null` too — attributable by IP only, pending an owner/architect ruling.
 - **The payload holds ids, money, enums and versions only** — the PII guard is the standing proof the
   erasure verdict relies on; a new member named `*Email`, `*Phone`, `*Name`, `*Reason`,
   `*Description`, `ConfirmationCode` or an unbounded `string` fails the build naming the record.

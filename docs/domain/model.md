@@ -3,7 +3,7 @@
 Generated from the EF Core entity configurations, not described from memory. A relationship on a
 diagram is a `HasOne(...)` declared in a configuration file; if it is not there, it is not enforced.
 
-One diagram per area, because a single picture of all 85 entities is a picture nobody reads. Entities
+One diagram per area, because a single picture of all 87 entities is a picture nobody reads. Entities
 appear in the area they are owned by, not everywhere they are referenced.
 
 ::: tip Checking the count
@@ -54,6 +54,7 @@ erDiagram
   EmployeePayoutDetails }o--o| Currency : "Currency"
   RefreshToken }o--|| User : "User"
   UserConsent }o--|| User : "User"
+  UserConsent }o--o| LegalDocument : "LegalDocument"
   UserStripeCustomer }o--|| User : "User"
   UserStripeCustomer }o--|| Currency : "Currency"
   EmployeeDocument }o--|| Employee : "Employee"
@@ -73,7 +74,7 @@ erDiagram
 | `DocumentDeletionRequest` | references `Document` (Restrict) — a cleaner's request to have a document removed, answered by an admin |
 | `EmployeeActionAudit` | — bare `EmployeeId` and `OrderId` scalars with no FK, because the act it records deletes the `OrderEmployee` row it describes and must survive an erased order; indexed `(OrderId, CreatedOn DESC)` for the admin timeline that reads it by order ([ADR-0062](/decisions/adr-0062) D6) |
 | `CustomerActionAudit` | — bare `UserId` scalar with no FK (null for a guest act), because the row must outlive everything it names; `ClientAudience`, `IpAddress`, `DeviceLabel`, `DeviceId` are the request context, `PayloadJson` (jsonb) the typed evidence a handler emitted, `ErrorCode` the refusal key on a failure row. `TenantId` NOT NULL. Append-only — `Pseudonymise()` (erasure blanks the three request-metadata columns) is the one mutator; indexed `(TenantId, OccurredOn DESC)`, `(UserId, OccurredOn DESC)`, `(ResourceType, ResourceId)`, `(OccurredOn)` for the three-year-per-row retention scan → [ADR-0062](/decisions/adr-0062), [`customer-action-audit`](/domain/roles/customer-action-audit) |
-| `UserConsent` | references `User`; one row per `(UserId, ConsentType)` — the **current state**, overwritten on regrant, with `DocumentVersion` (`varchar(32)`, nullable) naming the text accepted (`"2026-09-draft"` from `LegalDocumentVersions`; null on rows granted before versioning and on consent types with no document; stamped only for a `Customer` subject). The history of grants and withdrawals is the `customer.consent.*` rows in `CustomerActionAudit` → [ADR-0062](/decisions/adr-0062) D4 |
+| `UserConsent` | references `User`, `LegalDocument` (nullable, Restrict — a text a customer accepted can never be deleted from under the row); one row per `(UserId, ConsentType)` — the **current state**, overwritten on regrant, with `DocumentVersion` (`varchar(32)`, nullable — the document's effective date as `yyyy-MM-dd`) and `LegalDocumentId` written together (both null on consent types with no document and on every employee row, which stamps nothing until ADR-0041's agreement lands). A regrant under a *different document identity* moves the row. IP, user agent, version and document id **survive erasure** on the withdrawn row (`RetainedByPolicy`). The history of grants and withdrawals is the `customer.consent.*` rows in `CustomerActionAudit` → [ADR-0063](/decisions/adr-0063), [ADR-0062](/decisions/adr-0062) D4 |
 | `UserStripeCustomer` | references `User` (Restrict), `Currency` (Restrict); unique `(UserId, CurrencyId)` with no tenant term, unique `StripeCustomerId` — the Stripe Customer that bills this user in **one** currency. Stripe locks a Customer to the currency of its first invoice, so a user holds one per currency and can re-subscribe to Plus in a new market; `User.StripeCustomerId` stays as the legacy field one-off order payments use, adopted as the first row for a currency it has only ever billed. GDPR erasure deletes the rows; `DeleteCurrency` answers `currency.in_use` for them. → [ADR-0059](/decisions/adr-0059) amendment |
 
 ## Ordering
@@ -144,7 +145,21 @@ erDiagram
   PackagePrice }o--|| Currency : "Currency"
   ExtraPrice }o--|| Extra : "Extra"
   ExtraPrice }o--|| Currency : "Currency"
+  LegalDocument }o--o| Country : "Country"
+  LegalDocumentText }o--|| LegalDocument : "Document"
 ```
+
+**The legal texts are stored documents, versioned by the date they start applying.** `LegalDocument`
+is one version of one text — `Audience` (Customer | Employee), `Type` (TermsOfService |
+PrivacyPolicy), `CountryId` (the market the copy is for; **null = the platform-wide text a market
+without its own falls back to**), `EffectiveFrom` and `Version`, which *is* `EffectiveFrom` as
+`yyyy-MM-dd` — with one `LegalDocumentText` per language (`Language`, `Title`, `ContentMarkdown`,
+`ContentHash` SHA-256). Tenantless like `CountryConfiguration`: platform copy per market. **A document
+in force is immutable** — the seeder that writes them refuses to change an in-force text, and a
+wording change is a new document with a new date — so every text a customer ever accepted is still
+in the table, pointed at by `UserConsent.LegalDocumentId`. The documents are seeded from embedded
+markdown at every host start; there is no admin writer. → [ADR-0063](/decisions/adr-0063),
+[`legal-document`](/domain/roles/legal-document)
 
 **A catalogue entry carries no price.** `Service`, `Package` and `Extra` have no price column; a price
 is a row in `ServicePrices` (`BasePrice`, `PerRoomPrice`), `PackagePrices` (`Price`) or `ExtraPrices`
@@ -185,6 +200,8 @@ with none is not listed and cannot be flagged the default. → [ADR-0058](/decis
 | `CountryConfiguration` | references `Country`, `OperatorTenant` (nullable, Restrict — the company that serves this market); `InsuranceCoverageAmount` (nullable) is the per-country copy figure; `IsDefaultMarket` (filtered unique — at most one row) is the landing-page pre-selection. Tenantless: a per-country fact |
 | `PropertySizePreset` | references `Country` (Restrict); unique `(CountryId, Code)` — the size chips a country's booking wizard offers |
 | `ServiceCity` | references `Country` |
+| `LegalDocument` | references `Country` (nullable, Restrict — null is the platform-wide copy); unique `(Audience, Type, CountryId, Version)`, indexed `(Audience, Type, EffectiveFrom)`; tenantless; **no delete path** |
+| `LegalDocumentText` | references `Document` (Cascade); unique `(LegalDocumentId, Language)`; `ContentHash` is what the seeder compares and the admin preview shows |
 
 ## Money and payroll
 
@@ -217,7 +234,7 @@ that money was ever recorded in cannot be deleted. → [Pay and payouts](/flows/
 | `CreditAccount` | references `User` (Restrict); `CurrencyId` is a plain column with **no declared foreign key**; unique `(UserId, CurrencyId)` |
 | `CreditTransaction` | references `Account` (Cascade); unique `IdempotencyKey` — unfiltered and with no tenant term, because this is money and the backstop has to fire |
 | `Refund` | references `Dispute`, `Order`, `Receipt` |
-| `Dispute` | references `Order`, `User` |
+| `Dispute` | references `Order`, `User`; `TextRetainedUntil` (nullable, indexed) is the stamp an erasure sets to `now + retention.dispute_text.years` — the description, messages and resolution notes stay readable for defence of claims until the weekly `DisputeText` sweep finds the stamp past, blanks them and clears it (owner ruling 2026-09-14, Q-AUD-L3; the evidence blobs still go at erasure) → [ADR-0062](/decisions/adr-0062) D5 as amended |
 | `DisputeLine` | references `Dispute` (Cascade), `Service` and `Package` (both Restrict, no navigation); unique `(DisputeId, ServiceId, PackageId)` — the order lines a dispute is about |
 | `DisputeEvidence` | references `Dispute` |
 | `DisputeMessage` | references `Author`, `Dispute` |
@@ -271,7 +288,7 @@ named on their rows: `OrderReview` and `OrderReviewLine` (declared, with delete 
 | `DeadLetter` | — |
 | `EmailTemplateTranslation` | references `Language` |
 | `EmailTranslation` | — |
-| `GdprRequest` | references `User` |
+| `GdprRequest` | references `User`; `Status` gained a live `Failed` writer — an erasure that throws or is refused after its walk began leaves a `Failed` row written out of band (`ProcessedBy` the actor — `"self"`, the admin's e-mail or `"system"` — and `Notes` the exception type and message with any e-mail-shaped token blanked, **appended** per attempt within the 1 000-char bound, oldest text dropped first); a `Failed` row, or a `Processing` row older than 30 minutes, is what the daily retry sweep and the admin **Retry** re-run, and every row not yet `Completed` counts as *pending* for a second filing → [ADR-0062](/decisions/adr-0062) D5 as amended |
 | `LiveActivityToken` | — |
 | `OrderReview` | references `Order` |
 | `OrderReviewLine` | references `Review` (Cascade), `Service` and `Package` (both Restrict, no navigation); unique `(OrderReviewId, ServiceId, PackageId)` — the per-line ratings under a review |

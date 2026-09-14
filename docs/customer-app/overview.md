@@ -28,7 +28,7 @@ history, saved addresses, disputes, Plus, recurring schedules and rewards.
 | Rewards | `/rewards`, `/rewards/activity` — points, tiers and the tier floor line (shown only when the market's currency is the platform default), referral code |
 | Profile | `/profile` (account, language, notification preferences), `/saved-addresses` |
 | Authentication | `/login`, `/register`, `/r/:code` (referral landing), `/confirm-email` (6-digit code), `/forgot-password`; e-mail + password, Google and Apple sign-in (buttons hidden when the client id is not configured) |
-| Legal | `/terms` (states the market's currency code), `/privacy`, `/gdpr` (cookie consent and data requests) |
+| Legal | `/terms` and `/privacy` — the stored document in force for the chosen market and the UI language, fetched from `GET api/Legal/GetDocument` and rendered with its title, effective date and version (`yyyy-MM-dd`; the currency code filled in from the market — ADR-0063); `/gdpr` (cookie consent and data requests) |
 
 ## SSR {#ssr}
 
@@ -55,8 +55,9 @@ transfers the server's HTTP responses into the document, and Angular skips any r
 on a call made with a session, so:
 
 - an **anonymous own-API GET** — `Market/GetOverview`, the `Service|Package|Extra/GetOverview`
-  strips, `Membership/GetPlans`, `Country/GetPropertySizes`, `Country/GetServiced` — is fetched once on
-  the server and **served from the document on bootstrap**; the browser does not refetch it;
+  strips, `Membership/GetPlans`, `Country/GetPropertySizes`, `Country/GetServiced`,
+  `Legal/GetDocument` — is fetched once on the server and **served from the document on bootstrap**;
+  the browser does not refetch it;
 - a **session-bearing GET** (the same catalogue call for a signed-in customer, `GetMine`, orders,
   profile) carries the cookie, is **never transferred** and is re-fetched by the browser. That is the
   property that keeps one user's response out of another's document — the reason the cache was off
@@ -135,7 +136,7 @@ routes from `src/lib/lib.routes.ts`:
 | `confirm-email` | `@cleansia-customer/confirm-email` | `/confirm-email` |
 | `forgot-password` | `@cleansia-customer/forgot-password` | `/forgot-password` |
 | `gdpr` | `@cleansia-customer/gdpr` | `/gdpr` |
-| `legal-pages` | `@cleansia-customer/legal-pages` | `/terms` (with the market's currency code in §3) and `/privacy` |
+| `legal-pages` | `@cleansia-customer/legal-pages` | `/terms` and `/privacy` — a fetch-and-render of the stored document in force (`[innerHTML]` through the sanitizer; the copy lives in the seed files, not the locale JSON) |
 
 The 404 (`CustomerNotFoundComponent`) lives in the app itself, under `app/components/not-found/`,
 wrapping the shared component with this app's ways out of it.

@@ -10,14 +10,16 @@ catalogues.
 
 | Component | |
 |---|---|
-| **[AuditGate (ADR-0012 D3 + ADR-0062 D1, accepted 2026-09-13)](./audit-gate)** | **Responsibility (one sentence):** Say which audit table, if any, a request belongs to — the admin table for any `Command` an Administrator runs, the customer table for a marked `Command` a Customer (or an allowed anonymous caller) runs, none for everything else — so both audit behaviors answer identically |
+| **[AuditGate (ADR-0012 D3 + ADR-0062 D1, accepted 2026-09-13, host-aware since 2026-09-14)](./audit-gate)** | **Responsibility (one sentence):** Say which audit table, if any, a request belongs to — the admin table for any `Command` an Administrator runs, the customer table for a marked `Command` a Customer runs (or an allowed anonymous caller on a customer host), none for everything else — so both audit behaviors answer identically |
 | **[Role](./booking-price-summary)** | **✅ BUILT on both mobile clients** — iOS |
-| **[CustomerActionAudit (ADR-0062, accepted 2026-09-13)](./customer-action-audit)** | **Responsibility (one sentence):** Record that a customer did one money-relevant thing — with the figures and versions they were shown, the request context, and the outcome — as a row that outlives the account, the order and the erasure |
+| **[CustomerActionAudit (ADR-0062, accepted 2026-09-13, amended 2026-09-14)](./customer-action-audit)** | **Responsibility (one sentence):** Record that a customer did one money-relevant or account-relevant thing — with the figures and versions they were shown, the request context, and the outcome — as a row that outlives the account, the order and the erasure |
 | **[Role](./dead-letter-record)** | Introduced by **ADR-0002 D3** (the poison floor: persist + alert + ack, never re-process) |
 | **[Role](./employee-payout-details)** | Introduced by **ADR-0034** (`docs/decisions/adr-0034 |
 | **[Role](./express-waiver-resolver)** | **✅ BUILT. The "NOT YET BUILT" banner below is stale and is corrected here rather than deleted, so |
 | **[Role](./fcm-message-factory)** | Introduced by **ADR-0025** (iOS push display via per-platform APNs alert with loc-keys) |
 | **[Role](./idempotency-guard)** | Introduced by **ADR-0002 D2 |
+| **[IncidentFile (ADR-0062 D6 as amended, owner ruling 2026-09-14)](./incident-file)** | **Responsibility (one sentence):** Assemble, from the database alone, the one PDF that prints a customer's identity beside their orders, disputes, consents and the whole trail on those orders, hash its data section so a printed copy matches the audited act that produced it, and print nobody else's data |
+| **[LegalDocument (ADR-0063, accepted 2026-09-14)](./legal-document)** | **Responsibility (one sentence):** Be one version of one legal text — for one audience, one market or the whole platform — identified by the date it started applying, immutable once that date has passed, readable in any of its languages, so a consent row can point at exactly the text the customer read |
 | **[MarketDirectory (ADR-0058, accepted 2026-09-13)](./market-directory)** | **Responsibility (one sentence):** List the markets a customer may browse in — each serviced country joined to its configured, active currency — and name the default one, from an anonymous read that never throws |
 | **[Role](./membership-benefit-usage)** | **✅ ACCEPTED AND SHIPPED |
 | **[MembershipPlanPrice (ADR-0059, accepted 2026-09-13)](./membership-plan-price)** | **Responsibility (one sentence):** Name what one billing period of a plan costs in one currency and which Stripe Price charges it — the figure shown and the figure billed are the same row |

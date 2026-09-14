@@ -157,6 +157,16 @@ public async Task<PagedData<OrderListItem>> GetPaged([FromQuery] GetCustomerOrde
     => await Mediator.Send(request, ct);
 ```
 
+A paged query **may carry a `Validator`, and it runs** (T-0740). `ValidationPipelineBehavior` is no
+longer constrained to `BusinessResult` responses: a reject on a request whose response cannot carry
+one throws `RequestValidationException`, and `RequestValidationExceptionFilterAttribute` on the
+controller base answers it with the same 400 ProblemDetails the `IValidationResult` arm produces —
+declare `[ProducesResponseType(typeof(ProblemDetails), 400)]` on the action so the generated client
+agrees. Do **not** wrap a paged query in `BusinessResult<PagedData<T>>` to "get" a validator; that was
+the A2 deviation `GetActionTimeline` carried for a day. **Enforced by:**
+`EveryValidatorIsReachedByThePipelineTests` (resolves the behaviour from the container for every request
+type the assembly's validators name) + `RequestValidationExceptionFilterTests` — `T1-CI`.
+
 ## Controller pattern (from `Web.Customer/Controllers/OrderController.cs`)
 
 ```csharp

@@ -70,6 +70,50 @@ need backfilling.
 
 ### Added
 
+- **Customer — the terms and the privacy policy are dated documents, and the version you accept is
+  the date it took effect.** The `/terms` and `/privacy` pages show the text in force for your market
+  in your language, with *Effective from* and *Version* (`2026-09-14` today); a market with its own
+  wording reads that, everyone else reads the platform-wide text. A text already in force can never
+  be edited — a change is a new version with a new date — so the consent written at sign-up points at
+  exactly the words you read, for good. Nobody is asked to accept again when a new version takes
+  effect. (ADR-0063)
+
+- **Customer — every sign-in, sign-out, password reset and e-mail confirmation is on your record.**
+  The trail an admin reads (and your own data export) now carries them, with the method and where
+  they came from: a wrong password or a reset request for an unknown address is recorded with the
+  caller's IP and no address. Cleaners are not affected — on the partner side nothing of this is
+  written. (ADR-0062, owner ruling 2026-09-14)
+
+- **Customer — after an erasure request that could not complete, the platform finishes it for you.**
+  A failed erasure is kept on record with what went wrong and retried every day at 05:00 UTC until it
+  completes; you cannot file a second request over it, and an admin can retry it at once.
+
+- **Admin — the incident file is a PDF.** From a customer's page (whole account, or one typed order
+  id) or from an order's detail, *Incident file (PDF)* builds one document: the customer's identity as
+  of the build, their orders, the disputes on them with messages and evidence names, their consents
+  with version and request context, and the whole trail of customer, admin and cleaner acts on those
+  orders, newest first, with a SHA-256 of the data section on the last page and your e-mail in every
+  footer. Every build is itself recorded, with that hash, so a printed copy can be matched to the act
+  that produced it. Scoped to an order the file prints only the customer's own rows and the guest rows
+  on that order — never a bystander's. (ADR-0062, owner ruling 2026-09-14)
+
+- **Admin — a failed erasure shows on the data-protection page with a Retry.** The GDPR request
+  list filters by status; a `Failed` deletion (or one left `Processing` for over thirty minutes) shows
+  its note and a *Retry* that re-runs the erasure and completes the same row.
+
+- **Admin — every version of the legal texts, read-only.** *Legal documents* under the configuration
+  area lists each version per audience, type and market with its effective date, whether it is in
+  force and the languages it carries, and previews one language with its content hash. A new version
+  is a seed file plus a deploy; there is no editor. (ADR-0063)
+
+- **Admin — an admin's refused act on an order is traceable by the order.** A cancel refused
+  mid-job, a reassignment refused, a dispute status or message refused: each admin row carries the
+  order or dispute id, so the order's history and the audit list's resource filter find it.
+
+- **Cleaner — your registration sends the terms tick itself** on the partner web; the platform
+  records both consents in the same step as the account, and nothing waits in the browser for your
+  first sign-in. (The partner mobile apps still deliver it on first sign-in.)
+
 - **Admin — a customer's money-relevant acts are on record, and support can read them.** Every
   booking, cancellation, recurring confirmation, dispute filing, registration, consent, membership
   subscribe/swap/cancel, notification-preference change and recurring-schedule change a customer makes
@@ -83,12 +127,15 @@ need backfilling.
 
 - **Customer — the terms you accept are recorded with their version.** Registration and the web
   booking wizard send the terms tick to the server, which grants the two consents under the current
-  document version with the IP and device; nothing is parked in the browser any more. Nothing is
-  refused for want of a tick until the legal texts are final. (ADR-0062 D4)
+  document version with the IP and device; nothing is parked in the browser any more. *(2026-09-14:
+  the version became the document's effective date, and the tick became required — see the entries
+  above and under Changed.)* (ADR-0062 D4)
 
 - **Operator — the admin subject export is itself on record.** Exporting a customer's data now
   leaves an admin audit row and a completed GDPR request row, and the export is a `POST`; the
-  customer's own export commits its request row too.
+  customer's own export commits its request row too — and, since 2026-09-14, is itself a row on the
+  customer's trail. The export's consent section now shows the IP, the device and the document
+  version each consent was given under.
 
 - **Operator — every account, booking, receipt, pay rate and promo code belongs to the operating
   company that serves its market, from the first row.** The platform now knows which company under
@@ -116,8 +163,9 @@ need backfilling.
   a later change, before a second market opens. (ADR-0061)
 
 - **Operator — before the next DEV deploy, drop the DEV database.** The `Initial` migration was
-  regenerated again (`20260913132759`) and every business table's `TenantId` is now NOT NULL; the
-  seed repopulates it. One drop, owed once, at deploy time.
+  regenerated again — the shipped id is `20260914115922` (the legal-document tables, the consent's
+  document link and the dispute-text window joined the tenancy and audit changes) — and the seed
+  repopulates it, the legal texts included. One drop, owed once, at deploy time.
 
 - **Customer — you choose the market you browse in.** A market selector sits beside the language
   switcher in the web navbar and footer and under Profile → Preferences → Market on Android and iOS,
@@ -217,6 +265,29 @@ need backfilling.
 
 ### Changed
 
+- **Customer — you cannot register or book without accepting the terms.** A sign-up by e-mail and a
+  booking now require the terms tick; the refusal is `consent.terms_not_accepted`. A signed-in
+  customer whose account already holds both consents sees no box and is not asked; a guest always is;
+  a withdrawn consent is asked for again. Google and Apple sign-up without the tick keep answering
+  "sign up first". The web, Android and iOS customer apps all send the tick on the registration itself
+  and on a booking that showed the box — the iOS app no longer parks it for later. Confirming a
+  recurring occurrence and a cleaner's registration are not gated. (ADR-0062 D4 as amended, owner
+  ruling 2026-09-14)
+
+- **Customer — an erasure is all or nothing, and your dispute text is kept three years for the
+  defence of a claim.** An erasure request now commits in one step: if anything fails, nothing about
+  you changes — not your account, not your sessions, not your trail — and the failure is put on record
+  and retried (see Added). The description, messages and resolution notes of your disputes are no
+  longer blanked at erasure: they stay readable for three years from the erasure, then the weekly
+  sweep blanks them; the evidence files still go at once. (ADR-0062 D5 as amended, owner ruling
+  2026-09-14)
+
+- **API consumer — a paged read with a bad page size is refused, not silently served.** Validators
+  now run for every request type; `GET api/v1/AdminGdpr/requests` with `limit` above the ceiling
+  answers `400` with `validation.page_size_exceeded` (it used to serve the page), and the admin action
+  timeline answers the same `400` shape for a missing filter as before. `GET api/v1/AdminGdpr/requests`
+  also takes a `status` filter, and a `RegisterEmployeeCommand` carries `termsAccepted`.
+
 - **Customer — the money figures in the copy come from the market, not from the translation.** The
   "if we cancel" apology credit on the home page, the insurance ceiling on the mobile trust badge and
   FAQ, and the currency named in the terms are formatted from the market you browse in; a market with
@@ -298,6 +369,16 @@ need backfilling.
   never run before** — expect a burst of previously-undelivered notifications on that deploy.
 
 ### Fixed
+
+- **Operator — an API host closes its database connections when it stops.** The connection pool was
+  registered as a pre-built instance the container never disposed, so every host that shut down —
+  and, in the test suites, every host that ever booted — left its connections open on the server
+  until Postgres timed them out. The pool is now the host's to close.
+
+- **Customer — a sign-in, reset or confirmation on a second operator's account is filed under that
+  operator.** The account's own company is adopted before the confirmation check and by the two
+  password-reset steps, so the record of the act lands in the right company's feed rather than the
+  default market's. Invisible with one company today; the rule for the day there are two.
 
 - **Cleaner — the second cleaner on a two-person job can now take it.** Jobs long enough to need two
   cleaners were impossible to fully crew: the first cleaner's take went through, and the second got an

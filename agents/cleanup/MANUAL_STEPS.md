@@ -84,11 +84,14 @@ tenancy activation: `Tenants`, `CountryConfigurations.OperatorTenantId`, `Tenant
 stamped table, `IX_Users_Email` global, `IX_OrderReceipts_TenantId_ReceiptNumber`,
 `IX_EmployeePayConfigs_Tenant_Scope`, `IX_LoyaltyTierConfigs_Tier`), then through the customer audit
 log (T-0730: `CustomerActionAudits` + `UserConsents.DocumentVersion`; T-0733: the
-`IX_EmployeeActionAudits_OrderId_CreatedOn` index) to **`20260913174821`**. Each regeneration was proven
-against a real Postgres by the integration suite; the last one also by
-`SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built database.
-**The one owed drop belongs to `20260913174821`**: a DEV database whose `__EFMigrationsHistory` records
-any earlier id replays the whole create script against tables that already exist.
+`IX_EmployeeActionAudits_OrderId_CreatedOn` index) to `20260913174821`, then through the 2026-09-14
+follow-up batch (T-0742: `LegalDocuments`, `LegalDocumentTexts`, `UserConsents.LegalDocumentId`;
+T-0738: `Disputes.TextRetainedUntil` + `IX_Disputes_TextRetainedUntil`) to **`20260914115922`** — 87
+tables. Each regeneration was proven against a real Postgres by the integration suite; the tenancy
+one also by `SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built
+database. **The one owed drop belongs to `20260914115922`**: a DEV database whose
+`__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
+already exist. The legal texts need no extra step — every host seeds them at start.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every

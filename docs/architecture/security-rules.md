@@ -68,12 +68,21 @@ the handler's `IAuditContext` snapshot), a snapshot carrying **raw subject PII**
 best-effort *success*-audit are ADR-0012 violations (the success row must ride the action's commit;
 only *failures* are written out-of-band and must never re-throw into the caller's error).
 
-**The customer trail (ADR-0062).** The same two behaviors, through the second arm of `AuditGate`,
-write a `CustomerActionAudit` row for a `Command` that carries `[AuditAction("customer.…", Audience =
-AuditAudience.Customer, ResourceType = …)]` when the caller is a `Customer` — or anonymous, but only
-on the two markers that say `AllowsAnonymousActor` (`Register`, guest `CreateOrder`). Opt-in, not
-opt-out: sixteen commands are marked, and an unmarked customer command leaves no row on purpose
-(ADR-0045 D13 — no collection just in case). **What a customer row may hold:** identifiers, money,
+**The customer trail (ADR-0062, amended 2026-09-14).** The same two behaviors, through the second arm
+of `AuditGate`, write a `CustomerActionAudit` row for a `Command` that carries `[AuditAction("customer.…",
+Audience = AuditAudience.Customer, ResourceType = …)]` when the caller is a `Customer` — or anonymous,
+but only on a marker that says `AllowsAnonymousActor` **and only when the serving host is a customer
+host** (`IHostAudienceProvider.Audience == JwtAudiences.Customer`): nine commands carry the anonymous
+marker (`Register`, guest `CreateOrder`, `Login`, `MobileLogin`, `GoogleAuth`, `AppleAuth`,
+`ConfirmUserEmail`, `RequestPasswordChange`, `ChangePassword`), several are routed on the partner hosts
+too, and a cleaner's confirmation or reset there lands in **no** table — the employee table is not for
+sessions and the customer table is not theirs. Opt-in, not opt-out: **25 commands** are marked (21
+labels — the money and entitlement acts, the session acts since the owner overruled Q-AUD-L5, and the
+customer's own data export), and an unmarked customer command leaves no row on purpose (ADR-0045 D13
+— no collection just in case). An anonymous marked command that names no market implements
+`IOperatorScopedRequest` with an explicit `CountryId => null`, so its refusal row has an operator to
+be stamped with; its success row is stamped with the **account's** operator (ADR-0061 D4 as amended).
+**What a customer row may hold:** identifiers, money,
 enums (by name), versions and the request context — `ClientAudience` (the serving host's audience,
 never read off the JWT), `IpAddress`, `DeviceLabel`, and a `DeviceId` that on a signed-in row is the
 session's **signed `device_id` claim**, never the `X-Device-Id` header (the same rule as ADR-0026: the
@@ -86,20 +95,29 @@ payload is a typed `ICustomerAuditPayload` record the handler emits through
 and fails the build naming the record and the member. **The failure row's `ErrorCode` is the
 `BusinessErrorMessage` key** (`order.in_progress_cannot_cancel`, `order.total_price.not_match`), never the field
 name or the `ValidationError` sentinel — on both arms (`AuditErrorCode.Resolve`). **An anonymous
-refusal writes a failure row carrying the caller's IP**: a refused `Register` or guest `CreateOrder`
-lands out-of-band with `UserId = null`, bounded by the same `auth` rate-limit window that bounds the
-request (10 requests per minute per real client IP — every route that dispatches a marked command is
-`[EnableRateLimiting]`, pinned by `RateLimitCoverageGuardTests`); a refusal raised before the market's
-operator is resolved has no tenant to be stamped with and is skipped with one warning, never written
-with none. **Append-only, with one sanctioned mutator:** `Pseudonymise()` blanks the three
-request-metadata columns on erasure and nothing else — no code path calls `Remove`, `Deactivate` or
-touches `IsActive` on the type (`CustomerActionAuditImmutabilityTests`); each row is deleted by the
-retention sweep three years after its own act, and the sweep never reaches the admin or employee
-tables. **The admin subject export is itself audited:** `AdminExportUserData` is a `Command` marked
-`gdpr.user.export` (Sensitive), so dumping another person's whole record leaves an `AdminActionAudit`
-row with a count-only snapshot and commits its `GdprRequest` — a PII egress that used to leave no
-record at all. → [ADR-0062](/decisions/adr-0062), [`customer-action-audit`](/domain/roles/customer-action-audit),
-[`audit-gate`](/domain/roles/audit-gate)
+refusal writes a failure row carrying the caller's IP**: a refused `Register`, guest `CreateOrder` or
+sign-in lands out-of-band with `UserId = null`, bounded by the same `auth` rate-limit window that
+bounds the request (10 requests per minute per real client IP — every route that dispatches a marked
+command is `[EnableRateLimiting]`, pinned by `RateLimitCoverageGuardTests`); a refusal raised before
+the market's operator is resolved has no tenant to be stamped with and is skipped with one warning,
+never written with none. **A refusal for an unknown e-mail address is a row with no user, no
+resource and no payload** — the address the caller typed reaches no column (the PII guard refuses
+`Email`-named members; `PayloadJson` is null on every failure row). **A refused sign-in on a known
+account is also `UserId = null`** (a wrong password is a validation reject and never reaches the
+handler that would name the subject) — attributable by IP only, an open owner/architect question.
+**Append-only, with one sanctioned mutator:** `Pseudonymise()` blanks the three request-metadata
+columns on erasure and nothing else — no code path calls `Remove`, `Deactivate` or touches `IsActive`
+on the type (`CustomerActionAuditImmutabilityTests`); each row is deleted by the retention sweep three
+years after its own act, and the sweep never reaches the admin or employee tables. **The two PII
+egresses are themselves audited:** `AdminExportUserData` is a `Command` marked `gdpr.user.export`
+(Sensitive) and `ExportCustomerIncidentFile` — the PDF that prints a subject's identity on purpose —
+is marked `gdpr.user.incident_file` (Sensitive) with a snapshot of ids, section counts and the
+SHA-256 of the data section; both leave an `AdminActionAudit` row, never the content, and the export
+commits its `GdprRequest`. The incident file scoped to an order prints the subject's own rows and the
+guest rows on that order, **never a bystander's refused probe** (their id, IP and device label are not
+the subject's to export — S6). The customer's own export is a `customer.gdpr.export` row with counts.
+→ [ADR-0062](/decisions/adr-0062), [`customer-action-audit`](/domain/roles/customer-action-audit),
+[`audit-gate`](/domain/roles/audit-gate), [`incident-file`](/domain/roles/incident-file)
 
 **Token lifetime (ADR-0024).** The access-token TTL on a host that issues device-bound sessions is a
 security bound, not a tuning knob — changing `AccessTokenExpMinutes` on a mobile host requires a
@@ -184,8 +202,14 @@ those remain S5 gaps (tracked as `BSP-4d`). *(The sentence that used to stand he
 `[EnableRateLimiting("auth")]` since before ADR-0062 was drafted, and the ADR made the check
 mechanical: every customer-host action that dispatches a command marked `Audience = Customer` — a
 row-writer, so an unlimited route would be a storage amplifier — must carry `[EnableRateLimiting]`,
-pinned by `Cleansia.Tests/RateLimiting/RateLimitCoverageGuardTests.cs`. The Partner payroll controllers
-are outside that guard and are the remaining named gap.)*
+pinned by `Cleansia.Tests/RateLimiting/RateLimitCoverageGuardTests.cs`, anti-vacuous by label since
+the session acts joined (two password sign-ins share one label, so the guard counts labels, not
+files). The Partner payroll controllers are outside that guard and are the remaining named gap.)*
+
+Two routes added on 2026-09-14 sit in the windows on purpose: the anonymous legal-text read
+(`GET api/Legal/GetDocument`, `interactive`) because it renders markdown per request, and the admin
+incident file (`POST api/v1/AdminGdpr/incident-file/{userId}`, `auth`) because a PDF render holds a
+process-wide lock and a whole-subject file is the most expensive read on the admin host.
 
 ## S6 — Logging hygiene (no PII above Debug)
 
@@ -236,7 +260,7 @@ Three tools, and picking the wrong one is the usual mistake:
 |---|---|
 | A named field whose name says what it holds (`*email`, `*phone*`, `*firstName`, `birthDate`) | `ContactIdentityFieldRegex` — matched by **shape**, not enumerated, so the next `contactEmail` is covered without anyone remembering |
 | A named credential (`clientSecret`, `ephemeralKey`, `blobUrl`) | `SensitiveFieldRegex` — literal names; **values are unbounded**, so collapsing one frees window and can unmask what follows |
-| Free text no name can reach (`Notes`, `Description`, `ReviewNotes`, `HolderName`) | `IsSensitivePath` — wholesale route suppression. The customer audit routes are on it (`/customeraudit/`, all three — list, entry, timeline): an entry carries the subject's `payloadJson`, `ipAddress` and a client-controlled `deviceLabel`, none of which a name list reaches (ADR-0062 D6; `RequestLogCustomerAuditPathSuppressionTests`) |
+| Free text no name can reach (`Notes`, `Description`, `ReviewNotes`, `HolderName`) | `IsSensitivePath` — wholesale route suppression. The customer audit routes are on it (`/customeraudit/`, all three — list, entry, timeline): an entry carries the subject's `payloadJson`, `ipAddress` and a client-controlled `deviceLabel`, none of which a name list reaches (ADR-0062 D6; `RequestLogCustomerAuditPathSuppressionTests`). The `gdpr/` rule already covers the whole `AdminGdpr` controller — the incident-file PDF, the deletion retry and the export's consent section, whose `userAgent` is raw-but-suppressed (a user agent is free text no regex names) — and a test pins each |
 
 Keep the two regexes **separate**. They redact identically but they do not free window identically, and
 merging them makes `RedactionUnmaskedFreeTextGuardTests` report every string member of every DTO as

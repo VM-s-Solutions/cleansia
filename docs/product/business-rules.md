@@ -584,12 +584,13 @@ expansion path](/architecture/platform-expandability#expansion-path)
 A money dispute is answered from the record, not from memory ([ADR-0062](/decisions/adr-0062), owner
 ask 2026-09-13: *"proofs of customer actions that he performed and how they align with our terms and
 conditions, so that we don't give money every time"*). The rules below are what the record holds, for
-how long, and what it never holds. The legal texts have not been reviewed; every default is the one
-in force until the lawyer's list narrows or widens it (Q-AUD-L1 … L6 in the backlog's open questions).
+how long, and what it never holds. The legal texts have not been reviewed; **the owner ruled on every
+open question on 2026-09-14** (ADR-0062 §Rulings) and the figures below are the rulings, which a
+lawyer's review can still narrow or widen by a setting, a descriptor or a seed file.
 
-**Sixteen acts are recorded; nothing else is.** A customer act leaves a row in `CustomerActionAudits`
-only when its command is marked for it — opt-in, so that nothing is collected just in case
-(ADR-0045 D13). The acts, and the evidence each success row carries:
+**Twenty-five acts are recorded; nothing else is.** A customer act leaves a row in
+`CustomerActionAudits` only when its command is marked for it — opt-in, so that nothing is collected
+just in case (ADR-0045 D13). The acts, and the evidence each success row carries:
 
 | Act | Label | What the row proves |
 |---|---|---|
@@ -597,7 +598,12 @@ only when its command is marked for it — opt-in, so that nothing is collected 
 | Cancel | `customer.order.cancel` | the fee tier, rate and amount, the refund amount, the notice given in hours, the minutes since booking (the oops window), whether a cleaner had already accepted, the free window applied (Plus or standard), the policy figures at that moment, whether an express-waiver slot was released, whether a refund was initiated, the payment type and status, and that a reason was given (never the reason) |
 | Confirm a recurring occurrence | `customer.order.recurring.confirm` | the order, the template, the price, the currency, the payment type, the cleaning time and lead time |
 | File a dispute | `customer.dispute.create` | the dispute and order ids, the reason (an enum), hours since completion against the 24 h window, the window shown, the description's length and line count (never its text), the order total and currency |
-| Register by email | `customer.account.register` | the method, the language, whether a referral code was given, the terms tick, and the terms and privacy versions in force. Google and Apple sign-ups write **no** row — they are sign-in-or-register and would record a row on every social login; their proof is the two server-written consent rows with the version, plus `User.CreatedOn` |
+| Register by email | `customer.account.register` | the method, the language, whether a referral code was given, the terms tick, and the terms and privacy versions in force (the effective dates of the documents shown). A Google or Apple **sign-up** writes no registration row — its proof is the two server-written consent rows with the version, plus `User.CreatedOn` — but a refused one is recorded (see the next row) |
+| Sign in — password, Google or Apple | `customer.session.login` | the method, whether "remember me" was asked, the client family the token was minted for, and whether the e-mail was confirmed — a correct password on an unconfirmed address is a success that opens no session, and the row says so. Google and Apple are recorded as the **sign-in** they are; the branch that creates a new account declines this row |
+| Sign out | `customer.session.logout` | whether a token was there to revoke |
+| Ask for a password reset / complete one | `customer.password.reset_requested` / `.reset_completed` | who — and nothing else. A request for an address that matches no account is a row with **no user and no address**: the address the caller typed reaches no column |
+| Confirm the e-mail | `customer.account.email_confirmed` | which shape confirmed it — the 6-digit code or a legacy link |
+| Export their own data | `customer.gdpr.export` | how many orders, consents and trail rows the export held — never the export |
 | Grant / withdraw a consent | `customer.consent.grant` / `.withdraw` | the consent type and the document version — this **is** the consent history, because the `UserConsents` row is overwritten in place |
 | Subscribe to Plus (either surface) | `customer.membership.subscribe` | the plan, currency, price, monthly equivalent, country, trial days (none today), the channel, and whether the row is an idempotent replay of an earlier confirm (`reconciled`) |
 | Swap / cancel Plus | `customer.membership.swap` / `.cancel` | plan and price before and after; or the plan and when the current period ends |
@@ -606,65 +612,122 @@ only when its command is marked for it — opt-in, so that nothing is collected 
 
 **A refused attempt is recorded too, with the reason.** A validation reject, a business refusal or an
 exception leaves a row with `Success = false` and the **error key** (`order.in_progress_cannot_cancel`,
-`order.total_price.not_match`, `order.not_found` on a cross-user probe — with the probed order's id),
-never the field name and never a payload. That includes anonymous refusals: a refused registration or
-guest booking is a row with no user and the caller's IP, bounded by the `auth` rate-limit window
-(10 requests per minute per real client IP) — except one refused before its market's operating
-company is known (`country.not_serviced`, `tenant.not_found`), which has no company to belong to and
-is logged, not written.
+`order.total_price.not_match`, `order.not_found` on a cross-user probe — with the probed order's id,
+`consent.terms_not_accepted`, `auth.invalid_credentials`), never the field name and never a payload.
+That includes anonymous refusals: a refused registration, guest booking, sign-in or reset request is
+a row with no user and the caller's IP, bounded by the `auth` rate-limit window (10 requests per
+minute per real client IP) — except one refused before its market's operating company is known
+(`country.not_serviced`, `tenant.not_found`), which has no company to belong to and is logged, not
+written. An anonymous act is recorded **only on a customer host**: a cleaner signing in or resetting
+a password on a partner host leaves no row anywhere. A refused sign-in on an account that *exists* is
+recorded with no user too — attributable by IP only — until the owner rules on naming the account.
 
-**The terms have a version, and it is a code constant — `LegalDocumentVersions.CustomerTerms` and
-`.CustomerPrivacy`, both `"2026-09-draft"` today.** The legal pages render it (`terms_page.version`,
-`privacy_page.version`), the parity checker pins the five locales to the constant, and **a legal-text
-edit bumps the constant and the key in the same change** — the same one-place discipline as the
-booking-policy figures. The version is stamped on the consent row (`UserConsents.DocumentVersion`) and
-on the registration and booking rows at the moment of acceptance. A customer who accepted before
-versioning existed has a `null` version — "version unknown" — and is **not re-prompted and not
-backfilled** (Q-AUD-L2 default). A re-acceptance under a *different* version moves the consent row to
-it and writes a consent-grant row; the same version again is a no-op on the row and still a row in the
-trail.
+**An admin's refusal is traceable by the order.** An admin act refused on an order or a dispute
+(`AdminCancelOrder` → `order.cancel`, `AdminReassignOrder` → `order.reassign`, `UpdateDisputeStatus`,
+`AddDisputeMessage`) leaves an admin row with the resource type and id, so the order's history and
+the audit list's resource filter both find it — *"the reason is worth nothing if I can't trace the
+failed order"* (owner, Q-AUD-O2).
 
-**Registration records the consent, server-side, in the same commit.** When the register form (or a
-Google/Apple sign-up) sends the terms tick, the server grants `TermsOfService` and `PrivacyPolicy`
-with the version, the IP and the device — nothing is parked in the browser any more. The web order
-wizard sends its tick the same way, only when the box was shown and ticked (an account that already
-consented sees no box). A client that sends no tick — every shipped mobile build — is recorded as
-**not asserted** (`null`), and **nothing is refused for want of a tick**
-(Q-AUD-L4 default: record only, refuse nothing, until the legal texts are final; then a validator rule
-per path, web first).
+**The terms have a version, and the version is the date the text started applying.** The terms and
+the privacy policy are stored documents (`LegalDocuments`, one per audience, type and market, seeded
+from files in the repository at every host start), each identified by its effective date as
+`yyyy-MM-dd` — `2026-09-14` today, for the whole platform, in five languages. **A document in force
+is immutable**: an edit to its file is refused with a warning, and a wording change is a new file
+under a new date, so every text a customer ever accepted stays in the database. The `/terms` and
+`/privacy` pages show the version in force for the customer's market (a market's own copy beats the
+platform-wide one; a text dated in the future is invisible until its day) with its effective date;
+the currency it names is filled in from the market, never written into the text. The version and the
+document are stamped on the consent row (`UserConsents.DocumentVersion` + `LegalDocumentId`) and the
+version string on the registration and booking rows at the moment of acceptance. A re-acceptance
+under a **different document** moves the consent row to it and writes a consent-grant row; the same
+document again is a no-op on the row and still a row in the trail. **Nobody is re-prompted on a new
+version** — a customer's consent keeps pointing at the text they accepted (a re-prompt is a product
+decision per version, not built). → [ADR-0063](/decisions/adr-0063)
+
+**Registration and booking are refused without the terms tick (owner ruling 2026-09-14, Q-AUD-L4).**
+A customer registration by e-mail must assert `termsAccepted: true`, and a booking must assert it
+**unless the signed-in customer's account already holds both the terms and the privacy consent,
+granted and not withdrawn** — that customer sees no box on any client and sends nothing; a guest
+always asserts it. The refusal key is **`consent.terms_not_accepted`** (a missing tick and a `false`
+one are the same refusal; the failure row records it). A Google or Apple **sign-up** without the tick
+is refused as `auth.social_account_not_found` instead — on the shared sign-in-or-sign-up endpoint the
+tick is what tells the two screens apart, every sign-up screen refuses client-side first, and the
+clients read that key as "sign up first". Confirming a recurring occurrence is not gated (the template
+was accepted); an employee's registration is not gated (a cleaner accepts a different document,
+ADR-0041). When the tick arrives the server grants `TermsOfService` and `PrivacyPolicy` in the same
+commit as the account, with the document in force for the market, the IP and the device — nothing is
+parked in the browser; every client (customer web, Android, iOS) sends the tick on registration and
+on a booking that showed the box. A partner's registration sends its tick too and the server grants
+the two employee consents, unversioned, in the same commit (the partner **web**; both mobile partner
+apps still park the tick for a first sign-in that delivers it). One residual, stated: a booking by a
+signed-in customer with no consent rows records the tick but grants no rows — in production every
+account has both from registration, so only a DEV account created before the grant existed is asked
+again.
 
 **What a row never holds.** A name, an email, a phone, an address line, an entry instruction, the
 text of a reason or a description, card data, a token or a live code — and not the preferred cleaner
 the customer named, because erasure nulls that on purpose. A build-time guard walks every evidence
 record and fails on a member so named. Not recorded at all: quotes, promo-code checks, profile and
-address edits (the previous phone is PII the row may not hold), logins and password resets (the
-90-day `RefreshToken` is that record — Q-AUD-L5 default: no longer), reviews, dispute messages and
-evidence uploads (their own rows are durable), payments and the Stripe webhook (Stripe is the payment
-record), and the erasure itself (`GdprRequests` is its record).
+address edits (the previous phone is PII the row may not hold), refresh-token rotations (the
+`RefreshToken` row is that record), reviews, dispute messages and evidence uploads (their own rows are
+durable), payments and the Stripe webhook (Stripe is the payment record), and the erasure itself
+(`GdprRequests` is its record).
 
-**Retention — 3 years per row, default pending Q-AUD-L1.** Every row is deleted **three years after
-its own act** by the weekly retention sweep (`retention.customer_audit.years`, default 3; a value at
-or below zero is refused and the default kept, because a window of "now" would empty the evidence
-table on the next tick). Per row, not three years after the customer's last act: the anchor form
-would have kept an active customer's IP addresses for the life of the account. Legal basis assumed:
-legitimate interest, defence of claims (GDPR Art. 6(1)(f), Art. 17(3)(e)); three years is the Czech
-Civil Code's general subjective limitation period (§ 629) and covers card-scheme chargeback windows.
-The admin and cleaner audit tables have **no** window (ADR-0012 D6) and the sweep never touches them.
+**Retention — 3 years per row (owner ruling 2026-09-14, Q-AUD-L1: keep 3).** Every row is deleted
+**three years after its own act** by the weekly retention sweep (`retention.customer_audit.years`,
+default 3; a value at or below zero is refused and the default kept, because a window of "now" would
+empty the evidence table on the next tick). Per row, not three years after the customer's last act:
+the anchor form would have kept an active customer's IP addresses for the life of the account. Legal
+basis: legitimate interest, defence of claims (GDPR Art. 6(1)(f), Art. 17(3)(e)); three years is the
+Czech Civil Code's general subjective limitation period (§ 629) and covers card-scheme chargeback
+windows. The admin and cleaner audit tables have **no** window (ADR-0012 D6) and the sweep never
+touches them.
 
-**Erasure keeps the row and blanks where it came from.** Account deletion nulls the IP address, the
-device label and the device id on every row of the subject and nothing else; the act, its outcome, the
-evidence and the `UserId → OrderId` link stay — after erasure the trail is the only link from the
-erased id to its orders, which is the point of it, and the only route from that id back to a person is
-outside the platform, through Stripe (Q-AUD-L1 default: the link is kept). The customer's own free
-text does not survive erasure for defence of claims — the dispute description is blanked and the
-cancellation reason kept, as before (Q-AUD-L3 default: no).
+| Window | Setting | Default | What it governs |
+|---|---|---|---|
+| Customer audit rows | `retention.customer_audit.years` | 3 | per row, from its own act; floor > 0 |
+| Dispute text after erasure | `retention.dispute_text.years` | 3 | the description, messages and resolution notes of an **erased** customer's disputes, from the erasure; floor > 0 |
+| GDPR requests | `retention.gdpr_requests.years` | 3 | completed request rows |
+| Order PII | `retention.order_pii.years` | 2 | the order's customer fields |
+| Withdrawn consents | `retention.withdrawn_consents.years` | 3 | consent rows after withdrawal |
+
+**Erasure keeps the row and blanks where it came from — and it is one commit.** Account deletion
+nulls the IP address, the device label and the device id on every row of the subject and nothing
+else; the act, its outcome, the evidence and the `UserId → OrderId` link stay — after erasure the
+trail is the only link from the erased id to its orders, which is the point of it, and the only route
+from that id back to a person is outside the platform, through Stripe (Q-AUD-L1: the link is kept).
+The whole walk — the account, the orders, the sessions, the trail — commits **once**: an erasure that
+fails leaves the subject, their sessions and everything else exactly as they were, never half done.
+**The dispute text survives erasure for three years** (owner ruling 2026-09-14, Q-AUD-L3: *"keep it
+for 3 years then delete — cleaner and better for defence"*): the description, the messages and the
+resolution notes stay readable under a stamp the erasure sets, and the weekly sweep blanks them once
+it is past; the evidence files still go at erasure; the cancellation reason is kept as before. A
+guest's booking rows are **not** reached by a later erasure — a guest booking is never attached to an
+account, so no row with no user belongs to the subject; whether erasure should match guest bookings
+by e-mail is an open owner question.
+
+**A failed erasure is on record and finished by the platform.** If the walk throws or is refused
+after it began, a `Failed` GDPR request row is written outside the rolled-back transaction with the
+reason (exception type and message, any e-mail blanked) and who asked (`self`, the admin, `system`);
+the customer cannot file a second request while one is not yet completed (they see the existing
+"already pending" answer). A daily job (05:00 UTC) retries every `Failed` request — and every request
+left `Processing` for more than thirty minutes by a host that died mid-walk — once per row per day,
+appending the outcome to the row and logging a still-failed one at Error; an admin can retry it from
+the data-protection page at any time.
 
 **Support reads it; nobody else does.** The three admin reads and the per-customer timeline are behind
-`CanViewAuditLog` — no separate support role (Q-AUD-O1 default) — and the whole-subject export behind
-`CanAdminExportUserData`. The export is **JSON, unsigned, carrying the customer's identity as of
-export time**, and pulling it is itself an audited admin act (`gdpr.user.export`) — the dispute file a
-lawyer asks for is that export plus the order and dispute screens until the lawyer says what it must
-contain (Q-AUD-L6 default).
+`CanViewAuditLog` — no separate support role yet (owner, Q-AUD-O1: *"a few more roles like Support /
+Accountant / Manager … a bit later"* — T-0748) — and the two whole-subject exports behind
+`CanAdminExportUserData`: the **JSON export** (Art. 15 — profile, orders, consents with IP, device
+and version, the trail; no dispute section, an open owner call) and the **incident file, a PDF**
+(owner ruling 2026-09-14, Q-AUD-L6: *"PDF would be a cleaner approach"*) — the customer's identity as
+of the build, their orders (or one order), the disputes on them, the consents and the whole trail of
+customer, admin and cleaner acts on those orders, with a SHA-256 of the data section printed on the
+last page and carried on the audit row of the build, so a printed copy can be matched to the act that
+produced it. Not a signature: the hash matches the copy to *its own* build, and an unscoped file's
+hash changes with every later act on the account (including the previous build's own row); an
+order-scoped file is stable until something on that order changes. Every build of either export is
+itself an audited admin act (`gdpr.user.export`, `gdpr.user.incident_file`).
 
 The pricing calculator returns a **raw subtotal before any user-level discount** — tier, membership or
 promo. The **express surcharge is already folded in**, because the surcharge is a property of the

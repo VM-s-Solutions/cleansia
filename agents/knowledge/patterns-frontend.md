@@ -245,8 +245,11 @@ For a line only the owner can supply or retire (a publication date, a "pending r
 it its own key with `""` as the shipped value and render it under `@if ('page.key' | translate; as
 value)`. ngx-translate only falls back for an **undefined** value, so `""` passes through as falsy and
 the block disappears — the owner turns the line on or off by editing five JSON values, with no code
-change and no boolean flag in the component. Used by `legal-pages` for `last_updated_date` and
-`review_notice`.
+change and no boolean flag in the component. **No user today**: `legal-pages` used it for
+`last_updated_date` and `review_notice` until the legal texts became stored documents rendered from
+`GET api/Legal/GetDocument` (ADR-0063, T-0742) — the effective date is now data and the draft notice
+lives in the seed markdown. The idiom stays here for the next owner-supplied line; it is not the way to
+version a legal text.
 
 ### Retiring a claim the product does not deliver — pin the absence, don't just delete it
 

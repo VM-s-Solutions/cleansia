@@ -82,7 +82,9 @@ that succeeds re-labels its row to the new dispute and records the reason (an en
 completion against the 24 h window (a late filing is accepted — the window decides what is promised,
 not what is heard — and the row shows on which side of it the filing fell), the window shown, the
 description's length and line count — never the text, which lives on the dispute under its own
-erasure verdict — and the order total and currency.
+erasure verdict (kept readable for three years after an erasure, then blanked by the sweep — owner
+ruling 2026-09-14, → [GDPR](/flows/gdpr-and-audit#erasure-is-anonymise-in-place)) — and the order total
+and currency.
 Dispute messages and evidence uploads write no audit row: their own rows are durable and carry author
 and time, and the admin's resource history reads the dispute by id. Everything an admin does to the
 dispute afterwards — resolve, refund, escalate — is on the same timeline from the admin table, and a

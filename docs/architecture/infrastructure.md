@@ -163,9 +163,10 @@ All functions run in a single Azure Functions project deployed as a Docker conta
 
 ### Function Inventory
 
-**34 functions**, 20 timers and 14 queue consumers. This inventory listed five of them until
-2026-08-22, which is a large part of why nobody noticed that eight timers had never fired at all — see
-[the schedule tokens](#timer-schedules) below.
+**36 functions**, 22 timers and 14 queue consumers (`grep -l TimerTrigger src/Cleansia.Functions/Functions/*.cs | wc -l`
+is the check — the table below was one short, `ExpireStaleCredit`, until 2026-09-14). This inventory
+listed five of them until 2026-08-22, which is a large part of why nobody noticed that eight timers
+had never fired at all — see [the schedule tokens](#timer-schedules) below.
 
 #### Timers
 
@@ -186,11 +187,13 @@ All functions run in a single Azure Functions project deployed as a Docker conta
 | `SendRecurringOrderReminders` | `%Cron%` — daily 02:30 UTC | Warns a customer about an upcoming recurring instance |
 | `SendMembershipLifecycleNotifications` | `%Cron%` — daily 03:00 UTC | Expiry, renewal and cancellation notices |
 | `RefreshTokenCleanup` | daily 03:30 UTC | Deletes expired refresh tokens |
+| `ExpireStaleCredit` | daily 03:30 UTC | Expires customer credit past its expiry date |
 | `ExpireStaleReferrals` | `%Cron%` — daily 03:30 UTC | Expires referrals nobody redeemed |
 | `LiveActivityJanitor` | daily 04:00 UTC | Ends Live Activities whose orders are long finished |
 | `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
+| `RetryFailedUserDeletions` | daily 05:00 UTC | Re-runs every GDPR erasure left `Failed` (or `Processing` for over 30 min), once per row per day, in its own scope per row; logs a still-failed one at Error. Under `DataRetention__Enabled` |
 | `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
-| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders |
+| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders, expires customer audit rows (3 y per row) and blanks an erased customer's dispute text once its 3-year window is past (`DisputeText`) |
 
 #### Queue consumers
 
@@ -233,7 +236,7 @@ deployed database while reporting success (T-0685).
 
 | Setting | Turns off | Keeps working |
 |---|---|---|
-| `DataRetention__Enabled` | The weekly GDPR retention sweep (Sun 03:00) — expired codes, stale devices, old GDPR requests, order PII anonymisation, withdrawn consents, superseded documents, notifications | Everything else |
+| `DataRetention__Enabled` | The weekly GDPR retention sweep (Sun 03:00) — expired codes, stale devices, old GDPR requests, order PII anonymisation, withdrawn consents, superseded documents, notifications, customer audit rows, erased customers' dispute text — **and** the daily failed-erasure retry (05:00) | Everything else |
 | `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, **and generating + emailing an invoice per employee** | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod` |
 | `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders**, and everything that returns or releases money: refunds, cash-collection intent cancellation, membership cancellation, and GDPR erasure of the Stripe customer |
 

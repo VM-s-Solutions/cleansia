@@ -67,6 +67,27 @@ project resources launch through the IDE's run-session service, and VS refuses t
 graph works under F5 and `dotnet run` alike. The AppHost keeps a project reference (with
 `IsAspireProjectResource=false`) purely so the migrator is compiled before the AppHost starts.
 
+## The legal texts are seeded by every host, after the type catalog {#legal-seed}
+
+The migrator owns the **schema**; the legal *texts* are **rows**, and they are written by every host
+that binds the database — the five APIs and the Functions host alike — at every start, in every
+environment. `LegalDocumentSeedHostedService` reads the markdown files embedded in
+`Cleansia.Infra.Database` (`Seed/Legal/{audience}/{type}/{ISO3|any}/{yyyy-MM-dd}/{xx}.md`) and upserts
+them into `LegalDocuments` / `LegalDocumentTexts`: a new folder is a new version, a changed file under
+a date already in force is **refused with a warning** (what a customer accepted must read the same
+forever), and a second host booting at the same moment finds the rows already there. That is why a
+new version of the terms is *a seed file plus a deploy* and nothing else — there is no admin authoring.
+→ [ADR-0063](/decisions/adr-0063)
+
+Its place in the hosted-service order is load-bearing, like the type-catalog initializer's. Hosted
+services start **sequentially**, and `NpgsqlTypeCatalogInitializer` awaits a retry loop that can span
+about two minutes while a migration is in flight; the seed is registered **after** it, so it waits
+behind the migration instead of spending its own five bounded retries against a half-built schema.
+It is a plain `IHostedService`, awaited inline — not a `BackgroundService` — because being awaited is
+what turns its position into a wait rather than a race. A host that still cannot seed logs at Error
+and **starts anyway**: a customer can book while the legal page serves the previous version. Pinned by
+`BootDatabaseIoTests`.
+
 ## Why there are two customer hosts {#two-customer-hosts}
 
 The Customer **Web** host (5003) issues HttpOnly cookies. Native clients cannot read those, so the

@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**62 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**63 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -36,14 +36,17 @@ flowchart LR
   A0057[ADR-0057] --> A0037[ADR-0037]
   A0061[ADR-0061] --> A0050[ADR-0050]
   A0061[ADR-0061] --> A0017[ADR-0017]
+  A0063[ADR-0063] --> A0062[ADR-0062]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
-  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0050 old
+  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0050,A0062 old
 ```
 
 Grey nodes are superseded in whole or in part. Not every later record replaces an earlier one:
 [ADR-0062](./adr-0062) **extends** [ADR-0012](./adr-0012) — the admin audit gate gains a second,
 opt-in arm for customer acts and every sentence about the admin table stays true — so there is no
-arrow between them.
+arrow between them. [ADR-0063](./adr-0063) supersedes **one paragraph** of ADR-0062 (D4's version
+constant became a stored, dated document); the rest of ADR-0062 stands and was **amended in place on
+2026-09-14** with the owner's rulings, each decision carrying a dated block.
 
 ## All records
 
@@ -110,7 +113,8 @@ arrow between them.
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
 | **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
 | **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company | `accepted` |
-| **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012) | `accepted` |
+| **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14) | `accepted` |
+| **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

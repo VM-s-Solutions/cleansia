@@ -123,6 +123,7 @@ The default route (`/`) redirects to `/employee-management`.
 | `company-management`    | `@cleansia/admin-features/company-management`    | Company info CRUD         |
 | `template-management`   | `@cleansia/admin-features/template-management`   | Template CRUD             |
 | `fiscal-failures`       | `@cleansia/admin-features/fiscal-failures`       | Fiscal failure action queue |
+| `legal-documents`       | `@cleansia/admin-features/legal-documents`       | Read-only list of every legal-text version per audience, type and market, with a per-language preview and hash (`/legal-documents`, `CanViewCountryConfigurations`; a new version is a seed file + deploy — ADR-0063) |
 
 ## Guards
 
@@ -162,6 +163,7 @@ The admin app provides CRUD interfaces for platform-wide configuration:
 | Currencies   | Supported payment currencies                            |
 | Company Info | Company legal and contact details                       |
 | Templates    | Email and notification templates                        |
+| Legal documents | Every version of the terms and the privacy policy, read-only (ADR-0063) |
 
 Per-employee pay overrides are managed on the Employee Detail page (see [User Management](./user-management)), not via Global Rates.
 

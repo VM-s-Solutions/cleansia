@@ -64,18 +64,31 @@ tick and the terms version in force, the client it came from, the IP and device 
 the address text or the instructions. A guest booking writes the same row with no user; it is the
 case the row exists for, and it is reachable later only by the order, never by a person.
 
-A refused booking is a row too, written outside the transaction that was rolled back: the wrong
-quoted total is `order.total_price.not_match`, an express waiver whose quota ran out is its own key,
-a country another company serves is `order.country_operator_mismatch`. An anonymous refusal carries
+A refused booking is a row too, written outside the transaction that was rolled back: a missing
+terms tick is `consent.terms_not_accepted` (judged first, ahead of the price chain), the wrong quoted
+total is `order.total_price.not_match`, an express waiver whose quota ran out is its own key, a
+country another company serves is `order.country_operator_mismatch`. An anonymous refusal carries
 the caller's IP and is bounded by the same `auth` window as the request. Two refusals leave no row
 because nothing exists yet to stamp them with: a country that is not a market
 (`country.not_serviced`) and a market nobody operates (`tenant.not_found`) are refused before the
 operator is resolved, and the failure sink logs one warning instead of writing a row with no tenant.
 → [What is recorded about a customer](/product/business-rules#customer-record)
 
-The wizard's terms tick gates the review step and rides `termsAccepted` on the create command when
-the box was shown and ticked; an account that already consented sees no box and the row records
-"not asserted", as it does for every mobile build.
+## The terms tick is required, unless the account already consented
+
+A booking asserts `termsAccepted: true` or is refused — **unless** the signed-in customer's account
+already holds both the terms and the privacy consent, granted and not withdrawn (owner ruling
+2026-09-14). That customer sees no box on any client and sends nothing; a guest has no account to hold
+a consent on and always asserts it; a customer whose consent was withdrawn is asked again, which is the
+right answer to a withdrawal. The tick short-circuits the consent read, so a customer re-consenting at
+checkout is never refused for a row the server has not written yet. Every client behaves alike: the
+web wizard, the Android and the iOS customer apps show the sentence on the review step when the
+account lacks a consent (or there is no account), gate the confirmation on it, and send the tick only
+when the box was shown and ticked. The booking row records the tick and the version in force — the
+effective date of the terms document for the address's market ([ADR-0063](/decisions/adr-0063)) — and
+grants **no** consent rows for it (a residual stated in ADR-0062 D4 as amended: in production every
+account holds both from registration). Confirming a recurring occurrence is not gated — the template
+was accepted.
 
 ## Responsive quote previews
 

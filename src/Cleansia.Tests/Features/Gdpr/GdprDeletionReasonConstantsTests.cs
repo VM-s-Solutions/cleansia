@@ -122,4 +122,20 @@ public class GdprDeletionReasonConstantsTests
         Assert.Equal("admin", _capturedProcessedBy);
         Assert.Equal(GdprAuditReasons.FallbackAdminActor, _capturedProcessedBy);
     }
+
+    /// <summary>
+    /// The three erasure stamps, and only those, read as an erasure — an admin's ordinary deactivation
+    /// leaves a live identity behind and the incident file must print it as such.
+    /// </summary>
+    [Theory]
+    [InlineData("GDPR_DELETION", true)]
+    [InlineData("GDPR_ADMIN_DELETION", true)]
+    [InlineData("GDPR_DELETION_RETRY", true)]
+    [InlineData("admin@cleansia.test", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void Only_An_Erasure_Stamp_Is_An_Erasure(string? deactivatedBy, bool expected)
+    {
+        Assert.Equal(expected, GdprAuditReasons.IsErasure(deactivatedBy));
+    }
 }

@@ -267,6 +267,7 @@ public static class ServiceExtensions
         // Scoped: one erasure per request, and the pipeline's failure capture reads what the service set.
         services.AddScoped<IErasureAttempt, ErasureAttempt>();
         services.AddScoped<IGdprExportService, GdprExportService>();
+        services.AddScoped<IIncidentFileService, IncidentFileService>();
         // The one consent-write path: the GDPR consent endpoints and the partner-onboarding checkbox.
         services.AddScoped<IConsentService, ConsentService>();
         // The legal text in force for a market, stamped on a consent and shown on the legal pages.

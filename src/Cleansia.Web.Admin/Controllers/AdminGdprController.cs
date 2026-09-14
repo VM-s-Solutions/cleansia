@@ -24,6 +24,23 @@ public class AdminGdprController(IMediator mediator) : ApiController(mediator)
         return HandleResult<GdprExportDto>(result);
     }
 
+    [HttpPost("incident-file/{userId}")]
+    [Permission(Policy.CanAdminExportUserData)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportCustomerIncidentFile(string userId, [FromQuery] string? orderId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new ExportCustomerIncidentFile.Command(userId, orderId), cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return HandleResult<ExportCustomerIncidentFile.Response>(result);
+        }
+
+        return File(result.Value!.PdfBytes, "application/pdf", result.Value.FileName);
+    }
+
     [HttpPost("delete-account/{userId}")]
     [Permission(Policy.CanAdminDeleteUserAccount)]
     [EnableRateLimiting("auth")]

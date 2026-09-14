@@ -1,3 +1,4 @@
+using Cleansia.Infra.Services.Pdf.IncidentFile;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
 using Microsoft.Extensions.Logging;
@@ -96,6 +97,34 @@ public class QuestPdfService : IPdfService
         {
             _logger.LogError(ex, "Invoice PDF generation failed for {InvoiceNumber}: {Message}",
                 data.InvoiceNumber, ex.Message);
+            throw;
+        }
+    }
+
+    public IncidentFilePdf GenerateIncidentFilePdf(IncidentFilePdfData data)
+    {
+        // The subject id only: this log line is the one place the build is visible outside the audit
+        // row, and the file's whole point is that its content stays out of every other sink.
+        _logger.LogInformation("Generating incident file for subject {SubjectUserId}, scope={Scope}",
+            data.Subject.UserId, data.OrderIdFilter is null ? "all" : "order");
+
+        try
+        {
+            var sections = IncidentFileSections.Build(data);
+            var sha256 = IncidentFileDigest.Sha256Hex(sections);
+            byte[] pdfBytes;
+            lock (RenderGate)
+            {
+                pdfBytes = Document.Create(c => IncidentFileLayoutBuilder.Build(c, data, sections, sha256)).GeneratePdf();
+            }
+
+            _logger.LogInformation("Incident file generated successfully ({Size} bytes)", pdfBytes.Length);
+            return new IncidentFilePdf(pdfBytes, sha256);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Incident file generation failed for subject {SubjectUserId}: {Message}",
+                data.Subject.UserId, ex.Message);
             throw;
         }
     }

@@ -11,6 +11,13 @@ public static class GdprAuditReasons
     /// </summary>
     public const string RetriedDeletion = "GDPR_DELETION_RETRY";
 
+    /// <summary>
+    /// Whether a deactivation stamp is an erasure's. The anonymised name and address are markers a
+    /// reader could mistake for values; the stamp is the erasure's own signature.
+    /// </summary>
+    public static bool IsErasure(string? deactivatedBy) =>
+        deactivatedBy is SelfDeletion or AdminDeletion or RetriedDeletion;
+
     public const string FallbackAdminActor = "admin";
 
     /// <summary>The actor a retry records when no session carries an e-mail — the timer.</summary>

@@ -2428,7 +2428,13 @@
           "created_on": "Vytvořeno"
         },
         "fulfil": "Vyřídit žádost o smazání",
-        "fulfil_title": "Vyřídit tuto žádost o smazání?"
+        "fulfil_title": "Vyřídit tuto žádost o smazání?",
+        "retry": "Opakovat výmaz",
+        "retry_confirm_title": "Opakovat tento výmaz?",
+        "retry_confirm_message": "Výmaz účtu uživatele {{userId}} bude spuštěn znovu. Pokud uspěje, účet bude trvale anonymizován a akci nelze vrátit.",
+        "retry_confirm_yes": "Opakovat",
+        "retry_success": "Výmaz byl zopakován. Účet je nyní vymazán.",
+        "retry_error": "Výmaz se nepodařilo zopakovat."
       },
       "request_status": {
         "Pending": "Čeká",

@@ -2428,7 +2428,13 @@
           "created_on": "Created on"
         },
         "fulfil": "Fulfil deletion request",
-        "fulfil_title": "Fulfil this deletion request?"
+        "fulfil_title": "Fulfil this deletion request?",
+        "retry": "Retry deletion",
+        "retry_confirm_title": "Retry this deletion?",
+        "retry_confirm_message": "This re-runs the erasure of the account of user {{userId}}. If it succeeds, the account is permanently anonymized and this cannot be undone.",
+        "retry_confirm_yes": "Retry",
+        "retry_success": "Deletion retried. The account is now erased.",
+        "retry_error": "Couldn't retry the deletion."
       },
       "request_status": {
         "Pending": "Pending",

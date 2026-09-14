@@ -1,8 +1,9 @@
 import Foundation
 
 /// Per-app binding seam for the GDPR consent endpoints, mirroring `DeviceRegistrationClient`:
-/// each app implements it over its own generated Gdpr API so the parking and delivery rules
-/// live once, in `SignupConsentRepository`.
+/// the partner app implements it over its generated Gdpr API so the parking and delivery rules
+/// live once, in `SignupConsentRepository`. The customer app sends its tick on the registration
+/// itself and has no implementation.
 public protocol SignupConsentClient: Sendable {
     /// Every consent type the account has already answered — granted **or withdrawn**.
     /// `nil` when the read itself failed, which is not the same as "answered nothing".

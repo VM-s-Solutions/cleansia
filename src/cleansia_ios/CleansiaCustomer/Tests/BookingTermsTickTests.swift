@@ -99,8 +99,8 @@ final class BookingTermsTickTests: XCTestCase {
         XCTAssertEqual(consent.callCount, 0)
     }
 
-    /// The sheet re-reads at every opening, so an answer that went stale — a sign-out and another
-    /// account's sign-in on the same session-lived view model — is replaced, not kept.
+    /// The sheet re-reads at every opening, so an answer that went stale — a consent withdrawn
+    /// on the web GDPR page between two bookings in the same session — is replaced, not kept.
     func testARereadReplacesAStaleAnswer() async {
         let consent = FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy])
         let vm = makeVM(consent: consent)

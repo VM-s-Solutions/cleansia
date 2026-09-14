@@ -235,7 +235,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         _ = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: nil
         )
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
 
@@ -310,7 +311,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         _ = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: nil
         )
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
         MockURLProtocol.handler = { _ in (204, Data()) }
@@ -328,7 +330,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         let result = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: nil
         )
 
         guard case let .success(value) = result else { return XCTFail("expected success") }
@@ -342,7 +345,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         let result = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: nil
         )
 
         guard case let .success(value) = result else { return XCTFail("expected success") }
@@ -358,7 +362,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         _ = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: nil
         )
 
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register"))
@@ -373,7 +378,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         _ = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: "svk"
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: "svk", termsAccepted: nil
         )
 
         let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "Register")))
@@ -385,7 +391,8 @@ final class AuthApiClientTests: XCTestCase {
         MockURLProtocol.handler = { _ in (200, Data("true".utf8)) }
 
         _ = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en", countryId: nil
+            email: "a@b.cz", password: "pw", firstName: "A", lastName: "B", language: "en",
+            countryId: nil, termsAccepted: nil
         )
 
         let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: "RegisterEmployee")))

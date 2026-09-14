@@ -130,7 +130,9 @@ final class RegisterViewModel: ViewModel {
             firstName: form.firstName,
             lastName: form.lastName,
             language: settings.languageTag,
-            countryId: market.countryId
+            countryId: market.countryId,
+            // `RegisterEmployee` has no terms member yet; the tick is parked below instead.
+            termsAccepted: nil
         )
         registerState = .idle
 

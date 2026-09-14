@@ -101,7 +101,8 @@ final class SignupConsentSessionHookTests: XCTestCase {
             firstName: "Ada",
             lastName: "Lovelace",
             language: "en",
-            countryId: nil
+            countryId: nil,
+            termsAccepted: nil
         )
 
         XCTAssertEqual(delivery.sessionEmails, [])

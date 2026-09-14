@@ -37,6 +37,13 @@ public class Dispute : Auditable, ITenantEntity
 
     public string? StripeDisputeId { get; private set; }
 
+    /// <summary>
+    /// Set by the customer's erasure: the description, the messages and the resolution notes stay readable
+    /// until this instant because a chargeback or a claim on the order may still turn on them, and the
+    /// retention sweep blanks them once it is past. Null on a dispute whose customer was never erased.
+    /// </summary>
+    public DateTimeOffset? TextRetainedUntil { get; private set; }
+
     private readonly List<DisputeMessage> _messages = new();
     public IReadOnlyCollection<DisputeMessage> Messages => _messages.AsReadOnly();
 
@@ -184,6 +191,21 @@ public class Dispute : Auditable, ITenantEntity
         Updated(updatedBy, DateTimeOffset.UtcNow);
     }
 
+    public Dispute RetainTextUntil(DateTimeOffset retainedUntil)
+    {
+        TextRetainedUntil = retainedUntil;
+        return this;
+    }
+
+    public Dispute AnonymizeEvidence()
+    {
+        foreach (var evidence in _evidence)
+        {
+            evidence.Anonymize();
+        }
+        return this;
+    }
+
     public Dispute Anonymize()
     {
         Description = AnonymizationMarker.Value;
@@ -192,10 +214,8 @@ public class Dispute : Auditable, ITenantEntity
         {
             message.Anonymize();
         }
-        foreach (var evidence in _evidence)
-        {
-            evidence.Anonymize();
-        }
+        AnonymizeEvidence();
+        TextRetainedUntil = null;
         return this;
     }
 }

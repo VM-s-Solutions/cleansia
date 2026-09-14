@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260914081247_Initial")]
+    [Migration("20260914115922_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1125,6 +1125,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<DateTimeOffset?>("TextRetainedUntil")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -1146,6 +1149,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("Status");
 
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("TextRetainedUntil");
 
                     b.HasIndex("UserId");
 

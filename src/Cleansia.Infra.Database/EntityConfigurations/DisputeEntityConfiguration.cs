@@ -66,5 +66,6 @@ public class DisputeEntityConfiguration : AuditableEntityConfiguration<Dispute, 
         builder.HasIndex(d => d.UserId);
         builder.HasIndex(d => d.Status);
         builder.HasIndex(d => d.CreatedOn);
+        builder.HasIndex(d => d.TextRetainedUntil);
     }
 }

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -26,6 +27,11 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 /// blanking is a tracked write riding the erasure's single commit, an erasure whose commit throws leaves
 /// every row exactly as it was: the trail is never blanked for a customer who still exists.</para>
 ///
+/// <para>A GUEST row is reached by the order, not the subject (owner ruling 2026-09-14): a booking made
+/// before the account existed carries <c>UserId</c> null and the order id, and the order later became this
+/// account's — so its IP and device are the subject's too and are blanked with the rest. A stranger's guest
+/// row on another order is untouched.</para>
+///
 /// <para>Also covers the retention delete the repository exposes for the retention task: per row, by its own age,
 /// across tenants, and never the admin or employee tables.</para>
 /// </summary>
@@ -34,6 +40,10 @@ public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) :
 {
     private const string SubjectId = TestConstants.TestUserSession.TestUserId;
     private const string BystanderId = "user-keep-audit-1";
+    private const string CountryId = "country-cz-audit-erasure";
+    private const string CurrencyId = "currency-czk-audit-erasure";
+    private const string SubjectOrderId = "order-audit-erasure-subj";
+    private const string StrangerOrderId = "order-audit-erasure-other";
     private const string SubjectIp = "203.0.113.9";
     private const string SubjectDevice = "iPhone 15 / iOS 17.4";
     private const string SubjectDeviceId = "device-abc-123";
@@ -101,9 +111,8 @@ public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) :
                     CancellationToken.None);
                 Assert.True(result.IsSuccess);
 
-                // The pseudonymisation and User.Anonymize() are staged after the refresh-token revoke's own
-                // commit and are unsaved here; a row the commit cannot take (ActorId over its 26-char column)
-                // makes the single SaveChangesAsync throw.
+                // Everything the walk staged is unsaved here; a row the commit cannot take (ActorId over its
+                // 26-char column) makes the erasure's single SaveChangesAsync throw.
                 context.AdminActionAudits.Add(new AdminActionAudit
                 {
                     ActorId = new string('x', 40),
@@ -133,6 +142,41 @@ public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) :
                 });
             },
             transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Guest_Row_On_The_Subjects_Order_Loses_Its_Metadata_And_A_Strangers_Guest_Row_Keeps_It()
+    {
+        await TestMethod(
+            arrange: SeedSubjectWithAGuestBookingAndAStrangersGuestBooking,
+            act: async provider => await provider.GetRequiredService<IMediator>().Send(new DeleteUserAccount.Command()),
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+
+                var guestRows = await context.CustomerActionAudits.IgnoreQueryFilters()
+                    .Where(a => a.UserId == null)
+                    .OrderBy(a => a.ResourceId)
+                    .ToListAsync();
+                Assert.Equal(3, guestRows.Count);
+
+                var subjectGuestBooking = Assert.Single(guestRows, r => r.ResourceId == SubjectOrderId && r.ResourceType == "Order");
+                Assert.Null(subjectGuestBooking.IpAddress);
+                Assert.Null(subjectGuestBooking.DeviceLabel);
+                Assert.Null(subjectGuestBooking.DeviceId);
+                Assert.Null(subjectGuestBooking.UserId);
+                Assert.Contains("\"feeRate\": 0.5", subjectGuestBooking.PayloadJson);
+
+                var strangersGuestBooking = Assert.Single(guestRows, r => r.ResourceId == StrangerOrderId);
+                Assert.Equal("198.51.100.7", strangersGuestBooking.IpAddress);
+                Assert.Equal("Pixel 8", strangersGuestBooking.DeviceLabel);
+                Assert.Equal("device-keep-1", strangersGuestBooking.DeviceId);
+
+                // Same id, different resource: the walk keys on the ORDER, and an unrelated row that merely
+                // shares the identifier string under another type is not the subject's.
+                var otherTypeSameId = Assert.Single(guestRows, r => r.ResourceId == SubjectOrderId && r.ResourceType == "Dispute");
+                Assert.Equal("198.51.100.7", otherTypeSameId.IpAddress);
+            });
     }
 
     [Fact]
@@ -189,6 +233,56 @@ public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) :
             userId: SubjectId, clientAudience: JwtAudiences.Customer, ipAddress: SubjectIp, deviceLabel: SubjectDevice,
             deviceId: SubjectDeviceId, action: "customer.test.act", resourceType: "Order", resourceId: resourceId,
             success: success, errorCode: errorCode, payloadJson: payloadJson, correlationId: null);
+        row.TenantId = TestTenants.Default;
+        return row;
+    }
+
+    private static async Task SeedSubjectWithAGuestBookingAndAStrangersGuestBooking(CleansiaDbContext context)
+    {
+        await SeedSubjectWithRows(context);
+
+        var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
+        country.Id = CountryId;
+        context.Countries.Add(country);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.Id = CurrencyId;
+        currency.IsActive = true;
+        currency.SetAsDefault(true);
+        context.Currencies.Add(currency);
+
+        var order = Order.Create(
+            customerName: "Guest Who Registered Later",
+            customerEmail: TestConstants.TestUserSession.TestUserEmail,
+            customerPhone: "+420777111333",
+            customerAddress: Address.Create("Testovaci 12", "Praha", "11000", CountryId),
+            rooms: 2,
+            bathrooms: 1,
+            cleaningDateTime: DateTime.UtcNow.AddDays(-30),
+            paymentType: PaymentType.Card,
+            totalPrice: 1250m,
+            currencyId: CurrencyId,
+            paymentStatus: PaymentStatus.Paid,
+            userId: SubjectId);
+        order.Id = SubjectOrderId;
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+        context.Orders.Add(order);
+        StampUnstampedAdded(context, TestTenants.Default);
+        await context.CommitAsync(CancellationToken.None);
+
+        context.CustomerActionAudits.AddRange(
+            GuestRow("Order", SubjectOrderId, SubjectIp, SubjectDevice, SubjectDeviceId, Payload),
+            GuestRow("Order", StrangerOrderId, "198.51.100.7", "Pixel 8", "device-keep-1", payloadJson: null),
+            GuestRow("Dispute", SubjectOrderId, "198.51.100.7", "Pixel 8", "device-keep-1", payloadJson: null));
+        await context.SaveChangesAsync();
+    }
+
+    private static CustomerActionAudit GuestRow(
+        string resourceType, string resourceId, string ipAddress, string deviceLabel, string deviceId, string? payloadJson)
+    {
+        var row = CustomerActionAudit.Create(
+            userId: null, clientAudience: JwtAudiences.Customer, ipAddress: ipAddress, deviceLabel: deviceLabel,
+            deviceId: deviceId, action: "customer.order.create", resourceType: resourceType, resourceId: resourceId,
+            success: true, errorCode: null, payloadJson: payloadJson, correlationId: null);
         row.TenantId = TestTenants.Default;
         return row;
     }

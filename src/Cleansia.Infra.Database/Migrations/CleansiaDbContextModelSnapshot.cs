@@ -1122,6 +1122,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<DateTimeOffset?>("TextRetainedUntil")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -1143,6 +1146,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("Status");
 
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("TextRetainedUntil");
 
                     b.HasIndex("UserId");
 

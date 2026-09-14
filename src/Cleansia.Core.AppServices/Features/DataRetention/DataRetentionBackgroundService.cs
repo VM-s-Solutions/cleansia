@@ -19,6 +19,7 @@ public class DataRetentionBackgroundService(
     IEmployeeDocumentRepository employeeDocumentRepository,
     IUserNotificationRepository userNotificationRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
+    IDisputeRepository disputeRepository,
     IAppConfigurationProvider configProvider,
     IDataRetentionConfig retentionConfig,
     IBlobContainerClientFactory blobClientFactory,
@@ -47,6 +48,7 @@ public class DataRetentionBackgroundService(
         await RunSafeAsync("SupersededDocuments", CleanSupersededDocumentsAsync, cancellationToken);
         await RunSafeAsync("UserNotifications", CleanUserNotificationsAsync, cancellationToken);
         await RunSafeAsync("CustomerActionAudits", CleanCustomerActionAuditsAsync, cancellationToken);
+        await RunSafeAsync("DisputeText", CleanExpiredDisputeTextAsync, cancellationToken);
 
         logger.LogInformation("Data retention job completed");
     }
@@ -319,5 +321,36 @@ public class DataRetentionBackgroundService(
 
         logger.LogInformation("Deleted {Total} customer audit rows older than {Years} years",
             totalDeleted, years);
+    }
+
+    private async Task CleanExpiredDisputeTextAsync(CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var totalBlanked = 0;
+
+        // The erasure stamped the window (GdprDeletionService reads the retention.dispute_text.years
+        // setting); this task reads only the stamp. Anonymize() clears it, which is what makes each batch
+        // shrink the backlog rather than re-read the same rows. Pure-modify, so no tenant override.
+        while (true)
+        {
+            var batch = await disputeRepository.GetQueryableIgnoringTenant()
+                .Where(d => d.TextRetainedUntil != null && d.TextRetainedUntil < now)
+                .Include(d => d.Messages)
+                .Include(d => d.Evidence)
+                .Take(RetentionDefaults.BatchSize)
+                .ToListAsync(ct);
+
+            if (batch.Count == 0) break;
+
+            foreach (var dispute in batch)
+            {
+                dispute.Anonymize();
+            }
+
+            await disputeRepository.CommitAsync(ct);
+            totalBlanked += batch.Count;
+        }
+
+        logger.LogInformation("Blanked the text of {Total} disputes whose retention window has passed", totalBlanked);
     }
 }

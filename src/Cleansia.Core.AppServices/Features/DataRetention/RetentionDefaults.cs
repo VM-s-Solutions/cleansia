@@ -10,6 +10,7 @@ public static class RetentionDefaults
     public const string DeletedDocumentsDaysKey = "retention.deleted_documents.days";
     public const string NotificationsDaysKey = "retention.notifications.days";
     public const string CustomerAuditRetentionYearsKey = "retention.customer_audit.years";
+    public const string DisputeTextRetentionYearsKey = "retention.dispute_text.years";
 
     public const bool DefaultExpiredCodesEnabled = true;
     public const int DefaultStaleDevicesDays = 90;
@@ -19,6 +20,7 @@ public static class RetentionDefaults
     public const int DefaultDeletedDocumentsDays = 365;
     public const int DefaultNotificationsDays = 90;
     public const int DefaultCustomerAuditRetentionYears = 3;
+    public const int DefaultDisputeTextRetentionYears = 3;
 
     /// <summary>
     /// Runaway/abuse guard on the notifications feed — an order of magnitude above a realistic

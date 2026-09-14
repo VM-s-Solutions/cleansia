@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Devices;
 using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Enums;
@@ -141,21 +142,24 @@ public sealed class SubjectResidueErasureTests : IDisposable
     }
 
     /// <summary>
-    /// Asserted at the seam rather than over rows, because what matters is the exact call: the subject, no
-    /// spared session, and a reason that is NOT <c>password_reset</c> — that string alone drives ADR-0027's
+    /// Asserted at the seam rather than over rows, because what matters is the exact call: the subject, the
+    /// STAGED revoke (the self-committing one would split the erasure into two commits — owner ruling
+    /// 2026-09-14), and a reason that is NOT <c>password_reset</c> — that string alone drives ADR-0027's
     /// revoked-user poll, and an erasure has no business firing it.
     /// </summary>
     [Fact]
-    public async Task Erasure_Revokes_Every_Refresh_Token_The_Subject_Holds_Without_Firing_The_Reset_Directory()
+    public async Task Erasure_Stages_The_Revoke_Of_Every_Refresh_Token_The_Subject_Holds_Without_Committing_Or_Firing_The_Reset_Directory()
     {
         await SeedAsync();
 
         await EraseAsync(ErasedUserId);
 
         _refreshTokenService.Verify(
-            s => s.RevokeAllForUserAsync(
-                ErasedUserId, GdprAuditReasons.RefreshTokenRevocation, null, It.IsAny<CancellationToken>()),
+            s => s.StageRevokeAllForUserAsync(ErasedUserId, GdprAuditReasons.RefreshTokenRevocation, It.IsAny<CancellationToken>()),
             Times.Once);
+        _refreshTokenService.Verify(
+            s => s.RevokeAllForUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
         Assert.NotEqual("password_reset", GdprAuditReasons.RefreshTokenRevocation);
     }
 
@@ -208,6 +212,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
             _refreshTokenService.Object,
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
+            Mock.Of<IAppConfigurationProvider>(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(

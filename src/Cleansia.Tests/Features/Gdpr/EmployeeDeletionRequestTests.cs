@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Orders;
@@ -232,6 +233,7 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
             Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
+            Mock.Of<IAppConfigurationProvider>(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(

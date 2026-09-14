@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -165,6 +166,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
+            Mock.Of<IAppConfigurationProvider>(),
             NullLogger<GdprDeletionService>.Instance);
 
         return await service.DeleteUserAccountAsync(

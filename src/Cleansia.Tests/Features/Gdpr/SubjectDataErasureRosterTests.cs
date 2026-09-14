@@ -73,6 +73,13 @@ public class SubjectDataErasureRosterTests
         RetainedByPolicy,
 
         /// <summary>
+        /// Kept READABLE for a fixed window after the erasure because a claim on the order may still turn
+        /// on it, then blanked by the retention sweep. The erasure stamps the window rather than the
+        /// marker, so the site it names is that stamp, and the reason names the sweep that finishes it.
+        /// </summary>
+        RetainedForDefence,
+
+        /// <summary>
         /// Kept because the payload identifies a device, a quota slot or a counter rather than a person, and
         /// its only subject handle is an id that no longer resolves to one.
         ///
@@ -150,14 +157,20 @@ public class SubjectDataErasureRosterTests
             InErasure("photo.Anonymize()")),
 
         [typeof(Core.Domain.Disputes.Dispute)] = new(
-            Verdict.AnonymizedInPlace,
-            "The adjudication record is kept; the subject's text and the evidence paths are blanked, in that "
-                + "order relative to the blob deletes.",
-            InErasure("dispute.Anonymize()")),
+            Verdict.RetainedForDefence,
+            "The adjudication record is kept, and so is its TEXT — the description, the messages and the "
+                + "resolution notes — for three years after the erasure (owner ruling 2026-09-14: a "
+                + "chargeback or a claim on the order may still turn on it). The erasure stamps "
+                + "TextRetainedUntil from the retention.dispute_text.years window and the retention sweep's "
+                + "DisputeText task blanks the text once the stamp is past. The evidence FILES do not wait: "
+                + "the blobs are deleted at erasure and the rows' names and paths blanked next to them, in "
+                + "that order relative to the deletes.",
+            InErasure("dispute.AnonymizeEvidence()"), InErasure("dispute.RetainTextUntil(")),
 
         [typeof(Core.Domain.Disputes.DisputeMessage)] = new(
-            Verdict.AnonymizedInPlace,
-            "Blanked inside the dispute aggregate's own walk.",
+            Verdict.RetainedForDefence,
+            "Readable for the dispute's three-year window, then blanked inside the dispute aggregate's own "
+                + "walk when the sweep reaches its parent.",
             new Site(DisputeAggregate, "message.Anonymize()")),
 
         [typeof(Core.Domain.EmployeePayroll.OrderEmployeePay)] = new(
@@ -199,8 +212,10 @@ public class SubjectDataErasureRosterTests
                 + "which is what starts that clock: an untouched live token would otherwise keep the "
                 + "subject's IP address, device label and device id until its own natural expiry first. Not a "
                 + "session cut — the refresh path already refuses a deactivated user — and ADR-0027's poll "
-                + "predicate is untouched, since it reads the password_reset reason alone.",
-            InErasure("refreshTokenService.RevokeAllForUserAsync")),
+                + "predicate is untouched, since it reads the password_reset reason alone. STAGED, never "
+                + "self-committed: the revoke rides the erasure's single commit, so a commit failure leaves "
+                + "the sessions alive along with everything else (owner ruling 2026-09-14).",
+            InErasure("refreshTokenService.StageRevokeAllForUserAsync")),
 
         [typeof(Core.Domain.Documents.DocumentDeletionRequest)] = new(
             Verdict.Deleted,
@@ -434,7 +449,7 @@ public class SubjectDataErasureRosterTests
         {
             Assert.False(string.IsNullOrWhiteSpace(row.Why), $"{type.Name} carries no reason.");
 
-            if (row.Verdict is Verdict.Deleted or Verdict.AnonymizedInPlace)
+            if (row.Verdict is Verdict.Deleted or Verdict.AnonymizedInPlace or Verdict.RetainedForDefence)
             {
                 Assert.True(row.Sites.Length > 0,
                     $"{type.Name} claims the erasure acts on it ({row.Verdict}) but names no site that does.");

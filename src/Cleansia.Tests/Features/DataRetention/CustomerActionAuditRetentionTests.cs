@@ -254,6 +254,7 @@ public sealed class CustomerActionAuditRetentionTests : IDisposable
             new EmployeeDocumentRepository(ctx),
             new UserNotificationRepository(ctx),
             new CustomerActionAuditRepository(ctx),
+            new DisputeRepository(ctx),
             _configProvider.Object,
             new DataRetentionConfig(configuration),
             _blobClientFactory.Object,

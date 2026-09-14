@@ -86,6 +86,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             new EmployeeDocumentRepository(ctx),
             new UserNotificationRepository(ctx),
             new CustomerActionAuditRepository(ctx),
+            new DisputeRepository(ctx),
             _configProvider.Object,
             new DataRetentionConfig(new ConfigurationBuilder().Build()),
             _blobClientFactory.Object,
@@ -205,6 +206,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 Mock.Of<IRefreshTokenService>(),
                 Mock.Of<IStripeClient>(),
                 _blobClientFactory.Object,
+                Mock.Of<IAppConfigurationProvider>(),
                 NullLogger<GdprDeletionService>.Instance);
 
             var result = await gdpr.DeleteUserAccountAsync(

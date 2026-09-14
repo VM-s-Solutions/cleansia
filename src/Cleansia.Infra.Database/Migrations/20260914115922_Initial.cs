@@ -2118,6 +2118,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ResolvedBy = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     ResolvedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     StripeDisputeId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    TextRetainedUntil = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -3255,6 +3256,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Disputes_TenantId",
                 table: "Disputes",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Disputes_TextRetainedUntil",
+                table: "Disputes",
+                column: "TextRetainedUntil");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Disputes_UserId",

@@ -1,8 +1,10 @@
 ﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -38,6 +40,7 @@ public class GdprDeletionService(
     IRefreshTokenService refreshTokenService,
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
+    IAppConfigurationProvider configProvider,
     ILogger<GdprDeletionService> logger)
     : IGdprDeletionService
 {
@@ -339,8 +342,11 @@ public class GdprDeletionService(
         // live token keeps the subject's IP address, device label and device id until its own natural
         // expiry before the 90-day forensic window even begins. ADR-0027's directory is untouched: its poll
         // predicate reads the password_reset reason alone.
-        await refreshTokenService.RevokeAllForUserAsync(
-            user.Id, GdprAuditReasons.RefreshTokenRevocation, exceptRawToken: null, ct);
+        //
+        // STAGED, never the self-committing revoke: that one commits the unit of work mid-walk, which made
+        // everything above durable while everything below could still roll back — a half-erased subject with
+        // no request on record. The whole erasure is one commit, and the tokens ride it.
+        await refreshTokenService.StageRevokeAllForUserAsync(user.Id, GdprAuditReasons.RefreshTokenRevocation, ct);
 
         if (user.Cart is not null)
             cartRepository.Remove(user.Cart);
@@ -351,9 +357,10 @@ public class GdprDeletionService(
 
         var disputes = await disputeRepository.GetDisputesByUserIdAsync(user.Id, ct);
         var evidenceBlobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
+        var disputeTextRetainedUntil = DateTimeOffset.UtcNow.AddYears(await ResolveDisputeTextRetentionYearsAsync(ct));
         foreach (var dispute in disputes)
         {
-            // These two steps are ordered, not adjacent by accident. Anonymize() overwrites
+            // These two steps are ordered, not adjacent by accident. AnonymizeEvidence() overwrites
             // DisputeEvidence.FilePath, which is the only place the blob's name is stored — nothing else
             // in the database, the GDPR export or the audit log records it. Run it first and the delete
             // below is issued against "[DELETED]": the file survives with nothing left able to name it,
@@ -372,7 +379,12 @@ public class GdprDeletionService(
                 }
             }
 
-            dispute.Anonymize();
+            dispute.AnonymizeEvidence();
+
+            // The TEXT stays readable — the description, the messages, the resolution notes — because a
+            // chargeback or a claim on the order may still turn on it (owner ruling 2026-09-14; GDPR
+            // Art. 17(3)(e)). The stamp is what the retention sweep's DisputeText task acts on.
+            dispute.RetainTextUntil(disputeTextRetainedUntil);
         }
 
         var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
@@ -414,13 +426,33 @@ public class GdprDeletionService(
         // The customer's own conduct record stays for defence of claims (ADR-0062 D5) — the subject id is
         // pseudonymous once the User row below is anonymized — but the IP address, device label and
         // device id on each row are personal data and are blanked. A tracked walk, not a set-based
-        // update, placed AFTER the refresh-token revoke above: that revoke commits the unit of work
-        // mid-erasure, and the blanking must land in the same commit as the User row's anonymization —
-        // never a blanked trail for a customer who still exists.
+        // update, so the blanking lands in the same commit as the User row's anonymization — never a
+        // blanked trail for a customer who still exists. The guest rows are the same person one step
+        // removed: a booking made before the account existed carries no UserId, only the order id, and
+        // the order is now theirs.
         await customerActionAuditRepository.PseudonymiseForSubjectAsync(user.Id, ct);
+        await customerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync(customerOrderIds, ct);
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);
+    }
+
+    private async Task<int> ResolveDisputeTextRetentionYearsAsync(CancellationToken ct)
+    {
+        var setting = await configProvider.GetTenantSettingAsync(RetentionDefaults.DisputeTextRetentionYearsKey, ct);
+        var years = int.TryParse(setting, out var parsed) ? parsed : RetentionDefaults.DefaultDisputeTextRetentionYears;
+
+        // A window at or below zero would have the next sweep blank the text the ruling says to keep;
+        // a setting below the floor is a misconfiguration, not an instruction.
+        if (years <= 0)
+        {
+            logger.LogWarning(
+                "{Key} = {Years} is below the floor; the dispute text window uses the default {Default} years",
+                RetentionDefaults.DisputeTextRetentionYearsKey, years, RetentionDefaults.DefaultDisputeTextRetentionYears);
+            years = RetentionDefaults.DefaultDisputeTextRetentionYears;
+        }
+
+        return years;
     }
 
     private static string ExtractBlobNameFromUrl(string blobUrl)

@@ -119,6 +119,8 @@ export type {
   IMarketListItem,
   IGetPropertySizePresetsPropertySizePresetDto,
 } from './lib/client/customer-client';
+export { LegalClient, LegalDocumentDto, LegalDocumentType } from './lib/client/customer-client';
+export type { ILegalClient, ILegalDocumentDto } from './lib/client/customer-client';
 export {
   MembershipClient,
   MembershipStatus,

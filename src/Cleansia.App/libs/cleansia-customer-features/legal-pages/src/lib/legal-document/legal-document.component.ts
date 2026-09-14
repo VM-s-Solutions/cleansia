@@ -1,51 +1,48 @@
-import { isPlatformBrowser } from '@angular/common';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   OnDestroy,
+  OnInit,
   PLATFORM_ID,
   inject,
   input,
   signal,
 } from '@angular/core';
+import { CleansiaButtonComponent } from '@cleansia/components';
+import { LegalDocumentType } from '@cleansia/customer-services';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { TranslatePipe } from '@ngx-translate/core';
+import { Skeleton } from 'primeng/skeleton';
+import { LegalDocumentFacade } from './legal-document.facade';
 
 /**
  * A legal document — the Terms and the Privacy Policy are the same page with a
- * different namespace, so they are one component with two callers rather than
- * two copies of forty lines that drift.
+ * different document type, so they are one component with two callers rather
+ * than two copies of forty lines that drift.
  *
  * The board's shape is a contents rail beside numbered sections. That rail is
  * the point: these pages are not read, they are SEARCHED — somebody arrives
- * wanting the cancellation rule, and a wall of six unnumbered headings makes
- * them scroll for it. → the "Návratové a právní stránky" board
+ * wanting the cancellation rule, and a wall of unnumbered headings makes them
+ * scroll for it. → the "Návratové a právní stránky" board
  */
 @Component({
   selector: 'cleansia-customer-legal-document',
   standalone: true,
-  imports: [TranslatePipe, FoamEdgeComponent],
+  imports: [DatePipe, TranslatePipe, FoamEdgeComponent, CleansiaButtonComponent, Skeleton],
   templateUrl: './legal-document.component.html',
+  providers: [LegalDocumentFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LegalDocumentComponent implements AfterViewInit, OnDestroy {
-  /** `terms_page` or `privacy_page` — every key on the page hangs off this. */
-  readonly namespace = input.required<string>();
+export class LegalDocumentComponent implements OnInit, AfterViewInit, OnDestroy {
+  readonly type = input.required<LegalDocumentType>();
 
-  /** Which sections exist. The copy is keyed `section<N>_title` / `_text`. */
-  readonly sections = input.required<number[]>();
+  /** The page's own title, shown until the served document names its own. */
+  readonly titleKey = input.required<string>();
 
-  /**
-   * Interpolation for a section's text, by section number — a paragraph that names a figure the
-   * market decides (the currency in the terms' ordering section) carries a placeholder, and the
-   * caller supplies the value.
-   */
-  readonly sectionParams = input<Record<number, Record<string, unknown>>>({});
-
-  /** A key to render instead of `section<N>_text`, by section number, for a variant of the copy. */
-  readonly sectionTextKeys = input<Record<number, string>>({});
+  protected readonly facade = inject(LegalDocumentFacade);
 
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -55,7 +52,7 @@ export class LegalDocumentComponent implements AfterViewInit, OnDestroy {
    * on the first one: at the top of the document that IS where they are, and a
    * rail with nothing lit reads as a rail that does not work.
    */
-  readonly activeSection = signal<number>(1);
+  readonly activeSection = signal(0);
 
   private frame = 0;
   private readonly onScroll = () => {
@@ -67,6 +64,10 @@ export class LegalDocumentComponent implements AfterViewInit, OnDestroy {
       this.syncActiveSection();
     });
   };
+
+  ngOnInit(): void {
+    this.facade.load(this.type());
+  }
 
   ngAfterViewInit(): void {
     // Server-side there is no viewport to scroll and no document to measure.
@@ -96,9 +97,7 @@ export class LegalDocumentComponent implements AfterViewInit, OnDestroy {
    * where no heading is crossing anything.
    */
   private syncActiveSection(): void {
-    const headings = Array.from(
-      this.host.nativeElement.querySelectorAll<HTMLElement>('[data-section]'),
-    );
+    const headings = this.sectionHeadings();
     if (headings.length === 0) return;
 
     // At the bottom of the document the LAST section is the one being read,
@@ -107,39 +106,26 @@ export class LegalDocumentComponent implements AfterViewInit, OnDestroy {
     const atBottom =
       window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
     if (atBottom) {
-      const last = Number(headings[headings.length - 1].dataset['section']);
-      if (!Number.isNaN(last) && last !== this.activeSection()) this.activeSection.set(last);
+      this.activeSection.set(headings.length - 1);
       return;
     }
 
     // The line the heading has to cross to count as read: just under the navbar.
     const line = 96 + 24;
-    let current = Number(headings[0].dataset['section']) || 1;
-    for (const heading of headings) {
+    let current = 0;
+    for (const [index, heading] of headings.entries()) {
       if (heading.getBoundingClientRect().top > line) break;
-      const index = Number(heading.dataset['section']);
-      if (!Number.isNaN(index)) current = index;
+      current = index;
     }
     if (current !== this.activeSection()) this.activeSection.set(current);
   }
 
-  textKey(index: number): string {
-    return this.sectionTextKeys()[index] ?? `${this.namespace()}.section${index}_text`;
-  }
-
-  textParams(index: number): Record<string, unknown> | undefined {
-    return this.sectionParams()[index];
-  }
-
-  /** Two digits, as the board sets them: 01, 02 … */
-  ordinal(index: number): string {
-    return String(index).padStart(2, '0');
+  private sectionHeadings(): HTMLElement[] {
+    return Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>('.cl-lgl__content h2'));
   }
 
   jumpTo(index: number): void {
     if (!this.isBrowser) return;
-    this.host.nativeElement
-      .querySelector(`[data-section="${index}"]`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    this.sectionHeadings()[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

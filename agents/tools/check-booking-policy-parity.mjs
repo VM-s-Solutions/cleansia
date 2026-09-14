@@ -6,8 +6,8 @@
  * express slot adds. Four surfaces then STATE those numbers to a customer — the web copy, the web's
  * shared constants, Android's string resources and iOS's string catalog — and every one of them
  * holds its own literal. Nothing compiled them together, so nothing noticed when they stopped
- * agreeing. `LegalDocumentVersions` is pinned the same way (§4): the version the server stamps on a
- * consent is the one the legal pages show, in every locale.
+ * agreeing. The legal seed is held to the same shape (§3): the market's figures reach a legal text
+ * through a placeholder the server fills, never as a literal in one language's file.
  *
  * They did stop agreeing. Both mobile apps told customers a cancellation cost "50% charge" between
  * 4 and 24 hours and "100% charge" under 4, against a policy of 25% and 50%: double the real fee, in
@@ -31,7 +31,7 @@
  * Freezing the comparison is cheaper than plumbing the value, and it fails LOUDLY at the moment the
  * two disagree, which is the only property that actually mattered here.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -45,7 +45,9 @@ const REPO = rootArg
   : join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const POLICY_CS = 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs';
-const LEGAL_VERSIONS_CS = 'src/Cleansia.Core.Domain/Legal/LegalDocumentVersions.cs';
+/** The customer legal texts, one dated folder per version, one markdown file per language. */
+const LEGAL_SEED = 'src/Cleansia.Infra.Database/Seed/Legal/customer';
+const LEGAL_SEED_TYPES = ['terms-of-service', 'privacy-policy'];
 const WEB_MODEL = 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts';
 const WEB_I18N = 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n';
 const ANDROID_RES = 'src/cleansia_android/customer-app/src/main/res';
@@ -66,12 +68,6 @@ export function readCsConst(source, name) {
     `public\\s+const\\s+\\w+\\s+${name}\\s*=\\s*(-?[0-9]+(?:\\.[0-9]+)?)[mMdDfF]?\\s*;`,
   ).exec(source);
   return match ? Number(match[1]) : null;
-}
-
-/** `public const string X = "2026-09-draft";` → string. */
-export function readCsStringConst(source, name) {
-  const match = new RegExp(`public\\s+const\\s+string\\s+${name}\\s*=\\s*"([^"]*)"\\s*;`).exec(source);
-  return match ? match[1] : null;
 }
 
 /** `export const X = 0.2;` → number. */
@@ -289,8 +285,60 @@ for (const locale of LOCALES) {
   // The VALUE line renders the market's credit; its sibling is the variant for a market with none.
   pinPlaceholderCopy(`web/${locale}`, 'pages.home.rules.we_cancel_value', rules.we_cancel_value, { placeholder: '{{amount}}' });
   pinPlaceholderCopy(`web/${locale}`, 'pages.home.rules.we_cancel_value_refund_only', rules.we_cancel_value_refund_only);
-  pinPlaceholderCopy(`web/${locale}`, 'terms_page.section3_text', web.terms_page?.section3_text, { placeholder: '{{currency}}' });
-  pinPlaceholderCopy(`web/${locale}`, 'terms_page.section3_text_no_market', web.terms_page?.section3_text_no_market);
+}
+
+// The legal texts are stored documents seeded from markdown, one folder per effective date, and the
+// server fills `{{currency}}` with the market's code before rendering. Only the NEWEST version is
+// read: a version already in force is immutable, so a finding against it could never be fixed in
+// place — the fix is always the next dated folder, which is where this looks.
+
+/** The greatest `yyyy-MM-dd` folder under `<type>/any/`, or null when there is none. */
+export function newestSeedVersion(root, type) {
+  const dir = join(root, LEGAL_SEED, type, 'any');
+  if (!existsSync(dir)) return null;
+  const versions = readdirSync(dir).filter((name) => /^\d{4}-\d{2}-\d{2}$/.test(name)).sort();
+  return versions.length ? versions[versions.length - 1] : null;
+}
+
+/** The markdown paragraphs after the front-matter block. */
+export function seedParagraphs(markdown) {
+  const text = markdown.replace(/\r\n/g, '\n').replace(/^\uFEFF/, '');
+  const body = text.startsWith('---\n') ? text.slice(text.indexOf('\n---\n', 4) + 5) : text;
+  return body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+}
+
+function pinSeedText(where, markdown, { placeholder } = {}) {
+  const paragraphs = seedParagraphs(markdown);
+  const text = paragraphs.join('\n');
+  if (placeholder && !text.includes(placeholder)) {
+    note(where, `does not carry the ${placeholder} placeholder — the currency is the market's`);
+  }
+  for (const paragraph of paragraphs) {
+    if (!/\{\{\s*\w+\s*\}\}/.test(paragraph)) continue;
+    const baked = bakedAmountsIn(paragraph);
+    if (baked.length) {
+      note(where, `"${paragraph}" bakes a figure in (${baked.join(', ')}) — the amount comes from the market`);
+    }
+  }
+  if (CURRENCY_WORDS.test(text)) {
+    note(where, 'names a currency — the server fills the market\'s unit into the placeholder');
+  }
+}
+
+for (const type of LEGAL_SEED_TYPES) {
+  const version = newestSeedVersion(REPO, type);
+  if (version === null) {
+    note(`${LEGAL_SEED}/${type}/any`, 'has no dated version folder — the customer legal text has no seed');
+    continue;
+  }
+  for (const locale of LOCALES) {
+    const rel = `${LEGAL_SEED}/${type}/any/${version}/${locale}.md`;
+    if (!existsSync(join(REPO, rel))) {
+      note(rel, 'is missing');
+      continue;
+    }
+    pinSeedText(rel, read(rel), type === 'terms-of-service' ? { placeholder: '{{currency}}' } : {});
+  }
 }
 
 for (const [locale, dir] of Object.entries(ANDROID_DIRS)) {
@@ -317,52 +365,22 @@ for (const locale of LOCALES) {
   }
 }
 
-// ─── 4. The legal text version the server stamps on an acceptance (ADR-0062 D4) ────────
-// `LegalDocumentVersions` is what a consent row and a customer audit row carry; the legal pages
-// render `terms_page.version` / `privacy_page.version` so the reader can see which text they agreed
-// to. A legal-text edit bumps the constant AND the key in the same change — this is what notices when
-// only one of them moved. Mobile catalogues are not pinned: they deep-link the web page.
-const legalSource = read(LEGAL_VERSIONS_CS);
-const legalVersions = {
-  CustomerTerms: readCsStringConst(legalSource, 'CustomerTerms'),
-  CustomerPrivacy: readCsStringConst(legalSource, 'CustomerPrivacy'),
-};
-for (const [name, value] of Object.entries(legalVersions)) {
-  if (value === null) note(LEGAL_VERSIONS_CS, `could not read \`${name}\` — the parser needs updating`);
-}
-
-for (const locale of LOCALES) {
-  const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
-  for (const [key, csName] of [
-    ['terms_page.version', 'CustomerTerms'],
-    ['privacy_page.version', 'CustomerPrivacy'],
-  ]) {
-    const [page, member] = key.split('.');
-    const value = web[page]?.[member];
-    if (value === undefined) {
-      note(`web/${locale}`, `${key} is missing`);
-    } else if (value !== legalVersions[csName]) {
-      note(`web/${locale}`, `${key} = "${value}", LegalDocumentVersions.${csName} is "${legalVersions[csName]}"`);
-    }
-  }
-}
-
 // ─── Report ─────────────────────────────────────────────────────────────────
 if (findings.length) {
   console.log('booking-policy-parity violations:');
   for (const f of findings) console.log(`  ${f}`);
   console.log(
-    '\nBookingPolicy and LegalDocumentVersions are the authority. Change the COPY to match them — or,' +
-      '\nif the policy or the legal text itself is moving, change the constant first and let this check' +
-      '\ntell you every surface that quotes it.',
+    '\nBookingPolicy is the authority and a money figure belongs to the market. Change the COPY to' +
+      '\nmatch — or, if the policy itself is moving, change the constant first and let this check tell' +
+      '\nyou every surface that quotes it. A legal text is fixed by its next dated seed folder.',
   );
 } else {
+  const seedVersions = LEGAL_SEED_TYPES.map((type) => newestSeedVersion(REPO, type)).join(' / ');
   console.log(
     `booking-policy-parity: ${LOCALES.length} locale(s) × web + android + ios agree with ` +
       `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, express +${expressPct}% ` +
       `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
-      `money figures in copy come from the market; legal texts at ${legalVersions.CustomerTerms} / ` +
-      legalVersions.CustomerPrivacy,
+      `money figures in copy come from the market; legal seed ${seedVersions} carries the placeholders`,
   );
 }
 

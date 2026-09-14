@@ -3,9 +3,9 @@
  * Self-test for the booking-policy parity gate (`check-booking-policy-parity.mjs`).
  *
  * It never touches the working tree: every scenario materialises a fixture repository under a
- * throwaway directory — a BookingPolicy.cs, a LegalDocumentVersions.cs, the web's shared model, five
- * web locale files, five Android string files and an iOS catalog — and runs the tool against it with
- * `--root=`.
+ * throwaway directory — a BookingPolicy.cs, the web's shared model, five web locale files, five
+ * Android string files, an iOS catalog and the legal seed's markdown files — and runs the tool
+ * against it with `--root=`.
  *
  * WHAT THIS HAS TO PROVE, in order of what it cost to learn:
  *
@@ -69,8 +69,29 @@ function buildFixture(overrides = {}) {
     iosTier3: '50% charge',
     webWeCancelValue: 'Everything back + {{amount}} credit',
     webWeCancelRefundOnly: 'Everything back',
-    webTermsCurrency: 'Prices are displayed in {{currency}} and are the final amount payable.',
-    webTermsNoMarket: 'Prices are shown in the currency of the country you are booking in.',
+    /**
+     * The legal seed: the newest version's five language files per document. The terms carry the
+     * policy's own figures and a phone number on purpose — integers a legal text legitimately
+     * states, which the gate must not mistake for a baked amount.
+     */
+    seedVersion: '2026-09-14',
+    seedTerms:
+      'Please read these terms carefully.\n\n' +
+      '## Ordering & Payment\n\n' +
+      'Orders can be placed through our website. Prices are displayed in {{currency}} and are the final amount payable.\n\n' +
+      '## Cancellation Policy\n\n' +
+      'Once accepted: free 24+ hours before start, 25% fee 4-24 hours before, 50% fee under 4 hours before start.\n\n' +
+      '## Contact\n\n' +
+      'Write to info@cleansia.cz or +420 739 788 108.',
+    seedPrivacy: 'Your privacy matters.\n\n## Data We Collect\n\nName, email, phone number and address.',
+    /** Per-file body overrides keyed `<type>/<lang>`, for the "one translator edited one file" case. */
+    seedByFile: {},
+    /** The languages the newest version carries; a missing file is a finding. */
+    seedLanguages: LOCALES,
+    /** Other dated versions, `{ '<yyyy-MM-dd>': { '<type>': '<body>' } }` — only the newest is read. */
+    seedOtherVersions: {},
+    /** `false` leaves the seed tree out entirely. */
+    seedPresent: true,
     androidNoShowBody: 'Nobody could take booking #%1$s, so we refunded it and added %2$s credit towards your next clean.',
     androidInsured: 'Insured up to %1$s',
     androidInsuredNoFigure: 'Insured',
@@ -83,12 +104,6 @@ function buildFixture(overrides = {}) {
     iosFaq: 'Covered by insurance up to %1$@ per booking.',
     iosFaqNoFigure: 'Covered by insurance.',
     iosSeasonal: null,
-    csTermsVersion: '2026-09-draft',
-    csPrivacyVersion: '2026-09-draft',
-    webTermsVersion: '2026-09-draft',
-    webPrivacyVersion: '2026-09-draft',
-    /** Per-locale overrides of the two version keys, for the "one translator edited one file" case. */
-    webVersionByLocale: {},
     ...overrides,
   };
 
@@ -107,14 +122,23 @@ public static class BookingPolicy
 }
 `);
 
-  write(root, 'src/Cleansia.Core.Domain/Legal/LegalDocumentVersions.cs', `
-public static class LegalDocumentVersions
-{
-    public const string CustomerTerms = "${o.csTermsVersion}";
-
-    public const string CustomerPrivacy = "${o.csPrivacyVersion}";
-}
-`);
+  if (o.seedPresent) {
+    const seedFile = (type, version, lang, body) =>
+      write(
+        root,
+        `src/Cleansia.Infra.Database/Seed/Legal/customer/${type}/any/${version}/${lang}.md`,
+        `---\ntitle: ${type} ${lang}\n---\n\n${body}\n`,
+      );
+    for (const lang of o.seedLanguages) {
+      seedFile('terms-of-service', o.seedVersion, lang, o.seedByFile[`terms-of-service/${lang}`] ?? o.seedTerms);
+      seedFile('privacy-policy', o.seedVersion, lang, o.seedByFile[`privacy-policy/${lang}`] ?? o.seedPrivacy);
+    }
+    for (const [version, byType] of Object.entries(o.seedOtherVersions)) {
+      for (const [type, body] of Object.entries(byType)) {
+        for (const lang of LOCALES) seedFile(type, version, lang, body);
+      }
+    }
+  }
 
   write(root, 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts', `
 export const FIRST_WINDOW_HOUR = ${o.firstHour};
@@ -125,7 +149,6 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
 `);
 
   for (const locale of LOCALES) {
-    const versions = { terms: o.webTermsVersion, privacy: o.webPrivacyVersion, ...(o.webVersionByLocale[locale] ?? {}) };
     write(
       root,
       `src/Cleansia.App/apps/cleansia.app/src/assets/i18n/${locale}.json`,
@@ -147,14 +170,6 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
               date_hint: o.webDateHint,
             },
           },
-        },
-        terms_page: {
-          ...(versions.terms === null ? {} : { version: versions.terms }),
-          section3_text: o.webTermsCurrency,
-          section3_text_no_market: o.webTermsNoMarket,
-        },
-        privacy_page: {
-          ...(versions.privacy === null ? {} : { version: versions.privacy }),
         },
       }, null, 2),
     );
@@ -280,11 +295,6 @@ scenario(
   { code: 0 },
 );
 scenario(
-  'catches a terms page that names a currency instead of the placeholder',
-  { webTermsCurrency: 'Prices are displayed in CZK and are the final amount payable.' },
-  { code: 1, mentions: ['web/en', 'terms_page.section3_text', 'does not carry the {{currency}} placeholder', 'names a currency'] },
-);
-scenario(
   'catches an insurance claim with the ceiling baked in',
   { androidInsured: 'Insured up to 1 000 000 Kč', iosFaq: 'Covered by insurance up to 1,000,000 CZK per booking.' },
   { code: 1, mentions: ['android/en', 'booking_trust_insured', 'ios/en', 'help_faq_a3'] },
@@ -302,51 +312,61 @@ scenario(
   { code: 0, silentAbout: ['we_cancel_desc'] },
 );
 
-// ─── 2c. The legal text version is the C# constant (ADR-0062 D4) ─────────────────────
-// The version a consent row and an audit row are stamped with is `LegalDocumentVersions`; the legal
-// pages render `terms_page.version` / `privacy_page.version` so the reader can see which text they
-// agreed to. A legal-text edit bumps the constant AND the key in the same change; this is what holds
-// the five locale files to the constant.
+// ─── 2c. The legal seed carries the market placeholders and no baked money (ADR-0060 D4) ────
+// The legal texts are seed markdown now, one folder per effective date; the version the server stamps
+// on a consent is that folder's date, so nothing is pinned between a constant and a locale file any
+// more. What the gate still holds is the copy's SHAPE, in the newest version only — an older version
+// is immutable and past changing — across every language file it carries.
 scenario(
-  'catches one locale whose terms version drifted from the constant, naming the locale',
-  { webVersionByLocale: { cs: { terms: '2026-10-draft' } } },
+  'catches a terms seed that names a currency instead of the placeholder',
+  { seedByFile: { 'terms-of-service/en': 'Prices are displayed in CZK and are the final amount payable.' } },
   {
     code: 1,
-    mentions: ['web/cs', 'terms_page.version = "2026-10-draft"', 'LegalDocumentVersions.CustomerTerms is "2026-09-draft"'],
-    silentAbout: ['web/en', 'web/sk', 'web/ru', 'web/uk', 'privacy_page.version'],
+    mentions: ['terms-of-service/any/2026-09-14/en.md', 'does not carry the {{currency}} placeholder', 'names a currency'],
+    silentAbout: ['/cs.md', '/sk.md', '/ru.md', '/uk.md', 'privacy-policy/'],
   },
 );
 scenario(
-  'catches one locale whose privacy version drifted from the constant',
-  { webVersionByLocale: { uk: { privacy: '2026-09-final' } } },
-  { code: 1, mentions: ['web/uk', 'privacy_page.version = "2026-09-final"'], silentAbout: ['terms_page.version'] },
+  'catches a baked insurance ceiling in one language of the privacy seed',
+  { seedByFile: { 'privacy-policy/cs': 'Vaše soukromí.\n\n## Pojištění\n\nPojištěno do výše 1 000 000 Kč na zakázku.' } },
+  { code: 1, mentions: ['privacy-policy/any/2026-09-14/cs.md', 'names a currency'], silentAbout: ['/en.md', 'terms-of-service/'] },
 );
 scenario(
-  'a bumped constant fails every locale still carrying the old version',
-  { csTermsVersion: '2026-11-final' },
-  { code: 1, mentions: ['web/en', 'web/cs', 'web/sk', 'web/ru', 'web/uk', 'LegalDocumentVersions.CustomerTerms is "2026-11-final"'] },
+  'catches a figure baked in beside the placeholder',
+  { seedByFile: { 'terms-of-service/uk': 'Ціни вказані в {{currency}}, мінімальне замовлення 500.' } },
+  { code: 1, mentions: ['terms-of-service/any/2026-09-14/uk.md', 'bakes a figure in (500)'] },
 );
 scenario(
-  'the two documents are pinned independently',
-  { csPrivacyVersion: '2026-11-final', webPrivacyVersion: '2026-11-final' },
+  'reads only the newest version — an older, immutable text is past changing',
+  { seedOtherVersions: { '2026-01-01': { 'terms-of-service': 'Prices are displayed in CZK.' } } },
   { code: 0 },
 );
 scenario(
-  'a missing version key is a finding, not a silent pass',
-  { webVersionByLocale: { sk: { terms: null } } },
-  { code: 1, mentions: ['web/sk', 'terms_page.version is missing'] },
+  'orders the versions by date, not by the directory listing',
+  { seedOtherVersions: { '2026-12-01': { 'terms-of-service': 'Prices are displayed in CZK.' } } },
+  { code: 1, mentions: ['terms-of-service/any/2026-12-01/en.md', 'names a currency'], silentAbout: ['2026-09-14'] },
 );
-{
-  const root = buildFixture();
-  try {
-    write(root, 'src/Cleansia.Core.Domain/Legal/LegalDocumentVersions.cs', 'public static class LegalDocumentVersions { }\n');
-    const result = run(root);
-    if (result.code === 1 && result.stdout.includes('could not read `CustomerTerms`')) passed++;
-    else failures.push(`an unreadable LegalDocumentVersions.cs passed silently\n${result.stdout}`);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-}
+scenario(
+  'a language file missing from the newest version is a finding, not a silent pass',
+  { seedLanguages: LOCALES.filter((l) => l !== 'sk') },
+  {
+    code: 1,
+    mentions: ['terms-of-service/any/2026-09-14/sk.md — is missing', 'privacy-policy/any/2026-09-14/sk.md — is missing'],
+    silentAbout: ['/en.md', '/cs.md'],
+  },
+);
+scenario(
+  'a seed tree with no dated version is a finding, not a crash',
+  { seedPresent: false },
+  { code: 1, mentions: ['terms-of-service/any', 'has no dated version folder'] },
+);
+// The policy figures and the contact number are integers a legal text states on purpose; flagging
+// them would make the gate cry wolf on every honest seed file.
+scenario(
+  'does not mistake the policy percentages, hours or a phone number for a baked amount',
+  {},
+  { code: 0, silentAbout: ['bakes a figure in'] },
+);
 
 // ─── 3. The two defects that motivated this gate ────────────────────────────
 scenario(

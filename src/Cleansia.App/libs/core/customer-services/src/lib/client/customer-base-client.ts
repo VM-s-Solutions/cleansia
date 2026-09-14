@@ -23,6 +23,8 @@ import {
   IGdprClient,
   ILanguageClient,
   LanguageClient,
+  ILegalClient,
+  LegalClient,
   ILoyaltyClient,
   LoyaltyClient,
   IMarketClient,
@@ -63,6 +65,7 @@ interface ICustomerClient {
   countryClient: ICountryClient;
   currencyClient: ICurrencyClient;
   languageClient: ILanguageClient;
+  legalClient: ILegalClient;
   packageClient: IPackageClient;
   paymentClient: IPaymentClient;
   serviceClient: IServiceClient;
@@ -122,6 +125,7 @@ export class CustomerClient implements ICustomerClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  legalClient: ILegalClient = new LegalClient(this.httpClient, this.apiBaseUrl);
   packageClient: IPackageClient = new PackageClient(
     this.httpClient,
     this.apiBaseUrl

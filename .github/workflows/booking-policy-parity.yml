@@ -3,9 +3,9 @@ name: Booking policy parity
 # `BookingPolicy` decides what a cancellation costs, how late a booking is accepted and what express
 # adds. Four surfaces then STATE those numbers to a customer — the web's copy, the web's shared
 # constants, Android's string resources and iOS's string catalog — each holding its own literal.
-# `LegalDocumentVersions` is the second authority the same checker pins: the version the server
-# stamps on a consent must be the one the legal pages show, in every locale, so a bump of the
-# constant alone has to trigger this gate too.
+# The legal seed is the fifth tree the same checker reads: a legal text names the market's currency
+# through a placeholder the server fills, never as a literal, so an edit to a seed file alone has to
+# trigger this gate too.
 #
 # They drifted. Both mobile apps quoted a cancellation fee of 50% and 100% against a policy of 25%
 # and 50%, in five locales, for as long as it took someone to read them side by side; the home page
@@ -35,7 +35,7 @@ on:
       - '**'
     paths:
       - 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs'
-      - 'src/Cleansia.Core.Domain/Legal/LegalDocumentVersions.cs'
+      - 'src/Cleansia.Infra.Database/Seed/Legal/**'
       - 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts'
       - 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n/**'
       - 'src/cleansia_android/customer-app/src/main/res/**'
@@ -48,7 +48,7 @@ on:
       - master
     paths:
       - 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs'
-      - 'src/Cleansia.Core.Domain/Legal/LegalDocumentVersions.cs'
+      - 'src/Cleansia.Infra.Database/Seed/Legal/**'
       - 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts'
       - 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n/**'
       - 'src/cleansia_android/customer-app/src/main/res/**'

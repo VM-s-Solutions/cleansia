@@ -66,6 +66,7 @@
       "currencies": "Currencies",
       "currency_create": "Create Currency",
       "currency_edit": "Edit Currency",
+      "legal_documents": "Legal documents",
       "document_requirements": "Document requirements",
       "document_deletion_requests": "Document deletion requests",
       "company_info": "Company Info",
@@ -230,6 +231,7 @@
     "countries": "Countries",
     "service_area": "Service Area",
     "currencies": "Currencies",
+    "legal_documents": "Legal documents",
     "employee_documents": "Employee documents",
     "employee_document_requirements": "Requirements",
     "employee_document_deletion_requests": "Deletion requests",
@@ -1258,6 +1260,41 @@
         "create_error": "Failed to create language",
         "update_success": "Language updated successfully",
         "update_error": "Failed to update language"
+      }
+    },
+    "legal_documents": {
+      "title": "Legal documents",
+      "description": "Every version of every legal text the platform has shown, read-only: a new version is a seed file under a new effective date plus a deploy.",
+      "no_versions": "No legal documents found",
+      "no_texts": "This version has no texts",
+      "load_error": "Failed to load legal documents",
+      "text_load_error": "Failed to load this text",
+      "retry": "Try again",
+      "preview": "Preview",
+      "preview_title": "Preview",
+      "close_preview": "Close preview",
+      "show_language": "Show this language",
+      "all_markets": "All markets",
+      "audience": {
+        "customer": "Customer",
+        "employee": "Employee"
+      },
+      "type": {
+        "terms_of_service": "Terms of service",
+        "privacy_policy": "Privacy policy"
+      },
+      "columns": {
+        "audience": "Audience",
+        "type": "Type",
+        "market": "Market",
+        "effective_from": "Effective from",
+        "version": "Version",
+        "in_force": "In force",
+        "languages": "Languages",
+        "language": "Language",
+        "title": "Title",
+        "hash": "SHA-256",
+        "notes": "Notes"
       }
     },
     "country_management": {

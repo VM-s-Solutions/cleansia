@@ -28,6 +28,8 @@ import {
   IAdminInvoiceClient,
   AdminLanguageClient,
   IAdminLanguageClient,
+  AdminLegalClient,
+  IAdminLegalClient,
   AdminLoyaltyClient,
   IAdminLoyaltyClient,
   AdminLoyaltyTierClient,
@@ -74,6 +76,7 @@ interface IAdminClient {
   adminExtraClient: IAdminExtraClient;
   adminInvoiceClient: IAdminInvoiceClient;
   adminLanguageClient: IAdminLanguageClient;
+  adminLegalClient: IAdminLegalClient;
   adminOrderClient: IAdminOrderClient;
   accessInstructionsClient: IAccessInstructionsClient;
   adminPackageClient: IAdminPackageClient;
@@ -139,6 +142,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminCurrencyClient: IAdminCurrencyClient = new AdminCurrencyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminLegalClient: IAdminLegalClient = new AdminLegalClient(
     this.httpClient,
     this.apiBaseUrl
   );

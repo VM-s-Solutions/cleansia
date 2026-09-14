@@ -66,6 +66,7 @@
       "currencies": "Měny",
       "currency_create": "Vytvořit měnu",
       "currency_edit": "Upravit měnu",
+      "legal_documents": "Právní dokumenty",
       "document_requirements": "Požadované dokumenty",
       "document_deletion_requests": "Žádosti o smazání dokumentu",
       "company_info": "Informace o společnosti",
@@ -230,6 +231,7 @@
     "countries": "Země",
     "service_area": "Servisní oblast",
     "currencies": "Měny",
+    "legal_documents": "Právní dokumenty",
     "employee_documents": "Dokumenty uklízečů",
     "employee_document_requirements": "Požadavky",
     "employee_document_deletion_requests": "Žádosti o smazání",
@@ -1368,6 +1370,41 @@
         "create_error": "Nepodařilo se vytvořit jazyk",
         "update_success": "Jazyk byl úspěšně aktualizován",
         "update_error": "Nepodařilo se aktualizovat jazyk"
+      }
+    },
+    "legal_documents": {
+      "title": "Právní dokumenty",
+      "description": "Každá verze každého právního textu, který platforma zobrazila, pouze ke čtení: nová verze je seed soubor s novým datem účinnosti plus nasazení.",
+      "no_versions": "Žádné právní dokumenty nenalezeny",
+      "no_texts": "Tato verze nemá žádné texty",
+      "load_error": "Právní dokumenty se nepodařilo načíst",
+      "text_load_error": "Tento text se nepodařilo načíst",
+      "retry": "Zkusit znovu",
+      "preview": "Náhled",
+      "preview_title": "Náhled",
+      "close_preview": "Zavřít náhled",
+      "show_language": "Zobrazit tento jazyk",
+      "all_markets": "Všechny trhy",
+      "audience": {
+        "customer": "Zákazník",
+        "employee": "Zaměstnanec"
+      },
+      "type": {
+        "terms_of_service": "Obchodní podmínky",
+        "privacy_policy": "Zásady ochrany osobních údajů"
+      },
+      "columns": {
+        "audience": "Publikum",
+        "type": "Typ",
+        "market": "Trh",
+        "effective_from": "Účinné od",
+        "version": "Verze",
+        "in_force": "V platnosti",
+        "languages": "Jazyky",
+        "language": "Jazyk",
+        "title": "Název",
+        "hash": "SHA-256",
+        "notes": "Poznámky"
       }
     },
     "country_management": {

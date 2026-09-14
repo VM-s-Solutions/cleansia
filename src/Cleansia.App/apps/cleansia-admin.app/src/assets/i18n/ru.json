@@ -66,6 +66,7 @@
       "currencies": "Валюты",
       "currency_create": "Создать валюту",
       "currency_edit": "Редактировать валюту",
+      "legal_documents": "Юридические документы",
       "document_requirements": "Необходимые документы",
       "document_deletion_requests": "Запросы на удаление документов",
       "company_info": "Информация о компании",
@@ -230,6 +231,7 @@
     "countries": "Страны",
     "service_area": "Зона обслуживания",
     "currencies": "Валюты",
+    "legal_documents": "Юридические документы",
     "employee_documents": "Документы исполнителей",
     "employee_document_requirements": "Требования",
     "employee_document_deletion_requests": "Запросы на удаление",
@@ -1258,6 +1260,41 @@
         "create_error": "Не удалось создать язык",
         "update_success": "Язык успешно обновлён",
         "update_error": "Не удалось обновить язык"
+      }
+    },
+    "legal_documents": {
+      "title": "Юридические документы",
+      "description": "Каждая версия каждого юридического текста, который показывала платформа, только для чтения: новая версия — это seed-файл с новой датой вступления в силу плюс развёртывание.",
+      "no_versions": "Юридические документы не найдены",
+      "no_texts": "У этой версии нет текстов",
+      "load_error": "Не удалось загрузить юридические документы",
+      "text_load_error": "Не удалось загрузить этот текст",
+      "retry": "Попробовать снова",
+      "preview": "Просмотр",
+      "preview_title": "Просмотр",
+      "close_preview": "Закрыть просмотр",
+      "show_language": "Показать на этом языке",
+      "all_markets": "Все рынки",
+      "audience": {
+        "customer": "Клиент",
+        "employee": "Сотрудник"
+      },
+      "type": {
+        "terms_of_service": "Условия обслуживания",
+        "privacy_policy": "Политика конфиденциальности"
+      },
+      "columns": {
+        "audience": "Аудитория",
+        "type": "Тип",
+        "market": "Рынок",
+        "effective_from": "Действует с",
+        "version": "Версия",
+        "in_force": "Действует",
+        "languages": "Языки",
+        "language": "Язык",
+        "title": "Название",
+        "hash": "SHA-256",
+        "notes": "Примечания"
       }
     },
     "country_management": {

@@ -66,6 +66,7 @@
       "currencies": "Валюти",
       "currency_create": "Створити валюту",
       "currency_edit": "Редагувати валюту",
+      "legal_documents": "Юридичні документи",
       "document_requirements": "Необхідні документи",
       "document_deletion_requests": "Запити на видалення документів",
       "company_info": "Інформація про компанію",
@@ -230,6 +231,7 @@
     "countries": "Країни",
     "service_area": "Зона обслуговування",
     "currencies": "Валюти",
+    "legal_documents": "Юридичні документи",
     "employee_documents": "Документи виконавців",
     "employee_document_requirements": "Вимоги",
     "employee_document_deletion_requests": "Запити на видалення",
@@ -1258,6 +1260,41 @@
         "create_error": "Не вдалося створити мову",
         "update_success": "Мову успішно оновлено",
         "update_error": "Не вдалося оновити мову"
+      }
+    },
+    "legal_documents": {
+      "title": "Юридичні документи",
+      "description": "Кожна версія кожного юридичного тексту, який показувала платформа, лише для читання: нова версія — це seed-файл з новою датою набрання чинності плюс розгортання.",
+      "no_versions": "Юридичних документів не знайдено",
+      "no_texts": "Ця версія не має текстів",
+      "load_error": "Не вдалося завантажити юридичні документи",
+      "text_load_error": "Не вдалося завантажити цей текст",
+      "retry": "Спробувати ще раз",
+      "preview": "Перегляд",
+      "preview_title": "Перегляд",
+      "close_preview": "Закрити перегляд",
+      "show_language": "Показати цією мовою",
+      "all_markets": "Усі ринки",
+      "audience": {
+        "customer": "Клієнт",
+        "employee": "Працівник"
+      },
+      "type": {
+        "terms_of_service": "Умови надання послуг",
+        "privacy_policy": "Політика конфіденційності"
+      },
+      "columns": {
+        "audience": "Аудиторія",
+        "type": "Тип",
+        "market": "Ринок",
+        "effective_from": "Чинний з",
+        "version": "Версія",
+        "in_force": "Чинний",
+        "languages": "Мови",
+        "language": "Мова",
+        "title": "Назва",
+        "hash": "SHA-256",
+        "notes": "Примітки"
       }
     },
     "country_management": {

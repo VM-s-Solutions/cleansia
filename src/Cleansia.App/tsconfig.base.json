@@ -81,6 +81,9 @@
       "@cleansia/admin-features/language-management": [
         "libs/cleansia-admin-features/language-management/src/index.ts"
       ],
+      "@cleansia/admin-features/legal-documents": [
+        "libs/cleansia-admin-features/legal-documents/src/index.ts"
+      ],
       "@cleansia/admin-features/disputes-management": [
         "libs/cleansia-admin-features/disputes-management/src/index.ts"
       ],

@@ -129,6 +129,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'legal-documents',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/legal-documents').then(
+        (m) => m.legalDocumentsRoutes
+      ),
+  },
+  {
     path: 'employee-documents',
     canActivate: [adminGuard],
     loadChildren: () =>

@@ -96,6 +96,12 @@ export class AppComponent implements OnInit {
     { label: 'sidebar.service_area', icon: 'pi pi-map-marker', route: '/service-area-management' },
     { label: 'sidebar.currencies', icon: 'pi pi-dollar', route: '/currency-management' },
     {
+      label: 'sidebar.legal_documents',
+      icon: 'pi pi-file-check',
+      route: '/legal-documents',
+      permission: Policy.CanViewCountryConfigurations,
+    },
+    {
       label: 'sidebar.employee_documents',
       icon: 'pi pi-id-card',
       route: '/employee-documents',

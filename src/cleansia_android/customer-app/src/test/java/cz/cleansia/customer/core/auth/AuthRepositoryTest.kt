@@ -301,7 +301,8 @@ class AuthRepositoryTest {
     /**
      * The sign-up form cannot submit unticked, so the only value this ever carries is `true` — and
      * the server grants both consents in the registration's own commit off exactly this member.
-     * Before it existed the tick was parked on the device and delivered at the first sign-in.
+     * The tick is also still parked on the device and settled at the first sign-in against
+     * `answeredTypes()`, which finds both rows already granted and posts nothing.
      */
     @Test
     fun register_putsTheTermsTickOnTheRequestBody() = kotlinx.coroutines.test.runTest {

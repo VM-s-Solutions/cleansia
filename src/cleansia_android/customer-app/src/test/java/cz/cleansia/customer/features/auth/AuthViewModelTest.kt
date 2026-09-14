@@ -328,6 +328,23 @@ class AuthViewModelTest {
         }
     }
 
+    /**
+     * The form cannot submit unticked, so this path is reached only by a caller that bypasses it —
+     * and then the request must say `false`, never a hard-coded `true` that records a consent
+     * nobody gave.
+     */
+    @Test
+    fun `an unticked register sends the tick as false`() = runTest {
+        stubRegister(ApiResult.Success(Unit))
+
+        viewModel().register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = false)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.register(any(), any(), any(), any(), any(), termsAccepted = false, any(), any())
+        }
+    }
+
     // ─── Social auth: the terms tick is what separates a signup from a sign-in ───
 
     /**

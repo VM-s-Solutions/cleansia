@@ -2,22 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { AUTH_COOKIE_KEYS } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { PartnerClient } from '../client/base-client';
-import {
-  ConsentType,
-  GdprClient,
-  GrantConsentCommand,
-} from '../client/partner-client';
 import { PartnerAuthService } from './partner-auth.service';
-import { SignupConsentService } from './signup-consent.service';
-
-function gdprClientMock(): Record<string, jest.Mock> {
-  return {
-    consentsGet: jest.fn().mockReturnValue(of([])),
-    consentsPost: jest.fn().mockReturnValue(of(undefined)),
-  };
-}
 
 describe('PartnerAuthService command payloads', () => {
   let service: PartnerAuthService;
@@ -43,7 +30,6 @@ describe('PartnerAuthService command payloads', () => {
       providers: [
         PartnerAuthService,
         { provide: PartnerClient, useValue: { authClient } },
-        { provide: GdprClient, useValue: gdprClientMock() },
         { provide: Router, useValue: { navigate: jest.fn() } },
         {
           provide: TranslateService,
@@ -92,8 +78,8 @@ describe('PartnerAuthService command payloads', () => {
     expect(sentBody('register')['referralCode']).toBeUndefined();
   });
 
-  it('sends the profile plus the active language on employee register', () => {
-    service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak').subscribe();
+  it('sends the profile, the active language and the ticked terms on employee register', () => {
+    service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', true).subscribe();
 
     expect(sentBody('registerEmployee')).toEqual({
       email: 'a@b.cz',
@@ -101,7 +87,14 @@ describe('PartnerAuthService command payloads', () => {
       firstName: 'Jan',
       lastName: 'Novak',
       language: 'cs',
+      termsAccepted: true,
     });
+  });
+
+  it('never asserts a tick that was not given on employee register', () => {
+    service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', false).subscribe();
+
+    expect(sentBody('registerEmployee')['termsAccepted']).toBe(false);
   });
 
   it('sends the code and email on confirm', () => {
@@ -140,7 +133,7 @@ describe('PartnerAuthService command payloads', () => {
   // a cleaner registers with the market an admin will later hold them to (D6).
   it.each<[string, string, () => Observable<unknown>]>([
     ['register', 'register', () => service.register('a@b.cz', 'pw', 'Jan', 'Novak', undefined, 'svk-id')],
-    ['employee register', 'registerEmployee', () => service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', 'svk-id')],
+    ['employee register', 'registerEmployee', () => service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', true, 'svk-id')],
     ['google auth', 'googleAuth', () => service.authenticateWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', 'svk-id')],
   ])('sends the chosen market on %s', (_, method, call) => {
     call().subscribe();
@@ -149,7 +142,7 @@ describe('PartnerAuthService command payloads', () => {
   });
 
   it('sends no market on employee register when none is chosen, so the server picks its default', () => {
-    service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', null).subscribe();
+    service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', true, null).subscribe();
 
     expect(sentBody('registerEmployee')['countryId']).toBeUndefined();
   });
@@ -172,7 +165,6 @@ describe('PartnerAuthService command payloads', () => {
       providers: [
         PartnerAuthService,
         { provide: PartnerClient, useValue: { authClient } },
-        { provide: GdprClient, useValue: gdprClientMock() },
         { provide: Router, useValue: { navigate: jest.fn() } },
         {
           provide: TranslateService,
@@ -190,72 +182,5 @@ describe('PartnerAuthService command payloads', () => {
       .subscribe();
 
     expect(sentBody('resendConfirmationEmail')['language']).toBe('en');
-  });
-});
-
-describe('PartnerAuthService signup consent delivery', () => {
-  let service: PartnerAuthService;
-  let signupConsent: SignupConsentService;
-  let gdprClient: Record<string, jest.Mock>;
-
-  function startSession(email: string): void {
-    service.setSession({
-      email,
-      csrfToken: 'csrf-value',
-      refreshTokenExpiresAt: new Date('2030-01-01T00:00:00Z'),
-    } as never);
-  }
-
-  beforeEach(() => {
-    localStorage.clear();
-    gdprClient = gdprClientMock();
-
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [
-        PartnerAuthService,
-        { provide: PartnerClient, useValue: { authClient: {} } },
-        { provide: GdprClient, useValue: gdprClient },
-        { provide: Router, useValue: { navigate: jest.fn() } },
-        {
-          provide: TranslateService,
-          useValue: { currentLang: 'cs', getDefaultLang: () => 'en' },
-        },
-        {
-          provide: AUTH_COOKIE_KEYS,
-          useValue: { csrfToken: 'csrf', refreshTokenExp: 'exp', role: 'role' },
-        },
-      ],
-    });
-
-    service = TestBed.inject(PartnerAuthService);
-    signupConsent = TestBed.inject(SignupConsentService);
-  });
-
-  it('grants the signup tick at the first session, keyed on the identity the server returned', () => {
-    signupConsent.record('cleaner@example.com');
-
-    startSession('cleaner@example.com');
-
-    const bodies = gdprClient['consentsPost'].mock.calls.map(([command]) => {
-      expect(command).toBeInstanceOf(GrantConsentCommand);
-      return (command as GrantConsentCommand).toJSON();
-    });
-    expect(bodies).toEqual([
-      { consentType: ConsentType.TermsOfService },
-      { consentType: ConsentType.PrivacyPolicy },
-    ]);
-  });
-
-  it('signs the user in even when the grant is refused', () => {
-    gdprClient['consentsPost'].mockReturnValue(
-      throwError(() => ({ errors: { '': 'common.error_occurred' } }))
-    );
-    signupConsent.record('cleaner@example.com');
-
-    expect(() => startSession('cleaner@example.com')).not.toThrow();
-
-    expect(service.isLoggedIn()).toBe(true);
-    expect(localStorage.getItem('csrf')).toBe('csrf-value');
   });
 });

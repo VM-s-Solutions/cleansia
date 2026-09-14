@@ -7,7 +7,6 @@ import {
   MarketListItem,
   PartnerAuthService,
   PartnerClient,
-  SignupConsentService,
 } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -20,7 +19,6 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   private readonly authService = inject(PartnerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly signupConsent = inject(SignupConsentService);
   private readonly partnerClient = inject(PartnerClient);
 
   formGroup = this.createFormGroup();
@@ -58,13 +56,17 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       this.formGroup.value;
     const termsAccepted = this.formGroup.get('terms')?.value === true;
     this.authService
-      .registerEmployee(email, password, firstName, lastName, countryId)
+      .registerEmployee(
+        email,
+        password,
+        firstName,
+        lastName,
+        termsAccepted,
+        countryId
+      )
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
-          if (termsAccepted) {
-            this.signupConsent.record(email);
-          }
           this.router.navigate([CleansiaPartnerRoute.CONFIRM_EMAIL], {
             queryParams: { email },
           });

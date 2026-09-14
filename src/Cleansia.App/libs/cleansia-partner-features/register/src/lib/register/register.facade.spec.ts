@@ -1,16 +1,12 @@
 import { fakeAsync, flush, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
-  ConsentType,
-  GdprClient,
-  GrantConsentCommand,
   MarketListItem,
   PartnerAuthService,
   PartnerClient,
-  SignupConsentService,
   Translation,
 } from '@cleansia/partner-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaPartnerRoute, SnackbarService } from '@cleansia/services';
 import { LangChangeEvent, TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import { RegisterFacade } from './register.facade';
@@ -53,8 +49,6 @@ function translateStub(langChange: Subject<LangChangeEvent>) {
 
 describe('RegisterFacade — the consent ticked at signup', () => {
   let facade: RegisterFacade;
-  let signupConsent: SignupConsentService;
-  let gdprClient: Record<string, jest.Mock>;
   let authService: { registerEmployee: jest.Mock };
   let router: { navigate: jest.Mock };
   let snackbar: { showError: jest.Mock };
@@ -73,22 +67,15 @@ describe('RegisterFacade — the consent ticked at signup', () => {
     });
   }
 
-  function grantedBodies(): Record<string, unknown>[] {
-    return gdprClient['consentsPost'].mock.calls.map(([command]) => {
-      expect(command).toBeInstanceOf(GrantConsentCommand);
-      return (command as GrantConsentCommand).toJSON();
-    });
+  function assertedTick(): unknown {
+    expect(authService.registerEmployee).toHaveBeenCalledTimes(1);
+    return authService.registerEmployee.mock.calls[0][4];
   }
 
   beforeEach(() => {
-    localStorage.clear();
     authService = { registerEmployee: jest.fn().mockReturnValue(of(true)) };
     router = { navigate: jest.fn() };
     snackbar = { showError: jest.fn() };
-    gdprClient = {
-      consentsGet: jest.fn().mockReturnValue(of([])),
-      consentsPost: jest.fn().mockReturnValue(of(undefined)),
-    };
     partnerClient = {
       marketClient: { getOverview: jest.fn().mockReturnValue(of([CZ])) },
     };
@@ -99,7 +86,6 @@ describe('RegisterFacade — the consent ticked at signup', () => {
         { provide: Router, useValue: router },
         { provide: PartnerAuthService, useValue: authService },
         { provide: PartnerClient, useValue: partnerClient },
-        { provide: GdprClient, useValue: gdprClient },
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
@@ -109,31 +95,20 @@ describe('RegisterFacade — the consent ticked at signup', () => {
     });
 
     facade = TestBed.inject(RegisterFacade);
-    signupConsent = TestBed.inject(SignupConsentService);
   });
 
-  it('grants the ticked documents at the session that follows the signup', () => {
+  // The server grants both employee consents from the tick on RegisterEmployee itself, so the tick
+  // is a property of the request — nothing is parked client-side for a later session any more.
+  it('asserts the tick on the RegisterEmployee request', () => {
     fillForm(true);
 
     facade.register();
-    signupConsent.flush(EMAIL);
 
-    expect(grantedBodies()).toEqual([
-      { consentType: ConsentType.TermsOfService },
-      { consentType: ConsentType.PrivacyPolicy },
-    ]);
-  });
-
-  it('grants nothing when the registration itself failed', () => {
-    authService.registerEmployee.mockReturnValue(
-      throwError(() => new Error('taken'))
+    expect(assertedTick()).toBe(true);
+    expect(router.navigate).toHaveBeenCalledWith(
+      [CleansiaPartnerRoute.CONFIRM_EMAIL],
+      { queryParams: { email: EMAIL } }
     );
-    fillForm(true);
-
-    facade.register();
-    signupConsent.flush(EMAIL);
-
-    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
   });
 
   it('refuses to register at all while the box is unticked', () => {
@@ -142,37 +117,22 @@ describe('RegisterFacade — the consent ticked at signup', () => {
     facade.register();
 
     expect(authService.registerEmployee).not.toHaveBeenCalled();
+    expect(snackbar.showError).toHaveBeenCalledTimes(1);
   });
 
   // Unreachable in the shipped form, which the test above pins: `terms` is
-  // `requiredTrue`, so an unticked submit never reaches the grant. This pins the
-  // guard, not its reachability — it is what keeps an untick from becoming a
-  // manufactured record if the tick ever stops being required.
-  it('grants nothing for an absent tick when the form does not require one', () => {
+  // `requiredTrue`, so an unticked submit never reaches the request. This pins
+  // the assertion, not its reachability — an untick must never be sent as a tick
+  // if the tick ever stops being required.
+  it('asserts no tick for an absent one when the form does not require one', () => {
     const terms = facade.formGroup.get('terms');
     terms?.clearValidators();
     terms?.updateValueAndValidity();
     fillForm(false);
 
     facade.register();
-    signupConsent.flush(EMAIL);
 
-    expect(authService.registerEmployee).toHaveBeenCalled();
-    expect(gdprClient['consentsPost']).not.toHaveBeenCalled();
-  });
-
-  it('completes the signup even when the tick cannot be parked for delivery', () => {
-    const setItem = jest
-      .spyOn(Storage.prototype, 'setItem')
-      .mockImplementation(() => {
-        throw new Error('quota');
-      });
-    fillForm(true);
-
-    expect(() => facade.register()).not.toThrow();
-
-    setItem.mockRestore();
-    expect(router.navigate).toHaveBeenCalled();
+    expect(assertedTick()).toBe(false);
   });
 });
 
@@ -188,7 +148,6 @@ describe('RegisterFacade — the market picker', () => {
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: PartnerAuthService, useValue: authService },
         { provide: PartnerClient, useValue: { marketClient: { getOverview } } },
-        { provide: GdprClient, useValue: { consentsGet: jest.fn().mockReturnValue(of([])) } },
         { provide: SnackbarService, useValue: { showError: jest.fn() } },
         { provide: TranslateService, useValue: translateStub(langChange) },
       ],
@@ -209,11 +168,10 @@ describe('RegisterFacade — the market picker', () => {
 
   function sentCountryId(): unknown {
     expect(authService.registerEmployee).toHaveBeenCalledTimes(1);
-    return authService.registerEmployee.mock.calls[0][4];
+    return authService.registerEmployee.mock.calls[0][5];
   }
 
   beforeEach(() => {
-    localStorage.clear();
     authService = { registerEmployee: jest.fn().mockReturnValue(of(true)) };
     getOverview = jest.fn().mockReturnValue(of([SVK, CZ]));
     langChange = new Subject<LangChangeEvent>();

@@ -19,7 +19,6 @@ import {
   RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
 } from '../client/partner-client';
-import { SignupConsentService } from './signup-consent.service';
 
 @Injectable({
   providedIn: 'root',
@@ -29,7 +28,6 @@ export class PartnerAuthService {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
-  private readonly signupConsent = inject(SignupConsentService);
 
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
@@ -85,11 +83,16 @@ export class PartnerAuthService {
     return this.partnerClient.authClient.register(command).pipe(map(() => true));
   }
 
+  /**
+   * `termsAccepted` is the tick as the form holds it at submit; the server grants the two employee
+   * consents from it on the same request, so nothing is parked client-side for a later session.
+   */
   registerEmployee(
     email: string,
     password: string,
     firstName: string,
     lastName: string,
+    termsAccepted: boolean,
     countryId?: string | null
   ): Observable<boolean> {
     const command = new RegisterEmployeeCommand();
@@ -99,6 +102,7 @@ export class PartnerAuthService {
     command.lastName = lastName;
     command.language = this.currentLanguage();
     command.countryId = countryId ?? undefined;
+    command.termsAccepted = termsAccepted;
 
     return this.partnerClient.authClient.registerEmployee(command).pipe(map(() => true));
   }
@@ -268,11 +272,6 @@ export class PartnerAuthService {
     }
 
     this.isLoggedIn$.next(true);
-
-    // The signup tick predates any session, and the identity here is the
-    // server's rather than whatever a form held.
-    this.signupConsent.flush(authResult.email);
-
     this.setWarningDialogStatus(false);
   }
 }

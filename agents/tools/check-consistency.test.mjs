@@ -466,58 +466,6 @@ public class DoThing
     assert.equal(b1.length, 1, `expected 1 B1, got: ${r.out}`);
 });
 
-// A1/A5 — the paged-query archetype keyed on `IRequest<PagedData<` only, so a paged query declared
-// `IQuery<PagedData<` (BusinessResult-wrapped, because its validator must answer 400) evaded both
-// rules. Widened to `I(Request|Query)<PagedData<`; the canonical DataRangeRequest + MapToDto shape
-// still passes.
-test("A1 STILL flags an IQuery<PagedData<>> record with inline Offset/Limit", () => {
-    const r = run({
-        code: `namespace X;
-public class GetThingTimeline
-{
-    public record Query(string? UserId, int Offset = 0, int Limit = 20) : IQuery<PagedData<ThingDto>>;
-}`,
-    });
-    const a1 = r.out.split(/\r?\n/).filter((l) => /\bA1\b/.test(l));
-    assert.equal(a1.length, 1, `expected 1 A1, got: ${r.out}`);
-});
-
-test("A5 STILL flags a hand-built PagedData in an IQuery<PagedData<>> handler", () => {
-    const r = run({
-        code: `namespace X;
-public class GetThingTimeline
-{
-    public class Request : DataRangeRequest, IQuery<PagedData<ThingDto>>;
-
-    internal class Handler : IQueryHandler<Request, PagedData<ThingDto>>
-    {
-        public Task<BusinessResult<PagedData<ThingDto>>> Handle(Request request, CancellationToken ct) =>
-            Task.FromResult(BusinessResult.Success(new PagedData<ThingDto>(1, request.Limit, 0, [])));
-    }
-}`,
-    });
-    const a5 = r.out.split(/\r?\n/).filter((l) => /\bA5\b/.test(l));
-    assert.equal(a5.length, 1, `expected 1 A5, got: ${r.out}`);
-});
-
-test("A1/A5 do NOT flag an IQuery<PagedData<>> on DataRangeRequest returning via MapToDto", () => {
-    const r = run({
-        code: `namespace X;
-public class GetThingTimeline
-{
-    public class Request : DataRangeRequest, IQuery<PagedData<ThingDto>>;
-
-    internal class Handler : IQueryHandler<Request, PagedData<ThingDto>>
-    {
-        public Task<BusinessResult<PagedData<ThingDto>>> Handle(Request request, CancellationToken ct) =>
-            Task.FromResult(BusinessResult.Success(Array.Empty<ThingDto>().MapToDto(0, request)));
-    }
-}`,
-    });
-    const a = r.out.split(/\r?\n/).filter((l) => /\bA[15]\b/.test(l));
-    assert.equal(a.length, 0, `expected 0 A1/A5, got: ${r.out}`);
-});
-
 // C3 — teardown the rule could not see. Both shapes below are CORRECT and were reported as leaks.
 test("C3 does NOT flag a pipe whose takeUntil is far above the subscribe", () => {
     const filler = Array.from({ length: 34 }, (_, i) => `          // padding ${i}`).join("\n");
@@ -767,7 +715,7 @@ for (const [name, fn] of cases) {
 }
 console.log(
     failed === 0
-        ? `\ncheck-consistency rules (A1/A5 + B1 + B10 + C3 + E9 + E1 + E5 + conv): ${cases.length} passed`
-        : `\ncheck-consistency rules (A1/A5 + B1 + B10 + C3 + E9 + E1 + E5 + conv): ${failed}/${cases.length} FAILED`,
+        ? `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + E5 + conv): ${cases.length} passed`
+        : `\ncheck-consistency rules (B1 + B10 + C3 + E9 + E1 + E5 + conv): ${failed}/${cases.length} FAILED`,
 );
 process.exit(failed === 0 ? 0 : 1);

@@ -10,7 +10,6 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
-using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using MediatR;
@@ -45,10 +44,8 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
             setup: AdminSession,
             arrange: SeedOneOrderWithFourActs,
             act: provider => Send(provider, new GetActionTimeline.Request { UserId = CustomerId }),
-            assert: (CleansiaDbContext _, BusinessResult<PagedData<TimelineEntryDto>> result) =>
+            assert: (CleansiaDbContext _, PagedData<TimelineEntryDto> page) =>
             {
-                Assert.True(result.IsSuccess);
-                var page = result.Value!;
                 Assert.Equal(4, page.Total);
                 Assert.Equal(
                     new[] { TimelineSource.Employee, TimelineSource.Admin, TimelineSource.Customer, TimelineSource.Customer },
@@ -71,18 +68,18 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
                 Order: await Send(provider, new GetActionTimeline.Request { ResourceType = "Order", ResourceId = OrderId }),
                 Guest: await Send(provider, new GetActionTimeline.Request { ResourceType = "Order", ResourceId = GuestOrderId }),
                 GuestByUser: await Send(provider, new GetActionTimeline.Request { UserId = CustomerId })),
-            assert: (CleansiaDbContext _, (BusinessResult<PagedData<TimelineEntryDto>> Order, BusinessResult<PagedData<TimelineEntryDto>> Guest, BusinessResult<PagedData<TimelineEntryDto>> GuestByUser) r) =>
+            assert: (CleansiaDbContext _, (PagedData<TimelineEntryDto> Order, PagedData<TimelineEntryDto> Guest, PagedData<TimelineEntryDto> GuestByUser) r) =>
             {
-                Assert.Equal(3, r.Order.Value!.Total);
+                Assert.Equal(3, r.Order.Total);
                 Assert.Equal(
                     new[] { TimelineSource.Employee, TimelineSource.Admin, TimelineSource.Customer },
-                    r.Order.Value.Data.Select(e => e.Source));
+                    r.Order.Data.Select(e => e.Source));
 
-                var guest = Assert.Single(r.Guest.Value!.Data);
+                var guest = Assert.Single(r.Guest.Data);
                 Assert.Null(guest.ActorId);
                 Assert.Equal(GuestOrderId, guest.ResourceId);
 
-                Assert.DoesNotContain(r.GuestByUser.Value!.Data, e => e.ResourceId == GuestOrderId);
+                Assert.DoesNotContain(r.GuestByUser.Data, e => e.ResourceId == GuestOrderId);
                 return Task.CompletedTask;
             });
     }
@@ -98,7 +95,7 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
                 var pages = new List<PagedData<TimelineEntryDto>>();
                 for (var offset = 0; offset < 4; offset += 3)
                 {
-                    pages.Add((await Send(provider, new GetActionTimeline.Request { UserId = CustomerId, Offset = offset, Limit = 3 })).Value!);
+                    pages.Add(await Send(provider, new GetActionTimeline.Request { UserId = CustomerId, Offset = offset, Limit = 3 }));
                 }
 
                 return pages;
@@ -135,16 +132,16 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
             act: async provider => (
                 ByUser: await Send(provider, new GetActionTimeline.Request { UserId = CustomerId }),
                 ByOrder: await Send(provider, new GetActionTimeline.Request { ResourceType = "Order", ResourceId = OrderId })),
-            assert: (CleansiaDbContext _, (BusinessResult<PagedData<TimelineEntryDto>> ByUser, BusinessResult<PagedData<TimelineEntryDto>> ByOrder) r) =>
+            assert: (CleansiaDbContext _, (PagedData<TimelineEntryDto> ByUser, PagedData<TimelineEntryDto> ByOrder) r) =>
             {
-                Assert.Equal(4, r.ByUser.Value!.Total);
-                Assert.Equal(3, r.ByOrder.Value!.Total);
-                Assert.DoesNotContain(r.ByUser.Value.Data.Concat(r.ByOrder.Value.Data), e => e.Id.EndsWith("other-tenant"));
+                Assert.Equal(4, r.ByUser.Total);
+                Assert.Equal(3, r.ByOrder.Total);
+                Assert.DoesNotContain(r.ByUser.Data.Concat(r.ByOrder.Data), e => e.Id.EndsWith("other-tenant"));
                 return Task.CompletedTask;
             });
     }
 
-    private static async Task<BusinessResult<PagedData<TimelineEntryDto>>> Send(IServiceProvider provider, GetActionTimeline.Request request)
+    private static async Task<PagedData<TimelineEntryDto>> Send(IServiceProvider provider, GetActionTimeline.Request request)
     {
         var mediator = provider.GetRequiredService<IMediator>();
         return await mediator.Send(request);

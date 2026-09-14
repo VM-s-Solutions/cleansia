@@ -46,6 +46,6 @@ public class CustomerAuditController(IMediator mediator) : ApiController(mediato
     public async Task<IActionResult> GetActionTimeline([FromQuery] GetActionTimeline.Request request, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
-        return HandleResult<PagedData<TimelineEntryDto>>(result);
+        return Ok(result);
     }
 }

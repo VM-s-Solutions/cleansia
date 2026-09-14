@@ -1,4 +1,3 @@
-using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auditing.DTOs;
 using Cleansia.Core.AppServices.Mappers;
@@ -10,8 +9,8 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
-using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Auditing;
@@ -32,12 +31,8 @@ public class GetActionTimeline
     /// </summary>
     public const int RecentResourceCap = 1000;
 
-    /// <summary>
-    /// <see cref="IQuery{TResponse}"/> rather than the paged <c>IRequest&lt;PagedData&lt;T&gt;&gt;</c>
-    /// form because the "exactly one key" rule must answer 400, and the validation pipeline only runs
-    /// for a <c>BusinessResult</c> response. The order is fixed newest-first; <c>Sort</c> is not read.
-    /// </summary>
-    public class Request : DataRangeRequest, IQuery<PagedData<TimelineEntryDto>>
+    /// <summary>The order is fixed newest-first; <c>Sort</c> is not read.</summary>
+    public class Request : DataRangeRequest, IRequest<PagedData<TimelineEntryDto>>
     {
         public string? UserId { get; init; }
         public string? ResourceType { get; init; }
@@ -75,9 +70,9 @@ public class GetActionTimeline
         IOrderRepository orderRepository,
         IDisputeRepository disputeRepository,
         IUserMembershipRepository userMembershipRepository)
-        : IQueryHandler<Request, PagedData<TimelineEntryDto>>
+        : IRequestHandler<Request, PagedData<TimelineEntryDto>>
     {
-        public async Task<BusinessResult<PagedData<TimelineEntryDto>>> Handle(Request request, CancellationToken cancellationToken)
+        public async Task<PagedData<TimelineEntryDto>> Handle(Request request, CancellationToken cancellationToken)
         {
             var (customer, admin, employee) = string.IsNullOrWhiteSpace(request.UserId)
                 ? ByResource(request.ResourceType!, request.ResourceId!)
@@ -114,7 +109,7 @@ public class GetActionTimeline
 
             var page = Page(customerRows.Concat(adminRows).Concat(employeeRows), request.Offset, request.Limit);
 
-            return BusinessResult.Success(page.MapToDto(total, request));
+            return page.MapToDto(total, request);
         }
 
         private (IQueryable<CustomerActionAudit>, IQueryable<AdminActionAudit>, IQueryable<EmployeeActionAudit>) ByResource(

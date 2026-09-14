@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
@@ -36,7 +37,8 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 ///
 /// <para>What it proves: a Customer's success row rides the action's commit with the tenant stamped and
 /// the request context filled; a rolled-back action leaves no row; a handler refusal and a validation
-/// reject each leave one out-of-band row whose <c>ErrorCode</c> is the KEY; the latch keeps it to one; an
+/// reject each leave one out-of-band row whose <c>ErrorCode</c> is the KEY — on both of the reject's
+/// arms, returned as a result or thrown where the response cannot carry one; the latch keeps it to one; an
 /// Employee lands nowhere; an Administrator lands in the admin table; an anonymous caller lands in the
 /// customer table only where the marker allows it, with <c>ClientAudience</c> filled. For an anonymous
 /// market-scoped act the tenant is the operator <c>OperatorTenantScopeBehavior</c> resolved before
@@ -57,6 +59,9 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
 
     [AuditAction("customer.test.act", Audience = AuditAudience.Customer, ResourceType = "Order")]
     public sealed record CustomerActCommand(string OrderId) : IRequest<BusinessResult>;
+
+    [AuditAction("customer.test.list", Audience = AuditAudience.Customer, ResourceType = "Order")]
+    public sealed record CustomerListCommand(string OrderId) : IRequest<PagedData<string>>;
 
     [AuditAction("customer.test.guest_act", Audience = AuditAudience.Customer, ResourceType = "Order", AllowsAnonymousActor = true)]
     public sealed record GuestActCommand(string OrderId) : IRequest<BusinessResult>;
@@ -116,27 +121,27 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
     }
 
     // The FULL production nesting, both audit behaviors sharing ONE scoped AuditContext (the latch).
-    private async Task<BusinessResult> RunFullPipelineAsync<TRequest>(
+    private async Task<TResponse> RunFullPipelineAsync<TRequest, TResponse>(
         CleansiaDbContext context,
         Run run,
         TRequest command,
         IAuditWriter writer,
         IValidator<TRequest> validator,
-        RequestHandlerDelegate<BusinessResult> handler)
-        where TRequest : IRequest<BusinessResult>
+        RequestHandlerDelegate<TResponse> handler)
+        where TRequest : IRequest<TResponse>
     {
         var sink = Sink();
         var factory = Factory(run);
 
-        var failureCapture = new AuditFailureCaptureBehavior<TRequest, BusinessResult>(
+        var failureCapture = new AuditFailureCaptureBehavior<TRequest, TResponse>(
             run.Session, run.AuditContext, sink, factory,
-            NullLogger<AuditFailureCaptureBehavior<TRequest, BusinessResult>>.Instance);
-        var validation = new ValidationPipelineBehavior<TRequest, BusinessResult>(
-            [validator], NullLogger<ValidationPipelineBehavior<TRequest, BusinessResult>>.Instance);
-        var unitOfWork = new UnitOfWorkPipelineBehavior<TRequest, BusinessResult>(context);
-        var audit = new AuditLogBehavior<TRequest, BusinessResult>(
+            NullLogger<AuditFailureCaptureBehavior<TRequest, TResponse>>.Instance);
+        var validation = new ValidationPipelineBehavior<TRequest, TResponse>(
+            [validator], NullLogger<ValidationPipelineBehavior<TRequest, TResponse>>.Instance);
+        var unitOfWork = new UnitOfWorkPipelineBehavior<TRequest, TResponse>(context);
+        var audit = new AuditLogBehavior<TRequest, TResponse>(
             run.Session, run.AuditContext, writer, sink, factory,
-            NullLogger<AuditLogBehavior<TRequest, BusinessResult>>.Instance);
+            NullLogger<AuditLogBehavior<TRequest, TResponse>>.Instance);
 
         return await failureCapture.Handle(command,
             ct1 => validation.Handle(command,
@@ -330,6 +335,33 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
         Assert.False(row.Success);
         Assert.Equal(BusinessErrorMessage.TotalPriceNotMatch, row.ErrorCode);
         Assert.Equal("customer.test.act", row.Action);
+        Assert.Equal(Ip, row.IpAddress);
+        Assert.Equal(0, await OutboxCount(verify));
+    }
+
+    [Fact]
+    public async Task A_Validation_Reject_That_Travels_As_A_Throw_Writes_Exactly_One_OutOfBand_Row_With_The_First_Rules_Key()
+    {
+        await ResetAsync();
+        var run = new Run();
+
+        await using (var ctx = NewContext())
+        {
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
+            await Assert.ThrowsAsync<RequestValidationException>(() =>
+                RunFullPipelineAsync(ctx, run, new CustomerListCommand("ORD-1"), writer,
+                    new RejectingValidator<CustomerListCommand>(), _ =>
+                    {
+                        ctx.OutboxMessages.Add(OutboxMessage.Create(QueueNames.GenerateReceipt, "receipt:ORD-1", "{}", null));
+                        return Task.FromResult(new PagedData<string>(1, 50, 0, []));
+                    }));
+        }
+
+        await using var verify = NewContext();
+        var row = Assert.Single(await CustomerRows(verify));
+        Assert.False(row.Success);
+        Assert.Equal(BusinessErrorMessage.TotalPriceNotMatch, row.ErrorCode);
+        Assert.Equal("customer.test.list", row.Action);
         Assert.Equal(Ip, row.IpAddress);
         Assert.Equal(0, await OutboxCount(verify));
     }

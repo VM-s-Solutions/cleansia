@@ -21,9 +21,8 @@ public class UnitOfWorkPipelineBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
 
         // ADR-0002 D4 (F11) defense-in-depth: commit ONLY when the inner pipeline produced a
         // successful BusinessResult. Combined with the Validation-outer registration order, a future
-        // re-swap of the registration cannot resurrect F11 (a committed validation failure). TResponse
-        // is constrained to BusinessResult on the validation behavior, so PagedData<T> queries never
-        // reach this branch (the IsNotCommand guard above already skips them too).
+        // re-swap of the registration cannot resurrect F11 (a committed validation failure). A
+        // PagedData<T> query never reaches this branch: the IsNotCommand guard above skips it.
         if (response is BusinessResult { IsSuccess: true })
         {
             await unitOfWork.CommitAsync(cancellationToken);

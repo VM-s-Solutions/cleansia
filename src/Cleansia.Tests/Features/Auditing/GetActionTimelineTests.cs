@@ -10,7 +10,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using MockQueryable;
 using Moq;
@@ -148,10 +147,8 @@ public class GetActionTimelineTests
             [AdminRow("a-1", "Order", OrderId, T0.AddMinutes(3)), AdminRow("a-other", "Order", "order-9", T0.AddMinutes(9))],
             [EmployeeRow("e-1", OrderId, T0.AddMinutes(2)), EmployeeRow("e-other", "order-9", T0.AddMinutes(8))]);
 
-        var result = await Handle(new GetActionTimeline.Request { UserId = UserId });
+        var page = await Handle(new GetActionTimeline.Request { UserId = UserId });
 
-        Assert.True(result.IsSuccess);
-        var page = result.Value!;
         Assert.Equal(4, page.Total);
         Assert.Equal(
             new[] { TimelineSource.Customer, TimelineSource.Admin, TimelineSource.Employee, TimelineSource.Customer },
@@ -177,7 +174,7 @@ public class GetActionTimelineTests
 
         var result = await Handle(new GetActionTimeline.Request { UserId = UserId });
 
-        Assert.Equal(new[] { "a-membership", "a-dispute", "a-user" }, result.Value!.Data.Select(e => e.Id));
+        Assert.Equal(new[] { "a-membership", "a-dispute", "a-user" }, result.Data.Select(e => e.Id));
     }
 
     [Fact]
@@ -190,8 +187,8 @@ public class GetActionTimelineTests
 
         var result = await Handle(new GetActionTimeline.Request { ResourceType = "Order", ResourceId = OrderId });
 
-        Assert.Equal(3, result.Value!.Total);
-        Assert.Equal(new[] { "e-1", "a-1", "c-guest" }, result.Value.Data.Select(e => e.Id));
+        Assert.Equal(3, result.Total);
+        Assert.Equal(new[] { "e-1", "a-1", "c-guest" }, result.Data.Select(e => e.Id));
     }
 
     [Fact]
@@ -202,8 +199,8 @@ public class GetActionTimelineTests
 
         var result = await Handle(new GetActionTimeline.Request { UserId = UserId });
 
-        Assert.Equal(0, result.Value!.Total);
-        Assert.Empty(result.Value.Data);
+        Assert.Equal(0, result.Total);
+        Assert.Empty(result.Data);
     }
 
     [Fact]
@@ -213,7 +210,7 @@ public class GetActionTimelineTests
 
         var result = await Handle(new GetActionTimeline.Request { ResourceType = "Dispute", ResourceId = "dispute-1" });
 
-        var only = Assert.Single(result.Value!.Data);
+        var only = Assert.Single(result.Data);
         Assert.Equal("a-1", only.Id);
     }
 
@@ -230,20 +227,20 @@ public class GetActionTimelineTests
         var second = await Handle(new GetActionTimeline.Request { UserId = UserId, Offset = 4, Limit = 4 });
         var third = await Handle(new GetActionTimeline.Request { UserId = UserId, Offset = 8, Limit = 4 });
 
-        var ids = first.Value!.Data.Concat(second.Value!.Data).Concat(third.Value!.Data).Select(e => e.Id).ToList();
-        Assert.Equal(9, first.Value.Total);
+        var ids = first.Data.Concat(second.Data).Concat(third.Data).Select(e => e.Id).ToList();
+        Assert.Equal(9, first.Total);
         Assert.Equal(new[] { "e-2", "a-2", "c-2", "e-1", "a-1", "c-1", "e-0", "a-0", "c-0" }, ids);
-        Assert.Equal(2, first.Value.PageNumber + 1);
-        Assert.Equal(4, second.Value.PageSize);
+        Assert.Equal(2, first.PageNumber + 1);
+        Assert.Equal(4, second.PageSize);
     }
 
-    private Task<BusinessResult<PagedData<TimelineEntryDto>>> Handle(GetActionTimeline.Request request)
+    private Task<PagedData<TimelineEntryDto>> Handle(GetActionTimeline.Request request)
     {
         var handlerType = typeof(GetActionTimeline).GetNestedType("Handler", BindingFlags.NonPublic)!;
         var handler = Activator.CreateInstance(handlerType,
             _customer.Object, _admin.Object, _employee.Object, _orders.Object, _disputes.Object, _memberships.Object)!;
         var method = handlerType.GetMethod("Handle")!;
-        return (Task<BusinessResult<PagedData<TimelineEntryDto>>>)method.Invoke(handler, [request, CancellationToken.None])!;
+        return (Task<PagedData<TimelineEntryDto>>)method.Invoke(handler, [request, CancellationToken.None])!;
     }
 
     private void Seed(CustomerActionAudit[] customer, AdminActionAudit[] admin, EmployeeActionAudit[] employee)

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
@@ -22,7 +23,9 @@ public class GetAllGdprRequests
         {
             // Defense-in-depth against an admin / compromised admin sending a huge limit to dump
             // the whole audit table. Tighter than DataRangeRequest's default range for this surface.
-            RuleFor(q => q.Limit).InclusiveBetween(1, 100);
+            RuleFor(q => q.Limit)
+                .InclusiveBetween(1, 100)
+                .WithMessage(BusinessErrorMessage.PageSizeExceeded);
         }
     }
 

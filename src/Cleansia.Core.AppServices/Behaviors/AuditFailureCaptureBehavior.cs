@@ -11,7 +11,8 @@ namespace Cleansia.Core.AppServices.Behaviors;
 /// ADR-0012 D2.1/D2.2 — the OUTERMOST audit step, the backstop for the two failed-action shapes the
 /// inner <c>AuditLogBehavior</c> structurally cannot see:
 /// <list type="number">
-///   <item>a <b>validation reject</b> — <c>ValidationPipelineBehavior</c> returns the failure result
+///   <item>a <b>validation reject</b> — <c>ValidationPipelineBehavior</c> returns the failure result,
+///   or throws <see cref="RequestValidationException"/> where the response type cannot carry one,
 ///   WITHOUT calling <c>next()</c>, so neither <c>UnitOfWorkPipelineBehavior</c> nor the inner
 ///   <c>AuditLogBehavior</c> ever runs;</item>
 ///   <item>a <b>commit-throw</b> — the inner <c>AuditLogBehavior</c> adds its success row and returns
@@ -51,6 +52,11 @@ public class AuditFailureCaptureBehavior<TRequest, TResponse>(
         try
         {
             response = await next(cancellationToken);
+        }
+        catch (RequestValidationException ex)
+        {
+            await RecordFailureOutOfBandAsync(request, descriptor, audience.Value, AuditErrorCode.Resolve(ex.Errors), cancellationToken);
+            throw;
         }
         catch (Exception ex)
         {

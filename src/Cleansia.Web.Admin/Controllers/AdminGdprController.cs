@@ -46,6 +46,7 @@ public class AdminGdprController(IMediator mediator) : ApiController(mediator)
     [HttpGet("requests")]
     [Permission(Policy.CanViewGdprRequests)]
     [ProducesResponseType(typeof(PagedData<GdprRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<PagedData<GdprRequestDto>> GetAllGdprRequests([FromQuery] GetAllGdprRequests.Request request, CancellationToken cancellationToken)
         => await Mediator.Send(request, cancellationToken);
 }

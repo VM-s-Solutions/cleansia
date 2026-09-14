@@ -16,19 +16,21 @@ public static class FluentValidationExtensions
         // Handler.
         //   • AuditFailureCapture (ADR-0012 D2.1) is OUTERMOST: it observes the final outcome of the WHOLE
         //     inner pipeline, so it captures the two failed-admin-action shapes the inner AuditLog cannot
-        //     see — a validation reject (Validation short-circuits without next(), so neither UnitOfWork
-        //     nor the inner AuditLog ever runs) and a commit-throw (the inner AuditLog has already returned
-        //     its success-add before the OUTER UnitOfWork.CommitAsync throws). It writes the failure row
-        //     out-of-band, sharing the per-request IAuditContext latch so a handler-returned business
-        //     failure the inner AuditLog already recorded is not double-written.
+        //     see — a validation reject (Validation returns the failure result, or throws
+        //     RequestValidationException where the response cannot carry one, without calling next(), so
+        //     neither UnitOfWork nor the inner AuditLog ever runs) and a commit-throw (the inner AuditLog
+        //     has already returned its success-add before the OUTER UnitOfWork.CommitAsync throws). It
+        //     writes the failure row out-of-band, sharing the per-request IAuditContext latch so a
+        //     handler-returned business failure the inner AuditLog already recorded is not double-written.
         //   • PostCommitDispatch: it drains IPendingDispatch and puts messages on the wire ONLY after the
         //     inner pipeline returns a committed success — never before the commit (the F2/SEC-W1 fix),
         //     never on a commit-throw (the guard is unreached).
         //   • OperatorTenantScope (ADR-0061 D3) is OUTER to Validation: the validators' filtered
         //     pre-checks are the first tenanted reads of an anonymous market-scoped request, so the
         //     market's operator must be the ambient tenant before they run.
-        //   • Validation is OUTER to UnitOfWork: a failing validator returns the failure result
-        //     without calling next(), so control never reaches the UoW commit on a rejected command.
+        //   • Validation is OUTER to UnitOfWork: a failing validator returns the failure result (or throws
+        //     RequestValidationException where the response cannot carry one) without calling next(), so
+        //     control never reaches the UoW commit on a rejected command.
         //   • AuditLog (ADR-0012 D2) is INNER to UnitOfWork: its next() (the handler) returns before
         //     the UoW commit fires, so the success-audit row added to the scoped DbContext rides that
         //     single SaveChangesAsync and is atomic with the action. Moving it outer (post-commit) makes

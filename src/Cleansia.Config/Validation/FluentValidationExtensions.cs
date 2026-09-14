@@ -12,8 +12,8 @@ public static class FluentValidationExtensions
     public static IServiceCollection AddValidators(this IServiceCollection services)
     {
         // ADR-0002 D4 (F11) + D1 + ADR-0012 D2/D2.1: registration order = outer → inner for MediatR. The
-        // order MUST be AuditFailureCapture → PostCommitDispatch → Validation → UnitOfWork → AuditLog →
-        // Handler.
+        // order MUST be AuditFailureCapture → ErasureFailureCapture → PostCommitDispatch →
+        // OperatorTenantScope → Validation → UnitOfWork → AuditLog → Handler.
         //   • AuditFailureCapture (ADR-0012 D2.1) is OUTERMOST: it observes the final outcome of the WHOLE
         //     inner pipeline, so it captures the two failed-admin-action shapes the inner AuditLog cannot
         //     see — a validation reject (Validation returns the failure result, or throws

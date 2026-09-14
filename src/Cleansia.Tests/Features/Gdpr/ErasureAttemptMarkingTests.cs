@@ -62,16 +62,18 @@ public sealed class ErasureAttemptMarkingTests : IDisposable
 
         await using var ctx = NewContext();
         var result = await Service(ctx, attempt).DeleteUserAccountAsync(
-            SubjectUserId, GdprAuditReasons.SelfDeletion, user => (user.Email, null), deferEmployeeErasure: true, CancellationToken.None);
+            SubjectUserId, GdprAuditReasons.SelfDeletion, _ => (GdprAuditReasons.SelfActor, null), deferEmployeeErasure: true, CancellationToken.None);
         await ctx.CommitAsync(CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.True(attempt.Started);
         Assert.Equal(SubjectUserId, attempt.SubjectUserId);
-        Assert.Equal(SubjectEmail, attempt.ProcessedBy);
+        Assert.Equal(GdprAuditReasons.SelfActor, attempt.ProcessedBy);
+        Assert.DoesNotContain("@", attempt.ProcessedBy);
         var request = Assert.Single(await ctx.GdprRequests.IgnoreQueryFilters().ToListAsync());
         Assert.Equal(attempt.RequestId, request.Id);
         Assert.Equal(GdprRequestStatus.Completed, request.Status);
+        Assert.Equal(GdprAuditReasons.SelfActor, request.ProcessedBy);
     }
 
     [Fact]
@@ -82,7 +84,7 @@ public sealed class ErasureAttemptMarkingTests : IDisposable
 
         await using var ctx = NewContext();
         var result = await Service(ctx, attempt).DeleteUserAccountAsync(
-            SubjectUserId, GdprAuditReasons.SelfDeletion, user => (user.Email, null), deferEmployeeErasure: true, CancellationToken.None);
+            SubjectUserId, GdprAuditReasons.SelfDeletion, _ => (GdprAuditReasons.SelfActor, null), deferEmployeeErasure: true, CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.GdprDeletionBlockedByOrder, result.Error!.Message);
@@ -221,7 +223,7 @@ public sealed class ErasureAttemptMarkingTests : IDisposable
         {
             var request = GdprRequest.Create(SubjectUserId, GdprRequest.DeletionRequestType);
             request.Id = FailedRequestId;
-            request.MarkFailed(SubjectEmail, "DbUpdateException: boom");
+            request.MarkFailed(GdprAuditReasons.SelfActor, "DbUpdateException: boom");
             ctx.Add(request);
         }
 

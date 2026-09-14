@@ -82,6 +82,22 @@ public class GdprDeletionReasonConstantsTests
         Assert.Equal(GdprAuditReasons.SelfDeletion, _capturedReason);
     }
 
+    // The resolver also runs BEFORE the walk, to mark the attempt the out-of-band Failed row is written
+    // from, so the subject's live address must never be what it answers — that row outlives the erasure.
+    [Fact]
+    public async Task SelfDelete_Resolves_The_Self_Actor_Never_The_Subjects_Email()
+    {
+        _session.Setup(s => s.GetUserId()).Returns(UserId);
+
+        var result = await InvokeHandler(typeof(DeleteUserAccount), new DeleteUserAccount.Command());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("self", _capturedProcessedBy);
+        Assert.Equal(GdprAuditReasons.SelfActor, _capturedProcessedBy);
+        Assert.DoesNotContain("@", _capturedProcessedBy);
+        Assert.Null(_capturedNotes);
+    }
+
     [Fact]
     public async Task AdminDelete_ForwardsReason_GdprAdminDeletion_ByteIdentical()
     {

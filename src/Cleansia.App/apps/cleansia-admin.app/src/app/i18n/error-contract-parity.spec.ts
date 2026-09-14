@@ -636,6 +636,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'template.email.invalid_type',
   'template.email.key_exists',
   'template.email.not_found',
+  // The failed-deletion retry (AdminGdprController.RetryUserDeletion): only a Failed row, or one left
+  // Processing past the stale window, can be retried — AdminRetryUserDeletion.Validator.
+  'gdpr.request_not_retryable',
   // Users
   'user.not_existing_id',
   'user.not_found',
@@ -660,9 +663,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.deletion_blocked_by_order',
   'gdpr.deletion_blocked_by_unsettled_pay',
-  // The failed-deletion retry (AdminGdprController.RetryUserDeletion): the row must exist and be retryable.
+  // The failed-deletion retry: raised by AdminRetryUserDeletion.Validator and again, defensively, by
+  // GdprDeletionService.RetryDeletionAsync — the shared emitter is why it sits here.
   'gdpr.request_not_found',
-  'gdpr.request_not_retryable',
   'refund.failed',
   'service.missing_price_for_currency',
   'service.missing_translation_for_language',

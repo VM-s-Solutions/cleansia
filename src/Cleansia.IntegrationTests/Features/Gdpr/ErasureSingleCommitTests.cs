@@ -21,10 +21,12 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 /// <summary>
 /// Owner ruling 2026-09-14: the erasure is ONE commit. Until then the refresh-token revoke inside
 /// the walk committed the unit of work itself, so an erasure that failed after it left the subject
-/// half-erased — documents and orders durable, the User row and the audit trail not — with no request on
-/// record to say so. Against real Postgres, through <c>GdprDeletionService</c>'s real walk: a commit that
-/// throws at the very end leaves the subject exactly as they were, their sessions still alive and no
-/// <c>GdprRequest</c> written; a commit that lands revokes every session in the same write as the
+/// half-erased — documents and orders durable, the User row and the audit trail not. Against real
+/// Postgres, through <c>GdprDeletionService</c>'s real walk called bare: a commit that throws at the very
+/// end leaves the subject exactly as they were, their sessions still alive, and the walk itself has
+/// staged no durable row — the <c>Failed</c> request that IS on record after such a throw is the
+/// pipeline's, written out of band by <c>ErasureFailureCaptureBehavior</c> and proven in
+/// <c>FailedErasureRecordTests</c>; a commit that lands revokes every session in the same write as the
 /// subject's anonymisation.
 /// </summary>
 [Collection("PostgresCollection")]
@@ -38,7 +40,7 @@ public class ErasureSingleCommitTests(PostgresContainerFixture fixture) : BaseIn
     private const string Description = "The kitchen floor was not mopped and the bins were left full.";
 
     [Fact]
-    public async Task A_Throw_At_The_End_Of_The_Walk_Leaves_The_Subject_Untouched_Their_Sessions_Alive_And_No_Request_On_Record()
+    public async Task A_Throw_At_The_End_Of_The_Walk_Leaves_The_Subject_Untouched_Their_Sessions_Alive_And_Nothing_Of_The_Walk_Durable()
     {
         await TestMethod(
             arrange: Seed,
@@ -84,6 +86,7 @@ public class ErasureSingleCommitTests(PostgresContainerFixture fixture) : BaseIn
                     Assert.True(t.IsAlive);
                 });
 
+                // The bare service, not the pipeline: the Failed row is the capture behaviour's to write.
                 Assert.Empty(await context.GdprRequests.IgnoreQueryFilters().ToListAsync());
 
                 var consent = await context.UserConsents.IgnoreQueryFilters().SingleAsync(c => c.UserId == SubjectId);

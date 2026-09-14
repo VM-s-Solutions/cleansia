@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -167,6 +168,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
             Mock.Of<IAppConfigurationProvider>(),
+            new ErasureAttempt(),
             NullLogger<GdprDeletionService>.Instance);
 
         return await service.DeleteUserAccountAsync(

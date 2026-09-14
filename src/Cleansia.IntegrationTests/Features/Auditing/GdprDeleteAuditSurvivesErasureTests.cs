@@ -152,6 +152,12 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
             bool deferEmployeeErasure,
             CancellationToken cancellationToken) =>
             Task.FromResult(BusinessResult.Success());
+
+        public Task<BusinessResult> RetryDeletionAsync(
+            string requestId,
+            Func<User, (string ProcessedBy, string? Notes)> resolveAuditActor,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(BusinessResult.Success());
     }
 
     private sealed class SingleDbScopeFactory(string connectionString)

@@ -2771,7 +2771,9 @@
       "deletion_blocked_by_assigned_order": "Táto upratovačka je priradená k zakázke a zatiaľ sa nedá zmazať.",
       "deletion_blocked_by_unsettled_pay": "Tejto upratovačke stále dlžíme odmenu. Vyriešte to pred zmazaním účtu.",
       "consent_not_found": "Toto nastavenie súhlasu sa nepodarilo nájsť.",
-      "consent_already_granted": "Tento súhlas už bol udelený."
+      "consent_already_granted": "Tento súhlas už bol udelený.",
+      "request_not_found": "Túto žiadosť GDPR sme nenašli.",
+      "request_not_retryable": "Zopakovať možno iba neúspešnú žiadosť o vymazanie."
     },
     "general": {
       "not_found": "Zdroj nebol nájdený"

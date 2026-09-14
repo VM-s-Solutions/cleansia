@@ -2771,7 +2771,9 @@
       "deletion_blocked_by_assigned_order": "Этот клинер назначен на работу, аккаунт пока нельзя удалить.",
       "deletion_blocked_by_unsettled_pay": "Этому клинеру ещё не выплачено вознаграждение. Решите это до удаления аккаунта.",
       "consent_not_found": "Не удалось найти эту настройку согласия.",
-      "consent_already_granted": "Это согласие уже дано."
+      "consent_already_granted": "Это согласие уже дано.",
+      "request_not_found": "Мы не нашли этот запрос GDPR.",
+      "request_not_retryable": "Повторить можно только неудавшийся запрос на удаление."
     },
     "general": {
       "not_found": "Ресурс не найден"

@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.DataRetention;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -207,6 +208,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
                 Mock.Of<IStripeClient>(),
                 _blobClientFactory.Object,
                 Mock.Of<IAppConfigurationProvider>(),
+                new ErasureAttempt(),
                 NullLogger<GdprDeletionService>.Instance);
 
             var result = await gdpr.DeleteUserAccountAsync(

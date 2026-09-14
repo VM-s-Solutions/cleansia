@@ -2771,7 +2771,9 @@
       "deletion_blocked_by_assigned_order": "This cleaner is still assigned to a job and cannot be deleted yet.",
       "deletion_blocked_by_unsettled_pay": "This cleaner is still owed pay. Settle it before deleting the account.",
       "consent_not_found": "We couldn't find that consent setting.",
-      "consent_already_granted": "That consent has already been granted."
+      "consent_already_granted": "That consent has already been granted.",
+      "request_not_found": "We couldn't find that GDPR request.",
+      "request_not_retryable": "Only a failed deletion request can be retried."
     },
     "general": {
       "not_found": "Resource not found"

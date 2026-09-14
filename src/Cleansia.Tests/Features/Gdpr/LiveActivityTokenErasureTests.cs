@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -159,6 +160,7 @@ public sealed class LiveActivityTokenErasureTests : IDisposable
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
             Mock.Of<IAppConfigurationProvider>(),
+            new ErasureAttempt(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(

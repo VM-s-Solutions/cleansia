@@ -624,6 +624,11 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   reason: string;
 }> = [
   {
+    key: 'gdpr.request_not_found',
+    reason:
+      'Emitted by GdprDeletionService.RetryDeletionAsync, whose only callers are AdminRetryUserDeletion (dispatched by AdminGdprController) and, through it, the RetryFailedUserDeletions timer. This host dispatches DeleteUserAccount, which enters the service through DeleteUserAccountAsync and never reaches the retry.',
+  },
+  {
     key: 'payroll.invoice.reference_capacity_exhausted',
     reason:
       'Sole emitter is PayoutReferenceAllocator.AllocateAsync, reached only from GenerateInvoice and AssignInvoiceVariableSymbol (both AdminPayrollController) and the PayPeriodBackgroundService timer. This host\'s invoice actions — regenerate, download, get, list — take no IPayoutReferenceAllocator.',

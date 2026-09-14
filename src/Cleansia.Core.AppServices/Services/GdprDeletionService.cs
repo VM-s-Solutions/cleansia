@@ -41,10 +41,11 @@ public class GdprDeletionService(
     IStripeClient stripeClient,
     IBlobContainerClientFactory blobClientFactory,
     IAppConfigurationProvider configProvider,
+    IErasureAttempt erasureAttempt,
     ILogger<GdprDeletionService> logger)
     : IGdprDeletionService
 {
-    private const string DeletionRequestType = "Deletion";
+    private const string SubjectField = "userId";
 
     public async Task<BusinessResult> DeleteUserAccountAsync(
         string userId,
@@ -53,55 +54,20 @@ public class GdprDeletionService(
         bool deferEmployeeErasure,
         CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetQueryable()
-            .Include(u => u.Employee).ThenInclude(e => e!.Address)
-            .Include(u => u.Cart)
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var user = await LoadSubjectAsync(userId, cancellationToken);
 
         if (user is null)
             return BusinessResult.Failure(new Error(
                 nameof(userId), BusinessErrorMessage.NotExistingUserWithEmail));
 
-        var hasPending = await gdprRequestRepository.HasPendingRequestAsync(user.Id, DeletionRequestType, cancellationToken);
+        var hasPending = await gdprRequestRepository.HasPendingRequestAsync(user.Id, Domain.Users.GdprRequest.DeletionRequestType, cancellationToken);
         if (hasPending)
             return BusinessResult.Failure(new Error(
                 nameof(userId), BusinessErrorMessage.GdprDeletionAlreadyPending));
 
-        var blockingOrder = await HasBlockingOrderAsync(user.Id, cancellationToken);
-        if (blockingOrder)
-            return BusinessResult.Failure(new Error(
-                nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByOrder));
-
-        // MONEY OWED BLOCKS ERASURE. Owner ruling 2026-09-05, and the same shape as the unsettled-pay
-        // guard below: a credit balance is a DEBT, not a preference, and anonymizing the person it is
-        // owed to writes it off at the exact moment they asked to be forgotten. The customer spends it
-        // or asks to be paid out, and then the erasure proceeds and the account goes with them.
-        //
-        // Applies to CUSTOMERS, which is why it sits above the employee block rather than inside it.
-        // A zero balance never blocks anything, and a customer who has never had credit has no account
-        // at all. -> /architecture/security-rules, SubjectDataErasureRosterTests
-        var creditOwed = await HasPositiveCreditBalanceAsync(user.Id, cancellationToken);
-        if (creditOwed)
-            return BusinessResult.Failure(new Error(
-                nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByCreditBalance));
-
-        if (user.Employee is not null)
-        {
-            var blockingInvoice = await HasBlockingInvoiceAsync(user.Employee.Id, cancellationToken);
-            if (blockingInvoice)
-                return BusinessResult.Failure(new Error(
-                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByInvoice));
-
-            var blockingAssignment = await HasBlockingAssignedOrderAsync(user.Employee.Id, cancellationToken);
-            if (blockingAssignment)
-                return BusinessResult.Failure(new Error(
-                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByAssignedOrder));
-
-            var unsettledPay = await HasUnsettledPayAsync(user.Employee.Id, cancellationToken);
-            if (unsettledPay)
-                return BusinessResult.Failure(new Error(
-                    nameof(userId), BusinessErrorMessage.GdprDeletionBlockedByUnsettledPay));
-        }
+        var refusal = await FindRefusalAsync(user, cancellationToken);
+        if (refusal is not null)
+            return refusal;
 
         if (deferEmployeeErasure && user.Employee is not null)
         {
@@ -122,20 +88,108 @@ public class GdprDeletionService(
             // discard the very row this branch exists to write. The caller distinguishes "filed"
             // from "erased" by which app it is, not by the result — the partner clients say
             // "requested"; re-filing is refused by the pending-request check above.
-            var filedRequest = Domain.Users.GdprRequest.Create(user.Id, DeletionRequestType);
+            var filedRequest = Domain.Users.GdprRequest.Create(user.Id, Domain.Users.GdprRequest.DeletionRequestType);
             gdprRequestRepository.Add(filedRequest);
             return BusinessResult.Success();
         }
 
-        var auditEntry = Domain.Users.GdprRequest.Create(user.Id, DeletionRequestType);
+        var auditEntry = Domain.Users.GdprRequest.Create(user.Id, Domain.Users.GdprRequest.DeletionRequestType);
         auditEntry.MarkProcessing();
         gdprRequestRepository.Add(auditEntry);
 
+        // From here on a failure is a failed ERASURE, not a refusal: the row above rolls back with the
+        // walk, so the attempt is marked in request scope for the pipeline to put on record out of band.
+        erasureAttempt.Begin(user.Id, auditEntry.Id, resolveAuditActor(user).ProcessedBy);
+
+        return await EraseAsync(user, auditEntry, deactivationReason, resolveAuditActor, cancellationToken);
+    }
+
+    public async Task<BusinessResult> RetryDeletionAsync(
+        string requestId,
+        Func<Domain.Users.User, (string ProcessedBy, string? Notes)> resolveAuditActor,
+        CancellationToken cancellationToken)
+    {
+        var request = await gdprRequestRepository.GetByIdAsync(requestId, cancellationToken);
+        if (request is null)
+            return BusinessResult.Failure(new Error(
+                nameof(requestId), BusinessErrorMessage.GdprRequestNotFound));
+
+        var user = await LoadSubjectAsync(request.UserId, cancellationToken);
+        if (user is null)
+            return BusinessResult.Failure(new Error(
+                nameof(requestId), BusinessErrorMessage.NotExistingUserWithEmail));
+
+        // Before the checks, unlike the first attempt: the row already exists and an admin is watching it,
+        // so a refusal is stamped on it too — the note is what tells them why it is still not done.
+        erasureAttempt.Begin(user.Id, request.Id, resolveAuditActor(user).ProcessedBy);
+
+        var refusal = await FindRefusalAsync(user, cancellationToken);
+        if (refusal is not null)
+            return refusal;
+
+        request.MarkProcessing();
+        return await EraseAsync(user, request, GdprAuditReasons.RetriedDeletion, resolveAuditActor, cancellationToken);
+    }
+
+    private Task<Domain.Users.User?> LoadSubjectAsync(string userId, CancellationToken cancellationToken)
+        => userRepository.GetQueryable()
+            .Include(u => u.Employee).ThenInclude(e => e!.Address)
+            .Include(u => u.Cart)
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+    private async Task<BusinessResult?> FindRefusalAsync(Domain.Users.User user, CancellationToken cancellationToken)
+    {
+        var blockingOrder = await HasBlockingOrderAsync(user.Id, cancellationToken);
+        if (blockingOrder)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByOrder));
+
+        // MONEY OWED BLOCKS ERASURE. Owner ruling 2026-09-05, and the same shape as the unsettled-pay
+        // guard below: a credit balance is a DEBT, not a preference, and anonymizing the person it is
+        // owed to writes it off at the exact moment they asked to be forgotten. The customer spends it
+        // or asks to be paid out, and then the erasure proceeds and the account goes with them.
+        //
+        // Applies to CUSTOMERS, which is why it sits above the employee block rather than inside it.
+        // A zero balance never blocks anything, and a customer who has never had credit has no account
+        // at all. -> /architecture/security-rules, SubjectDataErasureRosterTests
+        var creditOwed = await HasPositiveCreditBalanceAsync(user.Id, cancellationToken);
+        if (creditOwed)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByCreditBalance));
+
+        if (user.Employee is null)
+            return null;
+
+        var blockingInvoice = await HasBlockingInvoiceAsync(user.Employee.Id, cancellationToken);
+        if (blockingInvoice)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByInvoice));
+
+        var blockingAssignment = await HasBlockingAssignedOrderAsync(user.Employee.Id, cancellationToken);
+        if (blockingAssignment)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByAssignedOrder));
+
+        var unsettledPay = await HasUnsettledPayAsync(user.Employee.Id, cancellationToken);
+        if (unsettledPay)
+            return BusinessResult.Failure(new Error(
+                SubjectField, BusinessErrorMessage.GdprDeletionBlockedByUnsettledPay));
+
+        return null;
+    }
+
+    private async Task<BusinessResult> EraseAsync(
+        Domain.Users.User user,
+        Domain.Users.GdprRequest request,
+        string deactivationReason,
+        Func<Domain.Users.User, (string ProcessedBy, string? Notes)> resolveAuditActor,
+        CancellationToken cancellationToken)
+    {
         await CancelActiveMembershipAsync(user.Id, cancellationToken);
         await AnonymizeUserDataAsync(user, deactivationReason, cancellationToken);
 
         var (processedBy, notes) = resolveAuditActor(user);
-        auditEntry.MarkCompleted(processedBy, notes);
+        request.MarkCompleted(processedBy, notes);
         return BusinessResult.Success();
     }
 

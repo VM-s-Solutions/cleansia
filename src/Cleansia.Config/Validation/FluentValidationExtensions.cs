@@ -35,8 +35,12 @@ public static class FluentValidationExtensions
         //     the UoW commit fires, so the success-audit row added to the scoped DbContext rides that
         //     single SaveChangesAsync and is atomic with the action. Moving it outer (post-commit) makes
         //     the success-audit non-atomic — a blocking finding, caught by the pipeline-order unit test.
+        //   • ErasureFailureCapture sits OUTER to UnitOfWork for the same reason AuditFailureCapture does:
+        //     the erasure is one commit, and the request row it staged rolls back with a commit-throw, so
+        //     only a behavior outside the commit can put the failed erasure on record (out of band).
         // A re-swap that breaks this order is caught by the pipeline-order unit test (verify #4).
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditFailureCaptureBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ErasureFailureCaptureBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PostCommitDispatchBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(OperatorTenantScopeBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>));

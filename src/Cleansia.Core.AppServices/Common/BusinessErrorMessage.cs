@@ -555,6 +555,14 @@ public static class BusinessErrorMessage
     /// the same, so splitting it would name a distinction the reader cannot act on.
     /// </summary>
     public const string GdprDeletionBlockedByUnsettledPay = "gdpr.deletion_blocked_by_unsettled_pay";
+    public const string GdprRequestNotFound = "gdpr.request_not_found";
+
+    /// <summary>
+    /// Only a deletion request that is <c>Failed</c>, or one left <c>Processing</c> long enough that no
+    /// run can still be on it, is re-run. A completed one has nothing to redo; a live one must not be
+    /// raced.
+    /// </summary>
+    public const string GdprRequestNotRetryable = "gdpr.request_not_retryable";
     public const string ConsentNotFound = "gdpr.consent_not_found";
     public const string ConsentAlreadyGranted = "gdpr.consent_already_granted";
 

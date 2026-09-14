@@ -34,6 +34,16 @@ public class AdminGdprController(IMediator mediator) : ApiController(mediator)
         return HandleResult<object>(result);
     }
 
+    [HttpPost("requests/{requestId}/retry-deletion")]
+    [Permission(Policy.CanAdminDeleteUserAccount)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> RetryUserDeletion(string requestId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new AdminRetryUserDeletion.Command(requestId), cancellationToken);
+        return HandleResult<object>(result);
+    }
+
     [HttpGet("consents/{userId}")]
     [Permission(Policy.CanAdminViewUserConsents)]
     [ProducesResponseType(typeof(List<UserConsentDto>), StatusCodes.Status200OK)]

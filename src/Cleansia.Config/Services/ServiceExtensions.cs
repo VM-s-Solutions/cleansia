@@ -4,6 +4,7 @@ using Cleansia.Config.Services.DeviceRevocation;
 using Cleansia.Config.Services.UserRevocation;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -263,6 +264,8 @@ public static class ServiceExtensions
         services.AddScoped<IOrderAccessService, OrderAccessService>();
         services.AddScoped<IAddressGeocoder, AddressGeocoder>();
         services.AddScoped<IGdprDeletionService, GdprDeletionService>();
+        // Scoped: one erasure per request, and the pipeline's failure capture reads what the service set.
+        services.AddScoped<IErasureAttempt, ErasureAttempt>();
         services.AddScoped<IGdprExportService, GdprExportService>();
         // The one consent-write path: the GDPR consent endpoints and the partner-onboarding checkbox.
         services.AddScoped<IConsentService, ConsentService>();

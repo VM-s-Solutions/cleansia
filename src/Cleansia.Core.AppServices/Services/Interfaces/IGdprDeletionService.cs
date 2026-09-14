@@ -30,4 +30,16 @@ public interface IGdprDeletionService
         Func<User, (string ProcessedBy, string? Notes)> resolveAuditActor,
         bool deferEmployeeErasure,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Re-runs the erasure a failed (or abandoned) deletion request describes, completing THAT row rather
+    /// than filing a new one. The blocking checks run again — the subject's state may have changed since
+    /// the first attempt — and a refusal is stamped on the row like a failure is, because every outcome
+    /// of a retry belongs to the request an admin is watching. Employees are erased on this path: a
+    /// request that reached the walk once has already passed the self-service deferral.
+    /// </summary>
+    Task<BusinessResult> RetryDeletionAsync(
+        string requestId,
+        Func<User, (string ProcessedBy, string? Notes)> resolveAuditActor,
+        CancellationToken cancellationToken);
 }

@@ -1,8 +1,10 @@
+using System.Linq.Expressions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Sorting;
 using Cleansia.Core.Domain.Sorting.Common;
@@ -15,7 +17,10 @@ namespace Cleansia.Core.AppServices.Features.Gdpr;
 
 public class GetAllGdprRequests
 {
-    public class Request : DataRangeRequest, IRequest<PagedData<GdprRequestDto>>;
+    public class Request : DataRangeRequest, IRequest<PagedData<GdprRequestDto>>
+    {
+        public GdprRequestStatus? Status { get; init; }
+    }
 
     internal class Validator : AbstractValidator<Request>
     {
@@ -43,10 +48,14 @@ public class GetAllGdprRequests
                 sort = [new SortDefinition { Field = nameof(GdprRequest.CreatedOn), Direction = SortDirection.Descending }];
             }
 
-            var totalItems = await gdprRequestRepository.GetCountAsync(null, cancellationToken);
+            Expression<Func<GdprRequest, bool>>? filter = request.Status is { } status
+                ? r => r.Status == status
+                : null;
+
+            var totalItems = await gdprRequestRepository.GetCountAsync(filter, cancellationToken);
 
             var items = await gdprRequestRepository
-                .GetPagedSort<GdprRequestSort>(request.Offset, request.Limit, null, sort)
+                .GetPagedSort<GdprRequestSort>(request.Offset, request.Limit, filter, sort)
                 .AsNoTracking()
                 .Select(r => r.MapToDto())
                 .ToListAsync(cancellationToken);

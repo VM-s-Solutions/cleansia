@@ -4,7 +4,17 @@ public static class GdprAuditReasons
 {
     public const string SelfDeletion = "GDPR_DELETION";
     public const string AdminDeletion = "GDPR_ADMIN_DELETION";
+
+    /// <summary>
+    /// The deactivation stamp of an erasure that completed on a RETRY of a failed request — an admin's
+    /// or the timer's — whichever path filed the request originally.
+    /// </summary>
+    public const string RetriedDeletion = "GDPR_DELETION_RETRY";
+
     public const string FallbackAdminActor = "admin";
+
+    /// <summary>The actor a retry records when no session carries an e-mail — the timer.</summary>
+    public const string SystemActor = "system";
 
     /// <summary>One spelling for the <c>GdprRequest.RequestType</c> both exports file and the admin list filters on.</summary>
     public const string ExportRequestType = "Export";

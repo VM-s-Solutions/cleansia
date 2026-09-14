@@ -6,6 +6,11 @@ namespace Cleansia.Core.Domain.Users;
 
 public class GdprRequest : Auditable, ITenantEntity
 {
+    public const int NotesMaxLength = 1000;
+
+    /// <summary>The <c>RequestType</c> of an erasure — filed, retried, recorded and listed under one spelling.</summary>
+    public const string DeletionRequestType = "Deletion";
+
     [Required]
     public string UserId { get; private set; }
 
@@ -22,7 +27,7 @@ public class GdprRequest : Auditable, ITenantEntity
 
     public DateTimeOffset? CompletedAt { get; private set; }
 
-    [MaxLength(1000)]
+    [MaxLength(NotesMaxLength)]
     public string? Notes { get; private set; }
 
     public static GdprRequest Create(string userId, string requestType)
@@ -44,15 +49,29 @@ public class GdprRequest : Auditable, ITenantEntity
         Status = GdprRequestStatus.Completed;
         CompletedAt = DateTimeOffset.UtcNow;
         ProcessedBy = processedBy;
-        Notes = notes;
+        Notes = AppendNote(Notes, notes);
         return this;
     }
 
-    public GdprRequest MarkFailed(string? notes = null)
+    public GdprRequest MarkFailed(string? processedBy = null, string? notes = null)
     {
         Status = GdprRequestStatus.Failed;
         CompletedAt = DateTimeOffset.UtcNow;
-        Notes = notes;
+        ProcessedBy = processedBy;
+        Notes = AppendNote(Notes, notes);
         return this;
+    }
+
+    // A retried request keeps every attempt's note; the column is bounded, so the OLDEST text is what
+    // goes when it overflows — the newest note is the one an admin acts on.
+    private static string? AppendNote(string? existing, string? note)
+    {
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            return existing;
+        }
+
+        var combined = string.IsNullOrWhiteSpace(existing) ? note : $"{existing}\n{note}";
+        return combined.Length <= NotesMaxLength ? combined : combined[^NotesMaxLength..];
     }
 }

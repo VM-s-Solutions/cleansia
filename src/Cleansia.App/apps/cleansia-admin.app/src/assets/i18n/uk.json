@@ -2771,7 +2771,9 @@
       "deletion_blocked_by_assigned_order": "Цей клінер призначений на роботу, запис ще не можна видалити.",
       "deletion_blocked_by_unsettled_pay": "Цьому клінеру ще не виплачено винагороду. Вирішіть це перед видаленням запису.",
       "consent_not_found": "Не вдалося знайти це налаштування згоди.",
-      "consent_already_granted": "Цю згоду вже надано."
+      "consent_already_granted": "Цю згоду вже надано.",
+      "request_not_found": "Ми не знайшли цей запит GDPR.",
+      "request_not_retryable": "Повторити можна лише невдалий запит на видалення."
     },
     "general": {
       "not_found": "Ресурс не знайдено"

@@ -679,6 +679,11 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
       'Emitted by ReceiptService.ReserveReceiptAsync — which only the Functions receipt handler reaches — and by the Languages CRUD features. This host\'s LanguageController serves GetLanguageOverview and nothing else.',
   },
   {
+    key: 'gdpr.request_not_found',
+    reason:
+      'Emitted by GdprDeletionService.RetryDeletionAsync, whose only callers are AdminRetryUserDeletion (dispatched by AdminGdprController) and, through it, the RetryFailedUserDeletions timer. This host dispatches DeleteUserAccount, which enters the service through DeleteUserAccountAsync and never reaches the retry.',
+  },
+  {
     key: 'payroll.invoice.reference_capacity_exhausted',
     reason:
       'Sole emitter is PayoutReferenceAllocator, reached only from the two admin payroll commands and the pay-period timer. This host has no payroll controller.',

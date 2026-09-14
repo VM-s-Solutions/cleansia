@@ -2771,7 +2771,9 @@
       "deletion_blocked_by_assigned_order": "Tato üklidová pracovnice je přiřazena k zakázce a zatím ji nelze smazat.",
       "deletion_blocked_by_unsettled_pay": "Této üklidové pracovnici stále dlužíme odměnu. Vyřešte to před smazáním účtu.",
       "consent_not_found": "Toto nastavení souhlasu se nepodařilo najít.",
-      "consent_already_granted": "Tento souhlas již byl udělen."
+      "consent_already_granted": "Tento souhlas již byl udělen.",
+      "request_not_found": "Tuto žádost GDPR jsme nenašli.",
+      "request_not_retryable": "Opakovat lze pouze neúspěšnou žádost o smazání."
     },
     "general": {
       "not_found": "Zdroj nenalezen"

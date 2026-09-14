@@ -660,6 +660,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.deletion_blocked_by_order',
   'gdpr.deletion_blocked_by_unsettled_pay',
+  // The failed-deletion retry (AdminGdprController.RetryUserDeletion): the row must exist and be retryable.
+  'gdpr.request_not_found',
+  'gdpr.request_not_retryable',
   'refund.failed',
   'service.missing_price_for_currency',
   'service.missing_translation_for_language',

@@ -427,11 +427,8 @@ public class GdprDeletionService(
         // pseudonymous once the User row below is anonymized — but the IP address, device label and
         // device id on each row are personal data and are blanked. A tracked walk, not a set-based
         // update, so the blanking lands in the same commit as the User row's anonymization — never a
-        // blanked trail for a customer who still exists. The guest rows are the same person one step
-        // removed: a booking made before the account existed carries no UserId, only the order id, and
-        // the order is now theirs.
+        // blanked trail for a customer who still exists.
         await customerActionAuditRepository.PseudonymiseForSubjectAsync(user.Id, ct);
-        await customerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync(customerOrderIds, ct);
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);

@@ -18,8 +18,7 @@ namespace Cleansia.Tests.Features.Auditing;
 /// <c>RemoveRange(params object[])</c> / <c>Entry(object)</c> carry no type at all — the latter are
 /// flagged when the calling method handles a <c>CustomerActionAudit</c>), that no method body which
 /// handles a <c>CustomerActionAudit</c> reads or sets <c>IsActive</c>, and that the one sanctioned
-/// mutator, <see cref="CustomerActionAudit.Pseudonymise"/>, is called from the erasure walk's two
-/// repository writes — the subject's own rows and the guest rows on the subject's orders — and nowhere
+/// mutator, <see cref="CustomerActionAudit.Pseudonymise"/>, is called from the erasure walk and nowhere
 /// else.
 ///
 /// <para>IL rather than source text because a call site is a fact about the compiled program: a helper,
@@ -103,18 +102,15 @@ public sealed class CustomerActionAuditImmutabilityTests
             .Order()
             .ToList();
 
-        // Anti-vacuity: the walk must actually see the sanctioned callers, or every "no offender" above
+        // Anti-vacuity: the walk must actually see the sanctioned caller, or every "no offender" above
         // would be a walk that resolves nothing.
         Assert.Equal(
-            [
-                $"{typeof(CustomerActionAuditRepository).FullName}.{nameof(CustomerActionAuditRepository.PseudonymiseForSubjectAsync)}",
-                $"{typeof(CustomerActionAuditRepository).FullName}.{nameof(CustomerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync)}"
-            ],
+            [$"{typeof(CustomerActionAuditRepository).FullName}.{nameof(CustomerActionAuditRepository.PseudonymiseForSubjectAsync)}"],
             callers);
     }
 
     [Fact]
-    public void The_Repository_Interface_Adds_Only_The_Two_Erasure_Writes_And_The_Retention_Delete()
+    public void The_Repository_Interface_Adds_Only_The_Erasure_Write_And_The_Retention_Delete()
     {
         var declared = typeof(ICustomerActionAuditRepository)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
@@ -123,11 +119,7 @@ public sealed class CustomerActionAuditImmutabilityTests
             .ToList();
 
         Assert.Equal(
-            [
-                nameof(ICustomerActionAuditRepository.DeleteExpiredAsync),
-                nameof(ICustomerActionAuditRepository.PseudonymiseForSubjectAsync),
-                nameof(ICustomerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync)
-            ],
+            [nameof(ICustomerActionAuditRepository.DeleteExpiredAsync), nameof(ICustomerActionAuditRepository.PseudonymiseForSubjectAsync)],
             declared);
     }
 

@@ -8,7 +8,6 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
     : BaseRepository<CustomerActionAudit>(context), ICustomerActionAuditRepository
 {
     private const int DeleteBatchSize = 100;
-    private const string OrderResourceType = "Order";
 
     public async Task<int> PseudonymiseForSubjectAsync(string userId, CancellationToken cancellationToken)
     {
@@ -16,25 +15,6 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
         // commit failure cannot leave the trail blanked while the subject still exists (or the reverse).
         var rows = await GetQueryableIgnoringTenant()
             .Where(a => a.UserId == userId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var row in rows)
-        {
-            row.Pseudonymise();
-        }
-
-        return rows.Count;
-    }
-
-    public async Task<int> PseudonymiseGuestRowsForOrdersAsync(IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken)
-    {
-        if (orderIds.Count == 0)
-        {
-            return 0;
-        }
-
-        var rows = await GetQueryableIgnoringTenant()
-            .Where(a => a.UserId == null && a.ResourceType == OrderResourceType && orderIds.Contains(a.ResourceId!))
             .ToListAsync(cancellationToken);
 
         foreach (var row in rows)

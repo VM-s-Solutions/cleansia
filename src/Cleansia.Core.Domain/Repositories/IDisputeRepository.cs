@@ -5,9 +5,9 @@ namespace Cleansia.Core.Domain.Repositories;
 public interface IDisputeRepository : IRepository<Dispute, string>
 {
     /// <summary>
-    /// All disputes filed by a specific user, with messages + evidence
-    /// pre-loaded. Used by the GDPR deletion service to cascade-delete
-    /// a user's dispute history.
+    /// All disputes filed by a specific user, TRACKED, with messages + evidence pre-loaded. The GDPR
+    /// erasure's read: it deletes the evidence blobs, blanks the evidence rows and stamps
+    /// <c>TextRetainedUntil</c>; the text itself stays readable until the retention sweep blanks it.
     /// </summary>
     Task<IReadOnlyList<Dispute>> GetDisputesByUserIdAsync(string userId, CancellationToken cancellationToken);
 

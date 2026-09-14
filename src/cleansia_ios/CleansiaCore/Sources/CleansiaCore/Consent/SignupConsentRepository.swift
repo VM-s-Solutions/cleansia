@@ -19,9 +19,10 @@ public protocol SignupConsentRecording: Sendable {
 /// Carries the consent ticked at signup to the first session that can record it.
 ///
 /// The partner registration issues no session — it returns a bare boolean and routes to
-/// email confirmation — and `RegisterEmployee` carries no terms member, while `GrantConsent`
-/// needs an authenticated caller. So the tick is parked against the address it was ticked for
-/// and delivered only once the server itself has named that same account in a token response.
+/// email confirmation — while `GrantConsent` needs an authenticated caller. So the tick is parked
+/// against the address it was ticked for and delivered only once the server itself has named that
+/// same account in a token response. `RegisterEmployee` does accept the tick server-side; the
+/// partner app keeps parking it while the employee agreement text is still open (ADR-0041).
 ///
 /// Every path here is best-effort and silent: a refusal, a 5xx or airplane mode must leave
 /// signup and sign-in working. Whatever did not land stays parked and is retried at the next

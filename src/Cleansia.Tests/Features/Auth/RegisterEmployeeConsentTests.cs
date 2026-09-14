@@ -12,12 +12,11 @@ using Moq;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// The partner register form sends its terms tick with the registration instead of parking it for
-/// the first sign-in. When the client asserted the tick, the handler writes the terms and privacy
-/// consents server-side on the user it created or reused — with NO legal document: an employee accepts
-/// a different text than the customer documents (ADR-0041), so the row stays unversioned exactly as
-/// the <c>GrantConsent</c> route leaves it. Employee registration is not gated on the tick and writes
-/// no customer audit row.
+/// When a client sends the terms tick with the employee registration, the handler writes the terms
+/// and privacy consents server-side on the user it created or reused — with NO legal document: an
+/// employee accepts a different text than the customer documents (ADR-0041), so the row stays
+/// unversioned exactly as the <c>GrantConsent</c> route leaves it. Employee registration is not gated
+/// on the tick and writes no customer audit row.
 /// </summary>
 public sealed class RegisterEmployeeConsentTests
 {

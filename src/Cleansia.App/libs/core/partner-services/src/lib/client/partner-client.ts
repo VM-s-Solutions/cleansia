@@ -13087,6 +13087,7 @@ export class RegisterEmployeeCommand implements IRegisterEmployeeCommand {
     lastName!: string | undefined;
     language!: string | undefined;
     countryId!: string | undefined;
+    termsAccepted!: boolean | undefined;
 
     constructor(data?: IRegisterEmployeeCommand) {
         if (data) {
@@ -13105,6 +13106,7 @@ export class RegisterEmployeeCommand implements IRegisterEmployeeCommand {
             this.lastName = Data["lastName"];
             this.language = Data["language"];
             this.countryId = Data["countryId"];
+            this.termsAccepted = Data["termsAccepted"];
         }
     }
 
@@ -13123,6 +13125,7 @@ export class RegisterEmployeeCommand implements IRegisterEmployeeCommand {
         data["lastName"] = this.lastName;
         data["language"] = this.language;
         data["countryId"] = this.countryId;
+        data["termsAccepted"] = this.termsAccepted;
         return data;
     }
 }
@@ -13134,6 +13137,7 @@ export interface IRegisterEmployeeCommand {
     lastName: string | undefined;
     language: string | undefined;
     countryId: string | undefined;
+    termsAccepted: boolean | undefined;
 }
 
 export class RegisterCommand implements IRegisterCommand {

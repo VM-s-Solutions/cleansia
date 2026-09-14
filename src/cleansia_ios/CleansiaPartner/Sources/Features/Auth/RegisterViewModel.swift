@@ -131,7 +131,8 @@ final class RegisterViewModel: ViewModel {
             lastName: form.lastName,
             language: settings.languageTag,
             countryId: market.countryId,
-            // `RegisterEmployee` has no terms member yet; the tick is parked below instead.
+            // The server accepts the tick here, but the partner app still parks it for the first
+            // session while the employee agreement text is open (ADR-0041), so none is sent.
             termsAccepted: nil
         )
         registerState = .idle

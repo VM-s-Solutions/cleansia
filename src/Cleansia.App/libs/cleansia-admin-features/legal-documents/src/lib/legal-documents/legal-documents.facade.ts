@@ -20,6 +20,7 @@ export class LegalDocumentsFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly translate = inject(TranslateService);
 
+  // Not paginated: get-versions returns every version, so there is no totalRecords.
   readonly versions = signal<LegalDocumentVersionDto[]>([]);
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
@@ -42,18 +43,22 @@ export class LegalDocumentsFacade extends UnsubscribeControlDirective {
           this.documentError.set(false);
           this.documentLoading.set(true);
         }),
+        // The flag settles on emission, not in an inner finalize: switchMap tears the superseded
+        // request down before the next one subscribes, and its finalize would clear the loader early.
         switchMap(({ documentId, language }) =>
           this.adminClient.adminLegalClient.getDocument(documentId, language).pipe(
             catchError(() => {
               this.documentError.set(true);
               return of(null);
-            }),
-            finalize(() => this.documentLoading.set(false))
+            })
           )
         ),
         takeUntil(this.destroyed$)
       )
-      .subscribe((document) => this.document.set(document));
+      .subscribe((document) => {
+        this.document.set(document);
+        this.documentLoading.set(false);
+      });
   }
 
   loadVersions(): void {

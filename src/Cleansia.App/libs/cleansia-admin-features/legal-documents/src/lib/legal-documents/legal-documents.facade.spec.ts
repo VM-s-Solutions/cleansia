@@ -169,6 +169,22 @@ describe('LegalDocumentsFacade', () => {
       expect(facade.documentLoading()).toBe(false);
     });
 
+    it('keeps loading while a language is switched before the previous text arrived', () => {
+      const pendingCs = new Subject<AdminLegalDocumentDto>();
+      const pendingSk = new Subject<AdminLegalDocumentDto>();
+      getDocumentMock.mockReturnValueOnce(pendingCs).mockReturnValueOnce(pendingSk);
+
+      facade.preview(terms);
+      facade.showLanguage(text('sk'));
+
+      expect(facade.documentLoading()).toBe(true);
+      expect(facade.document()).toBeNull();
+      pendingSk.next(documentIn('sk'));
+      pendingSk.complete();
+      expect(facade.documentLoading()).toBe(false);
+      expect(facade.document()?.language).toBe('sk');
+    });
+
     it('drops a slow earlier response once a newer language was requested', () => {
       const slowCs = new Subject<AdminLegalDocumentDto>();
       const fastSk = new Subject<AdminLegalDocumentDto>();
@@ -176,6 +192,7 @@ describe('LegalDocumentsFacade', () => {
 
       facade.preview(terms);
       facade.showLanguage(text('sk'));
+      expect(facade.documentLoading()).toBe(true);
       fastSk.next(documentIn('sk'));
       fastSk.complete();
       slowCs.next(documentIn('cs'));
@@ -183,6 +200,7 @@ describe('LegalDocumentsFacade', () => {
 
       expect(facade.language()).toBe('sk');
       expect(facade.document()?.language).toBe('sk');
+      expect(facade.documentLoading()).toBe(false);
     });
   });
 

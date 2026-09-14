@@ -46,12 +46,12 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
             //
             // Pooling is OFF, and that is load-bearing rather than a preference. Every TestMethod builds
             // a fresh ServiceCollection, so AddDbContextBindings builds a fresh NpgsqlDataSource — each
-            // with its own pool — and the ServiceProvider is never disposed. Registering the data source
-            // as an externally-created singleton instance means the container would not dispose it even
-            // if it were, so the pooled connections stayed OPEN on the container for the whole run and
-            // accumulated one test at a time until "53300: sorry, too many clients already". The suite
-            // had run out of headroom: adding a single test made an unrelated one fail. Unpooled, each
-            // connection closes when its DbContext does, and the count no longer grows with the suite.
+            // with its own pool — and the ServiceProvider is never disposed (BaseTransactionalPostgresSqlTest
+            // builds it and lets it go), so the container never gets to close the data source it owns, and
+            // the pooled connections stayed OPEN on the container for the whole run and accumulated one
+            // test at a time until "53300: sorry, too many clients already". The suite had run out of
+            // headroom: adding a single test made an unrelated one fail. Unpooled, each connection closes
+            // when its DbContext does, and the count no longer grows with the suite.
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:ConnectionString"] = $"{Fixture.GetConnectionString()};Pooling=false"

@@ -59,9 +59,11 @@ public static class DbContextBindingExtensions
             TryEagerlyReloadTypeCatalog(dataSource);
         }
 
-        // Through a factory, not as the instance: the container disposes only what it created, and that is
-        // what closes the pool with the host. Registered as an instance it outlived every shutdown — and in
-        // a test suite, every host booted — holding its connections open on the server to the end.
+        // Through a factory, not as the instance: the container disposes what a factory returned and never an
+        // instance handed to it, and that is what closes the pool with the host. Built above rather than
+        // inside the factory so the eager type-catalog probe can run at composition. Registered as an
+        // instance it outlived every shutdown — and in a test suite, every host booted — holding its
+        // connections open on the server to the end.
         services.AddSingleton(_ => dataSource);
         // Registration order is load-bearing: IHostedService.StartAsync runs sequentially, and
         // NpgsqlTypeCatalogInitializer awaits a retry loop that can span ~2 minutes while a migration is

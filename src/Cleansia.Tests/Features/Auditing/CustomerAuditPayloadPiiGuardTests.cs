@@ -40,7 +40,7 @@ public sealed class CustomerAuditPayloadPiiGuardTests
 
     /// <summary>The only shapes a string member may take: an identifier, a code, a version, or a bounded label.</summary>
     private static readonly Regex AllowedStringMember = new(
-        "^(.*Id|.*Ids|.*IdAtPurchase|.*Code|.*Version|.*VersionAccepted|Language|Method|Channel|Tier|Weekday|TimeOfDay|Frequency|.*Slugs|PaymentType|PaymentStatus)$",
+        "^(.*Id|.*Ids|.*IdAtPurchase|.*Code|.*Version|.*VersionAccepted|Language|Method|Channel|ClientAudience|Tier|Weekday|TimeOfDay|Frequency|.*Slugs|PaymentType|PaymentStatus)$",
         RegexOptions.Compiled);
 
     private static readonly HashSet<Type> ScalarTypes =
@@ -194,6 +194,8 @@ public sealed class CustomerAuditPayloadPiiGuardTests
         Assert.Contains(typeof(CreateOrder.OrderBookingEvidence), roots);
         Assert.Contains(typeof(CreateDispute.DisputeFilingEvidence), roots);
         Assert.Contains(typeof(MembershipSubscribeEvidence), roots);
+        Assert.Contains(typeof(Cleansia.Core.AppServices.Features.Auth.LoginEvidence), roots);
+        Assert.Contains(typeof(Cleansia.Core.AppServices.Features.Auth.Logout.LogoutEvidence), roots);
         Assert.Contains(typeof(CancelOrder.CancellationPolicyFigures), walked);
         Assert.Contains(typeof(CreateOrder.CancellationPolicyShown), walked);
         Assert.Contains(typeof(SwapMembershipPlan.MembershipPlanFacts), walked);
@@ -238,6 +240,8 @@ public sealed class CustomerAuditPayloadPiiGuardTests
     [InlineData("CurrencyCode", false)]
     [InlineData("TermsVersionAccepted", false)]
     [InlineData("ExtraSlugs", false)]
+    [InlineData("ClientAudience", false)]
+    [InlineData("Audience", true)]
     public void The_String_Rule_Refuses_Anything_Not_Shaped_Like_An_Id_Code_Version_Or_Label(string member, bool refused)
     {
         Assert.Equal(refused, !AllowedStringMember.IsMatch(member));

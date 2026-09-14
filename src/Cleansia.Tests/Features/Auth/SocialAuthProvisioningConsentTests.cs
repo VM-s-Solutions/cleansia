@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -13,10 +14,11 @@ using Moq;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// ADR-0062 D4 — the social commands are sign-in-or-register and carry no audit marker; the proof of a
-/// social registration is the two versioned consent rows the PROVISIONING branch writes, stamped with
-/// the documents in force for the market the sign-up named. A sign-in of an existing account writes
-/// none, and a refused provisioning writes none.
+/// ADR-0062 D4 — the social commands are sign-in-or-register and are marked as the SIGN-IN only; the
+/// proof of a social registration is the two versioned consent rows the PROVISIONING branch writes,
+/// stamped with the documents in force for the market the sign-up named. A sign-in of an existing
+/// account writes none, and a refused provisioning writes none. The session row's two branches are
+/// pinned by <see cref="SocialSignInAuditEvidenceTests"/>.
 /// </summary>
 public sealed class SocialAuthProvisioningConsentTests
 {
@@ -31,6 +33,7 @@ public sealed class SocialAuthProvisioningConsentTests
     private readonly LegalDocument _terms = LegalDocumentFixtures.Terms();
     private readonly LegalDocument _privacy = LegalDocumentFixtures.Privacy();
     private readonly Mock<ILegalDocumentResolver> _legalDocuments;
+    private readonly AuditContext _auditContext = new();
     private User? _provisionedUser;
 
     public SocialAuthProvisioningConsentTests()
@@ -53,7 +56,7 @@ public sealed class SocialAuthProvisioningConsentTests
         verifier.Setup(v => v.VerifyAsync("token", It.IsAny<CancellationToken>())).ReturnsAsync(claims);
         return new GoogleAuth.Handler(
             verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object, _hostAudience,
-            _consentService.Object, _legalDocuments.Object);
+            _consentService.Object, _legalDocuments.Object, _auditContext);
     }
 
     private AppleAuth.Handler AppleHandler(AppleVerifiedClaims? claims)
@@ -62,7 +65,7 @@ public sealed class SocialAuthProvisioningConsentTests
         verifier.Setup(v => v.VerifyAsync("token", "nonce", It.IsAny<CancellationToken>())).ReturnsAsync(claims);
         return new AppleAuth.Handler(
             verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object, _hostAudience,
-            _consentService.Object, _legalDocuments.Object, NullLogger<AppleAuth.Handler>.Instance);
+            _consentService.Object, _legalDocuments.Object, NullLogger<AppleAuth.Handler>.Instance, _auditContext);
     }
 
     private static GoogleAuth.Command GoogleCommand(bool termsAccepted) =>

@@ -1,9 +1,11 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -12,6 +14,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Users;
 
+[AuditAction("customer.password.reset_completed", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class ChangePassword
 {
     public class Validator : AbstractValidator<Command>
@@ -124,13 +127,19 @@ public class ChangePassword
         string Email,
         string NewPassword,
         string Code)
-        : ICommand<Response>;
+        : ICommand<Response>, IOperatorScopedRequest
+    {
+        // The reset names no market, so its refusal row is stamped with the default market's operator —
+        // the same answer a registration that names none gets. Off the wire.
+        string? IOperatorScopedRequest.CountryId => null;
+    }
 
     public record Response(string Id);
 
     internal class Handler(
         IUserRepository userRepository,
-        IRefreshTokenService refreshTokenService)
+        IRefreshTokenService refreshTokenService,
+        IAuditContext auditContext)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -145,6 +154,8 @@ public class ChangePassword
             // keep-none, unlike the authenticated change which spares the caller's session).
             await refreshTokenService.RevokeAllForUserAsync(
                 user.Id, "password_reset", exceptRawToken: null, cancellationToken);
+
+            auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
 
             return BusinessResult.Success(new Response(Id: user.Id));
         }

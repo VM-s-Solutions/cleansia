@@ -109,8 +109,8 @@ function leafKeys(node: unknown, prefix = ''): string[] {
 describe('customer audit action catalogue', () => {
   const catalogue = [...CUSTOMER_AUDIT_ACTIONS, ...EMPLOYEE_AUDIT_ACTIONS];
 
-  it('reads a sixteen-label customer catalogue and a two-label employee one off the lib', () => {
-    expect(new Set(CUSTOMER_AUDIT_ACTIONS).size).toBe(16);
+  it('reads a twenty-one-label customer catalogue and a two-label employee one off the lib', () => {
+    expect(new Set(CUSTOMER_AUDIT_ACTIONS).size).toBe(21);
     expect(new Set(EMPLOYEE_AUDIT_ACTIONS).size).toBe(2);
   });
 

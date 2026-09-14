@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
@@ -15,6 +16,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
+/// <summary>
+/// Sign-in-or-register. The marker records the sign-in of an existing account as a session act; the
+/// provisioning branch declines the row, because a registration's proof is the two consent rows it
+/// writes and a login row would say a session was opened by an account that did not exist a moment
+/// ago. A refusal on either branch is recorded — a bad token or a sign-in with no account is exactly
+/// the login history the row exists for.
+/// </summary>
+[AuditAction("customer.session.login", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class GoogleAuth
 {
     public class Validator : BaseAuthValidator<Command>
@@ -63,7 +72,8 @@ public class GoogleAuth
         IUserRepository userRepository,
         IHostAudienceProvider hostAudience,
         IConsentService consentService,
-        ILegalDocumentResolver legalDocumentResolver)
+        ILegalDocumentResolver legalDocumentResolver,
+        IAuditContext auditContext)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
@@ -121,7 +131,15 @@ public class GoogleAuth
                 // holds for every caller. The write rides the UnitOfWork commit; the row is tracked.
                 user.LinkGoogleId(claims.Subject);
 
-                return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
+                var session = await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken);
+
+                auditContext.RecordEvidence(
+                    "User",
+                    user.Id,
+                    new LoginEvidence(LoginEvidence.GoogleMethod, RememberMe: true, hostAudience.Audience, session.IsEmailConfirmed),
+                    actorUserId: user.Id);
+
+                return BusinessResult.Success(session);
             }
 
             // Provision only when Google reports the email as verified — reject an unverifiable email
@@ -140,6 +158,8 @@ public class GoogleAuth
                     new Error(nameof(Command.TermsAccepted), BusinessErrorMessage.SocialAccountNotFound));
             }
 
+            auditContext.DeclineSuccessRow();
+
             // FirstName / LastName are kept from the command — the Google ID-token may not carry a name
             // claim, so the client-provided display name is the only available source for those two.
             var userEntity = User.CreateWithGoogle(claims.Email, command.FirstName, command.LastName, claims.Subject);
@@ -147,9 +167,8 @@ public class GoogleAuth
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
 
-            // Reached only with the tick asserted. These two rows are the registration proof: the
-            // command carries no audit marker because one would also record every social sign-in
-            // (ADR-0062 D3), so the consent rides the same flush as the account.
+            // Reached only with the tick asserted. These two rows are the registration proof (the
+            // session row is declined above), so the consent rides the same flush as the account.
             await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService,
                 await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.TermsOfService, command.CountryId, cancellationToken), cancellationToken);
             await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy,

@@ -851,9 +851,13 @@ describe('error-contract parity (customer app, EP-1/EP-2/DA-7)', () => {
         'country.not_serviced',
         'tenant.not_found',
       ]);
+      // The session acts (sign-in, e-mail confirmation, the password reset pair) name no market and
+      // are scoped so their refusal audit row is stamped with the default market's operator.
       const scoped = [
         'AuthController -> Auth/AppleAuth.cs -> OperatorTenantScopeBehavior',
+        'AuthController -> Auth/ConfirmUserEmail.cs -> OperatorTenantScopeBehavior',
         'AuthController -> Auth/GoogleAuth.cs -> OperatorTenantScopeBehavior',
+        'AuthController -> Auth/Login.cs -> OperatorTenantScopeBehavior',
         'AuthController -> Auth/Register.cs -> OperatorTenantScopeBehavior',
         'OrderController -> Orders/CreateOrder.cs -> OperatorTenantScopeBehavior',
         'OrderController -> Orders/QuoteOrder.cs -> OperatorTenantScopeBehavior',
@@ -861,6 +865,8 @@ describe('error-contract parity (customer app, EP-1/EP-2/DA-7)', () => {
         'PaymentController -> Orders/CreateOrder.cs -> OperatorTenantScopeBehavior',
         'PromoCodeController -> PromoCodes/RequestPromoCode.cs -> OperatorTenantScopeBehavior',
         'ReferralController -> Referrals/ValidateReferral.cs -> OperatorTenantScopeBehavior',
+        'UserController -> Users/ChangePassword.cs -> OperatorTenantScopeBehavior',
+        'UserController -> Users/RequestPasswordChange.cs -> OperatorTenantScopeBehavior',
       ];
       expect([...(surface.keys.get('tenant.not_found') ?? [])].sort()).toEqual(scoped);
       expect(

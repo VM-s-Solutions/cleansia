@@ -23,6 +23,8 @@ public sealed class AuditContext : IAuditContext
     private AuditSnapshot? _snapshot;
     private bool _failureRecorded;
 
+    public bool SuccessRowDeclined { get; private set; }
+
     public void RecordChange(string resourceType, string resourceId, object before, object after, string? reason = null)
     {
         _snapshot = new AuditSnapshot(
@@ -33,15 +35,20 @@ public sealed class AuditContext : IAuditContext
             reason);
     }
 
-    public void RecordEvidence(string resourceType, string? resourceId, object payload, string? actorUserId = null)
+    public void RecordEvidence(string resourceType, string? resourceId, object? payload, string? actorUserId = null)
     {
         _snapshot = new AuditSnapshot(
             resourceType,
             resourceId,
             BeforeJson: null,
-            JsonSerializer.Serialize(payload, JsonOptions),
+            payload is null ? null : JsonSerializer.Serialize(payload, JsonOptions),
             Reason: null,
             actorUserId);
+    }
+
+    public void DeclineSuccessRow()
+    {
+        SuccessRowDeclined = true;
     }
 
     public AuditSnapshot? DrainSnapshot()

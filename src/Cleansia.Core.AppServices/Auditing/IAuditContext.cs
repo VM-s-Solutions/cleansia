@@ -18,10 +18,23 @@ public interface IAuditContext
     /// the new one. When the session does carry one, the session wins. <paramref name="resourceId"/> is
     /// null for an act whose aggregate does not exist yet (a membership checkout session: the webhook
     /// provisions the row) — the evidence is still worth more than the request's own ids.
+    /// <paramref name="payload"/> is null for an act whose only evidence is that it happened, and to
+    /// whom (a completed password reset): the row still needs the subject and resource the anonymous
+    /// session cannot name.
     /// </summary>
-    void RecordEvidence(string resourceType, string? resourceId, object payload, string? actorUserId = null);
+    void RecordEvidence(string resourceType, string? resourceId, object? payload, string? actorUserId = null);
 
     AuditSnapshot? DrainSnapshot();
+
+    /// <summary>
+    /// A marked command whose handler took a branch the marker does not describe declines the success
+    /// row: a social sign-in that provisioned the account instead of opening a session is a
+    /// registration, whose proof is the consent rows it writes, not a <c>customer.session.login</c>. A
+    /// refusal on that branch is still recorded — the failure arms do not read this.
+    /// </summary>
+    void DeclineSuccessRow();
+
+    bool SuccessRowDeclined { get; }
 
     /// <summary>
     /// Per-request latch shared by the inner <c>AuditLogBehavior</c> and the outer

@@ -63,7 +63,8 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
     {
         var session = AdminSession();
         var audit = new AuditLogBehavior<AdminRefundOrderCommand, BusinessResult>(
-            session, new AuditContext(), writer, sink, new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
+            session, new HostAudienceProvider(JwtAudiences.Admin), new AuditContext(), writer, sink,
+            new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
             NullLogger<AuditLogBehavior<AdminRefundOrderCommand, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<AdminRefundOrderCommand, BusinessResult>(context);
 
@@ -90,13 +91,13 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
         var factory = new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin));
 
         var failureCapture = new AuditFailureCaptureBehavior<AdminRefundOrderCommand, BusinessResult>(
-            session, auditContext, sink, factory,
+            session, new HostAudienceProvider(JwtAudiences.Admin), auditContext, sink, factory,
             NullLogger<AuditFailureCaptureBehavior<AdminRefundOrderCommand, BusinessResult>>.Instance);
         var validation = new ValidationPipelineBehavior<AdminRefundOrderCommand, BusinessResult>(
             [validator], NullLogger<ValidationPipelineBehavior<AdminRefundOrderCommand, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<AdminRefundOrderCommand, BusinessResult>(context);
         var audit = new AuditLogBehavior<AdminRefundOrderCommand, BusinessResult>(
-            session, auditContext, writer, sink, factory,
+            session, new HostAudienceProvider(JwtAudiences.Admin), auditContext, writer, sink, factory,
             NullLogger<AuditLogBehavior<AdminRefundOrderCommand, BusinessResult>>.Instance);
 
         var command = new AdminRefundOrderCommand("ORD-1");

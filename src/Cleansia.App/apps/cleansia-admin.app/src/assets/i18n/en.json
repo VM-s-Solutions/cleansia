@@ -882,7 +882,8 @@
             "create": "Dispute filed"
           },
           "account": {
-            "register": "Account registered"
+            "register": "Account registered",
+            "email_confirmed": "Email address confirmed"
           },
           "consent": {
             "grant": "Consent granted",
@@ -904,6 +905,14 @@
           },
           "gdpr": {
             "export": "Data exported"
+          },
+          "session": {
+            "login": "Signed in",
+            "logout": "Signed out"
+          },
+          "password": {
+            "reset_requested": "Password reset requested",
+            "reset_completed": "Password reset completed"
           }
         },
         "employee": {

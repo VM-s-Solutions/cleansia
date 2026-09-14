@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -31,6 +32,7 @@ namespace Cleansia.Core.AppServices.Behaviors;
 /// </summary>
 public class AuditFailureCaptureBehavior<TRequest, TResponse>(
     IUserSessionProvider userSessionProvider,
+    IHostAudienceProvider hostAudienceProvider,
     IAuditContext auditContext,
     IAuditFailureSink auditFailureSink,
     AuditEntryFactory auditEntryFactory,
@@ -42,7 +44,7 @@ public class AuditFailureCaptureBehavior<TRequest, TResponse>(
     {
         var descriptor = AuditActionDescriptor.For(request.GetType());
 
-        var audience = AuditGate.Resolve(request, descriptor, userSessionProvider);
+        var audience = AuditGate.Resolve(request, descriptor, userSessionProvider, hostAudienceProvider);
         if (audience is null)
         {
             return await next(cancellationToken);

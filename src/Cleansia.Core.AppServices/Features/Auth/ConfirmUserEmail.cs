@@ -1,8 +1,10 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -12,6 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
+[AuditAction("customer.account.email_confirmed", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class ConfirmUserEmail
 {
     // Two disjoint wire shapes (see SecurityTokens): the typed OTP is exactly 6 digits; the legacy
@@ -112,18 +115,37 @@ public class ConfirmUserEmail
     /// <param name="Email">The account the code was issued to. REQUIRED with a 6-digit code (the code
     /// only proves possession relative to a named account); ignored on the legacy-token branch, which
     /// keeps the old code-only wire shape so existing clients and in-flight emails stay valid.</param>
-    public record Command(string Code, string? Email = null) : ICommand<JwtTokenResponse>;
+    public record Command(string Code, string? Email = null) : ICommand<JwtTokenResponse>, IOperatorScopedRequest
+    {
+        // The confirmation names no market, so its refusal row is stamped with the default market's
+        // operator — the same answer a registration that names none gets. Off the wire.
+        string? IOperatorScopedRequest.CountryId => null;
+    }
+
+    /// <summary>Which wire shape confirmed the address: the typed code, or a link minted before the OTP switch.</summary>
+    public record EmailConfirmationEvidence(string Method) : ICustomerAuditPayload
+    {
+        public const string OtpMethod = "Otp";
+        public const string LegacyLinkMethod = "LegacyLink";
+    }
 
     public class Handler(
         ITokenService tokenService,
         IUserRepository userRepository,
-        IHostAudienceProvider hostAudience) : ICommandHandler<Command, JwtTokenResponse>
+        IHostAudienceProvider hostAudience,
+        IAuditContext auditContext) : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             // Same resolution the validator proved — a diverging load here would NRE into a 500.
             var user = await Resolve(userRepository, command, cancellationToken);
             user!.ConfirmEmail();
+
+            auditContext.RecordEvidence(
+                "User",
+                user.Id,
+                new EmailConfirmationEvidence(IsOtp(command.Code) ? EmailConfirmationEvidence.OtpMethod : EmailConfirmationEvidence.LegacyLinkMethod),
+                actorUserId: user.Id);
 
             return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
         }

@@ -1,9 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging;
@@ -16,6 +18,7 @@ namespace Cleansia.Core.AppServices.Features.Auth;
 /// trusted-device lockout-bypass marker is carried in the request body instead. The web
 /// <see cref="Login"/> command keeps that field off the wire.
 /// </summary>
+[AuditAction("customer.session.login", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class MobileLogin
 {
     public class Validator : LoginValidator<Command>
@@ -35,13 +38,20 @@ public class MobileLogin
         string Password,
         bool RememberMe,
         string? TrustedDeviceToken = null)
-        : ICommand<JwtTokenResponse>;
+        : ICommand<JwtTokenResponse>, IOperatorScopedRequest
+    {
+        // A sign-in names no market, so its refusal row is stamped with the default market's operator —
+        // the same answer a registration that names none gets. Off the wire: the login screen has no
+        // market to send.
+        string? IOperatorScopedRequest.CountryId => null;
+    }
 
     internal class Handler(
         ITokenService tokenService,
         IUserRepository userRepository,
         IHostAudienceProvider hostAudience,
         IRequestMetadataProvider requestMetadata,
+        IAuditContext auditContext,
         ILogger<Handler> logger)
         : ICommandHandler<Command, JwtTokenResponse>
     {
@@ -73,7 +83,15 @@ public class MobileLogin
             // opening the app. The refresh expiry slides on every rotation, so the session survives as
             // long as the app refreshes within the window. Parity with the social (Apple/Google) paths,
             // which already force the long lifetime.
-            return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
+            var response = await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken);
+
+            auditContext.RecordEvidence(
+                "User",
+                user.Id,
+                new LoginEvidence(LoginEvidence.PasswordMethod, RememberMe: true, hostAudience.Audience, response.IsEmailConfirmed),
+                actorUserId: user.Id);
+
+            return BusinessResult.Success(response);
         }
     }
 }

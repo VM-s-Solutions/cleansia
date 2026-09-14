@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -16,8 +17,10 @@ namespace Cleansia.Core.AppServices.Behaviors;
 ///
 /// <para>Gate: <see cref="AuditGate"/> answers WHICH table, or none. The admin arm (D3) takes every
 /// admin Command; the customer arm (ADR-0062 D1) takes a Command whose marker opted it in, from a
-/// Customer or — where the marker allows it — an anonymous caller. Queries, employee mutations and
-/// unmarked customer commands produce no row.</para>
+/// Customer or — where the marker allows it and the host is a customer host — an anonymous caller.
+/// Queries, employee mutations and unmarked customer commands produce no row. A handler that took a
+/// branch its marker does not describe declines the success row through <see cref="IAuditContext"/>;
+/// its refusals are still recorded.</para>
 ///
 /// <para>Failures (D2.1/D2.2): a business-failure the handler returns, or a thrown exception, means the
 /// action transaction never commits, so the row is written OUT-OF-BAND via <see cref="IAuditFailureSink"/>
@@ -31,6 +34,7 @@ namespace Cleansia.Core.AppServices.Behaviors;
 /// </summary>
 public class AuditLogBehavior<TRequest, TResponse>(
     IUserSessionProvider userSessionProvider,
+    IHostAudienceProvider hostAudienceProvider,
     IAuditContext auditContext,
     IAuditWriter auditWriter,
     IAuditFailureSink auditFailureSink,
@@ -43,7 +47,7 @@ public class AuditLogBehavior<TRequest, TResponse>(
     {
         var descriptor = AuditActionDescriptor.For(request.GetType());
 
-        var audience = AuditGate.Resolve(request, descriptor, userSessionProvider);
+        var audience = AuditGate.Resolve(request, descriptor, userSessionProvider, hostAudienceProvider);
         if (audience is null)
         {
             return await next(cancellationToken);
@@ -64,6 +68,11 @@ public class AuditLogBehavior<TRequest, TResponse>(
         {
             if (result.IsSuccess)
             {
+                if (auditContext.SuccessRowDeclined)
+                {
+                    return response;
+                }
+
                 var snapshot = auditContext.DrainSnapshot();
                 if (audience == AuditAudience.Admin)
                 {

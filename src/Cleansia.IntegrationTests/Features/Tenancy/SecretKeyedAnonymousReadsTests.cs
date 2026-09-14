@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -23,7 +24,9 @@ namespace Cleansia.IntegrationTests.Features.Tenancy;
 /// anonymous read keyed on a server-issued secret reaches a stamped row without knowing which company
 /// stamped it. TC-TEN-LOOKUP — a guest order is found by (number, email, code) from a request with no
 /// market, and not with a wrong email. TC-TEN-CONFIRM — a legacy 128-bit confirmation link confirms a
-/// stamped account and the JWT it returns carries that account's company.
+/// stamped account and the JWT it returns carries that account's company; the confirmation writes an
+/// audit row on refusal, so it is market-scoped (default market) and the seed carries that market —
+/// the account's own company still wins on the token (override replaces override).
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class SecretKeyedAnonymousReadsTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -95,6 +98,16 @@ public sealed class SecretKeyedAnonymousReadsTests(PostgresContainerFixture fixt
             arrange: async context =>
             {
                 context.Languages.Add(Language.Create("en", "English"));
+                var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+                czk.Id = CurrencyId;
+                czk.IsActive = true;
+                czk.SetAsDefault(true);
+                context.Currencies.Add(czk);
+                var czechia = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
+                czechia.Id = CountryId;
+                context.Countries.Add(czechia);
+                context.CountryConfigurations.Add(
+                    CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default).SetAsDefaultMarket(true));
                 var user = User.CreateWithPassword("legacy-link@cleansia.test", TestUtilities.Constants.TestUserSession.TestUserPassword, "Leg", "Acy");
                 user.TenantId = TestTenants.Second;
                 context.Users.Add(user);

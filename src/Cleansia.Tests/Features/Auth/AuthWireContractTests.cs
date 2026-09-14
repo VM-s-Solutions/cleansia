@@ -27,6 +27,22 @@ public class AuthWireContractTests
         Assert.DoesNotContain("trustedDeviceToken", json, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// The session acts are market-scoped for the audit row's tenant (explicit interface implementation,
+    /// always the default market); the seam stays off the wire so the generated clients do not change.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(Login.Command))]
+    [InlineData(typeof(MobileLogin.Command))]
+    [InlineData(typeof(ConfirmUserEmail.Command))]
+    [InlineData(typeof(Cleansia.Core.AppServices.Features.Users.RequestPasswordChange.Command))]
+    [InlineData(typeof(Cleansia.Core.AppServices.Features.Users.ChangePassword.Command))]
+    public void The_Session_Acts_Market_Seam_Is_Not_On_The_Wire(Type command)
+    {
+        Assert.True(typeof(Cleansia.Core.AppServices.Tenancy.IOperatorScopedRequest).IsAssignableFrom(command));
+        Assert.DoesNotContain(command.GetProperties(), p => p.Name == "CountryId");
+    }
+
     [Fact]
     public void WebLogin_TrustedDeviceToken_Cannot_Be_Set_From_The_Body()
     {

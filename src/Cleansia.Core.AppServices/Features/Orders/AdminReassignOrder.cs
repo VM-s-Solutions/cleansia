@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Orders;
@@ -12,6 +13,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
+// The command carries three ids, so without a named resource the resolver records none of them.
+[AuditAction("order.reassign", ResourceType = "Order")]
 public class AdminReassignOrder
 {
     public record Command(

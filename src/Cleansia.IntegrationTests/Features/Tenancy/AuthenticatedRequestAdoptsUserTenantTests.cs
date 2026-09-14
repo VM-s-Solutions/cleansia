@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -17,6 +18,8 @@ namespace Cleansia.IntegrationTests.Features.Tenancy;
 /// ADR-0061 D4 over real Postgres: login and refresh are anonymous, and every RefreshToken row they add
 /// is NOT NULL on TenantId — the request adopts the user's own operating company before the row is
 /// added, and the JWT it mints says the same. One host is enough: all five call the same TokenService.
+/// The login names no market, so the D3 scope resolves the DEFAULT market's operator first and the
+/// user's own company replaces it (override replaces override) — the seed carries that market.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class AuthenticatedRequestAdoptsUserTenantTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -70,11 +73,24 @@ public sealed class AuthenticatedRequestAdoptsUserTenantTests(PostgresContainerF
     private static async Task SeedSlovakUserAsync(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
+        SeedDefaultMarket(context);
         var user = User.CreateWithPassword(Email, TestUtilities.Constants.TestUserSession.TestUserPassword, "Slo", "Vak");
         user.ConfirmEmail();
         user.TenantId = TestTenants.Second;
         context.Users.Add(user);
         await context.CommitAsync(CancellationToken.None);
+    }
+
+    private static void SeedDefaultMarket(CleansiaDbContext context)
+    {
+        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        czk.IsActive = true;
+        czk.SetAsDefault(true);
+        context.Currencies.Add(czk);
+        var czechia = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
+        context.Countries.Add(czechia);
+        context.CountryConfigurations.Add(
+            CountryConfiguration.Create(czechia.Id, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default).SetAsDefaultMarket(true));
     }
 
     private static Task Anonymous(IServiceCollection services)

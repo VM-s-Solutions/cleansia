@@ -882,7 +882,8 @@
             "create": "Reklamace podána"
           },
           "account": {
-            "register": "Účet zaregistrován"
+            "register": "Účet zaregistrován",
+            "email_confirmed": "E-mailová adresa potvrzena"
           },
           "consent": {
             "grant": "Souhlas udělen",
@@ -904,6 +905,14 @@
           },
           "gdpr": {
             "export": "Data exportována"
+          },
+          "session": {
+            "login": "Přihlášení",
+            "logout": "Odhlášení"
+          },
+          "password": {
+            "reset_requested": "Obnovení hesla vyžádáno",
+            "reset_completed": "Obnovení hesla dokončeno"
           }
         },
         "employee": {

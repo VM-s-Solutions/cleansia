@@ -233,9 +233,20 @@ when the id is not `{ResourceType}Id` on the command); `AuditGate.Resolve` route
 same command. The handler emits ONE typed evidence record, nested beside the feature and implementing
 `ICustomerAuditPayload`, through `IAuditContext.RecordEvidence(...)` — server-side figures at the moment
 of the act, never a client-asserted money figure, never a name / contact / address / free text (the
-PII guard walks every record). Failure rows carry the error KEY via `AuditErrorCode.Resolve` on both
-tables. The roster test pins the marker set; a new marker needs its row there, its label in the five
-admin locales (`customer-audit-actions.ts`) and a rate-limit window on the customer-host action.
+PII guard walks every record); the payload is null when the only evidence is that the act happened and
+to whom (a completed password reset), and the `actorUserId` argument names the subject where the
+session cannot (the session acts run anonymously). Failure rows carry the error KEY via
+`AuditErrorCode.Resolve` on both tables. The roster test pins the marker set; a new marker needs its
+row there, its label in the five admin locales (`customer-audit-actions.ts`) and a rate-limit window on
+the customer-host action. Three facts about the anonymous arm (T-0744): the gate writes an anonymous
+act to the customer table **only on a customer host** (`IHostAudienceProvider.Audience ==
+JwtAudiences.Customer`) — a command routed on the partner hosts too (`Register`, `ConfirmUserEmail`,
+the password-reset pair) lands nowhere there; an anonymous marked command that names no market
+implements `IOperatorScopedRequest` with an **explicit** `CountryId => null` (off the wire, default
+market) so its out-of-band refusal row has a tenant to be stamped with; and a handler whose marked
+command took a branch the marker does not describe calls `IAuditContext.DeclineSuccessRow()` (the social
+sign-ins on their provisioning branch — a registration's proof is the consent rows) — its refusals are
+still recorded.
 
 ## Entities (from `Core.Domain/Common/`)
 

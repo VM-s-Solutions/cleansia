@@ -20,6 +20,11 @@ export const CUSTOMER_AUDIT_ACTIONS = [
   'customer.recurring.update',
   'customer.recurring.set_active',
   'customer.recurring.delete',
+  'customer.session.login',
+  'customer.session.logout',
+  'customer.password.reset_requested',
+  'customer.password.reset_completed',
+  'customer.account.email_confirmed',
 ] as const;
 
 // GetActionTimeline.EmployeeActionLabel — the two dotted labels the timeline gives employee rows.

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
@@ -88,7 +89,7 @@ public class ConfirmUserEmailSecurityTests
             .Setup(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User u, bool _, string _, CancellationToken _) =>
                 new JwtTokenResponse(Token: $"jwt-for-{u.Email}", IsEmailConfirmed: true));
-        return new ConfirmUserEmail.Handler(tokenService.Object, repo, new HostAudienceProvider(HostAudience));
+        return new ConfirmUserEmail.Handler(tokenService.Object, repo, new HostAudienceProvider(HostAudience), new AuditContext());
     }
 
     // A token valid for user B does not confirm/log in user A. A submits B's raw token? That

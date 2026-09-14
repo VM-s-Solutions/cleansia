@@ -246,7 +246,8 @@ public sealed class EmployeeUserAuditCoverageTests
             "partner-1", "partner@cleansia.test",
             [new Claim(ClaimTypes.Role, UserProfile.Employee.ToString())]);
         var behavior = new AuditLogBehavior<RejectEmployee.Command, BusinessResult>(
-            session, new AuditContext(), writer.Object, sink.Object, new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
+            session, new HostAudienceProvider(JwtAudiences.Admin), new AuditContext(), writer.Object, sink.Object,
+            new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
             NullLogger<AuditLogBehavior<RejectEmployee.Command, BusinessResult>>.Instance);
 
         await behavior.Handle(

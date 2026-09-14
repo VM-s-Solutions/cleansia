@@ -101,7 +101,9 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
             logger ?? NullLogger<OutOfBandAuditFailureSink>.Instance);
 
     private static AuditEntryFactory Factory(Run run) =>
-        new(run.Session, new TestRequestMetadataProvider(Ip, DeviceLabel, DeviceId), new HostAudienceProvider(run.Audience));
+        new(run.Session, new TestRequestMetadataProvider(Ip, DeviceLabel, DeviceId), Host(run));
+
+    private static IHostAudienceProvider Host(Run run) => new HostAudienceProvider(run.Audience);
 
     // UnitOfWork (outer, the single commit) → AuditLog (inner) → handler: the success placement.
     private async Task<BusinessResult> RunInnerPipelineAsync<TRequest>(
@@ -113,7 +115,7 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
         where TRequest : IRequest<BusinessResult>
     {
         var audit = new AuditLogBehavior<TRequest, BusinessResult>(
-            run.Session, run.AuditContext, writer, Sink(), Factory(run),
+            run.Session, Host(run), run.AuditContext, writer, Sink(), Factory(run),
             NullLogger<AuditLogBehavior<TRequest, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<TRequest, BusinessResult>(context);
 
@@ -134,13 +136,13 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
         var factory = Factory(run);
 
         var failureCapture = new AuditFailureCaptureBehavior<TRequest, TResponse>(
-            run.Session, run.AuditContext, sink, factory,
+            run.Session, Host(run), run.AuditContext, sink, factory,
             NullLogger<AuditFailureCaptureBehavior<TRequest, TResponse>>.Instance);
         var validation = new ValidationPipelineBehavior<TRequest, TResponse>(
             [validator], NullLogger<ValidationPipelineBehavior<TRequest, TResponse>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<TRequest, TResponse>(context);
         var audit = new AuditLogBehavior<TRequest, TResponse>(
-            run.Session, run.AuditContext, writer, sink, factory,
+            run.Session, Host(run), run.AuditContext, writer, sink, factory,
             NullLogger<AuditLogBehavior<TRequest, TResponse>>.Instance);
 
         return await failureCapture.Handle(command,
@@ -170,14 +172,14 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
         var writer = new DbContextAuditWriter(context, tenantProvider);
 
         var failureCapture = new AuditFailureCaptureBehavior<TRequest, BusinessResult>(
-            run.Session, run.AuditContext, sink, factory,
+            run.Session, Host(run), run.AuditContext, sink, factory,
             new CapturingLogger<AuditFailureCaptureBehavior<TRequest, BusinessResult>>(behaviorEntries));
         var operatorScope = new OperatorTenantScopeBehavior<TRequest, BusinessResult>(tenantProvider, new FixedOperatorResolver(resolution));
         var validation = new ValidationPipelineBehavior<TRequest, BusinessResult>(
             [validator], NullLogger<ValidationPipelineBehavior<TRequest, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<TRequest, BusinessResult>(context);
         var audit = new AuditLogBehavior<TRequest, BusinessResult>(
-            run.Session, run.AuditContext, writer, sink, factory,
+            run.Session, Host(run), run.AuditContext, writer, sink, factory,
             new CapturingLogger<AuditLogBehavior<TRequest, BusinessResult>>(behaviorEntries));
 
         return await failureCapture.Handle(command,

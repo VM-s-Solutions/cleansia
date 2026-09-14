@@ -6,8 +6,8 @@ import {
 } from './customer-audit-actions';
 
 describe('customer audit action catalogue', () => {
-  it('carries the sixteen customer labels and the two employee labels, each once', () => {
-    expect(new Set(CUSTOMER_AUDIT_ACTIONS).size).toBe(16);
+  it('carries the twenty-one customer labels and the two employee labels, each once', () => {
+    expect(new Set(CUSTOMER_AUDIT_ACTIONS).size).toBe(21);
     expect(new Set(EMPLOYEE_AUDIT_ACTIONS).size).toBe(2);
     for (const action of [...CUSTOMER_AUDIT_ACTIONS, ...EMPLOYEE_AUDIT_ACTIONS]) {
       expect(action).toMatch(/^(customer|employee)\.[a-z_]+(\.[a-z_]+)+$/);

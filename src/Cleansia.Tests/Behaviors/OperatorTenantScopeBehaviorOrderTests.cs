@@ -135,11 +135,13 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
     }
 
     /// <summary>
-    /// The seven requests of ADR-0061 D3 carry the marker, and nothing else does: a grep is the roster,
-    /// and this is the grep.
+    /// The nine requests of ADR-0061 D3 carry the marker, plus the five session acts that name no
+    /// market and write a tenanted audit row on refusal (ADR-0062, Q-AUD-L5 overruled: the sign-ins,
+    /// the e-mail confirmation and the password reset pair — default market, the account's own company
+    /// replacing it on the token, D4). Nothing else does: a grep is the roster, and this is the grep.
     /// </summary>
     [Fact]
-    public void Exactly_The_Seven_D3_Requests_Carry_The_Marker()
+    public void Exactly_The_D3_Requests_And_The_Session_Acts_Carry_The_Marker()
     {
         var marked = typeof(IOperatorScopedRequest).Assembly.GetTypes()
             .Where(t => typeof(IOperatorScopedRequest).IsAssignableFrom(t) && !t.IsInterface)
@@ -150,7 +152,10 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
         Assert.Equal(
         [
             "Cleansia.Core.AppServices.Features.Auth.AppleAuth+Command",
+            "Cleansia.Core.AppServices.Features.Auth.ConfirmUserEmail+Command",
             "Cleansia.Core.AppServices.Features.Auth.GoogleAuth+Command",
+            "Cleansia.Core.AppServices.Features.Auth.Login+Command",
+            "Cleansia.Core.AppServices.Features.Auth.MobileLogin+Command",
             "Cleansia.Core.AppServices.Features.Auth.Register+Command",
             "Cleansia.Core.AppServices.Features.Auth.RegisterEmployee+Command",
             "Cleansia.Core.AppServices.Features.Orders.CreateOrder+Command",
@@ -158,6 +163,8 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
             "Cleansia.Core.AppServices.Features.Orders.QuotePlusSavings+Query",
             "Cleansia.Core.AppServices.Features.PromoCodes.RequestPromoCode+Command",
             "Cleansia.Core.AppServices.Features.Referrals.ValidateReferral+Query",
+            "Cleansia.Core.AppServices.Features.Users.ChangePassword+Command",
+            "Cleansia.Core.AppServices.Features.Users.RequestPasswordChange+Command",
         ], marked);
     }
 }

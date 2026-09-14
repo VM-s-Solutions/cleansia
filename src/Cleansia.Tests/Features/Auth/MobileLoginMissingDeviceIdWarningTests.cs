@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -62,13 +63,19 @@ public class MobileLoginMissingDeviceIdWarningTests
         var loggerType = typeof(CapturingLogger<>).MakeGenericType(handlerType);
         var logger = Activator.CreateInstance(loggerType, entries)!;
 
-        var handler = Activator.CreateInstance(
-            handlerType,
-            tokens.Object,
-            users.Object,
-            new HostAudienceProvider(Audience),
-            Metadata(deviceId).Object,
-            logger)!;
+        // The customer mobile login records a session row and so takes the audit context; the partner one
+        // does not. The constructor is filled by parameter type so one helper serves both.
+        var dependencies = new Dictionary<Type, object>
+        {
+            [typeof(ITokenService)] = tokens.Object,
+            [typeof(IUserRepository)] = users.Object,
+            [typeof(IHostAudienceProvider)] = new HostAudienceProvider(Audience),
+            [typeof(IRequestMetadataProvider)] = Metadata(deviceId).Object,
+            [typeof(IAuditContext)] = new AuditContext(),
+            [typeof(ILogger<>).MakeGenericType(handlerType)] = logger,
+        };
+        var constructor = handlerType.GetConstructors().Single();
+        var handler = constructor.Invoke(constructor.GetParameters().Select(p => dependencies[p.ParameterType]).ToArray());
 
         var command = Activator.CreateInstance(
             featureType.GetNestedType("Command")!,

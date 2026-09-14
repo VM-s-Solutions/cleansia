@@ -112,7 +112,7 @@ public class RegistrationEmailDispatchTests
         user.UpdateLanguagePreference("uk");
         _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
-        var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending);
+        var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending, new AuditContext());
 
         var result = await handler.Handle(new RequestPasswordChange.Command(Email, Language), CancellationToken.None);
 
@@ -129,7 +129,7 @@ public class RegistrationEmailDispatchTests
         user.UpdateLanguagePreference(null);
         _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
-        var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending);
+        var handler = new RequestPasswordChange.Handler(_userRepository.Object, _pending, new AuditContext());
 
         await handler.Handle(new RequestPasswordChange.Command(Email, Language), CancellationToken.None);
 

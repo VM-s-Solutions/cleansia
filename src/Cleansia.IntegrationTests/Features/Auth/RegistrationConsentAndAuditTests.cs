@@ -25,8 +25,9 @@ namespace Cleansia.IntegrationTests.Features.Auth;
 /// registration that asserts the tick leaves two versioned consent rows with the request's IP and
 /// device, and one <c>customer.account.register</c> row keyed on the new user; one that asserts nothing
 /// leaves no consent row, records "not asserted", and is not refused. A social registration leaves the
-/// versioned consent rows and NO audit row — the command is sign-in-or-register and carries no marker —
-/// and a social sign-in of an existing account leaves nothing at all.
+/// versioned consent rows and NO audit row — the command is marked as the sign-in and its handler
+/// declines the row on the provisioning branch — and a social sign-in of an existing account leaves one
+/// <c>customer.session.login</c> row naming the provider, and no consent.
 /// </summary>
 [Collection("PostgresCollection")]
 public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -155,7 +156,7 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
     }
 
     [Fact]
-    public async Task A_Google_SignIn_Of_An_Existing_Account_Writes_No_Audit_Row_And_No_Consent()
+    public async Task A_Google_SignIn_Of_An_Existing_Account_Writes_One_Session_Row_Naming_The_Provider_And_No_Consent()
     {
         await TestMethod(
             setup: async services =>
@@ -178,7 +179,15 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
 
                 var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.GoogleId == "google-existing");
                 Assert.Empty(await ConsentsOf(context, user.Id));
-                Assert.Empty(await CustomerRows(context));
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.session.login", row.Action);
+                Assert.True(row.Success);
+                Assert.Equal(user.Id, row.UserId);
+                Assert.Equal(user.Id, row.ResourceId);
+                Assert.Equal(Ip, row.IpAddress);
+                Assert.Equal(LoginEvidence.GoogleMethod, JsonDocument.Parse(row.PayloadJson!).RootElement.GetProperty("method").GetString());
+                Assert.DoesNotContain(Constants.TestUserSession.TestUserEmail, row.PayloadJson);
             },
             transactional: false);
     }

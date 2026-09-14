@@ -55,12 +55,14 @@ public sealed class AuditFailureCaptureBehaviorTests
 
     private AuditFailureCaptureBehavior<TRequest, BusinessResult> Behavior<TRequest>(
         IUserSessionProvider session,
-        IAuditContext? auditContext = null)
+        IAuditContext? auditContext = null,
+        string host = JwtAudiences.Admin)
         where TRequest : notnull =>
         new(session,
+            new HostAudienceProvider(host),
             auditContext ?? new AuditContext(),
             _sink.Object,
-            new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
+            new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(host)),
             NullLogger<AuditFailureCaptureBehavior<TRequest, BusinessResult>>.Instance);
 
     private AuditFailureCaptureBehavior<TRequest, PagedData<string>> PagedBehavior<TRequest>(
@@ -68,6 +70,7 @@ public sealed class AuditFailureCaptureBehaviorTests
         IAuditContext? auditContext = null)
         where TRequest : notnull =>
         new(session,
+            new HostAudienceProvider(JwtAudiences.Admin),
             auditContext ?? new AuditContext(),
             _sink.Object,
             new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
@@ -233,14 +236,31 @@ public sealed class AuditFailureCaptureBehaviorTests
         var anonymous = new TestUserSessionProvider([]);
         var rejected = ValidationResult.WithErrors([new Error("TotalPrice", BusinessErrorMessage.TotalPriceNotMatch)]);
 
-        await Behavior<CustomerCreateOrderCommand>(anonymous)
+        await Behavior<CustomerCreateOrderCommand>(anonymous, host: JwtAudiences.Customer)
             .Handle(new CustomerCreateOrderCommand("ORD-1"), Returns(rejected), CancellationToken.None);
-        _sink.Verify(s => s.RecordFailureAsync(It.Is<CustomerActionAudit>(a => a.UserId == null && a.ClientAudience == JwtAudiences.Admin),
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<CustomerActionAudit>(a => a.UserId == null && a.ClientAudience == JwtAudiences.Customer),
             It.IsAny<CancellationToken>()), Times.Once);
 
-        await Behavior<AdminRefundOrderCommand>(anonymous)
+        await Behavior<AdminRefundOrderCommand>(anonymous, host: JwtAudiences.Customer)
             .Handle(new AdminRefundOrderCommand("ORD-1"), Returns(rejected), CancellationToken.None);
         _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Once);
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>The known case: the partner host routes the anonymous registration; a refusal there is nobody's row.</summary>
+    [Theory]
+    [InlineData(JwtAudiences.Partner)]
+    [InlineData(JwtAudiences.Mobile)]
+    [InlineData(JwtAudiences.Admin)]
+    public async Task An_Anonymous_Validation_Reject_Off_The_Customer_Hosts_Is_Not_Recorded(string host)
+    {
+        var anonymous = new TestUserSessionProvider([]);
+        var rejected = ValidationResult.WithErrors([new Error("TotalPrice", BusinessErrorMessage.TotalPriceNotMatch)]);
+
+        await Behavior<CustomerCreateOrderCommand>(anonymous, host: host)
+            .Handle(new CustomerCreateOrderCommand("ORD-1"), Returns(rejected), CancellationToken.None);
+
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
         _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 

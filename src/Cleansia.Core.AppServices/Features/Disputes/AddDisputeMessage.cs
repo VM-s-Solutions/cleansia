@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -10,6 +11,9 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Disputes;
 
+// Admin audience: only the admin arm records it, so a customer's or a cleaner's message stays unrecorded
+// (ADR-0062 D3 — the dispute row is its own durable record of author and time).
+[AuditAction("dispute.message.add", ResourceType = "Dispute")]
 public class AddDisputeMessage
 {
     public class Validator : AbstractValidator<Command>

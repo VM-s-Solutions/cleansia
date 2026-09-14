@@ -882,7 +882,8 @@
             "create": "Reklamácia podaná"
           },
           "account": {
-            "register": "Účet zaregistrovaný"
+            "register": "Účet zaregistrovaný",
+            "email_confirmed": "E-mailová adresa potvrdená"
           },
           "consent": {
             "grant": "Súhlas udelený",
@@ -904,6 +905,14 @@
           },
           "gdpr": {
             "export": "Údaje exportované"
+          },
+          "session": {
+            "login": "Prihlásenie",
+            "logout": "Odhlásenie"
+          },
+          "password": {
+            "reset_requested": "Obnovenie hesla vyžiadané",
+            "reset_completed": "Obnovenie hesla dokončené"
           }
         },
         "employee": {

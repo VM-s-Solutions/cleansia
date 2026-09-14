@@ -73,15 +73,20 @@ public sealed class RegisterConsentAndEvidenceTests
         Assert.True(descriptor.AllowsAnonymousActor);
     }
 
+    /// <summary>
+    /// The social commands are marked as the SIGN-IN, never as a registration: a social registration's
+    /// proof stays the two consent rows the provisioning branch writes (the handler declines the session
+    /// row on that branch).
+    /// </summary>
     [Theory]
     [InlineData(typeof(GoogleAuth.Command))]
     [InlineData(typeof(AppleAuth.Command))]
-    public void The_Social_SignIn_Or_Register_Commands_Carry_No_Marker(Type commandType)
+    public void The_Social_SignIn_Or_Register_Commands_Are_Marked_As_A_SignIn_Not_A_Registration(Type commandType)
     {
         var descriptor = AuditActionDescriptor.For(commandType);
 
-        Assert.Equal(AuditAudience.Admin, descriptor.Audience);
-        Assert.False(descriptor.AllowsAnonymousActor);
+        Assert.Equal("customer.session.login", descriptor.Action);
+        Assert.NotEqual("customer.account.register", descriptor.Action);
     }
 
     [Fact]

@@ -67,7 +67,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
 
         var handler = new AdminDeleteUserAccount.Handler(session, deletionService, auditContext);
         var audit = new AuditLogBehavior<AdminDeleteUserAccount.Command, BusinessResult>(
-            session, auditContext, writer, sink, factory,
+            session, new HostAudienceProvider(JwtAudiences.Admin), auditContext, writer, sink, factory,
             NullLogger<AuditLogBehavior<AdminDeleteUserAccount.Command, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<AdminDeleteUserAccount.Command, BusinessResult>(context);
 

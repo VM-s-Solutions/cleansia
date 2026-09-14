@@ -369,28 +369,44 @@ public class RateLimitCoverageGuardTests
     }
 
     /// <summary>
-    /// Anti-vacuity for the guard above: every marked command is reachable from BOTH customer hosts, so
-    /// a guard that found none would be a broken scan, not a clean surface.
+    /// Anti-vacuity for the guard above: every marked command is dispatched by some customer-host action
+    /// and every marked LABEL is reachable from BOTH customer hosts — the password sign-in is two commands
+    /// (the web one keeps the trusted-device marker off the wire, the mobile one carries it) sharing one
+    /// label, so the by-command check is per host family and the by-label check is per host. A guard that
+    /// found none would be a broken scan, not a clean surface.
     /// </summary>
     [Fact]
-    public void Every_Customer_Marked_Command_Is_Dispatched_By_An_Action_On_Both_Customer_Hosts()
+    public void Every_Customer_Marked_Command_Is_Dispatched_On_A_Customer_Host_And_Every_Label_On_Both()
     {
         Assert.NotEmpty(CustomerMarkedCommands);
 
+        var dispatchedAnywhere = CustomerHostControllers()
+            .SelectMany(ActionsOf)
+            .SelectMany(MarkedCommandsDispatchedBy)
+            .ToHashSet();
+        var unreachable = CustomerMarkedCommands.Except(dispatchedAnywhere).Select(t => t.FullName).OrderBy(x => x).ToList();
+        Assert.True(unreachable.Count == 0,
+            "no customer-host action dispatches these customer-marked commands (or the IL scan missed a "
+            + "construction site):\n  " + string.Join("\n  ", unreachable));
+
+        var labels = CustomerMarkedCommands.Select(LabelOf).ToHashSet();
         foreach (var host in new[] { typeof(Cleansia.Web.Customer.Controllers.OrderController).Assembly, typeof(Cleansia.Web.Mobile.Customer.Controllers.OrderController).Assembly })
         {
             var dispatched = CustomerHostControllers()
                 .Where(c => c.Assembly == host)
                 .SelectMany(ActionsOf)
                 .SelectMany(MarkedCommandsDispatchedBy)
+                .Select(LabelOf)
                 .ToHashSet();
 
-            var unreachable = CustomerMarkedCommands.Except(dispatched).Select(t => t.FullName).OrderBy(x => x).ToList();
-            Assert.True(unreachable.Count == 0,
-                $"{host.GetName().Name}: no action dispatches these customer-marked commands (or the IL scan missed a "
-                + "construction site):\n  " + string.Join("\n  ", unreachable));
+            var missing = labels.Except(dispatched).OrderBy(x => x).ToList();
+            Assert.True(missing.Count == 0,
+                $"{host.GetName().Name}: no action dispatches a command carrying these customer labels:\n  "
+                + string.Join("\n  ", missing));
         }
     }
+
+    private static string LabelOf(Type command) => AuditActionDescriptor.For(command).Action;
 
     // AC5 — webhooks keep their dedicated per-source-IP policy; a 429 from "auth"/"interactive"
     // would read to Stripe as a retry trigger.

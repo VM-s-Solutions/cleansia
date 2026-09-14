@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Features.Notifications;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Users;
 
 namespace Cleansia.Tests.Features.Auditing;
 
@@ -15,8 +16,10 @@ namespace Cleansia.Tests.Features.Auditing;
 /// entitlement act carries its frozen label, resource type and anonymous-actor flag, and NOTHING else
 /// carries the customer audience: a marker added, dropped or relabelled anywhere in
 /// <c>Cleansia.Core.AppServices</c> reddens this, the same discipline as the erasure roster. The
-/// self-export is on it by owner ruling (Q-AUD-O3): a whole-record egress is recorded whoever asks. The
-/// three absences are asserted by name because each is a decision, not an omission.
+/// self-export is on it by owner ruling (Q-AUD-O3): a whole-record egress is recorded whoever asks; the
+/// session acts are on it by owner ruling too (Q-AUD-L5 overruled): a sign-in, a sign-out, a password
+/// reset and an e-mail confirmation are a login history kept beyond the refresh-token window. The two
+/// absences are asserted by name because each is a decision, not an omission.
 /// </summary>
 public sealed class CustomerAuditActionRosterTests
 {
@@ -41,6 +44,14 @@ public sealed class CustomerAuditActionRosterTests
         [typeof(UpdateRecurringBooking.Command)] = new("customer.recurring.update", "RecurringBookingTemplate"),
         [typeof(SetRecurringBookingActive.Command)] = new("customer.recurring.set_active", "RecurringBookingTemplate"),
         [typeof(DeleteRecurringBooking.Command)] = new("customer.recurring.delete", "RecurringBookingTemplate"),
+        [typeof(Login.Command)] = new("customer.session.login", "User", AllowsAnonymousActor: true),
+        [typeof(MobileLogin.Command)] = new("customer.session.login", "User", AllowsAnonymousActor: true),
+        [typeof(GoogleAuth.Command)] = new("customer.session.login", "User", AllowsAnonymousActor: true),
+        [typeof(AppleAuth.Command)] = new("customer.session.login", "User", AllowsAnonymousActor: true),
+        [typeof(Logout.Command)] = new("customer.session.logout", "User"),
+        [typeof(RequestPasswordChange.Command)] = new("customer.password.reset_requested", "User", AllowsAnonymousActor: true),
+        [typeof(ChangePassword.Command)] = new("customer.password.reset_completed", "User", AllowsAnonymousActor: true),
+        [typeof(ConfirmUserEmail.Command)] = new("customer.account.email_confirmed", "User", AllowsAnonymousActor: true),
     };
 
     /// <summary>The marker sits on the outer feature class; the command the pipeline sees is its nested <c>Command</c>.</summary>
@@ -53,7 +64,7 @@ public sealed class CustomerAuditActionRosterTests
             .ToList();
 
     [Fact]
-    public void The_Customer_Roster_Is_Exactly_The_Seventeen_Commands_With_Their_Frozen_Labels()
+    public void The_Customer_Roster_Is_Exactly_The_TwentyFive_Commands_With_Their_Frozen_Labels()
     {
         var marked = MarkedInProduction();
 
@@ -91,36 +102,68 @@ public sealed class CustomerAuditActionRosterTests
     }
 
     [Fact]
-    public void Sixteen_Distinct_Labels_Because_Both_Subscribe_Surfaces_Share_One()
+    public void TwentyOne_Distinct_Labels_Because_Both_Subscribe_Surfaces_Share_One_And_Four_SignIns_Share_One()
     {
         var labels = MarkedInProduction().Select(x => x.Marker.Action).Distinct().ToList();
 
-        Assert.Equal(16, labels.Count);
+        Assert.Equal(21, labels.Count);
         Assert.All(labels, l => Assert.StartsWith("customer.", l));
     }
 
+    /// <summary>
+    /// An anonymous actor is recorded only where the act genuinely has no session yet: registration,
+    /// guest checkout, and the session acts that open or recover one. A signed-in act (a sign-out) is not
+    /// on the list, so a system job can never be recorded as a guest sign-out.
+    /// </summary>
     [Fact]
-    public void Only_Registration_And_Guest_Checkout_Record_An_Anonymous_Actor()
+    public void Only_The_Acts_With_No_Session_Yet_Record_An_Anonymous_Actor()
     {
         var anonymous = MarkedInProduction()
             .Where(x => x.Marker.AllowsAnonymousActor)
             .Select(x => x.Command)
             .ToHashSet();
 
-        Assert.Equal(new HashSet<Type> { typeof(Register.Command), typeof(CreateOrder.Command) }, anonymous);
+        Assert.Equal(
+            new HashSet<Type>
+            {
+                typeof(Register.Command), typeof(CreateOrder.Command),
+                typeof(Login.Command), typeof(MobileLogin.Command), typeof(GoogleAuth.Command), typeof(AppleAuth.Command),
+                typeof(RequestPasswordChange.Command), typeof(ChangePassword.Command), typeof(ConfirmUserEmail.Command),
+            },
+            anonymous);
     }
 
     /// <summary>
-    /// Sign-in-or-register commands: a marker would write a registration row on every social login and a
-    /// failure row with IP on every bad token — the login history the ADR declines (Q-AUD-L5).
+    /// The sign-in-or-register commands are marked as the SIGN-IN; the handler declines the row on the
+    /// provisioning branch (<c>IAuditContext.DeclineSuccessRow</c>), whose proof is the consent rows.
     /// </summary>
     [Theory]
     [InlineData(typeof(GoogleAuth))]
     [InlineData(typeof(AppleAuth))]
-    public void The_Social_SignIn_Or_Register_Commands_Are_Not_Marked(Type feature)
+    public void The_Social_SignIn_Or_Register_Commands_Are_Marked_As_The_SignIn(Type feature)
+    {
+        var descriptor = AuditActionDescriptor.For(feature.GetNestedType("Command")!);
+
+        Assert.Equal("customer.session.login", descriptor.Action);
+        Assert.Equal(AuditAudience.Customer, descriptor.Audience);
+        Assert.True(descriptor.AllowsAnonymousActor);
+    }
+
+    /// <summary>The token row is the record of a refresh; a row per refresh would be volume without a claim.</summary>
+    [Fact]
+    public void The_Token_Refresh_Is_Not_Marked()
+    {
+        Assert.Null(typeof(RefreshToken).GetCustomAttribute<AuditActionAttribute>(inherit: false));
+    }
+
+    /// <summary>The employee table is not for sessions: a cleaner's or an admin's own sign-in leaves no customer row.</summary>
+    [Theory]
+    [InlineData(typeof(PartnerLogin))]
+    [InlineData(typeof(MobilePartnerLogin))]
+    [InlineData(typeof(AdminLogin))]
+    public void The_Partner_And_Admin_SignIns_Are_Not_Marked(Type feature)
     {
         Assert.Null(feature.GetCustomAttribute<AuditActionAttribute>(inherit: false));
-        Assert.Equal(AuditAudience.Admin, AuditActionDescriptor.For(feature.GetNestedType("Command")!).Audience);
     }
 
     /// <summary>

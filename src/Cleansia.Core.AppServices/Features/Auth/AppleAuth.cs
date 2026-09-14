@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
@@ -16,6 +17,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
+/// <summary>
+/// Sign-in-or-register. The marker records the sign-in of an existing account as a session act; the
+/// provisioning branch declines the row, because a registration's proof is the two consent rows it
+/// writes and a login row would say a session was opened by an account that did not exist a moment
+/// ago. A refusal on either branch is recorded — a bad token or a sign-in with no account is exactly
+/// the login history the row exists for.
+/// </summary>
+[AuditAction("customer.session.login", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class AppleAuth
 {
     public class Validator : BaseAuthValidator<Command>
@@ -76,7 +85,8 @@ public class AppleAuth
         IHostAudienceProvider hostAudience,
         IConsentService consentService,
         ILegalDocumentResolver legalDocumentResolver,
-        ILogger<Handler> logger)
+        ILogger<Handler> logger,
+        IAuditContext auditContext)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         private const string AppleRelayEmailDomain = "privaterelay.appleid.com";
@@ -166,7 +176,15 @@ public class AppleAuth
                 var (derivedFirstName, derivedLastName) = DeriveNameFromEmail(user.Email);
                 user.ReplaceSystemGeneratedName(suppliedFirstName, suppliedLastName, derivedFirstName, derivedLastName);
 
-                return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
+                var session = await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken);
+
+                auditContext.RecordEvidence(
+                    "User",
+                    user.Id,
+                    new LoginEvidence(LoginEvidence.AppleMethod, RememberMe: true, hostAudience.Audience, session.IsEmailConfirmed),
+                    actorUserId: user.Id);
+
+                return BusinessResult.Success(session);
             }
 
             // Provision only when Apple reports a verified email — reject an unverifiable one rather than
@@ -190,6 +208,8 @@ public class AppleAuth
                     new Error(nameof(Command.TermsAccepted), BusinessErrorMessage.SocialAccountNotFound));
             }
 
+            auditContext.DeclineSuccessRow();
+
             // The display name comes from the command when Apple sent one — it only ever does on the FIRST
             // authorization, and may arrive partial — and otherwise from the verified email
             // (see ResolveDisplayName). Identity itself is always the verified claims.
@@ -199,9 +219,8 @@ public class AppleAuth
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
 
-            // Reached only with the tick asserted. These two rows are the registration proof: the
-            // command carries no audit marker because one would also record every social sign-in
-            // (ADR-0062 D3), so the consent rides the same flush as the account.
+            // Reached only with the tick asserted. These two rows are the registration proof (the
+            // session row is declined above), so the consent rides the same flush as the account.
             await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService,
                 await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.TermsOfService, command.CountryId, cancellationToken), cancellationToken);
             await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy,

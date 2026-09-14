@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -168,7 +169,7 @@ public class ChangePasswordSecurityTests
     {
         var handlerType = typeof(ChangePassword).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, repo, refreshTokenService ?? Mock.Of<IRefreshTokenService>())!;
+        var handler = Activator.CreateInstance(handlerType!, repo, refreshTokenService ?? Mock.Of<IRefreshTokenService>(), new AuditContext())!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult<ChangePassword.Response>>)handleMethod!.Invoke(

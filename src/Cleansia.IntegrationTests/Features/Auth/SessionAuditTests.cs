@@ -29,8 +29,12 @@ namespace Cleansia.IntegrationTests.Features.Auth;
 /// method and the audience, committed with the session; a sign-in with a wrong password or an unknown
 /// address leaves one out-of-band failure row with the KEY, the IP and the device — stamped with the
 /// default market's operator, because a sign-in names no market — and nowhere on it the address the
-/// caller typed; a reset request for an unknown address is the same shape. The success row is stamped
-/// with the account's own operator, the one the token was minted under.
+/// caller typed; a reset request for an unknown address is the same shape, and so is a refused sign-in
+/// on a KNOWN account — the validator refuses before any handler can name the subject, so that row is
+/// attributable by IP only. A success row is stamped with the account's own operator (ADR-0062 D7 —
+/// the row and the User row it describes agree by construction), which the cases on a SECOND operator's
+/// account prove: the default market's operator the scope behaviour set first is replaced whether a
+/// token was minted (a sign-in) or not (an unconfirmed address, the two reset acts).
 /// </summary>
 [Collection("PostgresCollection")]
 public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -56,7 +60,11 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
         return Task.CompletedTask;
     }
 
-    private static async Task Seed(CleansiaDbContext context)
+    private static Task Seed(CleansiaDbContext context) => Seed(context, TestTenants.Default, confirmed: true);
+
+    private static Task SeedSecondOperatorCustomer(CleansiaDbContext context) => Seed(context, TestTenants.Second, confirmed: true);
+
+    private static async Task Seed(CleansiaDbContext context, string tenantId, bool confirmed, Action<User>? prepare = null)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
@@ -74,7 +82,13 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
 
         var customer = User.CreateWithPassword(CustomerEmail, CustomerPassword, "Session", "Audit", UserProfile.Customer);
         customer.Id = CustomerId;
-        customer.ConfirmEmail();
+        if (confirmed)
+        {
+            customer.ConfirmEmail();
+        }
+
+        customer.TenantId = tenantId;
+        prepare?.Invoke(customer);
         context.Users.Add(customer);
 
         StampUnstampedAdded(context, TestTenants.Default);
@@ -235,6 +249,105 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
 
                 var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == CustomerId);
                 Assert.NotNull(user.ResetPasswordCode);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_SignIn_Of_A_Second_Operators_Account_Is_Stamped_With_That_Operator_Not_The_Default_Markets()
+    {
+        await TestMethod(
+            setup: AnonymousSession,
+            arrange: SeedSecondOperatorCustomer,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new Login.Command(CustomerEmail, CustomerPassword, RememberMe: true)),
+            assert: async (CleansiaDbContext context, BusinessResult<JwtTokenResponse> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.NotEmpty(result.Value.Token);
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.session.login", row.Action);
+                Assert.True(row.Success);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+                Assert.Equal(TestTenants.Second, Assert.Single(await context.RefreshTokens.IgnoreQueryFilters().ToListAsync()).TenantId);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Correct_Password_On_An_Unconfirmed_Address_Opens_No_Session_And_Its_Row_Is_Still_Stamped_With_The_Accounts_Operator()
+    {
+        await TestMethod(
+            setup: AnonymousSession,
+            arrange: context => Seed(context, TestTenants.Second, confirmed: false),
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new Login.Command(CustomerEmail, CustomerPassword, RememberMe: true)),
+            assert: async (CleansiaDbContext context, BusinessResult<JwtTokenResponse> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.False(result.Value.IsEmailConfirmed);
+                Assert.Empty(result.Value.Token);
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.session.login", row.Action);
+                Assert.True(row.Success);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+                Assert.False(JsonDocument.Parse(row.PayloadJson!).RootElement.GetProperty("emailConfirmed").GetBoolean());
+                Assert.Equal(0, await context.RefreshTokens.IgnoreQueryFilters().CountAsync());
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Reset_Request_For_A_Second_Operators_Account_Is_Stamped_With_That_Operator()
+    {
+        await TestMethod(
+            setup: AnonymousSession,
+            arrange: SeedSecondOperatorCustomer,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new RequestPasswordChange.Command(CustomerEmail)),
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.password.reset_requested", row.Action);
+                Assert.True(row.Success);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Completed_Reset_For_A_Second_Operators_Account_Leaves_One_Success_Row_Stamped_With_That_Operator()
+    {
+        string rawResetCode = null!;
+
+        await TestMethod(
+            setup: AnonymousSession,
+            arrange: context => Seed(context, TestTenants.Second, confirmed: true, prepare: customer => rawResetCode = customer.UpdateResetPasswordToken()),
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new ChangePassword.Command(CustomerEmail, "Brand-New-Password-456", rawResetCode)),
+            assert: async (CleansiaDbContext context, BusinessResult<ChangePassword.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.Equal(CustomerId, result.Value.Id);
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.password.reset_completed", row.Action);
+                Assert.True(row.Success);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(CustomerId, row.ResourceId);
+                Assert.Null(row.PayloadJson);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+                AssertCarriesNoAddress(row, CustomerEmail);
+
+                var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == CustomerId);
+                Assert.Null(user.ResetPasswordCode);
             },
             transactional: false);
     }

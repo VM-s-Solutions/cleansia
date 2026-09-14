@@ -14,8 +14,10 @@ public interface IAuditContext
     /// <summary>
     /// ADR-0062 D1 — the customer-side twin of <see cref="RecordChange"/>: one typed evidence record, no
     /// diff, no reason. <paramref name="actorUserId"/> exists for the acts whose actor does not exist
-    /// until the handler creates them (registration): the session has no user id, the row must carry
-    /// the new one. When the session does carry one, the session wins. <paramref name="resourceId"/> is
+    /// until the handler creates them (registration), or exists but is unnamed by the anonymous session
+    /// (the session acts: a sign-in, a reset, a confirmation): the session has no user id, the row must
+    /// carry the one the handler resolved. When the session does carry one, the session wins.
+    /// <paramref name="resourceId"/> is
     /// null for an act whose aggregate does not exist yet (a membership checkout session: the webhook
     /// provisions the row) — the evidence is still worth more than the request's own ids.
     /// <paramref name="payload"/> is null for an act whose only evidence is that it happened, and to

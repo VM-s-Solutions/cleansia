@@ -8,6 +8,7 @@ using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Features.Notifications;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Users;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Auditing;
 
@@ -131,6 +132,23 @@ public sealed class CustomerAuditActionRosterTests
                 typeof(RequestPasswordChange.Command), typeof(ChangePassword.Command), typeof(ConfirmUserEmail.Command),
             },
             anonymous);
+    }
+
+    /// <summary>
+    /// An anonymous refusal is written out of band and stamped from the ambient tenant, which on an
+    /// anonymous request only the scope behaviour sets — from the market the command names, or the
+    /// default market when it names none (an explicit <c>CountryId => null</c>). A guest-allowed marker
+    /// on a command outside that scope would drop every refusal row with one warning (ADR-0062 D1/D7).
+    /// </summary>
+    [Fact]
+    public void Every_Guest_Allowed_Marker_Sits_On_An_Operator_Scoped_Command()
+    {
+        var anonymous = MarkedInProduction().Where(x => x.Marker.AllowsAnonymousActor).ToList();
+
+        Assert.NotEmpty(anonymous);
+        Assert.All(anonymous, x => Assert.True(
+            typeof(IOperatorScopedRequest).IsAssignableFrom(x.Command),
+            $"{x.Feature.Name}.Command allows an anonymous actor but is not IOperatorScopedRequest: its refusal rows would have no tenant"));
     }
 
     /// <summary>

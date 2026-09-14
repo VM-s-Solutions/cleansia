@@ -15,7 +15,9 @@ namespace Cleansia.Tests.Services;
 /// be stamped with no tenant (and the column is NOT NULL). The request adopts the tenant of the user
 /// being authenticated BEFORE the row is added — which is also what the JWT it returns says — and it
 /// does so even when the scope behaviour set a market's operator first (social sign-in of an existing
-/// account of another company): the later override wins.
+/// account of another company): the later override wins. The adoption is the authentication's, not the
+/// mint's: a correct password on an unconfirmed address opens no session, and the sign-in row it still
+/// leaves (ADR-0062 D7) must carry the account's operator, not the default market's.
 /// </summary>
 public sealed class TokenServiceAdoptsUserTenantTests
 {
@@ -64,7 +66,7 @@ public sealed class TokenServiceAdoptsUserTenantTests
     }
 
     [Fact]
-    public async Task An_Unconfirmed_User_Mints_Nothing_And_Adopts_Nothing()
+    public async Task An_Unconfirmed_User_Mints_Nothing_But_The_Request_Still_Adopts_Their_Tenant()
     {
         var user = Cleansia.Core.Domain.Users.User.CreateWithPassword("unconfirmed@example.com", "Password1!", "Un", "Confirmed");
         user.TenantId = "cleansia-sk";
@@ -72,6 +74,7 @@ public sealed class TokenServiceAdoptsUserTenantTests
         var response = await Sut().GenerateTokenAsync(user, rememberMe: true, Audience);
 
         Assert.False(response.IsEmailConfirmed);
-        Assert.Empty(_calls);
+        Assert.Empty(response.Token);
+        Assert.Equal(["override:cleansia-sk"], _calls);
     }
 }

@@ -85,15 +85,24 @@ public class RequestPasswordChange
     public class Handler(
         IUserRepository userRepository,
         IPendingDispatch pending,
+        ITenantProvider tenantProvider,
         IAuditContext auditContext)
         : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
+
+            // Nothing mints a token here, so nothing adopts the account's operator the way TokenService does
+            // for a sign-in — and the audit row is stamped from the ambient tenant at commit (ADR-0061 D4).
+            if (!string.IsNullOrEmpty(user!.TenantId))
+            {
+                tenantProvider.SetTenantOverride(user.TenantId);
+            }
+
             // email the RAW reset token returned by the generator; the row keeps
             // only the hash (never read the persisted hashed column back into the email).
-            var rawResetToken = user!.UpdateResetPasswordToken();
+            var rawResetToken = user.UpdateResetPasswordToken();
 
             var languageCode = user.PreferredLanguageCode ?? command.Language;
             EmailDispatch.EnqueuePasswordReset(pending, user, $"{user.LastName} {user.FirstName}", rawResetToken, languageCode);

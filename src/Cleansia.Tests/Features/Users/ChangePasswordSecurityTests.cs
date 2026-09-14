@@ -169,7 +169,7 @@ public class ChangePasswordSecurityTests
     {
         var handlerType = typeof(ChangePassword).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, repo, refreshTokenService ?? Mock.Of<IRefreshTokenService>(), new AuditContext())!;
+        var handler = Activator.CreateInstance(handlerType!, repo, refreshTokenService ?? Mock.Of<IRefreshTokenService>(), Mock.Of<ITenantProvider>(), new AuditContext())!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult<ChangePassword.Response>>)handleMethod!.Invoke(

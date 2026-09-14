@@ -27,6 +27,19 @@ public class TokenService(
 
     public async Task<JwtTokenResponse> GenerateTokenAsync(User user, bool rememberMe, string audience, CancellationToken cancellationToken = default)
     {
+        // Every token mint runs on an anonymous request, so the RefreshToken row added below would be
+        // stamped with no tenant. The row belongs to the user being authenticated — which is also what
+        // the JWT will say (ADR-0061 D4). This deliberately REPLACES the market operator the scope
+        // behaviour set on a social sign-in: an existing account keeps its own operator, whichever
+        // market the request named. Nothing stamped is added between the two overrides. It runs before
+        // the confirmation check because the adoption is the authentication's, not the mint's: a correct
+        // password on an unconfirmed address opens no session but still leaves a sign-in audit row, and
+        // that row is stamped from the ambient tenant at commit (ADR-0062 D7).
+        if (!string.IsNullOrEmpty(user.TenantId))
+        {
+            tenantProvider.SetTenantOverride(user.TenantId);
+        }
+
         if (!user.IsEmailConfirmed)
         {
             return new JwtTokenResponse(
@@ -35,16 +48,6 @@ public class TokenService(
         }
 
         user.RecordLogin(timeProvider.GetUtcNow());
-
-        // Every token mint runs on an anonymous request, so the RefreshToken row added below would be
-        // stamped with no tenant. The row belongs to the user being authenticated — which is also what
-        // the JWT will say (ADR-0061 D4). This deliberately REPLACES the market operator the scope
-        // behaviour set on a social sign-in: an existing account keeps its own operator, whichever
-        // market the request named. Nothing stamped is added between the two overrides.
-        if (!string.IsNullOrEmpty(user.TenantId))
-        {
-            tenantProvider.SetTenantOverride(user.TenantId);
-        }
 
         var employeeId = await ResolveEmployeeIdAsync(user, cancellationToken);
         var accessToken = GenerateAccessToken(user, employeeId, audience, requestMetadata.DeviceId);

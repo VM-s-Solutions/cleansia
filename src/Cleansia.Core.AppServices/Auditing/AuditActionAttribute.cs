@@ -33,7 +33,9 @@ public sealed class AuditActionAttribute : Attribute
 
     /// <summary>
     /// Only a customer-audience marker reads this: an anonymous caller is recorded as a customer act
-    /// only where the act genuinely has no session yet (registration, guest checkout).
+    /// only where the act genuinely has no session yet (registration, guest checkout, the session acts
+    /// that open or recover one) — and only on a customer host (<c>AuditGate</c>). The command must be
+    /// <c>IOperatorScopedRequest</c>, or its refusal rows have no tenant to be stamped with.
     /// </summary>
     public bool AllowsAnonymousActor { get; init; }
 }

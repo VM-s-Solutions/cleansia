@@ -16,7 +16,9 @@ namespace Cleansia.HostTests.Tests;
 /// remote IP to record; the request context is proven on the pipeline tests); the
 /// Partner host still routes the anonymous <c>POST api/Auth/Register</c> whose command carries the
 /// customer marker, and a refusal there lands in no table — the host gate, not the marker, decides; an
-/// Administrator's sign-out on the Admin host lands in the admin table only.
+/// Administrator's sign-out on the Admin host lands in the admin table only, under the marker's frozen
+/// label — the admin arm keeps a customer marker's label, as <c>AuditLogBehaviorTests</c> pins for every
+/// customer-marked command an Administrator runs.
 /// </summary>
 public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
@@ -162,6 +164,7 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
         HttpAssert.IsOk(response);
         Assert.Empty(await CustomerRowsAsync());
         var row = Assert.Single(await AdminRowsAsync());
+        Assert.Equal("customer.session.logout", row.Action);
         Assert.Equal(AdminId, row.ActorId);
         Assert.True(row.Success);
         Assert.Equal("User", row.ResourceType);

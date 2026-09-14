@@ -13,8 +13,8 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// success path does. Two arms:
 /// <list type="bullet">
 ///   <item><b>Admin (ADR-0012 D3, opt-out):</b> the descriptor is audited, the type name ends
-///   <c>Command</c>, and the caller carries the Administrator role claim (precedent
-///   <c>AddDisputeMessage.cs:57</c>). Every admin mutation, marked or not.</item>
+///   <c>Command</c>, and the caller carries the Administrator role claim (precedent: the <c>isAdmin</c>
+///   claim read in <c>AddDisputeMessage.Handler</c>). Every admin mutation, marked or not.</item>
 ///   <item><b>Customer (ADR-0062 D1, opt-in):</b> the marker says <c>Audience = Customer</c> and the
 ///   caller is a Customer — or anonymous, but only where the marker says <c>AllowsAnonymousActor</c>
 ///   AND the serving host is a customer host. A system job has no role claim either, and a marker that

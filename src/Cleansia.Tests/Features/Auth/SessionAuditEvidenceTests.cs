@@ -28,7 +28,9 @@ namespace Cleansia.Tests.Features.Auth;
 /// with and whether a token was actually minted (an unconfirmed address is a correct password that opened
 /// no session); the sign-out records whether there was a token to revoke; the e-mail confirmation records
 /// which wire shape confirmed it; the two reset acts record nothing beyond the subject — and none of them
-/// carries the address the command was sent with.
+/// carries the address the command was sent with. The two reset acts mint no token, so nothing adopts the
+/// account's operator for them the way <c>TokenService</c> does for a sign-in: each handler adopts it
+/// itself before the row is stamped (ADR-0061 D4, ADR-0062 D7).
 /// </summary>
 public sealed class SessionAuditEvidenceTests
 {
@@ -177,31 +179,37 @@ public sealed class SessionAuditEvidenceTests
     }
 
     [Fact]
-    public async Task The_Reset_Request_Records_Only_The_Subject()
+    public async Task The_Reset_Request_Records_Only_The_Subject_And_Adopts_The_Accounts_Tenant()
     {
         var user = User.CreateWithPassword("reset@cleansia.test", "Password1!@abc", "John", "Doe");
+        user.TenantId = "cleansia-sk";
         var users = new Mock<IUserRepository>();
         users.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        var handler = new RequestPasswordChange.Handler(users.Object, Mock.Of<IPendingDispatch>(), _auditContext);
+        var tenant = new Mock<ITenantProvider>();
+        var handler = new RequestPasswordChange.Handler(users.Object, Mock.Of<IPendingDispatch>(), tenant.Object, _auditContext);
 
         var result = await handler.Handle(new RequestPasswordChange.Command(user.Email), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Null(SnapshotKeyedOn(user).AfterJson);
+        tenant.Verify(t => t.SetTenantOverride("cleansia-sk"), Times.Once);
     }
 
     [Fact]
-    public async Task The_Reset_Completion_Records_Only_The_Subject()
+    public async Task The_Reset_Completion_Records_Only_The_Subject_And_Adopts_The_Accounts_Tenant()
     {
         var user = User.CreateWithPassword("reset@cleansia.test", "Password1!@abc", "John", "Doe");
+        user.TenantId = "cleansia-sk";
         var users = new Mock<IUserRepository>();
         users.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        var handler = Construct(typeof(ChangePassword), users.Object, Mock.Of<IRefreshTokenService>(), _auditContext);
+        var tenant = new Mock<ITenantProvider>();
+        var handler = Construct(typeof(ChangePassword), users.Object, Mock.Of<IRefreshTokenService>(), tenant.Object, _auditContext);
 
         var result = await Invoke<BusinessResult<ChangePassword.Response>>(handler,
             new ChangePassword.Command(user.Email, "New-Password-456!", "123456"));
 
         Assert.True(result.IsSuccess);
         Assert.Null(SnapshotKeyedOn(user).AfterJson);
+        tenant.Verify(t => t.SetTenantOverride("cleansia-sk"), Times.Once);
     }
 }

@@ -139,13 +139,22 @@ public class ChangePassword
     internal class Handler(
         IUserRepository userRepository,
         IRefreshTokenService refreshTokenService,
+        ITenantProvider tenantProvider,
         IAuditContext auditContext)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
-            user!.UpdatePassword(command.NewPassword);
+
+            // Nothing mints a token here, so nothing adopts the account's operator the way TokenService does
+            // for a sign-in — and the audit row is stamped from the ambient tenant at commit (ADR-0061 D4).
+            if (!string.IsNullOrEmpty(user!.TenantId))
+            {
+                tenantProvider.SetTenantOverride(user.TenantId);
+            }
+
+            user.UpdatePassword(command.NewPassword);
             user.ClearResetPasswordToken();
 
             // Reset completion is the account-takeover recovery path: the caller proves control

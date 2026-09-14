@@ -230,10 +230,11 @@ init-only).
 ResourceType = "Order")]` (`AllowsAnonymousActor = true` only where a guest may act; `ResourceIdProperty`
 when the id is not `{ResourceType}Id` on the command); `AuditGate.Resolve` routes the row to
 `CustomerActionAudits` for a customer session and to the admin table for an administrator running the
-same command. The handler emits ONE typed evidence record, nested beside the feature and implementing
-`ICustomerAuditPayload`, through `IAuditContext.RecordEvidence(...)` — server-side figures at the moment
-of the act, never a client-asserted money figure, never a name / contact / address / free text (the
-PII guard walks every record); the payload is null when the only evidence is that the act happened and
+same command (under the marker's frozen label, pinned by `AuditLogBehaviorTests`). The handler emits ONE
+typed evidence record, nested beside the feature and implementing `ICustomerAuditPayload`, through
+`IAuditContext.RecordEvidence(...)` — server-side figures at the moment of the act, never a
+client-asserted money figure, never a name / contact / address / free text (the PII guard walks every
+record); the payload is null when the only evidence is that the act happened and
 to whom (a completed password reset), and the `actorUserId` argument names the subject where the
 session cannot (the session acts run anonymously). Failure rows carry the error KEY via
 `AuditErrorCode.Resolve` on both tables. The roster test pins the marker set; a new marker needs its
@@ -243,10 +244,17 @@ act to the customer table **only on a customer host** (`IHostAudienceProvider.Au
 JwtAudiences.Customer`) — a command routed on the partner hosts too (`Register`, `ConfirmUserEmail`,
 the password-reset pair) lands nowhere there; an anonymous marked command that names no market
 implements `IOperatorScopedRequest` with an **explicit** `CountryId => null` (off the wire, default
-market) so its out-of-band refusal row has a tenant to be stamped with; and a handler whose marked
-command took a branch the marker does not describe calls `IAuditContext.DeclineSuccessRow()` (the social
-sign-ins on their provisioning branch — a registration's proof is the consent rows) — its refusals are
-still recorded.
+market) so its out-of-band refusal row has a tenant to be stamped with (a refusal the scope behaviour
+itself raises — `country.not_serviced`, `tenant.not_found` — is still skipped with one warning, ADR-0062
+D1), and its SUCCESS row is stamped with the account's own operator, not the default market's: a
+handler that mints no token adopts it itself with `tenantProvider.SetTenantOverride(user.TenantId)`
+(the ADR-0061 D4 idiom — `RequestPasswordChange`, `ChangePassword`; `TokenService` does it for every
+sign-in, confirmed address or not); and a handler whose marked command took a branch the marker does
+not describe calls `IAuditContext.DeclineSuccessRow()` (the social sign-ins on their provisioning
+branch — a registration's proof is the consent rows) — its refusals are still recorded.
+**Enforced by:** `CustomerAuditActionRosterTests` (`Every_Guest_Allowed_Marker_Sits_On_An_Operator_Scoped_Command`
+— every `AllowsAnonymousActor` marker in the assembly, not a hand-kept list) + `AuditGateTests` (the host
+arm) + `SessionAuditTests` (the second-operator stamping, on Postgres) — `T1-CI`.
 
 ## Entities (from `Core.Domain/Common/`)
 

@@ -291,6 +291,11 @@ for (const locale of LOCALES) {
 // server fills `{{currency}}` with the market's code before rendering. Only the NEWEST version is
 // read: a version already in force is immutable, so a finding against it could never be fixed in
 // place — the fix is always the next dated folder, which is where this looks.
+//
+// What this does NOT read: a figure in a paragraph with no placeholder beside it. A legal text
+// states hours, percentages and a phone number on purpose, so the baked-figure check runs only
+// where a `{{…}}` slot says a market value is rendered; a bare "1 000 000" elsewhere is caught only
+// if a currency word rides along with it.
 
 /** The greatest `yyyy-MM-dd` folder under `<type>/any/`, or null when there is none. */
 export function newestSeedVersion(root, type) {

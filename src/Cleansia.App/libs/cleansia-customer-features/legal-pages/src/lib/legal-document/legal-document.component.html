@@ -10,8 +10,9 @@
       }}
     </p>
     <!--
-      The version the server stamps on a consent row at acceptance. A reader checking whether
-      they agreed to THIS text needs the handle, not just a date.
+      The same date twice on purpose: the version is the exact string a consent row stamps
+      (UserConsent.DocumentVersion), shown verbatim so a reader can match it to their record
+      character for character — a localized "September 14, 2026" is not what the row holds.
     -->
     <p class="cl-lgl__version">
       {{ 'legal.version' | translate: { version: doc.version } }}

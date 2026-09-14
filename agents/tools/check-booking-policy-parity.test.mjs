@@ -326,10 +326,17 @@ scenario(
     silentAbout: ['/cs.md', '/sk.md', '/ru.md', '/uk.md', 'privacy-policy/'],
   },
 );
+// It is the "Kč" that fires here, not the figure: a paragraph with no placeholder is not read for
+// baked amounts (a legal text states hours, percentages and a phone number on purpose), so the
+// ceiling alone, with no currency word, would pass. That residual is pinned, not implied.
 scenario(
-  'catches a baked insurance ceiling in one language of the privacy seed',
+  'catches a currency word in one language of the privacy seed',
   { seedByFile: { 'privacy-policy/cs': 'Vaše soukromí.\n\n## Pojištění\n\nPojištěno do výše 1 000 000 Kč na zakázku.' } },
-  { code: 1, mentions: ['privacy-policy/any/2026-09-14/cs.md', 'names a currency'], silentAbout: ['/en.md', 'terms-of-service/'] },
+  {
+    code: 1,
+    mentions: ['privacy-policy/any/2026-09-14/cs.md', 'names a currency'],
+    silentAbout: ['bakes a figure in', '/en.md', 'terms-of-service/'],
+  },
 );
 scenario(
   'catches a figure baked in beside the placeholder',

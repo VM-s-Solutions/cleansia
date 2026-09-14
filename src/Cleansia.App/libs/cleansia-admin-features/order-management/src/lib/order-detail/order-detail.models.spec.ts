@@ -1,5 +1,5 @@
 import { TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
-import { incidentFileName, resolveIncidentSubject } from './order-detail.models';
+import { resolveIncidentSubject } from './order-detail.models';
 
 function entry(
   source: TimelineSource,
@@ -44,13 +44,5 @@ describe('resolveIncidentSubject', () => {
 
   it('names nobody when the trail is empty', () => {
     expect(resolveIncidentSubject([])).toBeNull();
-  });
-});
-
-describe('incidentFileName', () => {
-  it('prints the UTC day, the shape the server names the file by', () => {
-    expect(incidentFileName('cust-1', new Date('2026-09-14T23:30:00Z'))).toBe(
-      'incident-cust-1-20260914.pdf'
-    );
   });
 });

@@ -1,6 +1,6 @@
 import { TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
 
-/** The timeline's page ceiling; one page is the whole lookup. */
+/** The timeline's page ceiling (GetActionTimeline refuses a larger limit). */
 export const INCIDENT_SUBJECT_LOOKUP_LIMIT = 100;
 
 /**
@@ -15,9 +15,4 @@ export function resolveIncidentSubject(
     (e) => e.source === TimelineSource.Customer && e.success && Boolean(e.actorId)
   );
   return own?.actorId ?? null;
-}
-
-export function incidentFileName(userId: string, generatedAt: Date): string {
-  const day = generatedAt.toISOString().slice(0, 10).replace(/-/g, '');
-  return `incident-${userId}-${day}.pdf`;
 }

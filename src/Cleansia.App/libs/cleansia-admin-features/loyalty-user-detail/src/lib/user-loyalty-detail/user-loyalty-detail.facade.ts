@@ -1,5 +1,4 @@
-import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
@@ -16,9 +15,10 @@ import {
   GdprExportDto,
   IssueCustomerCreditCommand,
   RevokePointsManuallyCommand,
+  incidentFileName,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { FileDownloadService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -52,7 +52,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly fileDownload = inject(FileDownloadService);
 
   readonly account = signal<GetUserLoyaltyAccountResponse | null>(null);
   readonly accountLoading = signal<boolean>(false);
@@ -439,7 +439,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       )
       .subscribe((file: FileResponse | null) => {
         if (file) {
-          this.downloadBlob(
+          this.fileDownload.downloadBlob(
             file.data,
             file.fileName ?? incidentFileName(userId, new Date())
           );
@@ -456,25 +456,13 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
 
   private downloadJson(data: unknown, fileName: string): void {
     const json = JSON.stringify(data, null, 2);
-    this.downloadBlob(new Blob([json], { type: 'application/json' }), fileName);
-  }
-
-  private downloadBlob(blob: Blob, fileName: string): void {
-    if (!this.isBrowser) return;
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = fileName;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    this.fileDownload.downloadBlob(
+      new Blob([json], { type: 'application/json' }),
+      fileName
+    );
   }
 }
 
 export function subjectExportFileName(userId: string, exportedAt: Date): string {
   return `subject-export-${userId}-${exportedAt.toISOString().slice(0, 10)}.json`;
-}
-
-export function incidentFileName(userId: string, generatedAt: Date): string {
-  const day = generatedAt.toISOString().slice(0, 10).replace(/-/g, '');
-  return `incident-${userId}-${day}.pdf`;
 }

@@ -17,13 +17,10 @@ import {
   ReferralStatus,
   RevokePointsManuallyCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { FileDownloadService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
-import {
-  incidentFileName,
-  UserLoyaltyDetailFacade,
-} from './user-loyalty-detail.facade';
+import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
 
 describe('UserLoyaltyDetailFacade — referrals panel', () => {
   let facade: UserLoyaltyDetailFacade;
@@ -413,7 +410,7 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
   let facade: UserLoyaltyDetailFacade;
   let gdprClient: { export: jest.Mock; incidentFile: jest.Mock };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
-  let download: jest.SpyInstance;
+  let download: jest.Mock;
 
   const pdf = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
   const served: FileResponse = {
@@ -428,6 +425,7 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
       incidentFile: jest.fn().mockReturnValue(of(served)),
     };
     snackbar = { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() };
+    download = jest.fn();
 
     TestBed.configureTestingModule({
       providers: [
@@ -440,15 +438,10 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: AdminGdprClient, useValue: gdprClient },
+        { provide: FileDownloadService, useValue: { downloadBlob: download } },
       ],
     });
     facade = TestBed.inject(UserLoyaltyDetailFacade);
-    download = jest
-      .spyOn(
-        facade as unknown as { downloadBlob: (b: Blob, n: string) => void },
-        'downloadBlob'
-      )
-      .mockImplementation(() => undefined);
   });
 
   it('asks for the whole account when no order scope is given and saves the served file under its own name', () => {
@@ -509,13 +502,5 @@ describe('UserLoyaltyDetailFacade — incident file', () => {
     facade.incidentFileExporting.set(true);
     facade.exportIncidentFile('order-7');
     expect(gdprClient.incidentFile).not.toHaveBeenCalled();
-  });
-});
-
-describe('incidentFileName', () => {
-  it('prints the UTC day, the shape the server names the file by', () => {
-    expect(incidentFileName('user-1', new Date('2026-09-14T23:30:00Z'))).toBe(
-      'incident-user-1-20260914.pdf'
-    );
   });
 });

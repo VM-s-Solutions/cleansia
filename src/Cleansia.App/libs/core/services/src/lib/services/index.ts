@@ -3,6 +3,7 @@ export * from './apple-sign-in';
 export * from './country-phone-code.model';
 export * from './country-phone-code.service';
 export * from './dialog.service';
+export * from './file-download.service';
 export * from './file-validation-error.service';
 export * from './google-sign-in';
 export * from './page-title.service';

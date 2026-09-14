@@ -21,6 +21,7 @@ import { ExpireCreditDialogComponent } from '../expire-credit-dialog/expire-cred
 import { GrantPointsDialogComponent } from '../grant-points-dialog/grant-points-dialog.component';
 import { IssueCreditDialogComponent } from '../issue-credit-dialog/issue-credit-dialog.component';
 import { UserLoyaltyDetailComponent } from './user-loyalty-detail.component';
+import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
 
 @Component({ selector: 'cleansia-admin-grant-points-dialog', standalone: true, template: '' })
 class GrantPointsDialogStub {
@@ -61,12 +62,15 @@ class TimelineStub {
 
 describe('UserLoyaltyDetailComponent — credit section', () => {
   let creditClient: { user: jest.Mock; issue: jest.Mock; expire: jest.Mock };
-  let gdprClient: { export: jest.Mock };
+  let gdprClient: { export: jest.Mock; incidentFile: jest.Mock };
   let grantedPolicies: Set<string>;
 
   beforeEach(async () => {
     creditClient = { user: jest.fn(), issue: jest.fn(), expire: jest.fn() };
-    gdprClient = { export: jest.fn().mockReturnValue(of(null)) };
+    gdprClient = {
+      export: jest.fn().mockReturnValue(of(null)),
+      incidentFile: jest.fn().mockReturnValue(of(null)),
+    };
     grantedPolicies = new Set<string>([
       'CanGrantLoyaltyPoints',
       'CanIssueCustomerCredit',
@@ -264,6 +268,35 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
 
     expect(el.querySelector('.cleansia-user-loyalty-detail__export')).toBeNull();
     expect(el.querySelector('cleansia-admin-audit-timeline')).toBeTruthy();
+  });
+
+  // The incident file is the same PII egress as the export, so it sits beside it under the same
+  // policy, with the order scope the admin types handed to the facade untouched — trimming is the
+  // facade's, and an untrimmed value here is what proves the component does not pre-empt it.
+  it('offers the incident file with its order scope beside the export and hands the typed scope to the facade', () => {
+    const fixture = renderFixture(noAccount());
+    const el = fixture.nativeElement as HTMLElement;
+    const facade = fixture.debugElement.injector.get(UserLoyaltyDetailFacade);
+    const exportIncidentFile = jest.spyOn(facade, 'exportIncidentFile');
+
+    expect(el.querySelector('.cleansia-user-loyalty-detail__incident-file')).toBeTruthy();
+    expect(
+      el.querySelector('.cleansia-user-loyalty-detail__incident-scope cleansia-text-input')
+    ).toBeTruthy();
+
+    fixture.componentInstance.incidentOrderControl.setValue('  order-7 ');
+    fixture.componentInstance.exportIncidentFile();
+
+    expect(exportIncidentFile).toHaveBeenCalledWith('  order-7 ');
+    expect(gdprClient.incidentFile).toHaveBeenCalledWith('user-1', 'order-7');
+  });
+
+  it('hides the incident file and its scope without CanAdminExportUserData', () => {
+    grantedPolicies.delete('CanAdminExportUserData');
+    const el = render(noAccount());
+
+    expect(el.querySelector('.cleansia-user-loyalty-detail__incident-file')).toBeNull();
+    expect(el.querySelector('.cleansia-user-loyalty-detail__incident-scope')).toBeNull();
   });
 
   // The timeline endpoint answers 403 without CanViewAuditLog; a section that always fails is worse

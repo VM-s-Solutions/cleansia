@@ -19,17 +19,20 @@
         [disabled]="!facade.order()?.id"
         (onClick)="viewAuditHistory()"
       />
-      <cleansia-button
-        *cleansiaPermission="Policy.CanAdminExportUserData"
-        class="cleansia-order-detail__incident-file"
-        icon="pi pi-file-pdf"
-        severity="secondary"
-        [outlined]="true"
-        [label]="'pages.order_detail.incident_file.button' | translate"
-        [disabled]="!facade.order()?.id"
-        [loading]="facade.incidentFileExporting()"
-        (onClick)="exportIncidentFile()"
-      />
+      <!-- The subject lookup that precedes the file reads the audit timeline, so both policies gate it. -->
+      <ng-container *cleansiaPermission="Policy.CanViewAuditLog">
+        <cleansia-button
+          *cleansiaPermission="Policy.CanAdminExportUserData"
+          class="cleansia-order-detail__incident-file"
+          icon="pi pi-file-pdf"
+          severity="secondary"
+          [outlined]="true"
+          [label]="'pages.order_detail.incident_file.button' | translate"
+          [disabled]="!facade.order()?.id"
+          [loading]="facade.incidentFileExporting()"
+          (onClick)="exportIncidentFile()"
+        />
+      </ng-container>
     </div>
 
     @if (facade.loading()) {

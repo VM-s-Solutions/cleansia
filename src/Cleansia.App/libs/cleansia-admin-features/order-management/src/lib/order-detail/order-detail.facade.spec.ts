@@ -9,7 +9,7 @@ import {
   TimelineEntryDto,
   TimelineSource,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { FileDownloadService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { OrderDetailFacade } from './order-detail.facade';
@@ -55,7 +55,7 @@ describe('OrderDetailFacade — incident file', () => {
     showErrorTranslated: jest.Mock;
     showSuccessTranslated: jest.Mock;
   };
-  let download: jest.SpyInstance;
+  let download: jest.Mock;
 
   const pdf = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
   const served: FileResponse = {
@@ -81,8 +81,17 @@ describe('OrderDetailFacade — incident file', () => {
     });
   }
 
-  function page(entries: TimelineEntryDto[]): PagedDataOfTimelineEntryDto {
-    return PagedDataOfTimelineEntryDto.fromJS({ data: entries, total: entries.length });
+  function page(
+    entries: TimelineEntryDto[],
+    total = entries.length
+  ): PagedDataOfTimelineEntryDto {
+    return PagedDataOfTimelineEntryDto.fromJS({ data: entries, total });
+  }
+
+  function adminRows(count: number): TimelineEntryDto[] {
+    return Array.from({ length: count }, (_, i) =>
+      entry(TimelineSource.Admin, `admin-${i}`, true)
+    );
   }
 
   beforeEach(() => {
@@ -103,6 +112,7 @@ describe('OrderDetailFacade — incident file', () => {
       showErrorTranslated: jest.fn(),
       showSuccessTranslated: jest.fn(),
     };
+    download = jest.fn();
 
     TestBed.configureTestingModule({
       providers: [
@@ -112,15 +122,10 @@ describe('OrderDetailFacade — incident file', () => {
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
         { provide: AdminGdprClient, useValue: gdprClient },
         { provide: CustomerAuditClient, useValue: auditClient },
+        { provide: FileDownloadService, useValue: { downloadBlob: download } },
       ],
     });
     facade = TestBed.inject(OrderDetailFacade);
-    download = jest
-      .spyOn(
-        facade as unknown as { downloadBlob: (b: Blob, n: string) => void },
-        'downloadBlob'
-      )
-      .mockImplementation(() => undefined);
     facade.order.set(OrderItem.fromJS({ id: 'order-1' }));
   });
 
@@ -151,6 +156,57 @@ describe('OrderDetailFacade — incident file', () => {
 
     expect(download).toHaveBeenCalledWith(pdf, 'incident-cust-1-20260914.pdf');
     jest.useRealTimers();
+  });
+
+  // The trail is newest-first and the customer's own rows are the oldest on an order that admins
+  // and cleaners have worked on since — every reveal and every drop lands above the booking — so a
+  // subject-less first page is not a subject-less trail.
+  it('pages on through the trail when the newest page names no customer', () => {
+    auditClient.timeline
+      .mockReturnValueOnce(of(page(adminRows(100), 150)))
+      .mockReturnValueOnce(
+        of(page([...adminRows(49), entry(TimelineSource.Customer, 'cust-1', true)], 150))
+      );
+
+    facade.exportIncidentFile();
+
+    expect(auditClient.timeline).toHaveBeenCalledTimes(2);
+    expect(auditClient.timeline).toHaveBeenNthCalledWith(
+      1,
+      undefined,
+      'Order',
+      'order-1',
+      undefined,
+      0,
+      100
+    );
+    expect(auditClient.timeline).toHaveBeenNthCalledWith(
+      2,
+      undefined,
+      'Order',
+      'order-1',
+      undefined,
+      100,
+      100
+    );
+    expect(gdprClient.incidentFile).toHaveBeenCalledWith('cust-1', 'order-1');
+    expect(download).toHaveBeenCalledWith(pdf, 'incident-cust-1-20260914.pdf');
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+  });
+
+  it('stops at the end of the trail when no page names a customer', () => {
+    auditClient.timeline
+      .mockReturnValueOnce(of(page(adminRows(100), 150)))
+      .mockReturnValueOnce(of(page(adminRows(50), 150)));
+
+    facade.exportIncidentFile();
+
+    expect(auditClient.timeline).toHaveBeenCalledTimes(2);
+    expect(gdprClient.incidentFile).not.toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+      'pages.order_detail.incident_file.no_subject'
+    );
+    expect(facade.incidentFileExporting()).toBe(false);
   });
 
   it('says so when the trail names no customer, and asks for no file', () => {

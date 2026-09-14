@@ -529,6 +529,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // GDPR consents
   'gdpr.consent_already_granted',
   'gdpr.consent_not_found',
+  // Consent — the terms gate on the anonymous POST api/Auth/Register this host still routes (it
+  // creates a Customer; RegisterEmployee is not gated).
+  'consent.terms_not_accepted',
   // Payout destination — UpdateBankDetails runs the whole PayoutDetailsValidator
   // chain, so every arm of it is reachable from the cleaner's bank-details form;
   // GetMyPayoutDetails returns payout.not_found.

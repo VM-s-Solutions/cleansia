@@ -578,6 +578,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.consent_not_found',
   'gdpr.consent_already_granted',
+  // Consent — the terms gate on Register and CreateOrder: a registration, or a booking by a guest or
+  // by a customer whose account does not already hold both legal consents, that asserts no tick.
+  'consent.terms_not_accepted',
   // Promo — request a first-clean code, and CreateOrder refusing a promo the
   // server will not honour (one key per PromoCodeError reason, plus a code on
   // an anonymous booking, which the applier would otherwise drop silently)

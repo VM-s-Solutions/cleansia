@@ -145,7 +145,7 @@ public sealed class UsersEmailGloballyUniqueTests(PostgresContainerFixture fixtu
             transactional: false);
     }
 
-    private static Register.Command Registration() => new(Email, TestUtilities.Constants.TestUserSession.TestUserPassword, "New", "Visitor", "en");
+    private static Register.Command Registration() => new(Email, TestUtilities.Constants.TestUserSession.TestUserPassword, "New", "Visitor", "en", TermsAccepted: true);
 
     private static Task MockEmail(IServiceCollection services)
     {

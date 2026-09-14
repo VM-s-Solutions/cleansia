@@ -131,10 +131,17 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.True(descriptor.AllowsAnonymousActor);
     }
 
+    // The gate is the validator's; the wire member stays optional so a client that omits it binds
+    // null and is refused as such, rather than failing to bind at all.
     [Fact]
-    public void The_Terms_Tick_Is_Optional_And_Defaults_To_Not_Asserted()
+    public void The_Terms_Tick_Stays_Nullable_On_The_Wire_And_An_Absent_Member_Lands_Null()
     {
-        Assert.Null(CreateOrderTestData.ValidCommand().TermsAccepted);
+        var parameter = typeof(CreateOrder.Command).GetConstructors().Single().GetParameters()
+            .Single(p => p.Name == nameof(CreateOrder.Command.TermsAccepted));
+
+        Assert.Equal(typeof(bool?), parameter.ParameterType);
+        Assert.True(parameter.HasDefaultValue);
+        Assert.Null(parameter.DefaultValue);
     }
 
     [Fact]
@@ -196,12 +203,14 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.DoesNotContain(command.CustomerAddress!.Street, snapshot.AfterJson!);
     }
 
+    // A consented customer sends nothing (the validator lets that through); the handler records the
+    // absence as null rather than inventing a tick.
     [Fact]
-    public async Task A_Client_That_Sends_No_Tick_Is_Recorded_As_Not_Asserted_And_Not_Refused()
+    public async Task A_Booking_That_Sends_No_Tick_Is_Recorded_As_Not_Asserted()
     {
         _session.Setup(s => s.GetUserId()).Returns((string?)null);
 
-        var result = await CreateHandler().Handle(CreateOrderTestData.ValidCommand(), CancellationToken.None);
+        var result = await CreateHandler().Handle(CreateOrderTestData.ValidCommand(termsAccepted: null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(JsonValueKind.Null, Payload(_auditContext.DrainSnapshot()).GetProperty("termsAccepted").ValueKind);

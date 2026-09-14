@@ -82,6 +82,7 @@ public sealed class CreateOrderOperatorAgreementTests
             Mock.Of<IPromoCodeService>(),
             _operators.Object,
             _tenant.Object,
+            Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
     }
 

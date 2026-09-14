@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
@@ -9,6 +10,7 @@ using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.IntegrationTests.Features.Legal;
 using Cleansia.TestUtilities;
 using MediatR;
@@ -24,7 +26,9 @@ namespace Cleansia.IntegrationTests.Features.Auth;
 /// ADR-0062 D4 through the real pipeline on real Postgres, as an anonymous caller: an e-mail
 /// registration that asserts the tick leaves two versioned consent rows with the request's IP and
 /// device, and one <c>customer.account.register</c> row keyed on the new user; one that asserts nothing
-/// leaves no consent row, records "not asserted", and is not refused. A social registration leaves the
+/// is refused with <c>consent.terms_not_accepted</c> (owner ruling 2026-09-14), creates no account and
+/// no consent, and leaves one out-of-band failure row carrying the key, the IP and the device — and
+/// nowhere the address the visitor typed. A social registration leaves the
 /// versioned consent rows and NO audit row — the command is marked as the sign-in and its handler
 /// declines the row on the provisioning branch — and a social sign-in of an existing account leaves one
 /// <c>customer.session.login</c> row naming the provider, and no consent.
@@ -131,26 +135,44 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
             transactional: false);
     }
 
-    [Fact]
-    public async Task An_Email_Registration_From_A_Client_That_Sends_No_Tick_Writes_No_Consent_Records_Not_Asserted_And_Is_Not_Refused()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    public async Task An_Email_Registration_Without_The_Tick_Is_Refused_Creates_Nothing_And_Leaves_One_Failure_Row_With_The_Key(bool? termsAccepted)
     {
         await TestMethod(
             setup: AnonymousWithRequestContext,
             arrange: SeedLanguageAsync,
-            act: async provider => await provider.GetRequiredService<IMediator>().Send(RegisterCommand(termsAccepted: null)),
+            act: async provider => await provider.GetRequiredService<IMediator>().Send(RegisterCommand(termsAccepted)),
             assert: async (context, result) =>
             {
-                Assert.True(result.IsSuccess);
-                var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Email == Constants.TestUserSession.TestUserEmail);
+                Assert.True(result.IsFailure);
+                var refusal = Assert.Single(Assert.IsAssignableFrom<IValidationResult>(result).Errors);
+                Assert.Equal(BusinessErrorMessage.TermsNotAccepted, refusal.Message);
+                Assert.Equal(nameof(Register.Command.TermsAccepted), refusal.Code);
 
-                Assert.Empty(await ConsentsOf(context, user.Id));
+                Assert.Empty(await context.Users.IgnoreQueryFilters().ToListAsync());
+                Assert.Empty(await context.UserConsents.IgnoreQueryFilters().ToListAsync());
 
                 var row = Assert.Single(await CustomerRows(context));
                 Assert.Equal("customer.account.register", row.Action);
-                Assert.True(row.Success);
-                Assert.Equal(user.Id, row.UserId);
-                var payload = JsonDocument.Parse(row.PayloadJson!).RootElement;
-                Assert.Equal(JsonValueKind.Null, payload.GetProperty("termsAccepted").ValueKind);
+                Assert.False(row.Success);
+                Assert.Equal(BusinessErrorMessage.TermsNotAccepted, row.ErrorCode);
+                Assert.Null(row.UserId);
+                Assert.Equal("User", row.ResourceType);
+                Assert.Null(row.ResourceId);
+                Assert.Null(row.PayloadJson);
+                Assert.Equal(JwtAudiences.Customer, row.ClientAudience);
+                Assert.Equal(Ip, row.IpAddress);
+                Assert.Equal(DeviceLabel, row.DeviceLabel);
+                Assert.Equal(DeviceId, row.DeviceId);
+                Assert.Equal(TestTenants.Default, row.TenantId);
+                foreach (var value in new[] { row.UserId, row.ResourceId, row.ErrorCode, row.PayloadJson, row.DeviceLabel, row.CorrelationId })
+                {
+                    Assert.DoesNotContain(Constants.TestUserSession.TestUserEmail, value ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+                }
+
+                Assert.Equal(0, await context.AdminActionAudits.IgnoreQueryFilters().CountAsync());
             },
             transactional: false);
     }

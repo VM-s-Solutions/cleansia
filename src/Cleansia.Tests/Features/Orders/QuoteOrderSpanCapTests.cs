@@ -202,6 +202,7 @@ public class QuoteOrderSpanCapTests
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IOperatorTenantResolver>(),
             Mock.Of<ITenantProvider>(),
+            Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 
     private static QuoteOrder.Command QuoteCommand() =>

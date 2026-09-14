@@ -56,7 +56,8 @@ internal static class CreateOrderTestData
 
     /// <summary>
     /// A fully valid command: a future cleaning date above the lead time, a positive total that
-    /// matches <see cref="MatchingPricing"/>, exactly the inline address, and one of each catalog id.
+    /// matches <see cref="MatchingPricing"/>, exactly the inline address, one of each catalog id, and
+    /// the terms tick asserted — the fixture books as a guest, and a guest without the tick is refused.
     /// </summary>
     public static CreateOrder.Command ValidCommand(
         AddressDto? customerAddress = null,
@@ -70,7 +71,8 @@ internal static class CreateOrderTestData
         string? promoCode = null,
         string? referralCode = null,
         string? specialInstructions = null,
-        string? accessInstructions = null) =>
+        string? accessInstructions = null,
+        bool? termsAccepted = true) =>
         new(
             CustomerName: "Test Customer",
             CustomerEmail: "customer@example.com",
@@ -91,7 +93,8 @@ internal static class CreateOrderTestData
             ReferralCode: referralCode,
             PreferredEmployeeId: preferredEmployeeId,
             SpecialInstructions: specialInstructions,
-            AccessInstructions: accessInstructions);
+            AccessInstructions: accessInstructions,
+            TermsAccepted: termsAccepted);
 
     public static OrderPricingResult MatchingPricing(decimal totalPrice = MatchingTotalPrice) =>
         new(

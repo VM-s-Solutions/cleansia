@@ -18,8 +18,9 @@ namespace Cleansia.Tests.Features.Auth;
 /// ADR-0062 D4 — the e-mail registration writes the terms and privacy consents server-side, stamped
 /// with the documents in force for the market the visitor registers with, when the client asserted the
 /// tick, and records the act as <c>customer.account.register</c> keyed on the NEW user (the session has
-/// none yet). An old client that sends nothing is recorded as "not asserted" and never refused
-/// (Q-AUD-L4). The evidence names the method, language, whether a referral code was present and the two
+/// none yet). The validator is the gate — a registration without the tick never reaches this handler
+/// (<c>RegisterValidatorTests</c>) — so the handler records what it is given and refuses nothing itself.
+/// The evidence names the method, language, whether a referral code was present and the two
 /// versions — never the person.
 /// </summary>
 public sealed class RegisterConsentAndEvidenceTests
@@ -120,7 +121,7 @@ public sealed class RegisterConsentAndEvidenceTests
     [Theory]
     [InlineData(null)]
     [InlineData(false)]
-    public async Task A_Missing_Or_Unticked_Box_Grants_Nothing_And_Still_Registers(bool? termsAccepted)
+    public async Task The_Handler_Grants_Nothing_For_A_Missing_Or_Unticked_Box_And_Leaves_The_Refusal_To_The_Validator(bool? termsAccepted)
     {
         var result = await CreateHandler().Handle(Command(termsAccepted), CancellationToken.None);
 

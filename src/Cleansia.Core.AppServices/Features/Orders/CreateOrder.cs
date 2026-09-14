@@ -44,6 +44,7 @@ public class CreateOrder
         private readonly IPromoCodeService _promoCodeService;
         private readonly IOperatorTenantResolver _operatorTenantResolver;
         private readonly ITenantProvider _tenantProvider;
+        private readonly IUserConsentRepository _userConsentRepository;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -61,10 +62,12 @@ public class CreateOrder
             IPromoCodeService promoCodeService,
             IOperatorTenantResolver operatorTenantResolver,
             ITenantProvider tenantProvider,
+            IUserConsentRepository userConsentRepository,
             ILanguageRepository languageRepository)
         {
             _operatorTenantResolver = operatorTenantResolver;
             _tenantProvider = tenantProvider;
+            _userConsentRepository = userConsentRepository;
             _packageRepository = packageRepository;
             _serviceRepository = serviceRepository;
             _payConfigRepository = payConfigRepository;
@@ -88,6 +91,13 @@ public class CreateOrder
 
             RuleFor(x => x.PaymentType)
                 .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
+            // Ahead of the price chain on purpose: the failure row records the FIRST refusal, and a
+            // booking nobody consented to is refused on that ground before any figure is judged.
+            RuleFor(x => x.TermsAccepted)
+                .MustAsync(AssertedOrAlreadyConsentedAsync)
+                .WithMessage(BusinessErrorMessage.TermsNotAccepted)
+                .WithErrorCode(nameof(Command.TermsAccepted));
 
             RuleFor(x => x.CustomerName)
                 .Cascade(CascadeMode.Stop)
@@ -284,6 +294,34 @@ public class CreateOrder
                     .WithMessage(BusinessErrorMessage.PreferredEmployeeNotEligible)
                     .WithName(nameof(Command.PreferredEmployeeId));
             });
+        }
+
+        /// <summary>
+        /// The tick is the answer when it is asserted — the consent read is skipped, so a customer
+        /// re-consenting at checkout is never refused for a row the server has not written yet. Without
+        /// it, only a signed-in customer whose account already holds BOTH legal consents, granted and not
+        /// withdrawn, may book: that customer sees no box on any client and sends nothing. A guest has
+        /// no account to hold a consent on, so a guest always asserts it. A withdrawn consent is not a
+        /// consent, and asking again is the correct response to one.
+        /// </summary>
+        private async Task<bool> AssertedOrAlreadyConsentedAsync(bool? termsAccepted, CancellationToken cancellationToken)
+        {
+            if (termsAccepted == true)
+            {
+                return true;
+            }
+
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return false;
+            }
+
+            var consents = await _userConsentRepository.GetByUserIdNoTrackingAsync(userId, cancellationToken);
+            return Holds(ConsentType.TermsOfService) && Holds(ConsentType.PrivacyPolicy);
+
+            bool Holds(ConsentType type) =>
+                consents.Any(c => c.ConsentType == type && c.IsGranted && c.WithdrawnAt is null);
         }
 
         /// <summary>
@@ -678,8 +716,10 @@ public class CreateOrder
         string? CustomerFloor = null,
         string? CustomerApartment = null,
         string? AccessMode = null,
-        // The terms tick as the client asserted it. Null is a client that sends nothing; it is recorded
-        // as "not asserted", never refused (ADR-0062 D4).
+        // The terms tick as the client asserted it; the validator refuses the booking unless it is true
+        // or the signed-in account already holds both legal consents (ADR-0062 D4 as amended
+        // 2026-09-14). Nullable so the wire contract every client was built against is unchanged — a
+        // guest's null is refused, not unbindable.
         bool? TermsAccepted = null) : ICommand<Response>, IOperatorScopedRequest
     {
         // A guest's market is the inline address's country; a guest cannot name a saved address, and a

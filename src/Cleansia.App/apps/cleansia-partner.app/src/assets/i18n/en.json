@@ -1270,6 +1270,9 @@
     "tenant": {
       "not_found": "This market is not operated by any Cleansia company yet."
     },
+    "consent": {
+      "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue."
+    },
     "gdpr": {
       "consent_not_found": "We could not find that consent setting",
       "consent_already_granted": "You have already granted this consent",

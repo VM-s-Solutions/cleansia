@@ -35,7 +35,9 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// <c>customer.order.create</c> row with no user, the host audience filled, <c>isGuest</c>, the terms
 /// tick as sent with the version in force, and the standard cancellation window — and no name, contact
 /// or address text. A checkout whose submitted total is not the server's leaves one out-of-band failure
-/// row carrying the price-mismatch KEY and no payload, and no order.
+/// row carrying the price-mismatch KEY and no payload, and no order. A guest checkout that asserts no
+/// tick is refused the same way under <c>consent.terms_not_accepted</c> (owner ruling 2026-09-14): a
+/// guest has no account to hold a consent on, so the tick is the only consent there is.
 /// </summary>
 [Collection("PostgresCollection")]
 public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -155,6 +157,39 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
                 Assert.Equal("customer.order.create", row.Action);
                 Assert.Null(row.UserId);
                 Assert.Equal(JwtAudiences.Customer, row.ClientAudience);
+                Assert.Equal("Order", row.ResourceType);
+                Assert.Null(row.ResourceId);
+                Assert.Null(row.PayloadJson);
+                Assert.Equal(TestTenants.Default, row.TenantId);
+            },
+            transactional: false);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    public async Task A_Guest_Checkout_Without_The_Tick_Is_Refused_And_Leaves_One_Failure_Row_With_The_Key_And_No_Order(bool? termsAccepted)
+    {
+        await TestMethod(
+            setup: GuestSession,
+            arrange: SeedAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(GuestCommand(CzkServicePrice + CzkPackagePrice, termsAccepted)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.True(result.IsFailure);
+                var refusal = Assert.Single(Assert.IsAssignableFrom<IValidationResult>(result).Errors);
+                Assert.Equal(BusinessErrorMessage.TermsNotAccepted, refusal.Message);
+                Assert.Equal(nameof(CreateOrder.Command.TermsAccepted), refusal.Code);
+                Assert.Empty(await context.Orders.IgnoreQueryFilters().ToListAsync());
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.False(row.Success);
+                Assert.Equal(BusinessErrorMessage.TermsNotAccepted, row.ErrorCode);
+                Assert.Equal("customer.order.create", row.Action);
+                Assert.Null(row.UserId);
+                Assert.Equal(JwtAudiences.Customer, row.ClientAudience);
+                Assert.Equal(Ip, row.IpAddress);
                 Assert.Equal("Order", row.ResourceType);
                 Assert.Null(row.ResourceId);
                 Assert.Null(row.PayloadJson);

@@ -117,7 +117,8 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
         PaymentType: PaymentType.Card,
         CurrencyId: CurrencyId,
         TotalPrice: QuotedTotal,
-        PromoCode: PromoCodeText);
+        PromoCode: PromoCodeText,
+        TermsAccepted: true);
 
     private static Task ConfigureCustomerSession(IServiceCollection services)
     {

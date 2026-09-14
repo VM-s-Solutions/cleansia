@@ -300,6 +300,7 @@ public class OrderSpanCapTests
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IOperatorTenantResolver>(),
             Mock.Of<ITenantProvider>(),
+            Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>

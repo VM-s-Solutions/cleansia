@@ -69,6 +69,7 @@ public class CreateOrderExpressWaiverValidatorTests
             Mock.Of<IPromoCodeService>(),
             Mock.Of<IOperatorTenantResolver>(),
             Mock.Of<ITenantProvider>(),
+            Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 
     private void ArrangePricing(OrderPricingResult result)

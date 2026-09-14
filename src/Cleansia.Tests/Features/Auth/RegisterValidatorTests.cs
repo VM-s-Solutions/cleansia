@@ -495,4 +495,32 @@ public class RegisterValidatorTests
         Assert.Empty(languageErrors);
     }
     #endregion
+    #region Terms Tick Tests
+
+    // A customer's account comes into existence only on an asserted tick (owner ruling 2026-09-14).
+    // Null (a client that sends nothing) and false (an unticked box) are the same refusal — neither is
+    // a consent.
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    public async Task When_The_Terms_Tick_Is_Not_Asserted_Then_Validation_Fails_With_TermsNotAccepted(bool? termsAccepted)
+    {
+        var result = await ValidatorScopedTo("cleansia-cz", existing: null)
+            .ValidateAsync(Registration() with { TermsAccepted = termsAccepted });
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors, e => e.PropertyName == nameof(Register.Command.TermsAccepted));
+        Assert.Equal(BusinessErrorMessage.TermsNotAccepted, error.ErrorMessage);
+        Assert.Equal(nameof(Register.Command.TermsAccepted), error.ErrorCode);
+    }
+
+    [Fact]
+    public async Task When_The_Terms_Tick_Is_Asserted_Then_Validation_Passes()
+    {
+        var result = await ValidatorScopedTo("cleansia-cz", existing: null)
+            .ValidateAsync(Registration() with { TermsAccepted = true });
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => $"{e.ErrorCode}={e.ErrorMessage}")));
+    }
+    #endregion
 }

@@ -274,6 +274,7 @@ public class PreferredCleanerCurrencyGateTests
             new Mock<IPromoCodeService>().Object,
             Mock.Of<IOperatorTenantResolver>(),
             Mock.Of<ITenantProvider>(),
+            Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 
     private ChoosePreferredCleaner.Validator ChooseValidator() =>

@@ -1786,6 +1786,9 @@
     "legal": {
       "document_not_found": "Tento právní dokument zatím není k dispozici."
     },
+    "consent": {
+      "terms_not_accepted": "Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů."
+    },
     "order": {
       "cleaning_date": {
         "future": "Datum úklidu musí být v budoucnosti.",

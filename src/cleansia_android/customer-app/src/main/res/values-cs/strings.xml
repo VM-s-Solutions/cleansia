@@ -1253,6 +1253,7 @@
     <string name="error_auth_social_account_not_found">K tomuto přihlášení jsme nenašli žádný účet. Nejprve se zaregistrujte.</string>
     <string name="error_auth_too_many_attempts">Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.</string>
     <string name="error_company_not_found">Informace o společnosti nenalezeny</string>
+    <string name="error_consent_terms_not_accepted">Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů.</string>
     <string name="error_country_not_existing_id">Země nenalezena</string>
     <string name="error_currency_invalid">Neplatná měna</string>
     <string name="error_country_not_serviced">V této zemi zatím nepůsobíme.</string>

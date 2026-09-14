@@ -1786,6 +1786,9 @@
     "legal": {
       "document_not_found": "This legal text is not available yet."
     },
+    "consent": {
+      "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue."
+    },
     "order": {
       "cleaning_date": {
         "future": "The cleaning date must be in the future.",

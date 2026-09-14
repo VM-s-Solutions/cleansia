@@ -1270,6 +1270,9 @@
     "tenant": {
       "not_found": "Tento trh zatím neprovozuje žádná společnost Cleansia."
     },
+    "consent": {
+      "terms_not_accepted": "Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů."
+    },
     "gdpr": {
       "consent_not_found": "Toto nastavení souhlasu jsme nenašli",
       "consent_already_granted": "Tento souhlas jste už udělili",

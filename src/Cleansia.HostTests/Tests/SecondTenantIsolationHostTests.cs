@@ -224,7 +224,7 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
 
         var inSlovakia = await anonymous.PostAsJsonAsync("/api/Auth/Register", new
         {
-            email, password = Password, firstName = "New", lastName = "Slovak", language = DomainSeed.LanguageCode, countryId = SlovakiaId,
+            email, password = Password, firstName = "New", lastName = "Slovak", language = DomainSeed.LanguageCode, countryId = SlovakiaId, termsAccepted = true,
         });
         HttpAssert.IsOk(inSlovakia);
 
@@ -233,7 +233,7 @@ public sealed class SecondTenantIsolationHostTests(HostTestPostgresFixture db) :
 
         var inCzechia = await anonymous.PostAsJsonAsync("/api/Auth/Register", new
         {
-            email, password = Password, firstName = "New", lastName = "Slovak", language = DomainSeed.LanguageCode,
+            email, password = Password, firstName = "New", lastName = "Slovak", language = DomainSeed.LanguageCode, termsAccepted = true,
         });
         await HttpAssert.RejectedAsync(inCzechia, BusinessErrorMessage.ExistingUserWithEmail);
         Assert.Equal(1, await QueryAsync(ctx => ctx.Users.IgnoreQueryFilters().CountAsync(u => u.Email == email)));

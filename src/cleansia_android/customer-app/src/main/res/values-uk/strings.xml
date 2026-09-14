@@ -1250,6 +1250,7 @@
     <string name="error_auth_social_account_not_found">Ми не знайшли облікового запису для цього входу. Спочатку зареєструйтеся.</string>
     <string name="error_auth_too_many_attempts">Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз.</string>
     <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
+    <string name="error_consent_terms_not_accepted">Щоб продовжити, прийміть Умови надання послуг та Політику конфіденційності.</string>
     <string name="error_country_not_existing_id">Країну не знайдено</string>
     <string name="error_currency_invalid">Недійсна валюта</string>
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>

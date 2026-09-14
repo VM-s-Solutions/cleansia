@@ -981,6 +981,41 @@
         }
       }
     },
+    "error.consent.terms_not_accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please accept the Terms of Service and Privacy Policy to continue."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы продолжить, примите Условия использования и Политику конфиденциальности."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб продовжити, прийміть Умови надання послуг та Політику конфіденційності."
+          }
+        }
+      }
+    },
     "error.country.not_existing_id": {
       "extractionState": "manual",
       "localizations": {

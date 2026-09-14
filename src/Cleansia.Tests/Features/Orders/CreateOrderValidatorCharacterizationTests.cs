@@ -99,6 +99,7 @@ public class CreateOrderValidatorCharacterizationTests
             _promoCodeService.Object,
             Mock.Of<IOperatorTenantResolver>(),
             Mock.Of<ITenantProvider>(),
+            Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 
     private static IServicePriceRepository PricedServices(params Currency[] currencies)

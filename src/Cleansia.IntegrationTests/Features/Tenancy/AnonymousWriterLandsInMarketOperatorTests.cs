@@ -52,7 +52,7 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
             setup: Anonymous,
             arrange: SeedAndCommitAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(new Register.Command("visitor@cleansia.test", Password, "Vi", "Sitor", "en", CountryId: countryId)),
+                .Send(new Register.Command("visitor@cleansia.test", Password, "Vi", "Sitor", "en", CountryId: countryId, TermsAccepted: true)),
             assert: async (context, result) =>
             {
                 Assert.True(result.IsSuccess, Describe(result));
@@ -233,7 +233,7 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
             setup: Anonymous,
             arrange: SeedAndCommitAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(new Register.Command("nobody@cleansia.test", Password, "No", "Body", "en", CountryId: Poland)),
+                .Send(new Register.Command("nobody@cleansia.test", Password, "No", "Body", "en", CountryId: Poland, TermsAccepted: true)),
             assert: async (context, result) =>
             {
                 Assert.False(result.IsSuccess);
@@ -254,7 +254,7 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
             setup: Anonymous,
             arrange: SeedAndCommitAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(new Register.Command("nowhere@cleansia.test", Password, "No", "Where", "en", CountryId: countryId)),
+                .Send(new Register.Command("nowhere@cleansia.test", Password, "No", "Where", "en", CountryId: countryId, TermsAccepted: true)),
             assert: async (context, result) =>
             {
                 Assert.False(result.IsSuccess);

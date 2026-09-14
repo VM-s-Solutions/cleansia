@@ -566,6 +566,14 @@ public static class BusinessErrorMessage
     public const string ConsentNotFound = "gdpr.consent_not_found";
     public const string ConsentAlreadyGranted = "gdpr.consent_already_granted";
 
+    // Consent
+    /// <summary>
+    /// A customer registration or booking that does not assert the terms tick is refused (owner ruling
+    /// 2026-09-14, ADR-0062 D4 as amended). A signed-in customer who already holds both legal consents
+    /// sees no box and is not asked again; a guest always asserts it.
+    /// </summary>
+    public const string TermsNotAccepted = "consent.terms_not_accepted";
+
     // Promo codes — kept for client mapping consistency. Not used directly
     // inside the handler (which returns the PromoCodeError enum stringified).
     public const string PromoNotFound = "promo.not_found";

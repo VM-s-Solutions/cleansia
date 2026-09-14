@@ -91,6 +91,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "common.min_length": "AddSavedAddress, CreateDispute, CreateOrder +1 more",
         "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth +38 more",
         "company.not_found": "ReceiptService",
+        "consent.terms_not_accepted": "CreateOrder, Register",
         "country.not_existing_id": "AddSavedAddress, UpdateSavedAddress",
         "country.not_serviced":
             "CreateMembershipSubscription, OperatorTenantScopeBehavior, OrderAddressResolver, QuoteOrder +1 more",

@@ -50,6 +50,12 @@ public class Register
                 .WithMessage(BusinessErrorMessage.Required)
                 .WithErrorCode(nameof(Command.Language))
                 .SetValidator(new LanguageValidator(languageRepository));
+
+            // Null and false are one refusal: a client that says nothing has not consented either.
+            RuleFor(user => user.TermsAccepted)
+                .Must(accepted => accepted == true)
+                .WithMessage(BusinessErrorMessage.TermsNotAccepted)
+                .WithErrorCode(nameof(Command.TermsAccepted));
         }
 
         // One identity per email across the holding (ADR-0061 D5.1): the pre-check ignores the tenant
@@ -76,8 +82,9 @@ public class Register
         string? ReferralCode = null,
         // The market the visitor registers with; null is the default market (ADR-0061 D3).
         string? CountryId = null,
-        // The terms tick as the client asserted it. Null is an older client that sends nothing; it is
-        // recorded as "not asserted", never refused (ADR-0062 D4, Q-AUD-L4).
+        // The terms tick as the client asserted it; the validator refuses the registration unless it is
+        // true (ADR-0062 D4 as amended 2026-09-14). Nullable so the wire contract every client was
+        // built against is unchanged — null is refused, not unbindable.
         bool? TermsAccepted = null)
         : ICommand, IOperatorScopedRequest;
 

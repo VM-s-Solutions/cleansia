@@ -1786,6 +1786,9 @@
     "legal": {
       "document_not_found": "Tento právny dokument zatiaľ nie je k dispozícii."
     },
+    "consent": {
+      "terms_not_accepted": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia."
+    },
     "order": {
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti.",

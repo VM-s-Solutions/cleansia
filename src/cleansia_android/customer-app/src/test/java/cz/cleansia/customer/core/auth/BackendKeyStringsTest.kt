@@ -105,6 +105,16 @@ class BackendKeyStringsTest {
         "order.country_operator_mismatch",
     )
 
+    /**
+     * The terms gate: `Register` and `CreateOrder` refuse a call that asserts no tick — a registration
+     * always, a booking unless the signed-in account already holds both legal consents. The social
+     * sign-ups keep `auth.social_account_not_found` for the same absence, because there the flag is
+     * what tells the sign-in screen from the sign-up screen.
+     */
+    private val termsTickKeys = listOf(
+        "consent.terms_not_accepted",
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -157,6 +167,11 @@ class BackendKeyStringsTest {
     @Test
     fun `the operator mismatch CreateOrder can answer resolves to a sentence in all five locales`() {
         assertAllResolve(createOrderOperatorKeys)
+    }
+
+    @Test
+    fun `the terms refusal Register and CreateOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(termsTickKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

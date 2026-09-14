@@ -245,6 +245,7 @@ public class CreateOrderPayCoverageValidatorTests
         Mock.Of<IPromoCodeService>(),
         Mock.Of<IOperatorTenantResolver>(),
         Mock.Of<ITenantProvider>(),
+        Mock.Of<IUserConsentRepository>(),
         CreateOrderTestData.Speaking(Constants.Language.English));
 
     [Fact]

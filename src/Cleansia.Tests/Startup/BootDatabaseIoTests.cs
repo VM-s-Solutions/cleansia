@@ -5,18 +5,21 @@ using Cleansia.Config;
 using Cleansia.Config.Database;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Seed.Legal;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 
 namespace Cleansia.Tests.Startup;
 
 /// <summary>
 /// Boot cost, pinned at the three places it is observable without a deployed host: whether composing the DI
 /// graph touches the database, what that touch is allowed to COST when the database does not answer, and
-/// whether the EF model warm-up stays off the startup path.
+/// whether the EF model warm-up stays off the startup path — and, at the other end of the host's life,
+/// that the pool it built is the host's to close.
 ///
 /// <para>The probe is a loopback listener that accepts and immediately closes, so a connection attempt is
 /// COUNTED rather than timed out. Counting is not by itself enough to make these assertions sound: the
@@ -212,6 +215,46 @@ public class BootDatabaseIoTests
         Assert.False(typeof(BackgroundService).IsAssignableFrom(typeof(LegalDocumentSeedHostedService)),
             "The seed must stay a plain IHostedService: being awaited inline is what turns its place in the " +
             "order into a wait behind the migration rather than a race with it.");
+    }
+
+    /// <summary>
+    /// The pool is the host's to close. Registered through the container it is disposed with the provider,
+    /// which is what lets the connections go at shutdown — and what lets every host a test suite boots
+    /// take its connections with it instead of holding them to the end of the run. The probe is the
+    /// anti-vacuity leg: a disposed data source refuses before it connects, so the only connection it may
+    /// count is the test's own control one.
+    /// </summary>
+    [Fact]
+    public async Task DisposingTheProviderDisposesTheDatabasePool()
+    {
+        using var probe = new ClosingLoopbackListener();
+        var provider = BuildGraph(probe.ConnectionString);
+        var dataSource = provider.GetRequiredService<NpgsqlDataSource>();
+
+        await provider.DisposeAsync();
+
+        Assert.Throws<ObjectDisposedException>(() => dataSource.OpenConnection());
+        AssertNothingConnectedBesidesTheControlProbe(probe, "Opening a connection on the disposed pool");
+    }
+
+    /// <summary>
+    /// The other half of ownership: there is ONE pool, and the DbContext draws from the container's. A
+    /// context configured with its own data source — or a connection string, which builds one — would
+    /// keep a second pool the host never disposes, which is exactly the leak the factory registration in
+    /// AddDbContextBindings closes. Disposing the container's pool underneath a live scope is the proof.
+    /// </summary>
+    [Fact]
+    public async Task TheDbContextDrawsFromTheContainerOwnedPool()
+    {
+        using var probe = new ClosingLoopbackListener();
+        await using var provider = BuildGraph(probe.ConnectionString);
+        provider.GetRequiredService<NpgsqlDataSource>().Dispose();
+
+        using var scope = provider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
+
+        Assert.Throws<ObjectDisposedException>(() => context.Database.OpenConnection());
+        AssertNothingConnectedBesidesTheControlProbe(probe, "Opening the DbContext's connection on the disposed pool");
     }
 
     private static List<Type?> HostedServiceImplementations(IServiceCollection services) =>

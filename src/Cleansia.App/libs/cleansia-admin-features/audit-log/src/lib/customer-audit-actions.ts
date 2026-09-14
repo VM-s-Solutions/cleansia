@@ -11,6 +11,7 @@ export const CUSTOMER_AUDIT_ACTIONS = [
   'customer.account.register',
   'customer.consent.grant',
   'customer.consent.withdraw',
+  'customer.gdpr.export',
   'customer.membership.subscribe',
   'customer.membership.swap',
   'customer.membership.cancel',

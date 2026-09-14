@@ -10,7 +10,8 @@ namespace Cleansia.HostTests.Tests;
 /// ADR-0062 D5-export / Q-AUD-O3 — the customer's own export (<c>GdprController.ExportMyData</c> on the
 /// Customer host) moved to POST when it became a Command, so the <c>GdprRequest("Export")</c> row it
 /// had always added finally commits. End-to-end: the caller's trail is in the body, the request row is
-/// in the database, no admin row is written for a self-export, and the old GET answers 405.
+/// in the database, the self-export is recorded as a customer act and not an admin one (owner ruling on
+/// Q-AUD-O3), and the old GET answers 405.
 /// </summary>
 public sealed class GdprSelfExportRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
@@ -27,7 +28,7 @@ public sealed class GdprSelfExportRouteTests(HostTestPostgresFixture db) : Authz
     }
 
     [Fact]
-    public async Task The_caller_gets_their_own_trail_the_request_row_commits_without_an_admin_row_and_the_old_GET_is_gone()
+    public async Task The_caller_gets_their_own_trail_the_request_row_commits_the_act_lands_on_the_customer_table_and_the_old_GET_is_gone()
     {
         await SeedAsync(async ctx =>
         {
@@ -59,6 +60,10 @@ public sealed class GdprSelfExportRouteTests(HostTestPostgresFixture db) : Authz
         Assert.Equal(GdprRequestStatus.Completed, request.Status);
 
         Assert.Equal(0, await QueryAsync(ctx => ctx.AdminActionAudits.IgnoreQueryFilters().CountAsync()));
+        var audit = await QueryAsync(ctx => ctx.CustomerActionAudits.IgnoreQueryFilters().SingleAsync(a => a.Action == "customer.gdpr.export"));
+        Assert.Equal(SubjectId, audit.UserId);
+        Assert.True(audit.Success);
+        Assert.Equal(SubjectId, audit.ResourceId);
     }
 
     private sealed record ExportResponse(ProfileResponse Profile, List<ActionResponse> CustomerActions);

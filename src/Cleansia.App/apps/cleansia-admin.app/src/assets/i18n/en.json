@@ -899,6 +899,9 @@
             "update": "Recurring booking updated",
             "set_active": "Recurring booking paused or resumed",
             "delete": "Recurring booking deleted"
+          },
+          "gdpr": {
+            "export": "Data exported"
           }
         },
         "employee": {

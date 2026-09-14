@@ -14,8 +14,9 @@ namespace Cleansia.Tests.Features.Auditing;
 /// ADR-0062 D3 (Verification #2) — the customer-audience roster, pinned whole. Every money or
 /// entitlement act carries its frozen label, resource type and anonymous-actor flag, and NOTHING else
 /// carries the customer audience: a marker added, dropped or relabelled anywhere in
-/// <c>Cleansia.Core.AppServices</c> reddens this, the same discipline as the erasure roster. The three
-/// absences are asserted by name because each is a decision, not an omission.
+/// <c>Cleansia.Core.AppServices</c> reddens this, the same discipline as the erasure roster. The
+/// self-export is on it by owner ruling (Q-AUD-O3): a whole-record egress is recorded whoever asks. The
+/// three absences are asserted by name because each is a decision, not an omission.
 /// </summary>
 public sealed class CustomerAuditActionRosterTests
 {
@@ -30,6 +31,7 @@ public sealed class CustomerAuditActionRosterTests
         [typeof(Register.Command)] = new("customer.account.register", "User", AllowsAnonymousActor: true),
         [typeof(GrantConsent.Command)] = new("customer.consent.grant", "User"),
         [typeof(WithdrawConsent.Command)] = new("customer.consent.withdraw", "User"),
+        [typeof(ExportUserData.Command)] = new("customer.gdpr.export", "User"),
         [typeof(CreateMembershipCheckoutSession.Command)] = new("customer.membership.subscribe", "UserMembership"),
         [typeof(CreateMembershipSubscription.Command)] = new("customer.membership.subscribe", "UserMembership"),
         [typeof(SwapMembershipPlan.Command)] = new("customer.membership.swap", "UserMembership"),
@@ -51,7 +53,7 @@ public sealed class CustomerAuditActionRosterTests
             .ToList();
 
     [Fact]
-    public void The_Customer_Roster_Is_Exactly_The_Sixteen_Commands_With_Their_Frozen_Labels()
+    public void The_Customer_Roster_Is_Exactly_The_Seventeen_Commands_With_Their_Frozen_Labels()
     {
         var marked = MarkedInProduction();
 
@@ -89,11 +91,11 @@ public sealed class CustomerAuditActionRosterTests
     }
 
     [Fact]
-    public void Fifteen_Distinct_Labels_Because_Both_Subscribe_Surfaces_Share_One()
+    public void Sixteen_Distinct_Labels_Because_Both_Subscribe_Surfaces_Share_One()
     {
         var labels = MarkedInProduction().Select(x => x.Marker.Action).Distinct().ToList();
 
-        Assert.Equal(15, labels.Count);
+        Assert.Equal(16, labels.Count);
         Assert.All(labels, l => Assert.StartsWith("customer.", l));
     }
 

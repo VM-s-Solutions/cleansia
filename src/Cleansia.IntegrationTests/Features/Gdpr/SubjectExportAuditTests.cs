@@ -6,11 +6,13 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.IntegrationTests.Features.Legal;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -26,8 +28,11 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 /// <c>GdprRequest("Export")</c> row each of them had been adding since the feature shipped was never
 /// committed, because a Query has no commit for it to ride. As Commands they commit; the admin one is
 /// additionally an audited admin act (<c>gdpr.user.export</c>) whose snapshot holds counts and the
-/// subject id, never the exported data. A build that throws commits nothing and is recorded out-of-band
-/// with the exception type — the test that would have caught the silent drop.
+/// subject id, never the exported data; the customer's own is a customer act (<c>customer.gdpr.export</c>,
+/// owner ruling on Q-AUD-O3) whose evidence is section counts. A build that throws commits nothing and is
+/// recorded out-of-band with the exception type on whichever table the actor's role selects — the test
+/// that would have caught the silent drop. The consent section carries what was consented: request
+/// context, version and the stored document the version names.
 /// </summary>
 [Collection("PostgresCollection")]
 public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -39,6 +44,8 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
     private const string AdminEmail = "admin@cleansia.test";
     private const string SubjectIp = "203.0.113.9";
     private const string SubjectDevice = "iPhone 15 / iOS 17.4";
+    private const string ConsentIp = "192.0.2.44";
+    private const string ConsentUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/130.0";
     private const string Payload = "{\"feeRate\": 0.5, \"hasBeenAccepted\": true}";
 
     private static Task AsAdministrator(IServiceCollection services)
@@ -52,6 +59,7 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
     {
         services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => new TestUserSessionProvider(
             SubjectId, SubjectEmail, [new Claim(ClaimTypes.Role, UserProfile.Customer.ToString())])));
+        services.Replace(ServiceDescriptor.Scoped<IRequestMetadataProvider>(_ => new TestRequestMetadataProvider(SubjectIp, SubjectDevice)));
         return Task.CompletedTask;
     }
 
@@ -133,7 +141,7 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
     }
 
     [Fact]
-    public async Task The_Subjects_Own_Export_Carries_Only_Their_Rows_Commits_Its_Request_And_Writes_No_Admin_Row()
+    public async Task The_Subjects_Own_Export_Carries_Only_Their_Rows_Commits_Its_Request_And_Is_Recorded_As_A_Customer_Act_With_Counts_Only()
     {
         await TestMethod(
             setup: AsTheSubject,
@@ -152,7 +160,115 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
                 Assert.Equal(SubjectEmail, request.ProcessedBy);
 
                 Assert.Equal(0, await context.AdminActionAudits.IgnoreQueryFilters().CountAsync());
-                Assert.Equal(3, await context.CustomerActionAudits.IgnoreQueryFilters().CountAsync());
+
+                var rows = await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync();
+                Assert.Equal(4, rows.Count);
+                var audit = Assert.Single(rows, a => a.Action == "customer.gdpr.export");
+                Assert.True(audit.Success);
+                Assert.Null(audit.ErrorCode);
+                Assert.Equal(SubjectId, audit.UserId);
+                Assert.Equal("User", audit.ResourceType);
+                Assert.Equal(SubjectId, audit.ResourceId);
+                Assert.Equal(JwtAudiences.Customer, audit.ClientAudience);
+                Assert.Equal(SubjectIp, audit.IpAddress);
+                Assert.Equal(SubjectDevice, audit.DeviceLabel);
+                Assert.NotNull(audit.PayloadJson);
+                var evidence = JsonDocument.Parse(audit.PayloadJson!).RootElement;
+                Assert.Equal(0, evidence.GetProperty("orderCount").GetInt32());
+                Assert.Equal(0, evidence.GetProperty("consentCount").GetInt32());
+                Assert.Equal(2, evidence.GetProperty("customerActionCount").GetInt32());
+                Assert.Equal(3, evidence.EnumerateObject().Count());
+                Assert.DoesNotContain(SubjectEmail, audit.PayloadJson, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain(TestConstants.TestUserSession.TestFirstName, audit.PayloadJson, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain("feeRate", audit.PayloadJson);
+                Assert.DoesNotContain("ORD-", audit.PayloadJson);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Self_Export_Whose_Build_Throws_Commits_No_Request_And_Is_Recorded_OutOfBand_On_The_Customer_Table_With_The_Exception_Type()
+    {
+        await TestMethod(
+            setup: async services =>
+            {
+                await AsTheSubject(services);
+                services.Replace(ServiceDescriptor.Scoped<IGdprExportService>(_ => new ThrowingExportService()));
+            },
+            arrange: SeedSubjectAndBystanderWithRows,
+            act: async provider =>
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                    provider.GetRequiredService<IMediator>().Send(new ExportUserData.Command()));
+                return true;
+            },
+            assert: async (CleansiaDbContext context, bool _) =>
+            {
+                Assert.Empty(await context.GdprRequests.IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(0, await context.AdminActionAudits.IgnoreQueryFilters().CountAsync());
+
+                var rows = await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync();
+                Assert.Equal(4, rows.Count);
+                var audit = Assert.Single(rows, a => a.Action == "customer.gdpr.export");
+                Assert.False(audit.Success);
+                Assert.Equal(nameof(InvalidOperationException), audit.ErrorCode);
+                Assert.Equal(SubjectId, audit.UserId);
+                Assert.Equal("User", audit.ResourceType);
+                Assert.Equal(JwtAudiences.Customer, audit.ClientAudience);
+                Assert.Equal(SubjectIp, audit.IpAddress);
+                Assert.Null(audit.PayloadJson);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task The_Consent_Section_Carries_The_Request_Context_The_Version_And_The_Document_Each_Grant_Named()
+    {
+        await TestMethod(
+            setup: AsTheSubject,
+            arrange: async context =>
+            {
+                await SeedSubjectAndBystanderWithRows(context);
+                await LegalSeed.SeedAsync(context);
+                var terms = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService);
+
+                var versioned = UserConsent.Grant(SubjectId, ConsentType.TermsOfService, ConsentIp, ConsentUserAgent, terms.Version, terms.Id);
+                var legacy = UserConsent.Grant(SubjectId, ConsentType.MarketingEmails, ipAddress: null, userAgent: null, documentVersion: null);
+                var strangers = UserConsent.Grant(BystanderId, ConsentType.PrivacyPolicy, "198.51.100.7", "Pixel 8", terms.Version, terms.Id);
+                foreach (var consent in new[] { versioned, legacy, strangers })
+                {
+                    consent.Created("seed", DateTimeOffset.UtcNow);
+                }
+
+                context.UserConsents.AddRange(versioned, legacy, strangers);
+            },
+            act: async provider => await provider.GetRequiredService<IMediator>().Send(new ExportUserData.Command()),
+            assert: async (CleansiaDbContext context, BusinessResult<GdprExportDto> result) =>
+            {
+                Assert.True(result.IsSuccess);
+                var terms = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService);
+
+                Assert.Equal(2, result.Value.Consents.Count);
+                Assert.DoesNotContain(result.Value.Consents, c => c.ConsentType == ConsentType.PrivacyPolicy);
+
+                var versioned = Assert.Single(result.Value.Consents, c => c.ConsentType == ConsentType.TermsOfService);
+                Assert.True(versioned.IsGranted);
+                Assert.NotNull(versioned.GrantedAt);
+                Assert.Equal(ConsentIp, versioned.IpAddress);
+                Assert.Equal(ConsentUserAgent, versioned.UserAgent);
+                Assert.Equal(terms.Version, versioned.DocumentVersion);
+                Assert.Equal(terms.Id, versioned.LegalDocumentId);
+
+                var legacy = Assert.Single(result.Value.Consents, c => c.ConsentType == ConsentType.MarketingEmails);
+                Assert.Null(legacy.IpAddress);
+                Assert.Null(legacy.UserAgent);
+                Assert.Null(legacy.DocumentVersion);
+                Assert.Null(legacy.LegalDocumentId);
+
+                var audit = Assert.Single(await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync(), a => a.Action == "customer.gdpr.export");
+                Assert.Equal(2, JsonDocument.Parse(audit.PayloadJson!).RootElement.GetProperty("consentCount").GetInt32());
+                Assert.DoesNotContain(ConsentUserAgent, audit.PayloadJson!);
+                Assert.DoesNotContain(terms.Version, audit.PayloadJson!);
             },
             transactional: false);
     }

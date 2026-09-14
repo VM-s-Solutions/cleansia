@@ -81,7 +81,8 @@ public class GdprExportService(
 
         var consents = await userConsentRepository.GetByUserIdNoTrackingAsync(userId, cancellationToken);
         var consentDtos = consents.Select(c => new GdprExportConsentDto(
-            c.Id, c.ConsentType, c.IsGranted, c.GrantedAt, c.WithdrawnAt)).ToList();
+            c.Id, c.ConsentType, c.IsGranted, c.GrantedAt, c.WithdrawnAt,
+            c.IpAddress, c.UserAgent, c.DocumentVersion, c.LegalDocumentId)).ToList();
 
         var customerActions = await customerActionAuditRepository.GetQueryable()
             .Where(a => a.UserId == userId)

@@ -7,8 +7,9 @@ namespace Cleansia.Tests.Logging;
 /// <summary>
 /// ADR-0062 D5-export / S6 — the subject export now carries the customer's own audit trail
 /// (<c>customerActions</c>: the payload, the IP address, the device label) beside the profile block that
-/// was already there. None of those names is in either redaction list and the device label is
-/// client-controlled text no denylist reaches, so the two export routes stay suppressed wholesale — the
+/// was already there, and the consent section carries the user agent each grant was made from. None of
+/// those names is in either redaction list and the device label and user agent are client-controlled
+/// text no denylist reaches, so the two export routes stay suppressed wholesale — the
 /// <c>gdpr/</c> rule, on every host — and this pins that the rule still holds for the POST verb the
 /// routes moved to when the export became a Command. The body is a real <see cref="GdprExportDto"/>
 /// through the hosts' own serializer options, so a renamed member cannot make this pass by accident.
@@ -62,7 +63,7 @@ public class RequestLogSubjectExportPathSuppressionTests
             Orders: [],
             Documents: [],
             Invoices: [],
-            Consents: [new GdprExportConsentDto("c-1", ConsentType.TermsOfService, true, DateTimeOffset.UtcNow, null)],
+            Consents: [new GdprExportConsentDto("c-1", ConsentType.TermsOfService, true, DateTimeOffset.UtcNow, null, Ip, Device, "2026-09-14", "legal-1")],
             CustomerActions:
             [
                 new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-1",
@@ -79,10 +80,12 @@ public class RequestLogSubjectExportPathSuppressionTests
         Assert.Contains("\"payloadJson\":", json);
         Assert.Contains("\"ipAddress\":\"" + Ip + "\"", json);
         Assert.Contains("\"deviceLabel\":", json);
+        Assert.Contains("\"userAgent\":", json);
         Assert.Contains("\"email\":\"" + Email + "\"", json);
         Assert.Contains("\"phoneNumber\":\"" + Phone + "\"", json);
         Assert.False(WireSurface.IsRedacted("payloadJson"));
         Assert.False(WireSurface.IsRedacted("ipAddress"));
         Assert.False(WireSurface.IsRedacted("deviceLabel"));
+        Assert.False(WireSurface.IsRedacted("userAgent"));
     }
 }

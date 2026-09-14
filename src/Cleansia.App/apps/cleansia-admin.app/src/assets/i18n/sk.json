@@ -899,6 +899,9 @@
             "update": "Opakovaná objednávka upravená",
             "set_active": "Opakovaná objednávka pozastavená alebo obnovená",
             "delete": "Opakovaná objednávka zmazaná"
+          },
+          "gdpr": {
+            "export": "Údaje exportované"
           }
         },
         "employee": {

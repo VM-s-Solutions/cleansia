@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -10,22 +11,31 @@ namespace Cleansia.Core.AppServices.Features.Gdpr;
 
 /// <summary>
 /// A Command, not a Query, so the <c>GdprRequest("Export")</c> row it adds is committed — as a Query it
-/// never was (ADR-0062 D6, Q-AUD-O3). No audit marker: a self-export is the subject reading their own
-/// record, not an act on somebody else.
+/// never was (ADR-0062 D6). Recorded as a customer act (owner ruling on Q-AUD-O3): the subject's whole
+/// record leaving the platform is worth a row even when the subject is the one asking. A build that
+/// throws commits nothing; the pipeline records the failure out-of-band with the exception type.
 /// </summary>
+[AuditAction("customer.gdpr.export", Audience = AuditAudience.Customer, ResourceType = "User")]
 public static class ExportUserData
 {
     public record Command : ICommand<GdprExportDto>;
+
+    /// <summary>
+    /// Section counts only. The export holds everything the platform knows about the subject, which is
+    /// exactly what the audit row must never copy.
+    /// </summary>
+    public record GdprExportEvidence(int OrderCount, int ConsentCount, int CustomerActionCount) : ICustomerAuditPayload;
 
     // Required even though the command is parameterless: the validation pipeline rejects any *Command
     // with no registered validator. The export operates on the session user, so there is no input.
     public class Validator : AbstractValidator<Command>;
 
-    internal class Handler(
+    public class Handler(
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
         IGdprExportService gdprExportService,
-        IGdprRequestRepository gdprRequestRepository)
+        IGdprRequestRepository gdprRequestRepository,
+        IAuditContext auditContext)
         : ICommandHandler<Command, GdprExportDto>
     {
         public async Task<BusinessResult<GdprExportDto>> Handle(Command request, CancellationToken cancellationToken)
@@ -42,6 +52,9 @@ public static class ExportUserData
 
             var export = await gdprExportService.BuildAsync(user.Id, user.Email, cancellationToken);
             auditEntry.MarkCompleted(user.Email);
+
+            auditContext.RecordEvidence("User", user.Id,
+                new GdprExportEvidence(export.Orders.Count, export.Consents.Count, export.CustomerActions.Count));
 
             return BusinessResult.Success(export);
         }

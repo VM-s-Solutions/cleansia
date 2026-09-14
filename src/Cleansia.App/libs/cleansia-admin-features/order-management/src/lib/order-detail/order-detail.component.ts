@@ -68,6 +68,10 @@ export class OrderDetailComponent implements OnInit {
     );
   }
 
+  exportIncidentFile(): void {
+    this.facade.exportIncidentFile();
+  }
+
   onRefunded(): void {
     this.reloadOrder();
   }

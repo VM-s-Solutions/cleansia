@@ -703,7 +703,13 @@
       },
       "access_instructions_reveal": "Reveal",
       "access_instructions_reveal_hint": "Revealing entry instructions is recorded against your account.",
-      "access_instructions_reveal_failed": "Could not reveal the entry instructions. Please try again."
+      "access_instructions_reveal_failed": "Could not reveal the entry instructions. Please try again.",
+      "incident_file": {
+        "button": "Incident file",
+        "success": "The incident file was downloaded and recorded",
+        "error": "The incident file could not be built",
+        "no_subject": "No customer is on this order's trail — build the file from the customer's page."
+      }
     },
     "invoice_management": {
       "title": "Invoice Management",
@@ -2508,7 +2514,14 @@
       },
       "export_subject_data": "Export subject data",
       "export_success": "The subject export was downloaded and recorded",
-      "export_error": "The subject export failed"
+      "export_error": "The subject export failed",
+      "incident_file": {
+        "button": "Incident file (PDF)",
+        "order_scope": "Order id (optional)",
+        "order_scope_hint": "Leave empty for the whole account, or enter one of this customer's order ids to scope the file to that order.",
+        "success": "The incident file was downloaded and recorded",
+        "error": "The incident file could not be built"
+      }
     }
   },
   "employees": {

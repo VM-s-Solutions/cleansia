@@ -12,6 +12,7 @@ import {
   GetUserLoyaltyActivityActivityItem,
   GrantPointsManuallyCommand,
   ExpireCustomerCreditCommand,
+  FileResponse,
   GdprExportDto,
   IssueCustomerCreditCommand,
   RevokePointsManuallyCommand,
@@ -88,6 +89,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
 
   readonly submitting = signal<boolean>(false);
   readonly exporting = signal<boolean>(false);
+  readonly incidentFileExporting = signal<boolean>(false);
 
   private currentUserId: string | null = null;
   private currentActivityOffset = 0;
@@ -411,14 +413,54 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * The incident file: the server builds the PDF from the database and records the build as an
+   * admin audit row. An empty scope asks for the whole account; an order id narrows it to that
+   * order, and whether the order is this customer's is the server's rule.
+   */
+  exportIncidentFile(orderScope: string | null): void {
+    const userId = this.currentUserId;
+    if (!userId || this.incidentFileExporting()) return;
+
+    const orderId = orderScope?.trim() || undefined;
+    this.incidentFileExporting.set(true);
+    this.gdprClient
+      .incidentFile(userId, orderId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showApiError(
+            error,
+            'pages.customer_detail.incident_file.error'
+          );
+          return of(null);
+        }),
+        finalize(() => this.incidentFileExporting.set(false))
+      )
+      .subscribe((file: FileResponse | null) => {
+        if (file) {
+          this.downloadBlob(
+            file.data,
+            file.fileName ?? incidentFileName(userId, new Date())
+          );
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.customer_detail.incident_file.success')
+          );
+        }
+      });
+  }
+
   navigateBack(): void {
     this.router.navigate(['/admin-user-management']);
   }
 
   private downloadJson(data: unknown, fileName: string): void {
-    if (!this.isBrowser) return;
     const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    this.downloadBlob(new Blob([json], { type: 'application/json' }), fileName);
+  }
+
+  private downloadBlob(blob: Blob, fileName: string): void {
+    if (!this.isBrowser) return;
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -430,4 +472,9 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
 
 export function subjectExportFileName(userId: string, exportedAt: Date): string {
   return `subject-export-${userId}-${exportedAt.toISOString().slice(0, 10)}.json`;
+}
+
+export function incidentFileName(userId: string, generatedAt: Date): string {
+  const day = generatedAt.toISOString().slice(0, 10).replace(/-/g, '');
+  return `incident-${userId}-${day}.pdf`;
 }

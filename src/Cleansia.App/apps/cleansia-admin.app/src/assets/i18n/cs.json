@@ -703,7 +703,13 @@
       },
       "access_instructions_reveal": "Zobrazit",
       "access_instructions_reveal_hint": "Zobrazení pokynů ke vstupu se zaznamenává k vašemu účtu.",
-      "access_instructions_reveal_failed": "Pokyny ke vstupu se nepodařilo zobrazit. Zkuste to prosím znovu."
+      "access_instructions_reveal_failed": "Pokyny ke vstupu se nepodařilo zobrazit. Zkuste to prosím znovu.",
+      "incident_file": {
+        "button": "Spis incidentu",
+        "success": "Spis incidentu byl stažen a zaznamenán",
+        "error": "Spis incidentu se nepodařilo sestavit",
+        "no_subject": "Na časové ose této objednávky není žádný zákazník — sestavte spis ze stránky zákazníka."
+      }
     },
     "invoice_management": {
       "title": "Správa faktur",
@@ -2508,7 +2514,14 @@
       },
       "export_subject_data": "Exportovat data subjektu",
       "export_success": "Export dat subjektu byl stažen a zaznamenán",
-      "export_error": "Export dat subjektu se nezdařil"
+      "export_error": "Export dat subjektu se nezdařil",
+      "incident_file": {
+        "button": "Spis incidentu (PDF)",
+        "order_scope": "ID objednávky (volitelné)",
+        "order_scope_hint": "Nechte prázdné pro celý účet, nebo zadejte ID jedné objednávky tohoto zákazníka a spis se omezí na ni.",
+        "success": "Spis incidentu byl stažen a zaznamenán",
+        "error": "Spis incidentu se nepodařilo sestavit"
+      }
     }
   },
   "employees": {

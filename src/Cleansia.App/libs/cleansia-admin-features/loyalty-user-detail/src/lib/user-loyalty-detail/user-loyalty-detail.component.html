@@ -18,6 +18,30 @@
         [loading]="facade.exporting()"
         (onClick)="exportSubjectData()"
       />
+      <cleansia-button
+        *cleansiaPermission="Policy.CanAdminExportUserData"
+        class="cleansia-user-loyalty-detail__incident-file"
+        [label]="'pages.customer_detail.incident_file.button' | translate"
+        icon="pi pi-file-pdf"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="facade.incidentFileExporting()"
+        (onClick)="exportIncidentFile()"
+      />
+    </div>
+
+    <div
+      *cleansiaPermission="Policy.CanAdminExportUserData"
+      class="cleansia-user-loyalty-detail__incident-scope"
+    >
+      <cleansia-text-input
+        [label]="'pages.customer_detail.incident_file.order_scope' | translate"
+        [formControl]="incidentOrderControl"
+        inputSize="large-width"
+      />
+      <small class="cleansia-user-loyalty-detail__incident-scope-hint">
+        {{ 'pages.customer_detail.incident_file.order_scope_hint' | translate }}
+      </small>
     </div>
 
     @if (facade.accountLoading() && !facade.account()) {

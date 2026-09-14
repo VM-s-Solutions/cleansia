@@ -8,6 +8,7 @@ import {
   CreditTransactionReason,
   ExpireCustomerCreditCommand,
   ExpireCustomerCreditResponse,
+  FileResponse,
   GdprExportDto,
   GetReferralsByUserResponse,
   GrantPointsManuallyCommand,
@@ -19,7 +20,10 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
-import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
+import {
+  incidentFileName,
+  UserLoyaltyDetailFacade,
+} from './user-loyalty-detail.facade';
 
 describe('UserLoyaltyDetailFacade — referrals panel', () => {
   let facade: UserLoyaltyDetailFacade;
@@ -402,5 +406,116 @@ describe('UserLoyaltyDetailFacade — subject export', () => {
     facade.exporting.set(true);
     facade.exportSubjectData();
     expect(gdprClient.export).not.toHaveBeenCalled();
+  });
+});
+
+describe('UserLoyaltyDetailFacade — incident file', () => {
+  let facade: UserLoyaltyDetailFacade;
+  let gdprClient: { export: jest.Mock; incidentFile: jest.Mock };
+  let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
+  let download: jest.SpyInstance;
+
+  const pdf = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
+  const served: FileResponse = {
+    data: pdf,
+    status: 200,
+    fileName: 'incident-user-1-20260914.pdf',
+  };
+
+  beforeEach(() => {
+    gdprClient = {
+      export: jest.fn(),
+      incidentFile: jest.fn().mockReturnValue(of(served)),
+    };
+    snackbar = { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() };
+
+    TestBed.configureTestingModule({
+      providers: [
+        UserLoyaltyDetailFacade,
+        {
+          provide: AdminClient,
+          useValue: { adminCreditClient: { user: jest.fn().mockReturnValue(of(null)) } },
+        },
+        { provide: SnackbarService, useValue: snackbar },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: AdminGdprClient, useValue: gdprClient },
+      ],
+    });
+    facade = TestBed.inject(UserLoyaltyDetailFacade);
+    download = jest
+      .spyOn(
+        facade as unknown as { downloadBlob: (b: Blob, n: string) => void },
+        'downloadBlob'
+      )
+      .mockImplementation(() => undefined);
+  });
+
+  it('asks for the whole account when no order scope is given and saves the served file under its own name', () => {
+    facade.loadCredit('user-1');
+
+    facade.exportIncidentFile('');
+
+    expect(gdprClient.incidentFile).toHaveBeenCalledWith('user-1', undefined);
+    expect(download).toHaveBeenCalledWith(pdf, 'incident-user-1-20260914.pdf');
+    expect(snackbar.showSuccess).toHaveBeenCalledWith(
+      'pages.customer_detail.incident_file.success'
+    );
+    expect(facade.incidentFileExporting()).toBe(false);
+  });
+
+  it('scopes the file to the order the admin named', () => {
+    facade.loadCredit('user-1');
+
+    facade.exportIncidentFile('  order-7 ');
+
+    expect(gdprClient.incidentFile).toHaveBeenCalledWith('user-1', 'order-7');
+  });
+
+  // Content-Disposition is exposed by the API's CORS policy, so the served name normally wins; the
+  // fallback is the same shape the server prints, on the UTC day, so a file never carries two names.
+  it('names the file by user and UTC day when the server sends no file name', () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-09-14T23:30:00Z'));
+    gdprClient.incidentFile.mockReturnValue(of({ data: pdf, status: 200 }));
+    facade.loadCredit('user-1');
+
+    facade.exportIncidentFile(null);
+
+    expect(download).toHaveBeenCalledWith(pdf, 'incident-user-1-20260914.pdf');
+    jest.useRealTimers();
+  });
+
+  it('surfaces the refusal and downloads nothing on failure', () => {
+    const error = new Error('boom');
+    gdprClient.incidentFile.mockReturnValue(throwError(() => error));
+    facade.loadCredit('user-1');
+
+    facade.exportIncidentFile('order-7');
+
+    expect(download).not.toHaveBeenCalled();
+    expect(snackbar.showSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showApiError).toHaveBeenCalledWith(
+      error,
+      'pages.customer_detail.incident_file.error'
+    );
+    expect(facade.incidentFileExporting()).toBe(false);
+  });
+
+  it('does nothing without a loaded user, and does not fire twice while a build is in flight', () => {
+    facade.exportIncidentFile('order-7');
+    expect(gdprClient.incidentFile).not.toHaveBeenCalled();
+
+    facade.loadCredit('user-1');
+    facade.incidentFileExporting.set(true);
+    facade.exportIncidentFile('order-7');
+    expect(gdprClient.incidentFile).not.toHaveBeenCalled();
+  });
+});
+
+describe('incidentFileName', () => {
+  it('prints the UTC day, the shape the server names the file by', () => {
+    expect(incidentFileName('user-1', new Date('2026-09-14T23:30:00Z'))).toBe(
+      'incident-user-1-20260914.pdf'
+    );
   });
 });

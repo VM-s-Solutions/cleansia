@@ -9,6 +9,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TimelineComponent } from '@cleansia/admin-features/audit-log';
 import {
@@ -27,6 +28,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
+  CleansiaTextInputComponent,
   CleansiaTitleComponent,
   PaginationState,
   TableColumn,
@@ -56,11 +58,13 @@ import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTableComponent,
+    CleansiaTextInputComponent,
     CleansiaTitleComponent,
     GrantPointsDialogComponent,
     IssueCreditDialogComponent,
@@ -84,6 +88,10 @@ export class UserLoyaltyDetailComponent
 
   readonly userId = signal<string | null>(null);
   readonly userEmail = signal<string | null>(null);
+
+  readonly incidentOrderControl = new FormControl<string>('', {
+    nonNullable: true,
+  });
 
   // One dialog reused for both grant + revoke; mode flips to drive copy/colors.
   readonly dialogVisible = signal<boolean>(false);
@@ -530,6 +538,10 @@ export class UserLoyaltyDetailComponent
 
   exportSubjectData(): void {
     this.facade.exportSubjectData();
+  }
+
+  exportIncidentFile(): void {
+    this.facade.exportIncidentFile(this.incidentOrderControl.value);
   }
 
   onBack(): void {

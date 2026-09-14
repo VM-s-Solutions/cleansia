@@ -1,24 +1,37 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import {
   AdminClient,
+  AdminGdprClient,
   Code,
+  CustomerAuditClient,
+  FileResponse,
   OrderItem,
   OrderStatus,
   PaymentStatus,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { AuditResourceType, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, map, of, switchMap, takeUntil } from 'rxjs';
+import {
+  INCIDENT_SUBJECT_LOOKUP_LIMIT,
+  incidentFileName,
+  resolveIncidentSubject,
+} from './order-detail.models';
 
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly gdprClient = inject(AdminGdprClient);
+  private readonly customerAuditClient = inject(CustomerAuditClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly order = signal<OrderItem | null>(null);
   readonly loading = signal<boolean>(false);
+  readonly incidentFileExporting = signal<boolean>(false);
 
   /**
    * Entry instructions are NOT on the order payload for an admin — the server withholds them and hands
@@ -69,6 +82,71 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
           this.revealedAccessInstructions.set(response.accessInstructions ?? '');
         }
       });
+  }
+
+  /**
+   * The incident file for this order's customer, scoped to this order. The subject is read off the
+   * order's trail (order-detail.models.ts says why); the server builds the PDF, decides whether the
+   * order is theirs, and records the build.
+   */
+  exportIncidentFile(): void {
+    const orderId = this.order()?.id;
+    if (!orderId || this.incidentFileExporting()) return;
+    this.incidentFileExporting.set(true);
+
+    this.customerAuditClient
+      .timeline(
+        undefined,
+        AuditResourceType.Order,
+        orderId,
+        undefined,
+        0,
+        INCIDENT_SUBJECT_LOOKUP_LIMIT
+      )
+      .pipe(
+        takeUntil(this.destroyed$),
+        map((page) => resolveIncidentSubject(page.data ?? [])),
+        switchMap((userId) => {
+          if (!userId) {
+            this.snackbarService.showErrorTranslated(
+              'pages.order_detail.incident_file.no_subject'
+            );
+            return of(null);
+          }
+          return this.gdprClient
+            .incidentFile(userId, orderId)
+            .pipe(map((file: FileResponse) => ({ userId, file })));
+        }),
+        catchError((error: unknown) => {
+          this.snackbarService.showApiError(
+            error,
+            'pages.order_detail.incident_file.error'
+          );
+          return of(null);
+        }),
+        finalize(() => this.incidentFileExporting.set(false))
+      )
+      .subscribe((result) => {
+        if (result) {
+          this.downloadBlob(
+            result.file.data,
+            result.file.fileName ?? incidentFileName(result.userId, new Date())
+          );
+          this.snackbarService.showSuccessTranslated(
+            'pages.order_detail.incident_file.success'
+          );
+        }
+      });
+  }
+
+  private downloadBlob(blob: Blob, fileName: string): void {
+    if (!this.isBrowser) return;
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   formatDate(date: string | Date | null | undefined): string {

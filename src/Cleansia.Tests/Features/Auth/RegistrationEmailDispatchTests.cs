@@ -77,7 +77,8 @@ public class RegistrationEmailDispatchTests
         var employeeRepository = new Mock<IEmployeeRepository>();
 
         var handler = new RegisterEmployee.Handler(
-            _cartRepository.Object, _userRepository.Object, employeeRepository.Object, _pending);
+            _cartRepository.Object, _userRepository.Object, employeeRepository.Object, _pending,
+            new Mock<IConsentService>().Object);
 
         var result = await handler.Handle(
             new RegisterEmployee.Command(Email, "Password1!@abc", "John", "Doe", Language), CancellationToken.None);

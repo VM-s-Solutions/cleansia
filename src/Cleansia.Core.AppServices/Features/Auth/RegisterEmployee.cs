@@ -64,14 +64,18 @@ public class RegisterEmployee
         string Language,
         // The market the cleaner registers against and is held to at approval (ADR-0061 D3/D6);
         // null is the default market.
-        string? CountryId = null)
+        string? CountryId = null,
+        // The terms tick as the client asserted it; null or false is never refused, since the employee
+        // agreement is ADR-0041's and does not gate registration.
+        bool? TermsAccepted = null)
         : ICommand, IOperatorScopedRequest;
 
     public class Handler(
         ICartRepository cartRepository,
         IUserRepository userRepository,
         IEmployeeRepository employeeRepository,
-        IPendingDispatch pending)
+        IPendingDispatch pending,
+        IConsentService consentService)
         : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -114,6 +118,14 @@ public class RegisterEmployee
             if (userEntity.Employee is null)
             {
                 employeeRepository.Add(Employee.CreateWithUser(userEntity));
+            }
+
+            // No document: an employee accepts a different text than the customer documents (ADR-0041),
+            // so the row stays unversioned until those land — the same rule GrantConsent applies.
+            if (command.TermsAccepted == true)
+            {
+                await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService, null, cancellationToken);
+                await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy, null, cancellationToken);
             }
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";

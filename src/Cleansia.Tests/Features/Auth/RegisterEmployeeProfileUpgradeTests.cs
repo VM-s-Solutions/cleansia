@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -26,7 +27,8 @@ public class RegisterEmployeeProfileUpgradeTests
     private readonly Mock<IPendingDispatch> _pending = new();
 
     private RegisterEmployee.Handler CreateHandler() => new(
-        _cartRepository.Object, _userRepository.Object, _employeeRepository.Object, _pending.Object);
+        _cartRepository.Object, _userRepository.Object, _employeeRepository.Object, _pending.Object,
+        new Mock<IConsentService>().Object);
 
     private static RegisterEmployee.Command Command() =>
         new(Email, Password, "John", "Doe", Language);

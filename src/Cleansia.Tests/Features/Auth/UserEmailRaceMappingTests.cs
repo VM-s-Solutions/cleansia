@@ -60,7 +60,8 @@ public class UserEmailRaceMappingTests
             new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
 
     private RegisterEmployee.Handler NewRegisterEmployeeHandler() =>
-        new(_cartRepository.Object, _userRepository.Object, new Mock<IEmployeeRepository>().Object, _pending);
+        new(_cartRepository.Object, _userRepository.Object, new Mock<IEmployeeRepository>().Object, _pending,
+            new Mock<IConsentService>().Object);
 
     private GoogleAuth.Handler NewGoogleHandler(Mock<IGoogleTokenVerifier> verifier) =>
         new(verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object,

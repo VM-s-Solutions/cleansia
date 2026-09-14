@@ -122,7 +122,7 @@ class AuthViewModelTest {
 
     private fun stubRegister(result: ApiResult<Unit>) {
         coEvery {
-            authRepository.register(any(), any(), any(), any(), any(), any(), any())
+            authRepository.register(any(), any(), any(), any(), any(), any(), any(), any())
         } returns result
     }
 
@@ -180,7 +180,7 @@ class AuthViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            authRepository.register(any(), any(), any(), any(), any(), any(), countryId = "svk-id")
+            authRepository.register(any(), any(), any(), any(), any(), any(), any(), countryId = "svk-id")
         }
     }
 
@@ -192,7 +192,7 @@ class AuthViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            authRepository.register(any(), any(), any(), any(), any(), any(), countryId = null)
+            authRepository.register(any(), any(), any(), any(), any(), any(), any(), countryId = null)
         }
     }
 
@@ -307,6 +307,25 @@ class AuthViewModelTest {
         )
         verify(exactly = 0) { snackbar.showError(any<String>()) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
+    }
+
+    // ─── Email sign-up: the tick reaches the server on the registration itself ───
+
+    /**
+     * The server grants both consents in the registration's own commit off this one member, so a
+     * ViewModel that only parks the tick on the device leaves the account with no consent on record
+     * until a sign-in that may never come from this handset.
+     */
+    @Test
+    fun `register asserts the terms tick on the registration request`() = runTest {
+        stubRegister(ApiResult.Success(Unit))
+
+        viewModel().register("new@example.com", "Passw0rd!", "Ada", "Lovelace", acceptedTerms = true)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            authRepository.register(any(), any(), any(), any(), any(), termsAccepted = true, any(), any())
+        }
     }
 
     // ─── Social auth: the terms tick is what separates a signup from a sign-in ───
@@ -542,6 +561,7 @@ class AuthViewModelTest {
                 firstName = "Ada",
                 lastName = "Lovelace",
                 language = "cs",
+                termsAccepted = true,
                 referralCode = null,
             )
         }

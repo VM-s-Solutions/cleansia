@@ -85,6 +85,7 @@ class AuthRepository(
         firstName: String,
         lastName: String,
         language: String,
+        termsAccepted: Boolean,
         referralCode: String? = null,
         countryId: String? = null,
     ): ApiResult<Unit> = safeApiCall(json) {
@@ -95,6 +96,7 @@ class AuthRepository(
                 firstName = firstName,
                 lastName = lastName,
                 language = language,
+                termsAccepted = termsAccepted,
                 referralCode = referralCode,
                 countryId = countryId,
             ),

@@ -73,6 +73,7 @@ private fun CreateOrderCommand.toWire(): GenCreateOrderCommand = GenCreateOrderC
     preferredEmployeeId = preferredEmployeeId,
     specialInstructions = specialInstructions,
     accessInstructions = accessInstructions,
+    termsAccepted = termsAccepted,
 )
 
 private fun CreateOrderAddressDto.toWire(): GenAddressDto = GenAddressDto(

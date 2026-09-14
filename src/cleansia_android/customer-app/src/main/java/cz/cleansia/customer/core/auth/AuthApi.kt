@@ -76,6 +76,12 @@ data class RegisterRequest(
     val lastName: String,
     val language: String,
     /**
+     * The signup screen's terms tick. The server grants Terms of Service and Privacy Policy in the
+     * registration's own commit off this member. Without a default for the same reason as
+     * [GoogleAuthRequest.termsAccepted].
+     */
+    val termsAccepted: Boolean,
+    /**
      * Loyalty Phase C — optional referral code entered at signup. Backend
      * accepts null/blank without failing registration; if non-null and valid,
      * a Referral row is created in Accepted state and the bonus pays out on

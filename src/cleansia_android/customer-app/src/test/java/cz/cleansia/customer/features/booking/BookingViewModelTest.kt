@@ -14,6 +14,8 @@ import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.ExtraListItem
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.core.consent.SignupConsentType
 import cz.cleansia.core.servicearea.ServicedCountry
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
@@ -82,6 +84,7 @@ class BookingViewModelTest {
     private lateinit var membershipRepository: MembershipRepository
     private lateinit var catalogRepository: CatalogRepository
     private lateinit var marketRepository: cz.cleansia.customer.core.market.MarketRepository
+    private lateinit var consentClient: GdprConsentClient
     private lateinit var appContext: Context
 
     private val marketFlow = MutableStateFlow<cz.cleansia.customer.core.market.MarketState>(
@@ -126,6 +129,10 @@ class BookingViewModelTest {
         }
         marketRepository = mockk(relaxed = true)
         every { marketRepository.state } returns marketFlow
+        // Default: nothing on record, so the review step asks. Tests that exercise an account
+        // that already consented override this per-test.
+        consentClient = mockk()
+        coEvery { consentClient.grantedTypes() } returns emptySet()
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
@@ -160,6 +167,7 @@ class BookingViewModelTest {
         membershipRepository = membershipRepository,
         catalogRepository = catalogRepository,
         marketRepository = marketRepository,
+        consentClient = consentClient,
         appContext = appContext,
     )
 
@@ -1528,6 +1536,163 @@ class BookingViewModelTest {
         advanceUntilIdle()
 
         assertEquals("EUR", (outcome as BookingSubmitOutcome.CardPending).paymentSheet.currencyCode)
+    }
+
+    // ── The review step's terms tick — shown unless both consents are on record, and gating the
+    //    slide-to-confirm exactly like the web wizard's place-order button. ──
+
+    private fun bothConsentsOnRecord() {
+        coEvery { consentClient.grantedTypes() } returns
+            setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy)
+    }
+
+    private fun BookingViewModel.readyToPlace(termsAccepted: Boolean, paymentMethod: String = "cash") {
+        update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                paymentMethod = paymentMethod,
+                termsAccepted = termsAccepted,
+            )
+        }
+    }
+
+    @Test
+    fun alreadyConsented_whenBothConsentsAreOnRecord_isTrue() = runTest {
+        bothConsentsOnRecord()
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(true, vm.alreadyConsented.value)
+    }
+
+    /** One of the two is not both: a withdrawn Privacy Policy consent re-asks for the pair. */
+    @Test
+    fun alreadyConsented_whenOnlyOneConsentIsOnRecord_isFalse() = runTest {
+        coEvery { consentClient.grantedTypes() } returns setOf(SignupConsentType.TermsOfService)
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(false, vm.alreadyConsented.value)
+    }
+
+    /** The safe direction for this switch is always "ask" — a consent that might not exist is asked for. */
+    @Test
+    fun alreadyConsented_whenTheReadFails_isFalse() = runTest {
+        coEvery { consentClient.grantedTypes() } returns null
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(false, vm.alreadyConsented.value)
+    }
+
+    @Test
+    fun alreadyConsented_whenSignedOut_readsNothingAndIsFalse() = runTest {
+        every { tokenStore.current() } returns null
+        bothConsentsOnRecord()
+
+        val vm = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(false, vm.alreadyConsented.value)
+        coVerify(exactly = 0) { consentClient.grantedTypes() }
+    }
+
+    @Test
+    fun canPlaceOrder_whenTheBoxIsShownAndUnticked_isFalse() = runTest {
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = false)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.canPlaceOrder.value)
+    }
+
+    @Test
+    fun canPlaceOrder_whenTheBoxIsShownAndTicked_isTrue() = runTest {
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true)
+        advanceUntilIdle()
+
+        assertEquals(true, vm.canPlaceOrder.value)
+    }
+
+    @Test
+    fun canPlaceOrder_whenAlreadyConsented_needsNoTick() = runTest {
+        bothConsentsOnRecord()
+
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = false)
+        advanceUntilIdle()
+
+        assertEquals(true, vm.canPlaceOrder.value)
+    }
+
+    @Test
+    fun canPlaceOrder_withoutAPaymentMethod_isFalseEvenWhenTicked() = runTest {
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true, paymentMethod = "")
+        advanceUntilIdle()
+
+        assertEquals(false, vm.canPlaceOrder.value)
+    }
+
+    /** A fresh open of the sheet starts unticked: the tick is per booking, never remembered. */
+    @Test
+    fun reset_clearsTheTick() = runTest {
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true)
+        advanceUntilIdle()
+
+        vm.reset()
+        advanceUntilIdle()
+
+        assertEquals(false, vm.state.value.termsAccepted)
+    }
+
+    private suspend fun kotlinx.coroutines.test.TestScope.createCommandSent(vm: BookingViewModel): CreateOrderCommand {
+        currentUserFlow.value = completeUser()
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith())
+        val sent = slot<CreateOrderCommand>()
+        coEvery { bookingApi.create(capture(sent)) } returns Response.success(
+            CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"),
+        )
+        advanceUntilIdle()
+        vm.submit()
+        advanceUntilIdle()
+        return sent.captured
+    }
+
+    /**
+     * `termsAccepted` is the one client-asserted member on the create command (ADR-0062 D4). It is
+     * sent only when the box was shown AND ticked; an account that already consented sees no box and
+     * asserts nothing new — the same rule as the web wizard.
+     */
+    @Test
+    fun submit_whenTheBoxWasShownAndTicked_sendsTermsAcceptedTrue() = runTest {
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true)
+
+        assertEquals(true, createCommandSent(vm).termsAccepted)
+    }
+
+    @Test
+    fun submit_whenAlreadyConsented_sendsNoTermsMember() = runTest {
+        bothConsentsOnRecord()
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true)
+
+        assertNull(createCommandSent(vm).termsAccepted)
+    }
+
+    @Test
+    fun submit_whenTheBoxWasShownAndUnticked_sendsNoTermsMember() = runTest {
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = false)
+
+        assertNull(createCommandSent(vm).termsAccepted)
     }
 
     private fun quoteWith(

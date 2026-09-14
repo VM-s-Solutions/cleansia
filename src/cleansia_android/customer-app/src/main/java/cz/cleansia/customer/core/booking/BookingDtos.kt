@@ -168,6 +168,12 @@ data class CreateOrderCommand(
     val accessInstructions: String? = null,
     @EncodeDefault(EncodeDefault.Mode.ALWAYS)
     val language: String = "en",
+    /**
+     * The review step's terms tick — the one client-asserted member on the booking's audit row.
+     * `true` only when the box was shown and ticked; null (absent on the wire) when an account that
+     * already holds both consents saw no box, so it asserts nothing new.
+     */
+    val termsAccepted: Boolean? = null,
 )
 
 @Serializable

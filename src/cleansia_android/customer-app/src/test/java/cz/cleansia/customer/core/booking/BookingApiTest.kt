@@ -30,8 +30,9 @@ class BookingApiTest {
     }
 
     private fun command(
-        specialInstructions: String?,
-        accessInstructions: String?,
+        specialInstructions: String? = null,
+        accessInstructions: String? = null,
+        termsAccepted: Boolean? = null,
     ) = CreateOrderCommand(
         customerName = "Ada Lovelace",
         customerEmail = "user@example.com",
@@ -45,7 +46,31 @@ class BookingApiTest {
         totalPrice = 100.0,
         specialInstructions = specialInstructions,
         accessInstructions = accessInstructions,
+        termsAccepted = termsAccepted,
     )
+
+    private suspend fun sentFor(command: CreateOrderCommand): GenCreateOrderCommand {
+        val sent = slot<GenCreateOrderCommand>()
+        coEvery { orderApi.orderCreateOrder(capture(sent)) } returns Response.success(
+            GenCreateOrderResponse(id = "o-1", confirmationCode = "ABC123"),
+        )
+        BookingApi(orderApi).create(command)
+        return sent.captured
+    }
+
+    /**
+     * The one client-asserted member on the booking's audit row: a mapper that drops it leaves every
+     * booking recorded as "not asserted" while the suite stays green, and the server refuses it.
+     */
+    @Test
+    fun create_carriesTheTermsTickOntoTheGeneratedCommand() = runTest {
+        assertEquals(true, sentFor(command(termsAccepted = true)).termsAccepted)
+    }
+
+    @Test
+    fun create_leavesTheTickOffWhenTheBoxWasNotShown() = runTest {
+        assertEquals(null, sentFor(command(termsAccepted = null)).termsAccepted)
+    }
 
     @Test
     fun create_carriesBothInstructionNotesOntoTheGeneratedCommand() = runTest {

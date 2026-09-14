@@ -218,6 +218,7 @@ private fun SheetContent(
     val expressWaiver by bookingVm.expressWaiver.collectAsStateWithLifecycle()
     val currentStep by bookingVm.step.collectAsStateWithLifecycle()
     val canStepBack by bookingVm.canStepBack.collectAsStateWithLifecycle()
+    val canPlaceOrder by bookingVm.canPlaceOrder.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var showAddressManager by remember { mutableStateOf(false) }
@@ -419,7 +420,7 @@ private fun SheetContent(
         2 -> state.street.isNotBlank() &&
             state.selectedLocalDate != null &&
             state.selectedTime.isNotBlank()
-        3 -> state.paymentMethod.isNotBlank()
+        3 -> canPlaceOrder
         else -> false
     }
 

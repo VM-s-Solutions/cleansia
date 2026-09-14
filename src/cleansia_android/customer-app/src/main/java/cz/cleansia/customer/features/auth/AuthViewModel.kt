@@ -105,6 +105,7 @@ class AuthViewModel @Inject constructor(
                 firstName = firstName,
                 lastName = lastName,
                 language = language,
+                termsAccepted = acceptedTerms,
                 referralCode = referralCode?.trim()?.uppercase()?.ifBlank { null },
                 countryId = marketRepository.ensureLoaded().countryId,
             )

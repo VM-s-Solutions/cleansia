@@ -230,6 +230,7 @@ class AuthRepositoryTest {
             firstName = "A",
             lastName = "B",
             language = "en",
+            termsAccepted = true,
         )
 
         assertTrue(result is ApiResult.Success)
@@ -247,6 +248,7 @@ class AuthRepositoryTest {
             firstName = "A",
             lastName = "B",
             language = "en",
+            termsAccepted = true,
         )
 
         assertTrue(result is ApiResult.Error)
@@ -287,9 +289,37 @@ class AuthRepositoryTest {
         val captured = io.mockk.slot<RegisterRequest>()
         coEvery { api.register(capture(captured)) } returns Response.success(Unit)
 
-        newRepository().register("user@example.com", "pw", "Ada", "Lovelace", "en", countryId = "svk-id")
+        newRepository().register(
+            "user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true, countryId = "svk-id",
+        )
 
         assertEquals("svk-id", captured.captured.countryId)
+    }
+
+    // ── register() — the terms tick reaching the wire body ──
+
+    /**
+     * The sign-up form cannot submit unticked, so the only value this ever carries is `true` — and
+     * the server grants both consents in the registration's own commit off exactly this member.
+     * Before it existed the tick was parked on the device and delivered at the first sign-in.
+     */
+    @Test
+    fun register_putsTheTermsTickOnTheRequestBody() = kotlinx.coroutines.test.runTest {
+        val captured = io.mockk.slot<RegisterRequest>()
+        coEvery { api.register(capture(captured)) } returns Response.success(Unit)
+
+        newRepository().register("user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
+
+        assertEquals(true, captured.captured.termsAccepted)
+    }
+
+    /** `Register.Command.TermsAccepted` binds by ASP.NET's camel-case default, like `GoogleAuth`'s. */
+    @Test
+    fun register_serializesTheTickUnderTheNameTheBackendBinds() {
+        val wireJson = AuthModule.provideJson()
+        val register = RegisterRequest("user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
+
+        assertTrue(wireJson.encodeToString(register).contains("\"termsAccepted\":true"))
     }
 
     @Test
@@ -317,7 +347,9 @@ class AuthRepositoryTest {
     @Test
     fun identityRequests_serializeTheMarketUnderTheNameTheBackendBinds() {
         val wireJson = AuthModule.provideJson()
-        val register = RegisterRequest("user@example.com", "pw", "Ada", "Lovelace", "en", countryId = "svk-id")
+        val register = RegisterRequest(
+            "user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true, countryId = "svk-id",
+        )
         val google = GoogleAuthRequest("t", "g", "user@example.com", "Ada", "Lovelace", true, countryId = "svk-id")
 
         assertTrue(wireJson.encodeToString(register).contains("\"countryId\":\"svk-id\""))
@@ -474,7 +506,7 @@ class AuthRepositoryTest {
         coEvery { authenticatedApi.logout(capture(logout)) } returns Response.success(Unit)
 
         val repo = newRepository()
-        repo.register("user@example.com", "pw", "Ada", "Lovelace", "en")
+        repo.register("user@example.com", "pw", "Ada", "Lovelace", "en", termsAccepted = true)
         repo.googleAuth("id-token", "subject", "user@example.com", "Ada", "Lovelace", termsAccepted = true)
         repo.confirmEmail("user@example.com", "123456")
         repo.resendConfirmationEmail("user@example.com", "en")

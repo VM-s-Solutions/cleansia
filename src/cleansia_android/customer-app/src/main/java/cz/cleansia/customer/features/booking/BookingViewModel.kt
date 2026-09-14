@@ -13,6 +13,8 @@ import cz.cleansia.customer.core.booking.CreateOrderResponse
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.resolveExpressWaiver
@@ -146,6 +148,7 @@ class BookingViewModel @Inject constructor(
     private val membershipRepository: MembershipRepository,
     private val catalogRepository: CatalogRepository,
     private val marketRepository: cz.cleansia.customer.core.market.MarketRepository,
+    private val consentClient: GdprConsentClient,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -168,9 +171,29 @@ class BookingViewModel @Inject constructor(
         .map { resolveExpressWaiver(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, ExpressWaiver.None)
 
+    /**
+     * Whether this account already holds the two consents the review step's tick names — Terms of
+     * Service and Privacy Policy — granted at sign-up or on an earlier booking. Re-consenting to the
+     * same two documents on every order is noise, so the box is shown only when this is false.
+     * Defaults to false and stays false on a failed read: a consent that might not exist is asked for.
+     */
+    private val _alreadyConsented = MutableStateFlow(false)
+    val alreadyConsented: StateFlow<Boolean> = _alreadyConsented.asStateFlow()
+
+    /**
+     * The review step's gate on the slide-to-confirm: a payment method, and the terms tick whenever
+     * the box is shown. The same rule as the web wizard's place-order button.
+     */
+    val canPlaceOrder: StateFlow<Boolean> = combine(_state, _alreadyConsented) { s, consented ->
+        s.paymentMethod.isNotBlank() && (consented || s.termsAccepted)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     init {
         if (tokenStore.current() != null) {
             viewModelScope.launch { membershipRepository.refresh() }
+            viewModelScope.launch {
+                _alreadyConsented.value = consentClient.grantedTypes()?.containsAll(SIGNUP_TICK_CONSENTS) == true
+            }
         }
     }
 
@@ -526,6 +549,9 @@ class BookingViewModel @Inject constructor(
                 // normalise to null rather than persisting an empty note.
                 specialInstructions = s.specialInstructions.trim().ifBlank { null },
                 accessInstructions = s.accessInstructions.trim().ifBlank { null },
+                // Asserted only when the box was shown and ticked; an account that already consented
+                // saw no box and asserts nothing new.
+                termsAccepted = if (!_alreadyConsented.value && s.termsAccepted) true else null,
             )
 
             val createResp = try {

@@ -15,7 +15,7 @@ import kotlinx.serialization.json.Json
 
 /**
  * Customer-app binding of the shared [SignupConsentClient] over the OpenAPI-generated
- * [GdprApi] (`/api/v1/Gdpr/consents`).
+ * [GdprApi] (`/api/v1/Gdpr/consents`), plus the booking review step's read of what is on record.
  */
 class GdprConsentClient @Inject constructor(
     private val gdprApi: GdprApi,
@@ -34,6 +34,21 @@ class GdprConsentClient @Inject constructor(
         safeApiCall(json) { gdprApi.gdprGetMyConsents() }
             .mapWire { consents ->
                 consents
+                    .map { it.consentType.required("consentType") }
+                    .mapNotNull { SignupConsentType.fromWireValue(it.value) }
+                    .toSet()
+            }
+            .getOrNull()
+
+    /**
+     * The consents currently in force — granted and not since withdrawn, the web wizard's own
+     * predicate. Null when the read failed; the caller treats that as "ask", never as "none".
+     */
+    suspend fun grantedTypes(): Set<SignupConsentType>? =
+        safeApiCall(json) { gdprApi.gdprGetMyConsents() }
+            .mapWire { consents ->
+                consents
+                    .filter { it.isGranted == true && it.withdrawnAt == null }
                     .map { it.consentType.required("consentType") }
                     .mapNotNull { SignupConsentType.fromWireValue(it.value) }
                     .toSet()

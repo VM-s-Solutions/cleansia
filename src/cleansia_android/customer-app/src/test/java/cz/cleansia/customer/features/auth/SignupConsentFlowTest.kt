@@ -115,7 +115,7 @@ class SignupConsentFlowTest {
      */
     private fun TestScope.register(acceptedTerms: Boolean, address: String = email) {
         val repository = mockk<AuthRepository>(relaxed = true)
-        coEvery { repository.register(any(), any(), any(), any(), any(), any(), any()) } returns registerResult
+        coEvery { repository.register(any(), any(), any(), any(), any(), any(), any(), any()) } returns registerResult
 
         AuthViewModel(
             authRepository = repository,

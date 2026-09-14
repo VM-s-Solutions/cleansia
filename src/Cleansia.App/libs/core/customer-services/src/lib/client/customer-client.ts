@@ -2599,6 +2599,103 @@ export class LanguageClient implements ILanguageClient {
     }
 }
 
+export interface ILegalClient {
+    /**
+     * @param type (optional) 
+     * @param countryId (optional) 
+     * @param language (optional) 
+     * @return OK
+     */
+    getDocument(type?: LegalDocumentType | undefined, countryId?: string | undefined, language?: string | undefined): Observable<LegalDocumentDto>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class LegalClient implements ILegalClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param type (optional) 
+     * @param countryId (optional) 
+     * @param language (optional) 
+     * @return OK
+     */
+    getDocument(type?: LegalDocumentType | undefined, countryId?: string | undefined, language?: string | undefined): Observable<LegalDocumentDto> {
+        let url = this.baseUrl + "/api/Legal/GetDocument?";
+        if (type === null)
+            throw new globalThis.Error("The parameter 'type' cannot be null.");
+        else if (type !== undefined)
+            url += "type=" + encodeURIComponent("" + type) + "&";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
+        if (language === null)
+            throw new globalThis.Error("The parameter 'language' cannot be null.");
+        else if (language !== undefined)
+            url += "language=" + encodeURIComponent("" + language) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetDocument(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetDocument(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<LegalDocumentDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<LegalDocumentDto>;
+        }));
+    }
+
+    protected processGetDocument(response: HttpResponseBase): Observable<LegalDocumentDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = LegalDocumentDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface ILoyaltyClient {
     /**
      * @return OK
@@ -11367,6 +11464,75 @@ export interface ILanguageListItem {
     id: string | undefined;
     code: string | undefined;
     name: string | undefined;
+}
+
+export class LegalDocumentDto implements ILegalDocumentDto {
+    type!: LegalDocumentType;
+    countryId!: string | undefined;
+    version!: string | undefined;
+    effectiveFrom!: Date;
+    language!: string | undefined;
+    title!: string | undefined;
+    contentHtml!: string | undefined;
+    contentHash!: string | undefined;
+
+    constructor(data?: ILegalDocumentDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.type = Data["type"];
+            this.countryId = Data["countryId"];
+            this.version = Data["version"];
+            this.effectiveFrom = Data["effectiveFrom"] ? new Date(Data["effectiveFrom"].toString()) : undefined as any;
+            this.language = Data["language"];
+            this.title = Data["title"];
+            this.contentHtml = Data["contentHtml"];
+            this.contentHash = Data["contentHash"];
+        }
+    }
+
+    static fromJS(data: any): LegalDocumentDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new LegalDocumentDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["type"] = this.type;
+        data["countryId"] = this.countryId;
+        data["version"] = this.version;
+        data["effectiveFrom"] = this.effectiveFrom ? formatDate(this.effectiveFrom) : undefined as any;
+        data["language"] = this.language;
+        data["title"] = this.title;
+        data["contentHtml"] = this.contentHtml;
+        data["contentHash"] = this.contentHash;
+        return data;
+    }
+}
+
+export interface ILegalDocumentDto {
+    type: LegalDocumentType;
+    countryId: string | undefined;
+    version: string | undefined;
+    effectiveFrom: Date;
+    language: string | undefined;
+    title: string | undefined;
+    contentHtml: string | undefined;
+    contentHash: string | undefined;
+}
+
+export enum LegalDocumentType {
+    TermsOfService = 0,
+    PrivacyPolicy = 1,
 }
 
 export class LoginCommand implements ILoginCommand {

@@ -2139,6 +2139,79 @@
         }
       }
     },
+    "/api/Legal/GetDocument": {
+      "get": {
+        "tags": [
+          "Legal"
+        ],
+        "operationId": "Legal_GetDocument",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/LegalDocumentType"
+            }
+          },
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalDocumentDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalDocumentDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalDocumentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/LiveActivity/Register": {
       "post": {
         "tags": [
@@ -9152,6 +9225,55 @@
         },
         "additionalProperties": false
       },
+      "LegalDocumentDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/LegalDocumentType"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentHtml": {
+            "type": "string",
+            "nullable": true
+          },
+          "contentHash": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LegalDocumentType": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "TermsOfService",
+          "PrivacyPolicy"
+        ]
+      },
       "Logout_Command": {
         "type": "object",
         "properties": {
@@ -11755,6 +11877,9 @@
     },
     {
       "name": "Language"
+    },
+    {
+      "name": "Legal"
     },
     {
       "name": "LiveActivity"

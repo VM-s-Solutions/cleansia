@@ -7414,6 +7414,13 @@ export class AdminGdprClient implements IAdminGdprClient {
             result200 = PagedDataOfGdprRequestDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
@@ -8519,6 +8526,209 @@ export class AdminLanguageClient implements IAdminLanguageClient {
             let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result404 = ProblemDetails.fromJS(resultData404);
             return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IAdminLegalClient {
+    /**
+     * @param audience (optional) 
+     * @param type (optional) 
+     * @param countryId (optional) 
+     * @return OK
+     */
+    getVersions(audience?: LegalDocumentAudience | undefined, type?: LegalDocumentType | undefined, countryId?: string | undefined): Observable<LegalDocumentVersionDto[]>;
+    /**
+     * @param language (optional) 
+     * @return OK
+     */
+    getDocument(id: string, language?: string | undefined): Observable<AdminLegalDocumentDto>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminLegalClient implements IAdminLegalClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param audience (optional) 
+     * @param type (optional) 
+     * @param countryId (optional) 
+     * @return OK
+     */
+    getVersions(audience?: LegalDocumentAudience | undefined, type?: LegalDocumentType | undefined, countryId?: string | undefined): Observable<LegalDocumentVersionDto[]> {
+        let url = this.baseUrl + "/api/AdminLegal/get-versions?";
+        if (audience === null)
+            throw new globalThis.Error("The parameter 'audience' cannot be null.");
+        else if (audience !== undefined)
+            url += "audience=" + encodeURIComponent("" + audience) + "&";
+        if (type === null)
+            throw new globalThis.Error("The parameter 'type' cannot be null.");
+        else if (type !== undefined)
+            url += "type=" + encodeURIComponent("" + type) + "&";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetVersions(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetVersions(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<LegalDocumentVersionDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<LegalDocumentVersionDto[]>;
+        }));
+    }
+
+    protected processGetVersions(response: HttpResponseBase): Observable<LegalDocumentVersionDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(LegalDocumentVersionDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param language (optional) 
+     * @return OK
+     */
+    getDocument(id: string, language?: string | undefined): Observable<AdminLegalDocumentDto> {
+        let url = this.baseUrl + "/api/AdminLegal/get-document/{id}?";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url = url.replace("{id}", encodeURIComponent("" + id));
+        if (language === null)
+            throw new globalThis.Error("The parameter 'language' cannot be null.");
+        else if (language !== undefined)
+            url += "language=" + encodeURIComponent("" + language) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetDocument(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetDocument(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminLegalDocumentDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminLegalDocumentDto>;
+        }));
+    }
+
+    protected processGetDocument(response: HttpResponseBase): Observable<AdminLegalDocumentDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminLegalDocumentDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -16928,6 +17138,94 @@ export interface IAdminExtraDetailDto {
     translations: { [key: string]: Translation; } | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+}
+
+export class AdminLegalDocumentDto implements IAdminLegalDocumentDto {
+    id!: string | undefined;
+    audience!: LegalDocumentAudience;
+    type!: LegalDocumentType;
+    countryId!: string | undefined;
+    countryIsoCode!: string | undefined;
+    effectiveFrom!: Date;
+    version!: string | undefined;
+    isInForce!: boolean;
+    notes!: string | undefined;
+    language!: string | undefined;
+    title!: string | undefined;
+    contentMarkdown!: string | undefined;
+    contentHtml!: string | undefined;
+    contentHash!: string | undefined;
+
+    constructor(data?: IAdminLegalDocumentDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.audience = Data["audience"];
+            this.type = Data["type"];
+            this.countryId = Data["countryId"];
+            this.countryIsoCode = Data["countryIsoCode"];
+            this.effectiveFrom = Data["effectiveFrom"] ? new Date(Data["effectiveFrom"].toString()) : undefined as any;
+            this.version = Data["version"];
+            this.isInForce = Data["isInForce"];
+            this.notes = Data["notes"];
+            this.language = Data["language"];
+            this.title = Data["title"];
+            this.contentMarkdown = Data["contentMarkdown"];
+            this.contentHtml = Data["contentHtml"];
+            this.contentHash = Data["contentHash"];
+        }
+    }
+
+    static fromJS(data: any): AdminLegalDocumentDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminLegalDocumentDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["audience"] = this.audience;
+        data["type"] = this.type;
+        data["countryId"] = this.countryId;
+        data["countryIsoCode"] = this.countryIsoCode;
+        data["effectiveFrom"] = this.effectiveFrom ? formatDate(this.effectiveFrom) : undefined as any;
+        data["version"] = this.version;
+        data["isInForce"] = this.isInForce;
+        data["notes"] = this.notes;
+        data["language"] = this.language;
+        data["title"] = this.title;
+        data["contentMarkdown"] = this.contentMarkdown;
+        data["contentHtml"] = this.contentHtml;
+        data["contentHash"] = this.contentHash;
+        return data;
+    }
+}
+
+export interface IAdminLegalDocumentDto {
+    id: string | undefined;
+    audience: LegalDocumentAudience;
+    type: LegalDocumentType;
+    countryId: string | undefined;
+    countryIsoCode: string | undefined;
+    effectiveFrom: Date;
+    version: string | undefined;
+    isInForce: boolean;
+    notes: string | undefined;
+    language: string | undefined;
+    title: string | undefined;
+    contentMarkdown: string | undefined;
+    contentHtml: string | undefined;
+    contentHash: string | undefined;
 }
 
 export class AdminLoginCommand implements IAdminLoginCommand {
@@ -25950,6 +26248,140 @@ export interface ILanguageListItem {
     id: string | undefined;
     code: string | undefined;
     name: string | undefined;
+}
+
+export enum LegalDocumentAudience {
+    Customer = 0,
+    Employee = 1,
+}
+
+export class LegalDocumentTextSummaryDto implements ILegalDocumentTextSummaryDto {
+    language!: string | undefined;
+    title!: string | undefined;
+    contentHash!: string | undefined;
+
+    constructor(data?: ILegalDocumentTextSummaryDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.language = Data["language"];
+            this.title = Data["title"];
+            this.contentHash = Data["contentHash"];
+        }
+    }
+
+    static fromJS(data: any): LegalDocumentTextSummaryDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new LegalDocumentTextSummaryDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["language"] = this.language;
+        data["title"] = this.title;
+        data["contentHash"] = this.contentHash;
+        return data;
+    }
+}
+
+export interface ILegalDocumentTextSummaryDto {
+    language: string | undefined;
+    title: string | undefined;
+    contentHash: string | undefined;
+}
+
+export enum LegalDocumentType {
+    TermsOfService = 0,
+    PrivacyPolicy = 1,
+}
+
+export class LegalDocumentVersionDto implements ILegalDocumentVersionDto {
+    id!: string | undefined;
+    audience!: LegalDocumentAudience;
+    type!: LegalDocumentType;
+    countryId!: string | undefined;
+    countryIsoCode!: string | undefined;
+    effectiveFrom!: Date;
+    version!: string | undefined;
+    isInForce!: boolean;
+    notes!: string | undefined;
+    texts!: LegalDocumentTextSummaryDto[] | undefined;
+
+    constructor(data?: ILegalDocumentVersionDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.audience = Data["audience"];
+            this.type = Data["type"];
+            this.countryId = Data["countryId"];
+            this.countryIsoCode = Data["countryIsoCode"];
+            this.effectiveFrom = Data["effectiveFrom"] ? new Date(Data["effectiveFrom"].toString()) : undefined as any;
+            this.version = Data["version"];
+            this.isInForce = Data["isInForce"];
+            this.notes = Data["notes"];
+            if (Array.isArray(Data["texts"])) {
+                this.texts = [] as any;
+                for (let item of Data["texts"])
+                    this.texts!.push(LegalDocumentTextSummaryDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): LegalDocumentVersionDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new LegalDocumentVersionDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["audience"] = this.audience;
+        data["type"] = this.type;
+        data["countryId"] = this.countryId;
+        data["countryIsoCode"] = this.countryIsoCode;
+        data["effectiveFrom"] = this.effectiveFrom ? formatDate(this.effectiveFrom) : undefined as any;
+        data["version"] = this.version;
+        data["isInForce"] = this.isInForce;
+        data["notes"] = this.notes;
+        if (Array.isArray(this.texts)) {
+            data["texts"] = [];
+            for (let item of this.texts)
+                data["texts"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface ILegalDocumentVersionDto {
+    id: string | undefined;
+    audience: LegalDocumentAudience;
+    type: LegalDocumentType;
+    countryId: string | undefined;
+    countryIsoCode: string | undefined;
+    effectiveFrom: Date;
+    version: string | undefined;
+    isInForce: boolean;
+    notes: string | undefined;
+    texts: LegalDocumentTextSummaryDto[] | undefined;
 }
 
 export class LogoutCommand implements ILogoutCommand {

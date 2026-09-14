@@ -2742,6 +2742,9 @@
       "not_found": "Jazyk nebol nájdený",
       "not_supported": "Jazyk nie je podporovaný"
     },
+    "legal": {
+      "document_not_found": "Tento právny dokument zatiaľ nie je k dispozícii."
+    },
     "loyalty": {
       "points_exceed_sanity_cap": "Tento počet bodov prekračuje limit povolený pre ručnú úpravu.",
       "reason_required": "Pre ručnú úpravu bodov sa vyžaduje dôvod.",

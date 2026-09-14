@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
+using Cleansia.IntegrationTests.Features.Legal;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.ServiceAreas;
@@ -113,7 +114,7 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
                 var payload = JsonDocument.Parse(row.PayloadJson!).RootElement;
                 Assert.True(payload.GetProperty("isGuest").GetBoolean());
                 Assert.True(payload.GetProperty("termsAccepted").GetBoolean());
-                Assert.Equal(LegalDocumentVersions.CustomerTerms, payload.GetProperty("termsVersionAccepted").GetString());
+                Assert.Equal((await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService)).Version, payload.GetProperty("termsVersionAccepted").GetString());
                 Assert.Equal(CzkServicePrice + CzkPackagePrice, payload.GetProperty("totalPrice").GetDecimal());
                 Assert.Equal("CZK", payload.GetProperty("currencyCode").GetString());
                 Assert.Equal(Czechia, payload.GetProperty("countryId").GetString());
@@ -164,6 +165,7 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
 
     private static async Task SeedAsync(CleansiaDbContext context)
     {
+        await LegalSeed.SeedAsync(context);
         context.Languages.Add(Language.Create("en", "English"));
 
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);

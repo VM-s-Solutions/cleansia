@@ -731,7 +731,7 @@ public class CreateOrder
         bool IsGuest,
         CancellationPolicyShown CancellationPolicyShown,
         bool? TermsAccepted,
-        string TermsVersionAccepted) : ICustomerAuditPayload
+        string? TermsVersionAccepted) : ICustomerAuditPayload
     {
         public static OrderBookingEvidence From(
             Order order,
@@ -741,6 +741,7 @@ public class CreateOrder
             Address address,
             bool expressWaiverReserved,
             CancellationPolicy cancellationPolicy,
+            string? termsVersion,
             DateTime nowUtc) => new(
             OrderId: order.Id,
             TotalPrice: order.TotalPrice,
@@ -773,7 +774,7 @@ public class CreateOrder
             IsGuest: string.IsNullOrEmpty(order.UserId),
             CancellationPolicyShown: CancellationPolicyShown.From(cancellationPolicy),
             TermsAccepted: command.TermsAccepted,
-            TermsVersionAccepted: LegalDocumentVersions.CustomerTerms);
+            TermsVersionAccepted: termsVersion);
     }
 
     /// <summary>
@@ -807,6 +808,7 @@ public class CreateOrder
         IExpressWaiverConsumer expressWaiverConsumer,
         ICreditAccountRepository creditAccountRepository,
         ICancellationPolicyResolver cancellationPolicyResolver,
+        ILegalDocumentResolver legalDocumentResolver,
         IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
@@ -969,8 +971,10 @@ public class CreateOrder
 
             var cancellationPolicy = await cancellationPolicyResolver.ResolveForUserAsync(
                 order.UserId, cancellationToken);
+            var terms = await legalDocumentResolver.ResolveInForceAsync(
+                LegalDocumentType.TermsOfService, address.CountryId, cancellationToken);
             auditContext.RecordEvidence("Order", order.Id, OrderBookingEvidence.From(
-                order, command, calc, currency, address, reservation != null, cancellationPolicy, nowUtc));
+                order, command, calc, currency, address, reservation != null, cancellationPolicy, terms?.Version, nowUtc));
 
             return BusinessResult.Success(new Response(
                 Id: order.Id,

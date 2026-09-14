@@ -546,6 +546,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // host dispatches: the named (or default) market has no operating company (ADR-0061 D3). Its
   // sibling refusal, a country that is not a market, is country.not_serviced above.
   'tenant.not_found',
+  // Legal — the terms / privacy page reads the text in force for the market; a market with no
+  // seeded text yet is the one refusal the page can show.
+  'legal.document_not_found',
   // Dispute — customer dispute flow
   'dispute.not_found',
   'dispute.already_exists',

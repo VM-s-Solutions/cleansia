@@ -608,6 +608,30 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LegalDocuments",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Audience = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    CountryId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    EffectiveFrom = table.Column<DateOnly>(type: "date", nullable: false),
+                    Version = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    Notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LegalDocuments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LegalDocuments_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PropertySizePresets",
                 columns: table => new
                 {
@@ -1002,6 +1026,29 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LegalDocumentTexts",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    LegalDocumentId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Language = table.Column<string>(type: "character varying(2)", maxLength: 2, nullable: false),
+                    Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    ContentMarkdown = table.Column<string>(type: "text", nullable: false),
+                    ContentHash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LegalDocumentTexts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LegalDocumentTexts_LegalDocuments_LegalDocumentId",
+                        column: x => x.LegalDocumentId,
+                        principalTable: "LegalDocuments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1503,6 +1550,7 @@ namespace Cleansia.Infra.Database.Migrations
                     IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
                     UserAgent = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     DocumentVersion = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
+                    LegalDocumentId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -1515,6 +1563,12 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserConsents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserConsents_LegalDocuments_LegalDocumentId",
+                        column: x => x.LegalDocumentId,
+                        principalTable: "LegalDocuments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserConsents_Users_UserId",
                         column: x => x.UserId,
@@ -3526,6 +3580,29 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LegalDocuments_Audience_Type_CountryId_Version",
+                table: "LegalDocuments",
+                columns: new[] { "Audience", "Type", "CountryId", "Version" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LegalDocuments_Audience_Type_EffectiveFrom",
+                table: "LegalDocuments",
+                columns: new[] { "Audience", "Type", "EffectiveFrom" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LegalDocuments_CountryId",
+                table: "LegalDocuments",
+                column: "CountryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LegalDocumentTexts_LegalDocumentId_Language",
+                table: "LegalDocumentTexts",
+                columns: new[] { "LegalDocumentId", "Language" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LiveActivityTokens_TenantId",
                 table: "LiveActivityTokens",
                 column: "TenantId");
@@ -4309,6 +4386,11 @@ namespace Cleansia.Infra.Database.Migrations
                 .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserConsents_LegalDocumentId",
+                table: "UserConsents",
+                column: "LegalDocumentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserConsents_TenantId",
                 table: "UserConsents",
                 column: "TenantId");
@@ -4542,6 +4624,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "GdprRequests");
 
             migrationBuilder.DropTable(
+                name: "LegalDocumentTexts");
+
+            migrationBuilder.DropTable(
                 name: "LiveActivityTokens");
 
             migrationBuilder.DropTable(
@@ -4687,6 +4772,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Services");
+
+            migrationBuilder.DropTable(
+                name: "LegalDocuments");
 
             migrationBuilder.DropTable(
                 name: "MembershipPlans");

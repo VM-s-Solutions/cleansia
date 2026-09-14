@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.LiveActivities;
 using Cleansia.Core.Domain.ServiceAreas;
 using Cleansia.Core.Domain.InvoiceTemplates;
@@ -333,6 +334,8 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     /// </summary>
     public virtual DbSet<PropertySizePreset> PropertySizePresets { get; set; }
     public virtual DbSet<UserConsent> UserConsents { get; set; }
+    public virtual DbSet<LegalDocument> LegalDocuments { get; set; }
+    public virtual DbSet<LegalDocumentText> LegalDocumentTexts { get; set; }
     public virtual DbSet<GdprRequest> GdprRequests { get; set; }
     public virtual DbSet<LoyaltyAccount> LoyaltyAccounts { get; set; }
 

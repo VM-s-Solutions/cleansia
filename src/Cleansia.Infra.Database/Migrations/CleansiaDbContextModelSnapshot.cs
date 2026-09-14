@@ -2465,6 +2465,92 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("CountryInvoiceConfigs", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Legal.LegalDocument", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<int>("Audience")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CountryId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("Audience", "Type", "EffectiveFrom");
+
+                    b.HasIndex("Audience", "Type", "CountryId", "Version")
+                        .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("Audience", "Type", "CountryId", "Version"), false);
+
+                    b.ToTable("LegalDocuments", (string)null);
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Legal.LegalDocumentText", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ContentHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ContentMarkdown")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<string>("LegalDocumentId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegalDocumentId", "Language")
+                        .IsUnique();
+
+                    b.ToTable("LegalDocumentTexts", (string)null);
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.LiveActivities.LiveActivityToken", b =>
                 {
                     b.Property<string>("Id")
@@ -6403,6 +6489,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsGranted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LegalDocumentId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasMaxLength(26)
@@ -6428,6 +6518,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LegalDocumentId");
 
                     b.HasIndex("TenantId");
 
@@ -6846,6 +6938,27 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Country");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Legal.LegalDocument", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Country");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Legal.LegalDocumentText", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Legal.LegalDocument", "Document")
+                        .WithMany("Texts")
+                        .HasForeignKey("LegalDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.LiveActivities.LiveActivityToken", b =>
@@ -7579,11 +7692,18 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.UserConsent", b =>
                 {
+                    b.HasOne("Cleansia.Core.Domain.Legal.LegalDocument", "LegalDocument")
+                        .WithMany()
+                        .HasForeignKey("LegalDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("LegalDocument");
 
                     b.Navigation("User");
                 });
@@ -7636,6 +7756,11 @@ namespace Cleansia.Infra.Database.Migrations
             modelBuilder.Entity("Cleansia.Core.Domain.Internationalization.Country", b =>
                 {
                     b.Navigation("Employees");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Legal.LegalDocument", b =>
+                {
+                    b.Navigation("Texts");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Loyalty.LoyaltyAccount", b =>

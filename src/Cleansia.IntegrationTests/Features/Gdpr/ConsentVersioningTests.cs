@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Database;
+using Cleansia.IntegrationTests.Features.Legal;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -53,12 +54,15 @@ public class ConsentVersioningTests(PostgresContainerFixture fixture) : BaseInte
         return Task.CompletedTask;
     }
 
-    private static UserConsent SeededTermsRow(User user, string? documentVersion)
+    private static UserConsent SeededTermsRow(User user, string? documentVersion, string? legalDocumentId = null)
     {
-        var consent = UserConsent.Grant(user.Id, ConsentType.TermsOfService, SeededIp, SeededDevice, documentVersion);
+        var consent = UserConsent.Grant(user.Id, ConsentType.TermsOfService, SeededIp, SeededDevice, documentVersion, legalDocumentId);
         consent.Created("seed", DateTime.UtcNow);
         return consent;
     }
+
+    private static Task<LegalDocument> TermsInForce(CleansiaDbContext context) =>
+        LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService);
 
     private static async Task<UserConsent> TermsRowOf(CleansiaDbContext context, string userId) =>
         await context.UserConsents.IgnoreQueryFilters().SingleAsync(c => c.UserId == userId && c.ConsentType == ConsentType.TermsOfService);
@@ -103,21 +107,23 @@ public class ConsentVersioningTests(PostgresContainerFixture fixture) : BaseInte
 
         await TestMethod(
             setup: services => SessionOf(services, customer, UserProfile.Customer, JwtAudiences.Customer),
-            arrange: context =>
+            arrange: async context =>
             {
+                await LegalSeed.SeedAsync(context);
                 context.Languages.Add(Language.Create("en", "English"));
                 context.Users.Add(customer);
                 context.UserConsents.Add(SeededTermsRow(customer, OlderVersion));
-                return Task.CompletedTask;
             },
             act: async provider => await provider.GetRequiredService<IMediator>().Send(new GrantConsent.Command(ConsentType.TermsOfService)),
             assert: async (context, result) =>
             {
                 Assert.True(result.IsSuccess);
 
+                var inForce = await TermsInForce(context);
                 var row = await TermsRowOf(context, customer.Id);
                 Assert.True(row.IsGranted);
-                Assert.Equal(LegalDocumentVersions.CustomerTerms, row.DocumentVersion);
+                Assert.Equal(inForce.Version, row.DocumentVersion);
+                Assert.Equal(inForce.Id, row.LegalDocumentId);
                 Assert.Equal(Ip, row.IpAddress);
                 Assert.Equal(DeviceLabel, row.UserAgent);
 
@@ -129,7 +135,7 @@ public class ConsentVersioningTests(PostgresContainerFixture fixture) : BaseInte
                 Assert.Equal(customer.Id, audit.ResourceId);
                 Assert.Equal(JwtAudiences.Customer, audit.ClientAudience);
                 var payload = JsonDocument.Parse(audit.PayloadJson!).RootElement;
-                Assert.Equal(LegalDocumentVersions.CustomerTerms, payload.GetProperty("documentVersion").GetString());
+                Assert.Equal(inForce.Version, payload.GetProperty("documentVersion").GetString());
                 Assert.Equal("termsOfService", payload.GetProperty("consentType").GetString());
             },
             transactional: false);
@@ -142,12 +148,13 @@ public class ConsentVersioningTests(PostgresContainerFixture fixture) : BaseInte
 
         await TestMethod(
             setup: services => SessionOf(services, customer, UserProfile.Customer, JwtAudiences.Customer),
-            arrange: context =>
+            arrange: async context =>
             {
+                await LegalSeed.SeedAsync(context);
+                var inForce = await TermsInForce(context);
                 context.Languages.Add(Language.Create("en", "English"));
                 context.Users.Add(customer);
-                context.UserConsents.Add(SeededTermsRow(customer, LegalDocumentVersions.CustomerTerms));
-                return Task.CompletedTask;
+                context.UserConsents.Add(SeededTermsRow(customer, inForce.Version, inForce.Id));
             },
             act: async provider => await provider.GetRequiredService<IMediator>().Send(new GrantConsent.Command(ConsentType.TermsOfService)),
             assert: async (context, result) =>
@@ -156,7 +163,7 @@ public class ConsentVersioningTests(PostgresContainerFixture fixture) : BaseInte
                 Assert.Equal(BusinessErrorMessage.ConsentAlreadyGranted, result.Error!.Message);
 
                 var row = await TermsRowOf(context, customer.Id);
-                Assert.Equal(LegalDocumentVersions.CustomerTerms, row.DocumentVersion);
+                Assert.Equal((await TermsInForce(context)).Version, row.DocumentVersion);
                 Assert.Equal(SeededIp, row.IpAddress);
                 Assert.Equal(SeededDevice, row.UserAgent);
 

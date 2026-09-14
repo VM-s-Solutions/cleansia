@@ -9,15 +9,17 @@ using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities;
+using Cleansia.Tests.Domain.Legal;
 using Moq;
 
 namespace Cleansia.Tests.Features.Gdpr;
 
 /// <summary>
 /// ADR-0062 D3/D4 — the two consent commands are customer acts recorded by the pipeline. Asserted at
-/// the producer: the marker is frozen, the handler passes the version in force ONLY for a customer
+/// the producer: the marker is frozen, the handler passes the document in force ONLY for a customer
 /// (the same command is routed on both Partner hosts, where an employee accepts a different document —
-/// ADR-0041), and the evidence carries the consent type and version, nothing about the person.
+/// ADR-0041), resolved for the default market because a signed-in customer names none, and the
+/// evidence carries the consent type and version, nothing about the person.
 /// </summary>
 public sealed class ConsentAuditEvidenceTests
 {
@@ -26,12 +28,19 @@ public sealed class ConsentAuditEvidenceTests
     private readonly Mock<IConsentService> _consentService = new();
     private readonly Mock<IUserConsentRepository> _userConsentRepository = new();
     private readonly AuditContext _auditContext = new();
+    private readonly LegalDocument _terms = LegalDocumentFixtures.Terms();
+    private readonly Mock<ILegalDocumentResolver> _legalDocuments;
+
+    public ConsentAuditEvidenceTests()
+    {
+        _legalDocuments = LegalDocumentFixtures.Resolver(_terms, LegalDocumentFixtures.Privacy());
+    }
 
     private static IUserSessionProvider Session(UserProfile role) =>
         new TestUserSessionProvider(UserId, "user@cleansia.test", [new Claim(ClaimTypes.Role, role.ToString())]);
 
     private GrantConsent.Handler GrantHandler(UserProfile role) =>
-        new(Session(role), _consentService.Object, _auditContext);
+        new(Session(role), _consentService.Object, _legalDocuments.Object, _auditContext);
 
     private WithdrawConsent.Handler WithdrawHandler(UserProfile role) =>
         new(Session(role), _userConsentRepository.Object, _auditContext);
@@ -54,10 +63,10 @@ public sealed class ConsentAuditEvidenceTests
     }
 
     [Fact]
-    public async Task A_Customer_Grant_Passes_The_Version_In_Force_And_Records_It()
+    public async Task A_Customer_Grant_Passes_The_Document_In_Force_For_The_Default_Market_And_Records_Its_Version()
     {
         _consentService
-            .Setup(s => s.TryGrantAsync(UserId, ConsentType.TermsOfService, LegalDocumentVersions.CustomerTerms, It.IsAny<CancellationToken>()))
+            .Setup(s => s.TryGrantAsync(UserId, ConsentType.TermsOfService, _terms, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await GrantHandler(UserProfile.Customer)
@@ -69,9 +78,10 @@ public sealed class ConsentAuditEvidenceTests
         Assert.Equal("User", snapshot!.ResourceType);
         Assert.Equal(UserId, snapshot.ResourceId);
         var payload = Payload(snapshot);
-        Assert.Equal(LegalDocumentVersions.CustomerTerms, payload.GetProperty("documentVersion").GetString());
+        Assert.Equal(_terms.Version, payload.GetProperty("documentVersion").GetString());
         Assert.Equal("termsOfService", payload.GetProperty("consentType").GetString());
         Assert.Equal(2, payload.EnumerateObject().Count());
+        _legalDocuments.Verify(r => r.ResolveInForceAsync(LegalDocumentType.TermsOfService, null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -86,6 +96,9 @@ public sealed class ConsentAuditEvidenceTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(JsonValueKind.Null, Payload(_auditContext.DrainSnapshot()).GetProperty("documentVersion").ValueKind);
+        _legalDocuments.Verify(
+            r => r.ResolveInForceAsync(It.IsAny<LegalDocumentType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -102,7 +115,10 @@ public sealed class ConsentAuditEvidenceTests
         _consentService.Verify(
             s => s.TryGrantAsync(UserId, ConsentType.TermsOfService, null, It.IsAny<CancellationToken>()), Times.Once);
         _consentService.Verify(
-            s => s.TryGrantAsync(It.IsAny<string>(), It.IsAny<ConsentType>(), It.Is<string?>(v => v != null), It.IsAny<CancellationToken>()),
+            s => s.TryGrantAsync(It.IsAny<string>(), It.IsAny<ConsentType>(), It.Is<LegalDocument?>(d => d != null), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _legalDocuments.Verify(
+            r => r.ResolveInForceAsync(It.IsAny<LegalDocumentType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -110,7 +126,7 @@ public sealed class ConsentAuditEvidenceTests
     public async Task An_Already_Granted_Consent_Is_Refused_And_Records_No_Evidence()
     {
         _consentService
-            .Setup(s => s.TryGrantAsync(UserId, ConsentType.TermsOfService, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.TryGrantAsync(UserId, ConsentType.TermsOfService, It.IsAny<LegalDocument?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await GrantHandler(UserProfile.Customer)

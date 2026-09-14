@@ -26,9 +26,17 @@ public class UserConsentEntityConfiguration : AuditableEntityConfiguration<UserC
         builder.Property(e => e.DocumentVersion)
             .HasMaxLength(32);
 
+        builder.Property(e => e.LegalDocumentId)
+            .HasMaxLength(26);
+
         builder.HasOne(e => e.User)
             .WithMany()
             .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.LegalDocument)
+            .WithMany()
+            .HasForeignKey(e => e.LegalDocumentId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => new { e.UserId, e.ConsentType })

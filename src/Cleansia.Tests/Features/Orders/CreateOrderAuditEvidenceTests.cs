@@ -8,6 +8,7 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
+using Cleansia.Tests.Domain.Legal;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -51,6 +52,7 @@ public sealed class CreateOrderAuditEvidenceTests
     private readonly Mock<IOrderFactory> _orderFactory = new();
     private readonly Mock<IAddressGeocoder> _addressGeocoder = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
+    private readonly LegalDocument _terms = LegalDocumentFixtures.Terms();
     private readonly AuditContext _auditContext = new();
 
     private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
@@ -110,6 +112,7 @@ public sealed class CreateOrderAuditEvidenceTests
             _expressWaiverConsumer.Object,
             _creditAccountRepository.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
+            LegalDocumentFixtures.Resolver(_terms, LegalDocumentFixtures.Privacy()).Object,
             _auditContext,
             NullLogger<CreateOrder.Handler>.Instance);
 
@@ -151,7 +154,7 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.Equal(CreatedOrderId, payload.GetProperty("orderId").GetString());
         Assert.True(payload.GetProperty("isGuest").GetBoolean());
         Assert.True(payload.GetProperty("termsAccepted").GetBoolean());
-        Assert.Equal(LegalDocumentVersions.CustomerTerms, payload.GetProperty("termsVersionAccepted").GetString());
+        Assert.Equal(_terms.Version, payload.GetProperty("termsVersionAccepted").GetString());
         Assert.Equal(CreateOrderTestData.MatchingTotalPrice, payload.GetProperty("totalPrice").GetDecimal());
         Assert.Equal("CZK", payload.GetProperty("currencyCode").GetString());
         Assert.Equal("cz", payload.GetProperty("countryId").GetString());

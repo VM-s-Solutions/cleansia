@@ -266,6 +266,8 @@ public static class ServiceExtensions
         services.AddScoped<IGdprExportService, GdprExportService>();
         // The one consent-write path: the GDPR consent endpoints and the partner-onboarding checkbox.
         services.AddScoped<IConsentService, ConsentService>();
+        // The legal text in force for a market, stamped on a consent and shown on the legal pages.
+        services.AddScoped<ILegalDocumentResolver, LegalDocumentResolver>();
         services.AddInfrastructureServices();
 
         return services;

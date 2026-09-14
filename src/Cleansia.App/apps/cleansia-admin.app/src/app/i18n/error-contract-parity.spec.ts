@@ -509,6 +509,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'language.in_use',
   'language.not_found',
   'language.not_supported',
+  // Legal documents — the read-only version catalogue and its per-language preview
+  'legal.document_not_found',
   // Catalogue: services, packages, extras, serviced cities
   'extra.in_use',
   'extra.not_found',

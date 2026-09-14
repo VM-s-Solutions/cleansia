@@ -2742,6 +2742,9 @@
       "not_found": "Language not found",
       "not_supported": "Language not supported"
     },
+    "legal": {
+      "document_not_found": "This legal text is not available yet."
+    },
     "loyalty": {
       "points_exceed_sanity_cap": "That number of points exceeds the limit allowed for a manual adjustment.",
       "reason_required": "A reason is required for a manual points adjustment.",

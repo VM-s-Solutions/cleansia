@@ -1818,6 +1818,9 @@
     "language": {
       "not_supported": "Tento jazyk není podporován."
     },
+    "legal": {
+      "document_not_found": "Tento právní dokument zatím není k dispozici."
+    },
     "order": {
       "cleaning_date": {
         "future": "Datum úklidu musí být v budoucnosti.",

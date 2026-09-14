@@ -62,7 +62,8 @@ public class GoogleAuthHandlerTests
             _cartRepository.Object,
             _userRepository.Object,
             _hostAudience,
-            new Mock<IConsentService>().Object)!;
+            new Mock<IConsentService>().Object,
+            new Mock<ILegalDocumentResolver>().Object)!;
 
     // Defaults to the signup screen's shape so the provisioning branch stays reachable; the sign-in
     // screen sends no tick and its tests pass termsAccepted: false explicitly.

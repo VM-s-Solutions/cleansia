@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 
@@ -9,7 +10,7 @@ public class ConsentService(
     IRequestMetadataProvider requestMetadata,
     IUserConsentRepository userConsentRepository) : IConsentService
 {
-    public async Task<bool> TryGrantAsync(string userId, ConsentType consentType, string? documentVersion, CancellationToken cancellationToken)
+    public async Task<bool> TryGrantAsync(string userId, ConsentType consentType, LegalDocument? document, CancellationToken cancellationToken)
     {
         var existing = await userConsentRepository.GetByUserAndTypeAsync(userId, consentType, cancellationToken);
 
@@ -20,22 +21,22 @@ public class ConsentService(
 
         if (existing is null)
         {
-            userConsentRepository.Add(UserConsent.Grant(userId, consentType, ipAddress, userAgent, documentVersion));
+            userConsentRepository.Add(UserConsent.Grant(userId, consentType, ipAddress, userAgent, document?.Version, document?.Id));
             return true;
         }
 
         if (!existing.IsGranted)
         {
-            existing.Regrant(ipAddress, userAgent, documentVersion);
+            existing.Regrant(ipAddress, userAgent, document?.Version, document?.Id);
             return true;
         }
 
-        if (documentVersion is null || existing.DocumentVersion == documentVersion)
+        if (document is null || existing.DocumentVersion == document.Version)
         {
             return false;
         }
 
-        existing.AcceptVersion(documentVersion, ipAddress, userAgent);
+        existing.AcceptVersion(document.Version, ipAddress, userAgent, document.Id);
         return true;
     }
 }

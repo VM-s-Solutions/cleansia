@@ -13,6 +13,7 @@ using Cleansia.Infra.Azure.Storage.Queues;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Tests.Domain.Legal;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
@@ -56,18 +57,18 @@ public class UserEmailRaceMappingTests
 
     private Register.Handler NewRegisterHandler() =>
         new(_cartRepository.Object, _userRepository.Object, new Mock<IReferralService>().Object, _pending,
-            new Mock<IConsentService>().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
+            new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
 
     private RegisterEmployee.Handler NewRegisterEmployeeHandler() =>
         new(_cartRepository.Object, _userRepository.Object, new Mock<IEmployeeRepository>().Object, _pending);
 
     private GoogleAuth.Handler NewGoogleHandler(Mock<IGoogleTokenVerifier> verifier) =>
         new(verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object,
-            new HostAudienceProvider("customer"), new Mock<IConsentService>().Object);
+            new HostAudienceProvider("customer"), new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object);
 
     private AppleAuth.Handler NewAppleHandler(Mock<IAppleTokenVerifier> verifier) =>
         new(verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object,
-            new HostAudienceProvider("customer"), new Mock<IConsentService>().Object, NullLogger<AppleAuth.Handler>.Instance);
+            new HostAudienceProvider("customer"), new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, NullLogger<AppleAuth.Handler>.Instance);
 
     private void AssertNoTokenMinted() =>
         _tokenService.Verify(

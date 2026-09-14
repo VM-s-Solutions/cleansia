@@ -17,6 +17,7 @@ using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using Cleansia.Tests.Common;
+using Cleansia.Tests.Domain.Legal;
 using Moq;
 using StripeException = Stripe.StripeException;
 
@@ -145,6 +146,7 @@ public class CreateOrderHandlerCharacterizationTests
             // customer who has never been credited looks like, and what every case here assumes.
             _creditAccountRepository.Object,
             new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object),
+            LegalDocumentFixtures.Resolver().Object,
             new AuditContext(),
             NullLogger<CreateOrder.Handler>.Instance);
 

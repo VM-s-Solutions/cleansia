@@ -601,6 +601,9 @@ public static class BusinessErrorMessage
     public const string ReferralNotAccepted = "referral.not_accepted";
     public const string ReferralReasonRequired = "referral.reason_required";
 
+    // Legal documents
+    public const string LegalDocumentNotFound = "legal.document_not_found";
+
     // Admin action audit log
     public const string AuditNotFound = "audit.not_found";
     /// <summary>The timeline is keyed by exactly one of a user or a (resource type, resource id) pair.</summary>

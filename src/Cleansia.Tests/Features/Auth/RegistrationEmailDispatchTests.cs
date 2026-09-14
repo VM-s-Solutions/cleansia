@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Tests.Domain.Legal;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
@@ -50,7 +51,7 @@ public class RegistrationEmailDispatchTests
 
         var handler = new Register.Handler(
             _cartRepository.Object, _userRepository.Object, referralService.Object, _pending,
-            new Mock<IConsentService>().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
+            new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext(), NullLogger<Register.Handler>.Instance);
 
         var result = await handler.Handle(
             new Register.Command(Email, "Password1!@abc", "John", "Doe", Language), CancellationToken.None);

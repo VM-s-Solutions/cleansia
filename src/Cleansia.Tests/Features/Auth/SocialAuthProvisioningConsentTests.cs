@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Tests.Domain.Legal;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -13,18 +14,23 @@ namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
 /// ADR-0062 D4 — the social commands are sign-in-or-register and carry no audit marker; the proof of a
-/// social registration is the two versioned consent rows the PROVISIONING branch writes. A sign-in of
-/// an existing account writes none, and a refused provisioning writes none.
+/// social registration is the two versioned consent rows the PROVISIONING branch writes, stamped with
+/// the documents in force for the market the sign-up named. A sign-in of an existing account writes
+/// none, and a refused provisioning writes none.
 /// </summary>
 public sealed class SocialAuthProvisioningConsentTests
 {
     private const string VerifiedEmail = "social@example.com";
+    private const string Market = "country-cze";
 
     private readonly Mock<ITokenService> _tokenService = new();
     private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IConsentService> _consentService = new();
     private readonly IHostAudienceProvider _hostAudience = new HostAudienceProvider("customer");
+    private readonly LegalDocument _terms = LegalDocumentFixtures.Terms();
+    private readonly LegalDocument _privacy = LegalDocumentFixtures.Privacy();
+    private readonly Mock<ILegalDocumentResolver> _legalDocuments;
     private User? _provisionedUser;
 
     public SocialAuthProvisioningConsentTests()
@@ -36,8 +42,9 @@ public sealed class SocialAuthProvisioningConsentTests
             .Setup(r => r.Add(It.IsAny<User>()))
             .Callback<User>(user => _provisionedUser = user);
         _consentService
-            .Setup(s => s.TryGrantAsync(It.IsAny<string>(), It.IsAny<ConsentType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.TryGrantAsync(It.IsAny<string>(), It.IsAny<ConsentType>(), It.IsAny<LegalDocument?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        _legalDocuments = LegalDocumentFixtures.Resolver(_terms, _privacy);
     }
 
     private GoogleAuth.Handler GoogleHandler(GoogleVerifiedClaims? claims)
@@ -46,7 +53,7 @@ public sealed class SocialAuthProvisioningConsentTests
         verifier.Setup(v => v.VerifyAsync("token", It.IsAny<CancellationToken>())).ReturnsAsync(claims);
         return new GoogleAuth.Handler(
             verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object, _hostAudience,
-            _consentService.Object);
+            _consentService.Object, _legalDocuments.Object);
     }
 
     private AppleAuth.Handler AppleHandler(AppleVerifiedClaims? claims)
@@ -55,22 +62,24 @@ public sealed class SocialAuthProvisioningConsentTests
         verifier.Setup(v => v.VerifyAsync("token", "nonce", It.IsAny<CancellationToken>())).ReturnsAsync(claims);
         return new AppleAuth.Handler(
             verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object, _hostAudience,
-            _consentService.Object, NullLogger<AppleAuth.Handler>.Instance);
+            _consentService.Object, _legalDocuments.Object, NullLogger<AppleAuth.Handler>.Instance);
     }
 
     private static GoogleAuth.Command GoogleCommand(bool termsAccepted) =>
-        new("token", "ignored", "ignored@x", "First", "Last", termsAccepted);
+        new("token", "ignored", "ignored@x", "First", "Last", termsAccepted, CountryId: Market);
 
     private static AppleAuth.Command AppleCommand(bool termsAccepted) =>
-        new("token", "nonce", "First", "Last", termsAccepted);
+        new("token", "nonce", "First", "Last", termsAccepted, CountryId: Market);
 
     private void AssertBothLegalConsentsGrantedFor(string userId)
     {
+        _legalDocuments.Verify(r => r.ResolveInForceAsync(LegalDocumentType.TermsOfService, Market, It.IsAny<CancellationToken>()), Times.Once);
+        _legalDocuments.Verify(r => r.ResolveInForceAsync(LegalDocumentType.PrivacyPolicy, Market, It.IsAny<CancellationToken>()), Times.Once);
         _consentService.Verify(
-            s => s.TryGrantAsync(userId, ConsentType.TermsOfService, LegalDocumentVersions.CustomerTerms, It.IsAny<CancellationToken>()),
+            s => s.TryGrantAsync(userId, ConsentType.TermsOfService, _terms, It.IsAny<CancellationToken>()),
             Times.Once);
         _consentService.Verify(
-            s => s.TryGrantAsync(userId, ConsentType.PrivacyPolicy, LegalDocumentVersions.CustomerPrivacy, It.IsAny<CancellationToken>()),
+            s => s.TryGrantAsync(userId, ConsentType.PrivacyPolicy, _privacy, It.IsAny<CancellationToken>()),
             Times.Once);
         _consentService.VerifyNoOtherCalls();
     }

@@ -30,6 +30,7 @@ public static class GrantConsent
     public class Handler(
         IUserSessionProvider userSessionProvider,
         IConsentService consentService,
+        ILegalDocumentResolver legalDocumentResolver,
         IAuditContext auditContext)
         : ICommandHandler<Command>
     {
@@ -39,11 +40,14 @@ public static class GrantConsent
             var userId = userSessionProvider.GetUserId()!;
 
             // The same command is routed on both Partner hosts, and an employee accepts a different
-            // document than the customer constants describe (ADR-0041) — their row stays unversioned.
+            // document than the customer texts (ADR-0041) — their row stays unversioned. A signed-in
+            // customer names no market, so the default market's text is the one in force for them.
             var isCustomer = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value == UserProfile.Customer.ToString();
-            var documentVersion = isCustomer ? LegalDocumentVersions.For(request.ConsentType) : null;
+            var document = isCustomer && LegalDocument.TypeFor(request.ConsentType) is { } documentType
+                ? await legalDocumentResolver.ResolveInForceAsync(documentType, countryId: null, cancellationToken)
+                : null;
 
-            var granted = await consentService.TryGrantAsync(userId, request.ConsentType, documentVersion, cancellationToken);
+            var granted = await consentService.TryGrantAsync(userId, request.ConsentType, document, cancellationToken);
 
             if (!granted)
             {
@@ -51,7 +55,7 @@ public static class GrantConsent
                     nameof(Command.ConsentType), BusinessErrorMessage.ConsentAlreadyGranted));
             }
 
-            auditContext.RecordEvidence("User", userId, new ConsentEvidence(request.ConsentType, documentVersion));
+            auditContext.RecordEvidence("User", userId, new ConsentEvidence(request.ConsentType, document?.Version));
 
             return BusinessResult.Success();
         }

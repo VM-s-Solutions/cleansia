@@ -2,6 +2,7 @@
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Database;
+using Cleansia.Infra.Database.Seed.Legal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,6 +68,11 @@ public static class DbContextBindingExtensions
         services.AddHostedService<NpgsqlTypeCatalogInitializer>();
         services.AddDbContext<CleansiaDbContext>(options => options.UseNpgsql(dataSource));
         services.AddScoped<IUnitOfWork>(provider => provider.GetService<CleansiaDbContext>()!);
+        // The legal texts are seeded from the embedded files at every host start, in every environment
+        // (a deploy is how a new version reaches the database). Registered after the type-catalog
+        // initializer so the seed waits behind an in-flight migration instead of retrying against it.
+        services.AddScoped<LegalDocumentSeeder>();
+        services.AddHostedService<LegalDocumentSeedHostedService>();
 
         return services;
     }

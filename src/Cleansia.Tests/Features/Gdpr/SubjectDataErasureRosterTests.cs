@@ -351,6 +351,12 @@ public class SubjectDataErasureRosterTests
         [typeof(Core.Domain.Configuration.CountryConfiguration)] = new(
             Verdict.NotADataSubject,
             "PhonePrefix is a country dialling code."),
+
+        [typeof(Core.Domain.Legal.LegalDocumentText)] = new(
+            Verdict.NotADataSubject,
+            "The platform's own legal text (the terms, the privacy policy) in one language — the unbounded "
+                + "column is the markdown a customer accepted, which must read the same forever. A consent row "
+                + "points at it by id; nothing about a person is in it."),
     };
 
     /// <summary>

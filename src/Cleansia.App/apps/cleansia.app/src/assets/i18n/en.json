@@ -1818,6 +1818,9 @@
     "language": {
       "not_supported": "That language isn't supported."
     },
+    "legal": {
+      "document_not_found": "This legal text is not available yet."
+    },
     "order": {
       "cleaning_date": {
         "future": "The cleaning date must be in the future.",

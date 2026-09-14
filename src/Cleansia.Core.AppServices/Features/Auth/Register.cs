@@ -86,8 +86,8 @@ public class Register
         string Language,
         bool ReferralCodePresent,
         bool? TermsAccepted,
-        string TermsVersion,
-        string PrivacyVersion) : ICustomerAuditPayload;
+        string? TermsVersion,
+        string? PrivacyVersion) : ICustomerAuditPayload;
 
     public class Handler(
         ICartRepository cartRepository,
@@ -95,6 +95,7 @@ public class Register
         IReferralService referralService,
         IPendingDispatch pending,
         IConsentService consentService,
+        ILegalDocumentResolver legalDocumentResolver,
         IAuditContext auditContext,
         ILogger<Handler> logger)
         : ICommandHandler<Command>
@@ -137,10 +138,15 @@ public class Register
                 rawConfirmationToken = userEntity.UpdateConfirmationCode();
             }
 
+            // The texts in force for the market the visitor registers with — recorded whether or not the
+            // box was ticked, because they are what the screen showed.
+            var terms = await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.TermsOfService, command.CountryId, cancellationToken);
+            var privacy = await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.PrivacyPolicy, command.CountryId, cancellationToken);
+
             if (command.TermsAccepted == true)
             {
-                await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService, LegalDocumentVersions.CustomerTerms, cancellationToken);
-                await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy, LegalDocumentVersions.CustomerPrivacy, cancellationToken);
+                await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService, terms, cancellationToken);
+                await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy, privacy, cancellationToken);
             }
 
             auditContext.RecordEvidence(
@@ -151,8 +157,8 @@ public class Register
                     command.Language,
                     !string.IsNullOrWhiteSpace(command.ReferralCode),
                     command.TermsAccepted,
-                    LegalDocumentVersions.CustomerTerms,
-                    LegalDocumentVersions.CustomerPrivacy),
+                    terms?.Version,
+                    privacy?.Version),
                 actorUserId: userEntity.Id);
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";

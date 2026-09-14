@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 
 namespace Cleansia.Core.Domain.Users;
 
@@ -26,18 +27,25 @@ public class UserConsent : Auditable, ITenantEntity
     public string? UserAgent { get; private set; }
 
     /// <summary>
-    /// The dated version string of the document accepted (ADR-0062 D4). Null on rows granted before
-    /// versioning existed and on consent types that have no document.
+    /// The version of the document accepted — its effective date, <c>yyyy-MM-dd</c> (ADR-0062 D4). Null
+    /// on rows granted before versioning existed and on consent types that have no document.
     /// </summary>
     [MaxLength(32)]
     public string? DocumentVersion { get; private set; }
+
+    /// <summary>The stored text the version names; null where <see cref="DocumentVersion"/> is.</summary>
+    [MaxLength(26)]
+    public string? LegalDocumentId { get; private set; }
+
+    public LegalDocument? LegalDocument { get; private set; }
 
     public static UserConsent Grant(
         string userId,
         ConsentType consentType,
         string? ipAddress,
         string? userAgent,
-        string? documentVersion)
+        string? documentVersion,
+        string? legalDocumentId = null)
         => new()
         {
             UserId = userId,
@@ -46,7 +54,8 @@ public class UserConsent : Auditable, ITenantEntity
             GrantedAt = DateTimeOffset.UtcNow,
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            DocumentVersion = documentVersion
+            DocumentVersion = documentVersion,
+            LegalDocumentId = legalDocumentId
         };
 
     public UserConsent Withdraw()
@@ -56,7 +65,7 @@ public class UserConsent : Auditable, ITenantEntity
         return this;
     }
 
-    public UserConsent Regrant(string? ipAddress, string? userAgent, string? documentVersion)
+    public UserConsent Regrant(string? ipAddress, string? userAgent, string? documentVersion, string? legalDocumentId = null)
     {
         IsGranted = true;
         GrantedAt = DateTimeOffset.UtcNow;
@@ -64,6 +73,7 @@ public class UserConsent : Auditable, ITenantEntity
         IpAddress = ipAddress;
         UserAgent = userAgent;
         DocumentVersion = documentVersion;
+        LegalDocumentId = legalDocumentId;
         return this;
     }
 
@@ -72,6 +82,6 @@ public class UserConsent : Auditable, ITenantEntity
     /// are opaque strings, so "different" is all the row can tell; the row stays the truth about now and
     /// the audit trail is the history (ADR-0062 D4).
     /// </summary>
-    public UserConsent AcceptVersion(string documentVersion, string? ipAddress, string? userAgent)
-        => Regrant(ipAddress, userAgent, documentVersion);
+    public UserConsent AcceptVersion(string documentVersion, string? ipAddress, string? userAgent, string? legalDocumentId = null)
+        => Regrant(ipAddress, userAgent, documentVersion, legalDocumentId);
 }

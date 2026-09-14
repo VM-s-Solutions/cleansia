@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Cleansia.IntegrationTests.Features.Legal;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,7 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
     {
         context.Languages.Add(Language.Create("en", "English"));
         await context.SaveChangesAsync();
+        await LegalSeed.SeedAsync(context);
     }
 
     private static Register.Command RegisterCommand(bool? termsAccepted) =>
@@ -65,7 +67,7 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
     private static async Task<List<CustomerActionAudit>> CustomerRows(Infra.Database.CleansiaDbContext context) =>
         await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync();
 
-    private static void AssertVersionedLegalConsents(List<UserConsent> consents)
+    private static async Task AssertVersionedLegalConsents(Infra.Database.CleansiaDbContext context, List<UserConsent> consents)
     {
         Assert.Equal(2, consents.Count);
         var terms = Assert.Single(consents, c => c.ConsentType == ConsentType.TermsOfService);
@@ -79,8 +81,12 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
             Assert.Equal(TestTenants.Default, consent.TenantId);
         }
 
-        Assert.Equal(LegalDocumentVersions.CustomerTerms, terms.DocumentVersion);
-        Assert.Equal(LegalDocumentVersions.CustomerPrivacy, privacy.DocumentVersion);
+        var termsDocument = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService);
+        var privacyDocument = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.PrivacyPolicy);
+        Assert.Equal(termsDocument.Version, terms.DocumentVersion);
+        Assert.Equal(termsDocument.Id, terms.LegalDocumentId);
+        Assert.Equal(privacyDocument.Version, privacy.DocumentVersion);
+        Assert.Equal(privacyDocument.Id, privacy.LegalDocumentId);
     }
 
     [Fact]
@@ -95,7 +101,7 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
                 Assert.True(result.IsSuccess);
                 var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Email == Constants.TestUserSession.TestUserEmail);
 
-                AssertVersionedLegalConsents(await ConsentsOf(context, user.Id));
+                await AssertVersionedLegalConsents(context, await ConsentsOf(context, user.Id));
 
                 var row = Assert.Single(await CustomerRows(context));
                 Assert.Equal("customer.account.register", row.Action);
@@ -110,8 +116,8 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
 
                 var payload = JsonDocument.Parse(row.PayloadJson!).RootElement;
                 Assert.True(payload.GetProperty("termsAccepted").GetBoolean());
-                Assert.Equal(LegalDocumentVersions.CustomerTerms, payload.GetProperty("termsVersion").GetString());
-                Assert.Equal(LegalDocumentVersions.CustomerPrivacy, payload.GetProperty("privacyVersion").GetString());
+                Assert.Equal((await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService)).Version, payload.GetProperty("termsVersion").GetString());
+                Assert.Equal((await LegalSeed.PlatformWideAsync(context, LegalDocumentType.PrivacyPolicy)).Version, payload.GetProperty("privacyVersion").GetString());
                 Assert.Equal("Email", payload.GetProperty("method").GetString());
                 var members = payload.EnumerateObject().Select(p => p.Name).ToList();
                 Assert.DoesNotContain(members, m => m.Contains("name", StringComparison.OrdinalIgnoreCase));
@@ -194,7 +200,7 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
 
                 var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.GoogleId == "google-brand-new");
                 Assert.Equal(AuthenticationType.Google, user.AuthenticationType);
-                AssertVersionedLegalConsents(await ConsentsOf(context, user.Id));
+                await AssertVersionedLegalConsents(context, await ConsentsOf(context, user.Id));
                 Assert.Empty(await CustomerRows(context));
             },
             transactional: false);
@@ -221,7 +227,7 @@ public class RegistrationConsentAndAuditTests(PostgresContainerFixture fixture) 
                 Assert.True(result.IsSuccess);
 
                 var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.AppleId == "apple-sub-new");
-                AssertVersionedLegalConsents(await ConsentsOf(context, user.Id));
+                await AssertVersionedLegalConsents(context, await ConsentsOf(context, user.Id));
                 Assert.Empty(await CustomerRows(context));
             },
             transactional: false);

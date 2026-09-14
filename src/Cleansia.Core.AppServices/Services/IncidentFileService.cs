@@ -119,17 +119,8 @@ public class IncidentFileService(
             .ToListAsync(cancellationToken);
     }
 
-    // The cap keeps the orders the subject acted on most recently, as the timeline's cap does; an
-    // unordered cut would make which orders an erased subject keeps arbitrary.
-    private async Task<List<string>> ProvenOrderIdsAsync(string userId, CancellationToken cancellationToken) =>
-        await customerActionAuditRepository.GetQueryable()
-            .Where(a => a.UserId == userId && a.Success && a.ResourceType == nameof(Order) && a.ResourceId != null)
-            .GroupBy(a => a.ResourceId!)
-            .Select(g => new { OrderId = g.Key, LastActedOn = g.Max(a => a.OccurredOn) })
-            .OrderByDescending(x => x.LastActedOn)
-            .ThenBy(x => x.OrderId)
-            .Take(GetActionTimeline.RecentResourceCap)
-            .Select(x => x.OrderId)
+    private Task<List<string>> ProvenOrderIdsAsync(string userId, CancellationToken cancellationToken) =>
+        GetActionTimeline.ProvenOrderIds(customerActionAuditRepository.GetQueryable(), userId)
             .ToListAsync(cancellationToken);
 
     private async Task<(IReadOnlyList<IncidentFileTrailEntry> Trail, bool Truncated)> LoadTrailAsync(

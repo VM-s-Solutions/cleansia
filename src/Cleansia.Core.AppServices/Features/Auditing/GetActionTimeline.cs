@@ -18,8 +18,10 @@ namespace Cleansia.Core.AppServices.Features.Auditing;
 /// <summary>
 /// One <c>OccurredOn DESC</c> page over the three audit tables (ADR-0062 D6), keyed by a user or by a
 /// resource. By user: the customer's own rows, the admin rows on the user or on their orders, disputes
-/// and memberships, and the cleaner rows on their orders. By resource: every row of the three tables
-/// that names it — which is the only way a guest act (<c>UserId</c> null) is ever reached.
+/// and memberships, and the cleaner rows on their orders — the orders being those that name the user
+/// or that the user's own successful acts named (<see cref="ProvenOrderIds"/>). By resource: every row
+/// of the three tables that names it — which is the only way a guest act (<c>UserId</c> null) is ever
+/// reached.
 /// </summary>
 public class GetActionTimeline
 {
@@ -129,8 +131,10 @@ public class GetActionTimeline
         private async Task<(IQueryable<CustomerActionAudit>, IQueryable<AdminActionAudit>, IQueryable<EmployeeActionAudit>)> ByUserAsync(
             string userId, CancellationToken cancellationToken)
         {
+            var provenOrderIds = await ProvenOrderIds(customerActionAuditRepository.GetQueryable(), userId)
+                .ToListAsync(cancellationToken);
             var orderIds = await orderRepository.GetQueryable()
-                .Where(o => o.UserId == userId)
+                .Where(o => o.UserId == userId || provenOrderIds.Contains(o.Id))
                 .OrderByDescending(o => o.CreatedOn)
                 .Take(RecentResourceCap)
                 .Select(o => o.Id)
@@ -162,6 +166,23 @@ public class GetActionTimeline
             return (customer, admin, employee);
         }
     }
+
+    /// <summary>
+    /// The orders a subject's own successful acts named, newest act first, capped at
+    /// <see cref="RecentResourceCap"/>. An erasure blanks <c>Order.UserId</c>, so this is how an erased
+    /// subject's orders are still theirs to the timeline and the incident file; a refused act proves
+    /// nothing — its order id is whatever the caller typed. The cap is taken after the ordering so which
+    /// orders an erased subject keeps is never whichever ids the database returned first.
+    /// </summary>
+    public static IQueryable<string> ProvenOrderIds(IQueryable<CustomerActionAudit> customerRows, string userId) =>
+        customerRows
+            .Where(a => a.UserId == userId && a.Success && a.ResourceType == nameof(Order) && a.ResourceId != null)
+            .GroupBy(a => a.ResourceId!)
+            .Select(g => new { OrderId = g.Key, LastActedOn = g.Max(a => a.OccurredOn) })
+            .OrderByDescending(x => x.LastActedOn)
+            .ThenBy(x => x.OrderId)
+            .Take(RecentResourceCap)
+            .Select(x => x.OrderId);
 
     public static IReadOnlyList<TimelineEntryDto> Page(IEnumerable<TimelineEntryDto> merged, int offset, int limit) =>
         merged

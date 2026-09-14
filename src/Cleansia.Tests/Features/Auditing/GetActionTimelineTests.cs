@@ -191,6 +191,29 @@ public class GetActionTimelineTests
         Assert.Equal(new[] { "e-1", "a-1", "c-guest" }, result.Data.Select(e => e.Id));
     }
 
+    /// <summary>
+    /// An erasure blanks <c>Order.UserId</c>, so an erased subject's orders no longer name them. The
+    /// admin and cleaner rows on those orders are reached through the orders the subject's own successful
+    /// acts named — the incident file's rule — and a refused act proves nothing.
+    /// </summary>
+    [Fact]
+    public async Task ByUser_Reaches_Admin_And_Employee_Rows_On_An_Order_An_Erased_Subjects_Own_Act_Proved()
+    {
+        const string probedOrderId = "order-probed";
+        var erased = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = OrderId, UserId = UserId }).AnonymizeCustomerData();
+        var probed = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = probedOrderId, UserId = UserId }).AnonymizeCustomerData();
+        _orders.Setup(r => r.GetQueryable()).Returns(new[] { erased, probed }.AsQueryable().BuildMock());
+        Seed(
+            [CustomerRow("c-booking", UserId, OrderId, T0), CustomerRow("c-refused", UserId, probedOrderId, T0.AddMinutes(1), success: false)],
+            [AdminRow("a-1", "Order", OrderId, T0.AddMinutes(2)), AdminRow("a-probed", "Order", probedOrderId, T0.AddMinutes(3))],
+            [EmployeeRow("e-1", OrderId, T0.AddMinutes(4)), EmployeeRow("e-probed", probedOrderId, T0.AddMinutes(5))]);
+
+        var page = await Handle(new GetActionTimeline.Request { UserId = UserId });
+
+        Assert.Equal(4, page.Total);
+        Assert.Equal(new[] { "e-1", "a-1", "c-refused", "c-booking" }, page.Data.Select(e => e.Id));
+    }
+
     [Fact]
     public async Task ByUser_Never_Surfaces_A_Guest_Row()
     {
@@ -279,11 +302,11 @@ public class GetActionTimelineTests
     private static TimelineEntryDto Entry(TimelineSource source, string id, DateTimeOffset occurredOn) =>
         new(source, id, occurredOn, "actor", "act", "Order", OrderId, true, null);
 
-    private static CustomerActionAudit CustomerRow(string id, string? userId, string orderId, DateTimeOffset occurredOn)
+    private static CustomerActionAudit CustomerRow(string id, string? userId, string orderId, DateTimeOffset occurredOn, bool success = true)
     {
         var row = CustomerActionAudit.Create(
             userId: userId, clientAudience: "cleansia.customer", ipAddress: null, deviceLabel: null, deviceId: null,
-            action: "customer.order.cancel", resourceType: "Order", resourceId: orderId, success: true, errorCode: null,
+            action: "customer.order.cancel", resourceType: "Order", resourceId: orderId, success: success, errorCode: success ? null : "order.not_found",
             payloadJson: null, correlationId: null);
         row.Id = id;
         typeof(CustomerActionAudit).GetProperty(nameof(CustomerActionAudit.OccurredOn))!.SetValue(row, occurredOn);

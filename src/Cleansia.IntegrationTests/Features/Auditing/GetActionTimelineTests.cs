@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Features.Auditing;
 using Cleansia.Core.AppServices.Features.Auditing.DTOs;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Auditing;
@@ -13,6 +14,7 @@ using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -23,8 +25,9 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 /// booking of one order, a consent grant), one admin refund on that order and one cleaner drop of it. By
 /// user the timeline returns the four rows <c>OccurredOn DESC</c> with the source of each; by resource it
 /// returns the three that name the order and, unlike the user key, reaches a guest act; paging walks
-/// the same order without a gap or a duplicate; and a row stamped for another operator never appears
-/// (the global tenant filter).
+/// the same order without a gap or a duplicate; a row stamped for another operator never appears
+/// (the global tenant filter); and once the user is erased — the order no longer names them — the
+/// admin and cleaner rows on it are still on their timeline, reached through their own booking row.
 /// </summary>
 [Collection("PostgresCollection")]
 public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -141,6 +144,35 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
             });
     }
 
+    [Fact]
+    public async Task ByUser_Keeps_The_Admin_And_Cleaner_Rows_On_An_Erased_Subjects_Order()
+    {
+        await TestMethod(
+            setup: AdminSession,
+            arrange: context => SeedOneOrderWithFourActs(context, completed: true),
+            act: async provider =>
+            {
+                var erased = await provider.GetRequiredService<IMediator>().Send(new AdminDeleteUserAccount.Command(CustomerId));
+                Assert.True(erased.IsSuccess, erased.Error?.Message);
+
+                return await Send(provider, new GetActionTimeline.Request { UserId = CustomerId });
+            },
+            assert: async (CleansiaDbContext context, PagedData<TimelineEntryDto> page) =>
+            {
+                Assert.Null(await context.Orders.IgnoreQueryFilters().Where(o => o.Id == OrderId).Select(o => o.UserId).SingleAsync());
+
+                Assert.Equal(5, page.Total);
+                Assert.Equal(
+                    new[] { "gdpr.user.delete", "employee.order.dropped", "order.refund.partial", "customer.consent.grant", "customer.order.create" },
+                    page.Data.Select(e => e.Action));
+                Assert.Equal(
+                    new[] { TimelineSource.Admin, TimelineSource.Employee, TimelineSource.Admin, TimelineSource.Customer, TimelineSource.Customer },
+                    page.Data.Select(e => e.Source));
+                Assert.Equal(new[] { CustomerId, OrderId, OrderId, CustomerId, OrderId }, page.Data.Select(e => e.ResourceId));
+            },
+            transactional: false);
+    }
+
     private static async Task<PagedData<TimelineEntryDto>> Send(IServiceProvider provider, GetActionTimeline.Request request)
     {
         var mediator = provider.GetRequiredService<IMediator>();
@@ -159,8 +191,11 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
     /// <summary>
     /// The customer books (T0) and grants a consent (T0+1h); an admin partially refunds the order (T0+2h);
     /// the cleaner who had it drops it (T0+3h). A guest booked a second order (T0+4h) that no user owns.
+    /// A completed order is what lets the customer be erased — a live one refuses the erasure.
     /// </summary>
-    private static async Task SeedOneOrderWithFourActs(CleansiaDbContext context)
+    private static Task SeedOneOrderWithFourActs(CleansiaDbContext context) => SeedOneOrderWithFourActs(context, completed: false);
+
+    private static async Task SeedOneOrderWithFourActs(CleansiaDbContext context, bool completed)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
@@ -179,8 +214,8 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
         customer.ConfirmEmail();
         context.Users.Add(customer);
 
-        context.Orders.Add(NewOrder(OrderId, CustomerId));
-        context.Orders.Add(NewOrder(GuestOrderId, userId: null));
+        context.Orders.Add(NewOrder(OrderId, CustomerId, completed));
+        context.Orders.Add(NewOrder(GuestOrderId, userId: null, completed));
 
         context.CustomerActionAudits.AddRange(
             CustomerRow("caud-create", CustomerId, OrderId, "customer.order.create", T0),
@@ -194,7 +229,7 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
         await context.CommitAsync(CancellationToken.None);
     }
 
-    private static Order NewOrder(string orderId, string? userId)
+    private static Order NewOrder(string orderId, string? userId, bool completed)
     {
         var order = Order.Create(
             customerName: "Time Line",
@@ -211,7 +246,15 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
             userId: userId);
         order.Id = orderId;
         order.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow);
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+        var stamp = T0.AddDays(-2);
+        foreach (var status in completed ? new[] { OrderStatus.New, OrderStatus.Completed } : [OrderStatus.New])
+        {
+            var track = OrderStatusTrack.Create(status, order);
+            track.Created(Constants.TestUserSession.TestUserName, stamp);
+            order.AddOrderStatus(track);
+            stamp = stamp.AddDays(1);
+        }
+
         return order;
     }
 

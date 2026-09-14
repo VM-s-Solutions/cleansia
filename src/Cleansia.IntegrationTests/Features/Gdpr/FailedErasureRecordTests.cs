@@ -267,6 +267,53 @@ public class FailedErasureRecordTests(PostgresContainerFixture fixture) : BaseIn
             transactional: false);
     }
 
+    // The subject files again while their failed erasure sits on record. The Failed row is the sweep's
+    // (or an admin's) to finish, so the second filing is refused as already pending; were it to complete,
+    // the sweep would then re-walk the erased subject through the first row and two Completed rows would
+    // stand for one erasure. The session is the subject's for the filing and the timer's for the sweep.
+    [Fact]
+    public async Task A_Failed_Row_Refuses_A_Second_Filing_And_The_Sweep_Completes_The_Original()
+    {
+        IUserSessionProvider session = new TestUserSessionProvider(new TestClaimsPrincipalUser());
+
+        await TestMethod(
+            setup: services =>
+            {
+                services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => session));
+                return Task.CompletedTask;
+            },
+            arrange: context => Seed(context, failedRequest: true, lastAttempt: StartOfToday.AddMinutes(-1)),
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var refiled = await mediator.Send(new DeleteUserAccount.Command());
+
+                session = new TestUserSessionProvider();
+                var swept = await mediator.Send(new RetryFailedUserDeletions.Command());
+                return (Refiled: refiled, Swept: swept);
+            },
+            assert: async (CleansiaDbContext context, (BusinessResult Refiled, BusinessResult<RetryFailedUserDeletions.Response> Swept) outcome) =>
+            {
+                Assert.True(outcome.Refiled.IsFailure);
+                Assert.Equal(BusinessErrorMessage.GdprDeletionAlreadyPending, outcome.Refiled.Error!.Message);
+
+                Assert.True(outcome.Swept.IsSuccess, outcome.Swept.Error?.Message);
+                Assert.Equal(new RetryFailedUserDeletions.Response(1, 1, 0), outcome.Swept.Value);
+
+                var request = Assert.Single(await context.GdprRequests.IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(FailedRequestId, request.Id);
+                Assert.Equal(GdprRequestStatus.Completed, request.Status);
+                Assert.Equal(GdprAuditReasons.SystemActor, request.ProcessedBy);
+                Assert.Equal($"{FirstNote}\nRetried by {GdprAuditReasons.SystemActor}", request.Notes);
+
+                var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == SubjectId);
+                Assert.False(user.IsActive);
+                Assert.StartsWith("deleted_", user.Email);
+                Assert.Equal(GdprAuditReasons.RetriedDeletion, user.DeactivatedBy);
+            },
+            transactional: false);
+    }
+
     [Fact]
     public async Task A_Refusal_Before_The_Walk_Leaves_No_Row()
     {

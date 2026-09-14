@@ -170,7 +170,11 @@ private struct BookingSheetContent: View {
     }
 
     private var canContinue: Bool {
-        BookingStepGate.canContinue(step: step, state: viewModel.state)
+        BookingStepGate.canContinue(
+            step: step,
+            state: viewModel.state,
+            alreadyConsented: viewModel.alreadyConsented
+        )
     }
 
     private var canConfirm: Bool {
@@ -196,6 +200,7 @@ private struct BookingSheetContent: View {
             footer
         }
         .background(CleansiaColors.background.ignoresSafeArea())
+        .task { await viewModel.loadConsentStatus() }
     }
 
     private var header: some View {

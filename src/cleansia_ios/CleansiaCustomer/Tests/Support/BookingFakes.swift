@@ -133,6 +133,21 @@ final class FakeOrderCreateClient: OrderCreateClient, @unchecked Sendable {
     }
 }
 
+final class FakeConsentStatusClient: ConsentStatusClient, @unchecked Sendable {
+    /// Nil is a failed read, the way the live client reports one.
+    var granted: Set<SignupConsentType>?
+    private(set) var callCount = 0
+
+    init(granted: Set<SignupConsentType>? = []) {
+        self.granted = granted
+    }
+
+    func grantedTypes() async -> Set<SignupConsentType>? {
+        callCount += 1
+        return granted
+    }
+}
+
 final class FakePaymentIntentClient: PaymentIntentClient, @unchecked Sendable {
     var result: ApiResult<PaymentIntentDetails>
     private(set) var callCount = 0

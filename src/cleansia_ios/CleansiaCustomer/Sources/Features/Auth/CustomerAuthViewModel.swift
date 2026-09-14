@@ -103,7 +103,6 @@ final class CustomerAuthViewModel: ViewModel {
     private let socialProvider: SocialSignInProviding
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
-    private let signupConsent: SignupConsentRecording
     private let pendingEmail: String?
     private let errorLocalizer = ApiErrorLocalizer()
 
@@ -129,7 +128,6 @@ final class CustomerAuthViewModel: ViewModel {
         socialProvider: SocialSignInProviding,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
-        signupConsent: SignupConsentRecording,
         pendingEmail: String? = nil,
         changePasswordClient: ChangePasswordClient = LiveChangePasswordClient(),
         referralClient: ReferralClient = LiveReferralClient(),
@@ -145,7 +143,6 @@ final class CustomerAuthViewModel: ViewModel {
         self.socialProvider = socialProvider
         self.settings = settings
         self.snackbar = snackbar
-        self.signupConsent = signupConsent
         self.pendingEmail = pendingEmail
         super.init()
         market.assign(to: &$marketState)
@@ -273,13 +270,13 @@ final class CustomerAuthViewModel: ViewModel {
             lastName: signUpForm.lastName,
             language: settings.languageTag,
             referralCode: referralCode.isEmpty ? nil : referralCode,
-            countryId: marketCountryId
+            countryId: marketCountryId,
+            termsAccepted: signUpForm.acceptTerms
         )
         signUpState = .idle
 
         switch result {
         case .success:
-            await signupConsent.recordSignupTick(email: signUpForm.email, accepted: signUpForm.acceptTerms)
             outcome.send(.needsEmailConfirm(email: signUpForm.email))
         case let .failure(error):
             snackbar.showApiError(error)
@@ -446,30 +443,14 @@ final class CustomerAuthViewModel: ViewModel {
         return true
     }
 
-    /// Parked BEFORE the auth call, not after: a social signup comes back holding a live session
-    /// and the spine flushes any parked tick from inside that same call, so a tick parked
-    /// afterwards misses the only delivery this flow performs.
-    private func parkSignupTick(email: String, accepted: Bool) async {
-        await signupConsent.recordSignupTick(email: email, accepted: accepted)
-    }
-
     private func handleSocial(_ result: SocialSignInResult, termsAccepted: Bool) async {
         switch result {
         case let .google(credential):
-            await parkSignupTick(email: credential.email, accepted: termsAccepted)
             let auth = await socialAuthClient
                 .googleAuth(credential, termsAccepted: termsAccepted, countryId: marketCountryId)
             socialState = .idle
             emit(auth, fallbackEmail: credential.email)
         case let .apple(credential):
-            // Apple hands the client no address of its own, so the identity token's claim is the
-            // only one available before the call. A token that carries none parks nothing rather
-            // than guessing: delivery matches on the address the SERVER later names, so a wrong
-            // key would silently never deliver.
-            await parkSignupTick(
-                email: JwtDecoder.email(of: credential.identityToken) ?? "",
-                accepted: termsAccepted
-            )
             let auth = await socialAuthClient
                 .appleAuth(credential, termsAccepted: termsAccepted, countryId: marketCountryId)
             socialState = .idle

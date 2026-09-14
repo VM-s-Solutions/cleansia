@@ -5,7 +5,6 @@ struct CustomerAuthStack {
     let spine: AuthApiClient
     let headerAdapter: HeaderAdapter
     let deviceIdProvider: DeviceIdProvider
-    let signupConsent: SignupConsentRepository
 }
 
 enum CustomerAuthSpine {
@@ -19,25 +18,19 @@ enum CustomerAuthSpine {
             deviceIdProvider: deviceIdProvider,
             anonymousAllowList: .customer
         )
-        let signupConsent = SignupConsentRepository(
-            store: UserDefaultsSignupConsentStore(),
-            client: CustomerSignupConsentClient()
-        )
         let spine = AuthApiClient(
             apiBaseURL: apiBaseURL,
             tokenStore: tokenStore,
             headerAdapter: headerAdapter,
             sessionScopedCaches: sessionScopedCaches,
             registerEndpoint: .customer,
-            signupConsent: signupConsent,
             authedSession: URLSession(configuration: .default),
             noAuthSession: URLSession(configuration: .ephemeral)
         )
         return CustomerAuthStack(
             spine: spine,
             headerAdapter: headerAdapter,
-            deviceIdProvider: deviceIdProvider,
-            signupConsent: signupConsent
+            deviceIdProvider: deviceIdProvider
         )
     }
 }

@@ -19,6 +19,10 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var extrasState: UiState<[CatalogExtra]> = .loading
     @Published private(set) var membership: MembershipSnapshot?
     @Published private(set) var expressWaiverStatus: ExpressWaiverStatus = .none
+    /// Whether the account already holds the two consents the review step's tick names — Terms of
+    /// Service and Privacy Policy. Re-consenting to the same two documents on every order is noise,
+    /// so the box is shown only while this is false; it stays false on a failed read.
+    @Published internal(set) var alreadyConsented = false
     /// The market the customer browses in — what the catalogue and the quote are priced for until
     /// an address decides otherwise.
     @Published private(set) var marketState: MarketState = .unavailable
@@ -37,6 +41,7 @@ final class BookingViewModel: ViewModel {
     let orderCreateClient: OrderCreateClient
     let paymentIntentClient: PaymentIntentClient
     let countryResolver: CountryResolver
+    let consentClient: ConsentStatusClient
     let tokenStore: TokenStore
     let isCardPaymentAvailable: Bool
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
@@ -61,6 +66,7 @@ final class BookingViewModel: ViewModel {
         orderCreateClient: OrderCreateClient = LiveOrderCreateClient(),
         paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
         countryResolver: CountryResolver = LiveCountryResolver(),
+        consentClient: ConsentStatusClient = LiveConsentStatusClient(),
         tokenStore: TokenStore = CustomerBookingTokenStore.shared,
         market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher(),
         isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
@@ -77,6 +83,7 @@ final class BookingViewModel: ViewModel {
         self.orderCreateClient = orderCreateClient
         self.paymentIntentClient = paymentIntentClient
         self.countryResolver = countryResolver
+        self.consentClient = consentClient
         self.tokenStore = tokenStore
         self.isCardPaymentAvailable = isCardPaymentAvailable
         self.quoteDebounce = quoteDebounce

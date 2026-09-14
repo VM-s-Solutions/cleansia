@@ -35,7 +35,8 @@ extension BookingViewModel {
                 quote: quote,
                 instant: instant,
                 countryId: countryId,
-                promoIsValid: promoIsValid
+                promoIsValid: promoIsValid,
+                alreadyConsented: alreadyConsented
             )
         )
 

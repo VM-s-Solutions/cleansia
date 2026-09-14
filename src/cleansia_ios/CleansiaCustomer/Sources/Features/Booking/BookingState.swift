@@ -31,4 +31,8 @@ struct BookingState: Equatable {
     var referralCode: String = ""
 
     var preferredEmployeeId: String?
+
+    /// The review step's terms tick. Per booking, never remembered: `reset()` starts the next one
+    /// unticked. Read only when the box is shown — see `BookingViewModel.alreadyConsented`.
+    var termsAccepted = false
 }

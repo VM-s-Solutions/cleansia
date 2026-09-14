@@ -69,10 +69,6 @@ final class CustomerAppContainer: AppContainer {
         base.apiClient
     }
 
-    var signupConsent: SignupConsentRepository {
-        authStack.signupConsent
-    }
-
     lazy var socialSignInProvider: SocialSignInProviding = CustomerSocialSignInProvider(
         googleClientID: AppConfig.googleClientID,
         googleServerClientID: AppConfig.googleServerClientID

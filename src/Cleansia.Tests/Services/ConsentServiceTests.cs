@@ -128,6 +128,23 @@ public class ConsentServiceTests
         Assert.Equal(_current.Id, existing.LegalDocumentId);
     }
 
+    // Two documents can share an effective date — a market's own copy seeded under the platform-wide
+    // date — so "already accepted" is the document's identity, not its version string.
+    [Fact]
+    public async Task A_Market_Copy_Sharing_The_Platform_Wide_Date_Is_A_Different_Acceptance()
+    {
+        var marketCopy = LegalDocumentFixtures.Terms(countryId: "cz");
+        var existing = UserConsent.Grant(UserId, ConsentType.TermsOfService, "198.51.100.1", "Firefox", _current.Version, _current.Id);
+        Existing(existing);
+
+        var granted = await CreateService().TryGrantAsync(UserId, ConsentType.TermsOfService, marketCopy, CancellationToken.None);
+
+        Assert.True(granted);
+        Assert.Equal(_current.Version, marketCopy.Version);
+        Assert.Equal(marketCopy.Id, existing.LegalDocumentId);
+        Assert.Equal("203.0.113.9", existing.IpAddress);
+    }
+
     // The employee path: no document in force for the subject, so a versioned row never moves and an
     // unversioned one is simply already granted.
     [Fact]

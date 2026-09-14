@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using Cleansia.Config;
 using Cleansia.Config.Database;
 using Cleansia.Infra.Database;
+using Cleansia.Infra.Database.Seed.Legal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -170,10 +171,7 @@ public class BootDatabaseIoTests
         var services = NewServiceCollection(probe.ConnectionString, out var configuration);
         services.AddCoreBindings(configuration, ProbeEnvironment);
 
-        var hostedServiceImplementations = services
-            .Where(descriptor => descriptor.ServiceType == typeof(IHostedService))
-            .Select(descriptor => descriptor.ImplementationType)
-            .ToList();
+        var hostedServiceImplementations = HostedServiceImplementations(services);
 
         var warmUp = hostedServiceImplementations.IndexOf(typeof(EfModelWarmupService));
         var typeCatalog = hostedServiceImplementations.IndexOf(typeof(NpgsqlTypeCatalogInitializer));
@@ -185,6 +183,42 @@ public class BootDatabaseIoTests
         Assert.True(typeof(BackgroundService).IsAssignableFrom(typeof(EfModelWarmupService)),
             "The warm-up must stay a BackgroundService; a plain IHostedService is awaited inline by the host.");
     }
+
+    /// <summary>
+    /// The mirror image of the warm-up: the legal-document seed is a plain <see cref="IHostedService"/>
+    /// awaited inline on purpose, so the first legal-page read after a deploy already finds the new
+    /// version — and that is exactly why its place in the order matters. Behind the initializer it starts
+    /// only once the database answers and the migration's extensions exist; ahead of it, its handful of
+    /// bounded retries would be spent against the in-flight migration and the host would come up unseeded
+    /// until the next restart. Both facts are asserted because either alone is vacuous without the other.
+    /// </summary>
+    [Fact]
+    public void LegalDocumentSeedIsAwaitedInlineAndRegisteredBehindTheRetryingInitializer()
+    {
+        using var probe = new ClosingLoopbackListener();
+        var services = NewServiceCollection(probe.ConnectionString, out var configuration);
+        services.AddCoreBindings(configuration, ProbeEnvironment);
+
+        var hostedServiceImplementations = HostedServiceImplementations(services);
+
+        var legalSeed = hostedServiceImplementations.IndexOf(typeof(LegalDocumentSeedHostedService));
+        var typeCatalog = hostedServiceImplementations.IndexOf(typeof(NpgsqlTypeCatalogInitializer));
+
+        Assert.True(legalSeed >= 0, "The legal-document seed is not registered as a hosted service.");
+        Assert.True(legalSeed > typeCatalog,
+            "The legal-document seed must be registered after NpgsqlTypeCatalogInitializer — hosted services " +
+            "start sequentially, and ahead of it the seed would spend its bounded retries against an in-flight " +
+            $"migration and give up (seed at {legalSeed}, initializer at {typeCatalog}).");
+        Assert.False(typeof(BackgroundService).IsAssignableFrom(typeof(LegalDocumentSeedHostedService)),
+            "The seed must stay a plain IHostedService: being awaited inline is what turns its place in the " +
+            "order into a wait behind the migration rather than a race with it.");
+    }
+
+    private static List<Type?> HostedServiceImplementations(IServiceCollection services) =>
+        services
+            .Where(descriptor => descriptor.ServiceType == typeof(IHostedService))
+            .Select(descriptor => descriptor.ImplementationType)
+            .ToList();
 
     /// <summary>
     /// The premise the warm-up rests on: EF caches one model per data source, so building it in a

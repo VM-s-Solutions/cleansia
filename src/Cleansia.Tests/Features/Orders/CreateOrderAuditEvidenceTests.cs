@@ -53,12 +53,14 @@ public sealed class CreateOrderAuditEvidenceTests
     private readonly Mock<IAddressGeocoder> _addressGeocoder = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly LegalDocument _terms = LegalDocumentFixtures.Terms();
+    private readonly Mock<ILegalDocumentResolver> _legalDocuments;
     private readonly AuditContext _auditContext = new();
 
     private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
 
     public CreateOrderAuditEvidenceTests()
     {
+        _legalDocuments = LegalDocumentFixtures.Resolver(_terms, LegalDocumentFixtures.Privacy());
         _countryRepository
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -112,7 +114,7 @@ public sealed class CreateOrderAuditEvidenceTests
             _expressWaiverConsumer.Object,
             _creditAccountRepository.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
-            LegalDocumentFixtures.Resolver(_terms, LegalDocumentFixtures.Privacy()).Object,
+            _legalDocuments.Object,
             _auditContext,
             NullLogger<CreateOrder.Handler>.Instance);
 
@@ -155,6 +157,9 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.True(payload.GetProperty("isGuest").GetBoolean());
         Assert.True(payload.GetProperty("termsAccepted").GetBoolean());
         Assert.Equal(_terms.Version, payload.GetProperty("termsVersionAccepted").GetString());
+        _legalDocuments.Verify(
+            r => r.ResolveInForceAsync(LegalDocumentType.TermsOfService, command.CustomerAddress!.CountryId, It.IsAny<CancellationToken>()),
+            Times.Once);
         Assert.Equal(CreateOrderTestData.MatchingTotalPrice, payload.GetProperty("totalPrice").GetDecimal());
         Assert.Equal("CZK", payload.GetProperty("currencyCode").GetString());
         Assert.Equal("cz", payload.GetProperty("countryId").GetString());

@@ -78,9 +78,8 @@ public class UserConsent : Auditable, ITenantEntity
     }
 
     /// <summary>
-    /// A re-acceptance under a different document version on a row that is already granted. Versions
-    /// are opaque strings, so "different" is all the row can tell; the row stays the truth about now and
-    /// the audit trail is the history (ADR-0062 D4).
+    /// A re-acceptance of a different document on a row that is already granted — different, not newer:
+    /// the row stays the truth about now and the audit trail is the history (ADR-0062 D4).
     /// </summary>
     public UserConsent AcceptVersion(string documentVersion, string? ipAddress, string? userAgent, string? legalDocumentId = null)
         => Regrant(ipAddress, userAgent, documentVersion, legalDocumentId);

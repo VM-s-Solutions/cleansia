@@ -22,7 +22,7 @@ public sealed class LegalDocumentResolver(
         if (document is null)
         {
             logger.LogWarning(
-                "No customer {Type} legal document is in force on {Today} for market {CountryId}; the consent is recorded without a version",
+                "No customer {Type} legal document is in force on {Today} for market {CountryId}",
                 type, today, marketCountryId ?? "(default)");
         }
 

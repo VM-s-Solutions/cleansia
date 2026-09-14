@@ -13,8 +13,8 @@ public interface IConsentService
 {
     /// <summary>
     /// Records the grant, re-grants a previously withdrawn one, or moves an already-granted row to
-    /// <paramref name="document"/>'s version when it differs from the version the row holds. Returns
-    /// <c>false</c> when the user already holds this consent under that version and nothing was written
+    /// <paramref name="document"/> when it is not the one the row points at. Returns
+    /// <c>false</c> when the user already holds this consent under that document and nothing was written
     /// — the caller decides whether that is an error (an explicit grant request) or a no-op (re-saving
     /// an onboarding form). <paramref name="document"/> is the legal text in force for THIS subject:
     /// null for a consent that has no document, and null for an employee, who accepts a different text

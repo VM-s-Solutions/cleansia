@@ -31,7 +31,9 @@ public class ConsentService(
             return true;
         }
 
-        if (document is null || existing.DocumentVersion == document.Version)
+        // The document's identity, not its version string: a market's own copy can be seeded under the
+        // platform-wide date, and a consent must then point at the text the customer actually accepted.
+        if (document is null || existing.LegalDocumentId == document.Id)
         {
             return false;
         }

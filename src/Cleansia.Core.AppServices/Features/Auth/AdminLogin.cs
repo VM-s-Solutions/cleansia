@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators.Auth;
@@ -23,8 +24,9 @@ public class AdminLogin
         public Validator(
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
-            IRefreshTokenService refreshTokenService)
-            : base(userRepository, refreshTokenRepository, refreshTokenService,
+            IRefreshTokenService refreshTokenService,
+            IAuditContext auditContext)
+            : base(userRepository, refreshTokenRepository, refreshTokenService, auditContext,
                 c => c.Email, c => c.Password, c => c.RememberMe, c => c.TrustedDeviceToken)
         {
         }

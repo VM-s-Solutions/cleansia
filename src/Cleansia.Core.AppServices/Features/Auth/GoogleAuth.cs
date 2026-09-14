@@ -105,6 +105,9 @@ public class GoogleAuth
 
             if (user is not null)
             {
+                // A refusal below is this account's row, not the IP's alone.
+                auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+
                 // S1: the account-type guard MUST run against the account the handler
                 // actually authenticates — the VERIFIED claims.Email — not the client-supplied
                 // command.Email the validator used to check. Block a Google login from binding into an

@@ -26,8 +26,9 @@ public class MobileLogin
         public Validator(
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
-            IRefreshTokenService refreshTokenService)
-            : base(userRepository, refreshTokenRepository, refreshTokenService,
+            IRefreshTokenService refreshTokenService,
+            IAuditContext auditContext)
+            : base(userRepository, refreshTokenRepository, refreshTokenService, auditContext,
                 c => c.Email, c => c.Password, c => c.RememberMe, c => c.TrustedDeviceToken)
         {
         }

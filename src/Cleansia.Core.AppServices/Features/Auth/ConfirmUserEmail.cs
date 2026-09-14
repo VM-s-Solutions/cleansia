@@ -25,11 +25,13 @@ public class ConfirmUserEmail
     {
         private readonly IUserRepository _userRepository;
         private readonly ILogger<Validator> _logger;
+        private readonly IAuditContext _auditContext;
 
-        public Validator(IUserRepository userRepository, ILogger<Validator> logger)
+        public Validator(IUserRepository userRepository, ILogger<Validator> logger, IAuditContext auditContext)
         {
             _userRepository = userRepository;
             _logger = logger;
+            _auditContext = auditContext;
 
             // A 6-digit OTP is guessable in isolation, so it is NEVER resolved by the bare code — the
             // email names the single account whose stored hash the code is compared against.
@@ -106,8 +108,17 @@ public class ConfirmUserEmail
             return true;
         }
 
-        private Task<User?> ResolveAsync(Command command, CancellationToken cancellationToken)
-            => Resolve(_userRepository, command, cancellationToken);
+        // Whichever rule refuses, the account it refused is already named on the audit context.
+        private async Task<User?> ResolveAsync(Command command, CancellationToken cancellationToken)
+        {
+            var user = await Resolve(_userRepository, command, cancellationToken);
+            if (user is not null)
+            {
+                _auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+            }
+
+            return user;
+        }
     }
 
     /// <param name="Code">The 6-digit typed verification code (or a legacy 22-char link token still

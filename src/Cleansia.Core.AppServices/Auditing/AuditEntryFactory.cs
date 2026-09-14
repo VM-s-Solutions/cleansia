@@ -20,7 +20,10 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// null on exactly the anonymous rows that most need it), IP and device label come from
 /// <see cref="IRequestMetadataProvider"/>, the device id is the session's signed <c>device_id</c> claim (the
 /// header only where there is no session to bind one), and the subject is the session's user id, falling
-/// back to the snapshot's <c>ActorUserId</c> only when the session has none (S1: the session wins).</para>
+/// back to the snapshot's <c>ActorUserId</c> only when the session has none (S1: the session wins). A
+/// failure row reads the subject and the resource off the snapshot too — a validator names the account
+/// it is about to refuse through the same seam — but never its payload: on a refusal the only payload
+/// there could be is the request's own words.</para>
 /// </summary>
 public sealed class AuditEntryFactory(
     IUserSessionProvider userSessionProvider,
@@ -44,9 +47,9 @@ public sealed class AuditEntryFactory(
         return BuildCustomer(request, descriptor, success: true, errorCode: null, snapshot);
     }
 
-    public CustomerActionAudit CreateCustomerFailure(object request, AuditActionDescriptor descriptor, string? errorCode)
+    public CustomerActionAudit CreateCustomerFailure(object request, AuditActionDescriptor descriptor, string? errorCode, AuditSnapshot? snapshot = null)
     {
-        return BuildCustomer(request, descriptor, success: false, errorCode, snapshot: null);
+        return BuildCustomer(request, descriptor, success: false, errorCode, snapshot);
     }
 
     private AdminActionAudit Build(
@@ -106,7 +109,7 @@ public sealed class AuditEntryFactory(
                 CustomerActionAudit.ResourceIdMaxLength),
             success: success,
             errorCode: Clamp(errorCode, CustomerActionAudit.ErrorCodeMaxLength),
-            payloadJson: snapshot?.AfterJson,
+            payloadJson: success ? snapshot?.AfterJson : null,
             correlationId: ResolveCorrelationId());
     }
 

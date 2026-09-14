@@ -45,6 +45,9 @@ public sealed class AuditFailureCaptureBehaviorTests
     [AuditAction("customer.order.list", Audience = AuditAudience.Customer, ResourceType = "Order")]
     public sealed record CustomerListSomethingCommand(string OrderId) : IRequest<PagedData<string>>;
 
+    [AuditAction("customer.session.login", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
+    public sealed record CustomerSignInCommand : IRequest<BusinessResult>;
+
     private readonly Mock<IAuditFailureSink> _sink = new();
 
     private static IUserSessionProvider Session(UserProfile? role) =>
@@ -245,6 +248,44 @@ public sealed class AuditFailureCaptureBehaviorTests
             .Handle(new AdminRefundOrderCommand("ORD-1"), Returns(rejected), CancellationToken.None);
         _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Once);
         _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The validator resolved the account by the typed address and named it before refusing: the row is
+    /// that account's — subject and resource — with no payload, so an account-takeover trail can be keyed
+    /// on the victim and not reconstructed by IP.
+    /// </summary>
+    [Fact]
+    public async Task An_Anonymous_Validation_Reject_Carries_The_Subject_The_Validator_Named_And_No_Payload()
+    {
+        var auditContext = new AuditContext();
+        auditContext.RecordEvidence("User", "cust-9", payload: null, actorUserId: "cust-9");
+        var behavior = Behavior<CustomerSignInCommand>(new TestUserSessionProvider([]), auditContext, host: JwtAudiences.Customer);
+        var rejected = ValidationResult.WithErrors([new Error("Password", BusinessErrorMessage.InvalidPassword)]);
+
+        var result = await behavior.Handle(new CustomerSignInCommand(), Returns(rejected), CancellationToken.None);
+
+        Assert.Same(rejected, result);
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<CustomerActionAudit>(a =>
+            !a.Success && a.ErrorCode == BusinessErrorMessage.InvalidPassword && a.UserId == "cust-9"
+            && a.ResourceType == "User" && a.ResourceId == "cust-9" && a.PayloadJson == null
+            && a.Action == "customer.session.login"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>An unknown address resolves nothing, so nothing is named and the row stays the key, the IP and the device.</summary>
+    [Fact]
+    public async Task An_Anonymous_Validation_Reject_With_Nothing_Named_Still_Names_Nobody()
+    {
+        var behavior = Behavior<CustomerSignInCommand>(new TestUserSessionProvider([]), host: JwtAudiences.Customer);
+        var rejected = ValidationResult.WithErrors([new Error("Email", BusinessErrorMessage.NotExistingUserWithEmail)]);
+
+        await behavior.Handle(new CustomerSignInCommand(), Returns(rejected), CancellationToken.None);
+
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<CustomerActionAudit>(a =>
+            !a.Success && a.ErrorCode == BusinessErrorMessage.NotExistingUserWithEmail
+            && a.UserId == null && a.ResourceId == null && a.PayloadJson == null),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>The known case: the partner host routes the anonymous registration; a refusal there is nobody's row.</summary>

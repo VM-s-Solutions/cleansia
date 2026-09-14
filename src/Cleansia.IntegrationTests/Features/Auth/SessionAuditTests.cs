@@ -2,8 +2,12 @@ using System.Security.Claims;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Auditing;
+using Cleansia.Core.AppServices.Features.Auditing.DTOs;
+using Cleansia.Core.AppServices.Features.Auditing.Filters;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Features.Users;
+using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Configuration;
@@ -27,14 +31,17 @@ namespace Cleansia.IntegrationTests.Features.Auth;
 /// Q-AUD-L5 overruled, through the real pipeline on real Postgres, as the anonymous caller a sign-in
 /// is: a password sign-in leaves one <c>customer.session.login</c> row keyed on the account with the
 /// method and the audience, committed with the session; a sign-in with a wrong password or an unknown
-/// address leaves one out-of-band failure row with the KEY, the IP and the device — stamped with the
-/// default market's operator, because a sign-in names no market — and nowhere on it the address the
-/// caller typed; a reset request for an unknown address is the same shape, and so is a refused sign-in
-/// on a KNOWN account — the validator refuses before any handler can name the subject, so that row is
-/// attributable by IP only. A success row is stamped with the account's own operator (ADR-0062 D7 —
-/// the row and the User row it describes agree by construction), which the cases on a SECOND operator's
-/// account prove: the default market's operator the scope behaviour set first is replaced whether a
-/// token was minted (a sign-in) or not (an unconfirmed address, the two reset acts).
+/// address leaves one out-of-band failure row with the KEY, the IP and the device, and nowhere on it
+/// the address the caller typed. An unknown address names nobody, and its row is stamped with the
+/// default market's operator because a sign-in names no market. A refusal on a KNOWN account — a wrong
+/// password, a bad reset or confirmation code, a reset asked for a social account — names that account:
+/// the validator resolved it before refusing and handed it to the audit context, and the failure sink
+/// stamps the row with the ACCOUNT's operator, so an account-takeover trail is keyed on the victim and
+/// lands in the victim's operator's feed, where both admin reads by user find it. A success row is
+/// stamped with the account's own operator too (ADR-0062 D7 — the row and the User row it describes
+/// agree by construction), which the cases on a SECOND operator's account prove: the default market's
+/// operator the scope behaviour set first is replaced whether a token was minted (a sign-in) or not (an
+/// unconfirmed address, the two reset acts).
 /// </summary>
 [Collection("PostgresCollection")]
 public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -64,7 +71,7 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
 
     private static Task SeedSecondOperatorCustomer(CleansiaDbContext context) => Seed(context, TestTenants.Second, confirmed: true);
 
-    private static async Task Seed(CleansiaDbContext context, string tenantId, bool confirmed, Action<User>? prepare = null)
+    private static async Task Seed(CleansiaDbContext context, string tenantId, bool confirmed, Action<User>? prepare = null, Func<User>? account = null)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
@@ -80,7 +87,7 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
         czk.SetAsDefault(true);
         context.Currencies.Add(czk);
 
-        var customer = User.CreateWithPassword(CustomerEmail, CustomerPassword, "Session", "Audit", UserProfile.Customer);
+        var customer = account?.Invoke() ?? User.CreateWithPassword(CustomerEmail, CustomerPassword, "Session", "Audit", UserProfile.Customer);
         customer.Id = CustomerId;
         if (confirmed)
         {
@@ -176,7 +183,7 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
     }
 
     [Fact]
-    public async Task A_SignIn_With_A_Wrong_Password_Leaves_One_Failure_Row_With_The_Key_And_No_User()
+    public async Task A_SignIn_With_A_Wrong_Password_On_A_Known_Account_Leaves_One_Failure_Row_Naming_That_Account()
     {
         await TestMethod(
             setup: AnonymousSession,
@@ -188,17 +195,183 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.True(result.IsFailure);
 
                 var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.session.login", row.Action);
                 Assert.False(row.Success);
                 Assert.Equal(BusinessErrorMessage.InvalidPassword, row.ErrorCode);
-                Assert.Null(row.UserId);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal("User", row.ResourceType);
+                Assert.Equal(CustomerId, row.ResourceId);
                 Assert.Null(row.PayloadJson);
                 Assert.Equal(Ip, row.IpAddress);
+                Assert.Equal(DeviceLabel, row.DeviceLabel);
+                Assert.Equal(DeviceId, row.DeviceId);
+                Assert.Equal(TestTenants.Default, row.TenantId);
                 AssertCarriesNoAddress(row, CustomerEmail);
 
                 var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == CustomerId);
                 Assert.Equal(1, user.FailedLoginAttempts);
             },
             transactional: false);
+    }
+
+    private sealed record RefusalObserved(
+        BusinessResult<JwtTokenResponse> Refusal,
+        PagedData<TimelineEntryDto> TimelineByUserAsSecondOperator,
+        PagedData<CustomerActionAuditDto> ListByUserAsSecondOperator,
+        PagedData<TimelineEntryDto> TimelineByUserAsDefaultOperator);
+
+    /// <summary>
+    /// The row is the second operator's: the sink read the account it names past the tenant filter and
+    /// stamped the row with the account's operator, not the default market's that the scope behaviour set
+    /// for the anonymous request. The reads are what an admin of each operator sees through the global
+    /// filter: the victim's own operator finds the row by user on both reads; the default market's does not.
+    /// </summary>
+    [Fact]
+    public async Task A_Wrong_Password_On_A_Second_Operators_Account_Is_Stamped_With_That_Operator_And_Found_By_Both_Admin_Reads_By_User()
+    {
+        await TestMethod(
+            setup: AnonymousSession,
+            arrange: SeedSecondOperatorCustomer,
+            act: async provider =>
+            {
+                var refusal = await provider.GetRequiredService<IMediator>()
+                    .Send(new Login.Command(CustomerEmail, "Wrong-Password-999!", RememberMe: false));
+
+                return new RefusalObserved(
+                    refusal,
+                    await ReadAsOperator(provider, TestTenants.Second, m => m.Send(new GetActionTimeline.Request { UserId = CustomerId })),
+                    await ReadAsOperator(provider, TestTenants.Second, m => m.Send(new GetPagedCustomerActionAudits.Request
+                    {
+                        Filter = new CustomerActionAuditFilter(CustomerId, null, null, null, null, null, null, null)
+                    })),
+                    await ReadAsOperator(provider, TestTenants.Default, m => m.Send(new GetActionTimeline.Request { UserId = CustomerId })));
+            },
+            assert: async (CleansiaDbContext context, RefusalObserved observed) =>
+            {
+                Assert.True(observed.Refusal.IsFailure);
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.False(row.Success);
+                Assert.Equal(BusinessErrorMessage.InvalidPassword, row.ErrorCode);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(CustomerId, row.ResourceId);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+                Assert.Null(row.PayloadJson);
+                AssertCarriesNoAddress(row, CustomerEmail);
+
+                var entry = Assert.Single(observed.TimelineByUserAsSecondOperator.Data);
+                Assert.Equal(TimelineSource.Customer, entry.Source);
+                Assert.Equal(row.Id, entry.Id);
+                Assert.Equal("customer.session.login", entry.Action);
+                Assert.False(entry.Success);
+                Assert.Equal(BusinessErrorMessage.InvalidPassword, entry.ErrorCode);
+
+                var listed = Assert.Single(observed.ListByUserAsSecondOperator.Data);
+                Assert.Equal(row.Id, listed.Id);
+                Assert.Equal(CustomerId, listed.UserId);
+
+                Assert.Empty(observed.TimelineByUserAsDefaultOperator.Data);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Reset_Request_For_A_Known_Social_Address_Leaves_One_Failure_Row_Naming_That_Account()
+    {
+        await TestMethod(
+            setup: AnonymousSession,
+            arrange: context => Seed(context, TestTenants.Second, confirmed: true,
+                account: () => User.CreateWithGoogle(CustomerEmail, "Session", "Audit", "google-sub-session-audit")),
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new RequestPasswordChange.Command(CustomerEmail)),
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsFailure);
+                Assert.Contains(((IValidationResult)result).Errors, e => e.Message == BusinessErrorMessage.GoogleAuthTypeError);
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.password.reset_requested", row.Action);
+                Assert.False(row.Success);
+                Assert.Equal(BusinessErrorMessage.GoogleAuthTypeError, row.ErrorCode);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal("User", row.ResourceType);
+                Assert.Equal(CustomerId, row.ResourceId);
+                Assert.Null(row.PayloadJson);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+                AssertCarriesNoAddress(row, CustomerEmail);
+
+                var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == CustomerId);
+                Assert.Null(user.ResetPasswordCode);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Bad_Reset_Code_On_A_Known_Account_Leaves_One_Failure_Row_Naming_That_Account()
+    {
+        await TestMethod(
+            setup: AnonymousSession,
+            arrange: context => Seed(context, TestTenants.Second, confirmed: true, prepare: customer => customer.UpdateResetPasswordToken()),
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new ChangePassword.Command(CustomerEmail, "Brand-New-Password-456", "000000")),
+            assert: async (CleansiaDbContext context, BusinessResult<ChangePassword.Response> result) =>
+            {
+                Assert.True(result.IsFailure);
+                Assert.Contains(((IValidationResult)result).Errors, e => e.Message == BusinessErrorMessage.NotValidResetPasswordToken);
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.password.reset_completed", row.Action);
+                Assert.False(row.Success);
+                Assert.Equal(BusinessErrorMessage.NotValidResetPasswordToken, row.ErrorCode);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(CustomerId, row.ResourceId);
+                Assert.Null(row.PayloadJson);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+                AssertCarriesNoAddress(row, CustomerEmail);
+
+                var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == CustomerId);
+                Assert.NotNull(user.ResetPasswordCode);
+                Assert.Equal(1, user.ResetPasswordCodeAttempts);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Wrong_Confirmation_Code_On_A_Known_Address_Leaves_One_Failure_Row_Naming_That_Account()
+    {
+        await TestMethod(
+            setup: AnonymousSession,
+            arrange: context => Seed(context, TestTenants.Second, confirmed: false),
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(new ConfirmUserEmail.Command("000000", CustomerEmail)),
+            assert: async (CleansiaDbContext context, BusinessResult<JwtTokenResponse> result) =>
+            {
+                Assert.True(result.IsFailure);
+                Assert.Contains(((IValidationResult)result).Errors, e => e.Message == BusinessErrorMessage.InvalidConfirmationCode);
+
+                var row = Assert.Single(await CustomerRows(context));
+                Assert.Equal("customer.account.email_confirmed", row.Action);
+                Assert.False(row.Success);
+                Assert.Equal(BusinessErrorMessage.InvalidConfirmationCode, row.ErrorCode);
+                Assert.Equal(CustomerId, row.UserId);
+                Assert.Equal(CustomerId, row.ResourceId);
+                Assert.Null(row.PayloadJson);
+                Assert.Equal(TestTenants.Second, row.TenantId);
+                AssertCarriesNoAddress(row, CustomerEmail);
+
+                var user = await context.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == CustomerId);
+                Assert.False(user.IsEmailConfirmed);
+                Assert.Equal(1, user.ConfirmationCodeAttempts);
+            },
+            transactional: false);
+    }
+
+    /// <summary>An admin of one operating company reads through the global filter under that company's tenant claim.</summary>
+    private static async Task<T> ReadAsOperator<T>(IServiceProvider provider, string tenantId, Func<IMediator, Task<T>> read)
+    {
+        using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(tenantId);
+        return await read(scope.ServiceProvider.GetRequiredService<IMediator>());
     }
 
     [Fact]

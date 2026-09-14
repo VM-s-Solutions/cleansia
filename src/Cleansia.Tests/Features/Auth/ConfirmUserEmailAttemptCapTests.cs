@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.Domain.Common;
@@ -40,7 +41,7 @@ public class ConfirmUserEmailAttemptCapTests
     }
 
     private static ConfirmUserEmail.Validator ValidatorFor(Mock<IUserRepository> repo)
-        => new(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        => new(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
 
     [Fact]
     public async Task When_The_Budget_Is_Spent_Even_The_Correct_Live_Code_Is_Refused()

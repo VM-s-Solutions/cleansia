@@ -168,6 +168,53 @@ public sealed class AuditEntryFactoryCustomerTests
     }
 
     /// <summary>
+    /// A refusal on a KNOWN account is that account's row. The validator names the subject it is about
+    /// to refuse through the same seam the handlers use, and the failure row reads the subject and the
+    /// resource off it — never the payload: on a refusal the only payload there could be is the request's
+    /// own words.
+    /// </summary>
+    [Fact]
+    public void A_Failure_Row_Takes_The_Subject_And_Resource_The_Validator_Named_And_Never_A_Payload()
+    {
+        var context = new AuditContext();
+        context.RecordEvidence("User", "cust-9", new { method = "Password" }, actorUserId: "cust-9");
+
+        var row = Factory(AnonymousSession())
+            .CreateCustomerFailure(new CancelCommand("ORD-1"), CancelDescriptor, BusinessErrorMessage.InvalidPassword, context.DrainSnapshot());
+
+        Assert.False(row.Success);
+        Assert.Equal(BusinessErrorMessage.InvalidPassword, row.ErrorCode);
+        Assert.Equal("cust-9", row.UserId);
+        Assert.Equal("User", row.ResourceType);
+        Assert.Equal("cust-9", row.ResourceId);
+        Assert.Null(row.PayloadJson);
+    }
+
+    [Fact]
+    public void The_Session_User_Wins_Over_The_Named_Subject_On_A_Failure_Row_Too()
+    {
+        var context = new AuditContext();
+        context.RecordEvidence("User", "cust-9", payload: null, actorUserId: "cust-9");
+
+        var row = Factory(CustomerSession("cust-1"))
+            .CreateCustomerFailure(new CancelCommand("ORD-1"), CancelDescriptor, BusinessErrorMessage.InvalidPassword, context.DrainSnapshot());
+
+        Assert.Equal("cust-1", row.UserId);
+    }
+
+    [Fact]
+    public void An_Anonymous_Failure_Row_With_No_Named_Subject_Names_Nobody()
+    {
+        var row = Factory(AnonymousSession())
+            .CreateCustomerFailure(new CancelCommand("ORD-1"), CancelDescriptor, BusinessErrorMessage.NotExistingUserWithEmail, snapshot: null);
+
+        Assert.Null(row.UserId);
+        Assert.Equal("Order", row.ResourceType);
+        Assert.Equal("ORD-1", row.ResourceId);
+        Assert.Null(row.PayloadJson);
+    }
+
+    /// <summary>
     /// A refused checkout must not carry the country id labelled as the membership. Uses the REAL
     /// command type and its REAL marker so a future shape change re-checks it.
     /// </summary>

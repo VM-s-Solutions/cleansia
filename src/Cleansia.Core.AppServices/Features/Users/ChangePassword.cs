@@ -9,6 +9,7 @@ using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -26,10 +27,12 @@ public class ChangePassword
         private const string AuthTypeErrorTemplate = "{" + AuthTypeErrorPlaceholder + "}";
 
         private readonly IUserRepository _userRepository;
+        private readonly IAuditContext _auditContext;
 
-        public Validator(IUserRepository userRepository)
+        public Validator(IUserRepository userRepository, IAuditContext auditContext)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _auditContext = auditContext ?? throw new ArgumentNullException(nameof(auditContext));
 
             RuleFor(command => command.Email)
                 .Cascade(CascadeMode.Stop)
@@ -73,7 +76,7 @@ public class ChangePassword
         private async Task<bool> UserAuthenticationTypeIsInternal(
             string email, ValidationContext<Command> context, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+            var user = await ResolveAsync(email, cancellationToken);
             if (user is not null && user.AuthenticationType == AuthenticationType.Internal)
             {
                 return true;
@@ -94,7 +97,7 @@ public class ChangePassword
         // (ADR-0003 residual: per-code attempt cap). A fresh code re-grants the budget.
         private async Task<bool> HasAttemptBudgetAsync(Command command, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
+            var user = await ResolveAsync(command.Email, cancellationToken);
             if (user?.ResetPasswordCode is null)
             {
                 return true;
@@ -107,7 +110,7 @@ public class ChangePassword
         {
             // lookup is (email, HASH of token). The reset token is stored hashed,
             // so hash the supplied raw code and compare — no plaintext comparison remains.
-            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
+            var user = await ResolveAsync(command.Email, cancellationToken);
 
             return user is not null &&
                    user.ResetPasswordCode is not null &&
@@ -118,8 +121,20 @@ public class ChangePassword
 
         private async Task<bool> CheckIfPasswordDifferentAsync(Command command, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByEmailIgnoringTenantAsync(command.Email, cancellationToken);
+            var user = await ResolveAsync(command.Email, cancellationToken);
             return user is not null && !command.NewPassword.CheckIfPasswordSame(user.Password!);
+        }
+
+        // Whichever rule refuses, the account it refused is already named on the audit context.
+        private async Task<User?> ResolveAsync(string email, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+            if (user is not null)
+            {
+                _auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+            }
+
+            return user;
         }
     }
 

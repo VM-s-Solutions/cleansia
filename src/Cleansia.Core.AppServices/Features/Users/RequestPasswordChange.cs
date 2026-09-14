@@ -12,9 +12,10 @@ using FluentValidation;
 namespace Cleansia.Core.AppServices.Features.Users;
 
 /// <summary>
-/// The row an anonymous reset request leaves names the account by id when the address matched one, and
-/// nobody at all when it did not: the address itself is the one thing the row must never carry, so a
-/// refused request is recorded as the failure key, the IP and the device only.
+/// The row an anonymous reset request leaves names the account by id when the address matched one —
+/// on a refusal too, since the validator names the account it resolved before refusing — and nobody at
+/// all when it did not: the address itself is the one thing the row must never carry, so a request for
+/// an unknown address is recorded as the failure key, the IP and the device only.
 /// </summary>
 [AuditAction("customer.password.reset_requested", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class RequestPasswordChange
@@ -28,10 +29,12 @@ public class RequestPasswordChange
         private const string AuthTypeErrorTemplate = "{" + AuthTypeErrorPlaceholder + "}";
 
         private readonly IUserRepository _userRepository;
+        private readonly IAuditContext _auditContext;
 
-        public Validator(IUserRepository userRepository)
+        public Validator(IUserRepository userRepository, IAuditContext auditContext)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _auditContext = auditContext ?? throw new ArgumentNullException(nameof(auditContext));
 
             RuleFor(command => command.Email)
                 .Cascade(CascadeMode.Stop)
@@ -57,6 +60,12 @@ public class RequestPasswordChange
             string email, ValidationContext<Command> context, CancellationToken cancellationToken)
         {
             var user = await _userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+            if (user is not null)
+            {
+                // A refusal below is this account's row, not the IP's alone.
+                _auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+            }
+
             if (user is not null && user.AuthenticationType == AuthenticationType.Internal)
             {
                 return true;

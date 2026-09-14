@@ -1,9 +1,11 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using FluentValidation;
 using System.Linq.Expressions;
 
@@ -28,11 +30,13 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
     private readonly IUserRepository userRepository;
     private readonly IRefreshTokenRepository refreshTokenRepository;
     private readonly IRefreshTokenService refreshTokenService;
+    private readonly IAuditContext auditContext;
 
     protected LoginValidator(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IRefreshTokenService refreshTokenService,
+        IAuditContext auditContext,
         Expression<Func<TCommand, string>> emailSelector,
         Expression<Func<TCommand, string>> passwordSelector,
         Expression<Func<TCommand, bool>> rememberMeSelector,
@@ -41,6 +45,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
         this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         this.refreshTokenRepository = refreshTokenRepository ?? throw new ArgumentNullException(nameof(refreshTokenRepository));
         this.refreshTokenService = refreshTokenService ?? throw new ArgumentNullException(nameof(refreshTokenService));
+        this.auditContext = auditContext ?? throw new ArgumentNullException(nameof(auditContext));
 
         var emailName = PropertyName(emailSelector);
         var passwordName = PropertyName(passwordSelector);
@@ -83,7 +88,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
 
     private async Task<bool> UserAuthenticationTypeIsInternal(string email, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+        var user = await ResolveAsync(email, cancellationToken);
         return user is not null && user.AuthenticationType == AuthenticationType.Internal;
     }
 
@@ -95,7 +100,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
     // gets for an address that is known to exist.
     private async Task<bool> UserAuthenticationTypeIsInternal(string email, ValidationContext<TCommand> context, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+        var user = await ResolveAsync(email, cancellationToken);
         if (user is not null && user.AuthenticationType == AuthenticationType.Internal)
         {
             return true;
@@ -119,7 +124,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
     // standing, identical to the baseline lockout behavior, so a credential-sprayer gains no new oracle.
     private async Task<bool> AccountIsNotLockedOutOrTrustedDevice(string email, string? trustedDeviceToken, CancellationToken cancellationToken)
     {
-        var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+        var user = await ResolveAsync(email, cancellationToken);
         if (user is null || !user.IsLockedOut(DateTimeOffset.UtcNow))
         {
             return true;
@@ -143,7 +148,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
 
     private async Task<bool> HasValidPassword(string email, string password, CancellationToken cancellationToken)
     {
-        var userEntity = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+        var userEntity = await ResolveAsync(email, cancellationToken);
         if (userEntity is null)
         {
             return false;
@@ -156,6 +161,19 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
 
         await userRepository.RecordFailedLoginAsync(email, DateTimeOffset.UtcNow, cancellationToken);
         return false;
+    }
+
+    // Whichever rule refuses, the account it refused is already named on the audit context: a refusal on
+    // a known account is that account's row, and only the validator resolves the address before it.
+    private async Task<User?> ResolveAsync(string email, CancellationToken cancellationToken)
+    {
+        var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
+        if (user is not null)
+        {
+            auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+        }
+
+        return user;
     }
 
     private static string PropertyName(LambdaExpression expression)

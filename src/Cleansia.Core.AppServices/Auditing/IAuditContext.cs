@@ -22,7 +22,10 @@ public interface IAuditContext
     /// provisions the row) — the evidence is still worth more than the request's own ids.
     /// <paramref name="payload"/> is null for an act whose only evidence is that it happened, and to
     /// whom (a completed password reset): the row still needs the subject and resource the anonymous
-    /// session cannot name.
+    /// session cannot name. A validator that resolves the account it is about to refuse names it the same
+    /// way, with no payload: a refusal on a KNOWN account is that account's row, so an account-takeover
+    /// trail is keyed on the victim rather than reconstructed by IP. The failure arms read the subject
+    /// and the resource off the snapshot and never its payload.
     /// </summary>
     void RecordEvidence(string resourceType, string? resourceId, object? payload, string? actorUserId = null);
 

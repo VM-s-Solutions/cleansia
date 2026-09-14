@@ -309,7 +309,7 @@ public sealed class AuditLogBehaviorTests
         _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    /// <summary>A refused anonymous act names nobody: the row is the key, the IP and the device, never the address the command carried.</summary>
+    /// <summary>A refused anonymous act on an address that resolved no account names nobody: the row is the key, the IP and the device, never the address the command carried.</summary>
     [Fact]
     public async Task An_Anonymous_Refusal_On_A_Customer_Host_Writes_A_Row_With_No_User_No_Payload_And_No_Resource()
     {
@@ -321,6 +321,28 @@ public sealed class AuditLogBehaviorTests
         _sink.Verify(s => s.RecordFailureAsync(It.Is<CustomerActionAudit>(a =>
             !a.Success && a.ErrorCode == BusinessErrorMessage.NotExistingUserWithEmail
             && a.UserId == null && a.PayloadJson == null && a.ResourceId == null), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// A handler that resolved the account and named it before refusing (the social sign-in's
+    /// account-type guard) leaves that account's row, with the subject and the resource and no payload.
+    /// </summary>
+    [Fact]
+    public async Task An_Anonymous_Refusal_On_A_Customer_Host_Carries_The_Subject_The_Handler_Named_And_No_Payload()
+    {
+        var auditContext = new AuditContext();
+        var behavior = Behavior<SignInOrRegisterCommand>(AnonymousSession(), JwtAudiences.Customer, auditContext);
+
+        await behavior.Handle(new SignInOrRegisterCommand("known@cleansia.test"), _ =>
+        {
+            auditContext.RecordEvidence("User", "user-9", payload: null, actorUserId: "user-9");
+            return Task.FromResult(BusinessResult.Failure(new Error("Email", BusinessErrorMessage.InternalAuthTypeError)));
+        }, CancellationToken.None);
+
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<CustomerActionAudit>(a =>
+            !a.Success && a.ErrorCode == BusinessErrorMessage.InternalAuthTypeError
+            && a.UserId == "user-9" && a.ResourceType == "User" && a.ResourceId == "user-9" && a.PayloadJson == null),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ── a declined success row ─────────────────────────────────────────────────

@@ -102,7 +102,7 @@ public class ConfirmUserEmailSecurityTests
         var repo = RepoResolvingByHash(userA, userB);
 
         // Attacker A submits a SHORT GUESSED code (the old 6-digit space) — cannot match any 128-bit hash.
-        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var guessResult = await validator.ValidateAsync(new ConfirmUserEmail.Command("123456"));
         Assert.False(guessResult.IsValid);
         Assert.Contains(guessResult.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidConfirmationCode);
@@ -127,7 +127,7 @@ public class ConfirmUserEmailSecurityTests
             IsEmailConfirmed = false,
         });
         var repo = RepoResolvingByHash(user);
-        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
 
         var result = await validator.ValidateAsync(new ConfirmUserEmail.Command(raw));
 
@@ -148,7 +148,7 @@ public class ConfirmUserEmailSecurityTests
         Assert.True(user.IsEmailConfirmed);
 
         // Replay: the same raw token now hashes to something the repo no longer holds -> rejected.
-        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var replay = await validator.ValidateAsync(new ConfirmUserEmail.Command(raw));
         Assert.False(replay.IsValid);
         Assert.Equal(BusinessErrorMessage.InvalidConfirmationCode, replay.Errors[0].ErrorMessage);
@@ -163,7 +163,7 @@ public class ConfirmUserEmailSecurityTests
         var (user, otp) = MakeUserWithLiveOtp("typed@example.com");
         var repo = RepoResolvingByHash(user);
 
-        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var validation = await validator.ValidateAsync(new ConfirmUserEmail.Command(otp, user.Email));
         Assert.True(validation.IsValid);
 
@@ -180,7 +180,7 @@ public class ConfirmUserEmailSecurityTests
     {
         var (user, otp) = MakeUserWithLiveOtp("holder@example.com");
         var repo = RepoResolvingByHash(user);
-        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
 
         var result = await validator.ValidateAsync(new ConfirmUserEmail.Command(otp));
 
@@ -199,7 +199,7 @@ public class ConfirmUserEmailSecurityTests
         var (userA, _) = MakeUserWithLiveOtp("attackerA@example.com");
         var (userB, otpB) = MakeUserWithLiveOtp("victimB@example.com");
         var repo = RepoResolvingByHash(userA, userB);
-        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
 
         var result = await validator.ValidateAsync(new ConfirmUserEmail.Command(otpB, userA.Email));
 
@@ -220,9 +220,47 @@ public class ConfirmUserEmailSecurityTests
         Assert.True(first.IsSuccess);
         Assert.Null(user.ConfirmationCode);
 
-        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), new AuditContext());
         var replay = await validator.ValidateAsync(new ConfirmUserEmail.Command(otp, user.Email));
         Assert.False(replay.IsValid);
         Assert.Equal(BusinessErrorMessage.InvalidConfirmationCode, replay.Errors[0].ErrorMessage);
+    }
+
+    // ---- The refused account is named to the audit context ----
+
+    // A wrong code against a KNOWN address is that account's audit row: the validator resolved the
+    // account by email before refusing, so it names the subject — id only, no payload, never the code.
+    [Fact]
+    public async Task A_Wrong_Otp_Against_A_Known_Address_Names_That_Account_With_No_Payload()
+    {
+        var (user, _) = MakeUserWithLiveOtp("named@example.com");
+        var repo = RepoResolvingByHash(user);
+        var auditContext = new AuditContext();
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), auditContext);
+
+        var result = await validator.ValidateAsync(new ConfirmUserEmail.Command("000000", user.Email));
+
+        Assert.False(result.IsValid);
+        var snapshot = auditContext.DrainSnapshot();
+        Assert.NotNull(snapshot);
+        Assert.Equal(user.Id, snapshot!.ActorUserId);
+        Assert.Equal("User", snapshot.ResourceType);
+        Assert.Equal(user.Id, snapshot.ResourceId);
+        Assert.Null(snapshot.AfterJson);
+    }
+
+    // A legacy code that resolves no account names nobody.
+    [Fact]
+    public async Task An_Unresolvable_Legacy_Code_Names_Nobody()
+    {
+        var (user, _) = MakeUserWithLiveOtp("holder@example.com");
+        var repo = RepoResolvingByHash(user);
+        var auditContext = new AuditContext();
+        var validator = new ConfirmUserEmail.Validator(repo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>(), auditContext);
+
+        var result = await validator.ValidateAsync(new ConfirmUserEmail.Command(SecurityTokens.Generate()));
+
+        Assert.False(result.IsValid);
+        Assert.Null(auditContext.DrainSnapshot());
     }
 }

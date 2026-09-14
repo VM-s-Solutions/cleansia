@@ -4,6 +4,8 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -38,7 +40,7 @@ public sealed class SocialSignInAuditEvidenceTests
             .Setup(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new JwtTokenResponse(Token: "jwt", IsEmailConfirmed: true));
         _consentService
-            .Setup(s => s.TryGrantAsync(It.IsAny<string>(), It.IsAny<Cleansia.Core.Domain.Enums.ConsentType>(), It.IsAny<LegalDocument?>(), It.IsAny<CancellationToken>()))
+            .Setup(s => s.TryGrantAsync(It.IsAny<string>(), It.IsAny<ConsentType>(), It.IsAny<LegalDocument?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
     }
 
@@ -143,5 +145,67 @@ public sealed class SocialSignInAuditEvidenceTests
         Assert.True(noAccount.IsFailure);
         Assert.False(_auditContext.SuccessRowDeclined);
         Assert.Null(_auditContext.DrainSnapshot());
+    }
+
+    // ── a refusal on a KNOWN account names it ──────────────────────────────────
+
+    /// <summary>
+    /// The account-type guard refuses a social token onto an existing password account; that refusal is
+    /// the account's row, so the handler names the subject it resolved — id only, no payload — before
+    /// refusing. The failure arm of the pipeline reads it; the caller is told nothing more than before.
+    /// </summary>
+    [Fact]
+    public async Task A_Google_Token_Refused_Onto_A_Password_Account_Names_That_Account_With_No_Payload()
+    {
+        var existing = User.CreateWithPassword(VerifiedEmail, "Passw0rd!", "First", "Last");
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(VerifiedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await GoogleHandler(new GoogleVerifiedClaims("sub-1", VerifiedEmail, EmailVerified: true))
+            .Handle(GoogleCommand(termsAccepted: false), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InternalAuthTypeError, result.Error!.Message);
+        var snapshot = _auditContext.DrainSnapshot();
+        Assert.NotNull(snapshot);
+        Assert.Equal(existing.Id, snapshot!.ActorUserId);
+        Assert.Equal("User", snapshot.ResourceType);
+        Assert.Equal(existing.Id, snapshot.ResourceId);
+        Assert.Null(snapshot.AfterJson);
+    }
+
+    [Fact]
+    public async Task An_Apple_Token_Refused_Onto_A_Google_Account_Names_That_Account_With_No_Payload()
+    {
+        var existing = User.CreateWithGoogle(VerifiedEmail, "First", "Last", "sub-1");
+        _userRepository
+            .Setup(r => r.GetByEmailIgnoringTenantAsync(VerifiedEmail, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await AppleHandler(new AppleVerifiedClaims("apple-sub-1", VerifiedEmail, EmailVerified: true))
+            .Handle(AppleCommand(termsAccepted: false), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.GoogleAuthTypeError, result.Error!.Message);
+        var snapshot = _auditContext.DrainSnapshot();
+        Assert.Equal(existing.Id, snapshot?.ActorUserId);
+        Assert.Null(snapshot?.AfterJson);
+    }
+
+    [Fact]
+    public async Task A_Deactivated_Account_Refused_A_Google_SignIn_Is_Named()
+    {
+        var existing = User.CreateWithGoogle(VerifiedEmail, "First", "Last", "sub-1");
+        existing.IsActive = false;
+        _userRepository
+            .Setup(r => r.GetByGoogleIdIgnoringTenantAsync("sub-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await GoogleHandler(new GoogleVerifiedClaims("sub-1", VerifiedEmail, EmailVerified: true))
+            .Handle(GoogleCommand(termsAccepted: false), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(existing.Id, _auditContext.DrainSnapshot()?.ActorUserId);
     }
 }

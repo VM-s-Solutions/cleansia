@@ -132,6 +132,9 @@ public class AppleAuth
 
             if (user is not null)
             {
+                // A refusal below is this account's row, not the IP's alone.
+                auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+
                 // S1: the account-type guard MUST run against the account the handler actually
                 // authenticates — resolved from the VERIFIED claims — not a client-supplied field. Block an
                 // Apple login from binding into an existing password (Internal) OR Google account that

@@ -117,7 +117,7 @@ public class AuditLogBehavior<TRequest, TResponse>(
             else
             {
                 await auditFailureSink.RecordFailureAsync(
-                    auditEntryFactory.CreateCustomerFailure(request, descriptor, errorCode),
+                    auditEntryFactory.CreateCustomerFailure(request, descriptor, errorCode, auditContext.DrainSnapshot()),
                     cancellationToken);
             }
         }

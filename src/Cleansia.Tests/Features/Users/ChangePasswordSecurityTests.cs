@@ -55,7 +55,7 @@ public class ChangePasswordSecurityTests
     {
         var raw = SecurityTokens.Generate();
         var user = UserWithResetToken(RightEmail, SecurityTokens.Hash(raw), DateTimeOffset.UtcNow.AddMinutes(15));
-        var validator = new ChangePassword.Validator(RepoFor(user).Object);
+        var validator = new ChangePassword.Validator(RepoFor(user).Object, new AuditContext());
 
         var result = await validator.ValidateAsync(new ChangePassword.Command(RightEmail, NewPassword, raw));
 
@@ -77,7 +77,7 @@ public class ChangePasswordSecurityTests
         repo.Setup(r => r.GetByEmailIgnoringTenantAsync(WrongEmail, It.IsAny<CancellationToken>())).ReturnsAsync(wrongUser);
         repo.Setup(r => r.TryChargeResetPasswordCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var validator = new ChangePassword.Validator(repo.Object);
+        var validator = new ChangePassword.Validator(repo.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(new ChangePassword.Command(WrongEmail, NewPassword, raw));
 
@@ -85,18 +85,24 @@ public class ChangePasswordSecurityTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotValidResetPasswordToken);
     }
 
-    // Wrong code, RIGHT email fails (hash mismatch). Proves no plaintext compare survives.
+    // Wrong code, RIGHT email fails (hash mismatch). Proves no plaintext compare survives. The refusal is
+    // that account's audit row: the account was resolved, so it is named to the audit context — id only.
     [Fact]
-    public async Task Wrong_Code_For_Right_Email_Fails()
+    public async Task Wrong_Code_For_Right_Email_Fails_And_Names_The_Account()
     {
         var realRaw = SecurityTokens.Generate();
         var user = UserWithResetToken(RightEmail, SecurityTokens.Hash(realRaw), DateTimeOffset.UtcNow.AddMinutes(15));
-        var validator = new ChangePassword.Validator(RepoFor(user).Object);
+        var auditContext = new AuditContext();
+        var validator = new ChangePassword.Validator(RepoFor(user).Object, auditContext);
 
         var result = await validator.ValidateAsync(new ChangePassword.Command(RightEmail, NewPassword, "totally-wrong-code"));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotValidResetPasswordToken);
+        var snapshot = auditContext.DrainSnapshot();
+        Assert.Equal(user.Id, snapshot?.ActorUserId);
+        Assert.Equal(user.Id, snapshot?.ResourceId);
+        Assert.Null(snapshot?.AfterJson);
     }
 
     // The stored reset column is NEVER the raw token a plaintext compare would match.
@@ -106,7 +112,7 @@ public class ChangePasswordSecurityTests
         var raw = SecurityTokens.Generate();
         var hashed = SecurityTokens.Hash(raw);
         var user = UserWithResetToken(RightEmail, hashed, DateTimeOffset.UtcNow.AddMinutes(15));
-        var validator = new ChangePassword.Validator(RepoFor(user).Object);
+        var validator = new ChangePassword.Validator(RepoFor(user).Object, new AuditContext());
 
         // If a plaintext compare survived, submitting the stored value would (wrongly) pass. It must not:
         // the validator hashes the input, so it compares Hash(hashed) != hashed.
@@ -121,7 +127,7 @@ public class ChangePasswordSecurityTests
     {
         var raw = SecurityTokens.Generate();
         var user = UserWithResetToken(RightEmail, SecurityTokens.Hash(raw), DateTimeOffset.UtcNow.AddMinutes(-1));
-        var validator = new ChangePassword.Validator(RepoFor(user).Object);
+        var validator = new ChangePassword.Validator(RepoFor(user).Object, new AuditContext());
 
         var result = await validator.ValidateAsync(new ChangePassword.Command(RightEmail, NewPassword, raw));
 

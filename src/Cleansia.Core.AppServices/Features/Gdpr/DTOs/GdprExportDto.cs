@@ -98,11 +98,6 @@ public record GdprExportInvoiceDto(
     DateTimeOffset CreatedOn
 );
 
-/// <summary>
-/// What was consented and under which text (ADR-0062 D4): the request context the grant was made from
-/// and the document the version names. Both are null on a row granted before versioning existed and on
-/// a consent type that has no document; the request context is null after an erasure.
-/// </summary>
 public record GdprExportConsentDto(
     string Id,
     ConsentType ConsentType,

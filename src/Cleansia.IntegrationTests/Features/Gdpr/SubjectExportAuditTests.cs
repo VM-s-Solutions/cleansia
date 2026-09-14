@@ -32,7 +32,8 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 /// owner ruling on Q-AUD-O3) whose evidence is section counts. A build that throws commits nothing and is
 /// recorded out-of-band with the exception type on whichever table the actor's role selects — the test
 /// that would have caught the silent drop. The consent section carries what was consented: request
-/// context, version and the stored document the version names.
+/// context, version and the stored document the version names — and an erasure withdraws the consent
+/// without blanking any of the three, because the withdrawn row is the lawful-basis record.
 /// </summary>
 [Collection("PostgresCollection")]
 public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -274,11 +275,20 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
     }
 
     [Fact]
-    public async Task An_Erased_Subject_Exports_With_The_Trail_Present_Its_Payloads_Intact_And_Its_Request_Context_Blanked()
+    public async Task An_Erased_Subject_Exports_With_The_Trail_Present_Its_Payloads_Intact_Its_Request_Context_Blanked_And_Its_Consent_Withdrawn_With_Its_Context_Kept()
     {
         await TestMethod(
             setup: AsAdministrator,
-            arrange: SeedSubjectAndBystanderWithRows,
+            arrange: async context =>
+            {
+                await SeedSubjectAndBystanderWithRows(context);
+                await LegalSeed.SeedAsync(context);
+                var terms = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService);
+
+                var consent = UserConsent.Grant(SubjectId, ConsentType.TermsOfService, ConsentIp, ConsentUserAgent, terms.Version, terms.Id);
+                consent.Created("seed", DateTimeOffset.UtcNow);
+                context.UserConsents.Add(consent);
+            },
             act: async provider =>
             {
                 var mediator = provider.GetRequiredService<IMediator>();
@@ -291,6 +301,17 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
                 Assert.True(result.IsSuccess);
                 Assert.StartsWith("deleted_", result.Value.Profile.Email);
                 AssertSubjectTrail(result.Value.CustomerActions, expectRequestContext: false);
+
+                var terms = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService);
+                var consent = Assert.Single(result.Value.Consents);
+                Assert.Equal(ConsentType.TermsOfService, consent.ConsentType);
+                Assert.False(consent.IsGranted);
+                Assert.NotNull(consent.GrantedAt);
+                Assert.NotNull(consent.WithdrawnAt);
+                Assert.Equal(ConsentIp, consent.IpAddress);
+                Assert.Equal(ConsentUserAgent, consent.UserAgent);
+                Assert.Equal(terms.Version, consent.DocumentVersion);
+                Assert.Equal(terms.Id, consent.LegalDocumentId);
 
                 var export = Assert.Single(await context.GdprRequests.IgnoreQueryFilters().Where(r => r.RequestType == "Export").ToListAsync());
                 Assert.Equal(GdprRequestStatus.Completed, export.Status);

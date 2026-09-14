@@ -5,9 +5,12 @@ namespace Cleansia.Infra.Services.Pdf.IncidentFile;
 
 /// <summary>
 /// The data section as one canonical UTF-8 text — LF line ends, no timestamps of the generation itself
-/// — and its SHA-256. Two builds over unchanged data print the same hash however far apart they were
-/// generated, which is what lets a printed copy be checked against a later re-generation and against
-/// the hash the audit row carries.
+/// — and its SHA-256. What the hash proves is that a printed copy is the file the audit row of the SAME
+/// build describes: the row carries this hash, and the copy prints it. It is not a promise that a later
+/// re-generation prints the same hash. The trail is part of the data, so an unscoped file differs
+/// whenever any act on the account landed in between — the previous build's own admin row included,
+/// since the unscoped trail carries the admin acts on the account; a scoped file, whose trail is the
+/// order's alone, is stable until something on that order changes.
 /// </summary>
 public static class IncidentFileDigest
 {

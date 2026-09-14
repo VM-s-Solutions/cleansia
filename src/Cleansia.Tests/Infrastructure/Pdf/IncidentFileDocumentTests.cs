@@ -1,9 +1,11 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.IncidentFile;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
 using Microsoft.Extensions.Logging.Abstractions;
+using QuestPDF.Fluent;
 
 namespace Cleansia.Tests.Infrastructure.Pdf;
 
@@ -11,8 +13,9 @@ namespace Cleansia.Tests.Infrastructure.Pdf;
 /// The incident file's document model and its render (Q-AUD-L6 ruling: a PDF). QuestPDF subsets its
 /// fonts and nothing can be read back out of the bytes, so the content claims are made on the section
 /// model the layout draws from — the same model the printed SHA-256 is computed over — and the render
-/// claims follow the invoice's shape: one render at a time, byte-identical for identical data, different
-/// when the trail differs.
+/// claims follow the invoice's shape: one render at a time, byte-identical for identical data once the
+/// wall-clock CreationDate/ModDate are zeroed, different when the trail, the generator or the printed
+/// hash differs.
 /// </summary>
 [Collection("QuestPdfRenderer")]
 public sealed class IncidentFileDocumentTests
@@ -130,11 +133,36 @@ public sealed class IncidentFileDocumentTests
 
         Assert.Equal("%PDF", Encoding.ASCII.GetString(rendered.Bytes, 0, 4));
         Assert.Equal(IncidentFileDigest.Sha256Hex(IncidentFileSections.Build(data)), rendered.DataSha256);
-        // The equality half is what stops the other half being vacuous: PDFs carry a wall-clock
-        // CreationDate, so "two renders differ" is true even of a layout that dropped the field.
-        Assert.Equal(rendered.Bytes, renderedAgain.Bytes);
-        Assert.NotEqual(rendered.Bytes, renderedOther.Bytes);
+        // The equality half is what stops the other half being vacuous: without it "two renders
+        // differ" would be true even of a layout that dropped the field.
+        Assert.Equal(WithoutClock(rendered.Bytes), WithoutClock(renderedAgain.Bytes));
+        Assert.NotEqual(WithoutClock(rendered.Bytes), WithoutClock(renderedOther.Bytes));
         Assert.NotEqual(rendered.DataSha256, renderedOther.DataSha256);
+    }
+
+    [Fact]
+    public void The_Footer_Prints_The_Generator()
+    {
+        var data = Fixture();
+        var byAnotherAdmin = data with { GeneratedBy = "someone-else@cleansia.test" };
+
+        // The generator's e-mail is printed nowhere but the footer, so the only way these bytes differ
+        // is that the footer is drawn.
+        Assert.NotEqual(WithoutClock(Pdf.GenerateIncidentFilePdf(data).Bytes), WithoutClock(Pdf.GenerateIncidentFilePdf(byAnotherAdmin).Bytes));
+    }
+
+    [Fact]
+    public void The_Integrity_Block_Prints_The_Hash()
+    {
+        var data = Fixture();
+        var sections = IncidentFileSections.Build(data);
+
+        var printedA = RenderLayout(data, sections, new string('a', 64));
+        var printedB = RenderLayout(data, sections, new string('b', 64));
+
+        // Same data, same sections, a different hash handed to the layout: only the Integrity block
+        // can tell the two documents apart.
+        Assert.NotEqual(WithoutClock(printedA), WithoutClock(printedB));
     }
 
     [Fact]
@@ -152,6 +180,14 @@ public sealed class IncidentFileDocumentTests
         Assert.Contains("## Customer acts (0)\nNone.\n", text);
         Assert.NotEmpty(rendered.Bytes);
     }
+
+    private static byte[] RenderLayout(IncidentFilePdfData data, IReadOnlyList<IncidentFileSection> sections, string dataSha256) =>
+        Document.Create(c => IncidentFileLayoutBuilder.Build(c, data, sections, dataSha256)).GeneratePdf();
+
+    // The wall-clock CreationDate/ModDate are zeroed IN PLACE, so every byte offset — and therefore the
+    // xref table — stays valid and two documents remain comparable byte for byte.
+    private static byte[] WithoutClock(byte[] bytes) =>
+        Encoding.Latin1.GetBytes(Regex.Replace(Encoding.Latin1.GetString(bytes), @"(?<=D:)\d{14}", new string('0', 14)));
 
     private static IncidentFilePdfData Fixture()
     {

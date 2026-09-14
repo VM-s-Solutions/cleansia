@@ -32,11 +32,12 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 /// subject with a completed, refunded, disputed order, a versioned consent and rows on all three audit
 /// tables; a bystander with an order of their own and a refused probe at the subject's order. Unscoped,
 /// the file carries the subject's own customer rows and the admin and cleaner rows on their orders and
-/// disputes, with a currency id read as its code; scoped to the order it carries every row that names
-/// the order or its dispute, the stranger's probe included, and not the admin act on the account; the
-/// bystander's order is refused as not found and the refusal is recorded; and an erased subject still
-/// gets the file — identity marked erased, the trail present with its request context blanked, the
-/// order reached through the subject's own successful act on it now that the order no longer names them.
+/// disputes, with a currency id read as its code; scoped to the order it carries the subject's rows that
+/// name the order or its dispute — never the stranger's probe, whose id and request context are not the
+/// subject's to export — and not the admin act on the account; the bystander's order is refused as not
+/// found and the refusal is recorded; and an erased subject still gets the file — identity marked erased,
+/// the trail present with its request context blanked, the order reached through the subject's own
+/// successful act on it now that the order no longer names them.
 /// </summary>
 [Collection("PostgresCollection")]
 public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -177,7 +178,7 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
     }
 
     [Fact]
-    public async Task Scoped_To_The_Order_The_Trail_Is_Every_Row_On_It_And_Its_Dispute_And_Not_The_Act_On_The_Account()
+    public async Task Scoped_To_The_Order_The_Trail_Is_The_Subjects_Rows_On_It_And_Its_Dispute_Not_A_Strangers_Probe_Nor_The_Act_On_The_Account()
     {
         await TestMethod(
             setup: AsAdministrator,
@@ -197,12 +198,11 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.Single(data.Disputes);
 
                 var customerRows = data.Trail.Where(e => e.Source == IncidentFileService.CustomerSource).ToList();
-                Assert.Equal(3, customerRows.Count);
-                var probe = Assert.Single(customerRows, e => e.ActorId == BystanderId);
-                Assert.False(probe.Success);
-                Assert.Equal("order.not_found", probe.ErrorCode);
-                Assert.Equal("customer.order.cancel", probe.Action);
+                Assert.Equal(["customer.dispute.create", "customer.order.create"], customerRows.Select(e => e.Action).OrderBy(a => a));
+                Assert.All(customerRows, e => Assert.Equal(SubjectId, e.ActorId));
                 Assert.Contains(customerRows, e => e.Action == "customer.dispute.create" && e.ResourceType == "Dispute" && e.ResourceId == DisputeId);
+                Assert.DoesNotContain(data.Trail, e => e.ActorId == BystanderId);
+                Assert.DoesNotContain(BystanderId, IncidentFileDigest.CanonicalText(IncidentFileSections.Build(data)));
 
                 var adminRows = data.Trail.Where(e => e.Source == IncidentFileService.AdminSource).ToList();
                 Assert.Equal(["dispute.resolve", "order.refund.partial"], adminRows.Select(e => e.Action).OrderBy(a => a));

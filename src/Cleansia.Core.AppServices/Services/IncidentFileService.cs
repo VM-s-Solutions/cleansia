@@ -119,12 +119,17 @@ public class IncidentFileService(
             .ToListAsync(cancellationToken);
     }
 
+    // The cap keeps the orders the subject acted on most recently, as the timeline's cap does; an
+    // unordered cut would make which orders an erased subject keeps arbitrary.
     private async Task<List<string>> ProvenOrderIdsAsync(string userId, CancellationToken cancellationToken) =>
         await customerActionAuditRepository.GetQueryable()
             .Where(a => a.UserId == userId && a.Success && a.ResourceType == nameof(Order) && a.ResourceId != null)
-            .Select(a => a.ResourceId!)
-            .Distinct()
+            .GroupBy(a => a.ResourceId!)
+            .Select(g => new { OrderId = g.Key, LastActedOn = g.Max(a => a.OccurredOn) })
+            .OrderByDescending(x => x.LastActedOn)
+            .ThenBy(x => x.OrderId)
             .Take(GetActionTimeline.RecentResourceCap)
+            .Select(x => x.OrderId)
             .ToListAsync(cancellationToken);
 
     private async Task<(IReadOnlyList<IncidentFileTrailEntry> Trail, bool Truncated)> LoadTrailAsync(
@@ -135,13 +140,14 @@ public class IncidentFileService(
         Dictionary<string, string> currencyCodes,
         CancellationToken cancellationToken)
     {
-        // Scoped to an order, the customer arm is every row that names the order or its disputes —
-        // the subject's, a guest's before the account existed, a stranger's refused probe — because an
-        // incident on an order is answered from everything that touched it. Unscoped, it is the
-        // subject's own rows, like the export.
+        // Scoped to an order, the customer arm is the subject's rows that name the order or its disputes
+        // plus the guest rows on it (a booking made before the account existed — the set the erasure
+        // treats as the subject's). A stranger's refused probe at the order is left out: its user id and
+        // request context are theirs, not the subject's, and this document leaves the platform. Unscoped,
+        // it is the subject's own rows, like the export.
         var customer = orderId is null
             ? customerActionAuditRepository.GetQueryable().Where(a => a.UserId == userId)
-            : customerActionAuditRepository.GetQueryable().Where(a => a.ResourceId != null && (
+            : customerActionAuditRepository.GetQueryable().Where(a => (a.UserId == userId || a.UserId == null) && a.ResourceId != null && (
                 (a.ResourceType == nameof(Order) && a.ResourceId == orderId)
                 || (a.ResourceType == nameof(Dispute) && disputeIds.Contains(a.ResourceId))));
 
@@ -229,7 +235,7 @@ public class IncidentFileService(
     {
         var currency = order.Currency?.Code ?? order.CurrencyId;
         var address = order.CustomerAddress is { } a
-            ? string.Join(", ", new[] { a.Street, a.ZipCode, a.City, a.CountryId }.Where(part => !string.IsNullOrWhiteSpace(part)))
+            ? string.Join(", ", new[] { a.Street, a.ZipCode, a.City, a.State, a.CountryId }.Where(part => !string.IsNullOrWhiteSpace(part)))
             : "—";
 
         var lines = order.SelectedServices

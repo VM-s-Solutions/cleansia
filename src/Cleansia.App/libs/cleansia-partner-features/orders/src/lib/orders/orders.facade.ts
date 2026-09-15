@@ -284,8 +284,9 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
   openCompleteOrderDialog(order: OrderListItem): void {
     const employeeId = this.currentEmployeeId();
+    const orderId = order.id;
 
-    if (!employeeId) {
+    if (!employeeId || !orderId) {
       this.snackbarService.showErrorTranslated(
         'pages.orders.employee_not_found'
       );
@@ -293,8 +294,8 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     }
 
     const dialogData: CompleteOrderDialogData = {
-      orderId: order.id!,
-      orderNumber: order.displayOrderNumber!,
+      orderId,
+      orderNumber: order.displayOrderNumber ?? '',
       estimatedTime: order.estimatedTime || 0,
     };
 
@@ -315,7 +316,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
         if (result) {
           this.store.dispatch(
             OrderActions.completeOrder({
-              orderId: order.id!,
+              orderId,
               actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
               completionNotes: result.completionNotes,
             })

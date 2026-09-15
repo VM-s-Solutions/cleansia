@@ -432,17 +432,6 @@
               dataType="text"
             />
           </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="
-                fieldLabels()?.vatNumberLabel ??
-                  ('pages.employee_detail.vat_number' | translate)
-              "
-              [floatVariant]="'on'"
-              formControlName="vatNumber"
-              dataType="text"
-            />
-          </div>
           @if (isLegalEntity()) {
             <div class="info-item">
               <cleansia-text-input
@@ -509,15 +498,6 @@
               }}:</span
             >
             <span class="value">{{ employee.registrationNumber || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{
-                fieldLabels()?.vatNumberLabel ??
-                  ('pages.employee_detail.vat_number' | translate)
-              }}:</span
-            >
-            <span class="value">{{ employee.vatNumber || '-' }}</span>
           </div>
           @if (employee.entityType === 2) {
             <div class="info-item">

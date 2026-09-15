@@ -30,7 +30,12 @@ public class ExpireStaleCredit
     /// </param>
     public record Command(int BatchSize = 500) : ICommand<Response>;
 
-    public record Response(int AccountsExpired, decimal TotalExpired);
+    /// <param name="TotalExpiredByCurrencyId">
+    /// What was taken, PER CURRENCY, keyed by <c>CreditAccount.CurrencyId</c>. Balances are
+    /// denominated and one sweep crosses every account, so a single total would add crowns to euros.
+    /// Read by nothing but the timer handler's log line.
+    /// </param>
+    public record Response(int AccountsExpired, IReadOnlyDictionary<string, decimal> TotalExpiredByCurrencyId);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -59,7 +64,7 @@ public class ExpireStaleCredit
                 nowUtc, command.BatchSize, cancellationToken);
 
             var accountsExpired = 0;
-            var totalExpired = 0m;
+            var totalExpired = new Dictionary<string, decimal>();
 
             // System job — no JWT context. The read above ignores the tenant filter, so the rows come
             // from every tenant at once; group them and set the override per group, because a
@@ -90,7 +95,7 @@ public class ExpireStaleCredit
                     account.RecordExpiry(taken, $"credit-expired:{account.Id}:{nowUtc:yyyy-MM-dd}", SystemActor);
 
                     accountsExpired++;
-                    totalExpired += taken;
+                    totalExpired[account.CurrencyId] = totalExpired.GetValueOrDefault(account.CurrencyId) + taken;
                 }
 
                 await unitOfWork.CommitAsync(cancellationToken);
@@ -101,9 +106,10 @@ public class ExpireStaleCredit
             if (accountsExpired > 0)
             {
                 logger.LogInformation(
-                    "ExpireStaleCredit took {Total} across {Count} account(s) whose balances had passed "
-                    + "their expiry date.",
-                    totalExpired, accountsExpired);
+                    "ExpireStaleCredit took {TotalByCurrency} across {Count} account(s) whose balances had "
+                    + "passed their expiry date.",
+                    string.Join(", ", totalExpired.Select(kv => $"{kv.Value} ({kv.Key})")),
+                    accountsExpired);
             }
 
             return BusinessResult.Success(new Response(accountsExpired, totalExpired));

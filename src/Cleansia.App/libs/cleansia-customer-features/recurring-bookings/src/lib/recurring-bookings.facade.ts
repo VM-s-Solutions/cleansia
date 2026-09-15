@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, Injector, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
@@ -18,11 +18,14 @@ import {
   loadCustomerServices,
   SavedAddressStore,
   selectCustomerPackages,
+  selectCustomerPackagesCatalogue,
   selectCustomerServices,
+  selectCustomerServicesCatalogue,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom, takeUntil } from 'rxjs';
 import {
   RecurringPrefillParams,
@@ -34,15 +37,21 @@ import {
   nextOccurrenceUtc,
 } from './recurring-bookings.models';
 
+/** A server-quoted figure with the currency the server priced it in. */
+export interface QuotedPrice {
+  amount: number;
+  currency: string | null;
+}
+
 /**
  * Single facade for both the recurring-bookings list view and the create
  * wizard. Signal-only state — matches the order-wizard convention; no NgRx
  * slice unless cross-screen caching becomes valuable.
  *
- * Lifetime: provided at the *list* component scope so the templates cache
- * outlives the wizard navigation. The wizard itself doesn't re-provide it,
- * so tapping "Create" → submit → back-to-list reuses the same in-flight
- * cache without a re-fetch round trip.
+ * Lifetime: each screen provides its own instance (the list and the wizard
+ * both declare it in `providers`), so the templates cache is per screen and
+ * "Create" → submit → back-to-list re-fetches; the shared catalogue and
+ * addresses live in the stores, not here.
  */
 @Injectable()
 export class RecurringBookingsFacade extends UnsubscribeControlDirective {
@@ -61,6 +70,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly store = inject(Store);
+  private readonly injector = inject(Injector);
 
   // ─── List state ────────────────────────────────────────────────────
   readonly templates = signal<RecurringBookingTemplateDto[]>([]);
@@ -85,9 +95,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
   // ─── Prices ────────────────────────────────────────────────────────
   /** templateId → quoted price per clean. Absent until the quote lands. */
-  readonly templatePrices = signal<Record<string, { amount: number; currency: string }>>({});
+  readonly templatePrices = signal<Record<string, QuotedPrice>>({});
   /** The price of whatever the form currently describes. */
-  readonly formPrice = signal<{ amount: number; currency: string } | null>(null);
+  readonly formPrice = signal<QuotedPrice | null>(null);
   readonly quoting = signal(false);
 
   /** Drives the address field's own spinner — see `ensureAddresses`. */
@@ -108,6 +118,63 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     initialValue: [] as PackageListItem[],
   });
   readonly savedAddresses = this.savedAddressStore.addresses;
+  private readonly servicesCatalogue = toSignal(this.store.select(selectCustomerServicesCatalogue), {
+    initialValue: { services: [] as ServiceListItem[], countryId: null as string | null },
+  });
+  private readonly packagesCatalogue = toSignal(this.store.select(selectCustomerPackagesCatalogue), {
+    initialValue: { packages: [] as PackageListItem[], countryId: null as string | null },
+  });
+
+  /** The chosen market, which prices the form until a saved address names a country. */
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null as string | null,
+  });
+  /**
+   * The chosen saved address's country, which decides the currency the schedule is priced in —
+   * and with it which catalogue entries can be offered at all. Before an address is chosen the
+   * chosen market stands in, the same precedence the one-off wizard and both mobile forms apply.
+   */
+  private readonly addressCountryId = computed<string | null>(() =>
+    this.countryOf(this.formData().savedAddressId) ?? this.marketCountryId(),
+  );
+  /**
+   * Whether the lists on screen are the ones priced for the address — the only lists a selection
+   * can honestly be checked against. False while the addresses are still loading, since they
+   * decide the market.
+   */
+  private readonly cataloguePricedForAddress = computed(() => {
+    const countryId = this.addressCountryId();
+    return (
+      !this.addressesLoading() &&
+      this.servicesCatalogue().countryId === countryId &&
+      this.packagesCatalogue().countryId === countryId
+    );
+  });
+
+  /** An order's selection waiting for the list it can be checked against. */
+  private readonly pendingPrefill = signal<RecurringPrefillParams | null>(null);
+  private readonly prefillEffect = effect(() => {
+    const params = this.pendingPrefill();
+    if (!params || !this.cataloguePricedForAddress()) return;
+    const needsServices = params.selectedServiceIds.length > 0;
+    const needsPackages = params.selectedPackageIds.length > 0;
+    if ((needsServices && this.services().length === 0) || (needsPackages && this.packages().length === 0)) {
+      return;
+    }
+
+    this.pendingPrefill.set(null);
+    const missing = this.prefillFromOrder(params);
+    if (missing.length > 0) {
+      this.snackbar.showSuccess(
+        this.translate.instant('recurring_booking.prefill_dropped_items', {
+          items: missing.join(', '),
+        }),
+      );
+    }
+  });
+  /** The country the catalogue was last read for, so a same-country address switch re-reads nothing. */
+  private catalogueCountryId: string | null = null;
+  private followingAddressCountry = false;
 
   // ─── Computed derivations for the template ─────────────────────────
   readonly canAdvance = computed(() => canAdvance(this.activeStep(), this.formData()));
@@ -135,10 +202,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     // picker "fixed" it, which is exactly what it looked like from outside.
     this.applyDefaultStartDate();
 
-    // Catalog dispatches are no-ops on already-loaded state. They flow into
-    // the customer-stores reducers, populating the signals above.
-    this.store.dispatch(loadCustomerServices());
-    this.store.dispatch(loadCustomerPackages());
+    this.followAddressCountry();
 
     // First, because it decides which page the customer is even shown. A
     // failure here reads as "not a member": the paywall is the safe wrong
@@ -251,6 +315,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       template.selectedPackageIds ?? [],
       template.rooms,
       template.bathrooms,
+      this.countryOf(template.savedAddressId),
     );
     if (!quoted) return;
     this.templatePrices.update((all) => ({ ...all, [template.id as string]: quoted }));
@@ -266,11 +331,79 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.quoting.set(true);
     try {
       this.formPrice.set(
-        await this.quote(d.selectedServiceIds, d.selectedPackageIds, d.rooms, d.bathrooms),
+        await this.quote(
+          d.selectedServiceIds,
+          d.selectedPackageIds,
+          d.rooms,
+          d.bathrooms,
+          this.countryOf(d.savedAddressId),
+        ),
       );
     } finally {
       this.quoting.set(false);
     }
+  }
+
+  /** The country of a saved address, which decides the currency a schedule is priced in. */
+  private countryOf(savedAddressId: string | null | undefined): string | null {
+    if (!savedAddressId) return null;
+    return this.savedAddresses().find((a) => a.id === savedAddressId)?.countryId || null;
+  }
+
+  /**
+   * The catalogue is priced per market and the server withholds what has no price in the
+   * address country's currency, so it is read for the chosen market first and again for every
+   * country the chosen saved address names. A selection the new list no longer offers would make
+   * the server refuse the quote outright, so it is trimmed to the new list — with a word to the
+   * customer — once that list has landed.
+   */
+  private followAddressCountry(): void {
+    if (this.followingAddressCountry) return;
+    this.followingAddressCountry = true;
+
+    toObservable(this.addressCountryId, { injector: this.injector })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((countryId) => {
+        if (countryId !== this.catalogueCountryId) this.loadCatalogue(countryId);
+      });
+    this.loadCatalogue(this.addressCountryId());
+
+    this.store
+      .select(selectCustomerServicesCatalogue)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(({ services, countryId }) => {
+        if (!this.pricedForAddress(countryId)) return;
+        this.keepSelected('selectedServiceIds', new Set(services.map((s) => s.id)));
+      });
+    this.store
+      .select(selectCustomerPackagesCatalogue)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(({ packages, countryId }) => {
+        if (!this.pricedForAddress(countryId)) return;
+        this.keepSelected('selectedPackageIds', new Set(packages.map((p) => p.id)));
+      });
+  }
+
+  private loadCatalogue(countryId: string | null): void {
+    this.catalogueCountryId = countryId;
+    this.store.dispatch(loadCustomerServices(countryId));
+    this.store.dispatch(loadCustomerPackages(countryId));
+  }
+
+  /** Only a list priced for the country the form is priced in may trim the selection. */
+  private pricedForAddress(countryId: string | null): boolean {
+    return countryId !== null && countryId === this.addressCountryId();
+  }
+
+  private keepSelected(
+    field: 'selectedServiceIds' | 'selectedPackageIds',
+    offered: Set<string | undefined>,
+  ): void {
+    const selected = this.formData()[field];
+    const kept = selected.filter((id) => offered.has(id));
+    if (kept.length === selected.length) return;
+    this.updateFormData({ [field]: kept });
+    this.snackbar.showInfoTranslated('pages.order.wizard.catalogue_changed_for_country');
   }
 
   private async quote(
@@ -278,15 +411,18 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     packageIds: string[],
     rooms: number,
     bathrooms: number,
-  ): Promise<{ amount: number; currency: string } | null> {
+    countryId: string | null,
+  ): Promise<QuotedPrice | null> {
     if (serviceIds.length === 0 && packageIds.length === 0) return null;
     const command = new QuoteOrderCommand();
     command.selectedServiceIds = serviceIds;
     command.selectedPackageIds = packageIds;
     command.rooms = rooms;
     command.bathrooms = bathrooms;
-    // Left unset deliberately: the currency is the caller's, resolved server
-    // side, and a schedule has no express surcharge to date-shift.
+    // The country, never a currency: the server prices in the address country's currency, and
+    // on create derives it from the saved address itself. A schedule has no express surcharge to
+    // date-shift.
+    command.countryId = countryId ?? undefined;
     command.currencyId = undefined;
     command.selectedExtraSlugs = [];
     command.cleaningDate = undefined;
@@ -297,7 +433,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       if (!quoted) return null;
       return {
         amount: quoted.finalPriceAfterDiscount ?? quoted.totalPrice,
-        currency: quoted.currencyCode || 'CZK',
+        // The quote names its currency; a blank one renders the bare number, never a guessed unit.
+        currency: quoted.currencyCode ?? '',
       };
     } catch {
       return null;
@@ -410,6 +547,15 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.formPrice.set(null);
     this.submitAttempted.set(false);
     this.formData.set({ ...RECURRING_WIZARD_INITIAL_DATA });
+  }
+
+  /**
+   * Prefill the wizard from a past order once the catalogue priced for the address is on screen,
+   * telling the customer what that list no longer offers. The prefill DID succeed then — the word
+   * says what was dropped, not that it failed.
+   */
+  prefill(params: RecurringPrefillParams): void {
+    this.pendingPrefill.set(params);
   }
 
   /**

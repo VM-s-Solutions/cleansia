@@ -17,6 +17,7 @@ import {
   RecurringPrefillParams,
 } from '@cleansia-customer/recurring-bookings';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
@@ -452,26 +453,18 @@ export class OrderDetailComponent implements OnInit {
     // Only rows the customer actually scored. An unscored row is not a zero — the server would reject
     // a rating outside 1..5, and "not scored" is a real answer that simply carries no line.
     const scores = this.reviewLineScores();
-    const lines = this.reviewLineOptions()
-      .filter((option) => scores.has(option.key))
-      .map((option) => ({
-        serviceId: option.serviceId,
-        packageId: option.packageId,
-        rating: scores.get(option.key)!,
-      }));
+    const lines = this.reviewLineOptions().flatMap((option) => {
+      const rating = scores.get(option.key);
+      return rating === undefined
+        ? []
+        : [{ serviceId: option.serviceId, packageId: option.packageId, rating }];
+    });
 
     this.facade.submitReview(this.reviewRating(), this.reviewComment(), lines);
   }
 
   protected getLocale(): string {
-    const localeMap: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
+    return localeFor(this.translate.currentLang);
   }
 
   formatDate(date: Date | undefined): string {
@@ -487,12 +480,7 @@ export class OrderDetailComponent implements OnInit {
 
   formatPrice(price: number | undefined): string {
     if (price == null) return '';
-    const code = this.order()?.currency?.code || 'CZK';
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, this.order()?.currency?.code, this.getLocale());
   }
 
   /**

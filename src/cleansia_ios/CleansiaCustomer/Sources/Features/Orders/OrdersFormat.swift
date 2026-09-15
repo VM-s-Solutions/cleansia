@@ -4,14 +4,15 @@ import Foundation
 enum OrdersFormat {
     /// Price + currency suffix (grouped, no fraction digits; CZK/EUR/USD/GBP get
     /// their symbol, others the raw code — never crashes on an unknown currency).
+    /// A blank code renders the bare amount: an unlabelled figure over a label guessed for it.
     static func price(_ amount: Double, currencyCode: String?) -> String {
-        let code = currencyCode?.nonBlank ?? "CZK"
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.locale = .current
         formatter.maximumFractionDigits = 0
         formatter.minimumFractionDigits = 0
         let number = formatter.string(from: NSNumber(value: amount)) ?? "\(Int(amount))"
+        guard let code = currencyCode?.nonBlank else { return number }
         switch code.uppercased() {
         case "CZK": return "\(number) Kč"
         case "EUR": return "\(number) €"

@@ -19,6 +19,7 @@ enum BookingPrefill {
         next.street = preferred.street
         next.city = preferred.city
         next.zipCode = preferred.zipCode
+        next.countryId = preferred.countryId
         next.savedAddressId = preferred.id
         next.hydratedFromSavedId = preferred.id
         return next
@@ -81,6 +82,7 @@ enum BookingPrefill {
         next.street = order.address?.street ?? ""
         next.city = order.address?.city ?? ""
         next.zipCode = order.address?.zipCode ?? ""
+        next.countryId = matchedSaved?.countryId
         next.savedAddressId = matchedSaved?.id
         next.hydratedFromSavedId = nil
         return (next, droppedAny)

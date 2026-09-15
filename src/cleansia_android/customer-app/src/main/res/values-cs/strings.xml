@@ -131,7 +131,6 @@
 
     <string name="home_hero2_top">Jaro je tu</string>
     <string name="home_hero2_title">Hloubkový úklid + okna v jednom</string>
-    <string name="home_hero2_cta">Ušetřete 450 Kč</string>
 
     <string name="home_hero3_top">Pozvěte kamaráda</string>
     <string name="home_hero3_title">Dejte mu bonus, získejte doplněk zdarma</string>
@@ -166,8 +165,6 @@
     <string name="home_milestone_title_v2">%1$s — Pokrok k další úrovni</string>
 
     <!-- Home — seasonal -->
-    <string name="home_seasonal_title">Sezóna jarního úklidu</string>
-    <string name="home_seasonal_subtitle">Kombinace oken + čalounění — tento měsíc +450 Kč</string>
 
     <!-- Home — quick actions -->
     <string name="home_quick_book">Rezervovat</string>
@@ -180,13 +177,10 @@
     <string name="home_services_see_all">Zobrazit vše</string>
 
     <string name="home_service_household_name">Domácí</string>
-    <string name="home_service_household_price">599 Kč</string>
 
     <string name="home_service_upholstery_name">Čalounění</string>
-    <string name="home_service_upholstery_price">799 Kč</string>
 
     <string name="home_service_windows_name">Okna</string>
-    <string name="home_service_windows_price">299 Kč</string>
 
     <!-- Home — promo carousel -->
     <string name="home_promo_title">Pro vás</string>
@@ -522,7 +516,8 @@
     <string name="help_faq_q2">Co když nebudu doma, když uklízeč přijde?</string>
     <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeči čekají až 15 minut; pokud vás nemůžeme zastihnout, rezervace může být zrušena.</string>
     <string name="help_faq_q3">Jsou uklízeči pojištěni a prověřeni?</string>
-    <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni do výše 1 000 000 Kč na rezervaci.</string>
+    <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni do výše %1$s na rezervaci.</string>
+    <string name="help_faq_a3_no_figure">Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni.</string>
     <string name="help_faq_q4">Jak změním termín?</string>
     <string name="help_faq_a4">V záložce Objednávky otevřete nadcházející rezervaci a klepněte na \"Změnit termín\". Změna zdarma až 12 hodin před úklidem.</string>
     <string name="help_faq_q5">Co je zahrnuto ve standardním úklidu?</string>
@@ -541,6 +536,8 @@
     <!-- Profile — language -->
     <string name="language_title">Jazyk</string>
     <string name="language_hint">Změny se použijí okamžitě.</string>
+    <string name="market_title">Trh</string>
+    <string name="market_hint">Ceny, Cleansia Plus i naše pravidla se řídí trhem, který si prohlížíte. O tom, v čem se objednávka účtuje, rozhoduje její adresa.</string>
     <string name="language_system">Podle systému</string>
     <string name="language_english">Angličtina</string>
     <string name="language_czech">Čeština</string>
@@ -550,6 +547,8 @@
 
     <string name="profile_row_appearance">Vzhled</string>
     <string name="profile_row_language">Jazyk</string>
+    <string name="profile_row_market">Trh</string>
+    <string name="market_chip_a11y">Trh: %1$s, ceny v %2$s</string>
 
     <!-- Profile — security -->
     <string name="profile_security_title">Zabezpečení</string>
@@ -600,7 +599,8 @@
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložit tuto adresu</string>
     <string name="booking_set_as_default">Nastavit jako výchozí</string>
-    <string name="booking_trust_insured">Pojištěno až do 1M Kč</string>
+    <string name="booking_trust_insured">Pojištěno až do %1$s</string>
+    <string name="booking_trust_insured_no_figure">Pojištěno</string>
     <string name="booking_trust_vetted">Prověření uklízeči</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
@@ -608,8 +608,8 @@
     <string name="booking_packages_featured">Doporučené balíčky</string>
     <string name="booking_package_includes">OBSAHUJE</string>
     <string name="booking_package_includes_prefix">Obsahuje:</string>
-    <string name="booking_price_from">od %1$d Kč</string>
-    <string name="booking_price_per_room">+ %1$d Kč/pokoj</string>
+    <string name="booking_price_from">od %1$s</string>
+    <string name="booking_price_per_room">+ %1$s/pokoj</string>
     <string name="details_base_price">Základní cena</string>
     <string name="details_per_room">Za pokoj</string>
     <string name="details_add_to_booking">Přidat do rezervace</string>
@@ -812,13 +812,13 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Lepší způsob, jak udržovat domov čistý</string>
-    <string name="membership_plus_price_per_month">199 Kč / měsíc</string>
     <string name="membership_subscribe_cta">Vyzkoušet Cleansia Plus</string>
     <string name="membership_disclosure">Můžete kdykoli zrušit. Předplatné se obnovuje automaticky, dokud ho nezrušíte.</string>
+    <string name="plus_not_available_in_market">Plus zatím není na vašem trhu k dispozici</string>
 
     <!-- Plus subscribe page redesign -->
     <string name="membership_hero_headline">Začněte šetřit ještě dnes</string>
-    <string name="membership_hero_trial_price">0 Kč / prvních %1$d dní</string>
+    <string name="membership_hero_trial_price">%1$s / prvních %2$d dní</string>
     <string name="membership_hero_then_price">poté %1$s / měsíc</string>
     <string name="membership_hero_then_price_year">poté %1$s / rok</string>
     <string name="membership_social_proof_headline">Jak funguje členská sleva</string>
@@ -1069,6 +1069,7 @@
     <string name="order_action_report_issue">Nahlásit problém</string>
     <string name="order_action_rebook">Objednat znovu</string>
     <string name="order_rebook_unavailable_items">Některé položky z vaší předchozí objednávky již nejsou dostupné.</string>
+    <string name="booking_market_items_unavailable">Některé vybrané položky se na této adrese nenabízejí a byly odebrány.</string>
 
     <!-- Dispute list -->
     <string name="dispute_list_title">Moje stížnosti</string>
@@ -1140,13 +1141,9 @@
     <string name="loyalty_tier_status_locked">Zamčeno</string>
     <string name="loyalty_threshold_points">%1$d b.</string>
     <string name="loyalty_discount_basic">%1$d %% sleva na všechny objednávky</string>
-    <string name="loyalty_discount_min_order">%1$d %% sleva na objednávky od %2$d Kč</string>
+    <string name="loyalty_discount_min_order">%1$d %% sleva na objednávky od %2$s</string>
     <string name="loyalty_no_discount_yet">Zatím bez slevy</string>
     <string name="loyalty_perks_welcome_badge">Vítejte v odměnách Cleansia</string>
-    <string name="loyalty_perks_discount_5_above_1000" formatted="false">5% sleva na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_10" formatted="false">10% sleva na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_12" formatted="false">12% sleva na objednávky nad 1000 Kč</string>
-    <string name="loyalty_perks_discount_15" formatted="false">15% sleva na objednávky nad 1000 Kč</string>
     <string name="loyalty_perks_priority_support">Přednostní zákaznická podpora</string>
     <string name="loyalty_perks_dedicated_pool">Vlastní tým uklízečů</string>
     <string name="loyalty_activity_title">Nedávná aktivita</string>
@@ -1208,7 +1205,7 @@
     <string name="notification_order_refunded_title">Vrácení peněz na cestě</string>
     <string name="notification_order_refunded_body">Vaše vrácení peněz za rezervaci #%1$s se zpracovává.</string>
     <string name="notification_order_no_cleaner_refunded_title">Žádný uklízeč nebyl k dispozici</string>
-    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit 250 Kč na příští úklid. Omlouváme se.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit %2$s na příští úklid. Omlouváme se.</string>
     <string name="notification_dispute_reply_title">Podpora odpověděla</string>
     <string name="notification_dispute_reply_body">Máte novou zprávu k vaší reklamaci. Klepněte pro přečtení.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zítřejší úklid</string>
@@ -1256,8 +1253,21 @@
     <string name="error_auth_social_account_not_found">K tomuto přihlášení jsme nenašli žádný účet. Nejprve se zaregistrujte.</string>
     <string name="error_auth_too_many_attempts">Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.</string>
     <string name="error_company_not_found">Informace o společnosti nenalezeny</string>
+    <string name="error_consent_terms_not_accepted">Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů.</string>
     <string name="error_country_not_existing_id">Země nenalezena</string>
     <string name="error_currency_invalid">Neplatná měna</string>
+    <string name="error_country_not_serviced">V této zemi zatím nepůsobíme.</string>
+    <string name="error_tenant_not_found">Tento trh zatím neprovozuje žádná společnost Cleansia.</string>
+    <string name="error_order_country_operator_mismatch">Tuto adresu obsluhuje jiná společnost Cleansia a z tohoto účtu ji nelze objednat.</string>
+    <string name="error_promo_not_found">Kód nebyl nalezen</string>
+    <string name="error_promo_inactive">Kód už není dostupný</string>
+    <string name="error_promo_expired">Tento kód vypršel</string>
+    <string name="error_promo_not_yet_valid">Kód ještě není aktivní</string>
+    <string name="error_promo_global_limit_reached">Kód už není dostupný</string>
+    <string name="error_promo_per_user_limit_reached">Tento kód jste už použili</string>
+    <string name="error_promo_below_minimum_order_amount">Objednávka nesplňuje minimální částku pro tento kód</string>
+    <string name="error_promo_currency_mismatch">Kód neplatí pro tuto měnu</string>
+    <string name="error_promo_requires_account">Pro použití slevového kódu se přihlaste.</string>
     <string name="error_device_invalid_platform">Nepodporovaná platforma zařízení.</string>
     <string name="error_dispute_already_exists">Spor pro tuto objednávku již existuje</string>
     <string name="error_dispute_max_length_exceeded">Překročena maximální délka</string>
@@ -1276,6 +1286,8 @@
     <string name="error_membership_not_found">Členství nenalezeno.</string>
     <string name="error_membership_plan_not_found">Plán členství nebyl nalezen.</string>
     <string name="error_membership_swap_same_plan">Tento plán již máte.</string>
+    <string name="error_membership_plan_not_priced_in_currency">Tento plán zatím není na vašem trhu v prodeji.</string>
+    <string name="error_membership_stripe_customer_currency_locked">Vaše platby za Plus jsou už nastavené v jiné měně. Pro změnu kontaktujte podporu.</string>
     <string name="error_order_not_completed">Objednávku lze hodnotit až po dokončení.</string>
     <string name="error_order_preferred_employee_not_eligible">Vybraný uklízeč není pro tuto objednávku k dispozici.</string>
     <string name="error_order_preferred_employee_membership_required">Výběr oblíbeného uklízeče je výhoda Cleansia Plus.</string>

@@ -28,27 +28,24 @@ public class Extra : Auditable
     public string? Description { get; private set; }
 
     [Required]
-    public decimal Price { get; private set; }
 
     public int DisplayOrder { get; private set; }
 
     private IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();
 
-    public static Extra Create(string slug, string name, string? description, decimal price, int displayOrder = 0) => new()
+    public static Extra Create(string slug, string name, string? description, int displayOrder = 0) => new()
     {
         Slug = slug,
         Name = name,
         Description = description,
-        Price = price,
         DisplayOrder = displayOrder,
     };
 
-    public Extra Update(string name, string? description, decimal price, int displayOrder)
+    public Extra Update(string name, string? description, int displayOrder)
     {
         Name = name;
         Description = description;
-        Price = price;
         DisplayOrder = displayOrder;
         return this;
     }

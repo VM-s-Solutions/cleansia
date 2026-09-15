@@ -3,9 +3,9 @@ import { FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminCurrencyListItem,
   CreatePromoCodeCommand,
   CreatePromoCodeResponse,
-  CurrencyListItem,
   PromoCodeDetailDto,
   PromoCodeType,
   UpdatePromoCodeCommand,
@@ -85,7 +85,7 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
       .getOverview()
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of([] as CurrencyListItem[]))
+        catchError(() => of([] as AdminCurrencyListItem[]))
       )
       .subscribe((items) => {
         // `?? []` because the generated client returns NULL, not an empty list, for a 200 whose body
@@ -95,12 +95,12 @@ export class PromoCodeFormFacade extends UnsubscribeControlDirective {
         this.currencies.set(
           (items ?? [])
             .filter(
-              (c): c is CurrencyListItem & { id: string; code: string } =>
+              (c): c is AdminCurrencyListItem & { id: string; code: string } =>
                 Boolean(c.id) && Boolean(c.code)
             )
             .map((c) => ({
-              id: c.id!,
-              code: c.code!,
+              id: c.id,
+              code: c.code,
               symbol: c.symbol,
             }))
         );

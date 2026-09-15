@@ -11,6 +11,8 @@ import cz.cleansia.customer.core.auth.AuthRepository
 import cz.cleansia.customer.core.auth.AuthSuccess
 import cz.cleansia.customer.core.auth.GoogleSignInController
 import cz.cleansia.customer.core.auth.GoogleSignInResult
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +42,7 @@ class AuthViewModel @Inject constructor(
     private val snackbar: SnackbarController,
     private val googleSignInController: GoogleSignInController,
     private val signupConsent: SignupConsentRepository,
+    private val marketRepository: MarketRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -102,7 +105,9 @@ class AuthViewModel @Inject constructor(
                 firstName = firstName,
                 lastName = lastName,
                 language = language,
+                termsAccepted = acceptedTerms,
                 referralCode = referralCode?.trim()?.uppercase()?.ifBlank { null },
+                countryId = marketRepository.ensureLoaded().countryId,
             )
                 .onSuccess {
                     signupConsent.recordSignupTick(email, acceptedTerms)
@@ -226,6 +231,7 @@ class AuthViewModel @Inject constructor(
                         firstName = pick.firstName,
                         lastName = pick.lastName,
                         termsAccepted = termsAccepted,
+                        countryId = marketRepository.ensureLoaded().countryId,
                     ).toAuthUiState(fallbackEmail = pick.email)
                 }
                 GoogleSignInResult.Cancelled -> {

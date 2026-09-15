@@ -78,6 +78,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'extra-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/extra-management').then(
+        (m) => m.extraManagementRoutes
+      ),
+  },
+  {
     path: 'admin-user-management',
     canActivate: [adminGuard],
     loadChildren: () =>
@@ -121,6 +129,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'legal-documents',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/legal-documents').then(
+        (m) => m.legalDocumentsRoutes
+      ),
+  },
+  {
     path: 'employee-documents',
     canActivate: [adminGuard],
     loadChildren: () =>
@@ -134,6 +150,14 @@ export const appRoutes: Route[] = [
     loadChildren: () =>
       import('@cleansia/admin-features/company-management').then(
         (m) => m.companyManagementRoutes
+      ),
+  },
+  {
+    path: 'company-settings',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/company-settings').then(
+        (m) => m.companySettingsRoutes
       ),
   },
   {

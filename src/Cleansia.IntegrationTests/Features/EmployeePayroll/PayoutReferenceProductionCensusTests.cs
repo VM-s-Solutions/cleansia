@@ -10,24 +10,28 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using TestTenants = Cleansia.TestUtilities.TestTenants;
 
 namespace Cleansia.IntegrationTests.Features.EmployeePayroll;
 
 /// <summary>
-/// The census that discharges the twelve hand-authored fixture symbols: every PRODUCTION path that
-/// constructs an <see cref="EmployeeInvoice"/> yields a non-null symbol matching <c>^[1-9][0-9]{9}$</c>,
-/// asserted through the real MediatR pipeline and the real background service rather than through a
-/// literal a test wrote. Without this, twelve fixtures pin a shape production never produces — the
-/// exact anti-pattern that let the field ship null on every row.
+/// The census that discharges the hand-authored fixture references: every PRODUCTION path that
+/// constructs an <see cref="EmployeeInvoice"/> yields a non-null symbol matching <c>^[1-9][0-9]{9}$</c>
+/// and an invoice number matching <c>^INV-[0-9]{4}-[0-9]{6}$</c>, asserted through the real MediatR
+/// pipeline and the real background service rather than through a literal a test wrote. Without this,
+/// the fixtures pin a shape production never produces — the exact anti-pattern that let the field ship
+/// null on every row.
 /// </summary>
 [Collection("PostgresCollection")]
 public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
     private const string ProducedSymbolPattern = "^[1-9][0-9]{9}$";
+    private const string ProducedInvoiceNumberPattern = "^INV-[0-9]{4}-[0-9]{6}$";
 
     private const string CountryId = "country-cz-census";
     private const string CurrencyId = "currency-czk-census";
@@ -48,10 +52,12 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
 
                 var invoice = await context.Set<EmployeeInvoice>()
                     .IgnoreQueryFilters()
-                    .SingleAsync(i => i.Id == result.Value!.InvoiceId);
+                    .SingleAsync(i => i.Id == result.Value!.InvoiceIds.Single());
 
                 Assert.NotNull(invoice.VariableSymbol);
                 Assert.Matches(ProducedSymbolPattern, invoice.VariableSymbol!);
+                Assert.Matches(ProducedInvoiceNumberPattern, invoice.InvoiceNumber);
+                Assert.Equal(invoice.InvoiceNumber, invoice.PaymentReference);
             },
             // NON-transactional, and that is the point rather than a harness convenience: the allocator
             // must never run inside an explicit transaction (ADR-0046 §D2.1), so a harness that wraps
@@ -89,7 +95,59 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
                 {
                     Assert.NotNull(i.VariableSymbol);
                     Assert.Matches(ProducedSymbolPattern, i.VariableSymbol!);
+                    Assert.Matches(ProducedInvoiceNumberPattern, i.InvoiceNumber);
                 });
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// The 2026-09-15 ruling through the batch: the sweep loops the expired periods per operating
+    /// company under that company's override, and the allocator reads the same ambient company — so
+    /// each company's first invoice of the year carries the SAME references, and both rows commit
+    /// under the per-company unique indexes.
+    /// </summary>
+    [Fact]
+    public async Task The_Pay_Period_Batch_Numbers_Each_Companys_Invoices_From_Its_Own_Series()
+    {
+        await TestMethod(
+            setup: services =>
+            {
+                services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
+                services.Replace(ServiceDescriptor.Scoped<IEmailService>(_ => new SilentEmailService()));
+                return Task.CompletedTask;
+            },
+            arrange: async context =>
+            {
+                await SeedEmployeesWithUnpaidPays(context, count: 1, closedPeriod: true);
+                await SeedSecondCompanyEmployeeWithUnpaidPay(context);
+            },
+            act: async provider =>
+            {
+                await provider.GetRequiredService<IPayPeriodBackgroundService>()
+                    .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+                return true;
+            },
+            assert: async (CleansiaDbContext context, bool _) =>
+            {
+                var first = await context.Set<EmployeeInvoice>()
+                    .IgnoreQueryFilters()
+                    .SingleAsync(i => i.TenantId == TestTenants.Default);
+                var second = await context.Set<EmployeeInvoice>()
+                    .IgnoreQueryFilters()
+                    .SingleAsync(i => i.TenantId == TestTenants.Second);
+
+                var year = DateTime.UtcNow.Year;
+                Assert.Equal($"{year:D4}000001", first.VariableSymbol);
+                Assert.Equal($"{year:D4}000001", second.VariableSymbol);
+                Assert.Equal($"INV-{year:D4}-000001", first.InvoiceNumber);
+                Assert.Equal($"INV-{year:D4}-000001", second.InvoiceNumber);
+
+                var counters = await context.Set<PayoutReferenceCounter>()
+                    .IgnoreQueryFilters()
+                    .ToListAsync();
+                Assert.Equal(4, counters.Count);
+                Assert.All(counters, c => Assert.Equal(1, c.Value));
             },
             transactional: false);
     }
@@ -153,12 +211,17 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
 
                 // Park the symbol the allocator is about to produce on an unrelated invoice, so the
                 // insert loses to the unique index exactly as a restored counter row would make it.
-                var squatter = EmployeeInvoice.CreateFromOrderPays(
+                // Create, not CreateFromOrderPays: this invoice exists only to occupy a variable symbol
+                // and deliberately invoices nothing, and deriving a currency from no rows is exactly the
+                // state CreateFromOrderPays now refuses.
+                var squatter = EmployeeInvoice.Create(
                     EmployeeIds[0],
                     await ForeignPeriodIdAsync(context),
-                    [],
-                    CurrencyId,
-                    $"{DateTime.UtcNow.Year:D4}000001");
+                    totalOrders: 0,
+                    subTotal: 0m,
+                    currencyId: CurrencyId,
+                    variableSymbol: $"{DateTime.UtcNow.Year:D4}000001",
+                    invoiceNumber: PayrollMockFactory.NextTestInvoiceNumber());
                 context.Add(squatter);
                 await context.CommitAsync(CancellationToken.None);
             },
@@ -205,10 +268,11 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
     {
         EmployeeIds.Clear();
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
 
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
 
@@ -246,13 +310,44 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
         for (var i = 0; i < count; i++)
         {
             context.Add(OrderEmployeePay.Create(
-                orders[i].Id, employees[i].Id, payPeriod.Id, basePay: 600m, totalPay: 600m));
+                orders[i].Id, employees[i].Id, payPeriod.Id, currency.Id, basePay: 600m, totalPay: 600m));
         }
 
         await context.CommitAsync(CancellationToken.None);
 
         EmployeeIds.AddRange(employees.Select(e => e.Id));
         _payPeriodId = payPeriod.Id;
+    }
+
+    /// <summary>
+    /// One cleaner with one unpaid pay row in an expired period, stamped for the SECOND company; the
+    /// shared catalogue rows are the ones <see cref="SeedEmployeesWithUnpaidPays"/> already added.
+    /// </summary>
+    private static async Task SeedSecondCompanyEmployeeWithUnpaidPay(CleansiaDbContext context)
+    {
+        var payPeriod = PayPeriod.Create(
+            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)));
+        context.Add(payPeriod);
+
+        var user = User.CreateWithPassword(
+            "census-emp-sk@cleansia.test", "12345678Test!", "Emp", "LoyeeSk", UserProfile.Employee);
+        user.ConfirmEmail();
+        context.Users.Add(user);
+
+        var employee = Employee.CreateWithUser(user);
+        context.Add(employee);
+
+        var order = NewOrder(user.Id, "census-buyer-sk@cleansia.test");
+        context.Add(order);
+
+        StampUnstampedAdded(context, TestTenants.Second);
+        await context.CommitAsync(CancellationToken.None);
+
+        context.Add(OrderEmployeePay.Create(
+            order.Id, employee.Id, payPeriod.Id, CurrencyId, basePay: 600m, totalPay: 600m));
+
+        StampUnstampedAdded(context, TestTenants.Second);
+        await context.CommitAsync(CancellationToken.None);
     }
 
     private static Order NewOrder(string ownerUserId, string customerEmail)
@@ -265,7 +360,6 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,

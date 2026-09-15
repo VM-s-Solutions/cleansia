@@ -27,8 +27,7 @@ public class EmployeeDocumentRequirementEntityConfiguration
         // One row per (country, type). A second row for the same pair is not a variant of the rule,
         // it is two rules disagreeing — and whichever the query happened to read first would win.
         //
-        // NULLS NOT DISTINCT is deliberately absent because neither column is nullable, so the
-        // single-tenant NULL hole that makes (TenantId, ...) indexes toothless does not apply here.
+        // NULLS NOT DISTINCT is deliberately absent because neither column is nullable.
         builder
             .HasIndex(r => new { r.CountryId, r.DocumentType })
             .IsUnique();

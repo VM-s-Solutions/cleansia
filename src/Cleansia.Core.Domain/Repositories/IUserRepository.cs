@@ -25,12 +25,12 @@ public interface IUserRepository : IRepository<User, string>
     Task<bool> ExistsWithEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Anonymous-path variant of <see cref="GetByEmailAsync"/> for login / lockout / password-reset.
-    /// Those requests carry no tenant claim, so the global tenant filter narrows every read to
-    /// <c>TenantId == null</c> and a tenant-stamped account could never log in. Bypasses the filter;
-    /// the caller-supplied email is the scope. Never use it on authenticated or registration
-    /// surfaces — email uniqueness is per-tenant (the (TenantId, Email) unique index), so those must
-    /// stay inside the filter.
+    /// Anonymous-path variant of <see cref="GetByEmailAsync"/> for login / lockout / password-reset and
+    /// the registration pre-checks. Those requests carry no claim, so the global tenant filter would
+    /// narrow the read to the ambient tenant and a stamped account in another operating company would be
+    /// invisible. Bypasses the filter; the caller-supplied email is the scope, and it is one identity
+    /// across the holding (the global Email unique index, ADR-0061 D5.1). Authenticated surfaces keep
+    /// <see cref="GetByEmailAsync"/>: their claim is the scope.
     /// </summary>
     Task<User?> GetByEmailIgnoringTenantAsync(string email, CancellationToken cancellationToken = default);
 
@@ -59,8 +59,11 @@ public interface IUserRepository : IRepository<User, string>
     /// </summary>
     Task<User?> GetByGoogleIdIgnoringTenantAsync(string googleId, CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
-    Task<User?> GetByConfirmationCodeAsync(string token, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The legacy 128-bit confirm link, opened anonymously against a tenant-stamped row: the hash is the
+    /// pin (ADR-0051 bypass-and-re-pin, ADR-0061 D4).
+    /// </summary>
+    Task<User?> GetByConfirmationCodeIgnoringTenantAsync(string token, CancellationToken cancellationToken = default);
     IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate);
     Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken);
     IQueryable<User> GetConfirmedUsersWithEmails(IEnumerable<string> emails);

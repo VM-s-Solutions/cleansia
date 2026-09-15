@@ -124,7 +124,6 @@
       "entity_type_natural_person": "Self-employed individual (OSVČ)",
       "entity_type_legal_entity": "Legal entity (s.r.o., a.s., ...)",
       "registration_number": "Registration Number",
-      "vat_number": "VAT Number",
       "legal_entity_name": "Legal Entity Name",
       "bank_details": "Bank Details for Payroll",
       "iban": "IBAN",
@@ -1073,9 +1072,6 @@
       "registration_number": {
         "invalid_format": "Invalid company registration number format for the selected country"
       },
-      "vat_number": {
-        "invalid_format": "Invalid VAT number format for the selected country"
-      },
       "must_be_positive": "Value must be positive",
       "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
       "page_must_be_positive": "Page must be greater than 0",
@@ -1106,8 +1102,7 @@
       "not_found": "Currency not found",
       "code_already_exists": "A currency with this code already exists",
       "in_use": "Cannot delete currency because it is currently in use",
-      "cannot_delete_default": "Cannot delete the default currency",
-      "exchange_rate_must_be_positive": "Exchange rate must be a positive number"
+      "cannot_delete_default": "Cannot delete the default currency"
     },
     "email": {
       "invalid_format": "Invalid email format",
@@ -1202,6 +1197,7 @@
         "not_found": "Invoice not found",
         "invalid_status": "Invalid invoice status",
         "already_exists": "Invoice already exists",
+        "already_paid": "This invoice is already paid and cannot be re-rendered",
         "pdf_generation_failed": "Failed to generate PDF",
         "template_not_found": "Invoice template not found",
         "cannot_cancel_paid": "Cannot cancel a paid invoice",
@@ -1270,6 +1266,12 @@
       "iso_code_already_exists": "A country with this ISO code already exists",
       "in_use": "Cannot delete country because it is currently in use",
       "not_serviced": "We do not operate in this country yet"
+    },
+    "tenant": {
+      "not_found": "This market is not operated by any Cleansia company yet."
+    },
+    "consent": {
+      "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue."
     },
     "gdpr": {
       "consent_not_found": "We could not find that consent setting",
@@ -1492,6 +1494,8 @@
       "email": "Email",
       "password": "Password",
       "confirm_password": "Confirm Password",
+      "market": "Market",
+      "market_placeholder": "Choose your market",
       "terms_agreement": "I agree to the terms",
       "terms_and_conditions": "I agree to the <a href='/gdpr'>Terms of Service and Privacy Policy</a>",
       "have_account": "Already have an account?",

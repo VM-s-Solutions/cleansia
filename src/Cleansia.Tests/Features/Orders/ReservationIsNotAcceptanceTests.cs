@@ -40,7 +40,7 @@ public class ReservationIsNotAcceptanceTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 
@@ -118,7 +118,7 @@ public class ReservationIsNotAcceptanceTests
 
     private Order ArrangeReservedOrder(double cleaningInHours)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var cleaningDateTime = DateTime.UtcNow.AddHours(cleaningInHours);
 
         var order = Order.Create(
@@ -128,7 +128,6 @@ public class ReservationIsNotAcceptanceTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 2000m,

@@ -46,6 +46,7 @@ struct RegisterFormState: Equatable {
 final class RegisterViewModel: ViewModel {
     @Published private(set) var form = RegisterFormState()
     @Published private(set) var registerState: ActionState = .idle
+    @Published private(set) var market: RegisterMarketState = .loading
 
     /// Carries the registered email so the caller can land the user on the confirm-email step —
     /// the code was just sent there, and bouncing to login would make them sign in only to be
@@ -53,17 +54,20 @@ final class RegisterViewModel: ViewModel {
     let registerSuccess = PassthroughSubject<String, Never>()
 
     private let client: RegistrationAuthClient
+    private let marketClient: PartnerMarketClient
     private let settings: AppSettingsStore
     private let snackbar: SnackbarController
     private let signupConsent: SignupConsentRecording
 
     init(
         client: RegistrationAuthClient,
+        marketClient: PartnerMarketClient,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
         signupConsent: SignupConsentRecording
     ) {
         self.client = client
+        self.marketClient = marketClient
         self.settings = settings
         self.snackbar = snackbar
         self.signupConsent = signupConsent
@@ -99,6 +103,22 @@ final class RegisterViewModel: ViewModel {
         form.termsError = nil
     }
 
+    /// A failed read is the no-market state, retried on the next appearance; a list already held
+    /// is kept, so a re-appearance never drops the cleaner's choice.
+    func loadMarkets() async {
+        if case .resolved = market { return }
+        switch await marketClient.getMarkets() {
+        case let .success(markets):
+            market = RegisterMarketState.preselect(markets)
+        case .failure:
+            market = .unavailable
+        }
+    }
+
+    func onMarketChange(countryId: String?) {
+        market = market.selecting(countryId: countryId)
+    }
+
     func register() async {
         if registerState.isSubmitting { return }
         guard validate() else { return }
@@ -109,7 +129,11 @@ final class RegisterViewModel: ViewModel {
             password: form.password,
             firstName: form.firstName,
             lastName: form.lastName,
-            language: settings.languageTag
+            language: settings.languageTag,
+            countryId: market.countryId,
+            // The server accepts the tick here, but the partner app still parks it for the first
+            // session while the employee agreement text is open (ADR-0041), so none is sent.
+            termsAccepted: nil
         )
         registerState = .idle
 

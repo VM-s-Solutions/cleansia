@@ -3,13 +3,13 @@ import CleansiaCustomerApi
 import Foundation
 
 protocol ExtraClient {
-    func loadExtras() async -> ApiResult<[CatalogExtra]>
+    func loadExtras(countryId: String?) async -> ApiResult<[CatalogExtra]>
 }
 
 struct LiveExtraClient: ExtraClient {
-    func loadExtras() async -> ApiResult<[CatalogExtra]> {
+    func loadExtras(countryId: String?) async -> ApiResult<[CatalogExtra]> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            try await CustomerExtraAPI.extraGetOverview().map(CatalogExtra.init)
+            try await CustomerExtraAPI.extraGetOverview(countryId: countryId).map(CatalogExtra.init)
         }
     }
 }

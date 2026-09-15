@@ -58,10 +58,10 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
                 && p.EmployeeInvoiceId == null, cancellationToken);
     }
 
-    public Task<decimal> SumPendingEarningsAsync(string employeeId, CancellationToken cancellationToken)
+    public Task<decimal> SumPendingEarningsAsync(string employeeId, string currencyId, CancellationToken cancellationToken)
     {
         return GetDbSet()
-            .Where(p => p.EmployeeId == employeeId && p.EmployeeInvoiceId == null)
+            .Where(p => p.EmployeeId == employeeId && p.EmployeeInvoiceId == null && p.CurrencyId == currencyId)
             .SumAsync(p => p.TotalPay, cancellationToken);
     }
 
@@ -71,6 +71,7 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
         return await GetDbSet()
             .Include(p => p.Order)
             .Include(p => p.PayPeriod)
+            .Include(p => p.Currency)
             .Where(p => p.EmployeeId == employeeId && p.PayPeriodId == payPeriodId)
             .ToListAsync(cancellationToken);
     }
@@ -81,6 +82,7 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
         return await GetDbSet()
             .Include(p => p.Order)
             .Include(p => p.Employee)
+            .Include(p => p.Currency)
             .Where(p => p.EmployeeInvoiceId == invoiceId)
             .ToListAsync(cancellationToken);
     }

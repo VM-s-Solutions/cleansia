@@ -8,6 +8,8 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.orders.OrderRepository
@@ -21,7 +23,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
 /**
- * Injection seam for the home screen's six singleton repositories.
+ * Injection seam for the home screen's seven singleton repositories.
  *
  * **Almost no state lives here** — it exists so the screen avoids the EntryPointAccessors
  * pattern. The one exception is [isUserRefreshing], and it is an exception on purpose: see
@@ -36,12 +38,18 @@ class HomeTabViewModel @Inject constructor(
     val catalogRepository: CatalogRepository,
     val recurringBookingRepository: RecurringBookingRepository,
     val notificationFeedRepository: NotificationFeedRepository,
+    val marketRepository: MarketRepository,
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
+    /**
+     * Home prices the chosen market (ADR-0058 D5). The directory is awaited first so the catalogue
+     * is not read once for the default and again for the market a moment later.
+     */
     fun refreshCatalog() {
         viewModelScope.launch {
-            catalogRepository.refresh().onError { error ->
+            val market = marketRepository.ensureLoaded()
+            catalogRepository.refresh(market.countryId).onError { error ->
                 if (error !is ApiError.Network) snackbar.showError(error)
             }
         }
@@ -68,6 +76,7 @@ class HomeTabViewModel @Inject constructor(
         refreshIfStale(loyaltyRepository.staleness) { loyaltyRepository.refresh() }
         refreshIfStale(orderRepository.staleness) { orderRepository.refresh() }
         refreshIfStale(membershipRepository.staleness) { membershipRepository.refresh() }
+        refreshIfStale(marketRepository.staleness) { marketRepository.refresh() }
     }
 
     /**
@@ -101,6 +110,7 @@ class HomeTabViewModel @Inject constructor(
                     launch { loyaltyRepository.refresh() },
                     launch { orderRepository.refresh() },
                     launch { membershipRepository.refresh() },
+                    launch { marketRepository.refresh() },
                 ).joinAll()
             } finally {
                 _isUserRefreshing.value = false

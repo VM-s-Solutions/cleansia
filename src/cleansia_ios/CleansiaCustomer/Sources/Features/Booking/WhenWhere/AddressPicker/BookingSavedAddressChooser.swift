@@ -39,6 +39,7 @@ enum BookingSavedAddressApply {
         next.street = address.street
         next.city = address.city
         next.zipCode = address.zipCode
+        next.countryId = address.countryId
         next.savedAddressId = address.id
         next.hydratedFromSavedId = nil
         return next

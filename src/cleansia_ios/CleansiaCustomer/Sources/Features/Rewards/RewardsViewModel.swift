@@ -16,6 +16,9 @@ struct RewardsContent: Equatable {
 @MainActor
 final class RewardsViewModel: ViewModel {
     @Published private(set) var state: UiState<RewardsContent> = .loading
+    /// The tier floor is a platform-default-currency figure (business rules, money constants):
+    /// stated only when the chosen market's currency is that one, and labelled with it.
+    @Published private(set) var tierFloor: TierFloorLabel = .applies(currencyCode: nil)
 
     private let loyaltyRepository: LoyaltyRepository
     private let referralRepository: RewardsReferralRepository
@@ -25,6 +28,8 @@ final class RewardsViewModel: ViewModel {
     init(
         loyaltyRepository: LoyaltyRepository,
         referralRepository: RewardsReferralRepository,
+        catalogSource: BookingViewModel,
+        marketStore: MarketStore,
         snackbar: SnackbarController,
         activityPreviewSize: Int = 5
     ) {
@@ -33,6 +38,14 @@ final class RewardsViewModel: ViewModel {
         self.snackbar = snackbar
         self.activityPreviewSize = activityPreviewSize
         super.init()
+        Publishers.CombineLatest(marketStore.$state, catalogSource.$catalogState)
+            .map { market, catalog in
+                LoyaltyPresentation.tierFloor(
+                    market: market,
+                    catalogDefaultCurrencyCode: catalog.loadedValue?.defaultCurrencyCode
+                )
+            }
+            .assign(to: &$tierFloor)
         if let content = currentContent() {
             state = .loaded(content)
         }

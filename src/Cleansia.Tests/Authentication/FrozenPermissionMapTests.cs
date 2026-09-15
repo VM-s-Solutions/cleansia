@@ -139,6 +139,12 @@ public class FrozenPermissionMapTests
         [Policy.CanUpdatePackage] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeletePackage] = PhysicalPolicy.AdminOnly,
 
+        // Extras (T-0698 admin extras CRUD, additive)
+        [Policy.CanViewExtras] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateExtra] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateExtra] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteExtra] = PhysicalPolicy.AdminOnly,
+
         // Languages
         [Policy.CanViewLanguages] = PhysicalPolicy.AdminOnly,
         [Policy.CanCreateLanguage] = PhysicalPolicy.AdminOnly,

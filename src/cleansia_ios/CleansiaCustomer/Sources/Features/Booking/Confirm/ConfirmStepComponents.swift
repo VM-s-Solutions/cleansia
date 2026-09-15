@@ -80,6 +80,7 @@ struct SummaryCard: View {
     let membershipDiscount: Double
     let tierDiscount: Double
     let combinedServerDiscount: Double
+    let unmetTierDiscountFloor: Double?
     let currencyCode: String
 
     private var showPromoLine: Bool {
@@ -151,6 +152,13 @@ struct SummaryCard: View {
             }
             if showTierLine {
                 AmountRow(label: L10n.Booking.summaryTierDiscount, value: "-\(money(tierDiscount))", emphasis: .success)
+            }
+            if let unmetTierDiscountFloor {
+                Text(L10n.Booking.tierDiscountMinNotMet(money(unmetTierDiscountFloor)))
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, Spacing.xxs)
             }
             switch summary.expressLine {
             case .notExpress:

@@ -79,13 +79,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
     public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
     {
-        // Cross-tenant scan: pay-calc on a tenant-scoped order should bootstrap
-        // a tenant-scoped PayPeriod for that same tenant. Today the system is
-        // single-tenant in practice (TenantId null), so the simple "any open
-        // period for the active tenant context" check is sufficient. The
-        // multi-tenant flow already loops per tenant in
-        // CloseExpiredPeriodsAndOpenNewAsync; bootstrap inherits the active
-        // tenant override from the caller (queue consumer sets none → null).
+        // Per-company bootstrap: the open-period read goes through the tenant
+        // filter and the new row is stamped from the ambient tenant at commit,
+        // so this answers for whatever tenant the caller has adopted. The
+        // scheduled rollover loops per tenant in CloseExpiredPeriodsAndOpenNewAsync.
         var hasOpen = await _payPeriodRepository
             .GetQueryable()
             .AnyAsync(p => p.Status == PayPeriodStatus.Open, cancellationToken);
@@ -139,9 +136,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             foreach (var tenantGroup in expiredPeriods.GroupBy(p => p.TenantId ?? string.Empty))
             {
-                // Reset before each iteration so a non-empty override from the
-                // previous group doesn't leak into a single-tenant (empty key)
-                // group that follows it.
+                // Reset before each iteration so the previous group's override
+                // never outlives its group: what the next commit stamps is
+                // decided here, not by whatever ran last.
                 _tenantProvider.ClearTenantOverride();
                 if (!string.IsNullOrEmpty(tenantGroup.Key))
                 {
@@ -236,25 +233,23 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                     var employeeName = $"{employee.User.FirstName} {employee.User.LastName}";
                     var languageCode = employee.User.PreferredLanguageCode ?? Constants.Language.English;
 
-                    byte[]? invoicePdfBytes = null;
-                    string? invoiceFileName = null;
+                    IReadOnlyList<(byte[] PdfBytes, string FileName)> attachments = [];
 
                     try
                     {
-                        var invoiceResult = await GenerateInvoiceForEmployeeAsync(employee, period, languageCode, cancellationToken);
-                        if (invoiceResult != null)
+                        attachments = await GenerateInvoicesForEmployeeAsync(employee, period, languageCode, cancellationToken);
+                        foreach (var (_, fileName) in attachments)
                         {
-                            invoicePdfBytes = invoiceResult.Value.PdfBytes;
-                            invoiceFileName = invoiceResult.Value.FileName;
                             _logger.LogInformation(
                                 "Generated invoice {FileName} for employee {EmployeeId}",
-                                invoiceFileName,
+                                fileName,
                                 employee.Id);
                         }
-                        else
+
+                        if (attachments.Count == 0)
                         {
                             _logger.LogInformation(
-                                "No unpaid orders found for employee {EmployeeId}, skipping invoice generation",
+                                "No invoice document for employee {EmployeeId}, sending the period closed email without one",
                                 employee.Id);
                         }
                     }
@@ -262,26 +257,37 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                     {
                         _logger.LogError(
                             ex,
-                            "Failed to generate invoice for employee {EmployeeId}, will send email without invoice",
+                            "Failed to generate invoices for employee {EmployeeId}, will send email without invoice",
                             employee.Id);
                     }
 
-                    await _emailService.SendPeriodClosedEmailAsync(
-                        employee.User.Email,
-                        employeeName,
-                        period.StartDate,
-                        period.EndDate,
-                        period.ClosedAt ?? DateTime.UtcNow,
-                        period.GetPeriodLabel(),
-                        languageCode,
-                        invoicePdfBytes,
-                        invoiceFileName,
-                        cancellationToken);
+                    // ONE EMAIL PER INVOICE DOCUMENT, or one plain email when there is none. The template
+                    // carries a single attachment and a cleaner who worked in two currencies holds two
+                    // documents; a second "period closed" email is the cheaper honest shape, and the
+                    // partner app remains the record either way.
+                    List<(byte[]? PdfBytes, string? FileName)> sends = attachments.Count == 0
+                        ? [(null, null)]
+                        : attachments.Select(a => ((byte[]?)a.PdfBytes, (string?)a.FileName)).ToList();
 
-                    _logger.LogInformation(
-                        "Sent period closed email to {Email} for period {PeriodId}",
-                        employee.User.Email,
-                        period.Id);
+                    foreach (var (invoicePdfBytes, invoiceFileName) in sends)
+                    {
+                        await _emailService.SendPeriodClosedEmailAsync(
+                            employee.User.Email,
+                            employeeName,
+                            period.StartDate,
+                            period.EndDate,
+                            period.ClosedAt ?? DateTime.UtcNow,
+                            period.GetPeriodLabel(),
+                            languageCode,
+                            invoicePdfBytes,
+                            invoiceFileName,
+                            cancellationToken);
+
+                        _logger.LogInformation(
+                            "Sent period closed email to {Email} for period {PeriodId}",
+                            employee.User.Email,
+                            period.Id);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -302,7 +308,14 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         }
     }
 
-    private async Task<(byte[] PdfBytes, string FileName)?> GenerateInvoiceForEmployeeAsync(
+    /// <summary>
+    /// ONE INVOICE PER CURRENCY the employee's unassigned pay holds in this period. A cleaner can work
+    /// an order in each, and a tax document is in one unit, so a mixed period yields one document per
+    /// currency rather than a refusal -- which had no admin action to resolve it and stranded the rows
+    /// forever. Returns one rendered attachment per invoice that rendered; an invoice whose render
+    /// failed is still written (its error stamped for the admin) and simply has no attachment.
+    /// </summary>
+    private async Task<IReadOnlyList<(byte[] PdfBytes, string FileName)>> GenerateInvoicesForEmployeeAsync(
         Employee employee,
         PayPeriod period,
         string languageCode,
@@ -313,24 +326,68 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
         if (!orderPays.Any())
         {
-            return null;
+            return [];
         }
 
-        var existingInvoice = await _employeeInvoiceRepository
+        // Per currency: a currency this pair already holds an invoice for is skipped (a late pay row
+        // must not grow a second document), the others proceed. The old check was per pair and would
+        // have refused the second currency forever.
+        var alreadyInvoiced = await _employeeInvoiceRepository
             .GetQueryable()
-            .FirstOrDefaultAsync(i => i.EmployeeId == employee.Id && i.PayPeriodId == period.Id, cancellationToken);
+            .Where(i => i.EmployeeId == employee.Id && i.PayPeriodId == period.Id)
+            .Select(i => i.CurrencyId)
+            .ToListAsync(cancellationToken);
 
-        if (existingInvoice != null)
+        var attachments = new List<(byte[] PdfBytes, string FileName)>();
+
+        foreach (var group in orderPays.GroupBy(p => p.CurrencyId).OrderBy(g => g.Key, StringComparer.Ordinal))
         {
-            _logger.LogWarning(
-                "Invoice already exists for employee {EmployeeId} and period {PeriodId}, skipping generation",
-                employee.Id,
-                period.Id);
-            return null;
+            if (alreadyInvoiced.Contains(group.Key))
+            {
+                _logger.LogWarning(
+                    "Invoice already exists for employee {EmployeeId} / period {PeriodId} in currency {CurrencyId}, skipping that currency",
+                    employee.Id,
+                    period.Id,
+                    group.Key);
+                continue;
+            }
+
+            var attachment = await GenerateOneInvoiceAsync(
+                employee, period, group.Key, group.ToList(), languageCode, cancellationToken);
+            if (attachment is not null)
+            {
+                attachments.Add(attachment.Value);
+            }
         }
 
-        var currency = await _currencyRepository.GetByCodeAsync(employee.PreferredCurrencyCode ?? string.Empty, cancellationToken) ??
-                       await _currencyRepository.GetDefaultAsync(cancellationToken);
+        return attachments;
+    }
+
+    /// <summary>One currency's rows into one invoice: reference, row, PDF, upload -- each step durable before the next.</summary>
+    private async Task<(byte[] PdfBytes, string FileName)?> GenerateOneInvoiceAsync(
+        Employee employee,
+        PayPeriod period,
+        string currencyId,
+        IReadOnlyList<OrderEmployeePay> orderPays,
+        string languageCode,
+        CancellationToken cancellationToken)
+    {
+        // THE CURRENCY COMES FROM THE PAY ROWS. It used to come from Employee.PreferredCurrencyCode --
+        // a field with no writer anywhere in the platform, so always null, so this always fell through
+        // to the platform default -- while GenerateInvoice derived the same document's currency from the
+        // work country's configuration. Two answers for one tax document, neither reading the rows being
+        // invoiced, and whichever path ran first decided. Both are deleted.
+        var currency = await _currencyRepository.GetByIdAsync(currencyId, cancellationToken);
+        if (currency is null)
+        {
+            _logger.LogError(
+                "Employee {EmployeeId}'s pay for period {PeriodId} names currency {CurrencyId}, which "
+                    + "does not exist; skipping that currency's invoice",
+                employee.Id,
+                period.Id,
+                currencyId);
+            return null;
+        }
 
         var variableSymbol = await _payoutReferenceAllocator.AllocateAsync(cancellationToken);
         if (variableSymbol.IsFailure)
@@ -343,12 +400,23 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             return null;
         }
 
+        var invoiceNumber = await _payoutReferenceAllocator.AllocateInvoiceNumberAsync(cancellationToken);
+        if (invoiceNumber.IsFailure)
+        {
+            _logger.LogError(
+                "Could not allocate an invoice number for employee {EmployeeId} / period {PeriodId} ({Error}); skipping this employee's invoice",
+                employee.Id,
+                period.Id,
+                invoiceNumber.Error?.Message);
+            return null;
+        }
+
         var invoice = EmployeeInvoice.CreateFromOrderPays(
             employee.Id,
             period.Id,
             orderPays,
-            currency!.Id,
-            variableSymbol.Value!);
+            variableSymbol.Value!,
+            invoiceNumber.Value!);
 
         _employeeInvoiceRepository.Add(invoice);
 
@@ -376,8 +444,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             _logger.LogError(
                 ex,
-                "Duplicate payout reference {VariableSymbol} for employee {EmployeeId} / period {PeriodId}; skipping this employee's invoice",
+                "Duplicate payout reference (variable symbol {VariableSymbol} or invoice number {InvoiceNumber}) for employee {EmployeeId} / period {PeriodId}; skipping this employee's invoice",
                 variableSymbol.Value,
+                invoiceNumber.Value,
                 employee.Id,
                 period.Id);
             return null;
@@ -504,11 +573,15 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         byte[] pdfBytes,
         CancellationToken cancellationToken)
     {
-        var employeeName = $"{employee.User?.FirstName}_{employee.User?.LastName}";
+        // THE EMPLOYEE'S ID, NOT THEIR NAME, and the same segment the regenerate path keys on so both
+        // writers address one file. The name is mutable, and it is also the only segment that told two
+        // companies' documents apart: each company numbers its own invoices, so two first invoices of a
+        // year are both INV-YYYY-000001 under the same auto-seeded period label.
+        var employeeFolder = employee.Id;
         var payPeriodDescription = invoice.PayPeriod!.GetPeriodLabel();
         var invoiceFileName = invoice.InvoiceNumber;
 
-        var blobName = $"{payPeriodDescription}/{employeeName}/{invoiceFileName}.pdf";
+        var blobName = $"{payPeriodDescription}/{employeeFolder}/{invoiceFileName}.pdf";
         var blobClient = _blobContainerClientFactory.GetBlobContainerClient(Common.Constants.BlobContainers.GeneratedInvoices);
 
         using var pdfStream = new MemoryStream(pdfBytes);

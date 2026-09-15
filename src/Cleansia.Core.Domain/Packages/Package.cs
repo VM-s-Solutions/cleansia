@@ -31,7 +31,6 @@ public class Package : Auditable
     public bool IsPopular { get; private set; }
 
     [Required]
-    public decimal Price { get; private set; }
 
     private IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();
@@ -42,13 +41,11 @@ public class Package : Auditable
     public static Package Create(
         string name,
         string description,
-        decimal price,
         string? tagline = null,
         bool isPopular = false) => new()
     {
         Name = name,
         Description = description,
-        Price = price,
         Tagline = tagline,
         IsPopular = isPopular
     };
@@ -56,13 +53,11 @@ public class Package : Auditable
     public Package Update(
         string name,
         string description,
-        decimal price,
         string? tagline = null,
         bool isPopular = false)
     {
         Name = name;
         Description = description;
-        Price = price;
         Tagline = tagline;
         IsPopular = isPopular;
         return this;

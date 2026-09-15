@@ -33,6 +33,20 @@ public class GetPeriodPaysOwnershipTests
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ICurrencyResolutionService> _currencyResolution = new();
 
+    public GetPeriodPaysOwnershipTests()
+    {
+        // No invoice unless a case says otherwise; Moq's default for a list is null, which is not
+        // "no invoices".
+        _invoiceRepository
+            .Setup(r => r.GetAllForEmployeeAndPayPeriodAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        // The resolver never returns null in production (the platform default is the last link), and
+        // an unmocked Task<Currency> would.
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CurrencyWithCode("CZK"));
+    }
+
     private GetPeriodPays.Handler CreateHandler() =>
         new(
             _employeeRepository.Object,
@@ -41,7 +55,8 @@ public class GetPeriodPaysOwnershipTests
             _orderPayRepository.Object,
             _orderAccessService.Object,
             _session.Object,
-            _currencyResolution.Object);
+            _currencyResolution.Object,
+            new Mock<ICurrencyRepository>().Object);
 
     private void SetRole(UserProfile role) =>
         _session.Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
@@ -150,11 +165,11 @@ public class GetPeriodPaysOwnershipTests
         SetRole(UserProfile.Administrator);
         ArrangeOwnPay();
         _invoiceRepository
-            .Setup(r => r.GetByEmployeeAndPayPeriodAsync(CallerEmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(InvoiceWithCurrency("EUR"));
+            .Setup(r => r.GetAllForEmployeeAndPayPeriodAsync(CallerEmployeeId, PayPeriodId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([InvoiceWithCurrency("EUR")]);
         _currencyResolution
-            .Setup(s => s.ResolveCurrencyCodeForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("CZK");
+            .Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CurrencyWithCode("CZK"));
 
         var result = await CreateHandler().Handle(
             new GetPeriodPays.Query(CallerEmployeeId, PayPeriodId), CancellationToken.None);
@@ -171,11 +186,11 @@ public class GetPeriodPaysOwnershipTests
         SetRole(UserProfile.Administrator);
         ArrangeOwnPay();
         _invoiceRepository
-            .Setup(r => r.GetByEmployeeAndPayPeriodAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((EmployeeInvoice?)null);
+            .Setup(r => r.GetAllForEmployeeAndPayPeriodAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
         _currencyResolution
-            .Setup(s => s.ResolveCurrencyCodeForEmployeeAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("CZK");
+            .Setup(s => s.ResolveCurrencyForEmployeeAsync(CallerEmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CurrencyWithCode("CZK"));
 
         var result = await CreateHandler().Handle(
             new GetPeriodPays.Query(CallerEmployeeId, PayPeriodId), CancellationToken.None);
@@ -188,6 +203,8 @@ public class GetPeriodPaysOwnershipTests
     {
         var invoice = (EmployeeInvoice)System.Runtime.CompilerServices.RuntimeHelpers
             .GetUninitializedObject(typeof(EmployeeInvoice));
+        typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.CurrencyId))!
+            .SetValue(invoice, $"currency-{code.ToLowerInvariant()}");
         typeof(EmployeeInvoice).GetProperty(nameof(EmployeeInvoice.Currency))!
             .SetValue(invoice, CurrencyWithCode(code));
         return invoice;
@@ -198,6 +215,7 @@ public class GetPeriodPaysOwnershipTests
         var currency = (Currency)System.Runtime.CompilerServices.RuntimeHelpers
             .GetUninitializedObject(typeof(Currency));
         typeof(Currency).GetProperty(nameof(Currency.Code))!.SetValue(currency, code);
+        currency.Id = $"currency-{code.ToLowerInvariant()}";
         return currency;
     }
 }

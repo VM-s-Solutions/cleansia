@@ -3,7 +3,11 @@ import Foundation
 enum CustomerNotificationDestination: Equatable {
     case order(orderId: String)
     case dispute(disputeId: String)
-    case subscribePlus
+    /// The membership MANAGEMENT surface, not the sales page. A notification about an existing
+    /// subscription — expiring soon, cancellation now effective — is addressed to someone who
+    /// already has one, so landing them on "buy Cleansia Plus" answered a question they had not
+    /// asked and hid the one they had.
+    case membershipManagement
     case rewardsActivity
 }
 
@@ -34,6 +38,7 @@ enum CustomerNotificationDeepLink {
              "order.completed",
              "order.cancelled",
              "order.refunded",
+             "order.no_cleaner_refunded",
              "order.starting_soon",
              "order.preferred_offer_closed",
              "recurring.scheduled":
@@ -44,7 +49,7 @@ enum CustomerNotificationDeepLink {
             return .dispute(disputeId: disputeId)
         case "membership.expiring_soon",
              "membership.cancellation_effective":
-            return .subscribePlus
+            return .membershipManagement
         case "loyalty.tier_upgrade":
             return .rewardsActivity
         default:

@@ -8,7 +8,7 @@ export function getPayConfigTableDefinition(
     onDelete: (row: EmployeePayConfigDto) => void;
   },
   translate: TranslateService,
-  formatCurrency: (value: number | undefined) => string
+  formatCurrency: (value: number | undefined, currencyCode?: string) => string
 ): { columns: TableColumn<EmployeePayConfigDto>[]; actions: TableAction<EmployeePayConfigDto>[] } {
   return {
     columns: [
@@ -24,7 +24,8 @@ export function getPayConfigTableDefinition(
         id: 'basePay',
         field: 'basePay',
         header: translate.instant('pages.pay_config_management.columns.base_pay'),
-        getValue: (row: EmployeePayConfigDto) => formatCurrency(row?.basePay),
+        getValue: (row: EmployeePayConfigDto) =>
+          formatCurrency(row?.basePay, row?.currencyCode),
         sortable: true,
         width: '15%',
       },
@@ -32,7 +33,8 @@ export function getPayConfigTableDefinition(
         id: 'extraPerRoom',
         field: 'extraPerRoom',
         header: translate.instant('pages.pay_config_management.columns.per_room'),
-        getValue: (row: EmployeePayConfigDto) => formatCurrency(row?.extraPerRoom),
+        getValue: (row: EmployeePayConfigDto) =>
+          formatCurrency(row?.extraPerRoom, row?.currencyCode),
         sortable: true,
         width: '15%',
       },
@@ -40,7 +42,8 @@ export function getPayConfigTableDefinition(
         id: 'extraPerBathroom',
         field: 'extraPerBathroom',
         header: translate.instant('pages.pay_config_management.columns.per_bathroom'),
-        getValue: (row: EmployeePayConfigDto) => formatCurrency(row?.extraPerBathroom),
+        getValue: (row: EmployeePayConfigDto) =>
+          formatCurrency(row?.extraPerBathroom, row?.currencyCode),
         sortable: true,
         width: '15%',
       },

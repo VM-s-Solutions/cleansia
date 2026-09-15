@@ -130,6 +130,10 @@ export class ServiceAreaManagementComponent implements OnInit {
     return !!country.id && this.facade.servicedCountryIds().has(country.id);
   }
 
+  trackCountryRow(country: CountryListItem): string {
+    return `${country.id}:${this.facade.servicedToggleRevision()}`;
+  }
+
   onCountryFilterChange(countryId: string | null): void {
     this.selectedCountryId.set(countryId);
   }

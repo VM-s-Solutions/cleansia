@@ -46,6 +46,13 @@ describe('FoamEdgeComponent', () => {
     return out;
   }
 
+  /** The one <path> the edge renders — the only place a rim could come back. */
+  function renderedPath(fixture: ComponentFixture<FoamEdgeComponent>): SVGPathElement {
+    const path = (fixture.nativeElement as HTMLElement).querySelector('path');
+    if (!path) throw new Error('the foam edge rendered no <path>');
+    return path;
+  }
+
   /** The y the run starts from — the baseline the bubbles bulge away from. */
   function baseline(path: string): number {
     const cap = /^M0,\d+ L0,(\d+)/.exec(path);
@@ -116,7 +123,7 @@ describe('FoamEdgeComponent', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     expect(host.querySelectorAll('path')).toHaveLength(1);
-    expect(host.querySelector('path')!.getAttribute('stroke')).toBeNull();
+    expect(renderedPath(fixture).getAttribute('stroke')).toBeNull();
   });
 
   it('lets the caller name the colour the bubbles are cut out of', () => {
@@ -129,8 +136,6 @@ describe('FoamEdgeComponent', () => {
     ref.setInput('fill', 'var(--cl-cta-3)');
     fixture.detectChanges();
 
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('path')!.getAttribute('fill'),
-    ).toBe('var(--cl-cta-3)');
+    expect(renderedPath(fixture).getAttribute('fill')).toBe('var(--cl-cta-3)');
   });
 });

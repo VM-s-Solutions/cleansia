@@ -194,13 +194,16 @@ at startup. Without a binding the worker process aborts.
 services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider("cleansia.functions"));
 ```
 
-## 4. EF tenant filter — null/null case
+## 4. EF tenant filter — a consumer with no tenant reads nothing
 
-`null = null` in SQL is `NULL` (not `true`), which would hide every row in
-single-tenant deployments and queue/webhook contexts. The global query
-filter at `CleansiaDbContext.ApplyTenantQueryFilters` has an explicit
-`(currentTenantId == null && e.TenantId == null)` branch to make
-single-tenant mode work.
+The Functions host has no JWT, so `GetCurrentTenantId()` is `null` until a consumer sets the override
+from the envelope it is processing (`SendEmailHandler`, the push producers). Since ADR-0061 every
+stamped row carries a non-null `TenantId`, so the filter's `(currentTenantId == null && e.TenantId ==
+null)` branch matches nothing here: a consumer that forgets its override reads an **empty** set — a
+user with no device, an order with no rows — and a producer that writes under no tenant fails `23502`.
+Set the override from the envelope's tenant before the first tenanted read; the envelope carries it
+because the producer passed `tenantProvider.GetCurrentTenantId()` (or the row's own tenant) when it
+enqueued. → [Cross-cutting concerns — tenancy](/flows/cross-cutting#tenancy)
 
 ## 5. Emulator setup
 
@@ -246,9 +249,11 @@ Several keys exist as separate keys for reasons that are easy to undo by "simpli
 
 ### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
 
-`OrderConfirmed` is [overloaded](/domain/order-lifecycle#confirmed-is-deliberately-overloaded) — it
-means *money settled* **or** *cleaner assigned*. Two of its producers, the Stripe webhook and the
-recurring cash confirmation, have no cleaner at all.
+`OrderConfirmed` is a **money** event with a fulfilment-sounding name. Both of its producers — the
+Stripe webhook and the recurring cash confirmation — settle payment and have no cleaner at all; since
+[ADR-0057](/decisions/adr-0057) neither writes a fulfilment status either. The key keeps its name
+because renaming it costs ten locale files across two mobile platforms and the customer still needs
+telling their payment landed. → [the order lifecycle](/domain/order-lifecycle)
 
 Widening that key to carry "a cleaner is committed to your booking" would repeat the overloading one
 layer up, in the thing that writes to a customer's lock screen.
@@ -284,7 +289,8 @@ missed message is theirs. A cleaner not turning up is somebody else's morning.
 | Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
 | Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
 
-The three reminders are non-mutable **on the owner's ruling**, on the same reasoning as the two above and
+The three reminders are non-mutable **on the owner's ruling** (2026-09-15, Q-PUSH-01 — the evening
+digest included; it was the one the ADR had escalated), on the same reasoning as the two above and
 recorded in ADR-0054: they are not marketing, they carry no offer, and each one is about work the cleaner
 already agreed to do.
 

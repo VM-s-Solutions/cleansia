@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Repositories;
@@ -11,6 +12,7 @@ using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
+[AuditAction("customer.membership.swap", Audience = AuditAudience.Customer, ResourceType = "UserMembership")]
 public class SwapMembershipPlan
 {
     public record Command(string NewPlanCode) : ICommand<Response>;
@@ -18,6 +20,18 @@ public class SwapMembershipPlan
     public record Response(
         string NewPlanCode,
         DateTime CurrentPeriodEnd);
+
+    /// <summary>
+    /// The plan and price before and after, in the subscription's own currency, and when the new period
+    /// Stripe returned begins (ADR-0062 D3).
+    /// </summary>
+    public record MembershipSwapEvidence(
+        MembershipPlanFacts Before,
+        MembershipPlanFacts After,
+        string? CurrencyCode,
+        DateTimeOffset EffectiveAt) : ICustomerAuditPayload;
+
+    public record MembershipPlanFacts(string? PlanCode, decimal? Price);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -30,9 +44,11 @@ public class SwapMembershipPlan
     public class Handler(
         IUserMembershipRepository userMembershipRepository,
         IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -69,6 +85,19 @@ public class SwapMembershipPlan
                     nameof(command.NewPlanCode), BusinessErrorMessage.MembershipSwapSamePlan));
             }
 
+            // The subscription keeps its currency for life (Stripe refuses a change on a live one), so the
+            // target is the new plan's price in THAT currency — never the market the customer is browsing.
+            var price = await membershipPlanPriceRepository.GetForPlanAsync(newPlan.Id, membership.CurrencyId, cancellationToken);
+            if (price == null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.NewPlanCode), BusinessErrorMessage.MembershipPlanNotPricedInCurrency));
+            }
+
+            var before = new MembershipPlanFacts(
+                membership.MembershipPlan?.Code,
+                (await membershipPlanPriceRepository.GetForPlanAsync(membership.MembershipPlanId, membership.CurrencyId, cancellationToken))?.Price);
+
             // Fresh attempt id so A→B→A→B-style swaps each reach Stripe
             // instead of replaying the first swap's response.
             var attemptId = Guid.NewGuid().ToString("N");
@@ -77,7 +106,7 @@ public class SwapMembershipPlan
             {
                 swapped = await stripeClient.SwapSubscriptionPriceAsync(
                     membership.StripeSubscriptionId,
-                    newPlan.StripePriceId,
+                    price.StripePriceId,
                     attemptId,
                     cancellationToken);
             }
@@ -96,6 +125,12 @@ public class SwapMembershipPlan
             logger.LogInformation(
                 "Swapped membership {MembershipId} (sub {SubscriptionId}) to plan {NewPlanCode}, new period end {PeriodEnd}",
                 membership.Id, membership.StripeSubscriptionId, newPlan.Code, swapped.CurrentPeriodEnd);
+
+            auditContext.RecordEvidence("UserMembership", membership.Id, new MembershipSwapEvidence(
+                Before: before,
+                After: new MembershipPlanFacts(newPlan.Code, price.Price),
+                CurrencyCode: membership.Currency?.Code,
+                EffectiveAt: new DateTimeOffset(DateTime.SpecifyKind(swapped.CurrentPeriodStart, DateTimeKind.Utc))));
 
             return BusinessResult.Success(new Response(
                 NewPlanCode: newPlan.Code,

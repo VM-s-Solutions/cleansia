@@ -1,0 +1,30 @@
+@if (hasChoice()) {
+  <div
+    class="cleansia-market-switcher"
+    [class.cleansia-market-switcher--pill]="variant() === 'pill'"
+    [class.cleansia-market-switcher--chip]="variant() === 'chip'"
+  >
+    <p-select
+      [options]="options()"
+      [ngModel]="current()?.value ?? null"
+      optionLabel="short"
+      optionValue="value"
+      (onChange)="onPick($event.value)"
+    >
+      <ng-template let-market pTemplate="item">
+        <span class="cleansia-market-switcher__item">{{ market.label }}</span>
+      </ng-template>
+
+      <ng-template let-market pTemplate="selectedItem">
+        <span class="cleansia-market-switcher__item">
+          @if (variant() === 'pill') {
+            <i class="pi pi-map cleansia-market-switcher__map" aria-hidden="true"></i>
+          }
+          {{ market.short }}
+        </span>
+      </ng-template>
+    </p-select>
+  </div>
+} @else if (variant() === 'chip' && current(); as market) {
+  <span class="cl-chip cl-chip--static cleansia-market-switcher__static">{{ market.short }}</span>
+}

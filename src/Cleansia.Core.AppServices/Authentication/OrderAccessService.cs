@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -10,14 +11,17 @@ public class OrderAccessService : IOrderAccessService
 {
     private readonly IUserSessionProvider _userSessionProvider;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly ICurrencyResolutionService _currencyResolutionService;
     private readonly Lazy<Task<string?>> _callerEmployeeId;
 
     public OrderAccessService(
         IUserSessionProvider userSessionProvider,
-        IEmployeeRepository employeeRepository)
+        IEmployeeRepository employeeRepository,
+        ICurrencyResolutionService currencyResolutionService)
     {
         _userSessionProvider = userSessionProvider;
         _employeeRepository = employeeRepository;
+        _currencyResolutionService = currencyResolutionService;
         _callerEmployeeId = new Lazy<Task<string?>>(ResolveCallerEmployeeIdAsync);
     }
 
@@ -88,14 +92,19 @@ public class OrderAccessService : IOrderAccessService
         // own customer and for an assigned cleaner, so narrowing it cannot hide a job from anyone who
         // is on it.
         var employeeId = await GetCallerEmployeeIdAsync(cancellationToken);
-        return !string.IsNullOrEmpty(employeeId)
-            && OrderAvailability.IsOfferable(
+        if (string.IsNullOrEmpty(employeeId))
+        {
+            return false;
+        }
+
+        var currency = await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
+        return OrderAvailability.IsOfferable(
                 order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId)
             // TakeableSeat, not AvailableSpots: the browse gate exists so a cleaner can READ what they
             // may TAKE. A cover-requested seat is takeable, so gating on capacity here would show the
             // job on the board and then 403 the cleaner opening it.
             && order.HasTakeableSeat
-            && OrderVisibility.NotHeldFrom(order, employeeId, DateTime.UtcNow);
+            && OrderVisibility.OpenTo(order, employeeId, currency.Id, DateTime.UtcNow);
     }
 
     private async Task<string?> ResolveCallerEmployeeIdAsync()

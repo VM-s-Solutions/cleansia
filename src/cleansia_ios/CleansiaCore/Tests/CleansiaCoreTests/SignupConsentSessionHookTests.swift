@@ -46,7 +46,7 @@ final class SignupConsentSessionHookTests: XCTestCase {
         respondWithSession(email: "relay@privaterelay.appleid.com", isEmailConfirmed: true)
 
         _ = await client.appleAuth(AppleAuthRequest(
-            identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil, termsAccepted: true
+            identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil, termsAccepted: true, countryId: nil
         ))
 
         XCTAssertEqual(delivery.sessionEmails, ["relay@privaterelay.appleid.com"])
@@ -62,7 +62,8 @@ final class SignupConsentSessionHookTests: XCTestCase {
             email: "typed@example.com",
             firstName: "Ada",
             lastName: "Lovelace",
-            termsAccepted: true
+            termsAccepted: true,
+            countryId: nil
         ))
 
         XCTAssertEqual(delivery.sessionEmails, ["server@example.com"])
@@ -99,7 +100,9 @@ final class SignupConsentSessionHookTests: XCTestCase {
             password: "pw",
             firstName: "Ada",
             lastName: "Lovelace",
-            language: "en"
+            language: "en",
+            countryId: nil,
+            termsAccepted: nil
         )
 
         XCTAssertEqual(delivery.sessionEmails, [])

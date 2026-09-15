@@ -8,9 +8,9 @@ public interface ITenantProvider
 
     /// <summary>
     /// Drops a previously set override. Background-job loops MUST call this
-    /// before each iteration so the tenant of one iteration doesn't leak into
-    /// the next when a later iteration has no tenant context (single-tenant /
-    /// null TenantId rows).
+    /// before each iteration so the tenant of one iteration never outlives it:
+    /// what the next commit stamps is decided by that iteration's own override,
+    /// not by whatever ran last.
     /// </summary>
     void ClearTenantOverride();
 }

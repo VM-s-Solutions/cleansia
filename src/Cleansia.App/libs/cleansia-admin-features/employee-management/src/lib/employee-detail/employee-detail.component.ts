@@ -169,7 +169,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
       [Validators.required]
     ),
     registrationNumber: new FormControl<string | null>(null),
-    vatNumber: new FormControl<string | null>(null),
     legalEntityName: new FormControl<string | null>(null),
     // emergency contact
     emergencyContactName: new FormControl<string | null>(null),
@@ -429,7 +428,6 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
       passportId: employee.passportId ?? null,
       entityType: employee.entityType ?? EmployeeEntityType.NaturalPerson,
       registrationNumber: employee.registrationNumber ?? null,
-      vatNumber: employee.vatNumber ?? null,
       legalEntityName: employee.legalEntityName ?? null,
       emergencyContactName: employee.emergencyContactName ?? null,
       emergencyContactPhone: employee.emergencyContactPhone ?? null,

@@ -92,7 +92,8 @@ public sealed class EmailService : IEmailService
             CustomerName = order.CustomerName,
             OrderNumber = order.DisplayOrderNumber,
             OrderDate = order.CreatedOn.ToString("d"),
-            TotalAmount = $"{order.Currency?.Symbol ?? "Kč"}{order.TotalPrice:N2}",
+            // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
+            TotalAmount = $"{order.Currency?.Symbol ?? string.Empty}{order.TotalPrice:N2}",
             OrderStatusLink = orderStatusLink
         }, languageCode);
 
@@ -266,7 +267,8 @@ public sealed class EmailService : IEmailService
         var address = order.CustomerAddress != null
             ? $"{order.CustomerAddress.Street}, {order.CustomerAddress.City}"
             : "";
-        var currencySymbol = order.Currency?.Symbol ?? "Kč";
+        // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
+        var currencySymbol = order.Currency?.Symbol ?? string.Empty;
 
         var (statusTitle, statusMessage, statusClass) = newStatus.ToLowerInvariant() switch
         {

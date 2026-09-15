@@ -4,9 +4,11 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Devices;
 using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -140,22 +142,43 @@ public sealed class SubjectResidueErasureTests : IDisposable
     }
 
     /// <summary>
-    /// Asserted at the seam rather than over rows, because what matters is the exact call: the subject, no
-    /// spared session, and a reason that is NOT <c>password_reset</c> — that string alone drives ADR-0027's
+    /// Asserted at the seam rather than over rows, because what matters is the exact call: the subject, the
+    /// STAGED revoke (the self-committing one would split the erasure into two commits — owner ruling
+    /// 2026-09-14), and a reason that is NOT <c>password_reset</c> — that string alone drives ADR-0027's
     /// revoked-user poll, and an erasure has no business firing it.
     /// </summary>
     [Fact]
-    public async Task Erasure_Revokes_Every_Refresh_Token_The_Subject_Holds_Without_Firing_The_Reset_Directory()
+    public async Task Erasure_Stages_The_Revoke_Of_Every_Refresh_Token_The_Subject_Holds_Without_Committing_Or_Firing_The_Reset_Directory()
     {
         await SeedAsync();
 
         await EraseAsync(ErasedUserId);
 
         _refreshTokenService.Verify(
-            s => s.RevokeAllForUserAsync(
-                ErasedUserId, GdprAuditReasons.RefreshTokenRevocation, null, It.IsAny<CancellationToken>()),
+            s => s.StageRevokeAllForUserAsync(ErasedUserId, GdprAuditReasons.RefreshTokenRevocation, It.IsAny<CancellationToken>()),
             Times.Once);
+        _refreshTokenService.Verify(
+            s => s.RevokeAllForUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
         Assert.NotEqual("password_reset", GdprAuditReasons.RefreshTokenRevocation);
+    }
+
+    /// <summary>
+    /// The per-currency Stripe Customer rows (owner ruling 2026-09-13) hold a Stripe id for
+    /// the subject exactly as the legacy <c>User.StripeCustomerId</c> does; the erasure clears that
+    /// field, so the rows go with it, and the bystander's stays.
+    /// </summary>
+    [Fact]
+    public async Task Erasure_Removes_The_Subjects_Per_Currency_Stripe_Customers()
+    {
+        await SeedAsync();
+        Assert.Contains(await ReadAsync<UserStripeCustomer>(), c => c.UserId == ErasedUserId);
+
+        await EraseAsync(ErasedUserId);
+
+        var remaining = await ReadAsync<UserStripeCustomer>();
+        Assert.DoesNotContain(remaining, c => c.UserId == ErasedUserId);
+        Assert.Equal("cus_kept_bystander", Assert.Single(remaining, c => c.UserId == BystanderUserId).StripeCustomerId);
     }
 
     private async Task EraseAsync(string userId)
@@ -171,6 +194,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
             new CreditAccountRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
+            new UserStripeCustomerRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),
@@ -184,9 +208,12 @@ public sealed class SubjectResidueErasureTests : IDisposable
             new UserNotificationRepository(ctx),
             new DeadLetterRepository(ctx),
             new OutboxMessageRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
             _refreshTokenService.Object,
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
+            Mock.Of<IAppConfigurationProvider>(),
+            new ErasureAttempt(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(
@@ -235,6 +262,13 @@ public sealed class SubjectResidueErasureTests : IDisposable
         ctx.Add(NewPhoto(ErasedOrderId, ErasedPhotoOriginalName, ErasedPhotoNotes, ErasedEmployeeId));
         ctx.Add(NewPhoto(BystanderOrderId, BystanderPhotoOriginalName, "Nothing to report.", BystanderEmployeeId));
 
+        // Its own code: the order factory above already seeds the CZK row.
+        var currency = Currency.Create("XEU", "€", "Erasure euro");
+        currency.Id = "currency-xeu-erase-res";
+        ctx.Add(currency);
+        ctx.Add(UserStripeCustomer.Create(ErasedUserId, currency.Id, "cus_erased_subject"));
+        ctx.Add(UserStripeCustomer.Create(BystanderUserId, currency.Id, "cus_kept_bystander"));
+
         await ctx.CommitAsync(CancellationToken.None);
     }
 
@@ -277,7 +311,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {

@@ -13,7 +13,8 @@ public interface IGdprExportService
 {
     /// <summary>
     /// Aggregates profile + address + employee + orders + documents + invoices
-    /// + consents into a <see cref="GdprExportDto"/>. <paramref name="exportedBy"/>
+    /// + consents + the customer's own audit trail (ADR-0062 D5) into a
+    /// <see cref="GdprExportDto"/>. <paramref name="exportedBy"/>
     /// is recorded in the export metadata (user's own email for self-export,
     /// <c>admin:&lt;email&gt;</c> for admin export).
     /// </summary>

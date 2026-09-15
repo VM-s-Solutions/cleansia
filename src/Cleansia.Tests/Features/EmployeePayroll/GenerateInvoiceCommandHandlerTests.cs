@@ -1,10 +1,9 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
-using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
-using Cleansia.TestUtilities.MockDataFactories.Currencies;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Moq;
 
@@ -21,31 +20,21 @@ public class GenerateInvoiceCommandHandlerTests
     private const string EmployeeId = PayrollMockFactory.EmployeeId;
     private const string PayPeriodId = PayrollMockFactory.PayPeriodId;
 
-    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
-    private readonly Mock<ICurrencyResolutionService> _currencyResolution = new();
     private readonly Mock<IEmployeeInvoiceRepository> _invoiceRepository = new();
     private readonly Mock<IOrderEmployeePayRepository> _orderPayRepository = new();
     private readonly Mock<IPayoutReferenceAllocator> _payoutReferenceAllocator = new();
 
-    private readonly Currency _currency = CurrencyMockFactory.Generate();
-
     public GenerateInvoiceCommandHandlerTests()
     {
-        _currency.Id = PayrollMockFactory.CurrencyId;
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
-        _currencyResolution
-            .Setup(s => s.ResolveCurrencyCodeForEmployeeAsync(EmployeeId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_currency);
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestInvoiceNumber));
     }
 
     private GenerateInvoice.Handler CreateHandler() => new(
-        _currencyRepository.Object,
-        _currencyResolution.Object,
         _invoiceRepository.Object,
         _orderPayRepository.Object,
         _payoutReferenceAllocator.Object);
@@ -147,6 +136,32 @@ public class GenerateInvoiceCommandHandlerTests
         Assert.Equal(0m, added!.TotalAmount);
     }
 
+    /// <summary>
+    /// The invoice number is a per-company series with the same yearly cap as the variable symbol, so
+    /// its refusal must be the handler's refusal: no row is staged and no pay row is assigned to a
+    /// document that does not exist, or the pay would be invoiced-without-an-invoice forever.
+    /// </summary>
+    [Fact]
+    public async Task A_Refused_Invoice_Number_Refuses_The_Command_And_Stages_Nothing()
+    {
+        var pays = new[] { PayrollMockFactory.OrderPay(basePay: 100m), PayrollMockFactory.OrderPay(basePay: 50m) };
+        ArrangeOrderPays(pays);
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<string>(new Error(
+                nameof(EmployeeInvoice.InvoiceNumber),
+                BusinessErrorMessage.InvoiceReferenceCapacityExhausted)));
+
+        var result = await CreateHandler().Handle(
+            new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(nameof(EmployeeInvoice.InvoiceNumber), result.Error!.Code);
+        Assert.Equal(BusinessErrorMessage.InvoiceReferenceCapacityExhausted, result.Error.Message);
+        _invoiceRepository.Verify(r => r.Add(It.IsAny<EmployeeInvoice>()), Times.Never);
+        Assert.All(pays, p => Assert.Null(p.EmployeeInvoiceId));
+    }
+
     // PayrollMockFactory derives TotalPay from the components, so a pay where the min/max clamp
     // fired (TotalPay < components sum) has to be created directly.
     private static OrderEmployeePay ClampedOrderPay(
@@ -155,6 +170,7 @@ public class GenerateInvoiceCommandHandlerTests
             orderId: $"order-{Guid.NewGuid():N}",
             employeeId: EmployeeId,
             payPeriodId: PayPeriodId,
+            currencyId: PayrollMockFactory.CurrencyId,
             basePay: basePay,
             extrasPay: extrasPay,
             expensesPay: expensesPay,

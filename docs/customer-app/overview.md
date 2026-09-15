@@ -1,105 +1,201 @@
 # Customer App Overview
 
-The **Customer App** (`cleansia.app`) is the public-facing application where customers browse cleaning services, place orders, make payments, and track their order status. It is the only app in the monorepo that supports **Server-Side Rendering (SSR)**.
+The **Customer App** (`apps/cleansia.app`, Nx project `cleansia.app`) is the public-facing application
+where customers choose a market, browse the catalogue, book, pay, track orders, run disputes, hold a
+Cleansia Plus membership and collect rewards. It is the only app in the monorepo that supports
+**Server-Side Rendering (SSR)**, and the only one with anonymous surfaces.
 
 ## Purpose
 
-Provide a seamless booking experience for cleaning services, allowing both authenticated users and guests to place and track orders.
+Provide the booking experience for cleaning services to both signed-in customers and guests: a guest
+can browse, quote, book end to end and track an order by number + e-mail; an account adds order
+history, saved addresses, disputes, Plus, recurring schedules and rewards.
 
 ## Key Features
 
-| Feature          | Description                                                                                                                                                                                                                 |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Home page        | Landing page with "What you get with our service" benefits section (Less worries, More time, Professional approach, Clean home), "How it works" (6 booking-flow steps), FAQ (6 questions), "Why Choose Us" section, and CTA |
-| Services catalog | Browse available cleaning services and packages                                                                                                                                                                             |
-| Order wizard     | Multi-step booking flow (services, address, date/time, payment, review)                                                                                                                                                     |
-| Checkout         | Stripe card payments or cash-on-delivery                                                                                                                                                                                    |
-| Order tracking   | Anonymous order lookup by order number + email                                                                                                                                                                              |
-| My Orders        | Authenticated order history with detail view and rebook                                                                                                                                                                     |
-| Disputes         | Submit and track order disputes                                                                                                                                                                                             |
-| Profile          | Manage account details (address form uses reactive FormGroup with country dropdown and validation)                                                                                                                          |
-| Authentication   | Email/password login, Google OAuth, registration, email confirmation (6-digit code input)                                                                                                                                   |
-| GDPR             | Cookie consent and data management                                                                                                                                                                                          |
+| Feature | Description |
+| --- | --- |
+| Home page | Landing page: hero, the quick quote with its market chip, the catalogue strips, "What you get", "How it works", the rules card (the market's apology credit formatted from `noShowCredit`, or the refund-only sentence), FAQ, the Plus teaser and CTA |
+| Market | A market selector (navbar pill, mobile-menu row, footer — drawn only with two or more markets) and a "CZ · CZK" chip beside the quick quote (a control with two or more markets, a static label with one). The choice lives in **one cookie**, `preferred_market` (ISO alpha-3, one year, `SameSite=Lax`), so SSR and the browser resolve the same market; every pre-address surface sends its `countryId` |
+| Services catalogue | `/services` — services, packages and extras priced in the chosen market, labelled from each payload's `currencyCode` |
+| Order wizard | `/order` — services, address, date/time, Plus step, payment, review. Public: a guest books end to end. From the address step on the address's country decides the price; the Plus step keeps the chosen market |
+| Checkout | Stripe card payments or cash; `/checkout/success` and `/checkout/cancel` are the two URLs Stripe returns to |
+| Order tracking | `/track-order` — anonymous lookup by order number + e-mail |
+| My Orders | `/orders`, `/orders/:orderId` — history, detail, rebook (auth) |
+| Disputes | `/disputes` — file and follow a dispute (auth) |
+| Cleansia Plus | `/plus` — the one public Plus page: benefits and the plans priced in the chosen market for everyone, the management panel on top for a member (`/membership` redirects here; `/membership/welcome` is the post-purchase page) |
+| Recurring bookings | `/membership/recurring`, `…/create`, `…/:id` — a member's schedules (create and edit gated by `customerMembershipGuard`; list, pause and delete are not) |
+| Rewards | `/rewards`, `/rewards/activity` — points, tiers and the tier floor line (shown only when the market's currency is the platform default), referral code |
+| Profile | `/profile` (account, language, notification preferences), `/saved-addresses` |
+| Authentication | `/login`, `/register`, `/r/:code` (referral landing), `/confirm-email` (6-digit code), `/forgot-password`; e-mail + password, Google and Apple sign-in (buttons hidden when the client id is not configured) |
+| Legal | `/terms` and `/privacy` — the stored document in force for the chosen market and the UI language, fetched from `GET api/Legal/GetDocument` and rendered with its title, effective date and version (`yyyy-MM-dd`; the currency code filled in from the market — ADR-0063); `/gdpr` (cookie consent and data requests) |
 
-## SSR
+## SSR {#ssr}
 
-The customer app uses `@angular/ssr` for server-side rendering. Key SSR files:
+The app uses `@angular/ssr`. Key files under `apps/cleansia.app/src/`:
 
-- `main.server.ts` -- Server bootstrap
-- `app.config.server.ts` -- Server providers
-- `app.routes.server.ts` -- Server route rendering strategy
+- `main.server.ts` — server bootstrap
+- `app/app.config.server.ts` — server providers
+- `app/app.routes.server.ts` — the render mode per route: `''`, `services`, `terms`, `privacy` and
+  `not-found` are `RenderMode.Server` (rendered on request — they need API data for SEO); everything
+  else is `RenderMode.Client`. The legal pages are `Server`, not `Prerender`, because prerendering
+  needs the builder's `outputMode`, without which the engine answers a Prerender route with a 404.
+
+**The server sees only the request.** Two cookies decide what it renders: the language cookie and the
+market cookie `preferred_market`. `initializeMarket` (an `APP_INITIALIZER`) runs on both branches —
+the server reads the cookie header, the browser reads `document.cookie` — resolves the same value
+against the same `Market/GetOverview` list and issues the same catalogue URLs, so the first client
+render equals the server's. It never throws: a failed list is the no-market shape (no chip, no
+selector, no `countryId` sent, nothing persisted, retried on the next navigation), not a failed
+render.
+
+**What the transfer cache serves, and what it never does.** `provideClientHydration(withEventReplay())`
+transfers the server's HTTP responses into the document, and Angular skips any request sent
+`withCredentials`. `CustomerAuthInterceptorFn` sends credentials only on a state-changing method and
+on a call made with a session, so:
+
+- an **anonymous own-API GET** — `Market/GetOverview`, the `Service|Package|Extra/GetOverview`
+  strips, `Membership/GetPlans`, `Country/GetPropertySizes`, `Country/GetServiced`,
+  `Legal/GetDocument` — is fetched once on the server and **served from the document on bootstrap**;
+  the browser does not refetch it;
+- a **session-bearing GET** (the same catalogue call for a signed-in customer, `GetMine`, orders,
+  profile) carries the cookie, is **never transferred** and is re-fetched by the browser. That is the
+  property that keeps one user's response out of another's document — the reason the cache was off
+  between 2026-08-28 and the 20.3.25/20.3.27 fixes.
 
 ::: warning
-All browser API access (`localStorage`, `window`, `sessionStorage`) is wrapped with `isPlatformBrowser()` checks throughout the customer app features.
+All browser API access (`localStorage`, `window`, `document`) is wrapped with `isPlatformBrowser()`
+checks. The market preference is the exception that proves the rule: it lives in a cookie **and
+nothing else**, because a second store the server cannot read is a hydration mismatch waiting for a
+cookie expiry ([ADR-0058](/decisions/adr-0058) D3).
 :::
 
 ## Route Structure
 
+`app/app.routes.ts`, top to bottom (order is behaviour — the literal `orders/lookup` redirects sit
+above the guarded `orders` route so they keep winning the match):
+
 ```
-/                     # Home page
-/services             # Services catalog
-/login                # Login (guest-only guard)
-/register             # Registration (guest-only guard)
-/confirm-email        # Email confirmation
-/forgot-password      # Password reset (guest-only guard)
-/order                # Order wizard
-/orders               # My orders list (auth guard)
-/orders/:id           # Order detail (auth guard)
-/track-order          # Anonymous order tracking (public)
-/checkout/success     # Payment success page
-/checkout/cancel      # Payment cancelled page
-/profile              # User profile (auth guard)
-/disputes             # Dispute management (auth guard)
-/gdpr                 # GDPR / cookie management
-/terms                # Terms of service
-/privacy              # Privacy policy
-/not-found            # 404 page
+/                              Home (public, SSR)
+/services                      Services catalogue (public, SSR)
+/plus                          Cleansia Plus — public page + member management panel
+/login                         Login (customerGuestGuard)
+/register                      Registration (customerGuestGuard)
+/r/:code                       Referral landing — registration with the code pre-applied (customerGuestGuard)
+/confirm-email                 E-mail confirmation
+/forgot-password               Password reset (customerGuestGuard)
+/track-order                   Anonymous order tracking (public)
+/order                         Order wizard (public — Order/CreateOrder is [AllowAnonymous])
+/orders/lookup                 → redirect /track-order (pathMatch full)
+/orders/lookup/:orderId        → redirect /track-order (pathMatch full)
+/orders                        My orders (customerAuthGuard)
+/orders/:orderId               Order detail (customerAuthGuard)
+/profile                       Profile (customerAuthGuard)
+/saved-addresses               Saved addresses (customerAuthGuard)
+/disputes                      Disputes (customerAuthGuard)
+/rewards                       Rewards (customerAuthGuard)
+/rewards/activity              Rewards activity (customerAuthGuard)
+/membership                    → redirect /plus (customerAuthGuard on the parent)
+/membership/subscribe          → redirect /plus
+/membership/welcome            Post-purchase page (Stripe Checkout's success URL)
+/membership/recurring          Recurring bookings list
+/membership/recurring/create   Create schedule (customerMembershipGuard)
+/membership/recurring/:id      Edit schedule (customerMembershipGuard)
+/checkout                      → redirect / (a namespace, not a page)
+/checkout/success              Payment success
+/checkout/cancel               Payment cancelled
+/gdpr                          Cookie consent / data requests
+/terms                         Terms of service (SSR)
+/privacy                       Privacy policy (SSR)
+/not-found                     The customer app's own 404 (SSR)
+/**                            → redirect /not-found
 ```
+
+Route path constants come from `CleansiaCustomerRoute` in `@cleansia/services`; `checkout`, `terms`
+and `privacy` are literal strings in the routes file.
 
 ## Feature Libraries
 
-Each feature is a separate Nx library under `libs/cleansia-customer-features/`:
+Sixteen Nx libraries under `libs/cleansia-customer-features/`, one per feature, each exporting its
+routes from `src/lib/lib.routes.ts`:
 
-| Library            | Import Path                           | Description                  |
-| ------------------ | ------------------------------------- | ---------------------------- |
-| `home`             | `@cleansia-customer/home`             | Landing page                 |
-| `services-catalog` | `@cleansia-customer/services-catalog` | Service browsing             |
-| `login`            | `@cleansia-customer/login`            | Authentication               |
-| `register`         | `@cleansia-customer/register`         | Account creation             |
-| `confirm-email`    | `@cleansia-customer/confirm-email`    | Email verification           |
-| `forgot-password`  | `@cleansia-customer/forgot-password`  | Password reset               |
-| `order-wizard`     | `@cleansia-customer/order-wizard`     | Booking flow                 |
-| `orders`           | `@cleansia-customer/orders`           | Order list, detail, tracking |
-| `checkout`         | `@cleansia-customer/checkout`         | Payment result pages         |
-| `profile`          | `@cleansia-customer/profile`          | Account management           |
-| `disputes`         | `@cleansia-customer/disputes`         | Dispute management           |
-| `gdpr`             | `@cleansia-customer/gdpr`             | Cookie/data consent          |
-| `legal-pages`      | `@cleansia-customer/legal-pages`      | Terms & privacy              |
+| Library | Import path | What it owns |
+| --- | --- | --- |
+| `home` | `@cleansia-customer/home` | Landing page: quick quote + market chip, catalogue strips, rules card, FAQ, Plus teaser |
+| `services-catalog` | `@cleansia-customer/services-catalog` | `/services` |
+| `plus` | `@cleansia-customer/plus` | `/plus` — the public Plus page and the member panel |
+| `order-wizard` | `@cleansia-customer/order-wizard` | `/order` — the booking flow, quote, Plus step, payment |
+| `checkout` | `@cleansia-customer/checkout` | `/checkout/success`, `/checkout/cancel` |
+| `orders` | `@cleansia-customer/orders` | `/orders`, `/orders/:orderId`, the `TrackOrderComponent` behind `/track-order` |
+| `disputes` | `@cleansia-customer/disputes` | `/disputes` |
+| `profile` | `@cleansia-customer/profile` | `/profile`, `/saved-addresses`, and the `/membership/*` routes (welcome page, recurring mount, the two redirects to `/plus`) |
+| `recurring-bookings` | `@cleansia-customer/recurring-bookings` | The schedules list and the create/edit wizard, mounted under `/membership/recurring` |
+| `rewards` | `@cleansia-customer/rewards` | `/rewards`, `/rewards/activity` |
+| `login` | `@cleansia-customer/login` | `/login` |
+| `register` | `@cleansia-customer/register` | `/register` and the `/r/:code` referral landing |
+| `confirm-email` | `@cleansia-customer/confirm-email` | `/confirm-email` |
+| `forgot-password` | `@cleansia-customer/forgot-password` | `/forgot-password` |
+| `gdpr` | `@cleansia-customer/gdpr` | `/gdpr` |
+| `legal-pages` | `@cleansia-customer/legal-pages` | `/terms` and `/privacy` — a fetch-and-render of the stored document in force (`[innerHTML]` through the sanitizer; the copy lives in the seed files, not the locale JSON) |
+
+The 404 (`CustomerNotFoundComponent`) lives in the app itself, under `app/components/not-found/`,
+wrapping the shared component with this app's ways out of it.
 
 ## Guards
 
-| Guard                | Behavior                                    |
-| -------------------- | ------------------------------------------- |
-| `customerAuthGuard`  | Redirects unauthenticated users to `/login` |
-| `customerGuestGuard` | Redirects authenticated users to `/orders`  |
+All three live in `@cleansia/customer-services` (`libs/core/customer-services/src/lib/guards/`) and
+return `true` on the server branch — a guard that redirects during SSR would render the login page
+for every crawler.
+
+| Guard | Behaviour |
+| --- | --- |
+| `customerAuthGuard` | Redirects an unauthenticated visitor to `/login` |
+| `customerGuestGuard` | Redirects a signed-in customer away from login/register to `/orders` |
+| `customerMembershipGuard` | Refuses the recurring create/edit screens without an active membership — mirrors the server's `recurring_booking.membership_required`, and deliberately does **not** guard the list, pause or delete, so a lapsed member keeps control of the schedules they have |
 
 ## State Management
 
-The customer app uses NgRx with `customerReducers` and `customerEffects`:
+NgRx with `customerReducers` / `customerEffects` from `@cleansia/customer-stores`
+(`libs/data-access/customer-stores/`), registered with strict immutability checks. Six slices:
 
-- **Customer user store** -- Current user profile
-- **Customer services store** -- Available services list
-- **Customer packages store** -- Available packages list
+- **`customerUser`** — the current user profile.
+- **`customerLoading`** — the global loading flag the interceptor chain drives.
+- **`customerCatalog`** — services, packages and extras for the current market.
+- **`customerOrder`** — order list and detail.
+- **`customerDispute`** — the customer's disputes.
+- **`customerMarket`** — `markets[]` from `Market/GetOverview`, `selectedIsoCode`, `loadFailed`.
+  Resolved by the `initializeMarket` `APP_INITIALIZER` on both branches (request cookie on the server,
+  `document.cookie` in the browser), persisted only by the browser branch, never throws, retried on
+  the next `NavigationEnd` while `loadFailed`. Selectors: `selectMarkets`, `selectMarket`,
+  `selectMarketCountryId` (null when unresolved — every reader then sends no `countryId`),
+  `selectMarketCurrencyCode`, `selectMarketNoShowCredit`, `selectMarketInsuranceCoverageAmount`,
+  `selectMarketLoadFailed`, `selectHasMarketChoice` (two or more markets — what draws the selector).
 
-Feature-level state is managed via signal-based Facades (e.g., `OrderWizardFacade`, `LoginFacade`).
+**The market cookie.** `preferred_market` holds the ISO alpha-3 code of the chosen market
+(`path=/; max-age=31536000; SameSite=Lax`), written by the market switcher and by `initializeMarket`
+after a successful resolution, read by both branches. A stored code is only ever **compared** against
+the list — a delisted or junk value falls to the `isDefault` market (the configuration flagged
+`IsDefaultMarket`, CZE today), then the first listed market, and is overwritten; the text is never
+rendered or sent. The code, not the id, because the DEV reseed re-mints ids.
+
+Feature-level state is in signal-based facades (`OrderWizardFacade`, `LoginFacade`,
+`MembershipFacade`, …) that extend `UnsubscribeControlDirective`; components hold no business logic.
 
 ## API Layer
 
-All API calls go through `CustomerClient` (NSwag-generated), which contains sub-clients:
+Every call goes through `CustomerClient` (`@cleansia/customer-services`, NSwag-generated — never
+hand-edited; regenerate with `npm run generate-customer-client`), which exposes one sub-client per
+controller: `authClient`, `userClient`, `orderClient`, `addressSearchClient`, `countryClient`,
+`currencyClient`, `languageClient`, `packageClient`, `serviceClient`, `extraClient`, `paymentClient`,
+`gdprClient`, `consentsClient`, `disputeClient`, `savedAddressClient`, `loyaltyClient`,
+`marketClient`, `creditClient`, `promoCodeClient`, `referralClient`, `membershipClient`,
+`notificationPreferencesClient`, `recurringBookingClient` and `apiClient`.
 
-- `userClient` -- User profile operations
-- `orderClient` -- Order CRUD and lookup
-- `paymentClient` -- Stripe payment session creation
-- `authClient` -- Login, register, Google OAuth
+The base URL is the `CUSTOMER_API_BASE_URL` token, pointing at the `Cleansia.Web.Customer` host
+(`:5003` locally). The interceptor chain is composed in `app/http-interceptors.ts` — common, then
+customer-services (auth: CSRF echo and `withCredentials` where the cookie is needed; the error
+interceptor resolving backend keys under `api.*`), then the store interceptors — and its order is
+pinned by `http-interceptors.spec.ts`.
 
-The base URL is provided via the `CUSTOMER_API_BASE_URL` injection token, which points to the `Cleansia.Web.Customer` backend.
+→ [Authentication](/customer-app/authentication) · [Business rules — the market](/product/business-rules#market)
+· [API — markets and memberships](/api/markets-and-memberships)

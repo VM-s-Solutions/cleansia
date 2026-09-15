@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import {
   CleansiaButtonComponent,
@@ -14,6 +14,7 @@ import { OrderListItem } from '@cleansia/customer-services';
 import { OrderStatus } from '@cleansia/models';
 import { OrderStatusLabelPipe, OrderStatusSeverityPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -121,7 +122,7 @@ export class OrdersComponent implements OnInit {
    */
   private pluralCategory(count: number): string {
     try {
-      return new Intl.PluralRules(this.getLocale()).select(count);
+      return new Intl.PluralRules(localeFor(this.translate.currentLang)).select(count);
     } catch {
       return 'other';
     }
@@ -200,19 +201,8 @@ export class OrdersComponent implements OnInit {
     this.router.navigate(['/order'], { queryParams: { rebook: 'true' } });
   }
 
-  private getLocale(): string {
-    const localeMap: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
-  }
-
   formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString(this.getLocale(), {
+    return new Date(date).toLocaleDateString(localeFor(this.translate.currentLang), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -222,10 +212,6 @@ export class OrdersComponent implements OnInit {
   }
 
   formatPrice(price: number, currency?: { code?: string }): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: currency?.code || 'CZK',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, currency?.code, localeFor(this.translate.currentLang));
   }
 }

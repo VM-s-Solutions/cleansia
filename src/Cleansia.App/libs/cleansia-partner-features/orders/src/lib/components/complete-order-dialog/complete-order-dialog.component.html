@@ -99,22 +99,21 @@
     </div>
 
     <div class="complete-order-dialog__footer">
-      <button
-        pButton
+      <p-button
         type="button"
         [label]="'pages.orders.complete_order.cancel_button' | translate"
-        class="p-button-text p-button-secondary"
-        (click)="onCancel()"
+        [text]="true"
+        severity="secondary"
+        (onClick)="onCancel()"
         [disabled]="loading()"
-      ></button>
-      <button
-        pButton
+      />
+      <p-button
         type="submit"
         [label]="'pages.orders.complete_order.complete_button' | translate"
         icon="pi pi-check"
         [disabled]="form.invalid || loading()"
         [loading]="loading()"
-      ></button>
+      />
     </div>
   </form>
 </div>

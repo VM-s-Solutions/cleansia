@@ -1,11 +1,13 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -43,8 +45,12 @@ public class QuoteOrderSpanCapTests
             .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The pay gate asks in the order's currency, which with no CurrencyId named is the default.
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.DefaultCurrency());
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(),
@@ -137,14 +143,14 @@ public class QuoteOrderSpanCapTests
     /// <summary>Both validators are handed the same catalog under the ids both commands select.</summary>
     private void SeedCatalog(int serviceMinutes, int packageServiceMinutes)
     {
-        var service = Service.Create(CategoryId, "Span Service", "Under test", 1000m, 0m, serviceMinutes);
+        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes);
         service.Id = ServiceId;
 
         var packagedService = Service.Create(
-            CategoryId, "Packaged Service", "Inside the bundle", 500m, 0m, packageServiceMinutes);
+            CategoryId, "Packaged Service", "Inside the bundle", packageServiceMinutes);
         packagedService.Id = $"{ServiceId}-packaged";
 
-        var package = Package.Create("Span Package", "Under test", 500m);
+        var package = Package.Create("Span Package", "Under test");
         package.Id = PackageId;
         package.AddService(packagedService);
 
@@ -165,19 +171,39 @@ public class QuoteOrderSpanCapTests
         return candidates.Where(c => requested.Contains(c.Id)).AsQueryable().BuildMock();
     }
 
+    // Any price at all, in the order's currency: this suite asserts on the SPAN, and an unpriced
+    // catalogue is not bookable.
+    private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
+
     private QuoteOrder.Validator QuoteValidator() =>
-        new(_serviceRepository.Object, _packageRepository.Object, _currencyRepository.Object);
+        new(
+            _serviceRepository.Object,
+            _packageRepository.Object,
+            _currencyRepository.Object,
+            OrderMarketDoubles.Servicing("cz"),
+            OrderMarketDoubles.Trading(Czk),
+            CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
+            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)));
 
     private CreateOrder.Validator CreateValidator() =>
         new(
             _packageRepository.Object,
             _serviceRepository.Object,
-            _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
             _session.Object,
-            PayConfigRepositoryDouble.Covering([ServiceId], [PackageId]));
+            PayConfigRepositoryDouble.Covering(CreateOrderTestData.CurrencyId, [ServiceId], [PackageId]),
+            _currencyRepository.Object,
+            OrderMarketDoubles.AddressIn("cz"),
+            OrderMarketDoubles.Trading(Czk),
+            CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
+            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
+            Mock.Of<IPromoCodeService>(),
+            Mock.Of<IOperatorTenantResolver>(),
+            Mock.Of<ITenantProvider>(),
+            Mock.Of<IUserConsentRepository>(),
+            CreateOrderTestData.Speaking(Constants.Language.English));
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

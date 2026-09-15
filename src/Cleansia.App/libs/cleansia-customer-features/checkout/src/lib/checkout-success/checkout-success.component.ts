@@ -15,6 +15,7 @@ import {
   LookupOrderResponse,
 } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of } from 'rxjs';
@@ -117,21 +118,10 @@ export class CheckoutSuccessComponent implements OnInit {
       .subscribe((result) => this.order.set(result?.orders?.[0] ?? null));
   }
 
-  private getLocale(): string {
-    const map: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return map[this.translate.currentLang] || 'en-US';
-  }
-
   formatDateTime(date: Date | undefined): string {
     if (!date) return '';
     const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleDateString(this.getLocale(), {
+    return d.toLocaleDateString(localeFor(this.translate.currentLang), {
       day: 'numeric',
       month: 'long',
       hour: '2-digit',
@@ -172,11 +162,11 @@ export class CheckoutSuccessComponent implements OnInit {
   });
 
   formatPrice(order: LookupOrderResponse): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: order.currency?.code || 'CZK',
-      minimumFractionDigits: 0,
-    }).format(order.totalPrice ?? 0);
+    return formatMoney(
+      order.totalPrice ?? 0,
+      order.currency?.code,
+      localeFor(this.translate.currentLang),
+    );
   }
 
 }

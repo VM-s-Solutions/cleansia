@@ -14,12 +14,16 @@ struct RewardsTab: View {
     init(
         loyaltyRepository: LoyaltyRepository,
         referralRepository: RewardsReferralRepository,
+        catalogSource: BookingViewModel,
+        marketStore: MarketStore,
         snackbar: SnackbarController,
         onOpenActivity: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: RewardsViewModel(
             loyaltyRepository: loyaltyRepository,
             referralRepository: referralRepository,
+            catalogSource: catalogSource,
+            marketStore: marketStore,
             snackbar: snackbar
         ))
         self.onOpenActivity = onOpenActivity
@@ -62,6 +66,7 @@ struct RewardsTab: View {
         case let .loaded(content):
             RewardsContentView(
                 content: content,
+                tierFloor: vm.tierFloor,
                 onCopyCode: copyCode,
                 onOpenActivity: onOpenActivity
             )
@@ -77,6 +82,8 @@ struct RewardsTab: View {
 
 struct RewardsContentView: View {
     let content: RewardsContent
+    /// The tier floor's label, resolved by the ViewModel from the chosen market (ADR-0058 D4).
+    let tierFloor: TierFloorLabel
     let onCopyCode: (String) -> Void
     let onOpenActivity: () -> Void
 
@@ -90,7 +97,7 @@ struct RewardsContentView: View {
                 TierHeroCard(tier: currentTier, account: content.account)
                 ProgressCard(account: content.account)
                 CurrentPerksCard(perks: content.account.currentPerks)
-                TierLadderCard(tiers: content.tiers, current: currentTier)
+                TierLadderCard(tiers: content.tiers, current: currentTier, floor: tierFloor)
 
                 if let referral = content.referral, !referral.code.isEmpty {
                     InviteFriendsCard(referral: referral, onCopyCode: onCopyCode)
@@ -290,6 +297,7 @@ enum RewardsTierStyle {
                         occurredOn: Date()
                     )]
                 ),
+                tierFloor: .applies(currencyCode: "CZK"),
                 onCopyCode: { _ in },
                 onOpenActivity: {}
             )

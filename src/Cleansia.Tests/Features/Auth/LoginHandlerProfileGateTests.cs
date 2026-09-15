@@ -1,4 +1,5 @@
 using System.Reflection;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
@@ -24,11 +25,20 @@ public class LoginHandlerProfileGateTests
 {
     private const string Audience = JwtAudiences.Customer;
 
+    // The customer and admin logins record a session row and so take the audit context; the partner
+    // login does not. The constructor is filled by parameter type so one helper serves all three.
     private static T Invoke<T>(Type featureType, ITokenService tokenService, IUserRepository repo, object command)
     {
         var handlerType = featureType.GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public)!;
-        var handler = Activator.CreateInstance(
-            handlerType, tokenService, repo, new HostAudienceProvider(Audience))!;
+        var dependencies = new Dictionary<Type, object>
+        {
+            [typeof(ITokenService)] = tokenService,
+            [typeof(IUserRepository)] = repo,
+            [typeof(IHostAudienceProvider)] = new HostAudienceProvider(Audience),
+            [typeof(IAuditContext)] = new AuditContext(),
+        };
+        var constructor = handlerType.GetConstructors().Single();
+        var handler = constructor.Invoke(constructor.GetParameters().Select(p => dependencies[p.ParameterType]).ToArray());
         var handleMethod = handlerType.GetMethod("Handle")!;
         return (T)handleMethod.Invoke(handler, [command, CancellationToken.None])!;
     }

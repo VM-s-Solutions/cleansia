@@ -1,12 +1,15 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -50,6 +53,8 @@ public class CreateMembershipSubscriptionIdempotencyTests
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IStripeClient> _stripe = new();
+    private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = MarketResolution.Resolving();
 
     public CreateMembershipSubscriptionIdempotencyTests()
     {
@@ -65,8 +70,6 @@ public class CreateMembershipSubscriptionIdempotencyTests
         var plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: StripePriceId,
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -75,6 +78,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         _planRepository
             .Setup(r => r.GetByCodeAsync(PlanCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(plan);
+        _priceRepository.PriceIn(plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId);
 
         // Model Stripe's real idempotency: the returned SubscriptionId is derived from the
         // idempotencyAttemptId, so two calls with the SAME attemptId yield the SAME subscription
@@ -95,11 +99,19 @@ public class CreateMembershipSubscriptionIdempotencyTests
             _userRepository.Object,
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
+            _currencyResolution.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
+            CustomerResolver(),
+            new AuditContext(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
+
+    private StripeCustomerResolver CustomerResolver() =>
+        new(new Mock<IUserStripeCustomerRepository>().Object, _membershipRepository.Object, _stripe.Object,
+            NullLogger<StripeCustomerResolver>.Instance);
 
     private static CreateMembershipSubscription.Command ConfirmedCommand(string? token) =>
         new(PlanCode, PaymentMethodConfirmed: true) { IdempotencyToken = token };
@@ -250,6 +262,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         var winnerRow = UserMembership.Create(
             userId: UserId,
             membershipPlanId: "plan-1",
+            currencyId: "currency-czk",
             stripeSubscriptionId: $"sub_tok-{ClientToken}",
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
@@ -293,9 +306,41 @@ public class CreateMembershipSubscriptionIdempotencyTests
 
         Assert.Equal(2, capturedAttemptIds.Count);
         // Defense in depth: with no client token, the fallback is DETERMINISTIC across calls
-        // (derived from stable inputs userId + planCode), NOT a per-call Guid — so even a
+        // (derived from stable inputs userId + planCode + currency), NOT a per-call Guid — so even a
         // not-yet-updated caller's double-tap collapses on the same Stripe key.
         Assert.Equal(capturedAttemptIds[0], capturedAttemptIds[1]);
+        Assert.Equal($"u-{UserId}-p-{PlanCode}-c-CZK", capturedAttemptIds[0]);
+    }
+
+    [Fact]
+    public async Task NullToken_FallbackKey_DiffersPerCurrency_SoACzkAttemptCannotReplayAsEur()
+    {
+        _membershipRepository
+            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null);
+        var eur = MembershipPricingMockFactory.Eur();
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyForCountryAsync("country-svk", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eur);
+        var plan = await _planRepository.Object.GetByCodeAsync(PlanCode, CancellationToken.None);
+        _priceRepository.PriceIn(plan!.Id, eur.Id, "price_eur_1", 7.99m);
+
+        var capturedAttemptIds = new List<string>();
+        _stripe
+            .Setup(c => c.CreateSubscriptionAsync(
+                StripeCustomerId, It.IsAny<string>(), It.IsAny<int>(),
+                Capture.In(capturedAttemptIds), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, string _, int _, string attemptId, CancellationToken _) =>
+                new SubscriptionResult($"sub_{attemptId}", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+
+        await CreateHandler().Handle(ConfirmedCommand(token: null), CancellationToken.None);
+        await CreateHandler().Handle(
+            new CreateMembershipSubscription.Command(PlanCode, PaymentMethodConfirmed: true, CountryId: "country-svk"),
+            CancellationToken.None);
+
+        Assert.Equal(2, capturedAttemptIds.Count);
+        Assert.NotEqual(capturedAttemptIds[0], capturedAttemptIds[1]);
+        Assert.EndsWith("-c-EUR", capturedAttemptIds[1]);
     }
 
     // ── Phase-1 (PaymentMethodConfirmed == false) unchanged: SetupIntent + ephemeral key, no sub ──

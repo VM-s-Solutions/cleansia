@@ -77,13 +77,13 @@ public class AutoCancelStaleRecurringOrders
             var cancelled = 0;
             // Grouped by tenant because the OrderStatusTrack row added below is stamped from the
             // AMBIENT tenant at commit time (CleansiaDbContext.SaveChangesAsync). This sweep carries no
-            // JWT, so without the override every cancellation row would land with a null TenantId
+            // JWT, so without the override every cancellation row would fail its NOT NULL tenant
             // whatever tenant the order belongs to. CleanupStalePendingOrders — named in its own header
             // as the exact complement of this sweep — is the reference shape.
             foreach (var tenantGroup in stale.GroupBy(o => o.TenantId ?? string.Empty))
             {
-                // Reset before each iteration so a non-empty override from the previous group doesn't
-                // leak into a single-tenant (empty key) group that follows it.
+                // Reset before each iteration so the previous group's override never outlives its
+                // group: what the next commit stamps is decided here, not by whatever ran last.
                 tenantProvider.ClearTenantOverride();
                 if (!string.IsNullOrEmpty(tenantGroup.Key))
                 {

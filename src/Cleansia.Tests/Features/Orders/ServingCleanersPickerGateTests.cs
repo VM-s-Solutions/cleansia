@@ -59,7 +59,7 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
         pragma.ExecuteNonQuery();
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 
@@ -125,7 +125,7 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
         await HandleAsync();
 
         _membershipRepository.Verify(
-            r => r.GetActiveForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()), Times.Once);
+            r => r.GetEntitledForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ── D12.3: a cleaner who left the platform is not offered. ───────────────────────────────────
@@ -207,7 +207,7 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
         return new CleansiaDbContext(
             options.Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private GetMyServingCleaners.Handler NewHandler(CleansiaDbContext ctx) =>
@@ -231,11 +231,12 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
         var membership = UserMembership.Create(
             userId: CustomerId,
             membershipPlanId: "plan-plus",
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_picker",
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 
@@ -286,7 +287,6 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
             customerAddress: Address.Create("Picker St 1", "Praha", "14000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-3),
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

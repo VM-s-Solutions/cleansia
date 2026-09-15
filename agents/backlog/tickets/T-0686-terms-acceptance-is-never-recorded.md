@@ -1,15 +1,15 @@
 ---
 id: T-0686
 title: Nothing records that a customer accepted the terms, or which version they accepted
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-14
 depends_on: []
 blocks: []
 stories: []
-adrs: []
+adrs: [ADR-0062]
 layers: [backend]
 security_touching: true
 manual_steps: []
@@ -61,3 +61,15 @@ evidence.
 
 - 2026-09-07 — found while establishing whether a customer audit log exists. Filed separately
   because it is smaller, more urgent, and does not depend on the audit-log design.
+- 2026-09-13 — **absorbed by ADR-0062 D4 / T-0732 (T-AUD-3)**, shipped on
+  `fix/remove-membership-free-trial`. AC1: `Register.Command.TermsAccepted`, and the server grants
+  `TermsOfService` + `PrivacyPolicy` with `UserConsents.DocumentVersion`, IP and device on email,
+  Google and Apple sign-up; an email registration also leaves a `customer.account.register` audit row
+  with both versions. AC2: `LegalDocumentVersions.CustomerTerms` / `.CustomerPrivacy` =
+  `"2026-09-draft"`, pinned to the legal pages' `terms_page.version` / `privacy_page.version` by the
+  parity checker; the handle becomes ADR-0041's `AgreementVersion.Version` when those tables land.
+  AC3: the admin trail (`/audit-log/customers`, the timeline on `/customers/:userId`) and the subject
+  export. The open decisions: (1) a dated string (Q-AUD-L2 default); (2) consent stays
+  overwrite-in-place — the `customer.consent.*` audit rows are the history; (3) no backfill, no
+  re-prompt, legacy rows `null` = "version unknown" (Q-AUD-L2 default). Mobile clients still send
+  nothing and are recorded as *not asserted*, never refused (Q-AUD-L4 default).

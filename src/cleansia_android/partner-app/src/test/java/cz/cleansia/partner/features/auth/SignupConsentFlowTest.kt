@@ -23,6 +23,7 @@ import cz.cleansia.partner.api.model.UserConsentDto
 import cz.cleansia.partner.api.model.WithdrawConsentCommand
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.consent.GdprConsentClient
+import cz.cleansia.partner.core.market.MarketRepository
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.settings.AppSettings
 import cz.cleansia.partner.core.settings.AppSettingsRepository
@@ -107,7 +108,9 @@ class SignupConsentFlowTest {
      */
     private fun TestScope.register(acceptTerms: Boolean, address: String = email) {
         val repository = mockk<AuthRepository>(relaxed = true)
-        coEvery { repository.register(any(), any(), any(), any(), any()) } returns registerResult
+        coEvery { repository.register(any(), any(), any(), any(), any(), any()) } returns registerResult
+        val marketRepository = mockk<MarketRepository>()
+        coEvery { marketRepository.getMarkets() } returns ApiResult.Success(emptyList())
 
         val vm = RegisterViewModel(
             repository,
@@ -115,6 +118,7 @@ class SignupConsentFlowTest {
             appSettingsRepository,
             snackbar,
             signupConsent,
+            marketRepository,
             context,
         )
         vm.onFirstNameChange("Ada")

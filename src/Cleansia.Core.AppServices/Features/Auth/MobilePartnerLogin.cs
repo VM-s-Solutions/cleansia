@@ -1,7 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Features.Auth.Validators;
+using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
@@ -24,8 +25,9 @@ public class MobilePartnerLogin
         public Validator(
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
-            IRefreshTokenService refreshTokenService)
-            : base(userRepository, refreshTokenRepository, refreshTokenService,
+            IRefreshTokenService refreshTokenService,
+            IAuditContext auditContext)
+            : base(userRepository, refreshTokenRepository, refreshTokenService, auditContext,
                 c => c.Email, c => c.Password, c => c.RememberMe, c => c.TrustedDeviceToken)
         {
         }

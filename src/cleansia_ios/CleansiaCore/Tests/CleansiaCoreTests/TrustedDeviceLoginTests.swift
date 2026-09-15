@@ -93,18 +93,19 @@ final class TrustedDeviceLoginTests: XCTestCase {
         let client = try makeClient(store: store)
 
         _ = await client.register(
-            email: "a@b.cz", password: "pw", firstName: "Ada", lastName: "Lovelace", language: "en"
+            email: "a@b.cz", password: "pw", firstName: "Ada", lastName: "Lovelace", language: "en",
+            countryId: nil, termsAccepted: nil
         )
         _ = await client.confirmEmail(email: "a@b.cz", code: "123456")
         _ = await client.resendConfirmation(email: "a@b.cz", language: "en")
         _ = await client.forgotPassword(email: "a@b.cz", language: "en")
         _ = await client.googleAuth(GoogleAuthRequest(
             token: "id-token", googleId: "g-1", email: "a@b.cz",
-            firstName: "Ada", lastName: "Lovelace", termsAccepted: true
+            firstName: "Ada", lastName: "Lovelace", termsAccepted: true, countryId: nil
         ))
         _ = await client.appleAuth(AppleAuthRequest(
             identityToken: "identity", rawNonce: "nonce",
-            firstName: "Ada", lastName: "Lovelace", termsAccepted: true
+            firstName: "Ada", lastName: "Lovelace", termsAccepted: true, countryId: nil
         ))
         _ = await client.refresh(refreshToken: storedRefresh)
         await client.logout()

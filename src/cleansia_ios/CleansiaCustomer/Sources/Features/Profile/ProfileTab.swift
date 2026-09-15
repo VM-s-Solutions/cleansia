@@ -5,6 +5,8 @@ struct ProfileTab: View {
     @ObservedObject var profileVM: ProfileViewModel
     @ObservedObject var membershipVM: MembershipViewModel
     @ObservedObject var preferences: CustomerPreferencesModel
+    @ObservedObject var marketStore: MarketStore
+    @Environment(\.locale) private var locale
     let avatarCache: RemoteImageCache
     let onOpen: (ShellRoute) -> Void
     let onSignOut: () -> Void
@@ -105,16 +107,30 @@ struct ProfileTab: View {
                     tag: preferences.languageTag
                 ),
                 route: .language
-            ),
-            ProfileRowItem(
-                icon: "moon",
-                label: L10n.Profile.rowAppearance,
-                value: CustomerPreferencesLabels.themeLabel(preferences.theme),
-                route: .appearance
-            ),
-            ProfileRowItem(icon: "lock", label: L10n.Profile.rowSecurity, route: .security),
-            ProfileRowItem(icon: "laptopcomputer.and.iphone", label: L10n.Profile.rowDevices, route: .devices)
+            )
         ]
+            + marketRow
+            + [
+                ProfileRowItem(
+                    icon: "moon",
+                    label: L10n.Profile.rowAppearance,
+                    value: CustomerPreferencesLabels.themeLabel(preferences.theme),
+                    route: .appearance
+                ),
+                ProfileRowItem(icon: "lock", label: L10n.Profile.rowSecurity, route: .security),
+                ProfileRowItem(icon: "laptopcomputer.and.iphone", label: L10n.Profile.rowDevices, route: .devices)
+            ]
+    }
+
+    /// Only where there is a choice to make — with one market or none, Preferences is the shipped list.
+    private var marketRow: [ProfileRowItem] {
+        guard marketStore.state.offersChoice, let selected = marketStore.selected else { return [] }
+        return [ProfileRowItem(
+            icon: "map",
+            label: L10n.Profile.rowMarket,
+            value: selected.localizedName(for: locale),
+            route: .market
+        )]
     }
 
     private var supportRows: [ProfileRowItem] {

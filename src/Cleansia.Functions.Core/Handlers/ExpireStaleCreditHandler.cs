@@ -28,8 +28,8 @@ public class ExpireStaleCreditHandler(
         if (result.IsSuccess && result.Value != null)
         {
             logger.LogInformation(
-                "ExpireStaleCredit completed; took {Total} across {Count} account(s)",
-                result.Value.TotalExpired,
+                "ExpireStaleCredit completed; took {TotalByCurrency} across {Count} account(s)",
+                string.Join(", ", result.Value.TotalExpiredByCurrencyId.Select(kv => $"{kv.Value} ({kv.Key})")),
                 result.Value.AccountsExpired);
         }
         else

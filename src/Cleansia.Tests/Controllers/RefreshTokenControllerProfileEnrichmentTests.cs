@@ -15,13 +15,14 @@ namespace Cleansia.Tests.Controllers;
 /// <summary>
 /// ADR-0001 D5 §3 — the per-host refresh call sites enrich the
 /// <see cref="RefreshTokenCmd.Command"/> with BOTH <c>RequiredAudience</c> (the host's own) AND
-/// <c>RequiredProfile</c> (the profile the host serves). This is the same command-construction seam
-/// the JWT-enrichment idiom uses (<c>command with { ... }</c>); the gate itself lives in the handler.
-/// Per the frozen mapping:
+/// <c>RequiredProfiles</c> (the profiles the host's sign-in serves). This is the same
+/// command-construction seam the JWT-enrichment idiom uses (<c>command with { ... }</c>); the gate
+/// itself lives in the handler. Per the mapping:
 ///   - Web.Customer / Mobile.Customer → (cleansia.customer, Customer)
-///   - Web.Partner / Mobile.Partner   → (cleansia.partner, Employee)
-///   - Web.Admin                      → (cleansia.admin, Administrator)  (already correct)
-/// These capture the enriched command per host, so each host passes its <c>RequiredProfile</c>.
+///   - Web.Partner / Mobile.Partner   → (cleansia.partner / cleansia.mobile, Employee or Administrator —
+///                                       what <c>PartnerLogin</c> admits)
+///   - Web.Admin                      → (cleansia.admin, Administrator)
+/// These capture the enriched command per host, so each host passes its <c>RequiredProfiles</c>.
 /// </summary>
 public class RefreshTokenControllerProfileEnrichmentTests
 {
@@ -57,7 +58,7 @@ public class RefreshTokenControllerProfileEnrichmentTests
     private static RefreshTokenCmd.Command Body() => new(Token: "raw-token");
 
     [Fact]
-    public async Task WebCustomer_Enriches_RequiredProfile_Customer_And_CustomerAudience()
+    public async Task WebCustomer_Enriches_RequiredProfiles_Customer_And_CustomerAudience()
     {
         var (mediator, captured) = ArrangeMediator();
         var controller = new Cleansia.Web.Customer.Controllers.AuthController(mediator.Object, CookieWriter(), CookieConfig());
@@ -66,12 +67,12 @@ public class RefreshTokenControllerProfileEnrichmentTests
         await controller.RefreshToken(Body(), CancellationToken.None);
 
         Assert.NotNull(captured());
-        Assert.Equal(UserProfile.Customer, captured()!.RequiredProfile);
+        Assert.Equal([UserProfile.Customer], captured()!.RequiredProfiles);
         Assert.Equal(JwtAudiences.Customer, captured()!.RequiredAudience);
     }
 
     [Fact]
-    public async Task MobileCustomer_Enriches_RequiredProfile_Customer_And_CustomerAudience()
+    public async Task MobileCustomer_Enriches_RequiredProfiles_Customer_And_CustomerAudience()
     {
         var (mediator, captured) = ArrangeMediator();
         var controller = new Cleansia.Web.Mobile.Customer.Controllers.AuthController(mediator.Object);
@@ -79,12 +80,12 @@ public class RefreshTokenControllerProfileEnrichmentTests
         await controller.RefreshToken(Body(), CancellationToken.None);
 
         Assert.NotNull(captured());
-        Assert.Equal(UserProfile.Customer, captured()!.RequiredProfile);
+        Assert.Equal([UserProfile.Customer], captured()!.RequiredProfiles);
         Assert.Equal(JwtAudiences.Customer, captured()!.RequiredAudience);
     }
 
     [Fact]
-    public async Task WebPartner_Enriches_RequiredProfile_Employee_And_PartnerAudience()
+    public async Task WebPartner_Enriches_RequiredProfiles_Employee_Or_Administrator_And_PartnerAudience()
     {
         var (mediator, captured) = ArrangeMediator();
         var controller = new Cleansia.Web.Partner.Controllers.AuthController(mediator.Object, CookieWriter(), CookieConfig());
@@ -93,12 +94,12 @@ public class RefreshTokenControllerProfileEnrichmentTests
         await controller.RefreshToken(Body(), CancellationToken.None);
 
         Assert.NotNull(captured());
-        Assert.Equal(UserProfile.Employee, captured()!.RequiredProfile);
+        Assert.Equal([UserProfile.Employee, UserProfile.Administrator], captured()!.RequiredProfiles);
         Assert.Equal(JwtAudiences.Partner, captured()!.RequiredAudience);
     }
 
     [Fact]
-    public async Task MobilePartner_Enriches_RequiredProfile_Employee_And_PartnerAudience()
+    public async Task MobilePartner_Enriches_RequiredProfiles_Employee_Or_Administrator_And_MobileAudience()
     {
         var (mediator, captured) = ArrangeMediator();
         var controller = new Cleansia.Web.Mobile.Partner.Controllers.AuthController(mediator.Object);
@@ -106,16 +107,14 @@ public class RefreshTokenControllerProfileEnrichmentTests
         await controller.RefreshToken(Body(), CancellationToken.None);
 
         Assert.NotNull(captured());
-        Assert.Equal(UserProfile.Employee, captured()!.RequiredProfile);
-        // Mobile.Partner keeps its existing audience pin — the (misleadingly named)
-        // JwtAudiences.Mobile constant IS the partner-mobile audience (ADR-0001 D5 §2,
-        // rename is out of scope). The ticket only adds RequiredProfile.
+        Assert.Equal([UserProfile.Employee, UserProfile.Administrator], captured()!.RequiredProfiles);
+        // The (misleadingly named) JwtAudiences.Mobile constant IS the partner-mobile audience
+        // (ADR-0001 D5 §2).
         Assert.Equal(JwtAudiences.Mobile, captured()!.RequiredAudience);
     }
 
-    // Admin is unchanged: it already pins Administrator + the Admin audience.
     [Fact]
-    public async Task Admin_StillEnriches_RequiredProfile_Administrator_And_AdminAudience()
+    public async Task Admin_Enriches_RequiredProfiles_Administrator_And_AdminAudience()
     {
         var (mediator, captured) = ArrangeMediator();
         var controller = new Cleansia.Web.Admin.Controllers.AdminAuthController(mediator.Object, CookieWriter(), CookieConfig());
@@ -124,7 +123,7 @@ public class RefreshTokenControllerProfileEnrichmentTests
         await controller.RefreshToken(Body(), CancellationToken.None);
 
         Assert.NotNull(captured());
-        Assert.Equal(UserProfile.Administrator, captured()!.RequiredProfile);
+        Assert.Equal([UserProfile.Administrator], captured()!.RequiredProfiles);
         Assert.Equal(JwtAudiences.Admin, captured()!.RequiredAudience);
     }
 }

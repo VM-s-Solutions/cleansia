@@ -6,43 +6,52 @@ using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Sorting.Common;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.Memberships.Admin;
 
 /// <summary>
-/// Characterization of the admin membership-plans paged list across the §A
-/// canonicalization (record Query + bespoke GetPagedAdminAsync -> Request : DataRangeRequest +
-/// MembershipPlanSpecification + GetPagedSort + MapToDto). Pins that the list returns ALL plans
-/// (active and inactive) mapped with the computed monthly-equivalent price, the page metadata,
-/// and that the active filter + case-insensitive code/name search reach the spec. Default order
-/// (BillingInterval, then MonthlyPriceCzk) preserved.
+/// The admin plan list returns ALL plans (active and inactive) with the platform-default-currency
+/// row's figures — null, not zero, when a plan has none — plus the page metadata, and the active
+/// filter + case-insensitive code/name search reach the specification.
 /// </summary>
 public class GetPagedMembershipPlansHandlerTests
 {
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
+    private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
+    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
+
+    public GetPagedMembershipPlansHandlerTests()
+    {
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MembershipPricingMockFactory.Czk());
+        _priceRepository
+            .Setup(r => r.GetForPlansAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+    }
 
     private Task<PagedData<MembershipPlanListItem>> Handle(GetPagedMembershipPlans.Request request)
     {
         var handlerType = typeof(GetPagedMembershipPlans).GetNestedType("Handler", BindingFlags.NonPublic)!;
-        var handler = Activator.CreateInstance(handlerType, _planRepository.Object)!;
+        var handler = Activator.CreateInstance(handlerType, _planRepository.Object, _priceRepository.Object, _currencyRepository.Object)!;
         var method = handlerType.GetMethod("Handle")!;
         return (Task<PagedData<MembershipPlanListItem>>)method.Invoke(handler, [request, CancellationToken.None])!;
     }
 
-    private static MembershipPlan Plan(string code, BillingInterval interval, decimal price, bool active)
+    private static MembershipPlan Plan(string code, BillingInterval interval, bool active)
     {
         var plan = MembershipPlan.Create(
             code: code,
             name: code,
-            monthlyPriceCzk: price,
-            stripePriceId: $"price_{code}",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: interval,
             trialPeriodDays: 0);
+        plan.Id = $"plan-{code}";
         if (!active)
         {
             plan.Deactivate();
@@ -51,12 +60,12 @@ public class GetPagedMembershipPlansHandlerTests
     }
 
     [Fact]
-    public async Task Returns_Active_And_Inactive_Plans_Mapped()
+    public async Task Returns_Active_And_Inactive_Plans_WithTheDefaultCurrencysRow_OrNullWhenAbsent()
     {
         var plans = new[]
         {
-            Plan("PLUS_MONTHLY", BillingInterval.Monthly, 199m, active: true),
-            Plan("PLUS_YEARLY", BillingInterval.Yearly, 1990m, active: false),
+            Plan("PLUS_MONTHLY", BillingInterval.Monthly, active: true),
+            Plan("PLUS_YEARLY", BillingInterval.Yearly, active: false),
         };
         _planRepository
             .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<MembershipPlan, bool>>>(), It.IsAny<CancellationToken>()))
@@ -65,6 +74,12 @@ public class GetPagedMembershipPlansHandlerTests
             .Setup(r => r.GetPagedSort<Cleansia.Core.Domain.Sorting.MembershipPlanSort>(
                 0, 20, It.IsAny<Expression<Func<MembershipPlan, bool>>>(), It.IsAny<IEnumerable<SortDefinition>>()))
             .Returns(plans.AsQueryable().BuildMock());
+        _priceRepository
+            .Setup(r => r.GetForPlansAsync(It.IsAny<IReadOnlyCollection<string>>(), MembershipPricingMockFactory.CzkCurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<string, MembershipPlanPrice>
+            {
+                [plans[1].Id] = MembershipPlanPrice.Create(plans[1].Id, MembershipPricingMockFactory.CzkCurrencyId, 1990m, "price_y"),
+            });
 
         var result = await Handle(new GetPagedMembershipPlans.Request { Offset = 0, Limit = 20 });
 
@@ -73,10 +88,15 @@ public class GetPagedMembershipPlansHandlerTests
         Assert.Equal(20, result.PageSize);
         var data = result.Data.ToList();
         Assert.Equal(2, data.Count);
-        Assert.Contains(data, d => d.Code == "PLUS_MONTHLY" && d.IsActive);
-        Assert.Contains(data, d => d.Code == "PLUS_YEARLY" && !d.IsActive);
+        Assert.All(data, d => Assert.Equal("CZK", d.CurrencyCode));
+        var monthly = data.Single(d => d.Code == "PLUS_MONTHLY");
+        Assert.True(monthly.IsActive);
+        Assert.Null(monthly.Price);
+        Assert.Null(monthly.MonthlyEquivalentPrice);
         var yearly = data.Single(d => d.Code == "PLUS_YEARLY");
-        Assert.Equal(Math.Round(1990m / 12m, 2), yearly.MonthlyEquivalentPriceCzk);
+        Assert.False(yearly.IsActive);
+        Assert.Equal(1990m, yearly.Price);
+        Assert.Equal(Math.Round(1990m / 12m, 2), yearly.MonthlyEquivalentPrice);
     }
 
     [Fact]
@@ -118,12 +138,8 @@ public class GetPagedMembershipPlansHandlerTests
         Assert.NotNull(captured);
         var predicate = captured!.Compile();
 
-        var activeMatch = Plan("PLUS_MONTHLY", BillingInterval.Monthly, 199m, active: true);
-        var inactiveMatch = Plan("PLUS_YEARLY", BillingInterval.Yearly, 1990m, active: false);
-        var activeNoMatch = Plan("BASIC", BillingInterval.Monthly, 99m, active: true);
-
-        Assert.True(predicate(activeMatch));
-        Assert.False(predicate(inactiveMatch));
-        Assert.False(predicate(activeNoMatch));
+        Assert.True(predicate(Plan("PLUS_MONTHLY", BillingInterval.Monthly, active: true)));
+        Assert.False(predicate(Plan("PLUS_YEARLY", BillingInterval.Yearly, active: false)));
+        Assert.False(predicate(Plan("BASIC", BillingInterval.Monthly, active: true)));
     }
 }

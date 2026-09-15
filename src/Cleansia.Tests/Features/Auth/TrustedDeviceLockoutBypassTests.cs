@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -73,7 +74,7 @@ public class TrustedDeviceLockoutBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user, AliveTokenFor(user.Id, RawTrustedToken));
-        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new Login.Command(user.Email, Password, true) { TrustedDeviceToken = RawTrustedToken });
@@ -87,7 +88,7 @@ public class TrustedDeviceLockoutBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user, AliveTokenFor(user.Id, RawTrustedToken));
-        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new Login.Command(user.Email, Password + "wrong", true) { TrustedDeviceToken = RawTrustedToken });
@@ -103,7 +104,7 @@ public class TrustedDeviceLockoutBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user, AliveTokenFor("some-other-user-id", RawTrustedToken));
-        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new Login.Command(user.Email, Password, true) { TrustedDeviceToken = RawTrustedToken });
@@ -120,7 +121,7 @@ public class TrustedDeviceLockoutBypassTests
         var user = LockedUser();
         var revoked = AliveTokenFor(user.Id, RawTrustedToken).Revoke("logout", DateTimeOffset.UtcNow.AddMinutes(-1));
         var (users, tokens, hasher) = Repos(user, revoked);
-        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new Login.Command(user.Email, Password, true) { TrustedDeviceToken = RawTrustedToken });
@@ -141,7 +142,7 @@ public class TrustedDeviceLockoutBypassTests
             deviceLabel: null,
             ipAddress: null);
         var (users, tokens, hasher) = Repos(user, expired);
-        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new Login.Command(user.Email, Password, true) { TrustedDeviceToken = RawTrustedToken });
@@ -155,7 +156,7 @@ public class TrustedDeviceLockoutBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user);
-        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new Login.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(new Login.Command(user.Email, Password, true));
 
@@ -170,7 +171,7 @@ public class TrustedDeviceLockoutBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user, AliveTokenFor(user.Id, RawTrustedToken));
-        var validator = new AdminLogin.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new AdminLogin.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new AdminLogin.Command(user.Email, Password, true) { TrustedDeviceToken = RawTrustedToken });
@@ -183,7 +184,7 @@ public class TrustedDeviceLockoutBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user);
-        var validator = new AdminLogin.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new AdminLogin.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(new AdminLogin.Command(user.Email, Password, true));
 
@@ -196,7 +197,7 @@ public class TrustedDeviceLockoutBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user, AliveTokenFor(user.Id, RawTrustedToken));
-        var validator = new PartnerLogin.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new PartnerLogin.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new PartnerLogin.Command(user.Email, Password, true) { TrustedDeviceToken = RawTrustedToken });
@@ -209,7 +210,7 @@ public class TrustedDeviceLockoutBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user);
-        var validator = new PartnerLogin.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new PartnerLogin.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(new PartnerLogin.Command(user.Email, Password, true));
 

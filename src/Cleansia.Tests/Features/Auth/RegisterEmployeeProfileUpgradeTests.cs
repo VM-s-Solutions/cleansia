@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -26,7 +27,8 @@ public class RegisterEmployeeProfileUpgradeTests
     private readonly Mock<IPendingDispatch> _pending = new();
 
     private RegisterEmployee.Handler CreateHandler() => new(
-        _cartRepository.Object, _userRepository.Object, _employeeRepository.Object, _pending.Object);
+        _cartRepository.Object, _userRepository.Object, _employeeRepository.Object, _pending.Object,
+        new Mock<IConsentService>().Object);
 
     private static RegisterEmployee.Command Command() =>
         new(Email, Password, "John", "Doe", Language);
@@ -35,7 +37,7 @@ public class RegisterEmployeeProfileUpgradeTests
     public async Task Existing_Unconfirmed_Customer_Is_Upgraded_To_Employee_Profile()
     {
         var user = User.CreateWithPassword(Email, Password, "John", "Doe");
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 
@@ -50,7 +52,7 @@ public class RegisterEmployeeProfileUpgradeTests
     public async Task Existing_Unconfirmed_Administrator_Is_Not_Downgraded()
     {
         var user = User.CreateWithPassword(Email, Password, "John", "Doe", UserProfile.Administrator);
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 
@@ -61,7 +63,7 @@ public class RegisterEmployeeProfileUpgradeTests
     [Fact]
     public async Task Fresh_User_Is_Created_With_Employee_Profile()
     {
-        _userRepository.Setup(r => r.GetByEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
 
         var result = await CreateHandler().Handle(Command(), CancellationToken.None);
 

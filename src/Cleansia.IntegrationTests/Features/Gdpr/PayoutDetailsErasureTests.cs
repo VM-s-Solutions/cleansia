@@ -173,7 +173,7 @@ public class PayoutDetailsErasureTests(PostgresContainerFixture fixture) : BaseI
         context.Users.Add(user);
         await context.CommitAsync(CancellationToken.None);
 
-        var country = Country.Create("Czechia", "CZ");
+        var country = Country.Create("Czechia", "CZ", "CZ");
         context.Countries.Add(country);
         await context.CommitAsync(CancellationToken.None);
 

@@ -80,6 +80,7 @@ extension SavedAddressDto {
             city: city.requireNonBlank("city"),
             zipCode: zipCode.requireNonBlank("zipCode"),
             country: country ?? "",
+            countryId: countryId,
             latitude: latitude,
             longitude: longitude,
             isDefault: isDefault.require("isDefault")

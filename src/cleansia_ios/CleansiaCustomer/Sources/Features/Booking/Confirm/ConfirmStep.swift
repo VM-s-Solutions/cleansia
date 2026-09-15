@@ -32,7 +32,7 @@ struct ConfirmStep: View {
     }
 
     private var currencyCode: String {
-        quote?.currencyCode ?? "CZK"
+        viewModel.displayCurrencyCode ?? ""
     }
 
     var body: some View {
@@ -50,7 +50,8 @@ struct ConfirmStep: View {
                     onSelect: setPreferredCleaner
                 )
                 CancellationPolicyCard(policy: extras.cancellationPolicy)
-                TrustBadges()
+                termsRow
+                TrustBadges(insurance: viewModel.insurance)
             }
             .padding(Spacing.l)
         }
@@ -86,6 +87,7 @@ struct ConfirmStep: View {
             membershipDiscount: membershipDiscount,
             tierDiscount: tierDiscount,
             combinedServerDiscount: combinedServerDiscount,
+            unmetTierDiscountFloor: viewModel.unmetTierDiscountFloor,
             currencyCode: currencyCode
         )
     }
@@ -164,6 +166,30 @@ struct ConfirmStep: View {
         viewModel.update { current in
             var next = current
             next.preferredEmployeeId = id
+            return next
+        }
+    }
+
+    /// The same two documents the sign-up tick names, asked only of an account that has not already
+    /// granted both. Gates the slide-to-confirm and rides `termsAccepted` on CreateOrder.
+    @ViewBuilder
+    private var termsRow: some View {
+        if !viewModel.alreadyConsented {
+            CleansiaConsentCheckbox(
+                checked: Binding(
+                    get: { viewModel.state.termsAccepted },
+                    set: setTermsAccepted
+                ),
+                markdown: L10n.Auth.acceptTerms,
+                toggleAccessibilityLabel: L10n.Auth.acceptTermsToggle
+            )
+        }
+    }
+
+    private func setTermsAccepted(_ accepted: Bool) {
+        viewModel.update { current in
+            var next = current
+            next.termsAccepted = accepted
             return next
         }
     }

@@ -55,7 +55,7 @@ public class GetPagedPromoCodesHandlerTests
         prop.SetValue(entity, value);
     }
 
-    private static Currency Czk() => Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+    private static Currency Czk() => Currency.Create("CZK", "Kč", "Czech Koruna");
 
     [Fact]
     public async Task Projects_Row_Including_CurrencyCode_And_PageMetadata()

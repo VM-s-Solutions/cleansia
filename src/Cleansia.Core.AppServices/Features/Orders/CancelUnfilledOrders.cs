@@ -1,9 +1,10 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
-using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -37,9 +38,10 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// never arrived, the same empty seat at the same instant is what triggers payment. One path needs no
 /// guard against a second one paying the same customer twice.</para>
 ///
-/// <para><b>The 250 goes on both failure paths</b> because they are the same path: owner ruling, "the
-/// customer must not be paid less when the platform failed harder".
-/// → <c>BookingPolicy.NoShowCreditCzk</c></para>
+/// <para><b>The apology goes on both failure paths</b> because they are the same path: owner ruling,
+/// "the customer must not be paid less when the platform failed harder". Its amount is the order
+/// currency's own <c>Currency.NoShowCredit</c>, authored per currency; a currency with none pays none.
+/// → /product/business-rules#money-constants</para>
 /// </summary>
 public class CancelUnfilledOrders
 {
@@ -78,10 +80,23 @@ public class CancelUnfilledOrders
     /// </summary>
     private static readonly OrderStatus[] NeverStarted = [OrderStatus.New, OrderStatus.Confirmed];
 
+    /// <summary>
+    /// The credit as the push states it: the number in invariant culture with no trailing zeros, a
+    /// space, then the currency's own symbol ("250 Kč", "10 €", "9.5 zł"); the code stands in for a
+    /// currency with no symbol. Formatted here rather than on the device because the figure is the
+    /// credit's own currency, which the device cannot know from the order alone (owner ruling
+    /// 2026-09-13).
+    /// </summary>
+    public static string FormatCreditAmount(decimal amount, Currency currency)
+    {
+        var number = amount.ToString("0.############################", CultureInfo.InvariantCulture);
+        var unit = string.IsNullOrWhiteSpace(currency.Symbol) ? currency.Code : currency.Symbol;
+        return $"{number} {unit}";
+    }
+
     public class Handler(
         IOrderRepository orderRepository,
         ICreditAccountRepository creditAccountRepository,
-        ICurrencyRepository currencyRepository,
         IRefundService refundService,
         INotificationProducer notificationProducer,
         ITenantProvider tenantProvider,
@@ -95,11 +110,6 @@ public class CancelUnfilledOrders
             var deadline = nowUtc.AddMinutes(-command.GraceMinutes);
             var floor = nowUtc.AddHours(-command.LookbackHours);
 
-            // The default currency decides whether the apology credit can be issued at all. Read once
-            // per tick rather than per order: it cannot change mid-sweep, and the alternative is a
-            // round trip for every row.
-            var defaultCurrency = await currencyRepository.GetDefaultAsync(cancellationToken);
-
             // System job, no JWT: read across tenants, then set the override per group so child rows
             // are stamped correctly at the commit INSIDE the loop.
             //
@@ -107,6 +117,8 @@ public class CancelUnfilledOrders
             // an abandoned checkout that CleanupStalePendingOrders owns, and a cash RECURRING
             // occurrence is structurally unfillable (it can never satisfy the offerability rule), so
             // sweeping it would cancel and credit the same booking every single week.
+            //
+            // The currency rides along because the apology credit is read off it.
             var unfilled = await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => NeverStarted.Contains(o.CurrentStatus)
                     && !o.AssignedEmployees.Any()
@@ -116,6 +128,7 @@ public class CancelUnfilledOrders
                         || (o.PaymentType == PaymentType.Cash && o.RecurringTemplateId == null)))
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
+                .Include(o => o.Currency)
                 .ToListAsync(cancellationToken);
 
             var cancelled = 0;
@@ -192,8 +205,8 @@ public class CancelUnfilledOrders
                     await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                         order, SystemActor, cancellationToken);
 
-                    var apologised = await TryIssueApologyCreditAsync(
-                        order, defaultCurrency, cancellationToken);
+                    var apology = await TryIssueApologyCreditAsync(order, cancellationToken);
+                    var apologised = apology is not null;
                     if (apologised)
                     {
                         credited++;
@@ -204,22 +217,32 @@ public class CancelUnfilledOrders
                     // than one of.
                     //
                     // Which message depends on what the customer actually got. Owner ruling 2026-09-06
-                    // is that the 250 is announced explicitly, and the key that says so is sent only
-                    // when the credit was really issued: a guest has no account to hold it and a
-                    // non-default-currency order is refused the grant, so both of those get the plain
-                    // cancellation. Promising credit nobody received would be worse than saying less.
+                    // is that the credit is announced explicitly, and the key that says so is sent
+                    // only when the credit was really issued: a guest has no account to hold it and
+                    // an order in a currency with no authored credit is refused the grant, so both of
+                    // those get the plain cancellation. Promising credit nobody received would be
+                    // worse than saying less.
+                    //
+                    // The credit rides along WITH its currency, formatted here: a money figure, not
+                    // PII, so it may sit on the lock screen and in the feed row's args.
                     if (!string.IsNullOrEmpty(order.UserId))
                     {
+                        var args = new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        };
+                        if (apology is { } creditAmount)
+                        {
+                            args["amount"] = FormatCreditAmount(creditAmount, order.Currency!);
+                        }
+
                         await notificationProducer.NotifyAsync(
                             order.UserId,
                             apologised
                                 ? NotificationEventCatalog.OrderNoCleanerRefunded
                                 : NotificationEventCatalog.OrderCancelled,
-                            new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
+                            args,
                             order.TenantId,
                             order.Id,
                             cancellationToken);
@@ -245,44 +268,44 @@ public class CancelUnfilledOrders
         }
 
         /// <summary>
-        /// The apology credit. Returns false — without failing the cancellation — whenever it cannot
-        /// honestly be given.
+        /// The apology credit: the amount issued, or null — without failing the cancellation —
+        /// whenever it cannot honestly be given.
         ///
         /// <para><b>A guest gets the refund and no credit</b>, because there is nowhere to put it:
         /// <c>Order.UserId</c> is nullable and <c>CreditAccount.UserId</c> is not, behind an FK to
-        /// Users. That is the rule the home page now states in five locales.</para>
+        /// Users. That is the rule the home page states in five locales.</para>
         ///
-        /// <para><b>Only in the platform's default currency.</b> <c>NoShowCreditCzk</c> is 250 CZK and
-        /// a credit account keeps whatever currency it was opened in, converting nothing — so on a EUR
-        /// order this would hand over 250 EUR, roughly twenty-five times the intended apology. Owner
-        /// ruling 2026-09-06: fail closed and log. The customer still gets the whole refund.</para>
+        /// <para><b>Only what the order's own currency authors.</b> A credit account keeps the currency
+        /// it was opened in and converts nothing, so the amount is <c>Currency.NoShowCredit</c> on the
+        /// order's currency and lands in the customer's account in that same currency. A currency with
+        /// no figure pays none: fail closed and log, the refund is unaffected (owner ruling
+        /// 2026-09-06). Nothing is ever scaled from another currency's figure.</para>
         /// </summary>
-        private async Task<bool> TryIssueApologyCreditAsync(
-            Order order, Currency? defaultCurrency, CancellationToken cancellationToken)
+        private async Task<decimal?> TryIssueApologyCreditAsync(Order order, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(order.UserId) || BookingPolicy.NoShowCreditCzk <= 0m)
+            if (string.IsNullOrEmpty(order.UserId))
             {
-                return false;
+                return null;
             }
 
-            if (defaultCurrency is null || order.CurrencyId != defaultCurrency.Id)
+            var amount = order.Currency?.NoShowCredit;
+            if (amount is null or <= 0m)
             {
-                logger.LogError(
-                    "CancelUnfilledOrders skipped the {Amount} apology credit on order {OrderId}: it is "
-                        + "priced in {OrderCurrency}, and the constant is denominated in the platform "
-                        + "default. The refund was not affected.",
-                    BookingPolicy.NoShowCreditCzk, order.Id, order.CurrencyId);
-                return false;
+                logger.LogWarning(
+                    "CancelUnfilledOrders skipped the apology credit on order {OrderId}: no apology credit "
+                        + "is authored for {CurrencyCode}. The refund was not affected.",
+                    order.Id, order.Currency?.Code ?? order.CurrencyId);
+                return null;
             }
 
             var account = await creditAccountRepository.EnsureForUserAsync(
-                order.UserId, defaultCurrency.Id, cancellationToken);
+                order.UserId, order.CurrencyId, cancellationToken);
 
             // One key per ORDER, so an order swept twice — a retried tick, a re-entry after a failed
             // commit — pays the apology once. The ledger's IdempotencyKey carries a plain unique index
             // that collapses the second write.
             account.Issue(
-                amount: BookingPolicy.NoShowCreditCzk,
+                amount: amount.Value,
                 reason: CreditTransactionReason.CleanerNoShow,
                 idempotencyKey: $"cleaner-noshow:{order.Id}",
                 // "system", not the cleaner who walked and not an admin: no person decided this, and
@@ -291,7 +314,7 @@ public class CancelUnfilledOrders
                 orderId: order.Id,
                 note: "No cleaner was assigned when the booking's time arrived.");
 
-            return true;
+            return amount.Value;
         }
     }
 }

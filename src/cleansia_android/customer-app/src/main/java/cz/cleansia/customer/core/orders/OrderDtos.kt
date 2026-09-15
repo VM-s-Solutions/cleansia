@@ -366,7 +366,6 @@ data class OrderCurrencyListItemDto(
     val code: String? = null,
     val symbol: String? = null,
     val name: String? = null,
-    val exchangeRate: Double = 0.0,
     val isDefault: Boolean = false,
 )
 
@@ -377,7 +376,6 @@ data class OrderCurrencyDetailDto(
     val code: String? = null,
     val name: String? = null,
     val symbol: String? = null,
-    val exchangeRate: Double = 0.0,
     val isDefault: Boolean = false,
 )
 

@@ -29,7 +29,7 @@ public static class DeleteUserAccount
             return gdprDeletionService.DeleteUserAccountAsync(
                 userId,
                 deactivationReason: GdprAuditReasons.SelfDeletion,
-                resolveAuditActor: user => (user.Email, null),
+                resolveAuditActor: _ => (GdprAuditReasons.SelfActor, null),
                 // The self path. A customer is erased; a cleaner only gets a request filed, because
                 // ending a working relationship needs paperwork this endpoint cannot perform.
                 deferEmployeeErasure: true,

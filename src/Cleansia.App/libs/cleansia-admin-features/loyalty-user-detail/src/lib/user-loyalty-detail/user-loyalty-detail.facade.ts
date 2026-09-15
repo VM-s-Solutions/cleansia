@@ -2,6 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminCurrencyListItem,
+  AdminGdprClient,
   AdminReferralListItem,
   CreditTransactionReason,
   GetUserCreditResponse,
@@ -9,11 +11,14 @@ import {
   GetUserLoyaltyActivityActivityItem,
   GrantPointsManuallyCommand,
   ExpireCustomerCreditCommand,
+  FileResponse,
+  GdprExportDto,
   IssueCustomerCreditCommand,
   RevokePointsManuallyCommand,
+  incidentFileName,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import { FileDownloadService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -24,16 +29,30 @@ export interface ManualPointsInput {
 
 export interface IssueCreditInput {
   amount: number;
+  currencyId: string;
   reason: CreditTransactionReason;
   note: string;
+}
+
+export interface ExpireCreditInput {
+  currencyId: string;
+  note: string;
+}
+
+/** A currency the admin may issue credit in — id for the command, code for the screen. */
+export interface CreditCurrencyOption {
+  id: string;
+  code: string;
 }
 
 @Injectable()
 export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly gdprClient = inject(AdminGdprClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
+  private readonly fileDownload = inject(FileDownloadService);
 
   readonly account = signal<GetUserLoyaltyAccountResponse | null>(null);
   readonly accountLoading = signal<boolean>(false);
@@ -60,7 +79,17 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly creditSubmitting = signal<boolean>(false);
   readonly creditExpiring = signal<boolean>(false);
 
+  /**
+   * The currencies an admin may issue credit in: the ones the platform OPERATES in. Credit is spendable
+   * only on an order in the same currency, and an order can only be placed in an active one, so a
+   * grant in an inactive currency is money the customer could never spend. The server refuses it too
+   * (IssueCustomerCredit.Validator); this keeps the choice off the screen.
+   */
+  readonly currencies = signal<CreditCurrencyOption[]>([]);
+
   readonly submitting = signal<boolean>(false);
+  readonly exporting = signal<boolean>(false);
+  readonly incidentFileExporting = signal<boolean>(false);
 
   private currentUserId: string | null = null;
   private currentActivityOffset = 0;
@@ -146,6 +175,27 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  loadCurrencies(): void {
+    this.adminClient.adminCurrencyClient
+      .getOverview()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as AdminCurrencyListItem[]))
+      )
+      .subscribe((currencies) => {
+        // `?? []`: the generated client returns null, not an empty list, for a 204 — reasoned out in
+        // service-management/service-form.facade.ts; the `.filter` below is this file's crash site.
+        this.currencies.set(
+          (currencies ?? [])
+            .filter(
+              (c): c is AdminCurrencyListItem & { id: string; code: string } =>
+                c.isActive && Boolean(c.id) && Boolean(c.code)
+            )
+            .map((c) => ({ id: c.id, code: c.code }))
+        );
+      });
+  }
+
   /**
    * Put money on the balance. The company owes it from the moment this succeeds, and there is no
    * "undo" endpoint — a mistake is corrected by spending it or by a payout, both of which involve a
@@ -158,6 +208,9 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
     const command = new IssueCustomerCreditCommand();
     command.userId = this.currentUserId;
     command.amount = input.amount;
+    // The unit of the amount, chosen by the admin. The server used to fill in the platform default
+    // while this screen labelled the field with the customer's largest balance's currency.
+    command.currencyId = input.currencyId;
     command.reason = input.reason;
     command.note = input.note;
     // S7a. One id per submission attempt: a network-layer retry reuses this command and the server's
@@ -191,22 +244,24 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * Take the whole balance off the books.
+   * Take one currency's whole balance off the books.
    *
    * <p>The reason this exists is erasure: GdprDeletionService refuses to erase a customer while a
    * balance is positive, and there are no Stripe payouts, so a leaving customer with credit was
    * previously stuck. The admin discharges it, the erasure proceeds. → ExpireCustomerCredit</p>
    *
-   * <p>No amount — the server only ever takes the lot. The note is required and is the only record
-   * of why money the company owed stopped being owed.</p>
+   * <p>No amount — the server only ever takes the lot, in the ONE currency named: a customer holds
+   * one account per currency, and a discharge that picked for itself could not say what it took.
+   * The note is required and is the only record of why money the company owed stopped being owed.</p>
    */
-  expireCredit(note: string, onSuccess?: () => void): void {
+  expireCredit(input: ExpireCreditInput, onSuccess?: () => void): void {
     if (!this.currentUserId) return;
     this.creditExpiring.set(true);
 
     const command = new ExpireCustomerCreditCommand();
     command.userId = this.currentUserId;
-    command.note = note;
+    command.currencyId = input.currencyId;
+    command.note = input.note;
     // S7a, same shape as the issue path: a transport retry replays this id and the ledger's unique
     // index collapses it, while a second deliberate click is a new id. Less load-bearing here —
     // draining an already-empty balance is a no-op — but the two paths stay the same shape.
@@ -229,6 +284,7 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.loyalty_user_detail.credit.expire_success', {
               amount: response.amountExpired,
+              currency: response.currencyCode,
             })
           );
           if (this.currentUserId) {
@@ -328,7 +384,85 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * The admin subject export, with the customer's audit trail in it. The server records the act as an
+   * admin audit row and a GdprRequest — this only asks for the file and hands it to the browser.
+   */
+  exportSubjectData(): void {
+    const userId = this.currentUserId;
+    if (!userId || this.exporting()) return;
+
+    this.exporting.set(true);
+    this.gdprClient
+      .export(userId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showApiError(error, 'pages.customer_detail.export_error');
+          return of(null);
+        }),
+        finalize(() => this.exporting.set(false))
+      )
+      .subscribe((data: GdprExportDto | null) => {
+        if (data) {
+          this.downloadJson(data, subjectExportFileName(userId, new Date()));
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.customer_detail.export_success')
+          );
+        }
+      });
+  }
+
+  /**
+   * The incident file: the server builds the PDF from the database and records the build as an
+   * admin audit row. An empty scope asks for the whole account; an order id narrows it to that
+   * order, and whether the order is this customer's is the server's rule.
+   */
+  exportIncidentFile(orderScope: string | null): void {
+    const userId = this.currentUserId;
+    if (!userId || this.incidentFileExporting()) return;
+
+    const orderId = orderScope?.trim() || undefined;
+    this.incidentFileExporting.set(true);
+    this.gdprClient
+      .incidentFile(userId, orderId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showApiError(
+            error,
+            'pages.customer_detail.incident_file.error'
+          );
+          return of(null);
+        }),
+        finalize(() => this.incidentFileExporting.set(false))
+      )
+      .subscribe((file: FileResponse | null) => {
+        if (file) {
+          this.fileDownload.downloadBlob(
+            file.data,
+            file.fileName ?? incidentFileName(userId, new Date())
+          );
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.customer_detail.incident_file.success')
+          );
+        }
+      });
+  }
+
   navigateBack(): void {
     this.router.navigate(['/admin-user-management']);
   }
+
+  private downloadJson(data: unknown, fileName: string): void {
+    const json = JSON.stringify(data, null, 2);
+    this.fileDownload.downloadBlob(
+      new Blob([json], { type: 'application/json' }),
+      fileName
+    );
+  }
+}
+
+export function subjectExportFileName(userId: string, exportedAt: Date): string {
+  return `subject-export-${userId}-${exportedAt.toISOString().slice(0, 10)}.json`;
 }

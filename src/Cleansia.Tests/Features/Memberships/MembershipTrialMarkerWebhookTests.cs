@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -31,6 +32,7 @@ public class MembershipTrialMarkerWebhookTests
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
+    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
 
     public MembershipTrialMarkerWebhookTests()
@@ -44,8 +46,6 @@ public class MembershipTrialMarkerWebhookTests
         var plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_test_1",
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -55,6 +55,9 @@ public class MembershipTrialMarkerWebhookTests
         _planRepository
             .Setup(r => r.GetByCodeAsync(PlanCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(plan);
+        _currencyRepository
+            .Setup(r => r.GetByCodeAsync("CZK", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MembershipPricingMockFactory.Czk());
     }
 
     private StripeSubscriptionWebhookHandler CreateHandler() =>
@@ -62,6 +65,7 @@ public class MembershipTrialMarkerWebhookTests
             _userRepository.Object,
             _membershipRepository.Object,
             _planRepository.Object,
+            _currencyRepository.Object,
             _tenantProvider.Object,
             NullLogger<StripeSubscriptionWebhookHandler>.Instance);
 
@@ -70,6 +74,7 @@ public class MembershipTrialMarkerWebhookTests
         var membership = UserMembership.Create(
             userId: UserId,
             membershipPlanId: PlanId,
+            currencyId: "currency-czk",
             stripeSubscriptionId: SubscriptionId,
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1),
@@ -111,6 +116,7 @@ public class MembershipTrialMarkerWebhookTests
                 Id = SubscriptionId,
                 Status = status,
                 TrialEnd = trialEnd,
+                Currency = "czk",
                 Metadata = new Dictionary<string, string>
                 {
                     ["UserId"] = UserId,

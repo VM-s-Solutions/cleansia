@@ -8,6 +8,7 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class PayoutReferenceCounterRepository(
     CleansiaDbContext context,
+    ITenantProvider tenantProvider,
     IUserSessionProvider userSessionProvider)
     : BaseRepository<PayoutReferenceCounter>(context), IPayoutReferenceCounterRepository
 {
@@ -15,19 +16,21 @@ public class PayoutReferenceCounterRepository(
 
     private const long MaxOrdinalPerYear = 999999;
 
-    public async Task<long?> AllocateNextAsync(int year, CancellationToken cancellationToken)
+    public async Task<long?> AllocateNextAsync(int year, string scope, CancellationToken cancellationToken)
     {
+        var tenantId = tenantProvider?.GetCurrentTenantId();
         var actorId = userSessionProvider?.GetUserId();
         var createdBy = string.IsNullOrWhiteSpace(actorId) ? SystemActor : actorId!;
         var now = DateTimeOffset.UtcNow;
         var id = Ulid.NewUlid().ToString();
 
         // One statement does both first-use insert and the atomic increment. The INSERT seeds the
-        // counter at 1; the ON CONFLICT branch increments the existing row, and because Postgres takes
-        // a row lock on the conflicting tuple, concurrent allocations for the same year are serialized
-        // — each RETURNING reports a distinct value. The arbiter is ("Year") alone: a non-nullable int
-        // cannot reproduce the nulls-distinct collapse FiscalCounters has to answer with
-        // AreNullsDistinct(false), and there is deliberately no tenant or scope term (ADR-0046 §D2.1).
+        // company's counter at 1; the ON CONFLICT branch increments the existing row, and because
+        // Postgres takes a row lock on the conflicting tuple, concurrent allocations for the same
+        // (company, year, scope) are serialized — each RETURNING reports a distinct value. The arbiter
+        // is the NULLS NOT DISTINCT index, so a tenant term can never make two rows for one series;
+        // and with no ambient company the NOT NULL column refuses the row (23502) rather than letting
+        // a numbering run silently share one holding-wide sequence.
         //
         // DELIBERATE EXCEPTION to the "never CommitAsync outside the UnitOfWork pipeline" rule, in the
         // PromoCodeRepository.TryIncrementGlobalRedemptionsAsync shape: this statement auto-commits
@@ -41,15 +44,15 @@ public class PayoutReferenceCounterRepository(
         // inside a transaction" is an invariant on the interface rather than an assumption here.
         //
         // The cap lives in the WHERE, not in a later C# check: without it the counter runs permanently
-        // past 999999 and formats to eleven digits, platform-wide, repairable only by a manual UPDATE.
-        // When the guard is false the DO UPDATE affects no row and RETURNING yields NOTHING — hence
-        // FirstOrDefault over a list rather than FiscalCounterRepository.cs's unguarded allocated[0],
-        // which would throw ArgumentOutOfRangeException from inside a repository at the cap.
+        // past 999999 and formats to seven digits, repairable only by a manual UPDATE. When the guard
+        // is false the DO UPDATE affects no row and RETURNING yields NOTHING — hence the empty-list
+        // check rather than FiscalCounterRepository.cs's unguarded allocated[0], which would throw
+        // ArgumentOutOfRangeException from inside a repository at the cap.
         const string sql = """
             INSERT INTO "PayoutReferenceCounters"
-                ("Id", "Year", "Value", "IsActive", "CreatedBy", "CreatedOn")
-            VALUES (@id, @year, 1, TRUE, @createdBy, @now)
-            ON CONFLICT ("Year")
+                ("Id", "TenantId", "Year", "Scope", "Value", "IsActive", "CreatedBy", "CreatedOn")
+            VALUES (@id, @tenantId, @year, @scope, 1, TRUE, @createdBy, @now)
+            ON CONFLICT ("TenantId", "Year", "Scope")
             DO UPDATE SET "Value" = "PayoutReferenceCounters"."Value" + 1,
                           "UpdatedBy" = @createdBy,
                           "UpdatedOn" = @now
@@ -60,7 +63,11 @@ public class PayoutReferenceCounterRepository(
         var parameters = new[]
         {
             new NpgsqlParameter("id", id),
+            // Typed, as in FiscalCounterRepository: a DBNull with no declared type is inferred from its
+            // single VALUES usage today, and a second usage would turn that into a 42P08.
+            new NpgsqlParameter("tenantId", NpgsqlDbType.Text) { Value = (object?)tenantId ?? DBNull.Value },
             new NpgsqlParameter("year", year),
+            new NpgsqlParameter("scope", scope),
             new NpgsqlParameter("createdBy", createdBy),
             new NpgsqlParameter("now", NpgsqlDbType.TimestampTz) { Value = now },
             new NpgsqlParameter("maxValue", MaxOrdinalPerYear),

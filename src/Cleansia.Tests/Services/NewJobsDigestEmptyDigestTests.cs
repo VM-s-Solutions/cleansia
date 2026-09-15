@@ -180,7 +180,6 @@ public sealed class NewJobsDigestEmptyDigestTests : IDisposable
             customerAddress: Address.Create("Empty St 1", "Praha", "14000", countryId),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,
@@ -205,11 +204,11 @@ public sealed class NewJobsDigestEmptyDigestTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        private string? _tenantId;
+        private string? _tenantId = TestTenants.Default;
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;

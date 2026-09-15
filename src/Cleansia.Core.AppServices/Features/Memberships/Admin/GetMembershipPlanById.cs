@@ -7,15 +7,14 @@ using Cleansia.Infra.Common.Validations;
 
 namespace Cleansia.Core.AppServices.Features.Memberships.Admin;
 
-/// <summary>
-/// Single membership-plan admin detail. Returns the persisted shape including
-/// the admin-entered <see cref="Cleansia.Core.Domain.Memberships.MembershipPlan.StripePriceId"/>.
-/// </summary>
+/// <summary>Single membership-plan admin detail with every currency's price row, keyed by currency code.</summary>
 public class GetMembershipPlanById
 {
     public record Query(string MembershipPlanId) : IQuery<MembershipPlanDetailDto>;
 
-    public class Handler(IMembershipPlanRepository membershipPlanRepository)
+    public class Handler(
+        IMembershipPlanRepository membershipPlanRepository,
+        IMembershipPlanPriceRepository membershipPlanPriceRepository)
         : IQueryHandler<Query, MembershipPlanDetailDto>
     {
         public async Task<BusinessResult<MembershipPlanDetailDto>> Handle(Query request, CancellationToken cancellationToken)
@@ -28,7 +27,9 @@ public class GetMembershipPlanById
                     new Error(nameof(request.MembershipPlanId), BusinessErrorMessage.MembershipPlanNotFound));
             }
 
-            return BusinessResult.Success(plan.MapToDetailDto());
+            var prices = await membershipPlanPriceRepository.GetAllForPlanAsync(plan.Id, cancellationToken);
+
+            return BusinessResult.Success(plan.MapToDetailDto(prices));
         }
     }
 }

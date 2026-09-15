@@ -72,10 +72,11 @@ public class MaterializeRecurringBookingTemplate
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
         IAddressRepository addressRepository,
-        ICurrencyRepository currencyRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IOrderRepository orderRepository,
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
+        IUserMembershipRepository userMembershipRepository,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
@@ -109,6 +110,37 @@ public class MaterializeRecurringBookingTemplate
             if (!string.IsNullOrEmpty(template.TenantId))
             {
                 tenantProvider.SetTenantOverride(template.TenantId);
+            }
+
+            // A recurring schedule is a Cleansia Plus benefit, and owner ruling 2026-09-08 (T-0690) is
+            // that no Plus benefit is granted without a paid subscription. This reverses the earlier
+            // position, documented below at the pricing call, that "a lapsed membership must not stop a
+            // schedule" — a lapsed member used to keep receiving orders, priced as a guest.
+            //
+            // Read AFTER the tenant override above, not before: UserMembership is an ITenantEntity, so
+            // the entitlement query is filtered, and without the override a tenanted member would read
+            // as unentitled and have their schedule stopped.
+            //
+            // Three things this deliberately does NOT do:
+            //   * It does not deactivate the template. The schedule stays exactly as authored, so
+            //     resubscribing resumes it on the next tick with no action from the customer. A lapse
+            //     is a pause, not a deletion.
+            //   * It does not touch occurrences already materialized inside the horizon. Those are real
+            //     orders, possibly already authorized on a card; retracting them is a refund path that
+            //     does not exist. They run, and the schedule stops after them.
+            //   * It does not notify. MembershipExpiringSoon already warns the customer before the
+            //     lapse (SendMembershipLifecycleNotifications), so the stop is not the first they hear
+            //     of it. A dedicated "your schedule has stopped" event is worth its own ticket.
+            var entitled = await userMembershipRepository
+                .GetEntitledForUserNoTrackingAsync(template.UserId, cancellationToken);
+
+            if (entitled == null)
+            {
+                logger.LogInformation(
+                    "Template {TemplateId} skipped: owner {UserId} has no paid Cleansia Plus membership. "
+                    + "The schedule is preserved and resumes if they resubscribe",
+                    template.Id, template.UserId);
+                return BusinessResult.Success(new Response(0));
             }
 
             var occurrences = ComputeOccurrences(template, now, horizon).ToList();
@@ -165,12 +197,6 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
-            // Resolved inside THIS scope on purpose: the Currency entity is handed to the order factory
-            // and ends up referenced by rows this scope's context tracks. A Currency loaded by the outer
-            // sweep's context would be a foreign tracked instance here.
-            var defaultCurrency = await currencyRepository.GetDefaultAsync(cancellationToken)
-                ?? throw new InvalidOperationException("No default currency configured");
-
             // Resolve the template's address, fail-soft.
             var saved = await savedAddressRepository.GetByIdAsync(template.SavedAddressId, cancellationToken);
             if (saved == null)
@@ -190,6 +216,17 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
+            // THE SERVICE ADDRESS'S COUNTRY'S CURRENCY, the same rule CreateOrder stamps a one-off
+            // booking with (owner ruling 2026-09-12). Fail-closed pricing is the backstop: a currency
+            // the template's items are not priced in makes OrderFactory throw, and the per-template
+            // scope confines that failure to this template's tick.
+            //
+            // Resolved inside THIS scope on purpose: the Currency entity is handed to the order factory
+            // and ends up referenced by rows this scope's context tracks. A Currency loaded by the outer
+            // sweep's context would be a foreign tracked instance here.
+            var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
+                address.CountryId, cancellationToken);
+
             // Recurring orders are scheduled days/weeks in advance,
             // so the express surcharge never applies — pass null
             // CleaningDate to skip the surcharge check. Extras aren't
@@ -200,12 +237,13 @@ public class MaterializeRecurringBookingTemplate
                 Array.Empty<string>(),
                 template.Rooms,
                 template.Bathrooms,
-                defaultCurrency.Id,
+                currency.Id,
                 cleaningDateUtc: null,
-                // A lapsed membership must not stop a schedule, and a live one must not have this
-                // background job spend the member's monthly express waivers on occurrences they never
-                // asked to be express. Both fall out of pricing the occurrence as a guest: null user,
-                // null cleaning date, no waiver resolved, full price.
+                // Priced as a guest — null user, null cleaning date — so this background job cannot
+                // spend the member's monthly express waivers on occurrences they never asked to be
+                // express. It reaches here only for a PAID member (the entitlement gate above), so the
+                // guest price is now a deliberate no-waiver choice rather than the lapsed-member
+                // fallback it used to be.
                 userId: null,
                 nowUtc: now,
                 cancellationToken);
@@ -225,10 +263,10 @@ public class MaterializeRecurringBookingTemplate
                     Address: address,
                     Rooms: template.Rooms,
                     Bathrooms: template.Bathrooms,
-                    Extras: new(),
+                    SelectedExtraSlugs: [],
                     CleaningDate: occurrence,
                     PaymentType: template.PaymentType,
-                    Currency: defaultCurrency,
+                    Currency: currency,
                     SelectedServiceIds: template.SelectedServiceIds,
                     SelectedPackageIds: template.SelectedPackageIds,
                     RawSubtotal: rawSubtotalResult.TotalPrice,

@@ -1,6 +1,8 @@
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Features.Loyalty.Admin;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.PayConfig;
@@ -81,8 +83,8 @@ public sealed class AuditSensitiveSnapshotTests
         Assert.Equal("Order", snapshot!.ResourceType);
         Assert.Equal("order-ovr", snapshot.ResourceId);
         Assert.Contains("\"orderId\":\"order-ovr\"", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)OrderStatus.Confirmed}", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)OrderStatus.OnTheWay}", snapshot.AfterJson);
+        Assert.Contains("\"status\":\"confirmed\"", snapshot.BeforeJson);
+        Assert.Contains("\"status\":\"onTheWay\"", snapshot.AfterJson);
         AssertNoSubjectPii(snapshot);
     }
 
@@ -130,10 +132,10 @@ public sealed class AuditSensitiveSnapshotTests
     public async Task PartialRefund_Emits_Amount_Consumed_And_No_Pii()
     {
         var auditContext = new AuditContext();
-        var service = Service.Create("cat-1", "Deep clean", "", 1000m, 0m);
+        var service = Service.Create("cat-1", "Deep clean", "");
         service.Id = "svc-a";
         var order = BuildOrder("order-prt", OrderStatus.Completed, totalPrice: 1000m, completed: true);
-        order.AddSelectedServices([OrderService.Create(order, service)]);
+        order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, service)]);
 
         var orderRepository = new Mock<IOrderRepository>();
         orderRepository.Setup(r => r.GetByIdAsync("order-prt", It.IsAny<CancellationToken>())).ReturnsAsync(order);
@@ -204,8 +206,8 @@ public sealed class AuditSensitiveSnapshotTests
         Assert.NotNull(snapshot);
         Assert.Equal("Dispute", snapshot!.ResourceType);
         Assert.Equal("dispute-1", snapshot.ResourceId);
-        Assert.Contains($"\"status\":{(int)DisputeStatus.Pending}", snapshot.BeforeJson);
-        Assert.Contains($"\"status\":{(int)DisputeStatus.Resolved}", snapshot.AfterJson);
+        Assert.Contains("\"status\":\"pending\"", snapshot.BeforeJson);
+        Assert.Contains("\"status\":\"resolved\"", snapshot.AfterJson);
         Assert.Contains("\"refundAmount\":250", snapshot.AfterJson);
         // The free-text resolution notes are NOT in the snapshot (could carry subject PII).
         Assert.DoesNotContain("approved by ops", snapshot.AfterJson);
@@ -308,6 +310,64 @@ public sealed class AuditSensitiveSnapshotTests
         AssertNoSubjectPii(snapshot);
     }
 
+    // ── AdminExportUserData (GDPR) ─────────────────────────────────────────
+
+    [Fact]
+    public async Task GdprExport_Emits_Scope_Subject_Id_And_Row_Counts_Only_Never_The_Exported_Data()
+    {
+        var auditContext = new AuditContext();
+        var exportService = new Mock<IGdprExportService>();
+        exportService.Setup(s => s.BuildAsync("subject-1", "admin:admin@cleansia.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ExportOf("subject-1"));
+
+        var handler = new AdminExportUserData.Handler(
+            AdminSession(), exportService.Object, Mock.Of<IGdprRequestRepository>(), auditContext);
+        var result = await handler.Handle(new AdminExportUserData.Command("subject-1"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var snapshot = auditContext.DrainSnapshot();
+        Assert.NotNull(snapshot);
+        Assert.Equal("User", snapshot!.ResourceType);
+        Assert.Equal("subject-1", snapshot.ResourceId);
+        Assert.Contains("\"subjectUserId\":\"subject-1\"", snapshot.AfterJson);
+        Assert.Contains("\"scope\":\"Export\"", snapshot.AfterJson);
+        Assert.Contains("\"orderCount\":1", snapshot.AfterJson);
+        Assert.Contains("\"disputeCount\":1", snapshot.AfterJson);
+        Assert.Contains("\"customerActionCount\":2", snapshot.AfterJson);
+        Assert.DoesNotContain("203.0.113.9", snapshot.AfterJson);
+        Assert.DoesNotContain("feeRate", snapshot.AfterJson);
+        Assert.DoesNotContain("kitchen", snapshot.AfterJson, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("+420", snapshot.AfterJson);
+        AssertNoSubjectPii(snapshot);
+    }
+
+    private static GdprExportDto ExportOf(string subjectId) =>
+        new(
+            new GdprExportProfileDto(subjectId, CustomerName.Split(' ')[0], CustomerName.Split(' ')[1], CustomerEmail,
+                "+420123456789", null, "en", DateTimeOffset.UtcNow),
+            Address: null,
+            Employee: null,
+            PayoutDetails: null,
+            Orders: [new GdprExportOrderDto("order-1", "CZ-1", CustomerName, CustomerEmail, OrderStatus.Completed, 1000m, DateTime.UtcNow, DateTimeOffset.UtcNow)],
+            Disputes:
+            [
+                new GdprExportDisputeDto("dispute-1", "order-1", "CZ-1", "QualityIssue", "The kitchen floor was not mopped.", "Resolved",
+                    "Partial refund issued.", 300m, "CZK", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow,
+                    [new GdprExportDisputeMessageDto("Customer", DateTimeOffset.UtcNow, "Photos attached, the tiles are still grey.")],
+                    ["kitchen-floor.jpg"]),
+            ],
+            Documents: [],
+            Invoices: [],
+            Consents: [],
+            CustomerActions:
+            [
+                new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-1", true, null,
+                    "{\"feeRate\":0.5}", "203.0.113.9", "iPhone 15"),
+                new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-2", false,
+                    "order.in_progress_cannot_cancel", null, "203.0.113.9", "iPhone 15"),
+            ],
+            new GdprExportMetadataDto(DateTimeOffset.UtcNow, "admin:admin@cleansia.test", "JSON"));
+
     [Fact]
     public async Task GdprDelete_On_Failed_Deletion_Emits_No_Snapshot()
     {
@@ -330,7 +390,7 @@ public sealed class AuditSensitiveSnapshotTests
         decimal totalPrice = 1000m,
         bool completed = false)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var address = Address.Create("Street 1", "Prague", "11000", "cz");
         var order = Order.Create(
             customerName: CustomerName,
@@ -339,7 +399,6 @@ public sealed class AuditSensitiveSnapshotTests
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,

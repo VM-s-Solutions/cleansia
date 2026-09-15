@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -13,9 +15,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.HostTests.Infrastructure;
 
 /// <summary>
-/// Builds the entity graphs the authz ACs need, written through a real host DbContext. All builders
-/// leave <c>TenantId</c> null (single-tenant) unless a <paramref name="tenantId"/> is supplied (the
-/// cross-tenant AC). Reference data (Country / Currency / Language) is created on demand and de-duped.
+/// Builds the entity graphs the authz ACs need, written through a real host DbContext. A builder stamps
+/// <c>TenantId</c> only when one is supplied (the cross-tenant ACs); otherwise the row is stamped at
+/// commit by <see cref="AuthzHostTestBase.SeedAsync"/> with <see cref="HostTestTenants.Default"/>.
+/// Reference data (Country / Currency / Language / the CZ market and its operator) is created on demand
+/// and de-duped.
 /// </summary>
 public static class DomainSeed
 {
@@ -27,21 +31,37 @@ public static class DomainSeed
     {
         if (!await ctx.Countries.IgnoreQueryFilters().AnyAsync(c => c.Id == CountryId))
         {
-            var country = Country.Create("Czechia", "CZ", isServiced: true);
+            var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
             country.Id = CountryId;
             ctx.Countries.Add(country);
         }
 
         if (!await ctx.Currencies.IgnoreQueryFilters().AnyAsync(c => c.Id == CurrencyId))
         {
-            var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+            var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+            currency.IsActive = true;
             currency.Id = CurrencyId;
+            // The platform default, as the seed script's CZK is: every partner money aggregate resolves
+            // the cleaner's currency through it and the repository throws when none exists.
+            currency.SetAsDefault(true);
             ctx.Currencies.Add(currency);
         }
 
         if (!await ctx.Languages.IgnoreQueryFilters().AnyAsync(l => l.Code == LanguageCode))
         {
             ctx.Languages.Add(Language.Create(LanguageCode, "English"));
+        }
+
+        // A cleaner is paid in the currency of the country they work in, and the resolver throws for a
+        // country with no configuration; every approved cleaner below works in this country.
+        // The market's operating company (ADR-0061 D2): an anonymous register / guest booking with no
+        // country resolves to this market and lands in HostTestTenants.Default.
+        if (!await ctx.CountryConfigurations.IgnoreQueryFilters().AnyAsync(c => c.CountryId == CountryId))
+        {
+            ctx.CountryConfigurations.Add(
+                CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m)
+                    .AssignOperator(HostTestTenants.Default)
+                    .SetAsDefaultMarket(true));
         }
     }
 
@@ -75,6 +95,7 @@ public static class DomainSeed
     public static Employee ApprovedEmployee(User user, string? tenantId = null)
     {
         var employee = BuildCompleteEmployee(user, tenantId);
+        employee.AssignWorkCountry(CountryId);
         employee.Approve(approvedByUserId: "admin-seed");
         return employee;
     }
@@ -98,6 +119,7 @@ public static class DomainSeed
     {
         var employee = BuildCompleteEmployee(user, tenantId);
         employee.ClearPayoutDetails();
+        employee.AssignWorkCountry(CountryId);
         employee.Approve(approvedByUserId: "admin-seed");
         return employee;
     }
@@ -109,7 +131,6 @@ public static class DomainSeed
         employee.UpdateEmployeeDetails(
             entityType: EmployeeEntityType.NaturalPerson,
             registrationNumber: "REG-123456",
-            vatNumber: null,
             legalEntityName: null,
             nationalityId: CountryId,
             passportId: "P1234567",
@@ -164,7 +185,8 @@ public static class DomainSeed
             totalOrders: 1,
             subTotal: 1000m,
             currencyId: CurrencyId,
-            variableSymbol: PayrollMockFactory.NextTestVariableSymbol());
+            variableSymbol: PayrollMockFactory.NextTestVariableSymbol(),
+            invoiceNumber: PayrollMockFactory.NextTestInvoiceNumber());
         if (tenantId is not null) invoice.TenantId = tenantId;
         return invoice;
     }
@@ -187,7 +209,6 @@ public static class DomainSeed
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(3),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,
@@ -282,19 +303,18 @@ public static class DomainSeed
         return (address, saved);
     }
 
-    public static MembershipPlan MembershipPlan(string code = "HOSTTEST-MONTHLY", string? tenantId = null)
-    {
-        var plan = Cleansia.Core.Domain.Memberships.MembershipPlan.Create(
+    public static MembershipPlan MembershipPlan(string code = "HOSTTEST-MONTHLY")
+        => Cleansia.Core.Domain.Memberships.MembershipPlan.Create(
             code: code,
             name: "Host-test plan",
-            monthlyPriceCzk: 299m,
-            stripePriceId: "price_hosttest",
             discountPercentage: 10m,
             freeCancellationWindowHours: 24,
             allowsExpressUpgrade: true);
-        if (tenantId is not null) plan.TenantId = tenantId;
-        return plan;
-    }
+
+    /// <summary>The plan's CZK price. The Stripe id is derived from the plan code, never a shared literal:
+    /// <c>MembershipPlanPrices.StripePriceId</c> is unique, and every host-test class seeds into the one database.</summary>
+    public static MembershipPlanPrice MembershipPlanPrice(string planId, string code = "HOSTTEST-MONTHLY", decimal price = 299m)
+        => Cleansia.Core.Domain.Memberships.MembershipPlanPrice.Create(planId, CurrencyId, price, $"price_hosttest_{code}");
 
     /// <summary>An ACTIVE <see cref="UserMembership"/> for <paramref name="ownerUserId"/> with a period
     /// that ends in the future (so <c>IsActive</c> and <c>GetActiveForUserAsync</c> resolve it). The
@@ -304,10 +324,35 @@ public static class DomainSeed
         var membership = UserMembership.Create(
             userId: ownerUserId,
             membershipPlanId: membershipPlanId,
+            currencyId: DomainSeed.CurrencyId,
             stripeSubscriptionId: "sub_hosttest",
             currentPeriodStart: DateTime.UtcNow.AddDays(-3),
             currentPeriodEnd: DateTime.UtcNow.AddDays(27));
         if (tenantId is not null) membership.TenantId = tenantId;
         return membership;
+    }
+
+    /// <summary>A customer audit row with the three request-metadata columns and a payload filled, so a
+    /// read that must withhold them has something to withhold. <c>OccurredOn</c> is settable because the
+    /// timeline orders by it and a single seed commit would otherwise tie every row.</summary>
+    public static CustomerActionAudit CustomerAudit(
+        string id, string? userId, string tenantId,
+        string resourceType = "Order", string resourceId = "order-1",
+        string? payloadJson = "{\"feeRate\":0.5,\"hasBeenAccepted\":true}",
+        DateTimeOffset? occurredOn = null)
+    {
+        var row = CustomerActionAudit.Create(
+            userId: userId, clientAudience: "cleansia.customer", ipAddress: "203.0.113.9",
+            deviceLabel: "iPhone 15 / iOS 17.4", deviceId: "device-1", action: "customer.order.cancel",
+            resourceType: resourceType, resourceId: resourceId, success: true, errorCode: null,
+            payloadJson: payloadJson, correlationId: null);
+        row.Id = id;
+        row.TenantId = tenantId;
+        if (occurredOn is not null)
+        {
+            typeof(CustomerActionAudit).GetProperty(nameof(CustomerActionAudit.OccurredOn))!.SetValue(row, occurredOn);
+        }
+
+        return row;
     }
 }

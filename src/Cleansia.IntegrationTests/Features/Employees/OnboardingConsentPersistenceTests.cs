@@ -149,7 +149,6 @@ public class OnboardingConsentPersistenceTests(PostgresContainerFixture fixture)
         PassportId: "AB12345",
         EntityType: EmployeeEntityType.NaturalPerson,
         RegistrationNumber: "12345678",
-        VatNumber: null,
         LegalEntityName: null,
         EmergencyName: null,
         EmergencyPhone: null,
@@ -165,7 +164,7 @@ public class OnboardingConsentPersistenceTests(PostgresContainerFixture fixture)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
 

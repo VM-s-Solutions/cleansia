@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -58,11 +59,12 @@ public class CancelOrderRefundSeamTests
             _policyResolver.Object,
             _producer.Object,
             _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            new AuditContext());
 
     private Order ArrangeCardPaidPendingOrder()
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -70,7 +72,6 @@ public class CancelOrderRefundSeamTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(10),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

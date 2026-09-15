@@ -2628,6 +2628,41 @@
         }
       }
     },
+    "booking_market_selection_pruned": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Část vašeho výběru není na této adrese v nabídce a byla odebrána."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some of your selection isn't offered at this address and was removed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часть вашего выбора по этому адресу не предлагается и была убрана."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Časť vášho výberu nie je na tejto adrese v ponuke a bola odobratá."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частину вашого вибору за цією адресою не пропонуємо, тож її прибрано."
+          }
+        }
+      }
+    },
     "booking_no_results": {
       "extractionState": "stale",
       "localizations": {
@@ -3266,31 +3301,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "od %1$d Kč"
+            "value": "od %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "from %1$d CZK"
+            "value": "from %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "от %1$d CZK"
+            "value": "от %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "od %1$d Kč"
+            "value": "od %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "від %1$d CZK"
+            "value": "від %1$@"
           }
         }
       }
@@ -3301,31 +3336,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d Kč/pokoj"
+            "value": "+ %1$@/pokoj"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d CZK/room"
+            "value": "+ %1$@/room"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d CZK/комната"
+            "value": "+ %1$@/комната"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d Kč/izba"
+            "value": "+ %1$@/izba"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+ %1$d CZK/кімната"
+            "value": "+ %1$@/кімната"
           }
         }
       }
@@ -6033,31 +6068,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Věrnostní sleva platí pro objednávky nad %d CZK"
+            "value": "Věrnostní sleva platí pro objednávky nad %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Loyalty discount applies on orders above %d CZK"
+            "value": "Loyalty discount applies on orders above %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Скидка за лояльность действует для заказов от %d CZK"
+            "value": "Скидка за лояльность действует для заказов от %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vernostná zľava platí pre objednávky nad %d CZK"
+            "value": "Vernostná zľava platí pre objednávky nad %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Знижка за лояльність діє для замовлень понад %d CZK"
+            "value": "Знижка за лояльність діє для замовлень понад %1$@"
           }
         }
       }
@@ -6167,37 +6202,72 @@
         }
       }
     },
+    "booking_trust_insured_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pojištěno"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insured"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Застраховано"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poistené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Застраховано"
+          }
+        }
+      }
+    },
     "booking_trust_insured": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pojištěno až do 1M Kč"
+            "value": "Pojištěno až do %1$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Insured up to 1M CZK"
+            "value": "Insured up to %1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Застраховано до 1М CZK"
+            "value": "Застраховано до %1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Poistené až do 1M Kč"
+            "value": "Poistené až do %1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Застраховано до 1М CZK"
+            "value": "Застраховано до %1$@"
           }
         }
       }
@@ -10542,37 +10612,72 @@
         }
       }
     },
+    "help_faq_a3_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes. All Cleansia cleaners are background-checked and covered by insurance."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Да. Все клинеры Cleansia проверены и застрахованы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áno. Všetci upratovači Cleansia sú preverení a poistení."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так. Усі клінери Cleansia перевірені та застраховані."
+          }
+        }
+      }
+    },
     "help_faq_a3": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni až do 1 000 000 Kč na rezervaci."
+            "value": "Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni až do %1$@ na rezervaci."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yes. All Cleansia cleaners are background-checked and covered by insurance up to 1,000,000 CZK per booking."
+            "value": "Yes. All Cleansia cleaners are background-checked and covered by insurance up to %1$@ per booking."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Да. Все клинеры Cleansia проверены и застрахованы до 1 000 000 CZK за заказ."
+            "value": "Да. Все клинеры Cleansia проверены и застрахованы до %1$@ за заказ."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Áno. Všetci upratovači Cleansia sú preverení a poistení až do 1 000 000 CZK na rezerváciu."
+            "value": "Áno. Všetci upratovači Cleansia sú preverení a poistení až do %1$@ na rezerváciu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Так. Усі клінери Cleansia перевірені та застраховані до 1 000 000 CZK за бронювання."
+            "value": "Так. Усі клінери Cleansia перевірені та застраховані до %1$@ за бронювання."
           }
         }
       }
@@ -11590,76 +11695,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваші регулярні прибирання"
-          }
-        }
-      }
-    },
-    "home_seasonal_subtitle": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kombinace oken + čalounění — tento měsíc +450 Kč"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Window + upholstery combo — +450 CZK this month"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Окна + обивка комбо — в этом месяце +450 CZK"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kombinácia okien + čalúnenia — tento mesiac +450 Kč"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Комбо вікна + оббивка — цього місяця +450 CZK"
-          }
-        }
-      }
-    },
-    "home_seasonal_title": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sezóna jarního úklidu"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spring deep clean season"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сезон весенней уборки"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sezóna jarného upratovania"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сезон весняного прибирання"
           }
         }
       }
@@ -12757,31 +12792,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d %% sleva na objednávky od %2$d Kč"
+            "value": "%1$d %% sleva na objednávky od %2$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d%% off orders ≥%2$d CZK"
+            "value": "%1$d%% off orders ≥%2$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d%% скидка на заказы ≥%2$d CZK"
+            "value": "%1$d%% скидка на заказы ≥%2$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d %% zľava na objednávky od %2$d Kč"
+            "value": "%1$d %% zľava na objednávky od %2$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d%% знижка на замовлення ≥%2$d CZK"
+            "value": "%1$d%% знижка на замовлення ≥%2$@"
           }
         }
       }
@@ -12992,146 +13027,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Спеціалізована команда клінерів"
-          }
-        }
-      }
-    },
-    "loyalty_perks_discount_10": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10%% sleva na objednávky nad 1000 Kč"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10%% off bookings over 1000 CZK"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10%% скидка на бронирования свыше 1000 CZK"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10%% zľava na objednávky nad 1000 Kč"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10%% знижка на бронювання понад 1000 CZK"
-          }
-        }
-      }
-    },
-    "loyalty_perks_discount_12": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "12%% sleva na objednávky nad 1000 Kč"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "12%% off bookings over 1000 CZK"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "12%% скидка на бронирования свыше 1000 CZK"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "12%% zľava na objednávky nad 1000 Kč"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "12%% знижка на бронювання понад 1000 CZK"
-          }
-        }
-      }
-    },
-    "loyalty_perks_discount_15": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15%% sleva na objednávky nad 1000 Kč"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15%% off bookings over 1000 CZK"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15%% скидка на бронирования свыше 1000 CZK"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15%% zľava na objednávky nad 1000 Kč"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15%% знижка на бронювання понад 1000 CZK"
-          }
-        }
-      }
-    },
-    "loyalty_perks_discount_5_above_1000": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5%% sleva na objednávky nad 1000 Kč"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5%% off bookings over 1000 CZK"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5%% скидка на бронирования свыше 1000 CZK"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5%% zľava na objednávky nad 1000 Kč"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5%% знижка на бронювання понад 1000 CZK"
           }
         }
       }
@@ -14754,31 +14649,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / prvních %1$d dní"
+            "value": "%1$@ / prvních %2$d dní"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / first %1$d days"
+            "value": "%1$@ / first %2$d days"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / первые %1$d дней"
+            "value": "%1$@ / первые %2$d дней"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / prvých %1$d dní"
+            "value": "%1$@ / prvých %2$d dní"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "0 Kč / перші %1$d днів"
+            "value": "%1$@ / перші %2$d днів"
           }
         }
       }
@@ -15654,6 +15549,111 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ / рік"
+          }
+        }
+      }
+    },
+    "plus_not_available_in_market": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus zatím není na vašem trhu k dispozici"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus is not available in your market yet"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus пока недоступен на вашем рынке"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus zatiaľ nie je na vašom trhu k dispozícii"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus поки що недоступний на вашому ринку"
+          }
+        }
+      }
+    },
+    "membership_plans_load_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plány Plus se nepodařilo načíst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't load the Plus plans."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить планы Plus."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plány Plus sa nepodarilo načítať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося завантажити плани Plus."
+          }
+        }
+      }
+    },
+    "membership_currency_locked_in": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše fakturace Plus je nastavená v %1$@. Pro změnu kontaktujte podporu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Plus billing is set up in %1$@. Contact support to change it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата Plus настроена в валюте %1$@. Чтобы изменить её, обратитесь в поддержку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša fakturácia Plus je nastavená v %1$@. Pre zmenu kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата Plus налаштована у валюті %1$@. Щоб її змінити, зверніться до підтримки."
           }
         }
       }
@@ -25427,6 +25427,76 @@
         }
       }
     },
+    "profile_row_market": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trh"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Market"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рынок"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trh"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ринок"
+          }
+        }
+      }
+    },
+    "market_chip_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trh: %1$@, ceny v %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Market: %1$@, prices in %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рынок: %1$@, цены в %2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trh: %1$@, ceny v %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ринок: %1$@, ціни в %2$@"
+          }
+        }
+      }
+    },
     "profile_row_language": {
       "extractionState": "stale",
       "localizations": {
@@ -26902,31 +26972,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
+            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added %2$@ credit towards your next clean. Sorry."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit 250 Kč na příští úklid. Omlouváme se."
+            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit %2$@ na příští úklid. Omlouváme se."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit 250 Kč na ďalšie upratovanie. Ospravedlňujeme sa."
+            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили 250 Kč бонусов на следующую уборку. Простите."
+            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили бонус %2$@ на следующую уборку. Простите."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали 250 Kč бонусів на наступне прибирання. Вибачте."
+            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали бонус %2$@ на наступне прибирання. Вибачте."
           }
         }
       }

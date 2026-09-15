@@ -11,8 +11,8 @@ import XCTest
 ///    than re-granted;
 ///  - anything that did not land stays parked for the next session.
 ///
-/// The exact commands that reach the wire are pinned per app, over each app's real
-/// generated Gdpr API — see `SignupConsentFlowTests` in CleansiaCustomer and CleansiaPartner.
+/// The exact commands that reach the wire are pinned over the partner app's real generated
+/// Gdpr API — see `SignupConsentFlowTests` in CleansiaPartner.
 final class SignupConsentRepositoryTests: XCTestCase {
     private var client: RecordingSignupConsentClient!
     private var store: InMemorySignupConsentStore!

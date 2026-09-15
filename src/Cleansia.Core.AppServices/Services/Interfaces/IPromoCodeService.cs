@@ -41,14 +41,17 @@ public interface IPromoCodeService
 {
     /// <summary>
     /// Validate a code + compute the discount it would yield without writing
-    /// any state. Used both by the customer-facing Validate endpoint (UX
-    /// optimisation) and by the CreateOrder handler (which then calls
-    /// <see cref="ApplyAsync"/> after the order id is known).
+    /// any state. Used by the customer-facing Validate endpoint, by the
+    /// CreateOrder validator (which refuses the booking on any error) and by
+    /// the CreateOrder handler (which then calls <see cref="ApplyAsync"/>
+    /// after the order id is known).
     /// </summary>
     /// <param name="orderCurrencyId">
-    /// Currency the order will be billed in. Required for fixed-amount
-    /// codes — they only apply when the order currency matches the code's
-    /// currency. Pass the tenant default when the call is purely advisory.
+    /// Currency the order will be billed in — the service address's country's.
+    /// A code bound to a currency applies only when this one matches it, so
+    /// every caller, advisory or not, must pass the currency the order will
+    /// actually be priced in: an advisory preview against a different currency
+    /// answers a question the checkout never asks.
     /// </param>
     Task<PromoCodePreviewResult> PreviewAsync(
         string code,

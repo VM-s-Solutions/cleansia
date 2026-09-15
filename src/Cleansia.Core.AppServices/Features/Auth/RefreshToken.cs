@@ -30,14 +30,16 @@ public class RefreshToken
         }
     }
 
-    // RequiredProfile/RequiredAudience are the host's per-host refresh pin (ADR-0001). They are
-    // server-authoritative: each AuthController sets them from its own host identity and a
-    // client-sent value would be discarded. JsonIgnore keeps them off the wire so they never appear
-    // in a generated client and can never be supplied by a caller — only Token crosses the wire.
+    // RequiredProfiles/RequiredAudience are the host's per-host refresh pin (ADR-0001): the profiles
+    // the host's sign-in admits, and its own audience. They are server-authoritative: each
+    // AuthController sets them from its own host identity and a client-sent value would be discarded.
+    // JsonIgnore keeps them off the wire so they never appear in a generated client and can never be
+    // supplied by a caller — only Token crosses the wire. An empty profile set admits nobody, so a host
+    // that pins the wrong thing fails on its first refresh instead of silently dropping the pin.
     public record Command(string Token) : ICommand<JwtTokenResponse>
     {
         [JsonIgnore]
-        public UserProfile? RequiredProfile { get; init; }
+        public IReadOnlyCollection<UserProfile>? RequiredProfiles { get; init; }
 
         [JsonIgnore]
         public string? RequiredAudience { get; init; }
@@ -49,6 +51,7 @@ public class RefreshToken
         IEmployeeRepository employeeRepository,
         IRequestMetadataProvider requestMetadata,
         IJwtSettings jwtSettings,
+        ITenantProvider tenantProvider,
         TimeProvider timeProvider)
         : ICommandHandler<Command, JwtTokenResponse>
     {
@@ -88,10 +91,17 @@ public class RefreshToken
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
             }
 
-            if (command.RequiredProfile.HasValue && user.Profile != command.RequiredProfile.Value)
+            if (command.RequiredProfiles is not null && !command.RequiredProfiles.Contains(user.Profile))
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
+            }
+
+            // The rotated RefreshToken row is stamped at the flush below; the request is anonymous, so
+            // the tenant is the user's (ADR-0061 D4).
+            if (!string.IsNullOrEmpty(user.TenantId))
+            {
+                tenantProvider.SetTenantOverride(user.TenantId);
             }
 
             // Persist the rotation only now that every accept/reject gate has passed — a rejected

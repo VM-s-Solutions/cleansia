@@ -39,7 +39,7 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
         return HandleResult<OrderItem>(result);
     }
 
-    // A Command, not a GET, and that is the point: AdminMutationGate writes an audit row only for a
+    // A Command, not a GET, and that is the point: AuditGate writes an audit row only for a
     // request type whose name ends in "Command". Entry instructions are a physical key to somebody's
     // home, so the compensating control for holding them is knowing who looked — see
     // RevealOrderAccessInstructions. Rate-limited on the same partition as the payout reveal, because

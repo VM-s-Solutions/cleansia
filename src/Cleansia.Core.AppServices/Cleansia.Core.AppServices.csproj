@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="Google.Apis.Auth" />
+    <PackageReference Include="Markdig" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <!-- T-0144 / ADR-0005 D1 — EmailService sources the SendGrid SDK's transport from the named

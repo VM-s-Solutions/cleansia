@@ -71,7 +71,7 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
 
     facade.createEmployeePayConfig({
       serviceId: 'svc-1',
-      packageId: '',
+      packageId: null,
       currencyId: 'cur-1',
       ...rateData,
       description: 'note',
@@ -104,8 +104,10 @@ describe('EmployeeDetailFacade — pay config overrides', () => {
 
     facade.createEmployeePayConfig({
       serviceId: 'svc-1',
+      packageId: null,
       currencyId: 'cur-1',
       ...rateData,
+      description: null,
     });
 
     expect(facade.payConfigDialogOpen()).toBe(true);
@@ -228,7 +230,8 @@ describe('EmployeeDetailFacade — employee update', () => {
   });
 
   it('never sends a raw payout identifier — payout details live behind their own contract', () => {
-    facade.updateEmployee({ firstName: 'Jitka', iban: 'CZ3155000000005885638003' });
+    const editedWithPayoutId = { firstName: 'Jitka', iban: 'CZ3155000000005885638003' };
+    facade.updateEmployee(editedWithPayoutId);
 
     const [, command] = updateMock.mock.calls[0];
     expect('iban' in command.toJSON()).toBe(false);

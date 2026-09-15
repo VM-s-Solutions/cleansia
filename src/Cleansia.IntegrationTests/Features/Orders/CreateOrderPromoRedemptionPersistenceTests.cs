@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -116,7 +117,8 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
         PaymentType: PaymentType.Card,
         CurrencyId: CurrencyId,
         TotalPrice: QuotedTotal,
-        PromoCode: PromoCodeText);
+        PromoCode: PromoCodeText,
+        TermsAccepted: true);
 
     private static Task ConfigureCustomerSession(IServiceCollection services)
     {
@@ -139,15 +141,17 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
     {
         context.Languages.Add(Language.Create("en", "English"));
 
-        var country = Country.Create("Czechia", "CZ", isServiced: true);
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
         context.Countries.Add(country);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default));
 
         context.Add(ServiceCity.Create(CountryId, City));
 
         // Exchange rate 1.0 keeps the quoted total equal to the catalog price, so the validator's
         // price-match check is exact and the promo discount is a clean 20% of 1000.
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1.0m);
+        var currency = Currency.Create("CZK", "Kč", "Czech koruna");
+        currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
@@ -157,7 +161,7 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
         context.Add(category);
 
         var service = Service.Create(
-            CategoryId, "Promo Redeem Service", "Service under test", ServiceBasePrice, 0m, 60);
+            CategoryId, "Promo Redeem Service", "Service under test", 60);
         service.Id = ServiceId;
         context.Add(service);
 
@@ -165,6 +169,12 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
         // refuses a selection that would quote nothing on a cleaner's board.
         context.EmployeePayConfigs.Add(
             EmployeePayConfig.CreateForService(ServiceId, 100m, CurrencyId));
+
+        // ...and its PRICE in the currency the order is placed in. A catalogue entry has no price of
+        // its own any more, and an entry with no row is not offerable — so this is the same class of
+        // arrangement as the pay config above it, not decoration.
+        context.ServicePrices.Add(
+            ServicePrice.Create(ServiceId, CurrencyId, ServiceBasePrice, 0m));
 
         var user = User.CreateWithPassword(
             CustomerEmail,

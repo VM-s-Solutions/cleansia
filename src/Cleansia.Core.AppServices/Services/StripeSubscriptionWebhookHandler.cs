@@ -20,6 +20,7 @@ public class StripeSubscriptionWebhookHandler(
     IUserRepository userRepository,
     IUserMembershipRepository userMembershipRepository,
     IMembershipPlanRepository membershipPlanRepository,
+    ICurrencyRepository currencyRepository,
     ITenantProvider tenantProvider,
     ILogger<StripeSubscriptionWebhookHandler> logger) : IStripeSubscriptionWebhookHandler
 {
@@ -151,6 +152,21 @@ public class StripeSubscriptionWebhookHandler(
             return null;
         }
 
+        // The charge currency is read off the subscription itself — Stripe sets it from the Price and it
+        // is never absent — rather than from metadata the platform wrote, which can be. A code the
+        // platform has no Currency for is a subscription it cannot mirror.
+        var currencyCode = stripeSub?.Currency?.ToUpperInvariant();
+        var currency = string.IsNullOrEmpty(currencyCode)
+            ? null
+            : await currencyRepository.GetByCodeAsync(currencyCode, cancellationToken);
+        if (currency == null)
+        {
+            logger.LogError(
+                "subscription.created webhook for sub {SubscriptionId} carries currency {CurrencyCode}, which names no platform currency; can't provision local row",
+                subscriptionId, currencyCode ?? "(none)");
+            return null;
+        }
+
         // SEC-W2 / ADR-0002 D2 — ASSERT BEFORE ACTING. The web Checkout flow only creates the
         // Stripe Session; this webhook is the SOLE creator of the local row, and unlike the request path
         // (CreateMembershipCheckoutSession) it never checked for an existing active membership. So a user
@@ -173,6 +189,7 @@ public class StripeSubscriptionWebhookHandler(
         var membership = UserMembership.Create(
             userId: userId,
             membershipPlanId: plan.Id,
+            currencyId: currency.Id,
             stripeSubscriptionId: subscriptionId,
             currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,

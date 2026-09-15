@@ -74,21 +74,6 @@ public class UpdateIdentificationInfo
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat)
                 .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
 
-            RuleFor(c => c.VatNumber)
-                .MaximumLength(50)
-                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
-            RuleFor(c => c.VatNumber)
-                .MustAsync(async (command, value, ct) =>
-                {
-                    var result = await _taxIdValidator.ValidateVatNumberAsync(
-                        command.BusinessCountryId, value, ct);
-                    return result.IsValid;
-                })
-                .WithMessage(BusinessErrorMessage.VatNumberInvalidFormat)
-                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
-
             // Legal entity name only required when EntityType=LegalEntity.
             // For natural persons the field is ignored (handler clears it).
             RuleFor(c => c.LegalEntityName)
@@ -119,7 +104,6 @@ public class UpdateIdentificationInfo
         EmployeeEntityType EntityType,
         string BusinessCountryId,
         string RegistrationNumber,
-        string? VatNumber,
         string? LegalEntityName) : ICommand<Response>;
 
     public record Response(string EmployeeId);
@@ -150,7 +134,6 @@ public class UpdateIdentificationInfo
             employee.UpdateBusinessIdentity(
                 command.EntityType,
                 command.RegistrationNumber,
-                command.VatNumber,
                 command.LegalEntityName);
 
             return BusinessResult.Success(new Response(employee.Id));

@@ -13,7 +13,7 @@ public enum CreditTransactionReason
     /// <summary>An admin settled a dispute with credit instead of, or alongside, a card refund.</summary>
     DisputeSettlement = 1,
 
-    /// <summary>The cleaner cancelled or did not arrive. → BookingPolicy.NoShowCreditCzk</summary>
+    /// <summary>The cleaner cancelled or did not arrive. The amount is <c>Currency.NoShowCredit</c>, authored per currency.</summary>
     CleanerNoShow = 2,
 
     /// <summary>An admin issued goodwill credit outside any dispute.</summary>

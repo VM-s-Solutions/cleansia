@@ -1,3 +1,4 @@
+import { OrderEmployeePayDto } from '@cleansia/partner-services';
 import { formatPayAmount, getPeriodPayTableDefinition } from './period-pay.models';
 
 describe('formatPayAmount', () => {
@@ -37,5 +38,16 @@ describe('getPeriodPayTableDefinition', () => {
 
   it('uses whatever the server sent, not a default', () => {
     expect(formatPayAmount(99, 'EUR')).toBe('99.00 EUR');
+  });
+
+  // Every row now names its own currency. The summary's code is the fallback for a row that carries
+  // none, never the other way round: a row's currency is the pay's, the summary's is the view's.
+  it('labels a row with the currency the row carries before the summary one', () => {
+    const { columns } = getPeriodPayTableDefinition('CZK');
+    const total = columns.find((column) => column.id === 'totalPay');
+    if (!total?.getValue) throw new Error('totalPay column missing or static');
+
+    expect(total.getValue(OrderEmployeePayDto.fromJS({ totalPay: 99, currencyCode: 'EUR' }))).toBe('99.00 EUR');
+    expect(total.getValue(OrderEmployeePayDto.fromJS({ totalPay: 99 }))).toBe('99.00 CZK');
   });
 });

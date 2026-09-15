@@ -43,7 +43,8 @@ public class GetCustomerOrders
                 minTotalPrice: request.Filter?.MinTotalPrice,
                 maxTotalPrice: request.Filter?.MaxTotalPrice,
                 orderStatuses: request.Filter?.OrderStatuses,
-                userId: userId);
+                userId: userId,
+                currencyId: request.Filter?.CurrencyId);
 
             var filter = specification.SatisfiedBy();
 

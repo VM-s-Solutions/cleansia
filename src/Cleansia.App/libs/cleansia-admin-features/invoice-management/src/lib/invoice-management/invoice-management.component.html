@@ -69,7 +69,14 @@
 
 <!-- Filter Drawer Backdrop -->
 @if (isFilterDrawerOpen()) {
-<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+<div
+  class="filter-drawer-backdrop"
+  role="button"
+  tabindex="0"
+  (click)="closeFilterDrawer()"
+  (keydown.escape)="closeFilterDrawer()"
+  [attr.aria-label]="'global.close' | translate"
+></div>
 }
 
 <!-- Filter Drawer -->
@@ -96,7 +103,9 @@
           <div
             class="filter-checkbox-item"
             [class.checked]="isStatusChecked(option.value)"
+            tabindex="0"
             (click)="toggleStatus(option.value)"
+            (keydown.enter)="toggleStatus(option.value)"
           >
             <cleansia-checkbox
               [label]="option.label"
@@ -107,6 +116,21 @@
           </div>
           }
         </div>
+      </div>
+
+      <!-- Currency Section -->
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.invoice_management.filters.currency' | translate }}
+        </h3>
+        <cleansia-select
+          [options]="currencyOptions()"
+          [label]="'pages.invoice_management.filters.currency' | translate"
+          [floatVariant]="'on'"
+          [showClear]="true"
+          formControlName="currencyId"
+          appendTo="body"
+        />
       </div>
     </form>
   </div>

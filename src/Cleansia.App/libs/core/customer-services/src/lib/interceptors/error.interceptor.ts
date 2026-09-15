@@ -11,6 +11,7 @@ import { Router } from '@angular/router';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { CustomerAuthService } from '../services';
+import { isSessionIssuingRoute } from './auth-routes';
 import { CustomerRefreshCoordinator } from './refresh-coordinator';
 
 export const CustomerErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
@@ -25,8 +26,8 @@ export const CustomerErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      // Don't try to refresh on the refresh/login endpoints themselves — infinite loop guard.
-      if (req.url.includes('/api/auth/RefreshToken') || req.url.includes('/api/auth/Login')) {
+      // A 401 from the refresh or login call itself must not trigger another refresh.
+      if (isSessionIssuingRoute(req.url)) {
         forceLogout(authService, router);
         return throwError(() => error);
       }

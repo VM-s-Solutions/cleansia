@@ -23,6 +23,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.completed",
         "order.cancelled",
         "order.refunded",
+        "order.no_cleaner_refunded",
         "order.starting_soon",
         "dispute.reply",
         "recurring.scheduled",
@@ -68,6 +69,12 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "employee.weekly_limit_set"
     ]
 
+    /// The server formats the credit as "<number> <symbol>" and sends it after the order number,
+    /// so the body takes two slots and states neither a figure nor a currency of its own.
+    private let orderNumberAndAmountArgEvents: Set<String> = [
+        "order.no_cleaner_refunded"
+    ]
+
     /// The word each locale uses for "cancelled" — i.e. the claim `order.assignment_revoked`
     /// must never make.
     private let cancelledWord = [
@@ -106,7 +113,16 @@ final class PushLocKeyCatalogTests: XCTestCase {
             let table = try localizableTable(for: language)
             for event in events {
                 let body = try XCTUnwrap(table["push.\(event).body"], "push.\(event).body in \(language)")
-                if orderNumberArgEvents.contains(event) {
+                if orderNumberAndAmountArgEvents.contains(event) {
+                    XCTAssertTrue(
+                        body.contains("%1$@") && body.contains("%2$@"),
+                        "push.\(event).body must carry the %1$@ and %2$@ loc-arg slots in \(language): \(body)"
+                    )
+                    XCTAssertEqual(
+                        formatSpecifierCount(body), 2,
+                        "push.\(event).body must carry exactly two slots in \(language): \(body)"
+                    )
+                } else if orderNumberArgEvents.contains(event) {
                     XCTAssertTrue(
                         body.contains("%1$@"),
                         "push.\(event).body must carry the %1$@ loc-arg slot in \(language): \(body)"

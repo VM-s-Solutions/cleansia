@@ -19,6 +19,7 @@ export interface OrderFilterParams {
   cleaningDateTo?: Date;
   hasAvailableSpots?: boolean;
   isUnassigned?: boolean;
+  currencyId?: string;
 }
 
 @Injectable()
@@ -36,6 +37,21 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
   private currentOffset = signal<number>(0);
   private currentLimit = signal<number>(20);
   private currentSort = signal<SortDefinition[] | undefined>(undefined);
+
+  readonly currencies = signal<{ id: string; code: string; isDefault: boolean }[]>([]);
+
+  loadCurrencies(): void {
+    this.adminClient.adminCurrencyClient
+      .getOverview()
+      .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
+      .subscribe((currencies) => {
+        this.currencies.set(
+          (currencies ?? []).flatMap((c) =>
+            c.id && c.code ? [{ id: c.id, code: c.code, isDefault: !!c.isDefault }] : []
+          )
+        );
+      });
+  }
 
   readonly orderStatusOptions = [
     {
@@ -110,7 +126,7 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
     // Parameters order: id, isActive, customerName, customerEmail, customerPhone,
     // displayOrderNumber, employeeId, cleaningDateFrom, cleaningDateTo,
     // paymentStatuses, paymentTypes, minTotalPrice, maxTotalPrice, orderStatuses,
-    // hasAvailableSpots, isUnassigned, excludeEmployeeId, sort, offset, limit
+    // hasAvailableSpots, isUnassigned, excludeEmployeeId, currencyId, sort, offset, limit
     this.adminClient.adminOrderClient
       .getPaged(
         undefined, // id
@@ -130,6 +146,7 @@ export class OrderManagementFacade extends UnsubscribeControlDirective {
         filterParams?.hasAvailableSpots, // hasAvailableSpots
         filterParams?.isUnassigned, // isUnassigned
         undefined, // excludeEmployeeId
+        filterParams?.currencyId, // currencyId
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()

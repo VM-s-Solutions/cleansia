@@ -33,10 +33,16 @@ public struct AnonymousAllowList: Sendable {
         "/api/user/changepassword"
     ]
 
+    /// The register form reads the market directory before there is a session.
+    private static let marketDirectory = [
+        "/api/market/getoverview"
+    ]
+
     private static let customerGuestBooking = [
         "/api/service/getoverview",
         "/api/package/getoverview",
         "/api/extra/getoverview",
+        "/api/currency/getoverview",
         "/api/membership/getplans",
         "/api/order/quote",
         "/api/order/createorder",
@@ -52,9 +58,9 @@ public struct AnonymousAllowList: Sendable {
         "/api/payment/createorder"
     ]
 
-    public static let partner = AnonymousAllowList(paths: sharedAuth)
+    public static let partner = AnonymousAllowList(paths: sharedAuth + marketDirectory)
     public static let customer = AnonymousAllowList(
-        paths: sharedAuth + customerGuestBooking,
+        paths: sharedAuth + marketDirectory + customerGuestBooking,
         dualUsePaths: customerDualUse
     )
 }

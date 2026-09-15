@@ -30,7 +30,8 @@ public class MarkInvoicePaidNotifyTests
             totalOrders: 3,
             subTotal: 900m,
             currencyId: "cur-czk",
-            variableSymbol: PayrollMockFactory.TestVariableSymbol);
+            variableSymbol: PayrollMockFactory.TestVariableSymbol,
+            invoiceNumber: PayrollMockFactory.TestInvoiceNumber);
         invoice.Approve("admin-1");
 
         if (employeeUserId is not null)

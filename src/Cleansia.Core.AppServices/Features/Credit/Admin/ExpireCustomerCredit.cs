@@ -20,27 +20,33 @@ namespace Cleansia.Core.AppServices.Features.Credit.Admin;
 /// required for exactly that reason — a row that says only "Expired" on a date the sweep did not run
 /// is a mystery to whoever reads it next.</para>
 ///
-/// <para>It only ever takes the WHOLE balance. A partial discharge would need a rule for what the
-/// remainder is now for, and there is no case that wants one: either the customer is leaving, or they
-/// are not.</para>
+/// <para>It only ever takes the WHOLE balance of ONE currency's account. A partial discharge would
+/// need a rule for what the remainder is now for, and there is no case that wants one: either the
+/// customer is leaving, or they are not. Credit is held per currency, so a customer holding two
+/// balances is discharged twice — once per account — and each row in the ledger and each response
+/// carries the unit it took.</para>
 /// </summary>
 [AuditAction("credit.expire", Sensitive = true, ResourceType = "CreditAccount")]
 public class ExpireCustomerCredit
 {
+    /// <param name="CurrencyId">
+    /// Which account to drain. Must exist; NOT required to be active — a balance stranded in a
+    /// switched-off currency is precisely the one that still blocks erasure and must be dischargeable.
+    /// </param>
     /// <param name="RequestId">
     /// S7a. Persisted as the ledger row's <c>IdempotencyKey</c>, where a plain unique index collapses
     /// a double-submit. Less load-bearing here than on the issue path — draining an empty balance is
     /// already a no-op — but the shape stays the same as its sibling so neither is the odd one out.
     /// </param>
-    public record Command(string UserId, string Note, string RequestId) : ICommand<Response>;
+    public record Command(string UserId, string CurrencyId, string Note, string RequestId) : ICommand<Response>;
 
-    public record Response(string UserId, decimal AmountExpired);
+    public record Response(string UserId, decimal AmountExpired, string CurrencyCode);
 
     private record BalanceSnapshot(string UserId, decimal Balance);
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IUserRepository userRepository)
+        public Validator(IUserRepository userRepository, ICurrencyRepository currencyRepository)
         {
             RuleFor(x => x.UserId)
                 .Cascade(CascadeMode.Stop)
@@ -48,6 +54,13 @@ public class ExpireCustomerCredit
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(async (id, ct) => await userRepository.ExistsAsync(id, ct))
                 .WithMessage(BusinessErrorMessage.UserNotFound);
+
+            RuleFor(x => x.CurrencyId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(currencyRepository.ExistsAsync)
+                .WithMessage(BusinessErrorMessage.CurrencyNotFound);
 
             // Required, and the only record of why money the company owed stopped being owed.
             RuleFor(x => x.Note)
@@ -68,6 +81,7 @@ public class ExpireCustomerCredit
 
     public class Handler(
         ICreditAccountRepository creditAccountRepository,
+        ICurrencyRepository currencyRepository,
         IUserSessionProvider userSessionProvider,
         IAuditContext auditContext) : ICommandHandler<Command, Response>
     {
@@ -75,16 +89,19 @@ public class ExpireCustomerCredit
             Command command, CancellationToken cancellationToken)
         {
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
+            var currency = await currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
+            var currencyCode = currency?.Code ?? string.Empty;
 
-            var account = await creditAccountRepository.GetByUserIdAsync(
+            var accounts = await creditAccountRepository.GetAllForUserAsync(
                 command.UserId, cancellationToken);
+            var account = accounts.FirstOrDefault(a => a.CurrencyId == command.CurrencyId);
 
-            // No account, or nothing on it. Both are SUCCESS with zero: the admin's intent — "make
-            // this balance not block anything" — is already true, and an error here would send them
-            // hunting for a problem that does not exist.
-            if (account == null || account.Balance <= 0m)
+            // No account in this currency, or nothing on it. Both are SUCCESS with zero: the admin's
+            // intent — "make this balance not block anything" — is already true, and an error here
+            // would send them hunting for a problem that does not exist.
+            if (account is null || account.Balance <= 0m)
             {
-                return BusinessResult.Success(new Response(command.UserId, 0m));
+                return BusinessResult.Success(new Response(command.UserId, 0m, currencyCode));
             }
 
             var balanceBefore = account.Balance;
@@ -98,7 +115,7 @@ public class ExpireCustomerCredit
                 new BalanceSnapshot(command.UserId, 0m),
                 command.Note);
 
-            return BusinessResult.Success(new Response(command.UserId, taken));
+            return BusinessResult.Success(new Response(command.UserId, taken, currencyCode));
         }
     }
 }

@@ -1,12 +1,15 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -33,6 +36,8 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IStripeClient> _stripe = new();
+    private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = MarketResolution.Resolving();
 
     private readonly MembershipPlan _plan;
 
@@ -50,8 +55,6 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
         _plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: StripePriceId,
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -60,6 +63,7 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
         _planRepository
             .Setup(r => r.GetByCodeAsync(PlanCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_plan);
+        _priceRepository.PriceIn(_plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId);
 
         _stripe
             .Setup(c => c.CreateSubscriptionAsync(
@@ -77,11 +81,19 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
             _userRepository.Object,
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
+            _currencyResolution.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
+            CustomerResolver(),
+            new AuditContext(),
             NullLogger<CreateMembershipSubscription.Handler>.Instance);
+
+    private StripeCustomerResolver CustomerResolver() =>
+        new(new Mock<IUserStripeCustomerRepository>().Object, _membershipRepository.Object, _stripe.Object,
+            NullLogger<StripeCustomerResolver>.Instance);
 
     private static CreateMembershipSubscription.Command ConfirmedCommand() =>
         new(PlanCode, PaymentMethodConfirmed: true) { IdempotencyToken = ClientToken };
@@ -104,6 +116,7 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
         var alreadyTracked = UserMembership.Create(
             userId: UserId,
             membershipPlanId: _plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: $"sub_tok-{ClientToken}",
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));

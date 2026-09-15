@@ -261,20 +261,8 @@ describe('the Plus express perk claim matches the mechanism (T-0544 / T-0514)', 
 
   it('the booking flow renders the waiver only on the server verdict, never on a client count', () => {
     const wizard = readFileSync(join(WIZARD_DIR, 'order-wizard.component.html'), 'utf8');
-    const summary = readFileSync(
-      join(WIZARD_DIR, 'components/wizard-summary-step.component.html'),
-      'utf8'
-    );
 
-    for (const [name, source] of [
-      ['order-wizard.component.html', wizard],
-      ['wizard-summary-step.component.html', summary],
-    ] as const) {
-      expect({ name, waived: source.includes('facade.expressSurchargeWaived()') }).toEqual({
-        name,
-        waived: true,
-      });
-    }
+    expect(wizard).toContain('facade.expressSurchargeWaived()');
 
     // The count is the server's `ExpressUpgradesRemaining`, rendered verbatim — a client that
     // adjusts it disagrees with the server the first time a cancellation releases a slot.

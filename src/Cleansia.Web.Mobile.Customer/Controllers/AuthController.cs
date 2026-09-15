@@ -110,7 +110,7 @@ public class AuthController(IMediator mediator) : CustomerMobileApiController(me
         // this host should refresh only here. Mirrors how the partner Mobile
         // host pins to JwtAudiences.Mobile, and Customer Web pins to
         // JwtAudiences.Customer.
-        var enriched = command with { RequiredProfile = UserProfile.Customer, RequiredAudience = JwtAudiences.Customer };
+        var enriched = command with { RequiredProfiles = [UserProfile.Customer], RequiredAudience = JwtAudiences.Customer };
         var result = await Mediator.Send(enriched, cancellationToken);
         return HandleResult<JwtTokenResponse>(result);
     }

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Notifications.DTOs;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
@@ -14,6 +15,7 @@ namespace Cleansia.Core.AppServices.Features.Notifications;
 /// values. Same upsert semantics as <see cref="GetMyNotificationPreferences"/>
 /// so the client never has to call GET first.
 /// </summary>
+[AuditAction("customer.notification_preferences.update", Audience = AuditAudience.Customer, ResourceType = "User")]
 public static class UpdateNotificationPreferences
 {
     public record Command(
@@ -33,9 +35,45 @@ public static class UpdateNotificationPreferences
     // pipeline requires one for every *Command.
     public class Validator : AbstractValidator<Command>;
 
+    /// <summary>
+    /// The flags before and after the replace-all write (ADR-0062 D3): the record that a customer did,
+    /// or did not, switch a category off before the notification they say they never received.
+    /// </summary>
+    public record NotificationPreferencesEvidence(
+        NotificationFlags Before,
+        NotificationFlags After) : ICustomerAuditPayload;
+
+    public record NotificationFlags(
+        bool OrderUpdates,
+        bool CleanerOnTheWay,
+        bool OrderCompleted,
+        bool OrderCancelled,
+        bool RefundIssued,
+        bool MembershipExpiring,
+        bool MembershipCancelled,
+        bool TierUpgrade,
+        bool Promo,
+        bool DisputeReply,
+        bool RecurringScheduled)
+    {
+        public static NotificationFlags Of(UserNotificationPreferences preferences) => new(
+            preferences.OrderUpdates,
+            preferences.CleanerOnTheWay,
+            preferences.OrderCompleted,
+            preferences.OrderCancelled,
+            preferences.RefundIssued,
+            preferences.MembershipExpiring,
+            preferences.MembershipCancelled,
+            preferences.TierUpgrade,
+            preferences.Promo,
+            preferences.DisputeReply,
+            preferences.RecurringScheduled);
+    }
+
     public class Handler(
         IUserNotificationPreferencesRepository repository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext)
         : ICommandHandler<Command, NotificationPreferencesDto>
     {
         public async Task<BusinessResult<NotificationPreferencesDto>> Handle(
@@ -50,6 +88,8 @@ public static class UpdateNotificationPreferences
                 repository.Add(preferences);
             }
 
+            var before = NotificationFlags.Of(preferences);
+
             preferences.Set(NotificationCategory.OrderUpdates, command.OrderUpdates);
             preferences.Set(NotificationCategory.CleanerOnTheWay, command.CleanerOnTheWay);
             preferences.Set(NotificationCategory.OrderCompleted, command.OrderCompleted);
@@ -61,6 +101,8 @@ public static class UpdateNotificationPreferences
             preferences.Set(NotificationCategory.Promo, command.Promo);
             preferences.Set(NotificationCategory.DisputeReply, command.DisputeReply);
             preferences.Set(NotificationCategory.RecurringScheduled, command.RecurringScheduled);
+
+            auditContext.RecordEvidence("User", userId, new NotificationPreferencesEvidence(before, NotificationFlags.Of(preferences)));
 
             return BusinessResult.Success(new NotificationPreferencesDto(
                 OrderUpdates: preferences.OrderUpdates,

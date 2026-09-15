@@ -160,3 +160,125 @@ cleansia-admin-audit-entry {
     font-style: italic;
   }
 }
+
+.cleansia-audit-log__segment {
+  display: flex;
+  justify-content: center;
+  margin: -0.5rem 0 0.5rem;
+}
+
+.cleansia-audit-log__guest {
+  color: var(--cleansia-text-secondary);
+  font-style: italic;
+}
+
+.cleansia-audit-link {
+  color: var(--cleansia-primary-700);
+  text-decoration: none;
+  font-weight: 600;
+  word-break: break-all;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+.cleansia-audit-timeline__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  color: var(--cleansia-text-secondary);
+
+  i {
+    font-size: 2rem;
+    color: #b45309;
+  }
+}
+
+.audit-source-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  line-height: 1;
+  white-space: nowrap;
+
+  &.source-customer {
+    background-color: #e0f2fe;
+    color: #0c4a6e;
+    border: 1px solid #bae6fd;
+  }
+
+  &.source-admin {
+    background-color: #ede9fe;
+    color: #4c1d95;
+    border: 1px solid #ddd6fe;
+  }
+
+  &.source-employee {
+    background-color: #cffafe;
+    color: #155e75;
+    border: 1px solid #a5f3fc;
+  }
+}
+
+.cleansia-audit-entry {
+  &__raw-action {
+    display: block;
+    font-family: monospace;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--cleansia-text-secondary);
+  }
+
+  &__error-code {
+    display: block;
+    margin-top: 0.375rem;
+    font-family: monospace;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: #991b1b;
+  }
+
+  &__meta-hint {
+    display: block;
+    margin-top: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--cleansia-text-secondary);
+  }
+
+  &__payload-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+
+    .cleansia-audit-entry__section-title {
+      margin: 0;
+    }
+  }
+
+  &__raw-json {
+    margin: 0;
+    padding: 1rem;
+    border-radius: 12px;
+    background: var(--cleansia-primary-0);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__diff + &__diff {
+    margin-top: 1.5rem;
+  }
+}

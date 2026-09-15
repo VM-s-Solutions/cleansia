@@ -19,9 +19,15 @@ export function formatPayAmount(
     : '';
 }
 
+/**
+ * A row's own currency first — the pay is in the ORDER's currency and the server names it per row —
+ * and the summary's (the currency view) only for a row that carries none.
+ */
 export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
   columns: TableColumn<OrderEmployeePayDto>[];
 } {
+  const format = (pay: OrderEmployeePayDto | undefined, value: number | undefined): string =>
+    formatPayAmount(value, pay?.currencyCode ?? currencyCode);
   return {
     columns: [
       {
@@ -36,7 +42,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.base_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.basePay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.basePay),
       },
       {
         id: 'extrasPay',
@@ -44,7 +50,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.extras_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.extrasPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.extrasPay),
       },
       {
         id: 'expensesPay',
@@ -52,7 +58,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.expenses_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.expensesPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.expensesPay),
       },
       {
         id: 'bonusPay',
@@ -60,7 +66,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.bonus_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.bonusPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.bonusPay),
       },
       {
         id: 'deductionPay',
@@ -68,7 +74,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.deduction_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.deductionPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.deductionPay),
       },
       {
         id: 'totalPay',
@@ -76,7 +82,7 @@ export function getPeriodPayTableDefinition(currencyCode: string | undefined): {
         header: 'pages.period_pay.total_pay',
         sortable: false,
         align: 'right',
-        getValue: (pay?: OrderEmployeePayDto) => formatPayAmount(pay?.totalPay, currencyCode),
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.totalPay),
       },
     ],
   };

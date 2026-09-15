@@ -11,6 +11,8 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   CleansiaButtonComponent,
+  CleansiaCalendarComponent,
+  CleansiaCheckboxComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
@@ -19,7 +21,7 @@ import {
   CleansiaTitleComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CompanyInfoFormData, CompanyInfoFacade } from './company-info.facade';
 
 @Component({
@@ -30,6 +32,8 @@ import { CompanyInfoFormData, CompanyInfoFacade } from './company-info.facade';
     ReactiveFormsModule,
     TranslatePipe,
     CleansiaButtonComponent,
+    CleansiaCalendarComponent,
+    CleansiaCheckboxComponent,
     CleansiaTextInputComponent,
     CleansiaTextareaComponent,
     CleansiaSelectComponent,
@@ -51,6 +55,8 @@ export class CompanyInfoComponent implements OnInit, OnDestroy {
     tagline: ['', [Validators.maxLength(500)]],
     registrationNumber: ['', [Validators.required, Validators.maxLength(50)]],
     vatNumber: ['', [Validators.maxLength(50)]],
+    isVatPayer: [false],
+    vatRegisteredFrom: this.fb.control<Date | null>(null),
     street: ['', [Validators.required, Validators.maxLength(100)]],
     city: ['', [Validators.required, Validators.maxLength(100)]],
     zipCode: ['', [Validators.required, Validators.maxLength(20)]],
@@ -69,7 +75,7 @@ export class CompanyInfoComponent implements OnInit, OnDestroy {
       .countries()
       .filter((c) => c.id)
       .map((c) => ({
-        value: c.id!,
+        value: c.id,
         label: c.name ?? c.isoCode ?? '',
       }))
   );
@@ -96,6 +102,8 @@ export class CompanyInfoComponent implements OnInit, OnDestroy {
     tagline?: string | null;
     registrationNumber?: string;
     vatNumber?: string | null;
+    isVatPayer?: boolean;
+    vatRegisteredFrom?: Date | null;
     street?: string;
     city?: string;
     zipCode?: string;
@@ -114,6 +122,10 @@ export class CompanyInfoComponent implements OnInit, OnDestroy {
       tagline: companyInfo.tagline ?? '',
       registrationNumber: companyInfo.registrationNumber ?? '',
       vatNumber: companyInfo.vatNumber ?? '',
+      isVatPayer: companyInfo.isVatPayer ?? false,
+      vatRegisteredFrom: companyInfo.vatRegisteredFrom
+        ? new Date(companyInfo.vatRegisteredFrom)
+        : null,
       street: companyInfo.street ?? '',
       city: companyInfo.city ?? '',
       zipCode: companyInfo.zipCode ?? '',
@@ -142,6 +154,8 @@ export class CompanyInfoComponent implements OnInit, OnDestroy {
       tagline: formValue.tagline || null,
       registrationNumber: formValue.registrationNumber,
       vatNumber: formValue.vatNumber || null,
+      isVatPayer: formValue.isVatPayer ?? false,
+      vatRegisteredFrom: formValue.vatRegisteredFrom ?? null,
       street: formValue.street,
       city: formValue.city,
       zipCode: formValue.zipCode,

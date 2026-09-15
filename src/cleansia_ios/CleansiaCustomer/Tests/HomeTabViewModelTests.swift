@@ -45,16 +45,83 @@ final class HomeTabViewModelTests: XCTestCase {
         Staleness(window: 30, now: { self.clock })
     }
 
-    private func makeViewModel() -> HomeTabViewModel {
-        HomeTabViewModel(
+    private func makeViewModel(
+        marketStore: MarketStore? = nil,
+        catalog: FakeCatalogClient = FakeCatalogClient()
+    ) -> HomeTabViewModel {
+        let marketStore = marketStore ?? MarketStore(
+            client: FakeMarketClient(),
+            preference: FakeMarketPreferenceStore()
+        )
+        return HomeTabViewModel(
             orderRepository: orderRepository,
             recurringRepository: RecurringBookingRepository(client: FakeRecurringBookingClient()),
             loyaltyRepository: loyaltyRepository,
             membershipRepository: membershipRepository,
             savedAddressRepository: SavedAddressRepository(client: FakeSavedAddressClient()),
-            catalogSource: BookingViewModel(catalogClient: FakeCatalogClient()),
+            marketStore: marketStore,
+            catalogSource: BookingViewModel(catalogClient: catalog, market: marketStore.statePublisher),
             snackbar: SnackbarController()
         )
+    }
+
+    // MARK: The market chip
+
+    func testTheChipShowsTheChosenMarketOnlyWhenThereIsAChoice() async {
+        let two = await makeViewModel(marketStore: MarketFixtures.resolved(selected: MarketFixtures.slovakia))
+        XCTAssertEqual(two.marketChip?.chipLabel, "SK · EUR")
+
+        let one = await makeViewModel(marketStore: MarketFixtures.resolved(MarketFixtures.one))
+        XCTAssertNil(one.marketChip)
+
+        let none = await makeViewModel(marketStore: MarketFixtures.unavailable())
+        XCTAssertNil(none.marketChip)
+    }
+
+    func testTheChipFollowsASwitchWithoutARestart() async {
+        let store = await MarketFixtures.resolved()
+        let vm = makeViewModel(marketStore: store)
+        XCTAssertEqual(vm.marketChip?.chipLabel, "CZ · CZK")
+
+        store.select(isoCode: "SVK")
+
+        XCTAssertEqual(vm.marketChip?.chipLabel, "SK · EUR")
+    }
+
+    /// The catalogue is priced for the chosen market, so Home reads the directory first and the
+    /// catalogue once, for that market — never once for the default and again for the market.
+    func testTheCatalogueIsReadOnceForTheChosenMarket() async {
+        let (store, _, _) = MarketFixtures.store(stored: "SVK")
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.slovak))
+        let vm = makeViewModel(marketStore: store, catalog: catalog)
+
+        await vm.refreshCatalogIfNeeded()
+
+        XCTAssertEqual(catalog.requestedCountryIds, ["svk"])
+    }
+
+    func testWithoutADirectoryTheCatalogueIsReadForTheDefaultAndNothingIsPersisted() async {
+        let (store, _, preference) = MarketFixtures.store(.failure(ApiError(httpStatus: 500)))
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let vm = makeViewModel(marketStore: store, catalog: catalog)
+
+        await vm.refreshCatalogIfNeeded()
+
+        XCTAssertEqual(catalog.requestedCountryIds, [nil])
+        XCTAssertTrue(preference.writes.isEmpty)
+        XCTAssertNil(vm.marketChip)
+    }
+
+    func testHomeEntryRetriesAFailedDirectoryRead() async {
+        let (store, client, _) = MarketFixtures.store(.failure(ApiError(httpStatus: 500)))
+        await store.refresh()
+        client.result = .success(MarketFixtures.two)
+        let vm = makeViewModel(marketStore: store)
+
+        await vm.refreshMarket()
+
+        XCTAssertEqual(client.callCount, 2)
+        XCTAssertEqual(vm.marketChip?.chipLabel, "CZ · CZK")
     }
 
     private var loyaltyCalls: Int {

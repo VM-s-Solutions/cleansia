@@ -48,6 +48,8 @@ class PeriodPayViewModel @Inject constructor(
      */
     val launchCurrencyCode: String? = savedStateHandle.get<String>("currencyCode")
 
+    private val currencyId: String? = savedStateHandle.get<String>("currencyId")
+
     private val _state = MutableStateFlow<PeriodPayUiState>(PeriodPayUiState.Loading)
     val state: StateFlow<PeriodPayUiState> = _state.asStateFlow()
 
@@ -68,7 +70,7 @@ class PeriodPayViewModel @Inject constructor(
                 _state.value = PeriodPayUiState.Error
                 return@launch
             }
-            when (val result = periodPayRepository.getPeriodPays(employeeId, payPeriodId)) {
+            when (val result = periodPayRepository.getPeriodPays(employeeId, payPeriodId, currencyId)) {
                 is ApiResult.Success -> _state.value = PeriodPayUiState.Loaded(result.data)
                 is ApiResult.Error -> {
                     snackbar.showError(errorTranslator.translate(result.error))

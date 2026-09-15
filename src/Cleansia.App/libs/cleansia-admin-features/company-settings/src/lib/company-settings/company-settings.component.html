@@ -1,0 +1,70 @@
+<div class="cleansia-company-settings">
+  <div class="cleansia-company-settings__container page-wrapper">
+    <div class="cleansia-company-settings__header">
+      <div class="header-content">
+        <cleansia-title [title]="'pages.company_settings.title' | translate" />
+        <p class="cleansia-company-settings__description">
+          {{ 'pages.company_settings.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else if (facade.hasError()) {
+      <div class="cleansia-company-settings__state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.company_settings.load_error' | translate }}</p>
+        <cleansia-button
+          [label]="'pages.company_settings.retry' | translate"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="facade.loadSettings()"
+        />
+      </div>
+      } @else {
+      <cleansia-table
+        [data]="facade.settings()"
+        [columns]="columns"
+        [actions]="actions"
+        [config]="{
+          paginator: false,
+          emptyMessage: 'pages.company_settings.no_settings'
+        }"
+        [loading]="facade.loading()"
+      />
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #valueTemplate let-setting>
+  @if (facade.isEditing(setting)) {
+  <div class="cleansia-company-settings__editor">
+    @if (setting.valueType === TenantSettingValueType.Bool) {
+    <cleansia-checkbox
+      [formControl]="boolDraft"
+      [label]="'pages.company_settings.enabled' | translate"
+      [disabled]="facade.isBusy(setting)"
+    />
+    } @else {
+    <cleansia-text-input
+      [formControl]="intDraft"
+      dataType="number"
+      [floatVariant]="null"
+      [showErrors]="false"
+      [disabled]="facade.isBusy(setting)"
+    />
+    }
+  </div>
+  } @else {
+  <span
+    class="cleansia-company-settings__value"
+    [class.cleansia-company-settings__value--overridden]="setting.isOverridden"
+  >
+    {{ effectiveValue(setting) }}
+  </span>
+  }
+</ng-template>

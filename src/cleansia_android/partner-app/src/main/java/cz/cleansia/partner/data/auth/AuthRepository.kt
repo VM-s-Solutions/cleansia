@@ -42,6 +42,9 @@ interface AuthRepository {
      *
      * Carries no payload: the endpoint answered a bool that was always `true` until T-0665, because
      * a failure arrives as an error rather than as `false`. Success is "it did not fail".
+     *
+     * [countryId] names the market the cleaner registers in; the server maps it to the operating
+     * company the account is created under (ADR-0061 D3). Null = the default market.
      */
     suspend fun register(
         email: String,
@@ -49,6 +52,7 @@ interface AuthRepository {
         firstName: String,
         lastName: String,
         language: String,
+        countryId: String? = null,
     ): ApiResult<Unit>
 
     /** Confirms the given email via the 6-digit code emailed at registration. Returns the issued JWT. */
@@ -159,6 +163,7 @@ class AuthRepositoryImpl @Inject constructor(
         firstName: String,
         lastName: String,
         language: String,
+        countryId: String?,
     ): ApiResult<Unit> {
         return safeApiCall(json) {
             authApi.authRegisterEmployee(
@@ -168,6 +173,7 @@ class AuthRepositoryImpl @Inject constructor(
                     firstName = firstName,
                     lastName = lastName,
                     language = language,
+                    countryId = countryId,
                 ),
             )
         }

@@ -23,12 +23,16 @@ final class HomeTabViewModel: ViewModel {
     @Published private(set) var selectedAddressId: String?
     @Published private(set) var packages: [CatalogPackage] = []
     @Published private(set) var firstPaintReady = false
+    /// The header chip's market — only when there is a choice to make (two or more markets); nil
+    /// with one market or none, when the header is exactly as it was without a directory.
+    @Published private(set) var marketChip: Market?
 
     private let orderRepository: OrderRepository
     private let recurringRepository: RecurringBookingRepository
     private let loyaltyRepository: LoyaltyRepository
     private let membershipRepository: MembershipRepository
     private let savedAddressRepository: SavedAddressRepository
+    private let marketStore: MarketStore
     private let catalogSource: BookingViewModel
     private let snackbar: SnackbarController
     private var cancellables: Set<AnyCancellable> = []
@@ -39,6 +43,7 @@ final class HomeTabViewModel: ViewModel {
         loyaltyRepository: LoyaltyRepository,
         membershipRepository: MembershipRepository,
         savedAddressRepository: SavedAddressRepository,
+        marketStore: MarketStore,
         catalogSource: BookingViewModel,
         snackbar: SnackbarController
     ) {
@@ -47,9 +52,13 @@ final class HomeTabViewModel: ViewModel {
         self.loyaltyRepository = loyaltyRepository
         self.membershipRepository = membershipRepository
         self.savedAddressRepository = savedAddressRepository
+        self.marketStore = marketStore
         self.catalogSource = catalogSource
         self.snackbar = snackbar
         super.init()
+        marketStore.$state
+            .map { Self.marketChip($0) }
+            .assign(to: &$marketChip)
         orderRepository.$orders.assign(to: &$recentOrders)
         orderRepository.$loaded.assign(to: &$ordersLoaded)
         orderRepository.$loading.assign(to: &$ordersLoading)
@@ -68,6 +77,16 @@ final class HomeTabViewModel: ViewModel {
 
     var isPlus: Bool {
         membership?.hasMembership == true
+    }
+
+    static func marketChip(_ state: MarketState) -> Market? {
+        state.offersChoice ? state.selected : nil
+    }
+
+    /// Home entry re-reads the market directory: a failed launch read is retried here, and a list
+    /// that changed since is picked up; inside the freshness window it costs nothing.
+    func refreshMarket() async {
+        await marketStore.refreshIfStale()
     }
 
     var hasAnyOrders: Bool {
@@ -202,6 +221,7 @@ final class HomeTabViewModel: ViewModel {
     /// snackbar on failure via the codebase-wide `showApiError` convention.
     func refreshCatalogIfNeeded() async {
         guard packages.isEmpty else { return }
+        await marketStore.refreshIfStale()
         await catalogSource.loadCatalog()
         if case let .error(error) = catalogSource.catalogState {
             snackbar.showApiError(error)

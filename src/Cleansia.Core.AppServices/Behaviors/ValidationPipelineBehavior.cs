@@ -5,13 +5,23 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Behaviors;
 
+/// <summary>
+/// Runs every registered validator for every request type. The behavior used to be constrained to
+/// <c>TResponse : BusinessResult</c>, which made the container skip it for anything else — a paged
+/// read's <c>IRequest&lt;PagedData&lt;T&gt;&gt;</c> validator was registered, discoverable, and never
+/// once executed. A reject now takes one of two arms by what the response can carry: a
+/// <see cref="BusinessResult"/> comes back as the typed <see cref="ValidationResult"/>; any other
+/// response type throws <see cref="RequestValidationException"/> with the same keyed errors, and the
+/// host maps it to the same 400.
+/// </summary>
 public class ValidationPipelineBehavior<TRequest, TResponse>
     (IEnumerable<IValidator<TRequest>> validators,
      ILogger<ValidationPipelineBehavior<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
-    where TResponse : BusinessResult
 {
+    private static readonly bool ResponseCarriesFailure = typeof(BusinessResult).IsAssignableFrom(typeof(TResponse));
+
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
@@ -67,12 +77,17 @@ public class ValidationPipelineBehavior<TRequest, TResponse>
             .Distinct()
             .ToArray();
 
-        if (errors.Length != 0)
+        if (errors.Length == 0)
         {
-            return CreateValidationResult<TResponse>(errors);
+            return await next(cancellationToken);
         }
 
-        return await next(cancellationToken);
+        if (ResponseCarriesFailure)
+        {
+            return (TResponse)(object)CreateValidationResult(typeof(TResponse), errors);
+        }
+
+        throw new RequestValidationException(errors);
     }
 
     /// <summary>
@@ -92,20 +107,23 @@ public class ValidationPipelineBehavior<TRequest, TResponse>
         return string.IsNullOrEmpty(failure.PropertyName) ? code : failure.PropertyName;
     }
 
-    private static TResult CreateValidationResult<TResult>(Error[] errors)
-        where TResult : BusinessResult
+    internal static TResult CreateValidationResult<TResult>(Error[] errors)
+        where TResult : BusinessResult =>
+        (TResult)CreateValidationResult(typeof(TResult), errors);
+
+    private static BusinessResult CreateValidationResult(Type resultType, Error[] errors)
     {
-        if (typeof(TResult) == typeof(BusinessResult))
+        if (resultType == typeof(BusinessResult))
         {
-            return (ValidationResult.WithErrors(errors) as TResult)!;
+            return ValidationResult.WithErrors(errors);
         }
 
         var validationResult = typeof(ValidationResult<>)
             .GetGenericTypeDefinition()
-            .MakeGenericType(typeof(TResult).GenericTypeArguments[0])
+            .MakeGenericType(resultType.GenericTypeArguments[0])
             .GetMethod(nameof(ValidationResult.WithErrors))!
-            .Invoke(null,[errors])!;
+            .Invoke(null, [errors])!;
 
-        return (validationResult as TResult)!;
+        return (BusinessResult)validationResult;
     }
 }

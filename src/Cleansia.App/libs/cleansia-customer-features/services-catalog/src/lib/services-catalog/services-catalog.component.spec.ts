@@ -2,11 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 import {
+  loadCustomerCurrencies,
   loadCustomerPackages,
   loadCustomerServices,
   selectCustomerCatalogLoading,
+  selectCustomerDefaultCurrencyCode,
   selectCustomerPackages,
   selectCustomerServices,
+  selectMarketCountryId,
 } from '@cleansia/customer-stores';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
@@ -46,7 +49,11 @@ describe('ServicesCatalogComponent', () => {
     pkg('p5', 'Ultimate', 700),
   ];
 
-  function build(packages: PackageListItem[] = [], services: ServiceListItem[] = []): void {
+  function build(
+    packages: PackageListItem[] = [],
+    services: ServiceListItem[] = [],
+    defaultCurrencyCode: string | null = 'CZK',
+  ): void {
     currentLang = 'en';
     router = { navigate: jest.fn() };
 
@@ -58,6 +65,8 @@ describe('ServicesCatalogComponent', () => {
             { selector: selectCustomerPackages, value: packages },
             { selector: selectCustomerServices, value: services },
             { selector: selectCustomerCatalogLoading, value: false },
+            { selector: selectCustomerDefaultCurrencyCode, value: defaultCurrencyCode },
+            { selector: selectMarketCountryId, value: 'cze-id' },
           ],
         }),
         { provide: Router, useValue: router },
@@ -82,13 +91,25 @@ describe('ServicesCatalogComponent', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('asks the store for both catalogs on init', () => {
+  it('asks the store for both catalogs priced in the chosen market, and the platform currencies', () => {
     build();
 
     component.ngOnInit();
 
-    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices());
-    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages());
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('cze-id'));
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('cze-id'));
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerCurrencies());
+  });
+
+  it('re-reads both catalogs when the customer switches market', () => {
+    build();
+    component.ngOnInit();
+
+    store.overrideSelector(selectMarketCountryId, 'svk-id');
+    store.refreshState();
+
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerServices('svk-id'));
+    expect(store.dispatch).toHaveBeenCalledWith(loadCustomerPackages('svk-id'));
   });
 
   describe('sorting the services', () => {
@@ -308,14 +329,50 @@ describe('ServicesCatalogComponent', () => {
     it('drops the trailing zeroes a whole crown price would otherwise carry', () => {
       build();
 
-      expect(component.formatPrice(1200)).not.toMatch(/[.,]\d/);
+      expect(component.formatPrice(1200)).not.toMatch(/[.,]00$/);
       expect(component.formatPrice(1200).replace(/\D/g, '')).toBe('1200');
     });
 
-    it('renders in crowns', () => {
-      build();
+    it('renders in the platform default currency, which is what the catalogue is priced in', () => {
+      build([], [], 'CZK');
 
-      expect(component.formatPrice(1200)).toContain('Kč');
+      expect(component.formatPrice(1200)).toContain('CZK');
+    });
+
+    it('follows the default currency rather than assuming crowns', () => {
+      build([], [], 'EUR');
+
+      expect(component.formatPrice(1200)).toContain('€');
+      expect(component.formatPrice(1200)).not.toContain('Kč');
+    });
+
+    it('prints a bare figure until the default currency is known', () => {
+      build([], [], null);
+
+      expect(component.formatPrice(1200).replace(/\D/g, '')).toBe('1200');
+      expect(component.formatPrice(1200)).not.toContain('Kč');
+    });
+
+    // The locale was a `'cs-CZ'` literal, so an English reader got Czech digit grouping and
+    // symbol placement on the catalogue while every order screen formatted per language.
+    it("groups and places the symbol the way the reader's language does", () => {
+      build([], [], 'CZK');
+
+      currentLang = 'en';
+      expect(component.formatPrice(1200)).toMatch(/CZK\s?1,200/);
+
+      currentLang = 'cs';
+      expect(component.formatPrice(1200)).toMatch(/1\s200\sKč/);
+    });
+
+    // Every catalogue item now says which currency it is priced in; the platform default is only
+    // the label for a figure with no item behind it.
+    it("labels a price with the item's own code when it carries one", () => {
+      build([], [], 'CZK');
+
+      expect(component.formatPrice(40, 'EUR')).toContain('€');
+      expect(component.formatPrice(40, 'EUR')).not.toContain('CZK');
+      expect(component.formatPrice(40, undefined)).toContain('CZK');
     });
   });
 });

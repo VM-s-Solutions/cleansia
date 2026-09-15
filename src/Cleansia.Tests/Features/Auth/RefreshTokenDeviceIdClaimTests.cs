@@ -82,6 +82,7 @@ public class RefreshTokenDeviceIdClaimTests
             _employeeRepository.Object,
             _requestMetadata.Object,
             _jwtSettings.Object,
+            Mock.Of<ITenantProvider>(),
             TimeProvider.System)!;
 
         var handleMethod = handlerType.GetMethod("Handle")!;

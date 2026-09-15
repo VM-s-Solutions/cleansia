@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Tests.Features.Orders;
 using MockQueryable;
 using Moq;
+using Cleansia.Core.AppServices.Tenancy;
 
 namespace Cleansia.Tests.Features.Memberships;
 
@@ -43,20 +44,33 @@ public class CreateOrderExpressWaiverValidatorTests
             .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(Array.Empty<Package>().AsQueryable().BuildMock());
         _currencyRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
+        // The pay gate asks in the order's currency, which with no CurrencyId named is the default.
+        _currencyRepository
+            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.DefaultCurrency());
     }
 
     private CreateOrder.Validator CreateValidator() =>
         new(
             _packageRepository.Object,
             _serviceRepository.Object,
-            _currencyRepository.Object,
             _pricingCalculator.Object,
             _orderRepository.Object,
             _userMembershipRepository.Object,
             _session.Object,
-            PayConfigRepositoryDouble.Holding());
+            PayConfigRepositoryDouble.Holding(),
+            _currencyRepository.Object,
+            OrderMarketDoubles.AddressIn("cz"),
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
+            CataloguePriceDoubles.NoServices(),
+            CataloguePriceDoubles.NoPackages(),
+            Mock.Of<IPromoCodeService>(),
+            Mock.Of<IOperatorTenantResolver>(),
+            Mock.Of<ITenantProvider>(),
+            Mock.Of<IUserConsentRepository>(),
+            CreateOrderTestData.Speaking(Constants.Language.English));
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

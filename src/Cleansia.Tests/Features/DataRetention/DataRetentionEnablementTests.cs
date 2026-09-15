@@ -80,10 +80,7 @@ public sealed class DataRetentionEnablementTests : IDisposable
 
         Assert.Single(await ReadNotificationsAsync());
 
-        await using (var ctx = NewContext())
-        {
-            await NewSweep(ctx, EmptyConfiguration()).RunAllRetentionTasksAsync(CancellationToken.None);
-        }
+        await RunSweepAsync(EmptyConfiguration());
 
         Assert.Empty(await ReadNotificationsAsync());
     }
@@ -104,11 +101,7 @@ public sealed class DataRetentionEnablementTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using (var ctx = NewContext())
-        {
-            var disabled = ConfigurationFrom(("DataRetention:Enabled", "false"));
-            await NewSweep(ctx, disabled).RunAllRetentionTasksAsync(CancellationToken.None);
-        }
+        await RunSweepAsync(ConfigurationFrom(("DataRetention:Enabled", "false")));
 
         Assert.Single(await ReadNotificationsAsync());
     }
@@ -129,16 +122,27 @@ public sealed class DataRetentionEnablementTests : IDisposable
             .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
             .Build();
 
-    private CleansiaDbContext NewContext() =>
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
+    }
+
+    /// <summary>
+    /// The sweep and its context share one tenant provider, the way one DI scope does on the host: the
+    /// per-company override the sweep sets is what the filter and the commit read.
+    /// </summary>
+    private async Task RunSweepAsync(IConfiguration configuration)
+    {
+        var tenantProvider = new FixedTenantProvider(null);
+        await using var ctx = NewContext(tenantProvider);
+        await NewSweep(ctx, tenantProvider, configuration).RunAllRetentionTasksAsync(CancellationToken.None);
     }
 
     private static UserNotification Row(DateTimeOffset createdOn)
@@ -152,9 +156,10 @@ public sealed class DataRetentionEnablementTests : IDisposable
     /// The sweep over the REAL <see cref="AppConfigurationProvider"/> against this database — no mock stands
     /// between the test and the condition a deployed host is in. That matters: a stubbed provider is what let
     /// the old tests pass while production did nothing. The per-task tuning keys it serves resolve to absent
-    /// here, exactly as they do in production, so every task falls through to its RetentionDefaults window.
+    /// here, as they do for a company that has set nothing, so every task falls through to its
+    /// RetentionDefaults window.
     /// </summary>
-    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, IConfiguration configuration)
+    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, ITenantProvider tenantProvider, IConfiguration configuration)
     {
         var session = new TestUserSessionProvider("system", "system@cleansia.test");
         return new DataRetentionBackgroundService(
@@ -165,6 +170,10 @@ public sealed class DataRetentionEnablementTests : IDisposable
             new UserConsentRepository(ctx),
             new EmployeeDocumentRepository(ctx),
             new UserNotificationRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
+            new DisputeRepository(ctx),
+            new TenantRepository(ctx),
+            tenantProvider,
             new AppConfigurationProvider(ctx),
             new DataRetentionConfig(configuration),
             _blobClientFactory.Object,

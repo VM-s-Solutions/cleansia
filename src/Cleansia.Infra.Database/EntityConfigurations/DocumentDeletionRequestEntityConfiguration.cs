@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
 public class DocumentDeletionRequestEntityConfiguration
-    : AuditableEntityConfiguration<DocumentDeletionRequest, string>
+    : TenantAuditableEntityConfiguration<DocumentDeletionRequest, string>
 {
     public override void Configure(EntityTypeBuilder<DocumentDeletionRequest> builder)
     {

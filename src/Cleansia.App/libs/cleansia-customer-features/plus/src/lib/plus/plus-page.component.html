@@ -13,41 +13,66 @@
         hardcoded "5 %" here would be another copy of a number an admin can
         change in one column.
       -->
+      <!--
+        Two variants, not one string with a conditional clause: the trial sentence is a promise, and a
+        promise that renders "The first 0 days are free" is worse than no promise. Plus has no trial
+        (T-0690) but the guard stays, because the plan column still exists and Stripe subscriptions
+        carry it. Android and iOS have branched on this all along; only the web did not.
+      -->
       <p class="cl-body cl-plusp__lead">
-        {{
-          'pages.plus.lead'
-            | translate
-              : {
-                  discount: facade.discountPercent(),
-                  hours: facade.cancellationHours(),
-                  days: facade.trialDays()
-                }
-        }}
+        @if (facade.trialDays() > 0) {
+          {{
+            'pages.plus.lead'
+              | translate
+                : {
+                    discount: facade.discountPercent(),
+                    hours: facade.cancellationHours(),
+                    days: facade.trialDays()
+                  }
+          }}
+        } @else {
+          {{
+            'pages.plus.lead_no_trial'
+              | translate
+                : { discount: facade.discountPercent(), hours: facade.cancellationHours() }
+          }}
+        }
       </p>
 
-      <div class="cl-plusp__actions">
-        <button type="button" class="cl-btn" [disabled]="facade.submitting()" (click)="startTrial()">
-          @if (facade.submitting()) {
-            <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
-          }
-          {{ 'pages.plus.cta_trial' | translate: { days: facade.trialDays() } }}
-        </button>
-        <!--
-          `routerLink="[]"` with a fragment, NOT href="#perks": a bare hash is a
-          navigation to the path "#perks", which the router resolves to the
-          empty path — so the link went to the home page instead of down the
-          page. anchorScrolling is enabled in app.config, so the fragment alone
-          does the scrolling.
-        -->
-        <a class="cl-link" [routerLink]="[]" fragment="perks">
-          {{ 'pages.plus.cta_whats_in_it' | translate }}
-        </a>
-      </div>
+      <!--
+        Not on sale in the chosen market: the hero keeps its badge, title and
+        mascot and drops every action — a button that opens a checkout the
+        server refuses is not an action.
+      -->
+      @if (!facade.plusUnavailable()) {
+        <div class="cl-plusp__actions">
+          <button type="button" class="cl-btn" [disabled]="facade.submitting()" (click)="startTrial()">
+            @if (facade.submitting()) {
+              <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+            }
+            @if (facade.trialDays() > 0) {
+              {{ 'pages.plus.cta_trial' | translate: { days: facade.trialDays() } }}
+            } @else {
+              {{ 'pages.plus.cta_subscribe' | translate }}
+            }
+          </button>
+          <!--
+            `routerLink="[]"` with a fragment, NOT href="#perks": a bare hash is a
+            navigation to the path "#perks", which the router resolves to the
+            empty path — so the link went to the home page instead of down the
+            page. anchorScrolling is enabled in app.config, so the fragment alone
+            does the scrolling.
+          -->
+          <a class="cl-link" [routerLink]="[]" fragment="perks">
+            {{ 'pages.plus.cta_whats_in_it' | translate }}
+          </a>
+        </div>
 
-      @if (facade.monthlyPlan(); as monthly) {
-        <p class="cl-muted cl-plusp__note">
-          {{ 'pages.plus.price_note' | translate: { price: formatCzk(monthly.price) } }}
-        </p>
+        @if (facade.monthlyPlan(); as monthly) {
+          <p class="cl-muted cl-plusp__note">
+            {{ 'pages.plus.price_note' | translate: { price: formatPrice(monthly.price) } }}
+          </p>
+        }
       }
     </div>
 
@@ -87,6 +112,27 @@
   </section>
 }
 
+@if (facade.plusUnavailable()) {
+  <!--
+    The catalogue's empty pattern, verbatim: no price, no button, no "notify me",
+    no date. The perks, the comparison and the FAQ describe a product this
+    market cannot buy, so they go with the actions.
+  -->
+  <section class="cl-plusp__body">
+    <div class="cl-plusp__inner">
+      <div class="cl-cat__empty">
+        <img
+          class="cl-cat__empty-mascot"
+          src="assets/images/mascot/mascot-leaning.webp"
+          alt=""
+          width="400"
+          height="400"
+        />
+        <h2 class="cl-h3">{{ 'pages.plus.not_available_in_market' | translate }}</h2>
+      </div>
+    </div>
+  </section>
+} @else {
 <section class="cl-plusp__body" id="perks">
   <div class="cl-plusp__inner">
     <h2 class="cl-d2">{{ 'pages.plus.perks_title' | translate }}</h2>
@@ -228,7 +274,7 @@
             <div class="cl-lbl cl-plusp__plan-lbl">
               {{ 'pages.membership.plan_monthly' | translate }}
             </div>
-            <div class="cl-num cl-plusp__price">{{ formatCzk(monthly.price) }}</div>
+            <div class="cl-num cl-plusp__price">{{ formatPrice(monthly.price) }}</div>
             <div class="cl-muted">{{ 'pages.plus.per_month' | translate }}</div>
             <p class="cl-plusp__plan-text">{{ 'pages.plus.plan_monthly_text' | translate }}</p>
             <div class="cl-plusp__plan-spacer"></div>
@@ -259,7 +305,7 @@
               `monthlyEquivalentPrice` is what the server computed the savings
               percentage against.
             -->
-            <div class="cl-num cl-plusp__price">{{ formatCzk(yearly.price) }}</div>
+            <div class="cl-num cl-plusp__price">{{ formatPrice(yearly.price) }}</div>
             <div class="cl-muted">{{ 'pages.plus.per_year' | translate }}</div>
             <p class="cl-plusp__plan-text">
               {{ 'pages.plus.plan_yearly_text' | translate: { percent: facade.yearlySavingsPercent() } }}
@@ -267,7 +313,7 @@
             <div class="cl-plusp__plan-spacer"></div>
             <button
               type="button"
-              class="cl-btn cl-btn--on-dark"
+              class="cl-btn cl-btn--inverse"
               [disabled]="facade.submitting()"
               (click)="startTrial(yearly.code)"
             >
@@ -281,23 +327,30 @@
       </div>
 
       <p class="cl-muted cl-plusp__note">
-        {{ 'pages.plus.plans_footnote' | translate: { days: facade.trialDays() } }}
+        @if (facade.trialDays() > 0) {
+          {{ 'pages.plus.plans_footnote' | translate: { days: facade.trialDays() } }}
+        } @else {
+          {{ 'pages.plus.plans_footnote_no_trial' | translate }}
+        }
       </p>
     }
 
     <h2 class="cl-d2 cl-plusp__h2">{{ 'pages.plus.faq_title' | translate }}</h2>
     <div class="cl-plusp__faq">
-      <div class="cl-plusp__qa">
-        <i class="pi pi-question-circle"></i>
-        <div>
-          <div class="cl-h4">
-            {{ 'pages.plus.faq_trial_q' | translate: { days: facade.trialDays() } }}
+      <!-- No trial, no question about it. This one disappears rather than being reworded. -->
+      @if (facade.trialDays() > 0) {
+        <div class="cl-plusp__qa">
+          <i class="pi pi-question-circle"></i>
+          <div>
+            <div class="cl-h4">
+              {{ 'pages.plus.faq_trial_q' | translate: { days: facade.trialDays() } }}
+            </div>
+            <p class="cl-muted">
+              {{ 'pages.plus.faq_trial_a' | translate: { days: facade.trialDays() } }}
+            </p>
           </div>
-          <p class="cl-muted">
-            {{ 'pages.plus.faq_trial_a' | translate: { days: facade.trialDays() } }}
-          </p>
         </div>
-      </div>
+      }
 
       @if (facade.hasExpressPerk()) {
         <div class="cl-plusp__qa">
@@ -305,7 +358,11 @@
           <div>
             <div class="cl-h4">{{ 'pages.plus.faq_express_q' | translate }}</div>
             <p class="cl-muted">
-              {{ 'pages.plus.faq_express_a' | translate: { days: facade.trialDays() } }}
+              @if (facade.trialDays() > 0) {
+                {{ 'pages.plus.faq_express_a' | translate: { days: facade.trialDays() } }}
+              } @else {
+                {{ 'pages.plus.faq_express_a_no_trial' | translate }}
+              }
             </p>
           </div>
         </div>
@@ -363,7 +420,11 @@
       />
       <div>
         <h2 class="cl-d2 cl-plusp__cta-title">
-          {{ 'pages.plus.closing_title' | translate: { days: facade.trialDays() } }}
+          @if (facade.trialDays() > 0) {
+            {{ 'pages.plus.closing_title' | translate: { days: facade.trialDays() } }}
+          } @else {
+            {{ 'pages.plus.closing_title_no_trial' | translate }}
+          }
         </h2>
         <p class="cl-body">{{ 'pages.plus.closing_text' | translate }}</p>
       </div>
@@ -379,3 +440,4 @@
     </div>
   </div>
 </section>
+}

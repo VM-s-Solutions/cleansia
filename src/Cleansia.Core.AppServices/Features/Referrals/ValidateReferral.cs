@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -26,7 +27,8 @@ public class ValidateReferral
         }
     }
 
-    public record Query(string Code) : IQuery<Response>;
+    // CountryId is the market whose referral codes are read; null is the default market (ADR-0061 D3).
+    public record Query(string Code, string? CountryId = null) : IQuery<Response>, IOperatorScopedRequest;
 
     public record Response(
         bool IsValid,

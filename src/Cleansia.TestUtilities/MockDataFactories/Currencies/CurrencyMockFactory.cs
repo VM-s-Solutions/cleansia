@@ -12,7 +12,6 @@ public class CurrencyMockFactory
 
         public string? Name { get; set; }
 
-        public decimal? ExchangeRate { get; set; }
     }
 
     public static Currency Generate(CurrencyPartial? mergeFrom = null)
@@ -20,9 +19,11 @@ public class CurrencyMockFactory
         var currency = Currency.Create(
             "CZK",
             "Kč",
-            "Czech Koruna",
-            1);
+            "Czech Koruna");
         currency.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow);
+        // Operated, as the DEV seed's CZK is. The entity is born switched off (Currency.Create), and a
+        // factory currency is one tests expect to be able to sell in.
+        currency.IsActive = true;
 
         return currency.Merge(mergeFrom);
     }

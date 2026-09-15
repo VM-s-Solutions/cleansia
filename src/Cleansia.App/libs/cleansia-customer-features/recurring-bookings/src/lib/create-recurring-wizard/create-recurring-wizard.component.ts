@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
   CleansiaAddressAutocompleteComponent,
@@ -20,6 +20,7 @@ import {
   CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { MapboxAddressSuggestion } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -70,7 +71,6 @@ export class CreateRecurringWizardComponent implements OnInit {
   protected readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly snackbar = inject(SnackbarService);
   private readonly confirmService = inject(ConfirmationService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -120,9 +120,10 @@ export class CreateRecurringWizardComponent implements OnInit {
   ]);
 
   /**
-   * Re-quote whenever the priced inputs change. Watching those four fields
-   * rather than the whole form object: the day, the time and the address move
-   * no money, and quoting on each of them would put a request behind every tap.
+   * Re-quote whenever the priced inputs change. Watching those five fields
+   * rather than the whole form object: the day and the time move no money, and
+   * quoting on each of them would put a request behind every tap. The address
+   * does — its country decides the currency the schedule is priced in.
    */
   private readonly quoteEffect = effect(() => {
     const d = this.facade.formData();
@@ -130,38 +131,8 @@ export class CreateRecurringWizardComponent implements OnInit {
     void d.selectedPackageIds;
     void d.rooms;
     void d.bathrooms;
+    void d.savedAddressId;
     this.facade.quoteForm();
-  });
-
-  /**
-   * Path B prefill — set when the user arrives via "Make this recurring" on an
-   * order detail page. Consumed once the catalogue is loaded so the
-   * cross-check against live services/packages is meaningful.
-   */
-  private pendingPrefill = signal<RecurringPrefillParams | null>(null);
-
-  private prefillEffect = effect(() => {
-    const params = this.pendingPrefill();
-    if (!params) return;
-
-    const services = this.facade.services();
-    const packages = this.facade.packages();
-    const needsServices = params.selectedServiceIds.length > 0;
-    const needsPackages = params.selectedPackageIds.length > 0;
-    if ((needsServices && services.length === 0) || (needsPackages && packages.length === 0)) {
-      return;
-    }
-
-    const missing = this.facade.prefillFromOrder(params);
-    if (missing.length > 0) {
-      // The prefill DID succeed — this says what was dropped, not that it failed.
-      this.snackbar.showSuccess(
-        this.translate.instant('recurring_booking.prefill_dropped_items', {
-          items: missing.join(', '),
-        }),
-      );
-    }
-    this.pendingPrefill.set(null);
   });
 
   /**
@@ -195,7 +166,7 @@ export class CreateRecurringWizardComponent implements OnInit {
       if (raw) {
         sessionStorage.removeItem(RECURRING_PREFILL_STORAGE_KEY);
         try {
-          this.pendingPrefill.set(JSON.parse(raw) as RecurringPrefillParams);
+          this.facade.prefill(JSON.parse(raw) as RecurringPrefillParams);
         } catch {
           // Corrupt payload — the user falls into the blank-slate flow.
         }
@@ -206,30 +177,14 @@ export class CreateRecurringWizardComponent implements OnInit {
   // ─── The price ─────────────────────────────────────────────────────
   formPrice(): string | null {
     const quoted = this.facade.formPrice();
-    return quoted ? this.money(quoted.amount, quoted.currency) : null;
+    if (!quoted) return null;
+    return formatMoney(quoted.amount, quoted.currency, localeFor(this.translate.currentLang));
   }
 
-  formatMoney(amount: number | undefined): string {
-    return amount === undefined ? '' : this.money(amount, 'CZK');
-  }
-
-  private money(amount: number, currency: string): string {
-    return new Intl.NumberFormat(this.locale(), {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-    }).format(amount);
-  }
-
-  private locale(): string {
-    const map: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return map[this.translate.currentLang] || 'en-US';
+  /** A catalogue price, labelled with the currency the item itself arrived in. */
+  formatMoney(amount: number | undefined, currencyCode: string | undefined): string {
+    if (amount === undefined) return '';
+    return formatMoney(amount, currencyCode, localeFor(this.translate.currentLang));
   }
 
   // ─── Field handlers ────────────────────────────────────────────────

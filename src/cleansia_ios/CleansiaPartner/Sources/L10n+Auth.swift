@@ -22,6 +22,10 @@ extension L10n {
             localized("confirm_password")
         }
 
+        static var market: String {
+            localized("register_market")
+        }
+
         static var acceptTerms: String {
             localized("accept_terms")
         }

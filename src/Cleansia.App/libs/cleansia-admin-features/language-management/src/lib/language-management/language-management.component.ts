@@ -13,11 +13,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import {
-  LanguageListItem,
-  SortDefinition,
-  SortDirection,
-} from '@cleansia/admin-services';
+import { LanguageListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -27,7 +23,6 @@ import {
   CleansiaTitleComponent,
   TableColumn,
   TableAction,
-  PaginationState,
 } from '@cleansia/components';
 import { Policy } from '@cleansia/services';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
@@ -70,7 +65,7 @@ export class LanguageManagementComponent implements AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
+  flagTemplate = viewChild<TemplateRef<LanguageListItem>>('flagTemplate');
 
   languageColumns!: TableColumn<LanguageListItem>[];
   languageActions!: TableAction<LanguageListItem>[];
@@ -149,10 +144,6 @@ export class LanguageManagementComponent implements AfterViewInit, OnDestroy {
     this.filterForm.reset({
       searchTerm: '',
     });
-  }
-
-  onSortChange(event: { field: string; order: number }): void {
-    // Sorting is handled client-side in the table component
   }
 
   createLanguage(): void {

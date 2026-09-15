@@ -17,18 +17,6 @@ namespace Cleansia.Web.Mobile.Partner.Controllers;
 public class AuthController(IMediator mediator) : MobileApiController(mediator)
 {
     [AllowAnonymous]
-    [HttpPost("Register")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Register([FromBody] Register.Command command)
-    {
-        var result = await Mediator.Send(command);
-
-        return HandleResult<object>(result);
-    }
-
-    [AllowAnonymous]
     [HttpPost("RegisterEmployee")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -104,7 +92,11 @@ public class AuthController(IMediator mediator) : MobileApiController(mediator)
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshToken.Command command, CancellationToken cancellationToken)
     {
-        var enriched = command with { RequiredProfile = UserProfile.Employee, RequiredAudience = JwtAudiences.Mobile };
+        var enriched = command with
+        {
+            RequiredProfiles = [UserProfile.Employee, UserProfile.Administrator],
+            RequiredAudience = JwtAudiences.Mobile,
+        };
         var result = await Mediator.Send(enriched, cancellationToken);
         return HandleResult<JwtTokenResponse>(result);
     }

@@ -159,10 +159,7 @@ export class PromoCodeDetailComponent
   formatDiscount(): string {
     const pc = this.facade.promoCode();
     if (!pc) return '';
-    return formatDiscount(
-      pc as unknown as PromoCodeListItem,
-      this.translate
-    );
+    return formatDiscount(pc as unknown as PromoCodeListItem);
   }
 
   formatStatus(): string {

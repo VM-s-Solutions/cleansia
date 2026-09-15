@@ -119,17 +119,6 @@
         dataType="text"
       />
     </div>
-    <div class="cleansia-profile__field">
-      <cleansia-text-input
-        [label]="
-          facade.fieldLabels()?.vatNumberLabel ??
-          ('pages.profile.vat_number' | translate)
-        "
-        [floatVariant]="'on'"
-        formControlName="vatNumber"
-        dataType="text"
-      />
-    </div>
     @if (isLegalEntity()) {
       <div class="cleansia-profile__field">
         <cleansia-text-input

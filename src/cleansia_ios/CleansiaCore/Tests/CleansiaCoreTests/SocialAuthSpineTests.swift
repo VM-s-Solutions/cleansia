@@ -43,7 +43,8 @@ final class SocialAuthSpineTests: XCTestCase {
             email: "a@b.cz",
             firstName: "Jana",
             lastName: "Nováková",
-            termsAccepted: false
+            termsAccepted: false,
+            countryId: nil
         ))
 
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "GoogleAuth"))
@@ -96,6 +97,34 @@ final class SocialAuthSpineTests: XCTestCase {
         }
     }
 
+    /// A first social sign-in provisions the account with the market's operating company, so the
+    /// chosen market has to reach both social bodies; nil omits it and the server takes the default.
+    func testSocialAuthPutsTheChosenMarketOnTheWire() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
+
+        _ = await client.googleAuth(googleRequest(termsAccepted: true, countryId: "svk"))
+        _ = await client.appleAuth(appleRequest(termsAccepted: true, countryId: "svk"))
+
+        for path in ["GoogleAuth", "AppleAuth"] {
+            let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: path)))
+            XCTAssertEqual(body["countryId"] as? String, "svk", "\(path) dropped the market")
+        }
+    }
+
+    func testSocialAuthWithNoMarketOmitsTheField() async throws {
+        let client = try makeClient(store: MemTokenStore())
+        MockURLProtocol.handler = { _ in (200, Data(#"{"token":"","isEmailConfirmed":false}"#.utf8)) }
+
+        _ = await client.googleAuth(googleRequest(termsAccepted: true))
+        _ = await client.appleAuth(appleRequest(termsAccepted: true))
+
+        for path in ["GoogleAuth", "AppleAuth"] {
+            let body = try decodeBody(XCTUnwrap(MockURLProtocol.recorder.last(matching: path)))
+            XCTAssertFalse(body.keys.contains("countryId"), "\(path) sent a market it does not have")
+        }
+    }
+
     func testAppleAuthPostsContractBodyToAppleAuthPath() async throws {
         let store = MemTokenStore()
         let client = try makeClient(store: store)
@@ -106,7 +135,8 @@ final class SocialAuthSpineTests: XCTestCase {
             rawNonce: "raw-nonce-xyz",
             firstName: "Jan",
             lastName: "Novák",
-            termsAccepted: false
+            termsAccepted: false,
+            countryId: nil
         ))
 
         let request = try XCTUnwrap(MockURLProtocol.recorder.last(matching: "AppleAuth"))
@@ -183,19 +213,27 @@ final class SocialAuthSpineTests: XCTestCase {
         XCTAssertEqual(error.code, "auth.invalid_apple_user_token")
     }
 
-    private func googleRequest(termsAccepted: Bool) -> GoogleAuthRequest {
+    private func googleRequest(termsAccepted: Bool, countryId: String? = nil) -> GoogleAuthRequest {
         GoogleAuthRequest(
             token: "t",
             googleId: "g",
             email: "a@b.cz",
             firstName: "A",
             lastName: "B",
-            termsAccepted: termsAccepted
+            termsAccepted: termsAccepted,
+            countryId: countryId
         )
     }
 
-    private func appleRequest(termsAccepted: Bool) -> AppleAuthRequest {
-        AppleAuthRequest(identityToken: "t", rawNonce: "n", firstName: nil, lastName: nil, termsAccepted: termsAccepted)
+    private func appleRequest(termsAccepted: Bool, countryId: String? = nil) -> AppleAuthRequest {
+        AppleAuthRequest(
+            identityToken: "t",
+            rawNonce: "n",
+            firstName: nil,
+            lastName: nil,
+            termsAccepted: termsAccepted,
+            countryId: countryId
+        )
     }
 
     private func decodeBody(_ request: URLRequest) throws -> [String: Any] {

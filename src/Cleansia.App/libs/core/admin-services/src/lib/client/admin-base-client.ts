@@ -22,10 +22,14 @@ import {
   IAdminEmployeeClient,
   AdminEmployeeDocumentClient,
   IAdminEmployeeDocumentClient,
+  AdminExtraClient,
+  IAdminExtraClient,
   AdminInvoiceClient,
   IAdminInvoiceClient,
   AdminLanguageClient,
   IAdminLanguageClient,
+  AdminLegalClient,
+  IAdminLegalClient,
   AdminLoyaltyClient,
   IAdminLoyaltyClient,
   AdminLoyaltyTierClient,
@@ -50,6 +54,8 @@ import {
   IAdminReportClient,
   AdminServiceClient,
   IAdminServiceClient,
+  AdminTenantSettingsClient,
+  IAdminTenantSettingsClient,
   AdminUserClient,
   IAdminUserClient,
   ApiClient,
@@ -69,8 +75,10 @@ interface IAdminClient {
   adminCurrencyClient: IAdminCurrencyClient;
   adminEmailTemplateClient: IAdminEmailTemplateClient;
   adminEmployeeDocumentClient: IAdminEmployeeDocumentClient;
+  adminExtraClient: IAdminExtraClient;
   adminInvoiceClient: IAdminInvoiceClient;
   adminLanguageClient: IAdminLanguageClient;
+  adminLegalClient: IAdminLegalClient;
   adminOrderClient: IAdminOrderClient;
   accessInstructionsClient: IAccessInstructionsClient;
   adminPackageClient: IAdminPackageClient;
@@ -78,6 +86,7 @@ interface IAdminClient {
   adminPayrollClient: IAdminPayrollClient;
   adminReportClient: IAdminReportClient;
   adminServiceClient: IAdminServiceClient;
+  adminTenantSettingsClient: IAdminTenantSettingsClient;
   adminUserClient: IAdminUserClient;
   emailTemplateTypesClient: ITypesClient;
   adminPayConfigClient: IAdminPayConfigClient;
@@ -119,6 +128,10 @@ export class AdminClient implements IAdminClient {
   );
   adminEmployeeDocumentClient: IAdminEmployeeDocumentClient =
     new AdminEmployeeDocumentClient(this.httpClient, this.apiBaseUrl);
+  adminExtraClient: IAdminExtraClient = new AdminExtraClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   adminInvoiceClient: IAdminInvoiceClient = new AdminInvoiceClient(
     this.httpClient,
     this.apiBaseUrl
@@ -132,6 +145,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminCurrencyClient: IAdminCurrencyClient = new AdminCurrencyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminLegalClient: IAdminLegalClient = new AdminLegalClient(
     this.httpClient,
     this.apiBaseUrl
   );
@@ -160,6 +177,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminServiceClient: IAdminServiceClient = new AdminServiceClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminTenantSettingsClient: IAdminTenantSettingsClient = new AdminTenantSettingsClient(
     this.httpClient,
     this.apiBaseUrl
   );

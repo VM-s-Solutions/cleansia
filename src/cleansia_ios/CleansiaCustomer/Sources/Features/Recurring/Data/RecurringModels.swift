@@ -58,6 +58,8 @@ struct RecurringSavedAddress: Equatable, Identifiable {
     let label: String?
     let street: String?
     let city: String?
+    /// The market the schedule is priced in: the catalogue the form offers follows this country.
+    let countryId: String?
     let isDefault: Bool
 
     var displayLine: String {

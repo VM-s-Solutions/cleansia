@@ -14,12 +14,15 @@ public class GetServicedCountries
 {
     public record Request : IRequest<IEnumerable<CountryListItem>>;
 
-    public class Handler(ICountryRepository countryRepository) : IRequestHandler<Request, IEnumerable<CountryListItem>>
+    public class Handler(
+        ICountryRepository countryRepository,
+        ICountryConfigurationRepository countryConfigurationRepository) : IRequestHandler<Request, IEnumerable<CountryListItem>>
     {
         public async Task<IEnumerable<CountryListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
+            var defaultMarketCountryId = (await countryConfigurationRepository.GetDefaultMarketAsync(cancellationToken))?.CountryId;
             var countries = await countryRepository.GetServicedAsync(cancellationToken);
-            return countries.Select(c => c.MapToDto());
+            return countries.Select(c => c.MapToDto(c.Id == defaultMarketCountryId));
         }
     }
 }

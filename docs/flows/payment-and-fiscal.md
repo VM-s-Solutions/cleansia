@@ -20,7 +20,7 @@ sequenceDiagram
     DB-->>W: 23505
     W-->>S: 200 — replay, do nothing
   else first time
-    W->>DB: PaymentStatus = Paid, status = Confirmed
+    W->>DB: PaymentStatus = Paid (status stays New -- ADR-0057)
     DB-->>W: committed
     W->>Q: enqueue receipt + push
     W-->>S: 200
@@ -56,6 +56,36 @@ sequenceDiagram
 The webhook does not compare what Stripe charged against the order total. It does not have to: the
 charge was created from the persisted server-side `order.TotalPrice`, so there is no client-supplied
 number anywhere in the chain to disagree with.
+
+## No guessed unit, no guessed regime
+
+A receipt is a statement about a sale, and a fiscal registration is a declaration to a tax authority,
+so neither is allowed to fill in what the order did not carry.
+
+**The currency.** Every amount is rendered in the order's own `Currency` row. When that navigation was
+not loaded — a loader omission, not a CZK order — the order e-mails (`EmailService`) and the customer
+receipt PDF (`ReceiptService`) print the **bare number with no unit** (`order.Currency?.Symbol ??
+string.Empty`); nothing substitutes "Kč". The fiscal request goes further and **refuses**:
+`FiscalCurrencyCodeOf` throws when the order has no resolved currency, so the request is never built and
+the receipt is never registered in a default currency.
+
+**The regime.** The receipt's country is `Order.CustomerAddress.CountryId`, and it decides the
+enforcement mode, the provider and the receipt-number counter's issuer scope. With no country at all
+the mode is `None` and there is nothing to register. Under any other mode, an order whose country row
+or ISO code cannot be resolved is refused on the same landing as a missing currency —
+`FiscalCountryCodeOf` throws — never declared to the Czech authority by default. The counter follows
+suit: with no ISO code there is no provider key, and `FiscalSequenceScope.Resolve` maps the empty key
+to the `DEFAULT` issuer scope (which does not reset annually), not to `cz-eet2`.
+
+**Both refusals land in the same place.** They throw inside `HandleFiscalAsync`'s try, which marks the
+receipt `FiscalRegistrationFailed` with `FiscalErrorKind.Unknown` and the exception message, and logs at
+error level. The customer flow is not aborted, the receipt PDF is still generated (with a bare number if
+the currency was the gap), and the retry job (`RetryFiscalRegistrationAsync`) sees the row like any
+other failed registration — and refuses again, identically, until the order is loaded with what it
+needs. The cleaner's invoice PDF applies the same rule on its side: no resolved
+`EmployeeInvoice.Currency`, no render, `PdfGenerationError` recorded.
+→ [Fiscal compliance](/architecture/fiscal-compliance) ·
+[Where CZK is hardcoded](/architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable)
 
 ## The stale-checkout sweep
 

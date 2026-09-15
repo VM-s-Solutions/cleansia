@@ -37,11 +37,11 @@ public class FiscalCounterAllocatorTests : BaseIntegrationTest
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
     }
 
     private FiscalCounterRepository NewRepository(CleansiaDbContext context) =>
-        new(context, new FixedTenantProvider(tenantId: null), new TestUserSessionProvider("system", "system@cleansia.test"));
+        new(context, new FixedTenantProvider(TestTenants.Default), new TestUserSessionProvider("system", "system@cleansia.test"));
 
     private async Task ResetAsync()
     {
@@ -53,6 +53,7 @@ public class FiscalCounterAllocatorTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     [Fact]

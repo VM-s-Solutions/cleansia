@@ -110,13 +110,13 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // keeps the hero stat a correct, correctly-labelled scalar.
         var savingsCurrencyCode = await realizedOrders
             .OrderByDescending(o => o.CreatedOn)
-            .Select(o => o.Currency.Code)
+            .Select(o => o.Currency!.Code)
             .FirstOrDefaultAsync(cancellationToken);
 
         var totalSavings = savingsCurrencyCode is null
             ? 0m
             : await realizedOrders
-                .Where(o => o.Currency.Code == savingsCurrencyCode)
+                .Where(o => o.Currency!.Code == savingsCurrencyCode)
                 .SumAsync(
                     o => (o.TierDiscountAmount ?? 0m)
                         + (o.PromoDiscountAmount ?? 0m)
@@ -240,7 +240,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     }
 
     public async Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
-        DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
+        DateTime startDate, DateTime endDate, string currencyId, CancellationToken cancellationToken)
     {
         return await GetDbSet()
             .Include(o => o.OrderStatusHistory)
@@ -248,7 +248,9 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(s => s.Service)
             .Include(o => o.SelectedPackages)
                 .ThenInclude(op => op.Package)
-            .Where(o => o.CleaningDateTime >= startDate &&
+            // One currency per report: a sum across two is not a number, so the filter is in SQL.
+            .Where(o => o.CurrencyId == currencyId &&
+                       o.CleaningDateTime >= startDate &&
                        o.CleaningDateTime <= endDate)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
@@ -395,6 +397,14 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 && o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
                 && o.CurrentStatus == OrderStatus.Completed)
             .AnyAsync(ct);
+    }
+
+    public Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Where(o => o.Id == orderId)
+            .Select(o => new OrderOwnerAndCurrency(o.UserId, o.CurrencyId))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<(double? Average, int Count)> GetAverageRatingForEmployeeAsync(

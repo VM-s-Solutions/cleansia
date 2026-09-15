@@ -65,7 +65,7 @@ public sealed class PreferredCleanerSlotQueryBindingTests(HostTestPostgresFixtur
 
             var category = ServiceCategory.Create("home-binding", "Home", "Home cleaning");
             ctx.Add(category);
-            var service = Service.Create(category.Id, "Deep clean", "Deep clean", 1500m, 200m, ServiceMinutes);
+            var service = Service.Create(category.Id, "Deep clean", "Deep clean", ServiceMinutes);
             service.Id = ServiceId;
             ctx.Add(service);
 
@@ -73,6 +73,7 @@ public sealed class PreferredCleanerSlotQueryBindingTests(HostTestPostgresFixtur
             ctx.Users.Add(customer);
 
             var plan = DomainSeed.MembershipPlan("SLOT-BINDING");
+            ctx.Add(DomainSeed.MembershipPlanPrice(plan.Id, "SLOT-BINDING"));
             ctx.Add(plan);
             ctx.Add(DomainSeed.ActiveMembership(customer.Id, plan.Id));
 

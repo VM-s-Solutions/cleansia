@@ -33,7 +33,8 @@ public class TakeOrderValidatorTests
         _validator = new TakeOrder.Validator(
             _orderRepository.Object,
             _employeeRepository.Object,
-            _accessService.Object);
+            _accessService.Object,
+            ValidatorTestHelpers.CurrencyResolver());
     }
 
     [Theory]

@@ -15,4 +15,12 @@ public class TenantConfigurationRepository(CleansiaDbContext context) : BaseRepo
     {
         return GetDbSet().AnyAsync(c => c.Key == key, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<TenantConfiguration>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .AsNoTracking()
+            .OrderBy(c => c.Key)
+            .ToListAsync(cancellationToken);
+    }
 }

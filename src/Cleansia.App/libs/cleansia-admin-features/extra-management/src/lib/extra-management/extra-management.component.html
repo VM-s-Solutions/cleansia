@@ -1,0 +1,142 @@
+<div class="cleansia-extra-management">
+  <div class="cleansia-extra-management__container page-wrapper">
+    <div class="cleansia-extra-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.extra_management.title' | translate"
+        />
+        <p class="cleansia-extra-management__description">
+          {{ 'pages.extra_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <div class="filter-header">
+      <div class="filter-chips-inline">
+        @for (chip of activeFilterChips(); track chip.key) {
+        <div class="filter-chip">
+          <span class="filter-chip-label">{{ chip.label }}:</span>
+          <span class="filter-chip-value">{{ chip.value }}</span>
+          <button
+            class="filter-chip-remove"
+            (click)="removeFilterChip(chip.key)"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        } @if (hasActiveFilters()) {
+        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
+          {{ 'pages.extra_management.filters.clear_all' | translate }}
+        </button>
+        }
+      </div>
+      <div class="header-actions">
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.extra_management.filters.title' | translate"
+            icon="pi pi-filter"
+            [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
+            [outlined]="!hasActiveFilters()"
+            (onClick)="openFilterDrawer()"
+          />
+          @if (hasActiveFilters()) {
+          <span class="filter-count-badge">{{ activeFilterCount() }}</span>
+          }
+        </div>
+        <cleansia-button
+          *cleansiaPermission="Policy.CanCreateExtra"
+          [label]="'pages.extra_management.create_extra' | translate"
+          icon="pi pi-plus"
+          (onClick)="createExtra()"
+        />
+      </div>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.extras()"
+        [columns]="extraColumns"
+        [actions]="extraActions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.extra_management.no_extras'
+        }"
+        [loading]="facade.loading()"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+@if (isFilterDrawerOpen()) {
+<div
+  class="filter-drawer-backdrop"
+  role="button"
+  tabindex="0"
+  (click)="closeFilterDrawer()"
+  (keydown.escape)="closeFilterDrawer()"
+  [attr.aria-label]="'global.close' | translate"
+></div>
+}
+
+<div class="filter-drawer" [class.open]="isFilterDrawerOpen()">
+  <div class="filter-drawer-header">
+    <div class="filter-drawer-title">
+      <i class="pi pi-filter"></i>
+      <span>{{ 'pages.extra_management.filters.title' | translate }}</span>
+    </div>
+    <button class="filter-drawer-close" (click)="closeFilterDrawer()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <div class="filter-drawer-content">
+    <form [formGroup]="filterForm" class="filter-form">
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.extra_management.filters.search' | translate }}
+        </h3>
+        <cleansia-text-input
+          formControlName="searchTerm"
+          [placeholder]="
+            'pages.extra_management.filters.search_placeholder' | translate
+          "
+          className="full-width"
+        />
+      </div>
+
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.extra_management.filters.status' | translate }}
+        </h3>
+        <cleansia-select
+          formControlName="status"
+          [options]="statusFilterOptions"
+          [showClear]="false"
+          className="full-width"
+        />
+      </div>
+    </form>
+  </div>
+
+  <div class="filter-drawer-footer">
+    <cleansia-button
+      [label]="'pages.extra_management.filters.reset' | translate"
+      icon="pi pi-times"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="resetFilters()"
+    />
+  </div>
+</div>
+
+<p-confirmDialog />

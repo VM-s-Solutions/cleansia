@@ -2,13 +2,15 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminCurrencyListItem,
   ServiceListItem,
   SortDefinition,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { formatMoney } from '@cleansia/utils';
+import { Observable, catchError, finalize, map, of, switchMap, takeUntil, tap } from 'rxjs';
 import { resolveServiceErrorKey } from './service-management.models';
 
 export interface ServiceFilterParams {
@@ -35,19 +37,39 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
 
   readonly isActiveFilter = computed(() => this.currentFilter()?.isActive);
 
+  /**
+   * The currency the list's price columns are in. The paged list shows the platform default currency's
+   * row (ServiceListItem carries no code of its own), so the code is read once from the currency overview
+   * rather than assumed. Null until known; the formatter then prints the bare number rather than a
+   * currency it cannot name.
+   */
+  readonly defaultCurrencyCode = signal<string | null>(null);
+
   loadServices(): void {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    this.adminClient.adminServiceClient
-      .getPaged(
-        filterParams?.searchTerm,
-        filterParams?.isActive,
-        this.currentSort(),
-        this.currentOffset(),
-        this.currentLimit()
-      )
+    // The currency first, once, so the rows never render under a label that arrives later.
+    const currency$: Observable<string | null> =
+      this.defaultCurrencyCode() !== null
+        ? of(this.defaultCurrencyCode())
+        : this.adminClient.adminCurrencyClient.getOverview().pipe(
+            catchError(() => of([] as AdminCurrencyListItem[])),
+            map((currencies) => (currencies ?? []).find((c) => c.isDefault)?.code ?? null),
+            tap((code) => this.defaultCurrencyCode.set(code))
+          );
+
+    currency$
       .pipe(
+        switchMap(() =>
+          this.adminClient.adminServiceClient.getPaged(
+            filterParams?.searchTerm,
+            filterParams?.isActive,
+            this.currentSort(),
+            this.currentOffset(),
+            this.currentLimit()
+          )
+        ),
         takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
@@ -88,10 +110,7 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
 
   formatCurrency(value: number | undefined): string {
     if (value === undefined || value === null) return '';
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'CZK',
-    }).format(value);
+    return formatMoney(value, this.defaultCurrencyCode(), 'en-GB', { fractionDigits: 2 });
   }
 
   navigateToCreateService(): void {

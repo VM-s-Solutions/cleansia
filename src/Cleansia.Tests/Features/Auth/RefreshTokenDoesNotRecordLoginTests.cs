@@ -53,7 +53,7 @@ public class RefreshTokenDoesNotRecordLoginTests
 
         var result = await Handle(new RefreshTokenCmd.Command("any")
         {
-            RequiredProfile = UserProfile.Customer,
+            RequiredProfiles = [UserProfile.Customer],
             RequiredAudience = CustomerAudience,
         });
 
@@ -71,6 +71,7 @@ public class RefreshTokenDoesNotRecordLoginTests
             _employeeRepository.Object,
             _requestMetadata.Object,
             _jwtSettings.Object,
+            Mock.Of<ITenantProvider>(),
             TimeProvider.System)!;
 
         var handleMethod = handlerType.GetMethod("Handle")!;

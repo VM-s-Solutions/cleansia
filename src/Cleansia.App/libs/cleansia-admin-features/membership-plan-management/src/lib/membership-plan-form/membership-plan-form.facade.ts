@@ -1,10 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
+  AdminCurrencyClient,
+  AdminCurrencyListItem,
   AdminMembershipClient,
-  BillingInterval,
   CreateMembershipPlanCommand,
   MembershipPlanDetailDto,
+  MembershipPlanPriceInput,
   UpdateMembershipPlanCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -15,13 +17,21 @@ import {
   BillingIntervalWireValue,
   resolveMembershipPlanErrorKey,
 } from '../membership-plan-list/membership-plan-list.models';
+import {
+  MembershipPlanPriceEntry,
+  PlanCurrencyOption,
+} from './membership-plan-form.models';
 
 export interface MembershipPlanCreateInput {
   code: string;
   name: string;
   billingInterval: BillingIntervalWireValue;
-  monthlyPriceCzk: number;
-  stripePriceId: string;
+  /**
+   * One entry per currency CODE the admin filled in. A currency left blank is absent rather than
+   * present at zero — the backend upserts a row for every key it receives, and a plan with no row
+   * in a currency is "Plus is not on sale in that market", which is a legal state.
+   */
+  prices: { [code: string]: MembershipPlanPriceEntry };
   discountPercentage: number;
   freeCancellationWindowHours: number;
   trialPeriodDays: number;
@@ -37,11 +47,13 @@ export type MembershipPlanUpdateInput = Omit<
 @Injectable()
 export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
   private readonly membershipClient = inject(AdminMembershipClient);
+  private readonly currencyClient = inject(AdminCurrencyClient);
   private readonly snackbar = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
   readonly plan = signal<MembershipPlanDetailDto | null>(null);
+  readonly currencies = signal<PlanCurrencyOption[]>([]);
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
 
@@ -63,6 +75,31 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
       });
   }
 
+  loadCurrencies(): void {
+    this.currencyClient
+      .getOverview()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as AdminCurrencyListItem[]))
+      )
+      .subscribe((currencies) => {
+        // The generated client hands back null, not [], for a body that is not a JSON array.
+        this.currencies.set(
+          (currencies ?? [])
+            .filter(
+              (c): c is AdminCurrencyListItem & { code: string } => Boolean(c.code)
+            )
+            .map((c) => ({
+              code: c.code,
+              symbol: c.symbol ?? c.code,
+              name: c.name ?? c.code,
+              isDefault: c.isDefault,
+              isActive: c.isActive,
+            }))
+        );
+      });
+  }
+
   create(input: MembershipPlanCreateInput): void {
     if (this.saving()) return;
     this.saving.set(true);
@@ -70,11 +107,8 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     const command = new CreateMembershipPlanCommand();
     command.code = input.code.trim().toUpperCase();
     command.name = input.name.trim();
-    // The wire value is an int (Monthly=1, Yearly=2); the generated string
-    // enum type is stale until the admin client is regenerated.
-    command.billingInterval = input.billingInterval as unknown as BillingInterval;
-    command.monthlyPriceCzk = input.monthlyPriceCzk;
-    command.stripePriceId = input.stripePriceId.trim();
+    command.billingInterval = input.billingInterval;
+    command.prices = this.buildPrices(input.prices);
     command.discountPercentage = input.discountPercentage;
     command.freeCancellationWindowHours = input.freeCancellationWindowHours;
     command.trialPeriodDays = input.trialPeriodDays;
@@ -110,8 +144,7 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     const command = new UpdateMembershipPlanCommand();
     command.membershipPlanId = id;
     command.name = input.name.trim();
-    command.monthlyPriceCzk = input.monthlyPriceCzk;
-    command.stripePriceId = input.stripePriceId.trim();
+    command.prices = this.buildPrices(input.prices);
     command.discountPercentage = input.discountPercentage;
     command.freeCancellationWindowHours = input.freeCancellationWindowHours;
     command.trialPeriodDays = input.trialPeriodDays;
@@ -142,5 +175,18 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
 
   navigateBack(): void {
     this.router.navigate([`/${CleansiaAdminRoute.MEMBERSHIP_PLAN_MANAGEMENT}`]);
+  }
+
+  private buildPrices(source: { [code: string]: MembershipPlanPriceEntry }): {
+    [code: string]: MembershipPlanPriceInput;
+  } {
+    const prices: { [code: string]: MembershipPlanPriceInput } = {};
+    for (const [code, entry] of Object.entries(source)) {
+      const input = new MembershipPlanPriceInput();
+      input.price = entry.price;
+      input.stripePriceId = entry.stripePriceId.trim();
+      prices[code] = input;
+    }
+    return prices;
   }
 }

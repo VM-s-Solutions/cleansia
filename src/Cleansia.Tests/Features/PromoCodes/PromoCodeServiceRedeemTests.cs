@@ -37,10 +37,11 @@ public class PromoCodeServiceRedeemTests
 
     private readonly Mock<IPromoCodeRepository> _promoCodes = new();
     private readonly Mock<IPromoCodeRedemptionRepository> _redemptions = new();
+    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly List<(LogLevel Level, string Message, Exception? Exception)> _logEntries = [];
 
     private PromoCodeService CreateService() =>
-        new(_promoCodes.Object, _redemptions.Object, new CapturingLogger<PromoCodeService>(_logEntries));
+        new(_promoCodes.Object, _redemptions.Object, _currencyRepository.Object, new CapturingLogger<PromoCodeService>(_logEntries));
 
     private PromoCode ArrangeCode(int maxPerUser = 1, int? globalMax = null, int globalCount = 0)
     {

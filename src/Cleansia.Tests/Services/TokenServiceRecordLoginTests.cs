@@ -41,6 +41,7 @@ public class TokenServiceRecordLoginTests
         _refreshTokenService.Object,
         _employeeRepository.Object,
         _requestMetadata.Object,
+        Mock.Of<ITenantProvider>(),
         _timeProvider);
 
     [Fact]

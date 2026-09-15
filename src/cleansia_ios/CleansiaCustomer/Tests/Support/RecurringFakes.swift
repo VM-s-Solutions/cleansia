@@ -57,11 +57,27 @@ final class FakeRecurringSavedAddressClient: RecurringSavedAddressClient, @unche
 }
 
 enum RecurringFixtures {
+    static func address(
+        id: String,
+        countryId: String? = nil,
+        isDefault: Bool = false
+    ) -> RecurringSavedAddress {
+        RecurringSavedAddress(
+            id: id,
+            label: isDefault ? "Home" : "Flat",
+            street: "Zenklova 6",
+            city: "Praha",
+            countryId: countryId,
+            isDefault: isDefault
+        )
+    }
+
     static func template(
         id: String = "tpl-1",
         isActive: Bool = true,
         frequency: Int = 1,
-        endsOn: Date? = nil
+        endsOn: Date? = nil,
+        selectedServiceIds: [String] = ["s-1"]
     ) -> RecurringTemplate {
         RecurringTemplate(
             id: id,
@@ -72,7 +88,7 @@ enum RecurringFixtures {
             bathrooms: 1,
             savedAddressId: "addr-1",
             addressLine: "Zenklova 6, Praha",
-            selectedServiceIds: ["svc-1"],
+            selectedServiceIds: selectedServiceIds,
             selectedPackageIds: [],
             paymentType: 1,
             startsOn: Date(timeIntervalSince1970: 1_780_000_000),

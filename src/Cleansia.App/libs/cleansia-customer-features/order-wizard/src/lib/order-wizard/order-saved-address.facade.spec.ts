@@ -1,6 +1,5 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { AddressDto } from '@cleansia/customer-services';
 import { SavedAddressStore } from '@cleansia/customer-stores';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
 import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData, createAddressDto } from './order-wizard.models';

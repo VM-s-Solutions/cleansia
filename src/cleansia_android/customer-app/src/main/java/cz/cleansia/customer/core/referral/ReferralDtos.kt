@@ -51,6 +51,8 @@ data class ReferralListResponseDto(
 @Serializable
 data class ValidateReferralRequest(
     val code: String,
+    /** The market the code is looked up in (ADR-0061 D3); null = the default market. */
+    val countryId: String? = null,
 )
 
 @Serializable

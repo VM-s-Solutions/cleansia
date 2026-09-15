@@ -7,6 +7,8 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.settings.AppSettingsRepository
@@ -29,12 +31,15 @@ class MainShellViewModel @Inject constructor(
     val orderRepository: OrderRepository,
     val loyaltyRepository: LoyaltyRepository,
     val referralRepository: ReferralRepository,
+    val marketRepository: MarketRepository,
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
+    /** The catalogue is warmed for the chosen market, so the directory is read first (ADR-0058 D5). */
     fun refreshCatalog() {
         viewModelScope.launch {
-            catalogRepository.refresh().onError { error ->
+            val market = marketRepository.ensureLoaded()
+            catalogRepository.refresh(market.countryId).onError { error ->
                 if (error !is ApiError.Network) snackbar.showError(error)
             }
         }

@@ -87,7 +87,7 @@ public class GetMyServingCleaners
                 .Take(MaxCleaners)
                 .ToListAsync(cancellationToken);
 
-            var membership = await userMembershipRepository.GetActiveForUserNoTrackingAsync(userId, cancellationToken);
+            var membership = await userMembershipRepository.GetEntitledForUserNoTrackingAsync(userId, cancellationToken);
 
             var busy = membership is null || rows.Count == 0
                 ? null

@@ -8,7 +8,7 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// <see cref="LoyaltyAccount"/>. <see cref="Points"/> is signed
 /// (positive on Earn, negative on Revoke).
 /// </summary>
-public class LoyaltyTransaction : Auditable, ITenantEntity
+public class LoyaltyTransaction : TenantAuditable
 {
     [Required]
     public string LoyaltyAccountId { get; private set; } = default!;

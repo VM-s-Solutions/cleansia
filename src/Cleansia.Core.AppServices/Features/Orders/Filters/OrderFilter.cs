@@ -21,4 +21,5 @@ public record OrderFilter(
     IEnumerable<OrderStatus>? OrderStatuses,
     bool? HasAvailableSpots,
     bool? IsUnassigned,
-    string? ExcludeEmployeeId);
+    string? ExcludeEmployeeId,
+    string? CurrencyId = null);

@@ -1,4 +1,7 @@
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Orders;
@@ -10,6 +13,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
+// The command carries three ids, so without a named resource the resolver records none of them.
+[AuditAction("order.reassign", ResourceType = "Order")]
 public class AdminReassignOrder
 {
     public record Command(
@@ -112,6 +117,22 @@ public class AdminReassignOrder
 
             var assignment = OrderEmployee.Create(order, target);
             order.AddAssignedEmployee(assignment);
+
+            // An admin assigning a cleaner IS a cleaner taking the job, so the fulfilment axis moves —
+            // mirroring TakeOrder, and guarded the same way so a reassignment on an OnTheWay or
+            // InProgress order never walks the status backwards.
+            //
+            // This append is new with T-0691 and it is not cosmetic. Before the split every card order
+            // arrived here already Confirmed (the Stripe webhook wrote it on payment), so an admin
+            // assignment on a New order could only be a cash one, which TakeOrder would have confirmed.
+            // Now a paid card order rests at New, and without this line an admin-assigned order would
+            // sit at New with a crew on it — a false statement under the new meaning, and invisible to
+            // the six sweeps that select Confirmed AND AssignedEmployees.Any(): the pre-cleaning
+            // reminder, the cleaner job reminder, the tomorrow digest, NotifyOnTheWay and StartOrder.
+            if (order.GetCurrentOrderStatus() is OrderStatus.New)
+            {
+                order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+            }
 
             await OrderCleanerAssignedNotifier.NotifyCustomerOfAssignmentAsync(
                 order, assignment, notificationProducer, cancellationToken);

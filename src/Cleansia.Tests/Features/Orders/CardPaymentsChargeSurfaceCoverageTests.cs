@@ -49,6 +49,9 @@ public class CardPaymentsChargeSurfaceCoverageTests
         ("Services/GdprDeletionService.cs",
             "Deletes the Stripe customer as part of an erasure request. A legal obligation that cannot "
             + "wait on an ops toggle."),
+        ("Services/StripeCustomerResolver.cs",
+            "Creates a Stripe Customer object, never a charge, and only for the two subscribe handlers, "
+            + "both of which refuse on the switch before any Stripe object is created."),
     };
 
     private static readonly Regex StripeDependency =

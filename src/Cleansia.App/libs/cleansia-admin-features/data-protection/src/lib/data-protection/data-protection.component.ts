@@ -7,27 +7,39 @@ import {
   inject,
   OnDestroy,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { GdprRequestDto, UserConsentDto } from '@cleansia/admin-services';
+import {
+  FormBuilder,
+  FormControl,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import {
+  GdprRequestDto,
+  GdprRequestStatus,
+  UserConsentDto,
+} from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
   PaginationState,
   TableAction,
   TableColumn,
 } from '@cleansia/components';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
-import { Policy } from '@cleansia/services';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import { DataProtectionFacade } from './data-protection.facade';
 import {
   getConsentTableDefinition,
+  getGdprRequestStatusOptions,
   getGdprRequestTableDefinition,
 } from './data-protection.models';
 
@@ -42,6 +54,7 @@ import {
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaSelectComponent,
     CleansiaTableComponent,
     CleansiaTextInputComponent,
     CleansiaTitleComponent,
@@ -55,14 +68,18 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly permissions = inject(PermissionService);
   protected readonly facade = inject(DataProtectionFacade);
   protected readonly Policy = Policy;
 
   requestColumns!: TableColumn<GdprRequestDto>[];
   requestActions!: TableAction<GdprRequestDto>[];
   consentColumns!: TableColumn<UserConsentDto>[];
+  statusOptions: ICleansiaSelectOption[] = [];
 
   private readonly destroy$ = new Subject<void>();
+
+  readonly statusControl = new FormControl<GdprRequestStatus | null>(null);
 
   readonly userForm = this.fb.nonNullable.group({
     userId: this.fb.nonNullable.control<string>('', [Validators.required]),
@@ -76,6 +93,10 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
       this.rebuildTableDefinitions();
       this.cd.detectChanges();
     });
+
+    this.statusControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((status) => this.facade.selectStatus(status));
 
     this.facade.loadRequests();
   }
@@ -154,6 +175,27 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  confirmRetry(row: GdprRequestDto): void {
+    const requestId = row.id;
+    if (!requestId) return;
+
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.data_protection.requests.retry_confirm_message',
+        { userId: row.userId ?? '—' }
+      ),
+      header: this.translate.instant(
+        'pages.data_protection.requests.retry_confirm_title'
+      ),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translate.instant(
+        'pages.data_protection.requests.retry_confirm_yes'
+      ),
+      rejectLabel: this.translate.instant('global.actions.cancel'),
+      accept: () => this.facade.retryDeletion(requestId),
+    });
+  }
+
   formatDate(d?: Date): string {
     if (!d) return '—';
     return new Intl.DateTimeFormat(this.translate.currentLang ?? 'en', {
@@ -175,12 +217,18 @@ export class DataProtectionComponent implements AfterViewInit, OnDestroy {
 
   private rebuildTableDefinitions(): void {
     const requestTable = getGdprRequestTableDefinition(
+      {
+        onFulfil: (row) => this.confirmFulfil(row),
+        onRetry: (row) => this.confirmRetry(row),
+        retrying: () => this.facade.retrying(),
+      },
       this.translate,
-      (d) => this.formatDate(d),
-      (row) => this.confirmFulfil(row)
+      this.permissions,
+      (d) => this.formatDate(d)
     );
     this.requestColumns = requestTable.columns;
     this.requestActions = requestTable.actions;
+    this.statusOptions = getGdprRequestStatusOptions(this.translate);
     this.consentColumns = getConsentTableDefinition(this.translate, (d) =>
       this.formatDate(d)
     ).columns;

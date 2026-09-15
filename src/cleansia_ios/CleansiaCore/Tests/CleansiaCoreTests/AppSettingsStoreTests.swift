@@ -66,6 +66,31 @@ final class AppSettingsStoreTests: XCTestCase {
         XCTAssertFalse(store.hasSeenOnboarding(userId: "user-a"))
     }
 
+    func testMarketDefaultsToNilSoTheDirectoryDecides() {
+        XCTAssertNil(makeStore(locale: "en").marketIsoCode)
+    }
+
+    func testMarketPersistsBesideTheLanguageAndSurvivesReinit() {
+        makeStore(locale: "en").setMarket(isoCode: "SVK")
+        XCTAssertEqual(defaults.string(forKey: "settings.market"), "SVK")
+        XCTAssertEqual(makeStore(locale: "en").marketIsoCode, "SVK")
+    }
+
+    func testClearMarketReturnsToFollowingTheDefault() {
+        let store = makeStore(locale: "en")
+        store.setMarket(isoCode: "SVK")
+        store.clearMarket()
+        XCTAssertNil(store.marketIsoCode)
+        XCTAssertNil(defaults.string(forKey: "settings.market"))
+    }
+
+    func testABlankMarketCodeIsNeverStored() {
+        let store = makeStore(locale: "en")
+        store.setMarket(isoCode: "SVK")
+        store.setMarket(isoCode: "  ")
+        XCTAssertNil(store.marketIsoCode)
+    }
+
     func testLanguageResolvesPersistedInSetTag() {
         defaults.set("sk", forKey: "settings.language")
         let store = makeStore(locale: "en")

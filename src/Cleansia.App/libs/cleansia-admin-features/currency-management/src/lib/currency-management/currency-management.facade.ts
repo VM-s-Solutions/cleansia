@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AdminClient, CurrencyListItem } from '@cleansia/admin-services';
+import { AdminClient, AdminCurrencyListItem } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -14,7 +14,7 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
-  readonly currencies = signal<CurrencyListItem[]>([]);
+  readonly currencies = signal<AdminCurrencyListItem[]>([]);
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
 
@@ -43,13 +43,13 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
     this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT, 'create']);
   }
 
-  navigateToEditCurrency(currency: CurrencyListItem): void {
+  navigateToEditCurrency(currency: AdminCurrencyListItem): void {
     if (currency.id) {
       this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT, currency.id, 'edit']);
     }
   }
 
-  setDefaultCurrency(currency: CurrencyListItem): void {
+  setDefaultCurrency(currency: AdminCurrencyListItem): void {
     if (!currency.id || currency.isDefault) return;
 
     this.adminClient.adminCurrencyClient
@@ -75,7 +75,59 @@ export class CurrencyManagementFacade extends UnsubscribeControlDirective {
       });
   }
 
-  deleteCurrency(currency: CurrencyListItem): void {
+  deactivateCurrency(currency: AdminCurrencyListItem): void {
+    if (!currency.id) return;
+
+    this.adminClient.adminCurrencyClient
+      .deactivate(currency.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveCurrencyErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.currency_management.messages.deactivate_success'
+            )
+          );
+          this.loadCurrencies();
+        }
+      });
+  }
+
+  activateCurrency(currency: AdminCurrencyListItem): void {
+    if (!currency.id) return;
+
+    this.adminClient.adminCurrencyClient
+      .activate(currency.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveCurrencyErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.currency_management.messages.activate_success'
+            )
+          );
+          this.loadCurrencies();
+        }
+      });
+  }
+
+  deleteCurrency(currency: AdminCurrencyListItem): void {
     if (!currency.id) return;
 
     this.adminClient.adminCurrencyClient

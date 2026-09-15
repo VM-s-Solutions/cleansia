@@ -111,7 +111,7 @@ Azure Functions run as a Docker container with QuestPDF for native PDF generatio
 ## Key Design Decisions
 
 1. **CQRS with MediatR** — All business logic goes through command/query handlers with pipeline behaviors (validation, unit of work)
-2. **Multi-tenancy** — Shared database with `TenantId` global query filter on all entities
+2. **Multi-tenancy** — Shared database; a tenant is an operating company under the holding, every business row carries its `TenantId` (NOT NULL) and a global query filter scopes reads; an anonymous request names a market and the server maps it to the company ([ADR-0061](/decisions/adr-0061))
 3. **QuestPDF over Chromium** — Native .NET PDF generation without browser dependency
 4. **Separate APIs per audience** — Different auth policies, CORS, and rate limiting per API
 5. **Queue-based PDF generation** — APIs enqueue messages, Functions process asynchronously

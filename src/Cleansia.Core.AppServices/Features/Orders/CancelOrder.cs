@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
@@ -13,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
+[AuditAction("customer.order.cancel", Audience = AuditAudience.Customer, ResourceType = "Order")]
 public class CancelOrder
 {
     public record Command(
@@ -26,6 +29,45 @@ public class CancelOrder
         decimal RefundAmount,
         decimal TotalPrice,
         bool RefundInitiated);
+
+    /// <summary>
+    /// What the cancel cost and why, as the server computed it at the click (ADR-0062 D3). The reason
+    /// text stays on <c>Order.CancellationReason</c>; the row records only that one was given.
+    /// </summary>
+    public record OrderCancellationEvidence(
+        CancellationFeeTier Tier,
+        decimal FeeRate,
+        decimal FeeAmount,
+        decimal RefundAmount,
+        decimal TotalPrice,
+        string CurrencyId,
+        bool HasBeenAccepted,
+        decimal HoursBeforeCleaning,
+        decimal MinutesSinceBooking,
+        int FreeCancellationHoursApplied,
+        CancellationPolicyFigures PolicyFigures,
+        bool ExpressWaiverReleased,
+        bool RefundInitiated,
+        PaymentType PaymentType,
+        PaymentStatus PaymentStatus,
+        bool ReasonProvided) : ICustomerAuditPayload;
+
+    public record CancellationPolicyFigures(
+        int FreeHours,
+        int PartialHours,
+        decimal PartialRate,
+        decimal LastMinuteRate,
+        int OopsMinutesStandard,
+        int OopsMinutesFirstTime)
+    {
+        public static CancellationPolicyFigures Current() => new(
+            BookingPolicy.FreeCancellationHours,
+            BookingPolicy.PartialCancellationHours,
+            BookingPolicy.PartialCancellationFeeRate,
+            BookingPolicy.LastMinuteCancellationFeeRate,
+            BookingPolicy.OopsWindowMinutesStandard,
+            BookingPolicy.OopsWindowMinutesFirstTime);
+    }
 
     public class Validator : AbstractValidator<Command>
     {
@@ -53,7 +95,8 @@ public class CancelOrder
         ICancellationPolicyResolver cancellationPolicyResolver,
         INotificationProducer notificationProducer,
         ILiveActivityProducer liveActivityProducer,
-        IExpressWaiverConsumer expressWaiverConsumer
+        IExpressWaiverConsumer expressWaiverConsumer,
+        IAuditContext auditContext
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -93,6 +136,7 @@ public class CancelOrder
             var assessment = CancellationAssessor.Assess(order, policy, now);
             var feeRate = assessment.FeeRate;
             var refundAmount = assessment.RefundAmount;
+            var paymentStatusAtCancel = order.PaymentStatus;
 
             order.Cancel(
                 cancelledAtUtc: now,
@@ -150,9 +194,10 @@ public class CancelOrder
             // Deliberately keyed on the order's own state, not on CancelledBy: both system sweeps append
             // a status track without calling Order.Cancel, so their orders release here with no change to
             // either sweep.
+            var expressWaiverReleased = false;
             if (!assessment.HasBeenAccepted)
             {
-                await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
+                expressWaiverReleased = await expressWaiverConsumer.ReleaseForOrderAsync(order.Id, cancellationToken);
             }
 
             // Tell every cleaner who ACCEPTED this job that it's off — they hear nothing today.
@@ -162,6 +207,24 @@ public class CancelOrder
                 order, notificationProducer, cancellationToken);
 
             await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
+
+            auditContext.RecordEvidence("Order", order.Id, new OrderCancellationEvidence(
+                Tier: assessment.Tier,
+                FeeRate: feeRate,
+                FeeAmount: assessment.FeeAmount,
+                RefundAmount: refundAmount,
+                TotalPrice: order.TotalPrice,
+                CurrencyId: order.CurrencyId,
+                HasBeenAccepted: assessment.HasBeenAccepted,
+                HoursBeforeCleaning: Math.Round((decimal)(order.CleaningDateTime - now).TotalHours, 2),
+                MinutesSinceBooking: Math.Round((decimal)(now - order.CreatedOn.UtcDateTime).TotalMinutes, 2),
+                FreeCancellationHoursApplied: policy.FreeCancellationHours,
+                PolicyFigures: CancellationPolicyFigures.Current(),
+                ExpressWaiverReleased: expressWaiverReleased,
+                RefundInitiated: refundInitiated,
+                PaymentType: order.PaymentType,
+                PaymentStatus: paymentStatusAtCancel,
+                ReasonProvided: !string.IsNullOrWhiteSpace(command.Reason)));
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

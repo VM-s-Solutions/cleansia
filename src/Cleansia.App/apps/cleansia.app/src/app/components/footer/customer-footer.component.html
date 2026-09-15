@@ -106,6 +106,12 @@
       -->
       <div class="cl-footer__prefs">
         <cleansia-language-switcher variant="globe" />
+        <cleansia-market-switcher
+          variant="pill"
+          [markets]="markets()"
+          [selected]="selectedMarketCode()"
+          (marketChange)="onMarketChange($event)"
+        />
         <button
           type="button"
           class="cl-footer__theme-toggle"

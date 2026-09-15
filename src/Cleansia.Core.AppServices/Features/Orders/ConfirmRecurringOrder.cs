@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -26,9 +27,23 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <para>Refuses orders that are not pending, not owned by the caller, or not linked to a template —
 /// those belong on the standard booking flow. → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
+[AuditAction("customer.order.recurring.confirm", Audience = AuditAudience.Customer, ResourceType = "Order")]
 public class ConfirmRecurringOrder
 {
     public record Command(string OrderId) : ICommand<Response>;
+
+    /// <summary>
+    /// The occurrence the customer confirmed, priced as the materializer stored it (ADR-0062 D3). On the
+    /// card flavour the row records the confirmation the customer initiated; the money moves on the webhook.
+    /// </summary>
+    public record RecurringOccurrenceConfirmationEvidence(
+        string OrderId,
+        string RecurringTemplateId,
+        decimal TotalPrice,
+        string? CurrencyCode,
+        PaymentType PaymentType,
+        DateTimeOffset CleaningDateTime,
+        decimal LeadTimeHours) : ICustomerAuditPayload;
 
     /// <summary>
     /// Both flavors return the same shape; consumers branch on
@@ -62,6 +77,7 @@ public class ConfirmRecurringOrder
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
+        IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -90,22 +106,45 @@ public class ConfirmRecurringOrder
                     nameof(order.PaymentStatus), BusinessErrorMessage.OrderPaymentAlreadyPaid));
             }
 
-            return order.PaymentType switch
+            var result = order.PaymentType switch
             {
                 PaymentType.Cash => await HandleCashAsync(order, cancellationToken),
                 PaymentType.Card => await HandleCardAsync(order, sessionUserId, cancellationToken),
                 _ => BusinessResult.Failure<Response>(new Error(
                     nameof(order.PaymentType), BusinessErrorMessage.InvalidEnumValue)),
             };
+
+            if (result.IsSuccess)
+            {
+                var nowUtc = DateTime.UtcNow;
+                auditContext.RecordEvidence("Order", order.Id, new RecurringOccurrenceConfirmationEvidence(
+                    OrderId: order.Id,
+                    RecurringTemplateId: order.RecurringTemplateId,
+                    TotalPrice: order.TotalPrice,
+                    CurrencyCode: order.Currency?.Code,
+                    PaymentType: order.PaymentType,
+                    CleaningDateTime: new DateTimeOffset(DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)),
+                    LeadTimeHours: Math.Round((decimal)(order.CleaningDateTime - nowUtc).TotalHours, 2)));
+            }
+
+            return result;
         }
 
         private async Task<BusinessResult<Response>> HandleCashAsync(
             Order order, CancellationToken cancellationToken)
         {
-            // Cash means the customer pays the cleaner on-site — no gateway
-            // step, the order moves straight to Confirmed. Mirrors the Cash
-            // branch in CreateOrder.Handler so receipts get queued the same way.
-            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+            // Cash means the customer pays the cleaner on-site — no gateway step. The MONEY axis moves
+            // and the fulfilment axis does not: the customer confirming their own occurrence is not a
+            // cleaner taking it, and owner ruling 2026-09-08 (T-0691) is that Confirmed means only the
+            // latter. This used to append Confirmed here, which was the same overload as the Stripe
+            // webhook wearing different clothes — and leaving it would have meant the word still had
+            // two meanings after the split, buying nothing for the whole cost.
+            //
+            // The occurrence stays offerable: it rests at New + Paid, and OrderAvailability admits New
+            // with a satisfied money term. Before the ruling that was NOT true — a recurring cash
+            // occurrence at New is refused by the money term (Cash && RecurringTemplateId != null), so
+            // the Confirmed append was load-bearing for offerability. It is the PaymentStatus.Paid
+            // write below that carries it now.
             order.UpdatePaymentStatus(PaymentStatus.Paid);
 
             pending.Enqueue(
@@ -166,7 +205,12 @@ public class ConfirmRecurringOrder
                 return 0m;
             }
 
-            var spendable = await creditAccountRepository.GetSpendableAsync(userId, cancellationToken);
+            // Asked FOR the order's currency rather than asked-then-compared. The comparison below is
+            // kept as a belt-and-braces assertion on a money path, but it can no longer be the thing
+            // that decides: an unkeyed read returned whichever account existed, so a customer with a
+            // matching balance and a second account could be told they had none.
+            var spendable = await creditAccountRepository.GetSpendableAsync(
+                userId, order.CurrencyId, cancellationToken);
             if (spendable == null || spendable.CurrencyId != order.CurrencyId)
             {
                 return 0m;
@@ -265,7 +309,9 @@ public class ConfirmRecurringOrder
             // charge surface is not the one that quietly charges the card twice.
             var intent = await stripeClient.CreatePaymentIntentAsync(
                 amount: order.AmountDueOnCard,
-                currency: order.Currency.Code,
+                currency: order.Currency?.Code
+                          ?? throw new InvalidOperationException(
+                              $"Order {order.Id} has no resolved currency; a payment intent cannot be denominated."),
                 stripeCustomerId: stripeCustomerId,
                 orderId: order.Id,
                 displayOrderNumber: order.DisplayOrderNumber,

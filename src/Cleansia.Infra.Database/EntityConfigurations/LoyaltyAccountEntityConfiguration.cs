@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class LoyaltyAccountEntityConfiguration : AuditableEntityConfiguration<LoyaltyAccount, string>
+public class LoyaltyAccountEntityConfiguration : TenantAuditableEntityConfiguration<LoyaltyAccount, string>
 {
     public override void Configure(EntityTypeBuilder<LoyaltyAccount> builder)
     {

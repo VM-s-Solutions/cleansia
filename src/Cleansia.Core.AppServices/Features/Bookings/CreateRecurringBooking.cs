@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -9,6 +11,7 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
+[AuditAction("customer.recurring.create", Audience = AuditAudience.Customer, ResourceType = "RecurringBookingTemplate")]
 public class CreateRecurringBooking
 {
     public record Command(
@@ -29,11 +32,19 @@ public class CreateRecurringBooking
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IUserSessionProvider _userSessionProvider;
+        private readonly ISavedAddressRepository _savedAddressRepository;
+        private readonly ICurrencyResolutionService _currencyResolutionService;
 
-        public Validator(IOrderRepository orderRepository, IUserSessionProvider userSessionProvider)
+        public Validator(
+            IOrderRepository orderRepository,
+            IUserSessionProvider userSessionProvider,
+            ISavedAddressRepository savedAddressRepository,
+            ICurrencyResolutionService currencyResolutionService)
         {
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
+            _savedAddressRepository = savedAddressRepository;
+            _currencyResolutionService = currencyResolutionService;
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -89,6 +100,10 @@ public class CreateRecurringBooking
         /// ONCE, here — the relationship is monotone and this is the only gate needing the caller's
         /// identity, while everything that can lapse is re-run per occurrence by the hold resolver, where
         /// a "no" costs the perk and never the cleaning.
+        ///
+        /// <para>The second term is the currency: every occurrence is priced in the currency of the saved
+        /// address's country, and a cleaner paid in another could never take one. A saved address the
+        /// handler will refuse passes this term untouched so its own not-found answer is the one given.</para>
         /// </summary>
         private async Task<bool> PreferredEmployeeIsEligibleAsync(
             Command command,
@@ -98,7 +113,26 @@ public class CreateRecurringBooking
 
             return !string.IsNullOrEmpty(userId)
                 && await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
-                    userId, command.PreferredEmployeeId!, cancellationToken);
+                    userId, command.PreferredEmployeeId!, cancellationToken)
+                && await PreferredEmployeeIsPaidInTheAddressCurrencyAsync(
+                    userId, command.SavedAddressId, command.PreferredEmployeeId!, cancellationToken);
+        }
+
+        private async Task<bool> PreferredEmployeeIsPaidInTheAddressCurrencyAsync(
+            string userId, string savedAddressId, string employeeId, CancellationToken cancellationToken)
+        {
+            var addresses = await _savedAddressRepository.GetByUserAsync(userId, cancellationToken);
+            var address = addresses.FirstOrDefault(a => a.Id == savedAddressId);
+            if (address?.Address is null)
+            {
+                return true;
+            }
+
+            var orderCurrency = await _currencyResolutionService.ResolveCurrencyForCountryAsync(
+                address.Address.CountryId, cancellationToken);
+            var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(
+                employeeId, cancellationToken);
+            return cleanerCurrency.Id == orderCurrency.Id;
         }
     }
 
@@ -106,7 +140,8 @@ public class CreateRecurringBooking
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
         IUserMembershipRepository userMembershipRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -116,7 +151,7 @@ public class CreateRecurringBooking
             // held by every signed-in customer — without this the perk is free to anyone who calls
             // the endpoint directly. The client-side gates are UX, not the control.
             var membership = await userMembershipRepository
-                .GetActiveForUserNoTrackingAsync(userId, cancellationToken);
+                .GetEntitledForUserNoTrackingAsync(userId, cancellationToken);
             if (membership is null)
             {
                 return BusinessResult.Failure<RecurringBookingTemplateDto>(new Error(
@@ -149,6 +184,9 @@ public class CreateRecurringBooking
                 preferredEmployeeId: command.PreferredEmployeeId);
 
             templateRepository.Add(template);
+
+            auditContext.RecordEvidence("RecurringBookingTemplate", template.Id,
+                new RecurringTemplateEvidence(Before: null, After: RecurringTemplateFacts.Of(template)));
 
             var line = $"{address.Address.Street}, {address.Address.City} {address.Address.ZipCode}";
 

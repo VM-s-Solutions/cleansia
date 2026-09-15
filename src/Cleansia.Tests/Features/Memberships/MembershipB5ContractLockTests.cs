@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
@@ -25,6 +26,7 @@ public class MembershipB5ContractLockTests
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IStripeClient> _stripe = new();
+    private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
 
     public MembershipB5ContractLockTests()
     {
@@ -39,15 +41,18 @@ public class MembershipB5ContractLockTests
             _membershipRepository.Object,
             _session.Object,
             _stripe.Object,
+            new AuditContext(),
             NullLogger<CancelMembershipSubscription.Handler>.Instance);
 
     private SwapMembershipPlan.Handler SwapHandler() =>
         new(
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            new AuditContext(),
             NullLogger<SwapMembershipPlan.Handler>.Instance);
 
     [Fact]

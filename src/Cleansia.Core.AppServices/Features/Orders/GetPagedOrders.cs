@@ -35,6 +35,7 @@ public class GetPagedOrders
         IUserSessionProvider userSessionProvider,
         IEmployeePayConfigRepository payConfigRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IServiceScopeFactory serviceScopeFactory,
         ILogger<Handler> logger)
         : IRequestHandler<Request, PagedData<OrderListItem>>
@@ -45,6 +46,7 @@ public class GetPagedOrders
             var isAdmin = role == UserProfile.Administrator.ToString();
 
             string? callerEmployeeId = null;
+            string? callerCurrencyId = null;
             if (!isAdmin)
             {
                 callerEmployeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
@@ -52,6 +54,9 @@ public class GetPagedOrders
                 {
                     return new List<OrderListItem>().MapToDto(0, request);
                 }
+
+                callerCurrencyId = (await currencyResolutionService
+                    .ResolveCurrencyForEmployeeAsync(callerEmployeeId, cancellationToken)).Id;
             }
 
             DateTime? cleaningDateFrom = request.Filter?.CleaningDateFrom;
@@ -90,9 +95,13 @@ public class GetPagedOrders
                 request.Filter?.ExcludeEmployeeId,
                 restrictToEmployeeId: isAdmin ? null : callerEmployeeId,
                 notHeldFromEmployeeId: isAdmin ? null : callerEmployeeId,
-                nowUtc: isAdmin ? null : DateTime.UtcNow);
+                nowUtc: isAdmin ? null : DateTime.UtcNow,
+                cleanerCurrencyId: callerCurrencyId,
+                currencyId: request.Filter?.CurrencyId);
 
             var filter = specification.SatisfiedBy();
+            var sort = request.Sort.MapToDomain()
+                .WithinCurrencyWhenSortedBy(nameof(Order.TotalPrice), request.Filter?.CurrencyId);
 
             var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
             // Server-side projection onto exactly the columns the list DTO reads (plus the
@@ -100,7 +109,7 @@ public class GetPagedOrders
             // the previous full-graph Include set paid ~7 split queries per page for mostly
             // unread columns.
             var orders = await orderRepository
-                .GetPagedSort<OrderSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+                .GetPagedSort<OrderSort>(request.Offset, request.Limit, filter, sort)
                 .SelectOrderListRows()
                 .AsSplitQuery()
                 .ToListAsync(cancellationToken);
@@ -123,10 +132,16 @@ public class GetPagedOrders
                 new Dictionary<string, decimal>(0);
             if (!isAdmin && !string.IsNullOrEmpty(callerEmployeeId) && (serviceIdsAcrossPage.Count > 0 || packageIdsAcrossPage.Count > 0))
             {
+                // EVERY currency on the page, in one read. Narrowing to a single currency here would
+                // mean a query per currency and reintroduce the N+1 that batching removed; narrowing
+                // per ORDER happens downstream, in OrderPayEstimator, which is the only place that
+                // knows which of the page's orders a row is being estimated for.
+                var currencyIdsAcrossPage = orders.Select(o => o.CurrencyId).Distinct().ToList();
+
                 serviceConfigsForCaller = await payConfigRepository.GetServiceConfigsForOrderAsync(
-                    serviceIdsAcrossPage, callerEmployeeId, cancellationToken);
+                    serviceIdsAcrossPage, callerEmployeeId, currencyIdsAcrossPage, cancellationToken);
                 packageConfigsForCaller = await payConfigRepository.GetPackageConfigsForOrderAsync(
-                    packageIdsAcrossPage, callerEmployeeId, cancellationToken);
+                    packageIdsAcrossPage, callerEmployeeId, currencyIdsAcrossPage, cancellationToken);
                 // Batched per-row pay lookup. One query for the whole
                 // page, two columns, no eager-loaded nav graphs —
                 // replaces the N+1 GetByOrderAndEmployeeAsync loop

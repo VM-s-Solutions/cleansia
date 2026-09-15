@@ -1,12 +1,15 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -32,6 +35,8 @@ public class CreateMembershipCheckoutSessionContractLockTests
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IStripeClient> _stripe = new();
+    private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = MarketResolution.Resolving();
 
     public CreateMembershipCheckoutSessionContractLockTests()
     {
@@ -44,8 +49,6 @@ public class CreateMembershipCheckoutSessionContractLockTests
         var plan = MembershipPlan.Create(
             code: PlanCode,
             name: "Plus Monthly",
-            monthlyPriceCzk: 199m,
-            stripePriceId: StripePriceId,
             discountPercentage: 5m,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
@@ -54,6 +57,7 @@ public class CreateMembershipCheckoutSessionContractLockTests
         _planRepository
             .Setup(r => r.GetByCodeAsync(PlanCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(plan);
+        _priceRepository.PriceIn(plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId);
     }
 
     private void SetupUserWithStripeCustomer()
@@ -71,11 +75,19 @@ public class CreateMembershipCheckoutSessionContractLockTests
             _userRepository.Object,
             _membershipRepository.Object,
             _planRepository.Object,
+            _priceRepository.Object,
+            _currencyResolution.Object,
             _session.Object,
             _stripe.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             new MembershipTrialResolver(_membershipRepository.Object),
+            CustomerResolver(),
+            new AuditContext(),
             NullLogger<CreateMembershipCheckoutSession.Handler>.Instance);
+
+    private StripeCustomerResolver CustomerResolver() =>
+        new(new Mock<IUserStripeCustomerRepository>().Object, _membershipRepository.Object, _stripe.Object,
+            NullLogger<StripeCustomerResolver>.Instance);
 
     [Fact]
     public async Task UserNotFound_Failure_NamesOffendingUserField_NotCommand()
@@ -105,10 +117,10 @@ public class CreateMembershipCheckoutSessionContractLockTests
             .ReturnsAsync(user);
 
         var plan = MembershipPlan.Create(
-            code: PlanCode, name: "Plus Monthly", monthlyPriceCzk: 199m, stripePriceId: StripePriceId,
+            code: PlanCode, name: "Plus Monthly",
             discountPercentage: 5m, freeCancellationWindowHours: 4, allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly, trialPeriodDays: 0);
-        var active = UserMembership.Create(UserId, plan.Id, "sub_active_1", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1));
+        var active = UserMembership.Create(UserId, plan.Id, "currency-czk", "sub_active_1", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1));
         _membershipRepository
             .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(active);
@@ -139,5 +151,50 @@ public class CreateMembershipCheckoutSessionContractLockTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(CheckoutUrl, result.Value.CheckoutUrl);
+    }
+
+    [Fact]
+    public async Task PlanUnpricedInTheResolvedCurrency_Refuses_AndNeverReachesStripe()
+    {
+        SetupUserWithStripeCustomer();
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyForCountryAsync("country-svk", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MembershipPricingMockFactory.Eur());
+
+        var result = await CreateHandler().Handle(
+            new CreateMembershipCheckoutSession.Command(PlanCode, CountryId: "country-svk"),
+            CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.MembershipPlanNotPricedInCurrency, result.Error!.Message);
+        _stripe.Verify(c => c.CreateMembershipCheckoutSessionAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task TheMarketsRow_IsWhatStripeIsHanded_NotAnotherCurrencys()
+    {
+        SetupUserWithStripeCustomer();
+        var eur = MembershipPricingMockFactory.Eur();
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyForCountryAsync("country-svk", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eur);
+        var plan = await _planRepository.Object.GetByCodeAsync(PlanCode, CancellationToken.None);
+        _priceRepository.PriceIn(plan!.Id, eur.Id, "price_eur_1", 7.99m);
+        _stripe
+            .Setup(c => c.CreateMembershipCheckoutSessionAsync(
+                StripeCustomerId, "price_eur_1", UserId, PlanCode, It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CheckoutUrl);
+
+        var result = await CreateHandler().Handle(
+            new CreateMembershipCheckoutSession.Command(PlanCode, CountryId: "country-svk"),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _stripe.Verify(c => c.CreateMembershipCheckoutSessionAsync(
+            StripeCustomerId, "price_eur_1", UserId, PlanCode, It.IsAny<int>(),
+            It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

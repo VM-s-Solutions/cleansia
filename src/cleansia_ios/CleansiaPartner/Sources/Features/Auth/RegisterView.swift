@@ -8,6 +8,7 @@ struct RegisterView: View {
 
     init(
         client: RegistrationAuthClient,
+        marketClient: PartnerMarketClient,
         settings: AppSettingsStore,
         snackbar: SnackbarController,
         signupConsent: SignupConsentRecording,
@@ -16,6 +17,7 @@ struct RegisterView: View {
     ) {
         _vm = StateObject(wrappedValue: RegisterViewModel(
             client: client,
+            marketClient: marketClient,
             settings: settings,
             snackbar: snackbar,
             signupConsent: signupConsent
@@ -27,6 +29,7 @@ struct RegisterView: View {
     var body: some View {
         RegisterContent(
             form: vm.form,
+            market: vm.market,
             isLoading: vm.registerState.isSubmitting,
             onFirstNameChange: vm.onFirstNameChange,
             onLastNameChange: vm.onLastNameChange,
@@ -34,15 +37,18 @@ struct RegisterView: View {
             onPasswordChange: vm.onPasswordChange,
             onConfirmPasswordChange: vm.onConfirmPasswordChange,
             onAcceptTermsChange: vm.onAcceptTermsChange,
+            onMarketChange: vm.onMarketChange,
             onSignIn: onSignIn,
             onSubmit: { Task { await vm.register() } }
         )
+        .task { await vm.loadMarkets() }
         .onReceive(vm.registerSuccess) { onRegistered($0) }
     }
 }
 
 private struct RegisterContent: View {
     let form: RegisterFormState
+    let market: RegisterMarketState
     let isLoading: Bool
     let onFirstNameChange: (String) -> Void
     let onLastNameChange: (String) -> Void
@@ -50,6 +56,7 @@ private struct RegisterContent: View {
     let onPasswordChange: (String) -> Void
     let onConfirmPasswordChange: (String) -> Void
     let onAcceptTermsChange: (Bool) -> Void
+    let onMarketChange: (String?) -> Void
     let onSignIn: () -> Void
     let onSubmit: () -> Void
 
@@ -59,6 +66,14 @@ private struct RegisterContent: View {
 
     private var acceptTermsBinding: Binding<Bool> {
         Binding(get: { form.acceptTerms }, set: onAcceptTermsChange)
+    }
+
+    private var marketBinding: Binding<String?> {
+        Binding(get: { market.countryId }, set: onMarketChange)
+    }
+
+    private var marketOptions: [CleansiaDropdownOption] {
+        market.markets.map { CleansiaDropdownOption(id: $0.countryId, label: RegisterMarketLabel.row($0)) }
     }
 
     var body: some View {
@@ -109,6 +124,17 @@ private struct RegisterContent: View {
                     keyboardType: .emailAddress,
                     enabled: !isLoading
                 )
+
+                if market.offersChoice {
+                    Spacer().frame(height: Spacing.xs)
+
+                    CleansiaDropdown(
+                        selectedId: marketBinding,
+                        options: marketOptions,
+                        label: L10n.Register.market,
+                        enabled: !isLoading
+                    )
+                }
 
                 Spacer().frame(height: Spacing.xs)
 
@@ -197,6 +223,9 @@ private struct RegisterContent: View {
                 preview(form: RegisterFormState(), isLoading: false)
                     .previewDisplayName("Idle")
 
+                preview(form: RegisterFormState(), market: twoMarkets, isLoading: false)
+                    .previewDisplayName("Two markets")
+
                 preview(
                     form: RegisterFormState(
                         firstName: "Jana",
@@ -226,9 +255,25 @@ private struct RegisterContent: View {
             }
         }
 
-        private static func preview(form: RegisterFormState, isLoading: Bool) -> some View {
+        private static let twoMarkets = RegisterMarketState.preselect([
+            RegisterMarket(
+                countryId: "cze", isoCode: "CZE", name: "Czechia", translations: ["cs": "Česko"],
+                currencyCode: "CZK", isDefault: true
+            ),
+            RegisterMarket(
+                countryId: "svk", isoCode: "SVK", name: "Slovakia", translations: ["cs": "Slovensko"],
+                currencyCode: "EUR", isDefault: false
+            )
+        ])
+
+        private static func preview(
+            form: RegisterFormState,
+            market: RegisterMarketState = .unavailable,
+            isLoading: Bool
+        ) -> some View {
             RegisterContent(
                 form: form,
+                market: market,
                 isLoading: isLoading,
                 onFirstNameChange: { _ in },
                 onLastNameChange: { _ in },
@@ -236,6 +281,7 @@ private struct RegisterContent: View {
                 onPasswordChange: { _ in },
                 onConfirmPasswordChange: { _ in },
                 onAcceptTermsChange: { _ in },
+                onMarketChange: { _ in },
                 onSignIn: {},
                 onSubmit: {}
             )

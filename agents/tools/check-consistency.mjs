@@ -322,6 +322,7 @@ function checkDisputeWrites(roots) {
 const SESSION_WIPE_ALLOW = new Map([
     // Public / device-level caches — value is identical for every user, so nothing to leak.
     ["CatalogRepository", "public services/packages/extras catalog — anonymous-fetchable, no account data"],
+    ["MarketRepository", "public market directory + the device's chosen market — anonymous-fetchable, no account data"],
     ["CustomerServiceAreaDataSource", "public serviced-countries/cities — device-level, not per-user"],
     ["PartnerServiceAreaDataSource", "public serviced-countries/cities — device-level, not per-user"],
     ["AppSettingsStore", "device UI prefs (lang/theme/onboarding); per-user onboarding keyed by userId"],

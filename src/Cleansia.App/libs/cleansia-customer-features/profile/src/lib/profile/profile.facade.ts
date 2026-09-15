@@ -300,7 +300,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
             const iso = country.isoCode ?? '';
             return {
               label: iso ? `${name} (${iso})` : name,
-              value: country.id!,
+              value: country.id,
             };
           });
           this.countryOptions.set(options);

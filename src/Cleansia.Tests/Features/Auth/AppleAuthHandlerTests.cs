@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
@@ -70,7 +71,10 @@ public class AppleAuthHandlerTests
             _cartRepository.Object,
             _userRepository.Object,
             _hostAudience,
-            new CapturingLogger<AppleAuth.Handler>(_logEntries))!;
+            new Mock<IConsentService>().Object,
+            new Mock<ILegalDocumentResolver>().Object,
+            new CapturingLogger<AppleAuth.Handler>(_logEntries),
+            new AuditContext())!;
 
     // Defaults to the signup screen's shape so the provisioning branch stays reachable; the sign-in
     // screen sends no tick and its tests pass termsAccepted: false explicitly.
@@ -281,7 +285,7 @@ public class AppleAuthHandlerTests
     }
 
     // The sub is the stable identity, so it wins over the email — and the matched account KEEPS its
-    // stored email (rewriting it would collide with the (TenantId, Email) unique index and silently
+    // stored email (rewriting it would collide with the global Email unique index and silently
     // merge accounts when the user switches between a relay address and their real one).
     [Fact]
     public async Task AppleId_Match_Wins_Over_Email_And_Does_Not_Rewrite_The_Stored_Email()

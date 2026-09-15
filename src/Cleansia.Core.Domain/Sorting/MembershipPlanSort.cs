@@ -13,8 +13,8 @@ public class MembershipPlanSort(string propertyName, bool isAscending)
     {
         if (string.Equals(propertyName, nameof(MembershipPlan.BillingInterval), StringComparison.CurrentCultureIgnoreCase))
             return x => x.BillingInterval;
-        if (string.Equals(propertyName, nameof(MembershipPlan.MonthlyPriceCzk), StringComparison.CurrentCultureIgnoreCase))
-            return x => x.MonthlyPriceCzk;
+        // NO PRICE SORT: a plan is priced per currency (MembershipPlanPrice), so the key falls through
+        // to DefaultSort exactly as PackageSort's does, and for the same reason.
         if (string.Equals(propertyName, nameof(MembershipPlan.Code), StringComparison.CurrentCultureIgnoreCase))
             return x => x.Code;
         if (string.Equals(propertyName, nameof(MembershipPlan.Name), StringComparison.CurrentCultureIgnoreCase))

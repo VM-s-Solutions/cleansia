@@ -114,6 +114,51 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
     }
 
     /// <summary>
+    /// The per-country figures customer copy interpolates (ADR-0060 D2). Needs an existing
+    /// configuration row; the country update does not create one.
+    /// </summary>
+    [HttpPut("{countryId}/market-content")]
+    [Permission(Policy.CanUpdateCountry)]
+    [ProducesResponseType(typeof(UpdateCountryMarketContent.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> UpdateMarketContent(
+        string countryId,
+        [FromBody] UpdateCountryMarketContent.Command command,
+        CancellationToken cancellationToken)
+    {
+        if (command.CountryId != countryId)
+        {
+            return BadRequest("Country ID in route does not match command");
+        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UpdateCountryMarketContent.Response>(result);
+    }
+
+    /// <summary>
+    /// Flags this country as the default market — what a customer surface pre-selects before any
+    /// choice is made. The country must be serviced and its configured currency switched on.
+    /// </summary>
+    [HttpPut("{countryId}/default-market")]
+    [Permission(Policy.CanUpdateCountry)]
+    [ProducesResponseType(typeof(SetDefaultMarket.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("auth")]
+    public async Task<IActionResult> SetDefaultMarket(
+        string countryId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new SetDefaultMarket.Command(countryId), cancellationToken);
+        return HandleResult<SetDefaultMarket.Response>(result);
+    }
+
+    /// <summary>
     /// What this country calls its business identifiers, and whether it demands them.
     ///
     /// <para>CountryConfiguration has carried these since it was seeded, and no endpoint on THIS host

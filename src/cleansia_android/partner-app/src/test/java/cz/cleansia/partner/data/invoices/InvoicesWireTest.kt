@@ -357,6 +357,14 @@ class InvoicesWireTest {
         assertEquals(emptyList<OrderPayLine>(), invoice.orderPays)
     }
 
+    // --- the currency view My Pay is opened with ---------------------------------
+
+    @Test
+    fun everyInvoiceKeepsTheCurrencyIdTheWireCarried() = runTest {
+        assertEquals(listOf("cur-czk", "cur-czk"), loadedList(CAPTURED_PAGE).map { it.currencyId })
+        assertEquals("cur-czk", loadedDetail(capturedInvoice().toString()).currencyId)
+    }
+
     // --- rule 5: nullable-by-design strings stay nullable -------------------------
 
     @Test
@@ -367,6 +375,7 @@ class InvoicesWireTest {
         assertNull(invoice.invoiceNumber)
         assertNull(invoice.payPeriodLabel)
         assertNull(invoice.currencyCode)
+        assertNull(invoice.currencyId)
         assertNull(invoice.variableSymbol)
         assertNull(invoice.specificSymbol)
         assertNull(invoice.paymentReference)
@@ -457,6 +466,7 @@ class InvoicesWireTest {
                   "deductionAmount": 40.25,
                   "totalAmount": 1500.25,
                   "currencyCode": "CZK",
+                  "currencyId": "cur-czk",
                   "status": 3,
                   "pdfBlobName": "invoices/2026-0042.pdf",
                   "pdfGenerationFailed": false,
@@ -483,6 +493,7 @@ class InvoicesWireTest {
                   "deductionAmount": 80.00,
                   "totalAmount": 2400.75,
                   "currencyCode": "CZK",
+                  "currencyId": "cur-czk",
                   "status": 1,
                   "pdfBlobName": "invoices/2026-0043.pdf",
                   "pdfGenerationFailed": false,
@@ -520,6 +531,7 @@ class InvoicesWireTest {
               "deductionAmount": 40.25,
               "totalAmount": 1500.25,
               "currencyCode": "CZK",
+              "currencyId": "cur-czk",
               "status": 3,
               "pdfBlobName": "invoices/2026-0042.pdf",
               "pdfGenerationFailed": false,
@@ -586,6 +598,7 @@ class InvoicesWireTest {
             "deductionAmount",
             "totalAmount",
             "currencyCode",
+            "currencyId",
             "status",
             "pdfBlobName",
             "pdfGenerationFailed",
@@ -618,6 +631,7 @@ class InvoicesWireTest {
             "specificSymbol",
             "paymentReference",
             "currencyCode",
+            "currencyId",
             "pdfBlobName",
             "pdfGenerationError",
             "approvedBy",

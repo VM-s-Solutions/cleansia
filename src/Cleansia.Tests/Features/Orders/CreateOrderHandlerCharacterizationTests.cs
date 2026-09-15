@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
@@ -15,6 +17,7 @@ using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using Cleansia.Tests.Common;
+using Cleansia.Tests.Domain.Legal;
 using Moq;
 using StripeException = Stripe.StripeException;
 
@@ -35,7 +38,6 @@ public class CreateOrderHandlerCharacterizationTests
 
     private readonly Mock<IAddressRepository> _addressRepository = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<ICountryRepository> _countryRepository = new();
     private readonly Mock<IServiceCityRepository> _serviceCityRepository = new();
     private readonly Mock<IStripeClientFactory> _stripeClientFactory = new();
@@ -54,14 +56,6 @@ public class CreateOrderHandlerCharacterizationTests
     public CreateOrderHandlerCharacterizationTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
-
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
-        _currencyRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
 
         _countryRepository
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -109,9 +103,21 @@ public class CreateOrderHandlerCharacterizationTests
                 }));
     }
 
+    /// <summary>The fixture's "cz" trades in CZK, Slovakia in EUR; anything else is the platform default.</summary>
+    private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
+    private static readonly Currency Eur = Market(Currency.Create("EUR", "€", "Euro"), "currency-eur");
+    private const string Slovakia = "sk";
+
+    private static Currency Market(Currency currency, string id)
+    {
+        currency.Id = id;
+        currency.IsActive = true;
+        return currency;
+    }
+
     private CreateOrder.Handler CreateHandler(OrderChannel channel = OrderChannel.Web) =>
         new(
-            _currencyRepository.Object,
+            OrderMarketDoubles.Trading(Czk, ("cz", Czk), (Slovakia, Eur)),
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
@@ -139,6 +145,9 @@ public class CreateOrderHandlerCharacterizationTests
             // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a
             // customer who has never been credited looks like, and what every case here assumes.
             _creditAccountRepository.Object,
+            new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object),
+            LegalDocumentFixtures.Resolver().Object,
+            new AuditContext(),
             NullLogger<CreateOrder.Handler>.Instance);
 
     private void ArrangeSavedAddress(string savedAddressId, string ownerUserId, Address? resolved = null)
@@ -402,6 +411,128 @@ public class CreateOrderHandlerCharacterizationTests
         await CreateHandler().Handle(CreateOrderTestData.ValidCommand(), CancellationToken.None);
 
         Assert.Null(captured!.AccessInstructions);
+    }
+
+    // ---------------------------------------------------------------- the order's currency
+
+    /// <summary>
+    /// THE ORDER IS STAMPED WITH THE SERVICE ADDRESS'S COUNTRY'S CURRENCY (owner ruling 2026-09-12),
+    /// and priced with that row's id, so the price and the stamp cannot name different currencies. A
+    /// Slovak address is a EUR order whatever the command says: the validator has already refused a
+    /// named currency that disagrees, so the handler reads the country and nothing else.
+    /// </summary>
+    [Fact]
+    public async Task The_Order_Is_Stamped_With_The_Address_Countrys_Currency()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia)) with { CurrencyId = null };
+        await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.Same(Eur, captured!.Currency);
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+            Eur.Id, It.IsAny<DateTime?>(), It.IsAny<string?>(),
+            It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    /// <summary>
+    /// The saved-address path reads the same country: a saved Slovak address books a EUR order.
+    /// </summary>
+    [Fact]
+    public async Task A_Saved_Address_Is_Stamped_With_Its_Countrys_Currency()
+    {
+        ArrangeSavedAddress("saved-sk", ownerUserId: UserId,
+            resolved: AddressMockFactory.Generate(new AddressMockFactory.AddressPartial
+            {
+                CountryId = Slovakia, Latitude = 48.14, Longitude = 17.10,
+            }));
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand(savedAddressId: "saved-sk") with { CurrencyId = null };
+        await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.Same(Eur, captured!.Currency);
+    }
+
+    [Fact]
+    public async Task A_Czech_Address_Is_Stamped_With_The_Platform_Default()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand() with { CurrencyId = null };
+        await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.Same(Czk, captured!.Currency);
+    }
+
+    /// <summary>
+    /// The validator refuses a promo the preview will not honour, and the handler re-runs the SAME
+    /// preview -- the same code, the pre-surcharge subtotal, the address country's currency -- so the
+    /// two cannot disagree. The service is set up on exactly those arguments: a handler that previewed
+    /// on a different subtotal or currency would get no answer here and book without the discount.
+    /// </summary>
+    [Fact]
+    public async Task A_Promo_The_Validator_Honoured_Is_Applied_From_The_Same_Preview()
+    {
+        _pricingCalculator
+            .Setup(c => c.CalculateAsync(
+                It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+                It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+                It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateOrderTestData.MatchingPricing(totalPrice: 1800m) with
+            {
+                ExpressSurchargeApplied = true, ExpressSurchargeAmount = 300m,
+            });
+        _promoCodeService
+            .Setup(s => s.PreviewAsync("SAVE10", UserId, 1500m, Eur.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PromoCodePreviewResult(true, 100m, "promo-1", null));
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand(
+            customerAddress: CreateOrderTestData.InlineAddress(countryId: Slovakia),
+            totalPrice: 1800m,
+            promoCode: "SAVE10") with { CurrencyId = null };
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(100m, captured!.PromoDiscountAmount);
+        Assert.Equal("promo-1", captured.PromoCodeId);
     }
 
     [Fact]

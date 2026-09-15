@@ -8,6 +8,12 @@ public class OrderServiceEntityConfiguration : IEntityTypeConfiguration<OrderSer
 {
     public void Configure(EntityTypeBuilder<OrderService> builder)
     {
+        // The line's own money, frozen when the order was placed. numeric(18,2) to match every other
+        // money column in the schema.
+        builder.Property(os => os.UnitBasePrice).IsRequired().HasPrecision(18, 2);
+        builder.Property(os => os.UnitPerRoomPrice).IsRequired().HasPrecision(18, 2);
+        builder.Property(os => os.LineTotal).IsRequired().HasPrecision(18, 2);
+
         // Restrict (not the convention Cascade) so deleting a Service that an order line references is
         // rejected at the database rather than silently stripping the line from a historical (possibly
         // invoiced/receipted) order. The admin in-use guard maps the resulting 23503 to service.in_use;

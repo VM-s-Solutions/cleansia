@@ -31,13 +31,11 @@ public class CreditTransactionEntityConfiguration : AuditableEntityConfiguration
         builder.Property(t => t.DisputeId).HasMaxLength(26);
         builder.Property(t => t.Note).HasMaxLength(500);
 
-        // A PLAIN unique index on a NOT NULL column, with no filter and no tenant term.
-        //
-        // LoyaltyTransactions took the other shape — (TenantId, IdempotencyKey), unique, filtered
-        // "IdempotencyKey IS NOT NULL", and without .AreNullsDistinct(false). TenantId is null in
-        // production, so Postgres treats every row's key as distinct and the index its own comment
-        // calls "the atomic backstop" enforces nothing. This is money; the backstop has to actually
-        // fire, so there is nothing here that can be null and nothing to filter on.
+        // A PLAIN unique index on a NOT NULL column, with no filter and no tenant term. The key is
+        // minted per grant and unique on its own, and this table carries no tenant column, so there is
+        // nothing to add. This is money; the backstop has to actually fire, so there is nothing here
+        // that can be null and nothing to filter on — the shape that once let LoyaltyTransactions'
+        // (TenantId, IdempotencyKey) index enforce nothing while its tenant term was nullable.
         builder.HasIndex(t => t.IdempotencyKey)
             .IsUnique();
 

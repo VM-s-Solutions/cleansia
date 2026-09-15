@@ -27,6 +27,14 @@ clients send empty, backend overwrites), be commented as server-enriched, and be
 controller from the JWT **before** `Mediator.Send`. Anonymous endpoints should need no `UserId` at
 all.
 
+**A request names a market, never a tenant.** An anonymous request that writes a tenanted row carries an
+optional `countryId` (`IOperatorScopedRequest`) — a market it could equally pass to `Order/Quote` — and
+the server maps market → operating company from `CountryConfiguration.OperatorTenantId`, a column only
+the seed writes (ADR-0061 D3). There is no `tenantId` on any wire, no header, no cookie; a request that
+carries a `tenant_id` claim is never re-scoped by the field. A visitor choosing which operator to
+register with is the public site working as intended; a client naming a tenant would be S1's exact
+failure, and the shape of the API makes it impossible to express.
+
 **An identity a client cannot know is not an authorization check.** A self-write that authorizes by
 comparing the session user to a *client-supplied* id passes only for callers that already know the
 answer, so it protects nothing and silently locks out any client that cannot guess it. `MyProfileDto`
@@ -59,6 +67,66 @@ code. An admin mutation with **no** row, a behavior that **computes** before/aft
 the handler's `IAuditContext` snapshot), a snapshot carrying **raw subject PII**, or a non-atomic /
 best-effort *success*-audit are ADR-0012 violations (the success row must ride the action's commit;
 only *failures* are written out-of-band and must never re-throw into the caller's error).
+
+**The customer trail (ADR-0062, amended 2026-09-14).** The same two behaviors, through the second arm
+of `AuditGate`, write a `CustomerActionAudit` row for a `Command` that carries `[AuditAction("customer.…",
+Audience = AuditAudience.Customer, ResourceType = …)]` when the caller is a `Customer` — or anonymous,
+but only on a marker that says `AllowsAnonymousActor` **and only when the serving host is a customer
+host** (`IHostAudienceProvider.Audience == JwtAudiences.Customer`): nine commands carry the anonymous
+marker (`Register`, guest `CreateOrder`, `Login`, `MobileLogin`, `GoogleAuth`, `AppleAuth`,
+`ConfirmUserEmail`, `RequestPasswordChange`, `ChangePassword`), several are routed on the partner hosts
+too, and a cleaner's confirmation or reset there lands in **no** table — the employee table is not for
+sessions and the customer table is not theirs. Opt-in, not opt-out: **25 commands** are marked (21
+labels — the money and entitlement acts, the session acts since the owner overruled Q-AUD-L5, and the
+customer's own data export), and an unmarked customer command leaves no row on purpose (ADR-0045 D13
+— no collection just in case). An anonymous marked command that names no market implements
+`IOperatorScopedRequest` with an explicit `CountryId => null`, so its refusal row has an operator to
+be stamped with; its success row is stamped with the **account's** operator (ADR-0061 D4 as amended).
+**What a customer row may hold:** identifiers, money,
+enums (by name), versions and the request context — `ClientAudience` (the serving host's audience,
+never read off the JWT), `IpAddress`, `DeviceLabel`, and a `DeviceId` that on a signed-in row is the
+session's **signed `device_id` claim**, never the `X-Device-Id` header (the same rule as ADR-0026: the
+adversary is the client). **What it may never hold:** a name, contact detail, address text, free text
+the customer typed (`*Reason`, `*Description`, `*Instructions`, `*Note` are refused by name; a
+dispute's description is recorded as a length), card data, a token or a live code (`ConfirmationCode`,
+`ResetCode`, … are refused by name), or `preferredEmployeeId` (the erasure nulls it on purpose). The
+payload is a typed `ICustomerAuditPayload` record the handler emits through
+`IAuditContext.RecordEvidence(...)`; `CustomerAuditPayloadPiiGuardTests` walks every one by reflection
+and fails the build naming the record and the member. **The failure row's `ErrorCode` is the
+`BusinessErrorMessage` key** (`order.in_progress_cannot_cancel`, `order.total_price.not_match`), never the field
+name or the `ValidationError` sentinel — on both arms (`AuditErrorCode.Resolve`). **An anonymous
+refusal writes a failure row carrying the caller's IP**: a refused `Register`, guest `CreateOrder` or
+sign-in lands out-of-band with `UserId = null`, bounded by the same `auth` rate-limit window that
+bounds the request (10 requests per minute per real client IP — every route that dispatches a marked
+command is `[EnableRateLimiting]`, pinned by `RateLimitCoverageGuardTests`); a refusal raised before
+the market's operator is resolved has no tenant to be stamped with and is skipped with one warning,
+never written with none. **A refusal for an unknown e-mail address is a row with no user, no
+resource and no payload** — the address the caller typed reaches no column (the PII guard refuses
+`Email`-named members; `PayloadJson` is null on every failure row). **A refused sign-in, reset or
+confirmation on a known account names the account** (owner ruling 2026-09-15): the validator that
+resolved it names it through `RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id)`
+before refusing, so the failure row carries the account's id as subject and resource — an id the
+caller has *not* proven they own, which is why the row stays `PayloadJson` null, the session still
+wins over the named subject (S1), the response is the same key as before, and the id is read by the
+admin surfaces alone. The out-of-band sink stamps such a row with the **named account's** operator,
+read past the tenant filter in its own scope; a row naming nobody keeps the ambient stamp.
+**Append-only, with one sanctioned mutator:** `Pseudonymise()` blanks the three request-metadata
+columns on erasure and nothing else — no code path calls `Remove`, `Deactivate` or touches `IsActive`
+on the type (`CustomerActionAuditImmutabilityTests`); each row is deleted by the retention sweep three
+years after its own act, and the sweep never reaches the admin or employee tables. **The two PII
+egresses are themselves audited:** `AdminExportUserData` is a `Command` marked `gdpr.user.export`
+(Sensitive) and `ExportCustomerIncidentFile` — the PDF that prints a subject's identity on purpose —
+is marked `gdpr.user.incident_file` (Sensitive) with a snapshot of ids, section counts and the
+SHA-256 of the data section; both leave an `AdminActionAudit` row, never the content, and the export
+commits its `GdprRequest`. The incident file scoped to an order prints the subject's own rows and the
+guest rows on that order, **never a bystander's refused probe** (their id, IP and device label are not
+the subject's to export — S6). The customer's own export is a `customer.gdpr.export` row with counts,
+and its `GdprRequest` row names the fixed actor `self`, never the subject's e-mail (the row outlives
+the erasure). The incident file prints the operating company's name and markets, **never the tenant
+id** (S4). The JSON export's trail is the account's own rows — not the guest rows on the bookings the
+erasure reaches by e-mail, whose IP and device may be a stranger's.
+→ [ADR-0062](/decisions/adr-0062), [`customer-action-audit`](/domain/roles/customer-action-audit),
+[`audit-gate`](/domain/roles/audit-gate), [`incident-file`](/domain/roles/incident-file)
 
 **Token lifetime (ADR-0024).** The access-token TTL on a host that issues device-bound sessions is a
 security bound, not a tuning knob — changing `AccessTokenExpMinutes` on a mobile host requires a
@@ -103,7 +171,9 @@ data unless gated by a different shared secret (e.g. a confirmation code in the 
 the entity gains a sensitive field tomorrow. Audit every Response/DTO for fields that must not
 reach the client:
 - `UserId` (the client knows their own id); other users' ids
-- `TenantId` (never expose)
+- `TenantId` (never expose — and never *print*: the incident file resolves the operator to its display
+  name and markets from the market registry rather than emitting the id, and the id is absent from
+  the hashed section model — `IncidentFileTests`)
 - email / phone / full name of non-self users (exception: cleaner first-name on an assigned order
   is documented intent)
 - Stripe customer/subscription ids, token hashes, password hashes
@@ -138,8 +208,19 @@ this shape for any new per-user side-effect window — do not hand-roll an un-pa
 
 **Partitioning is not coverage.** A correctly partitioned policy applied to *some* endpoints does not
 satisfy S5 for the money/side-effect endpoints that carry **no** `[EnableRateLimiting]` at all —
-those remain S5 gaps (tracked as `BSP-4d`; verified-uncovered today include
-`Web.Customer/MembershipController.CreateCheckoutSession` and the Partner payroll controllers).
+those remain S5 gaps (tracked as `BSP-4d`). *(The sentence that used to stand here named
+`Web.Customer/MembershipController.CreateCheckoutSession` as verified-uncovered; it has carried
+`[EnableRateLimiting("auth")]` since before ADR-0062 was drafted, and the ADR made the check
+mechanical: every customer-host action that dispatches a command marked `Audience = Customer` — a
+row-writer, so an unlimited route would be a storage amplifier — must carry `[EnableRateLimiting]`,
+pinned by `Cleansia.Tests/RateLimiting/RateLimitCoverageGuardTests.cs`, anti-vacuous by label since
+the session acts joined (two password sign-ins share one label, so the guard counts labels, not
+files). The Partner payroll controllers are outside that guard and are the remaining named gap.)*
+
+Two routes added on 2026-09-14 sit in the windows on purpose: the anonymous legal-text read
+(`GET api/Legal/GetDocument`, `interactive`) because it renders markdown per request, and the admin
+incident file (`POST api/v1/AdminGdpr/incident-file/{userId}`, `auth`) because a PDF render holds a
+process-wide lock and a whole-subject file is the most expensive read on the admin host.
 
 ## S6 — Logging hygiene (no PII above Debug)
 
@@ -190,7 +271,7 @@ Three tools, and picking the wrong one is the usual mistake:
 |---|---|
 | A named field whose name says what it holds (`*email`, `*phone*`, `*firstName`, `birthDate`) | `ContactIdentityFieldRegex` — matched by **shape**, not enumerated, so the next `contactEmail` is covered without anyone remembering |
 | A named credential (`clientSecret`, `ephemeralKey`, `blobUrl`) | `SensitiveFieldRegex` — literal names; **values are unbounded**, so collapsing one frees window and can unmask what follows |
-| Free text no name can reach (`Notes`, `Description`, `ReviewNotes`, `HolderName`) | `IsSensitivePath` — wholesale route suppression |
+| Free text no name can reach (`Notes`, `Description`, `ReviewNotes`, `HolderName`) | `IsSensitivePath` — wholesale route suppression. The customer audit routes are on it (`/customeraudit/`, all three — list, entry, timeline): an entry carries the subject's `payloadJson`, `ipAddress` and a client-controlled `deviceLabel`, none of which a name list reaches (ADR-0062 D6; `RequestLogCustomerAuditPathSuppressionTests`). The `gdpr/` rule already covers the whole `AdminGdpr` controller — the incident-file PDF, the deletion retry and the export's consent section, whose `userAgent` is raw-but-suppressed (a user agent is free text no regex names) — and a test pins each |
 
 Keep the two regexes **separate**. They redact identically but they do not free window identically, and
 merging them makes `RedactionUnmaskedFreeTextGuardTests` report every string member of every DTO as
@@ -258,13 +339,48 @@ a deterministic server-side fallback. Reference: `CreateMembershipSubscription.D
 
 ## S8 — Tenant isolation correctness
 
-Every entity holding user-scoped data implements `ITenantEntity`; the global EF query filter then
-auto-scopes reads. When adding an entity, ask "could two tenants both have rows here?" — if yes,
-`ITenantEntity`; if no (true platform config), document why it isn't. Unique indexes on
-tenant-scoped tables are `(TenantId, X)`, not `(X)` — `Code` is unique *per tenant*. The global
-filter applies to `Set<T>()` reads but **not** to raw SQL (`FromSqlRaw`/`ExecuteSqlRaw`),
-`IQueryable` exposed from the wrong layer, or joins where only one side carries the filter — audit
-those paths.
+A tenant is an **operating company** under the holding (ADR-0061): `Tenants` is the registry (one row,
+`cleansia-cz`, seed-only), `CountryConfiguration.OperatorTenantId` maps each market to the company
+that serves it, and **every stamped table's `TenantId` is NOT NULL and a real foreign key into
+`Tenants`** (`FK_<T>_Tenants_TenantId`, `Restrict`, no navigation — ADR-0061 D1/D8 as amended
+2026-09-15) — the only nullable ones are the two infra exemptions, `OutboxMessages` and `DeadLetters`,
+and a `NULL` passes the FK there. `NULL` is not a tenant and never was one that production ran on.
+Every entity holding one operator's customers, cleaners or money extends **`TenantAuditable`** (the
+`Auditable` that carries `TenantId`; the two `BaseEntity + ITenantEntity` audits map the column by
+hand); the global EF query filter then auto-scopes reads. A plain `Auditable` **has no tenant column** —
+the 21 catalogue and per-country tables carry none, and a model sweep fails a non-`ITenantEntity` type
+that grows one. When adding an entity, ask "could two operators legitimately hold *different* rows here
+for the same key?" — if yes, `TenantAuditable`; if no (the brand's catalogue or programme, or a
+per-country fact), it is plain `Auditable` and says why in a one-line comment naming its sibling
+(`LoyaltyTierConfig` names `MembershipPlan`). Unique indexes on stamped tables
+are `(TenantId, X)`, not `(X)` — `Code` is unique *per operator*, and since 2026-09-15 so are a payout
+invoice's number and variable symbol (`EmployeeInvoices (TenantId, InvoiceNumber)` and
+`(TenantId, VariableSymbol)`, each company numbering its own) — with one deliberate exception:
+`Users (Email)` is **global**, because one email is one identity across the holding (ADR-0061 D5.1;
+every anonymous identity read already resolved by email ignoring the tenant, so a per-operator scope
+would make login ambiguous). The global filter applies to `Set<T>()` reads but **not** to raw SQL
+(`FromSqlRaw`/`ExecuteSqlRaw`), `IQueryable` exposed from the wrong layer, or joins where only one side
+carries the filter — audit those paths.
+
+**How a row gets its tenant, and the two standing guards.** An authenticated request's tenant is the
+`tenant_id` claim. An anonymous request that writes names a market (S1 above) and
+`OperatorTenantScopeBehavior` sets the market's operator as the ambient tenant before validation runs;
+a request that authenticates a user (`TokenService`, `RefreshToken`) adopts that user's tenant before it
+writes; a job or webhook derives the tenant of every row it writes from the row it read — or, when its
+work is *per company* rather than per row (the retention sweeps, which read each company's own
+windows), loops the registry (`ITenantRepository.GetAllIdsAsync`) and sets the override per company.
+`CommitAsync` stamps every `Added` `ITenantEntity` from whatever is ambient at commit time, and the
+database refuses a row with none (`23502`) or with a company the registry does not hold (`23503`). The
+guards that stand over all of it, all in `backend-ci.yml` with no `continue-on-error`:
+**`SeededDatabaseHasNoOrphanTenantRowsTests`** (the seed applied to the migration-built database leaves
+zero `NULL` tenants on stamped tables, every tenant in `Tenants`, and an operator on the default
+market), **`SecondTenantIsolationHostTests`** (a second operating company seeded whole — customer,
+cleaner, order, receipt, pay default, promo code, membership — and a CZ admin who lists none of it and
+404s on every by-id read; every JWT minted carries `tenant_id`), **`TenantIdRequiredModelTests`** (every
+`ITenantEntity` NOT NULL bar the two envelopes, FK'd with `Restrict`, and no other type carries a
+`TenantId`), **`InitialMigrationTenantDdlTests`** (the committed migration's own operations — 48
+`FK_<T>_Tenants_TenantId`, 2 nullable, no `IX_<tenantless>_TenantId`) and
+**`TenantForeignKeyEnforcedTests`** (a real `23503`).
 
 ### The one question that decides every bypass (ADR-0051)
 
@@ -277,27 +393,31 @@ question first and the form second.
 |  | **Read under a tenant claim** | **Read with no claim (anonymous / job)** |
 |---|---|---|
 | **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68` |
-| **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150` | **symmetric → FILTERED.** `src/Cleansia.Infra.Database/Repositories/UserRepository.cs:105-118`; the register / resend admission pre-checks |
+| **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150`; **the legacy confirm read** `UserRepository.GetByConfirmationCodeIgnoringTenantAsync` (written under the market's operator by `Register`, read anonymously from the link — pinned by the code hash); **the register / resend / admin-create pre-checks** (`GetByEmailIgnoringTenantAsync` / `ExistsWithEmailIgnoringTenantAsync` — pinned by the global `IX_Users_Email`, deliberately across the holding: one email is one identity); `Order/Lookup` and `LookupBatch` (`GetQueryableIgnoringTenant()`, pinned by `ConfirmationCode` + `CustomerEmail`) | **symmetric → FILTERED.** Since ADR-0061 D3 every anonymous write runs under the market operator's override, so this cell holds the reads a request makes of rows *it* wrote in the same scope — the promo `GetByCodeAsync` pre-check under `RequestPromoCode`, `ValidateReferral`'s `(TenantId, Code)` read |
 
 **Two things this is deliberately NOT.** *"The endpoint is anonymous"* is not the test — the bottom-right
-cell is anonymous and stays filtered, and widening the register/resend pre-checks across tenants
-re-creates the cross-tenant existence oracle the composite index was chosen to remove
-(`UserEntityConfiguration.cs:99-105`). *"The key is an unguessable secret"* is not the test either —
-`GetByConfirmationCodeAsync` and `GetByTokenHashAsync` key on the same kind of SHA-256 hash and land on
-**opposite** sides, because their cells differ. A secret makes a bypass *safe*; it never makes one
+cell is anonymous and stays filtered because the scope behaviour gave it a tenant. *(The sentence that
+used to stand here — that widening the register/resend pre-checks across tenants "re-creates the
+cross-tenant existence oracle the composite index was chosen to remove" — is superseded by ADR-0061
+D5.1: under one brand and one holding, "this email is registered with Cleansia" is the oracle every
+register endpoint already is, and the composite index bought nothing the login path did not give away.)*
+*"The key is an unguessable secret"* is not the test either — `GetByConfirmationCodeIgnoringTenantAsync`
+and `GetByTokenHashAsync` key on the same kind of SHA-256 hash and both bypass *because their cells are
+asymmetric*, not because the key is secret. A secret makes a bypass *safe*; it never makes one
 *necessary*.
 
 **The re-pin may not be an appeal to a uniqueness property the schema does not enforce.** Permitted pins:
-an unguessable server-issued secret, the caller's own id from their JWT, or a row id read out of an
-already-pinned row. *Not* permitted: "the email is unique across the platform" — email uniqueness is
-`(TenantId, Email)` by design and, while `TenantId` is dormant, is enforced by nothing at all until the
-owner-run migration emits `NULLS NOT DISTINCT` (`consistency.md` §*"Tenant-scoped unique indexes"*, the
-`Users` arming note; the C# builder call has landed and the DDL has not). Where the true pin is a
-**caller obligation** the method cannot verify (`GetActiveByUserIdAsync`'s "the `UserId` comes from the
-caller's own JWT"), say so in those words rather than dressing it as an invariant.
+an unguessable server-issued secret, the caller's own id from their JWT, a row id read out of an
+already-pinned row — and, since ADR-0061 D5.1, **the email**, because `IX_Users_Email` is unique with no
+tenant term and `Email` is NOT NULL, so the schema enforces exactly what the pin claims (the sentence
+that used to forbid it here described `(TenantId, Email)` under a dormant `TenantId`, which no longer
+exists). Where the true pin is a **caller obligation** the method cannot verify
+(`GetActiveByUserIdAsync`'s "the `UserId` comes from the caller's own JWT"), say so in those words rather
+than dressing it as an invariant.
 
 **Enforced by:** `src/Cleansia.Tests/Features/Auth/UserRepositoryTokenLookupTenantTests.cs` (bypass
-sites confined to an enumerated roster; confirm-family pinned filtered) +
+sites confined to an enumerated roster; the confirm family and the register pre-checks pinned on the
+bypass side since ADR-0061) +
 `src/Cleansia.Tests/Features/Auth/EmployeeRepositoryTenantTokenLookupTests.cs` (the write-authenticated /
 read-anonymous cell, seeded with a **non-null** tenant so it can fail), both run by
 `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, over
@@ -311,14 +431,17 @@ with `grep -rn "IgnoreQueryFilters(\|GetQueryableIgnoringTenant()" src/Cleansia.
 **Retires when:** that status line stops reading `proposed`.
 
 **Anonymous-write / authenticated-read asymmetry (the silent-zero-rows trap).** A row written on an
-**anonymous** path (no tenant claim → stamped `TenantId = null`) but later read/updated on an
-**authenticated** request (JWT carries `tenant_id`) is **hidden by the global filter** — the
-write silently matches zero rows and the side effect (confirm an order, revoke a token) never happens.
-Same class as the *tenant-ignoring-read-on-webhook-paths* memory note. The fix on the read side:
-`IgnoreQueryFilters()` **plus an explicit caller-scoped predicate** that re-pins the surface — never
-just clearing the filter. Pin by an unguessable secret (`TokenHash`) or the caller's own `UserId` from
-the JWT, so the read finds the caller's own null-stamped rows without widening across tenants
-(preserves S1/S3). References: the order webhook existence check `ExistsIgnoringTenantAsync` (T-0245);
+**anonymous** path but later read/updated on an **authenticated** request (JWT carries `tenant_id`) is
+**hidden by the global filter** whenever the two ambient tenants differ — the write silently matches
+zero rows and the side effect (confirm an order, revoke a token) never happens. Since ADR-0061 the
+anonymous write is stamped with the *market's operator* (or the *authenticating user's* tenant on a
+token mint), so the two agree far more often than they used to — but a guest who booked under operator
+A and later signs in with an account under operator B, or a token minted for a user before their tenant
+was known, is the same trap with a real value instead of `NULL`. Same class as the
+*tenant-ignoring-read-on-webhook-paths* memory note. The fix on the read side: `IgnoreQueryFilters()`
+**plus an explicit caller-scoped predicate** that re-pins the surface — never just clearing the filter.
+Pin by an unguessable secret (`TokenHash`) or the caller's own `UserId` from the JWT, so the read finds
+the caller's own rows without widening across tenants (preserves S1/S3). References: the order webhook existence check `ExistsIgnoringTenantAsync` (T-0245);
 the refresh-token revoke/rotate reads `RefreshTokenRepository.GetByTokenHashAsync` /
 `GetActiveByUserIdAsync` / `RevokeChainAsync` (T-0236).
 
@@ -328,9 +451,11 @@ the refresh-token revoke/rotate reads `RefreshTokenRepository.GetByTokenHashAsyn
 `GetByIdAsync`, which narrows to `TenantId == null` and resolves **nothing** for a tenanted row. The
 guard reads `if (x is null) return;`, so the job's *effect* still happens and only its *bookkeeping*
 silently doesn't. **A sweep must be tenant-ignoring on BOTH sides of the loop, not just the selection**
-— audit the write-back of every `GetQueryableIgnoringTenant()` sweep, and the pattern is invisible in
-single-tenant mode, so **the pinning test must seed a non-null `TenantId`** (a fixture wired
-`tenantId: null` proves nothing here). Reference: `NewJobsDigestService.StampWatermarkAsync` →
+— audit the write-back of every `GetQueryableIgnoringTenant()` sweep. The pattern was invisible while
+every row was `NULL`; since ADR-0061 every fixture seeds a real tenant by default (`cleansia-cz`), so a
+job's tenant-scoped read against a stamped row returns nothing in the test exactly as it would in
+production — **the pinning test must still seed a non-null `TenantId`**, and it now does unless someone
+writes `null` on purpose. Reference: `NewJobsDigestService.StampWatermarkAsync` →
 `GetByIdIgnoringTenantAsync`, which left the watermark frozen and re-notified tenanted cleaners on every
 sweep, forever (T-0529). *(`EmployeeRepository.GetByUserEmailIgnoringTenantAsync` (T-0361) used to be
 listed here and is **not** an instance of this case — it has no loop, no write-back and no sweep. It is

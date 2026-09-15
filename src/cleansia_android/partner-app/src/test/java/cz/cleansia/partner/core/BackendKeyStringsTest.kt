@@ -22,10 +22,14 @@ class BackendKeyStringsTest {
     ).firstOrNull { it.isDirectory }
         ?: error("partner-app res/ not found from working dir ${File(".").absolutePath}")
 
-    private val declared: Set<String> = Regex("<string name=\"([^\"]+)\"")
-        .findAll(File(resDir, "values/strings.xml").readText())
+    private val locales = listOf("values", "values-cs", "values-sk", "values-uk", "values-ru")
+
+    private fun declared(locale: String): Set<String> = Regex("<string name=\"([^\"]+)\"")
+        .findAll(File(resDir, "$locale/strings.xml").readText())
         .map { it.groupValues[1] }
         .toSet()
+
+    private val declared: Set<String> = declared("values")
 
     @Test
     fun `the take gate's terminal refusals resolve to a sentence`() {
@@ -36,6 +40,16 @@ class BackendKeyStringsTest {
                 resName in declared,
             )
         }
+    }
+
+    /** `GetPeriodPays` refuses a currency view it cannot find; the key is new to the partner host. */
+    @Test
+    fun `the My Pay currency-view refusal resolves to a sentence`() {
+        val resName = "error_currency_not_found"
+        assertTrue(
+            "currency.not_found renders raw — values/strings.xml declares no <string name=\"$resName\">",
+            resName in declared,
+        )
     }
 
     /**
@@ -56,6 +70,25 @@ class BackendKeyStringsTest {
                 value!!.contains(bound.toString()),
             )
         }
+    }
+
+    /**
+     * `OperatorTenantScopeBehavior` runs before validation on `RegisterEmployee` and `GoogleAuth`: a
+     * country that is not a market is refused with the existing key, a market nobody operates with
+     * the new one (ADR-0061 D3). The picker on the register form sends the chosen market, so both
+     * are live 400s a cleaner can read.
+     */
+    @Test
+    fun `every operator-scope refusal registration can answer resolves to a sentence in all five locales`() {
+        val keys = listOf("country.not_serviced", "tenant.not_found")
+        val raw = locales.flatMap { locale ->
+            val declared = declared(locale)
+            keys
+                .map { it to "error_" + it.replace('.', '_').lowercase() }
+                .filterNot { (_, resName) -> resName in declared }
+                .map { (key, resName) -> "$locale/$resName ($key)" }
+        }
+        assertTrue("these refusals render raw: $raw", raw.isEmpty())
     }
 
     @Test

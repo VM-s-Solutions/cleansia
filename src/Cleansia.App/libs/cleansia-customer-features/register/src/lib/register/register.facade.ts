@@ -7,10 +7,9 @@ import {
   CustomerAuthService,
   CustomerClient,
   JwtTokenResponse,
-  SignupConsentService,
   ValidateReferralQuery,
 } from '@cleansia/customer-services';
-import { loadCustomerUser } from '@cleansia/customer-stores';
+import { loadCustomerUser, selectMarketCountryId } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
@@ -36,13 +35,18 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
-  private readonly signupConsent = inject(SignupConsentService);
 
   private readonly termsControl = new FormControl(false, [
     Validators.requiredTrue,
   ]);
 
   formGroup = this.createFormGroup();
+
+  // The market the visitor is browsing is the operating company the account is opened with
+  // (ADR-0061 D3); every anonymous call the form makes names it.
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null,
+  });
 
   readonly termsAccepted = toSignal(
     this.termsControl.valueChanges.pipe(map(() => this.isTermsTicked())),
@@ -75,6 +79,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
 
     const query = new ValidateReferralQuery();
     query.code = normalized;
+    query.countryId = this.marketCountryId() ?? undefined;
 
     try {
       const resp = await firstValueFrom(
@@ -130,18 +135,22 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     }
 
     const { email, password, firstName, lastName, referralCode } = this.formGroup.value;
-    const termsAccepted = this.isTermsTicked();
     // Bad/empty referral codes are NOT a blocker per the spec — we send the
     // raw value (when non-empty) and let the backend silently skip on failure.
     const trimmedReferral = (referralCode as string | undefined)?.trim();
     this.authService
-      .register(email, password, firstName, lastName, trimmedReferral || undefined)
+      .register(
+        email,
+        password,
+        firstName,
+        lastName,
+        this.isTermsTicked(),
+        trimmedReferral || undefined,
+        this.marketCountryId()
+      )
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
-          if (termsAccepted) {
-            this.signupConsent.record(email);
-          }
           this.snackbarService.showSuccessTranslated('auth.register.success');
           this.router.navigate([CleansiaCustomerRoute.CONFIRM_EMAIL], {
             queryParams: { email },
@@ -160,12 +169,18 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     const { sub: googleId, email, given_name: firstName, family_name: lastName } = decoded;
 
     this.authService
-      .signUpWithGoogle(credential, googleId, email, firstName || '', lastName || '')
+      .signUpWithGoogle(
+        credential,
+        googleId,
+        email,
+        firstName || '',
+        lastName || '',
+        this.marketCountryId()
+      )
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
           this.authService.setSession(authResult);
-          this.recordSignupConsent(authResult.email);
           this.store.dispatch(loadCustomerUser());
           this.snackbarService.showSuccessTranslated('auth.login.success');
           this.router.navigate([CleansiaCustomerRoute.ORDERS]);
@@ -191,12 +206,11 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     if (!this.isTermsTicked()) return this.socialSignUpBlocked();
 
     this.authService
-      .signUpWithApple(identityToken, rawNonce, firstName, lastName)
+      .signUpWithApple(identityToken, rawNonce, firstName, lastName, this.marketCountryId())
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
           this.authService.setSession(authResult);
-          this.recordSignupConsent(authResult.email);
           this.store.dispatch(loadCustomerUser());
           this.snackbarService.showSuccessTranslated('auth.login.success');
           this.router.navigate([CleansiaCustomerRoute.ORDERS]);
@@ -213,17 +227,6 @@ export class RegisterFacade extends UnsubscribeControlDirective {
    */
   socialSignUpBlocked(): void {
     this.snackbarService.showErrorTranslated('auth.register.social_terms_required');
-  }
-
-  /**
-   * The social branches hold a session by the time this runs, so the tick goes
-   * straight out instead of waiting for a later sign-in. The tick is re-read
-   * rather than captured at the click: the box stays live behind the provider
-   * popup, and an untick is not a tick.
-   */
-  private recordSignupConsent(email: string | undefined): void {
-    if (!email || !this.isTermsTicked()) return;
-    this.signupConsent.recordForActiveSession(email);
   }
 
   private isTermsTicked(): boolean {

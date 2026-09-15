@@ -67,8 +67,7 @@ export function getOrderTableDefinition(
         width: '10%',
         getValue: (row: OrderListItem) => {
           if (!row) return '';
-          const symbol = row.currency?.symbol || 'Kc';
-          return `${row.totalPrice?.toFixed(2)} ${symbol}`;
+          return `${row.totalPrice?.toFixed(2)} ${row.currency?.symbol ?? ''}`.trimEnd();
         },
       },
       {
@@ -119,8 +118,16 @@ export function getOrderTableDefinition(
 export function getOrderStatusClass(order: OrderListItem): string {
   if (!order.orderStatus) return 'order-status-badge status-pending';
   switch (order.orderStatus.value) {
+    // New and OnTheWay had no case and fell to the Pending default, so a brand-new order was styled
+    // as the dead Pending status and OnTheWay as "waiting". Both now have their own class, and both
+    // classes have styles — the detail page already emitted status-new and status-ontheway against
+    // nothing at all. (T-0687)
+    case OrderStatus.New:
+      return 'order-status-badge status-new';
     case OrderStatus.Pending:
       return 'order-status-badge status-pending';
+    case OrderStatus.OnTheWay:
+      return 'order-status-badge status-ontheway';
     case OrderStatus.Confirmed:
       return 'order-status-badge status-confirmed';
     case OrderStatus.InProgress:

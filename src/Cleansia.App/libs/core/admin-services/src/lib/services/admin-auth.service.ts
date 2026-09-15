@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AUTH_COOKIE_KEYS, CleansiaAdminRoute, LocalStorageKey, Role } from '@cleansia/services';

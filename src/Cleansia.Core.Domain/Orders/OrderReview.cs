@@ -4,7 +4,7 @@ using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.Domain.Orders;
 
-public class OrderReview : Auditable, ITenantEntity
+public class OrderReview : TenantAuditable
 {
     [Required]
     [MaxLength(26)]

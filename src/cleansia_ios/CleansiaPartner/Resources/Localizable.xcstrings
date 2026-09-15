@@ -16361,41 +16361,6 @@
         }
       }
     },
-    "profile_vat_number": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DIČ (nepovinné)"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "VAT number (optional)"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Номер НДС (необязательно)"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IČ DPH (nepovinné)"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Номер ПДВ (необов'язково)"
-          }
-        }
-      }
-    },
     "profile_zip_code": {
       "extractionState": "stale",
       "localizations": {
@@ -17416,31 +17381,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
+            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added %2$@ credit towards your next clean. Sorry."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit 250 Kč na příští úklid. Omlouváme se."
+            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit %2$@ na příští úklid. Omlouváme se."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit 250 Kč na ďalšie upratovanie. Ospravedlňujeme sa."
+            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили 250 Kč бонусов на следующую уборку. Простите."
+            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили бонус %2$@ на следующую уборку. Простите."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали 250 Kč бонусів на наступне прибирання. Вибачте."
+            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали бонус %2$@ на наступне прибирання. Вибачте."
           }
         }
       }
@@ -18523,6 +18488,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ви повинні прийняти Умови та положення"
+          }
+        }
+      }
+    },
+    "register_market": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Země, kde budete pracovat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Country you'll work in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Страна, где вы будете работать"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krajina, kde budete pracovať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Країна, де ви працюватимете"
           }
         }
       }

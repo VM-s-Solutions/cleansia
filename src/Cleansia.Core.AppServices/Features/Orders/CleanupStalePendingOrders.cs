@@ -80,9 +80,9 @@ public class CleanupStalePendingOrders
             int cancelledCount = 0;
             foreach (var tenantGroup in stale.GroupBy(o => o.TenantId ?? string.Empty))
             {
-                // Reset before each iteration so a non-empty override from the
-                // previous group doesn't leak into a single-tenant (empty key)
-                // group that follows it.
+                // Reset before each iteration so the previous group's override
+                // never outlives its group: what the next commit stamps is
+                // decided here, not by whatever ran last.
                 tenantProvider.ClearTenantOverride();
                 if (!string.IsNullOrEmpty(tenantGroup.Key))
                 {

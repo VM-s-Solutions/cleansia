@@ -52,9 +52,6 @@ public class EmployeeSelfUpdateIdInertTests
             .Setup(v => v.ValidateRegistrationNumberAsync(
                 It.IsAny<string>(), It.IsAny<EmployeeEntityType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TaxIdValidationResult.Valid());
-        _taxIds
-            .Setup(v => v.ValidateVatNumberAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(TaxIdValidationResult.Valid());
     }
 
     private void ArrangeCallerIsNotAnEmployee() => _employees
@@ -86,7 +83,7 @@ public class EmployeeSelfUpdateIdInertTests
     private Task<ValidationResult> ValidateIdentificationInfoAsync(string? employeeId) => ValidateAsync(
         new UpdateIdentificationInfo.Validator(_countries.Object, _employees.Object, _session.Object, _taxIds.Object),
         new UpdateIdentificationInfo.Command(
-            employeeId, CountryId, "AB12345", EmployeeEntityType.NaturalPerson, CountryId, "12345678", null, null));
+            employeeId, CountryId, "AB12345", EmployeeEntityType.NaturalPerson, CountryId, "12345678", null));
 
     private Task<ValidationResult> ValidateJobRadiusAsync(string? employeeId) => ValidateAsync(
         new UpdateJobRadius.Validator(_employees.Object, _session.Object),

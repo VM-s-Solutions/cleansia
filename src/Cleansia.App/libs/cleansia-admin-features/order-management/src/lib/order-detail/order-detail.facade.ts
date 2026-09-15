@@ -1,24 +1,48 @@
 import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
+  AdminGdprClient,
   Code,
+  CustomerAuditClient,
+  FileResponse,
   OrderItem,
   OrderStatus,
   PaymentStatus,
+  incidentFileName,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { SnackbarService } from '@cleansia/services';
+import {
+  AuditResourceType,
+  FileDownloadService,
+  SnackbarService,
+} from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  finalize,
+  map,
+  of,
+  switchMap,
+  takeUntil,
+} from 'rxjs';
+import {
+  INCIDENT_SUBJECT_LOOKUP_LIMIT,
+  resolveIncidentSubject,
+} from './order-detail.models';
 
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
+  private readonly gdprClient = inject(AdminGdprClient);
+  private readonly customerAuditClient = inject(CustomerAuditClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
+  private readonly fileDownload = inject(FileDownloadService);
 
   readonly order = signal<OrderItem | null>(null);
   readonly loading = signal<boolean>(false);
+  readonly incidentFileExporting = signal<boolean>(false);
 
   /**
    * Entry instructions are NOT on the order payload for an admin — the server withholds them and hands
@@ -71,6 +95,83 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * The incident file for this order's customer, scoped to this order. The subject is read off the
+   * order's trail (order-detail.models.ts says why); the server builds the PDF, decides whether the
+   * order is theirs, and records the build.
+   */
+  exportIncidentFile(): void {
+    const orderId = this.order()?.id;
+    if (!orderId || this.incidentFileExporting()) return;
+    this.incidentFileExporting.set(true);
+
+    this.readIncidentSubject(orderId, 0)
+      .pipe(
+        switchMap((userId) => {
+          if (!userId) {
+            this.snackbarService.showErrorTranslated(
+              'pages.order_detail.incident_file.no_subject'
+            );
+            return of(null);
+          }
+          return this.gdprClient
+            .incidentFile(userId, orderId)
+            .pipe(map((file: FileResponse) => ({ userId, file })));
+        }),
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showApiError(
+            error,
+            'pages.order_detail.incident_file.error'
+          );
+          return of(null);
+        }),
+        finalize(() => this.incidentFileExporting.set(false))
+      )
+      .subscribe((result) => {
+        if (result) {
+          this.fileDownload.downloadBlob(
+            result.file.data,
+            result.file.fileName ?? incidentFileName(result.userId, new Date())
+          );
+          this.snackbarService.showSuccessTranslated(
+            'pages.order_detail.incident_file.success'
+          );
+        }
+      });
+  }
+
+  /**
+   * The trail is newest-first and the customer's own rows are the oldest on an order that admins and
+   * cleaners have worked on since, so the lookup walks page by page until a subject turns up or the
+   * trail runs out.
+   */
+  private readIncidentSubject(
+    orderId: string,
+    offset: number
+  ): Observable<string | null> {
+    return this.customerAuditClient
+      .timeline(
+        undefined,
+        AuditResourceType.Order,
+        orderId,
+        undefined,
+        offset,
+        INCIDENT_SUBJECT_LOOKUP_LIMIT
+      )
+      .pipe(
+        switchMap((page) => {
+          const entries = page.data ?? [];
+          const subject = resolveIncidentSubject(entries);
+          const read = offset + entries.length;
+          if (subject || entries.length === 0 || read >= (page.total ?? 0)) {
+            return of(subject);
+          }
+          return this.readIncidentSubject(orderId, read);
+        })
+      );
+  }
+
   formatDate(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
@@ -94,8 +195,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
   formatPrice(price: number | null | undefined): string {
     if (price === null || price === undefined) return '-';
-    const currency = this.order()?.currency?.symbol || 'Kc';
-    return `${price.toFixed(2)} ${currency}`;
+    return `${price.toFixed(2)} ${this.order()?.currency?.symbol ?? ''}`.trimEnd();
   }
 
   formatDuration(minutes: number | null | undefined): string {

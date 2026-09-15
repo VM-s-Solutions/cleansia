@@ -39,15 +39,18 @@ public class ChoosePreferredCleaner
         private readonly IUserSessionProvider _userSessionProvider;
         private readonly IUserMembershipRepository _userMembershipRepository;
         private readonly IOrderRepository _orderRepository;
+        private readonly ICurrencyResolutionService _currencyResolutionService;
 
         public Validator(
             IUserSessionProvider userSessionProvider,
             IUserMembershipRepository userMembershipRepository,
-            IOrderRepository orderRepository)
+            IOrderRepository orderRepository,
+            ICurrencyResolutionService currencyResolutionService)
         {
             _userSessionProvider = userSessionProvider;
             _userMembershipRepository = userMembershipRepository;
             _orderRepository = orderRepository;
+            _currencyResolutionService = currencyResolutionService;
 
             RuleFor(x => x.OrderId)
                 .NotEmpty()
@@ -74,10 +77,32 @@ public class ChoosePreferredCleaner
             => PreferredOfferExit.CallerHasActiveMembershipAsync(
                 _userSessionProvider, _userMembershipRepository, cancellationToken);
 
+        /// <summary>
+        /// The same two terms as <c>CreateOrder.Validator</c>: a completed order together, and paid in
+        /// the order's currency. The currency is read off the caller's own order -- a two-column
+        /// projection, because the handler loads the order itself and this term needs only the owner
+        /// and the currency; someone else's order passes this term untouched so the handler's
+        /// not-found answer is the only one they get.
+        /// </summary>
         private async Task<bool> PreferredEmployeeIsEligibleAsync(
             Command command, CancellationToken cancellationToken)
             => await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
-                _userSessionProvider.GetUserId()!, command.EmployeeId, cancellationToken);
+                   _userSessionProvider.GetUserId()!, command.EmployeeId, cancellationToken)
+               && await PreferredEmployeeIsPaidInTheOrdersCurrencyAsync(command, cancellationToken);
+
+        private async Task<bool> PreferredEmployeeIsPaidInTheOrdersCurrencyAsync(
+            Command command, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository.GetOwnerAndCurrencyAsync(command.OrderId, cancellationToken);
+            if (order is null || order.UserId != _userSessionProvider.GetUserId())
+            {
+                return true;
+            }
+
+            var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(
+                command.EmployeeId, cancellationToken);
+            return cleanerCurrency.Id == order.CurrencyId;
+        }
     }
 
     public class Handler(

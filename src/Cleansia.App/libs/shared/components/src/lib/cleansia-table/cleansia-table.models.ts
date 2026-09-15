@@ -1,17 +1,17 @@
 import { TemplateRef } from '@angular/core';
 
-export interface TableColumn<T = any> {
+export interface TableColumn<T = unknown> {
   id: string;
   field: string;
   header: string;
   sortable?: boolean;
   width?: string;
   align?: 'left' | 'center' | 'right';
-  customTemplate?: TemplateRef<any>;
-  getValue?: (row: T) => any;
+  customTemplate?: TemplateRef<unknown>;
+  getValue?: (row: T) => unknown;
 }
 
-export interface TableAction<T = any> {
+export interface TableAction<T = unknown> {
   icon: string;
   tooltip?: string;
   color?: 'warning' | 'danger' | 'success' | 'info' | 'primary';
@@ -76,7 +76,7 @@ export interface CleansiaTableAction<T = unknown> {
   disabled?: (item: T) => boolean;
 }
 
-export interface TableColumnAction<T = any> {
+export interface TableColumnAction<T = unknown> {
   icon: string;
   onClick: (row: T) => void;
   buttonPalette?: string;
@@ -88,7 +88,7 @@ export interface TableColumnAction<T = any> {
   disabled?: (row: T) => boolean;
 }
 
-export interface TableDefinition<T = any> {
+export interface TableDefinition<T = unknown> {
   columns: TableColumn<T>[];
   onRowClick?: (row: T) => void;
 }

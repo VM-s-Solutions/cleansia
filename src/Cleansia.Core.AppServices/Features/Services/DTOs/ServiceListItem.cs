@@ -9,4 +9,6 @@ public record ServiceListItem(
     CategoryDto Category,
     decimal BasePrice,
     decimal PerRoomPrice,
-    Dictionary<string, Translation> Translations);
+    Dictionary<string, Translation> Translations,
+    /// <summary>The currency the two prices are in, so a surface labels them from the payload rather than from a default it assumed.</summary>
+    string? CurrencyCode = null);

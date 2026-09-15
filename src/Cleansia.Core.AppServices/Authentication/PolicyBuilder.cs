@@ -153,6 +153,12 @@ public static class PolicyBuilder
         [Policy.CanUpdatePackage] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeletePackage] = PhysicalPolicy.AdminOnly,
 
+        // Extras
+        [Policy.CanViewExtras] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateExtra] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateExtra] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteExtra] = PhysicalPolicy.AdminOnly,
+
         // Languages
         [Policy.CanViewLanguages] = PhysicalPolicy.AdminOnly,
         [Policy.CanCreateLanguage] = PhysicalPolicy.AdminOnly,

@@ -36,7 +36,12 @@ public record CreateOrderInput(
     Address Address,
     int Rooms,
     int Bathrooms,
-    Dictionary<string, bool> Extras,
+    /// <summary>
+    /// The extra SLUGS this order buys. Was a <c>Dictionary&lt;string, bool&gt;</c> whose false entries
+    /// meant nothing anywhere — every reader filtered them out first — so the list is the honest shape
+    /// and the one <c>OrderExtras</c> can store.
+    /// </summary>
+    IReadOnlyCollection<string> SelectedExtraSlugs,
     DateTime CleaningDate,
     PaymentType PaymentType,
     Currency Currency,

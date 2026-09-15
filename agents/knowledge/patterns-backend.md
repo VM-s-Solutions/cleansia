@@ -29,7 +29,7 @@ parallel ones.** Authoritative architecture prose:
 | Session | `IUserSessionProvider` (`GetUserId()`, `GetTypedUserClaim(...)`) | `Cleansia.Core.Domain/Repositories/IUserSessionProvider.cs` |
 | Repo base | `BaseRepository<TEntity> : IRepository<TEntity, string>` | `Cleansia.Infra.Database/BaseRepository.cs` |
 | Unit of work | `IUnitOfWork` (`CommitAsync`) | `Cleansia.Core.Domain/SeedWork/IUnitOfWork.cs` |
-| Entity bases | `BaseEntity`, `Auditable : BaseEntity`, `IEntity`/`IEntity<T>`, `ITenantEntity` | `Cleansia.Core.Domain/Common/` |
+| Entity bases | `BaseEntity`, `Auditable : BaseEntity`, `TenantAuditable : Auditable, ITenantEntity`, `IEntity`/`IEntity<T>`, `ITenantEntity` | `Cleansia.Core.Domain/Common/` |
 | Paging in | `DataRangeRequest` (`Offset`, `Limit`, `Sort`) | `…/Shared/DTOs/RequestModels/DataRangeRequest.cs` |
 | Paging out | `PagedData<T>` (`PageNumber`, `PageSize`, `Total`, `Data`) | `…/Shared/DTOs/ResponseModels/` |
 | Sort | `SortDefinition`, `BaseSort<TEntity>`, `<Entity>Sort` | `…/Shared/DTOs/Sorting/`, `Core.Domain/Sorting/` |
@@ -157,6 +157,16 @@ public async Task<PagedData<OrderListItem>> GetPaged([FromQuery] GetCustomerOrde
     => await Mediator.Send(request, ct);
 ```
 
+A paged query **may carry a `Validator`, and it runs** (T-0740). `ValidationPipelineBehavior` is no
+longer constrained to `BusinessResult` responses: a reject on a request whose response cannot carry
+one throws `RequestValidationException`, and `RequestValidationExceptionFilterAttribute` on the
+controller base answers it with the same 400 ProblemDetails the `IValidationResult` arm produces —
+declare `[ProducesResponseType(typeof(ProblemDetails), 400)]` on the action so the generated client
+agrees. Do **not** wrap a paged query in `BusinessResult<PagedData<T>>` to "get" a validator; that was
+the A2 deviation `GetActionTimeline` carried for a day. **Enforced by:**
+`EveryValidatorIsReachedByThePipelineTests` (resolves the behaviour from the container for every request
+type the assembly's validators name) + `RequestValidationExceptionFilterTests` — `T1-CI`.
+
 ## Controller pattern (from `Web.Customer/Controllers/OrderController.cs`)
 
 ```csharp
@@ -225,15 +235,65 @@ values are themselves the subject's PII (profile edit), the snapshot is ids-only
 (mirrors `gdpr.user.delete`). Never set an `AdminActionAudit` to `Modified`/`Deleted` (append-only,
 init-only).
 
+**Customer-action audit is the same pipeline with an audience (ADR-0062).** A customer-facing
+`Command` opts in with `[AuditAction("customer.<domain>.<act>", Audience = AuditAudience.Customer,
+ResourceType = "Order")]` (`AllowsAnonymousActor = true` only where a guest may act; `ResourceIdProperty`
+when the id is not `{ResourceType}Id` on the command); `AuditGate.Resolve` routes the row to
+`CustomerActionAudits` for a customer session and to the admin table for an administrator running the
+same command — **under the marker's `AdminAction` label where it declares one** (`Logout` declares
+`AdminAction = "admin.session.logout"`; an administrator's act is an admin act and reads as one), else
+the frozen label; `AuditEntryFactory.Build` writes `descriptor.AdminAction` on every admin row, and an
+admin-audience marker declares none (its one label is already the admin one — pinned by
+`AuditActionDescriptorTests`, `AuditLogBehaviorTests`, `SessionAuditRouteTests`). The admin sign-in is
+itself a row: `AdminLogin` carries `[AuditAction("admin.session.login", ResourceType = "User",
+AllowsAnonymousActor = true)]`, and the gate admits an anonymous act on the **admin host for an
+admin-audience marker** exactly as it does on a customer host for a customer one. The handler emits ONE
+typed evidence record, nested beside the feature and implementing `ICustomerAuditPayload`, through
+`IAuditContext.RecordEvidence(...)` — server-side figures at the moment of the act, never a
+client-asserted money figure, never a name / contact / address / free text (the PII guard walks every
+record); the payload is null when the only evidence is that the act happened and
+to whom (a completed password reset), and the `actorUserId` argument names the subject where the
+session cannot (the session acts run anonymously). Failure rows carry the error KEY via
+`AuditErrorCode.Resolve` on both tables. The roster test pins the marker set; a new marker needs its
+row there, its label in the five admin locales (`customer-audit-actions.ts`) and a rate-limit window on
+the customer-host action. Three facts about the anonymous arm (T-0744): the gate writes an anonymous
+act to the customer table **only on a customer host** (`IHostAudienceProvider.Audience ==
+JwtAudiences.Customer`) — a command routed on the partner hosts too (`ConfirmUserEmail`, `GoogleAuth`,
+the password-reset pair; `Register` is no longer among them — the partner hosts stopped routing the
+customer registration on 2026-09-15, and `GoogleAuth` / `ConfirmUserEmail` off a customer host sign in
+an existing Employee or Administrator only, `TokenService` refusing any other audience/profile pair as
+an invariant) lands nowhere there; an anonymous marked command that names no market
+implements `IOperatorScopedRequest` with an **explicit** `CountryId => null` (off the wire, default
+market) so its out-of-band refusal row has a tenant to be stamped with (a refusal the scope behaviour
+itself raises — `country.not_serviced`, `tenant.not_found` — is still skipped with one warning, ADR-0062
+D1), and its SUCCESS row is stamped with the account's own operator, not the default market's: a
+handler that mints no token adopts it itself with `tenantProvider.SetTenantOverride(user.TenantId)`
+(the ADR-0061 D4 idiom — `RequestPasswordChange`, `ChangePassword`; `TokenService` does it for every
+sign-in, confirmed address or not); and a handler whose marked command took a branch the marker does
+not describe calls `IAuditContext.DeclineSuccessRow()` (the social sign-ins on their provisioning
+branch — a registration's proof is the consent rows) — its refusals are still recorded.
+**Enforced by:** `CustomerAuditActionRosterTests` (`Every_Guest_Allowed_Marker_Sits_On_An_Operator_Scoped_Command`
+— every `AllowsAnonymousActor` marker in the assembly, not a hand-kept list) + `AuditGateTests` (the host
+arm) + `SessionAuditTests` (the second-operator stamping, on Postgres) — `T1-CI`.
+
 ## Entities (from `Core.Domain/Common/`)
 
 - `IEntity` = `{ object Id; bool IsActive; }`; `IEntity<T>` narrows `Id`/`IsActive`. IDs are strings.
-- `Auditable : BaseEntity` adds `TenantId`, `CreatedBy/On`, `UpdatedBy/On`, `DeactivatedBy/On`, with
-  fluent `Created(...)`, `Updated(...)`, `Deactivated(...)` (the last sets `IsActive=false`).
+- `Auditable : BaseEntity` adds `CreatedBy/On`, `UpdatedBy/On`, `DeactivatedBy/On`, with fluent
+  `Created(...)`, `Updated(...)`, `Deactivated(...)` (the last sets `IsActive=false`). It carries **no**
+  tenant column: a catalogue or per-country type (`Currency`, `Service`, `MembershipPlan`, …) stays here.
+- `TenantAuditable : Auditable, ITenantEntity` adds `TenantId` (`string?` in C#, stamped at commit;
+  NOT NULL + `FK_<T>_Tenants_TenantId` Restrict in the database). Its mapping is
+  `TenantAuditableEntityConfiguration<T, string>`; plain `AuditableEntityConfiguration<T, string>` maps
+  no tenant. The two `BaseEntity + ITenantEntity` audits map the column and the FK by hand.
+  **Enforced by:** `TenantIdRequiredModelTests` (every `ITenantEntity` NOT NULL, FK'd, Restrict; no
+  other type carries the column) + `InitialMigrationTenantDdlTests` (the committed migration agrees) —
+  `T1-CI`, `backend-ci.yml` unit job.
 - Rich domain: private setters, factory `Create(...)`, behavior methods (`order.Cancel(...)`,
   `order.AddOrderStatus(OrderStatusTrack.Create(...))`, `order.UpdatePaymentStatus(...)`). Entity
   classes carry **no EF attributes** — mapping lives in `Infra.Database/EntityConfigurations/`
-  (DB Master's domain). Implement `ITenantEntity` for user-scoped data (S8).
+  (DB Master's domain). User-scoped data implements `ITenantEntity` (S8): the 45 stamped types via
+  `TenantAuditable`, the two audits by hand.
 
 ## Errors & i18n binding (critical, verified)
 
@@ -986,7 +1046,7 @@ is the name of the rule but not the best shape for it:
 A cap on how many times **one user** may receive **one benefit** in **one period** is a row, never a
 counter and never a derived count.
 
-- **Shape:** an `Auditable` + `ITenantEntity` ledger row carrying `UserId`, a **`Kind` discriminator**
+- **Shape:** a `TenantAuditable` ledger row carrying `UserId`, a **`Kind` discriminator**
   (int-stored, never reordered), a **stored `PeriodKey`** string, and a 0-based `SlotOrdinal`.
 - **Concurrency — three layers, all three named:** a non-authoritative app-level read (the resolver's
   count — it decides the *quoted* price, never the claim), **one atomic claim statement**, and a
@@ -996,8 +1056,11 @@ counter and never a derived count.
   `generate_series(0, @max-1)` + `NOT EXISTS` + `ORDER BY g LIMIT 1` + `ON CONFLICT DO NOTHING` +
   `RETURNING <col> AS "Value"`. A count derives an *occupied* ordinal after a non-maximal release —
   the claim then loses to its own index forever while the read path still says "1 left"; `MAX+1` never
-  re-uses a hole at all. Send a nullable `TenantId` as an **explicit `NpgsqlDbType.Text`** parameter
-  (`42P08` fires only in single-tenant mode and survives a tenanted test run).
+  re-uses a hole at all. Send `TenantId` as an **explicit `NpgsqlDbType.Text`** parameter: a bare
+  parameter used in two positions is typed by inference, and a null value has no type to infer
+  (`42P08`). The tenant is never null on a stamped table since ADR-0061, so the failure no longer has a
+  production path — the explicit type stays because raw SQL is typed by the caller, not the model, and
+  the CLR property is still `string?`.
 - **⚠️ Add an INDEPENDENT cardinality bound in the SAME statement — the smallest-free-ordinal
   derivation does not imply the cap.** "A full quota yields no candidate ordinal" holds only while the
   quota is **invariant across the period**. The moment the quota can be edited or swapped mid-period
@@ -1641,15 +1704,29 @@ ticket after the first three were fixed.
 
 Two isolation axes meet in this codebase, and they live in **different layers** — keep them there.
 
-- **Tenancy = an APP concern, and it already exists.** Tenant rows are isolated **logically** by the
-  global query filter in `CleansiaDbContext.ApplyTenantQueryFilters` (applied to every
-  `ITenantEntity` — `{ string? TenantId }`), driven by the `tenant_id` JWT claim resolved by
-  `TenantProvider`. The filter body is exactly
+- **Tenancy = an APP concern, and it is active.** A tenant is an operating company under the holding
+  (`Tenants`, seed-only; `CountryConfiguration.OperatorTenantId` maps each market to the company that
+  serves it — ADR-0061). Tenant rows are isolated **logically** by the global query filter in
+  `CleansiaDbContext.ApplyTenantQueryFilters` (applied to every `ITenantEntity` — `{ string? TenantId }`
+  in C#, **NOT NULL** in the database on every stamped table but `OutboxMessages` / `DeadLetters`),
+  driven by the `tenant_id` JWT claim resolved by `TenantProvider`. The filter body is exactly
   `tenantProvider == null || (currentTenantId == null && e.TenantId == null) || e.TenantId == currentTenantId`
-  — design-time bypass, the single-tenant `null/null` middle clause, then the multi-tenant happy path.
-  Cross-tenant work (background jobs, anonymous webhooks) is **explicit**: `tenantProvider.SetTenantOverride(...)`
-  or `IgnoreQueryFilters` (see the webhook/`IgnoreQueryFilters` memory notes). **This is the proven path;
-  do not move tenancy to infra (DB-per-tenant / schema-per-tenant) and do not touch the filter.**
+  — design-time bypass, a middle clause that **matches nothing on a stamped table** (a reader with no
+  tenant reads nothing; the clause is kept because three ADRs pin the filter diff-empty), then the
+  happy path. **An anonymous request has no tenant until something gives it one**: a request that
+  writes names a market (`IOperatorScopedRequest.CountryId`, null = the default market) and
+  `OperatorTenantScopeBehavior` sets the market operator's override before validation; a token mint
+  adopts the user's tenant (`TokenService`); a job or webhook **must** set the override from the row it
+  read, per row or per tenant group, and commit inside the loop — a job that forgets reads nothing and
+  writes a `23502`; one that invents a company writes a `23503` (every stamped table is FK'd to
+  `Tenants`, Restrict). **A job whose unit of work is a company rather than a row** — the retention
+  sweeps, which read each company's own `TenantSettingCatalog` windows — loops the registry instead:
+  `ITenantRepository.GetAllIdsAsync()` → `SetTenantOverride(id)` per company → the work → commit
+  inside → `ClearTenantOverride()`; `DataRetentionBackgroundService` is the reference, and the input
+  (rows or companies) is what picks the shape. Cross-tenant *reads* are explicit:
+  `GetQueryableIgnoringTenant()` / `IgnoreQueryFilters` plus a caller-bound re-pin (S8). **This is the
+  proven path; do not move tenancy to infra (DB-per-tenant / schema-per-tenant) and do not touch the
+  filter.**
 - **Region = an INFRA/config concern, and it is net-new.** Region answers *"which physical
   deployment/DB does this request hit?"* — it never answers *"whose rows is this?"* There is **no
   region concept in the domain or data model** (the only geography is `CountryConfiguration`, the

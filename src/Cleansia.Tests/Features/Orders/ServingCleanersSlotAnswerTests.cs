@@ -160,7 +160,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
     {
         await SeedAsync();
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _busyAnswer = [CleanerId];
 
@@ -216,21 +216,22 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider());
+            new FixedTenantProvider(TestTenants.Default));
 
     private void ArrangeActiveMembership() =>
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: CustomerId,
                 membershipPlanId: "plan-plus",
+                currencyId: "currency-czk",
                 stripeSubscriptionId: "sub_slot",
                 currentPeriodStart: DateTime.UtcNow.AddDays(-1),
                 currentPeriodEnd: DateTime.UtcNow.AddMonths(1)));
 
     private static Service NewService(string id, int estimatedMinutes)
     {
-        var service = Service.Create("category-1", id, id, 500m, 100m, estimatedMinutes);
+        var service = Service.Create("category-1", id, id, estimatedMinutes);
         service.Id = id;
         return service;
     }
@@ -238,7 +239,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
     /// <summary>The bundle's own length is its included services' — a package has no estimate of its own.</summary>
     private static Package NewBundle()
     {
-        var bundle = Package.Create("Bundle", "Bundle", 900m);
+        var bundle = Package.Create("Bundle", "Bundle");
         bundle.Id = BundleId;
         bundle.AddService(NewService(BundledIroningId, 90));
         return bundle;
@@ -270,7 +271,6 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
             customerAddress: Cleansia.Core.Domain.Users.Address.Create("Slot St 2", "Praha", "14000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(-3),
             paymentType: PaymentType.Card,
             totalPrice: 1200m,
@@ -294,9 +294,9 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
         await ctx.CommitAsync(CancellationToken.None);
     }
 
-    private sealed class FixedTenantProvider : ITenantProvider
+    private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {
-        private string? _tenantId;
+        private string? _tenantId = tenantId;
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;

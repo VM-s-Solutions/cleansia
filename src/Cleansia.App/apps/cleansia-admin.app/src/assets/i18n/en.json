@@ -50,6 +50,9 @@
       "packages": "Packages",
       "package_create": "Create Package",
       "package_edit": "Edit Package",
+      "extras": "Extras",
+      "extra_create": "Create Extra",
+      "extra_edit": "Edit Extra",
       "admin_users": "Admin Users",
       "admin_user_create": "Create Admin User",
       "admin_user_edit": "Edit Admin User",
@@ -63,11 +66,13 @@
       "currencies": "Currencies",
       "currency_create": "Create Currency",
       "currency_edit": "Edit Currency",
+      "legal_documents": "Legal documents",
       "document_requirements": "Document requirements",
       "document_deletion_requests": "Document deletion requests",
       "company_info": "Company Info",
       "company_info_create": "Create Company Info",
       "company_info_edit": "Edit Company Info",
+      "company_settings": "Company settings",
       "templates": "Templates",
       "invoice_templates": "Invoice Templates",
       "invoice_template_create": "Create Invoice Template",
@@ -93,7 +98,9 @@
       "membership_plan_edit": "Edit Membership Plan",
       "data_protection": "Data Protection",
       "profile": "My Profile",
-      "customer_detail": "Customer"
+      "customer_detail": "Customer",
+      "audit_log_customers": "Customer actions",
+      "audit_log_customer_entry": "Customer action"
     }
   },
   "components": {
@@ -219,15 +226,18 @@
     "reports": "Reports",
     "services": "Services",
     "packages": "Packages",
+    "extras": "Extras",
     "admin_users": "Admin Users",
     "languages": "Languages",
     "countries": "Countries",
     "service_area": "Service Area",
     "currencies": "Currencies",
+    "legal_documents": "Legal documents",
     "employee_documents": "Employee documents",
     "employee_document_requirements": "Requirements",
     "employee_document_deletion_requests": "Deletion requests",
     "company_info": "Company Info",
+    "company_settings": "Company settings",
     "templates": "Templates",
     "global_rates": "Global Rates",
     "fiscal_failures": "Fiscal Failures",
@@ -334,7 +344,6 @@
       "entity_type_natural_person": "Self-employed individual",
       "entity_type_legal_entity": "Legal entity",
       "registration_number": "Registration Number",
-      "vat_number": "VAT Number",
       "legal_entity_name": "Legal Entity Name",
       "iban": "IBAN",
       "emergency_contact": "Emergency Contact",
@@ -558,7 +567,8 @@
         "date_from": "Date From",
         "date_to": "Date To",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "currency": "Currency"
       },
       "order_status": {
         "pending": "Pending",
@@ -695,7 +705,13 @@
       },
       "access_instructions_reveal": "Reveal",
       "access_instructions_reveal_hint": "Revealing entry instructions is recorded against your account.",
-      "access_instructions_reveal_failed": "Could not reveal the entry instructions. Please try again."
+      "access_instructions_reveal_failed": "Could not reveal the entry instructions. Please try again.",
+      "incident_file": {
+        "button": "Incident file",
+        "success": "The incident file was downloaded and recorded",
+        "error": "The incident file could not be built",
+        "no_subject": "No customer is on this order's trail — build the file from the customer's page."
+      }
     },
     "invoice_management": {
       "title": "Invoice Management",
@@ -723,7 +739,8 @@
         "search_placeholder": "Search by invoice number or employee",
         "status": "Invoice Status",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "currency": "Currency"
       },
       "invoice_status": {
         "pending": "Pending",
@@ -775,7 +792,6 @@
       "history": {
         "title": "Resource History",
         "description": "Everything that happened to this resource:",
-        "no_audits": "No audit entries for this resource",
         "back": "Back to Audit Log"
       },
       "entry": {
@@ -793,6 +809,126 @@
       },
       "drill_in": {
         "view_history": "View audit history"
+      },
+      "segments": {
+        "admin": "Admin actions",
+        "customer": "Customer actions"
+      },
+      "customers": {
+        "title": "Customer actions",
+        "description": "The trail of what customers did on their own accounts — bookings, cancellations, disputes, memberships, consent — and what the platform recorded about each act.",
+        "no_audits": "No customer actions found",
+        "load_error": "Failed to load the customer actions",
+        "guest": "Guest",
+        "columns": {
+          "occurred_on": "When",
+          "user": "Customer",
+          "action": "Action",
+          "resource": "Resource",
+          "audience": "Client",
+          "outcome": "Outcome"
+        },
+        "filters": {
+          "user": "Customer",
+          "user_id": "Customer ID",
+          "action": "Action",
+          "audience": "Client"
+        },
+        "entry": {
+          "title": "Customer action",
+          "description": "What the customer did, from which client, and the evidence the platform kept about it.",
+          "view": "View details",
+          "back": "Back",
+          "load_error": "Failed to load the customer action",
+          "when": "When",
+          "who": "Who",
+          "outcome": "Outcome",
+          "audience": "Client",
+          "audience_hint": "The customer web and the customer app share this name; the device tells them apart.",
+          "ip_address": "IP address",
+          "device": "Device",
+          "device_id": "Device ID",
+          "correlation_id": "Correlation ID",
+          "payload_title": "Recorded evidence",
+          "field": "Field",
+          "value": "Value",
+          "before": "Before",
+          "after": "After",
+          "no_payload": "No evidence was recorded for this action",
+          "show_raw": "Show raw JSON",
+          "hide_raw": "Show as table"
+        }
+      },
+      "timeline": {
+        "load_error": "Failed to load the timeline",
+        "no_entries": "Nothing recorded yet",
+        "view": "View details",
+        "columns": {
+          "occurred_on": "When",
+          "source": "Source",
+          "actor": "Who",
+          "action": "Action",
+          "resource": "Resource",
+          "outcome": "Outcome"
+        },
+        "source": {
+          "customer": "Customer",
+          "admin": "Admin",
+          "employee": "Cleaner"
+        }
+      },
+      "actions": {
+        "customer": {
+          "order": {
+            "create": "Booking placed",
+            "cancel": "Booking cancelled",
+            "recurring": {
+              "confirm": "Recurring occurrence confirmed"
+            }
+          },
+          "dispute": {
+            "create": "Dispute filed"
+          },
+          "account": {
+            "register": "Account registered",
+            "email_confirmed": "Email address confirmed"
+          },
+          "consent": {
+            "grant": "Consent granted",
+            "withdraw": "Consent withdrawn"
+          },
+          "membership": {
+            "subscribe": "Membership subscribed",
+            "swap": "Membership plan changed",
+            "cancel": "Membership cancelled"
+          },
+          "notification_preferences": {
+            "update": "Notification preferences updated"
+          },
+          "recurring": {
+            "create": "Recurring booking created",
+            "update": "Recurring booking updated",
+            "set_active": "Recurring booking paused or resumed",
+            "delete": "Recurring booking deleted"
+          },
+          "gdpr": {
+            "export": "Data exported"
+          },
+          "session": {
+            "login": "Signed in",
+            "logout": "Signed out"
+          },
+          "password": {
+            "reset_requested": "Password reset requested",
+            "reset_completed": "Password reset completed"
+          }
+        },
+        "employee": {
+          "order": {
+            "cover_requested": "Cover requested",
+            "dropped": "Job dropped"
+          }
+        }
       }
     },
     "pay_config_management": {
@@ -910,8 +1046,11 @@
       "name": "Name",
       "description": "Description",
       "category": "Category",
-      "base_price": "Base Price (CZK)",
-      "per_room_price": "Per Room Price (CZK)",
+      "base_price": "Base price",
+      "per_room_price": "Per-room price",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "price_required": "Required",
+      "price_optional": "Optional",
       "estimated_time": "Estimated Time (minutes)",
       "messages": {
         "load_error": "Failed to load service",
@@ -969,7 +1108,11 @@
       "translations": "Translations",
       "name": "Name",
       "description": "Description",
-      "price": "Price (CZK)",
+      "price": "Price",
+      "pricing": "Pricing",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "price_required": "Required",
+      "price_optional": "Optional",
       "included_services": "Included Services",
       "select_services": "Select services to include",
       "weights_title": "Relative price weights",
@@ -984,6 +1127,60 @@
       },
       "tagline": "Card tagline",
       "is_popular": "Most popular package"
+    },
+    "extra_management": {
+      "title": "Extras",
+      "description": "Booking add-ons and their price in each currency",
+      "create_extra": "Create Extra",
+      "edit_extra": "Edit",
+      "delete_extra": "Delete Extra",
+      "delete_confirm": "Delete this extra? Only an extra no order has ever bought can be deleted; otherwise deactivate it.",
+      "activate_extra": "Activate Extra",
+      "deactivate_extra": "Deactivate Extra",
+      "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the booking wizard; orders that bought it are kept.",
+      "no_extras": "No extras found",
+      "filters": {
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by slug, name or description",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All",
+        "status": "Status",
+        "status_all": "All",
+        "status_active": "Active",
+        "status_inactive": "Inactive"
+      },
+      "columns": {
+        "slug": "Slug",
+        "name": "Name",
+        "price": "Price",
+        "display_order": "Order"
+      },
+      "messages": {
+        "delete_success": "Extra deleted",
+        "activate_success": "Extra activated",
+        "deactivate_success": "Extra deactivated"
+      }
+    },
+    "extra_form": {
+      "create_title": "Create Extra",
+      "edit_title": "Edit Extra",
+      "basic_info": "Basic Information",
+      "pricing": "Pricing",
+      "translations": "Translations",
+      "slug": "Slug",
+      "slug_hint": "Lower-case words joined by hyphens, e.g. inside-oven. Cannot be changed later.",
+      "name": "Name",
+      "description": "Description",
+      "display_order": "Display order",
+      "price": "Price",
+      "price_required": "Required",
+      "price_optional": "Optional",
+      "no_currencies": "No currencies are configured, so this cannot be priced yet.",
+      "messages": {
+        "create_success": "Extra created",
+        "update_success": "Extra updated"
+      }
     },
     "admin_user_management": {
       "title": "Admin User Management",
@@ -1082,6 +1279,41 @@
         "update_error": "Failed to update language"
       }
     },
+    "legal_documents": {
+      "title": "Legal documents",
+      "description": "Every version of every legal text the platform has shown, read-only: a new version is a seed file under a new effective date plus a deploy.",
+      "no_versions": "No legal documents found",
+      "no_texts": "This version has no texts",
+      "load_error": "Failed to load legal documents",
+      "text_load_error": "Failed to load this text",
+      "retry": "Try again",
+      "preview": "Preview",
+      "preview_title": "Preview",
+      "close_preview": "Close preview",
+      "show_language": "Show this language",
+      "all_markets": "All markets",
+      "audience": {
+        "customer": "Customer",
+        "employee": "Employee"
+      },
+      "type": {
+        "terms_of_service": "Terms of service",
+        "privacy_policy": "Privacy policy"
+      },
+      "columns": {
+        "audience": "Audience",
+        "type": "Type",
+        "market": "Market",
+        "effective_from": "Effective from",
+        "version": "Version",
+        "in_force": "In force",
+        "languages": "Languages",
+        "language": "Language",
+        "title": "Title",
+        "hash": "SHA-256",
+        "notes": "Notes"
+      }
+    },
     "country_management": {
       "title": "Country Management",
       "description": "Manage countries available in the system",
@@ -1089,15 +1321,20 @@
       "edit_country": "Edit Country",
       "delete_country": "Delete Country",
       "delete_confirm": "Are you sure you want to delete this country? This may affect existing data.",
+      "set_default_market": "Set as default market",
+      "set_default_market_confirm": "Set {{name}} as the default market? Visitors will see it until they pick a country.",
+      "default_market": "Default market",
       "no_countries": "No countries found",
       "columns": {
         "iso_code": "ISO Code",
         "name": "Name",
+        "default_market": "Default market",
         "actions": "Actions"
       },
       "messages": {
         "load_error": "Failed to load countries",
         "delete_success": "Country deleted successfully",
+        "set_default_market_success": "Default market updated",
         "delete_error": "Failed to delete country"
       }
     },
@@ -1153,7 +1390,7 @@
       "edit_title": "Edit Country",
       "basic_info": "Basic Information",
       "iso_code": "ISO Code",
-      "iso_code_placeholder": "e.g., CZ, US, DE",
+      "iso_code_placeholder": "e.g. CZE, USA, DEU",
       "name": "Country Name",
       "name_placeholder": "e.g., Czech Republic, United States, Germany",
       "messages": {
@@ -1161,12 +1398,24 @@
         "create_success": "Country created successfully",
         "create_error": "Failed to create country",
         "update_success": "Country updated successfully",
-        "update_error": "Failed to update country"
-      }
+        "update_error": "Failed to update country",
+        "market_content_success": "Market content updated successfully"
+      },
+      "iso_alpha2": "Two-letter code",
+      "iso_alpha2_placeholder": "e.g. CZ, US, DE",
+      "iso_alpha2_help": "ISO 3166-1 alpha-2. Customers see it on the market chip.",
+      "validation": {
+        "iso_alpha2_invalid": "Exactly two letters."
+      },
+      "market": "Market",
+      "insurance_coverage_amount": "Insurance coverage per booking",
+      "insurance_coverage_amount_placeholder": "Leave empty to state no figure",
+      "insurance_coverage_amount_help": "A number in the country's default currency, shown in customer copy. Empty means the copy names no figure.",
+      "market_content_unavailable": "Available once the country has a configuration."
     },
     "currency_management": {
       "title": "Currency Management",
-      "description": "Manage currencies and exchange rates",
+      "description": "Manage the currencies the platform operates in, the default currency and the amount that earns a loyalty point",
       "create_currency": "Create Currency",
       "edit_currency": "Edit Currency",
       "delete_currency": "Delete Currency",
@@ -1177,44 +1426,66 @@
         "code": "Code",
         "symbol": "Symbol",
         "name": "Name",
-        "exchange_rate": "Exchange Rate",
+        "is_active": "Operated",
         "is_default": "Default",
         "actions": "Actions"
       },
+      "operated": "Yes",
+      "not_operated": "Not yet",
       "messages": {
         "load_error": "Failed to load currencies",
         "delete_success": "Currency deleted successfully",
         "delete_error": "Failed to delete currency",
-        "set_default_success": "Default currency updated"
+        "set_default_success": "Default currency updated",
+        "activate_success": "Currency switched on",
+        "deactivate_success": "Currency switched off"
       },
       "set_default": "Set as Default",
-      "set_default_confirm": "Set {{code}} as the default currency?"
+      "set_default_confirm": "Set {{code}} as the default currency?",
+      "activate": "Switch on",
+      "activate_confirm": "Switch on {{code}}? From now on every service and package must be priced in it before it can be saved.",
+      "deactivate": "Switch off",
+      "deactivate_confirm": "Switch off {{code}}? Customers will no longer be able to book in it. Existing orders, pay and invoices are not affected."
     },
     "currency_form": {
       "create_title": "Create Currency",
       "edit_title": "Edit Currency",
       "basic_info": "Basic Information",
       "code": "Currency Code",
-      "code_placeholder": "e.g., USD, EUR, CZK",
       "symbol": "Symbol",
-      "symbol_placeholder": "e.g., $, €, Kč",
       "name": "Currency Name",
-      "name_placeholder": "e.g., US Dollar, Euro, Czech Koruna",
-      "exchange_rate": "Exchange Rate",
-      "exchange_rate_placeholder": "e.g., 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Amount that earns one loyalty point",
+      "loyalty_points_divisor_placeholder": "e.g. 10 for CZK — leave empty and the currency earns no points",
       "messages": {
         "load_error": "Failed to load currency",
         "create_success": "Currency created successfully",
         "create_error": "Failed to create currency",
         "update_success": "Currency updated successfully",
         "update_error": "Failed to update currency"
-      }
+      },
+      "no_show_credit": "No-show apology credit",
+      "no_show_credit_placeholder": "e.g. 250 for CZK — leave empty and no credit is paid in this currency"
     },
     "company_info": {
-      "title": "Company Information",
+      "bank_account_number": "Bank Account Number",
+      "bank_name": "Bank Name",
+      "city": "City",
+      "country": "Country",
       "create_title": "Create Company",
-      "edit_title": "Edit Company",
       "description": "Manage company details used in invoices and receipts",
+      "edit_title": "Edit Company",
+      "email": "Email",
+      "iban": "IBAN",
+      "is_vat_payer": "VAT payer",
+      "legal_name": "Legal Name",
+      "messages": {
+        "load_error": "Failed to load company information",
+        "save_success": "Company information saved successfully",
+        "save_error": "Failed to save company information",
+        "create_success": "Company information created successfully"
+      },
+      "phone": "Phone",
+      "registration_number": "Registration Number",
       "sections": {
         "legal_info": "Legal Information",
         "tax_info": "Tax Information",
@@ -1222,28 +1493,16 @@
         "contact": "Contact Information",
         "banking": "Banking Information"
       },
-      "legal_name": "Legal Name",
-      "trading_name": "Trading Name",
-      "tagline": "Tagline",
-      "registration_number": "Registration Number",
-      "vat_number": "VAT Number (DIC)",
       "street": "Street",
-      "city": "City",
-      "zip_code": "ZIP Code",
-      "country": "Country",
-      "phone": "Phone",
-      "email": "Email",
-      "website": "Website",
-      "bank_name": "Bank Name",
-      "bank_account_number": "Bank Account Number",
-      "iban": "IBAN",
       "swift": "SWIFT/BIC",
-      "messages": {
-        "load_error": "Failed to load company information",
-        "save_success": "Company information saved successfully",
-        "save_error": "Failed to save company information",
-        "create_success": "Company information created successfully"
-      }
+      "tagline": "Tagline",
+      "title": "Company Information",
+      "trading_name": "Trading Name",
+      "vat_number": "VAT Number (DIC)",
+      "vat_registered_from": "VAT registered from",
+      "vat_registered_from_hint": "The date registration took effect. Kept because it cannot be recovered once the status changes.",
+      "website": "Website",
+      "zip_code": "ZIP Code"
     },
     "template_management": {
       "title": "Template Management",
@@ -1485,6 +1744,71 @@
         "delete_error": "Failed to delete company information"
       }
     },
+    "company_settings": {
+      "title": "Company settings",
+      "description": "Every setting your operating company can hold, with the platform default and the value in force. A row at its default stores nothing; an override is stored for your company alone.",
+      "no_settings": "The catalogue has no settings",
+      "load_error": "Failed to load the company settings",
+      "retry": "Try again",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "reset": "Reset to default",
+      "enabled": "Enabled",
+      "confirm_reset_title": "Reset to default",
+      "confirm_reset": "Remove the stored value of {{key}} so the platform default applies again?",
+      "source": {
+        "overridden": "Overridden",
+        "default": "Default"
+      },
+      "messages": {
+        "save_success": "Setting saved",
+        "reset_success": "Setting reset to its default"
+      },
+      "columns": {
+        "key": "Key",
+        "description": "Description",
+        "category": "Category",
+        "range": "Allowed range",
+        "default": "Default",
+        "value": "Value",
+        "source": "Source"
+      },
+      "categories": {
+        "retention": "Data retention"
+      },
+      "descriptions": {
+        "retention": {
+          "expired_codes": {
+            "enabled": "Whether the weekly retention job clears expired e-mail confirmation and password reset codes"
+          },
+          "stale_devices": {
+            "days": "Days a device may stay inactive before its push registration is deleted"
+          },
+          "gdpr_requests": {
+            "years": "Years after a data-protection request is completed before the processing administrator's identity is cleared from it"
+          },
+          "order_pii": {
+            "years": "Years after the cleaning before a completed order's customer data is anonymised"
+          },
+          "withdrawn_consents": {
+            "years": "Years a withdrawn consent record is kept"
+          },
+          "deleted_documents": {
+            "days": "Days a deactivated employee document is kept before the file is deleted"
+          },
+          "notifications": {
+            "days": "Days a notification stays in the in-app feed"
+          },
+          "customer_audit": {
+            "years": "Years a customer audit row is kept"
+          },
+          "dispute_text": {
+            "years": "Years after a customer's account erasure that the free text of their disputes is kept before it is blanked"
+          }
+        }
+      }
+    },
     "reports": {
       "title": "Reports",
       "description": "View revenue and payroll reports, analyze performance, and track financial data",
@@ -1497,7 +1821,8 @@
         "title": "Filters",
         "date_range": "Date Range",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "currency": "Currency"
       },
       "revenue_report": "Revenue Report",
       "payroll_report": "Payroll Report",
@@ -1904,12 +2229,14 @@
           "cancel": "Cancel",
           "submit": "Issue credit",
           "field": {
-            "amount": "Amount ({{currency}})",
+            "currency": "Currency",
+            "amount": "Amount",
             "reason": "Reason",
             "note": "What happened",
             "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."
           },
           "validation": {
+            "currency_required": "Choose a currency.",
             "amount_min": "Enter an amount above zero.",
             "amount_max": "That is above the limit for a single credit. Issue it in smaller amounts.",
             "note_required": "Say what happened.",
@@ -1922,7 +2249,7 @@
           "reason": "Reason",
           "note": "What happened"
         },
-        "expire_success": "Discharged {{amount}}.",
+        "expire_success": "Discharged {{amount}} {{currency}}.",
         "expire_error": "The balance could not be discharged.",
         "expire_dialog": {
           "title": "Discharge credit balance",
@@ -2087,13 +2414,14 @@
         "code": "Code",
         "name": "Name",
         "interval": "Billing",
-        "price": "Price (CZK)",
-        "monthly_equivalent": "Monthly equiv. (CZK)",
+        "price": "Price",
+        "monthly_equivalent": "Monthly equivalent",
         "discount": "Discount",
         "trial_days": "Trial days",
         "free_cancel_window": "Free-cancel (h)",
         "express": "Express",
-        "status": "Status"
+        "status": "Status",
+        "currency": "Currency"
       },
       "interval": {
         "Monthly": "Monthly",
@@ -2124,7 +2452,7 @@
           "name": "Name",
           "interval": "Billing interval",
           "interval_immutable": "Billing interval cannot be changed after creation.",
-          "price": "Price (CZK)",
+          "price": "Price",
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Copy from the Stripe dashboard (price_...). The platform does not create Stripe prices.",
           "discount": "Discount (%)",
@@ -2137,17 +2465,22 @@
         "validation": {
           "code_invalid": "2–50 characters: letters, numbers or underscores.",
           "price_negative": "Price must be zero or more.",
-          "stripe_price_id_required": "Stripe Price id is required.",
           "discount_range": "Discount must be between 0 and 100.",
           "trial_negative": "Trial days must be zero or more.",
           "window_negative": "Window must be zero or more.",
-          "express_upgrades_negative": "Included express upgrades must be zero or more."
+          "express_upgrades_negative": "Included express upgrades must be zero or more.",
+          "price_block_half_filled": "Enter both a price and a Stripe Price id, or leave both empty to keep the plan off sale in this currency."
         },
         "submit_create": "Create plan",
         "submit_update": "Save changes",
         "success": {
           "created": "Membership plan created",
           "updated": "Membership plan updated"
+        },
+        "price_block": {
+          "active": "Active",
+          "optional": "Optional",
+          "no_currencies": "No currencies are configured, so this plan cannot be priced yet."
         }
       }
     },
@@ -2168,7 +2501,13 @@
           "created_on": "Created on"
         },
         "fulfil": "Fulfil deletion request",
-        "fulfil_title": "Fulfil this deletion request?"
+        "fulfil_title": "Fulfil this deletion request?",
+        "retry": "Retry deletion",
+        "retry_confirm_title": "Retry this deletion?",
+        "retry_confirm_message": "This re-runs the erasure of the account of user {{userId}}. If it succeeds, the account is permanently anonymized and this cannot be undone.",
+        "retry_confirm_yes": "Retry",
+        "retry_success": "Deletion retried. The account is now erased.",
+        "retry_error": "Couldn't retry the deletion."
       },
       "request_status": {
         "Pending": "Pending",
@@ -2233,6 +2572,22 @@
       },
       "messages": {
         "change_password_success": "Password changed successfully"
+      }
+    },
+    "customer_detail": {
+      "timeline": {
+        "title": "Timeline",
+        "description": "Every recorded act on this customer — their own, an admin's on their orders, disputes and membership, and a cleaner's on their jobs — newest first."
+      },
+      "export_subject_data": "Export subject data",
+      "export_success": "The subject export was downloaded and recorded",
+      "export_error": "The subject export failed",
+      "incident_file": {
+        "button": "Incident file (PDF)",
+        "order_scope": "Order id (optional)",
+        "order_scope_hint": "Leave empty for the whole account, or enter one of this customer's order ids to scope the file to that order.",
+        "success": "The incident file was downloaded and recorded",
+        "error": "The incident file could not be built"
       }
     }
   },
@@ -2389,7 +2744,10 @@
       "not_found": "Admin user not found"
     },
     "audit": {
-      "not_found": "Audit entry not found."
+      "not_found": "Audit entry not found.",
+      "timeline": {
+        "filter_required": "The timeline needs exactly one key: a user, or a resource type together with its id."
+      }
     },
     "auth": {
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
@@ -2428,7 +2786,11 @@
       "not_existing_id": "Country not found",
       "not_found": "Country not found",
       "not_serviced": "This country is not serviced.",
-      "required": "A country is required."
+      "required": "A country is required.",
+      "market_not_ready": "This country cannot be switched on yet: it needs a configuration whose default currency is active.",
+      "default_market_changed_concurrently": "The default market was changed by someone else. Refresh and try again",
+      "configuration_missing": "This country has no configuration yet, so its market content cannot be saved.",
+      "iso_alpha2_invalid": "The two-letter country code must be exactly two uppercase letters."
     },
     "credit": {
       "amount_exceeds_sanity_cap": "That amount is above the limit for a single credit. Issue it in smaller amounts if it is correct.",
@@ -2437,11 +2799,14 @@
     },
     "currency": {
       "cannot_delete_default": "Cannot delete the default currency",
+      "cannot_deactivate_default": "The default currency cannot be switched off. Set another currency as the default first",
       "code_already_exists": "A currency with this code already exists",
-      "exchange_rate_must_be_positive": "Exchange rate must be a positive number",
+      "default_changed_concurrently": "The default currency was changed by someone else. Refresh and try again",
       "in_use": "Cannot delete currency because it is currently in use",
       "invalid": "Invalid currency",
-      "not_found": "Currency not found"
+      "not_found": "Currency not found",
+      "not_priced": "The catalogue has no prices in this currency yet. Price at least one service or package in it first",
+      "loyalty_divisor_missing": "This currency has no loyalty earn rate yet. Set how much of it earns one point on the currency form before switching the market on; an open market must keep one"
     },
     "device": {
       "invalid_platform": "Platform must be 'android' or 'ios'"
@@ -2472,7 +2837,8 @@
       "not_found": "Employee not found",
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
       "profile_incomplete": "Employee profile is incomplete",
-      "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit"
+      "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit",
+      "work_country_operator_mismatch": "The work country belongs to another operating company."
     },
     "employee_document": {
       "deletion_already_resolved": "This deletion request has already been answered.",
@@ -2500,7 +2866,9 @@
       "deletion_blocked_by_assigned_order": "This cleaner is still assigned to a job and cannot be deleted yet.",
       "deletion_blocked_by_unsettled_pay": "This cleaner is still owed pay. Settle it before deleting the account.",
       "consent_not_found": "We couldn't find that consent setting.",
-      "consent_already_granted": "That consent has already been granted."
+      "consent_already_granted": "That consent has already been granted.",
+      "request_not_found": "We couldn't find that GDPR request.",
+      "request_not_retryable": "Only a failed deletion request can be retried."
     },
     "general": {
       "not_found": "Resource not found"
@@ -2510,6 +2878,9 @@
       "in_use": "Cannot delete language because it is currently in use",
       "not_found": "Language not found",
       "not_supported": "Language not supported"
+    },
+    "legal": {
+      "document_not_found": "This legal text is not available yet."
     },
     "loyalty": {
       "points_exceed_sanity_cap": "That number of points exceeds the limit allowed for a manual adjustment.",
@@ -2522,7 +2893,9 @@
         "action_failed": "The membership plan action failed. Try again.",
         "code_already_exists": "A plan with this code already exists.",
         "discount_out_of_range": "Discount must be between 0 and 100.",
-        "not_found": "Membership plan not found."
+        "not_found": "Membership plan not found.",
+        "trial_not_permitted": "Cleansia Plus benefits require an active subscription, so a free trial cannot be set. Leave the trial at 0 days.",
+        "stripe_price_already_used": "That Stripe Price id is already used by another plan price."
       }
     },
     "order": {
@@ -2564,6 +2937,12 @@
         "not_match": "Total price doesn't match",
         "positive": "Total price must be positive"
       }
+    },
+    "extra": {
+      "in_use": "Cannot delete extra because an order references it. Deactivate it instead.",
+      "not_found": "Extra not found",
+      "slug_already_exists": "An extra with this slug already exists",
+      "slug_invalid": "Slug must be lower-case words joined by single hyphens, e.g. inside-oven"
     },
     "package": {
       "in_use": "Cannot delete package because it is currently in use",
@@ -2610,6 +2989,8 @@
         "invalid_status": "Invalid invoice status",
         "not_approved": "Invoice must be approved before it can be marked paid",
         "not_found": "Invoice not found",
+        "payout_currency_mismatch": "The cleaner's payout account is not set up to receive this invoice's currency. Ask them to update their payout details before approving.",
+        "payout_details_missing": "The cleaner has no usable payout details on file, so there is nowhere to send this invoice's payment. Ask them to supply their payout details before approving.",
         "pdf_generation_failed": "Failed to generate PDF",
         "reference_already_assigned": "This invoice already has a payment reference.",
         "reference_capacity_exhausted": "This year's payment references are exhausted. Contact support.",
@@ -2662,7 +3043,9 @@
       "in_use": "Cannot delete service because it is currently in use",
       "missing_translation_for_language": "Missing translation for required language",
       "not_found": "Service not found",
-      "translations_required": "Translations are required for all supported languages"
+      "translations_required": "Translations are required for all supported languages",
+      "prices_required": "A price is required",
+      "missing_price_for_currency": "Missing a price for a currency the platform operates in"
     },
     "service_area": {
       "city_not_serviced": "We don't currently serve this city.",
@@ -2691,6 +3074,13 @@
         "in_use": "Cannot delete receipt template because it is currently in use",
         "not_found": "Receipt template not found"
       }
+    },
+    "tenant": {
+      "not_found": "This market is not operated by any Cleansia company yet."
+    },
+    "tenant_setting": {
+      "invalid_value": "The value is not of the right type or is outside the allowed range for this setting.",
+      "unknown_key": "This setting is not in the catalogue and cannot be set."
     },
     "user": {
       "email_confirmed": "Email is already confirmed",

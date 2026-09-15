@@ -131,18 +131,4 @@ describe('AuditLogFacade', () => {
     expect(args?.at(-2)).toBe(20);
     expect(args?.at(-1)).toBe(50);
   });
-
-  it('pins the resource filter so the per-resource history cannot be widened', () => {
-    facade.loadResourceHistory('Order', 'order-1');
-
-    let args = auditClient.getPaged.mock.calls.at(-1);
-    expect(args?.[3]).toBe('Order');
-    expect(args?.[4]).toBe('order-1');
-
-    facade.applyFilter({ resourceType: 'Dispute', resourceId: 'dispute-9' });
-
-    args = auditClient.getPaged.mock.calls.at(-1);
-    expect(args?.[3]).toBe('Order');
-    expect(args?.[4]).toBe('order-1');
-  });
 });

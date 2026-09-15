@@ -38,12 +38,12 @@ public sealed class PruneOutboxHandlerTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
     }
 
     private static OutboxMessage DispatchedRow(string key, DateTimeOffset dispatchedOn)
@@ -165,6 +165,7 @@ public sealed class PruneOutboxHandlerTests : IDisposable
         await EnsureSchemaAsync();
         var audit = new AdminActionAudit
         {
+            TenantId = TestTenants.Default,
             ActorId = "admin-1",
             ActorProfile = UserProfile.Administrator,
             Action = "order.refunded",

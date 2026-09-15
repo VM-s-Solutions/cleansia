@@ -27,6 +27,8 @@ import cz.cleansia.customer.core.auth.GoogleSignInController
 import cz.cleansia.customer.core.auth.GoogleSignInResult
 import cz.cleansia.customer.core.auth.JwtTokenResponseDto
 import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -79,6 +81,7 @@ class SignupConsentFlowTest {
     private lateinit var context: Context
     private lateinit var store: SignupConsentStore
     private lateinit var signupConsent: SignupConsentRepository
+    private lateinit var marketRepository: MarketRepository
 
     private val email = "ada@example.com"
 
@@ -91,8 +94,10 @@ class SignupConsentFlowTest {
         settings = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         googleSignInController = mockk(relaxed = true)
+        marketRepository = mockk()
         context = mockk(relaxed = true)
 
+        coEvery { marketRepository.ensureLoaded() } returns MarketState.Unavailable
         every { settings.settings } returns flowOf(AppSettings())
         coEvery { settings.emailLanguageTag() } returns "cs"
         every { context.packageName } returns "cz.cleansia.customer"
@@ -110,7 +115,7 @@ class SignupConsentFlowTest {
      */
     private fun TestScope.register(acceptedTerms: Boolean, address: String = email) {
         val repository = mockk<AuthRepository>(relaxed = true)
-        coEvery { repository.register(any(), any(), any(), any(), any(), any()) } returns registerResult
+        coEvery { repository.register(any(), any(), any(), any(), any(), any(), any(), any()) } returns registerResult
 
         AuthViewModel(
             authRepository = repository,
@@ -118,6 +123,7 @@ class SignupConsentFlowTest {
             snackbar = snackbar,
             googleSignInController = googleSignInController,
             signupConsent = signupConsent,
+            marketRepository = marketRepository,
             appContext = context,
         ).register(address, "Passw0rd!", "Ada", "Lovelace", acceptedTerms = acceptedTerms)
 
@@ -189,6 +195,7 @@ class SignupConsentFlowTest {
             snackbar = snackbar,
             googleSignInController = googleSignInController,
             signupConsent = signupConsent,
+            marketRepository = marketRepository,
             appContext = context,
         ).launch()
 

@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.LiveActivities;
 using Cleansia.Core.Domain.ServiceAreas;
 using Cleansia.Core.Domain.InvoiceTemplates;
@@ -26,6 +27,7 @@ using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -223,7 +225,8 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 tenantProviderField,
                 typeof(ITenantProvider).GetMethod(nameof(ITenantProvider.GetCurrentTenantId))!);
 
-            // currentTenantId == null  (single-tenant / unauthenticated mode)
+            // currentTenantId == null  (no claim and no override: an anonymous request, or a job
+            // that has not yet chosen a group)
             var currentTenantNullCheck = Expression.Equal(
                 currentTenantCall,
                 Expression.Constant(null, typeof(string)));
@@ -233,11 +236,10 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 tenantIdProperty,
                 Expression.Constant(null, typeof(string)));
 
-            // Single-tenant mode: callers without a tenant claim should see
-            // entities that were also created without one. SQL's
-            // `null == null` is NULL (not true), which would otherwise hide
-            // every row in single-tenant deployments and in queue/webhook
-            // contexts where the user's TenantId happens to also be null.
+            // Callers without a tenant may see only the rows that carry none. Since ADR-0061 every
+            // stamped table is NOT NULL, so this clause matches only the two nullable envelopes
+            // (OutboxMessages, DeadLetters); it stays because SQL's `null == null` is NULL, not true,
+            // and without it a tenant-less consumer would see nothing at all.
             var singleTenantMatch = Expression.AndAlso(
                 currentTenantNullCheck,
                 entityTenantNullCheck);
@@ -249,9 +251,10 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
             //     || (currentTenantId == null && e.TenantId == null)
             //     || e.TenantId == currentTenantId.
             //
-            // The middle clause is what makes single-tenant mode work — without
-            // it, null/null is filtered out and queue functions / unauthenticated
-            // reads return zero rows even when the entity matches.
+            // Activated 2026-09-13 (ADR-0061): an anonymous request that WRITES resolves its
+            // operator from the market it names before validation (OperatorTenantScopeBehavior),
+            // and a signed-in caller's claim always wins; a tenant-less READ of a stamped table
+            // returns nothing, which is the isolation the filter exists for.
             //
             // Background jobs that need to read across tenants must still call
             // ITenantProvider.SetTenantOverride() (or use IgnoreQueryFilters)
@@ -294,6 +297,11 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<Order> Orders { get; set; }
     public virtual DbSet<OrderService> OrderServices { get; set; }
     public virtual DbSet<OrderPackage> OrderPackages { get; set; }
+    public virtual DbSet<OrderExtra> OrderExtras { get; set; }
+    public virtual DbSet<OrderPackageService> OrderPackageServices { get; set; }
+    public virtual DbSet<ServicePrice> ServicePrices { get; set; }
+    public virtual DbSet<PackagePrice> PackagePrices { get; set; }
+    public virtual DbSet<ExtraPrice> ExtraPrices { get; set; }
     public virtual DbSet<OrderEmployee> OrderEmployees { get; set; }
     public virtual DbSet<OrderStatusTrack> OrderStatusHistory { get; set; }
     public virtual DbSet<OrderNote> OrderNotes { get; set; }
@@ -315,6 +323,9 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<DisputeMessage> DisputeMessages { get; set; }
     public virtual DbSet<DisputeEvidence> DisputeEvidence { get; set; }
     public virtual DbSet<TenantConfiguration> TenantConfigurations { get; set; }
+
+    /// <summary>The operating companies every stamped row points at (ADR-0061 D1). Seed-only.</summary>
+    public virtual DbSet<Tenant> Tenants { get; set; }
     public virtual DbSet<CountryConfiguration> CountryConfigurations { get; set; }
 
     /// <summary>
@@ -323,6 +334,8 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     /// </summary>
     public virtual DbSet<PropertySizePreset> PropertySizePresets { get; set; }
     public virtual DbSet<UserConsent> UserConsents { get; set; }
+    public virtual DbSet<LegalDocument> LegalDocuments { get; set; }
+    public virtual DbSet<LegalDocumentText> LegalDocumentTexts { get; set; }
     public virtual DbSet<GdprRequest> GdprRequests { get; set; }
     public virtual DbSet<LoyaltyAccount> LoyaltyAccounts { get; set; }
 
@@ -341,7 +354,9 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<ReferralCode> ReferralCodes { get; set; }
     public virtual DbSet<Referral> Referrals { get; set; }
     public virtual DbSet<MembershipPlan> MembershipPlans { get; set; }
+    public virtual DbSet<MembershipPlanPrice> MembershipPlanPrices { get; set; }
     public virtual DbSet<UserMembership> UserMemberships { get; set; }
+    public virtual DbSet<UserStripeCustomer> UserStripeCustomers { get; set; }
     public virtual DbSet<MembershipBenefitUsage> MembershipBenefitUsages { get; set; }
     public virtual DbSet<RecurringBookingTemplate> RecurringBookingTemplates { get; set; }
     public virtual DbSet<UserNotificationPreferences> UserNotificationPreferences { get; set; }
@@ -353,4 +368,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     /// <summary>The employee-side twin, kept separate on owner ruling 2026-09-06.</summary>
     public virtual DbSet<EmployeeActionAudit> EmployeeActionAudits { get; set; }
+
+    /// <summary>The customer-side table (ADR-0062), written by the same pipeline through the customer arm of the gate.</summary>
+    public virtual DbSet<CustomerActionAudit> CustomerActionAudits { get; set; }
 }

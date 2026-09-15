@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<UserMembership, string>
+public class UserMembershipEntityConfiguration : TenantAuditableEntityConfiguration<UserMembership, string>
 {
     public override void Configure(EntityTypeBuilder<UserMembership> builder)
     {
@@ -17,6 +17,10 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
             .HasMaxLength(26);
 
         builder.Property(m => m.MembershipPlanId)
+            .IsRequired()
+            .HasMaxLength(26);
+
+        builder.Property(m => m.CurrencyId)
             .IsRequired()
             .HasMaxLength(26);
 
@@ -54,6 +58,13 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
         builder.HasOne(m => m.MembershipPlan)
             .WithMany()
             .HasForeignKey(m => m.MembershipPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // The currency the subscription is billed in, fixed for life. Restrict: a currency with a
+        // subscription in it cannot be deleted (CurrencyRepository.IsInUseAsync answers first).
+        builder.HasOne(m => m.Currency)
+            .WithMany()
+            .HasForeignKey(m => m.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Webhook reconciliation looks up by StripeSubscriptionId; keep unique.
@@ -102,11 +113,7 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
         // "Status" = 1.
         //
         // Tenant-scoped (TenantId, UserId) per S8 — UserMembership is an
-        // ITenantEntity. NOTE: Postgres treats NULLs as DISTINCT in a UNIQUE
-        // index by default, so two NULL-TenantId active rows for the same user
-        // are NOT rejected by this index (single-tenant mode); there the
-        // app-level GetActiveForUserAsync assert + the StripeSubscriptionId
-        // unique index are the guards, and the index hardens multi-tenant mode.
+        // ITenantEntity, and the tenant term is NOT NULL.
         //
         // This index is deliberately left NULLS DISTINCT because it is a BACKSTOP
         // behind an authoritative app-level assert — "at most one active row" is a

@@ -38,6 +38,13 @@ final class BookingPricingTests: XCTestCase {
 
     func testFormatTotalRoundsToWholeWithSymbol() {
         XCTAssertEqual(BookingPricing.formatTotal(1200.4, currencyCode: "CZK"), "1200 Kč")
+        XCTAssertEqual(BookingPricing.formatTotal(1000, currencyCode: "EUR"), "1000 €")
+    }
+
+    /// Before the catalogue has loaded there is no currency to label with, and a bare figure is
+    /// the honest rendering — never a guessed suffix.
+    func testFormatTotalWithNoCurrencyRendersTheBareAmount() {
+        XCTAssertEqual(BookingPricing.formatTotal(1200, currencyCode: ""), "1200")
     }
 }
 

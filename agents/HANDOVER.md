@@ -55,14 +55,14 @@ shows a blank status pill in the admin list (`OrderStatus.New` is `0` and the gu
 
 ## Then, in this order
 
-**1 — Order status: card vs cash.** *Investigate is already done, and the finding is not what it
-looked like.* Both payment types are created identically as `(New, Pending)`. The card path diverges
-seconds later because the Stripe webhook writes the **fulfilment** axis: it sets `Paid` **and**
-appends `Confirmed`. So `New`-cash and `Confirmed`-card are the same business state — "live, nobody
-assigned". `Confirmed` is also what a cleaner taking the job produces, so the word covers two
-unrelated events. **The decision:** is `Confirmed` allowed to keep meaning two things (ADR-0037 says
-yes)? If yes this is presentation only and T-0687 is most of it. If no, it is a domain change across
-eight-plus consumers including both mobile apps.
+**1 — Order status: card vs cash. ✅ DONE (T-0691, ADR-0057).** The decision was taken on 2026-09-08:
+`Confirmed` is NOT allowed to keep meaning two things. It now means only "a cleaner took this job", a
+paid card order rests at `New + Paid`, and the offerability status term dropped its payment qualifier
+(the money term was always asking that question). ADR-0037 D1 is superseded in part by ADR-0057.
+
+Two things worth carrying forward: the mobile booking timelines needed **no** change — they already key
+on `cleanerAssigned` and caption the step "Cleaner confirmed", so the split made them more truthful, not
+less — and item 4 below is now unblocked.
 
 **2 — Legal documents vs. the built processes.** Needs the documents; nothing to read in the repo
 until they arrive. **Do this BEFORE the customer audit log** — the review defines what must be

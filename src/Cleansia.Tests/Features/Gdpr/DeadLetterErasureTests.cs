@@ -1,8 +1,10 @@
 ﻿using System.Text.Json;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.DeadLettering;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -206,6 +208,7 @@ public sealed class DeadLetterErasureTests : IDisposable
             new CreditAccountRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
+            new UserStripeCustomerRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),
@@ -219,9 +222,12 @@ public sealed class DeadLetterErasureTests : IDisposable
             new UserNotificationRepository(ctx),
             new DeadLetterRepository(ctx),
             new OutboxMessageRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
             Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
+            Mock.Of<IAppConfigurationProvider>(),
+            new ErasureAttempt(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(
@@ -356,7 +362,7 @@ public sealed class DeadLetterErasureTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {

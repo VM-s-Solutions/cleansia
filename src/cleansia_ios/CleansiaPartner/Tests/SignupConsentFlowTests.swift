@@ -171,6 +171,7 @@ final class SignupConsentFlowTests: XCTestCase {
         let settings = UserDefaultsAppSettingsStore(defaults: defaults)
         let viewModel = RegisterViewModel(
             client: spine,
+            marketClient: UnreadMarketClient(),
             settings: settings,
             snackbar: SnackbarController(),
             signupConsent: signupConsent

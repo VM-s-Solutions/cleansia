@@ -1,10 +1,13 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Features.Auth.Validators;
+using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -14,6 +17,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
+/// <summary>
+/// Sign-in-or-register. The marker records the sign-in of an existing account as a session act; the
+/// provisioning branch declines the row, because a registration's proof is the two consent rows it
+/// writes and a login row would say a session was opened by an account that did not exist a moment
+/// ago. A refusal on either branch is recorded — a bad token or a sign-in with no account is exactly
+/// the login history the row exists for.
+/// </summary>
+[AuditAction("customer.session.login", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class AppleAuth
 {
     public class Validator : BaseAuthValidator<Command>
@@ -59,8 +70,12 @@ public class AppleAuth
         string RawNonce,
         string? FirstName,
         string? LastName,
-        bool TermsAccepted = false)
-        : ICommand<JwtTokenResponse>;
+        bool TermsAccepted = false,
+        // The market a first sign-in provisions into; null is the default market (ADR-0061 D3). An
+        // existing account keeps its own operator: TokenService re-scopes to it before the token is
+        // minted.
+        string? CountryId = null)
+        : ICommand<JwtTokenResponse>, IOperatorScopedRequest;
 
     public class Handler(
         IAppleTokenVerifier appleTokenVerifier,
@@ -68,7 +83,10 @@ public class AppleAuth
         ICartRepository cartRepository,
         IUserRepository userRepository,
         IHostAudienceProvider hostAudience,
-        ILogger<Handler> logger)
+        IConsentService consentService,
+        ILegalDocumentResolver legalDocumentResolver,
+        ILogger<Handler> logger,
+        IAuditContext auditContext)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         private const string AppleRelayEmailDomain = "privaterelay.appleid.com";
@@ -114,12 +132,15 @@ public class AppleAuth
 
             if (user is not null)
             {
+                // A refusal below is this account's row, not the IP's alone.
+                auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+
                 // S1: the account-type guard MUST run against the account the handler actually
                 // authenticates — resolved from the VERIFIED claims — not a client-supplied field. Block an
                 // Apple login from binding into an existing password (Internal) OR Google account that
                 // shares this verified email (the verified-email-collision takeover Google's hardening
                 // closed). A sub-matched account keeps its stored email untouched: rewriting it would
-                // collide with the (TenantId, Email) unique index and silently merge two accounts.
+                // collide with the global Email unique index and silently merge two accounts.
                 // The rejection names the provider the colliding account ACTUALLY uses (the same switch
                 // the password login uses) — telling a Google user to "sign in with your email and
                 // password" sends them to a dead end. No extra disclosure: the caller already holds a
@@ -158,7 +179,15 @@ public class AppleAuth
                 var (derivedFirstName, derivedLastName) = DeriveNameFromEmail(user.Email);
                 user.ReplaceSystemGeneratedName(suppliedFirstName, suppliedLastName, derivedFirstName, derivedLastName);
 
-                return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
+                var session = await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken);
+
+                auditContext.RecordEvidence(
+                    "User",
+                    user.Id,
+                    new LoginEvidence(LoginEvidence.AppleMethod, RememberMe: true, hostAudience.Audience, session.IsEmailConfirmed),
+                    actorUserId: user.Id);
+
+                return BusinessResult.Success(session);
             }
 
             // Provision only when Apple reports a verified email — reject an unverifiable one rather than
@@ -182,6 +211,8 @@ public class AppleAuth
                     new Error(nameof(Command.TermsAccepted), BusinessErrorMessage.SocialAccountNotFound));
             }
 
+            auditContext.DeclineSuccessRow();
+
             // The display name comes from the command when Apple sent one — it only ever does on the FIRST
             // authorization, and may arrive partial — and otherwise from the verified email
             // (see ResolveDisplayName). Identity itself is always the verified claims.
@@ -191,9 +222,16 @@ public class AppleAuth
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
 
+            // Reached only with the tick asserted. These two rows are the registration proof (the
+            // session row is declined above), so the consent rides the same flush as the account.
+            await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService,
+                await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.TermsOfService, command.CountryId, cancellationToken), cancellationToken);
+            await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy,
+                await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.PrivacyPolicy, command.CountryId, cancellationToken), cancellationToken);
+
             // The resolve-by-email fallback above and this insert cross a snapshot boundary with no
-            // lock, so (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous
-            // provisionings of the same verified address (ADR-0050). FLUSH here and own the loser's
+            // lock, so the global Email UNIQUE index is what actually arbitrates two simultaneous
+            // provisionings of the same verified address (ADR-0050 D2). FLUSH here and own the loser's
             // 23505 — and do it BEFORE minting a JWT, so no token is issued for a row that was rejected.
             try
             {

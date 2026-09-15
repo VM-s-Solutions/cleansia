@@ -7,11 +7,18 @@ namespace Cleansia.Infra.Database.Repositories;
 public class CreditAccountRepository(CleansiaDbContext context)
     : BaseRepository<CreditAccount>(context), ICreditAccountRepository
 {
-    public Task<CreditAccount?> GetByUserIdAsync(string userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CreditAccount>> GetAllForUserAsync(
+        string userId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        // Ordered so the two callers render and drain deterministically rather than in whatever order
+        // Postgres returns. Largest balance first, then by currency, so the account the admin sees on a
+        // one-balance screen is the one that matters most and does not move between page loads.
+        return await GetDbSet()
             .Include(a => a.Transactions)
-            .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.Balance)
+            .ThenBy(a => a.CurrencyId)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<CreditAccount> EnsureForUserAsync(
@@ -20,8 +27,12 @@ public class CreditAccountRepository(CleansiaDbContext context)
         // No Include(Transactions). Issue() only APPENDS, and EF tracks an appended child without the
         // collection pre-loaded - same reasoning as LoyaltyAccountRepository, and it matters more here
         // because a long-lived customer's ledger is unbounded.
+        // BOTH COLUMNS. Matching on UserId alone returned an account in whatever currency the
+        // customer's first credit happened to open, and every caller then added its own currency's
+        // number to that balance -- a CZK refund landing on a EUR account, with no error and no clue.
         var existing = await GetDbSet()
-            .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(
+                a => a.UserId == userId && a.CurrencyId == currencyId, cancellationToken);
 
         if (existing != null)
         {
@@ -62,11 +73,13 @@ public class CreditAccountRepository(CleansiaDbContext context)
         // An account may not exist yet: credit can only reach an order through one, but a customer
         // whose account was created and then erased still needs somewhere for the money to land. This
         // is the one part of a return that goes through the tracked graph, and it is followed by an
-        // explicit flush so the raw statement below has a row to update.
+        // explicit flush so the raw statement below has a row to update. The flush is CommitAsync, not
+        // SaveChangesAsync: the commit is where the new row's TenantId is stamped, and the column is
+        // NOT NULL (ADR-0061 D8) — a bare save would 23502.
         var account = await EnsureForUserAsync(userId, currencyId, cancellationToken);
         if (context.Entry(account).State == EntityState.Added)
         {
-            await context.SaveChangesAsync(cancellationToken);
+            await context.CommitAsync(cancellationToken);
         }
 
         // ONE STATEMENT, mirroring TryDebitAsync, and for a second reason on top of the shared one.
@@ -79,10 +92,6 @@ public class CreditAccountRepository(CleansiaDbContext context)
         // never commits - a tracked Issue would be thrown away along with the half-built order, and
         // flushing it explicitly would persist that order. A self-contained statement is the only
         // shape that puts the money back on a path that is about to roll back.
-        //
-        // TenantId is copied from the ACCOUNT rather than written as NULL: the ledger row belongs to
-        // whichever tenant the balance does, and hard-coding null would be right only for as long as
-        // single-tenant mode lasts.
         var rowsAffected = await context.Database.ExecuteSqlAsync(
             $"""
             WITH returned AS (
@@ -93,14 +102,14 @@ public class CreditAccountRepository(CleansiaDbContext context)
                     "UpdatedBy" = {actorId},
                     "UpdatedOn" = NOW()
                 WHERE "Id" = {account.Id}
-                RETURNING "Id", "TenantId"
+                RETURNING "Id"
             )
             INSERT INTO "CreditTransactions" (
                 "Id", "CreditAccountId", "Amount", "Reason", "OrderId", "DisputeId",
-                "IdempotencyKey", "Note", "IsActive", "TenantId", "CreatedBy", "CreatedOn")
+                "IdempotencyKey", "Note", "IsActive", "CreatedBy", "CreatedOn")
             SELECT
                 {NewId()}, returned."Id", {amount}, {(int)CreditTransactionReason.OrderPaymentReturned},
-                {orderId}, NULL, {idempotencyKey}, {note}, TRUE, returned."TenantId", {actorId}, NOW()
+                {orderId}, NULL, {idempotencyKey}, {note}, TRUE, {actorId}, NOW()
             FROM returned
             """,
             cancellationToken);
@@ -136,16 +145,26 @@ public class CreditAccountRepository(CleansiaDbContext context)
             .SumAsync(t => t.Amount, cancellationToken);
     }
 
-    public async Task<CreditSpendable?> GetSpendableAsync(
-        string userId, CancellationToken cancellationToken)
+    public Task<CreditSpendable?> GetSpendableAsync(
+        string userId, string currencyId, CancellationToken cancellationToken)
     {
-        var row = await GetDbSet()
+        return GetDbSet()
             .AsNoTracking()
-            .Where(a => a.UserId == userId)
+            .Where(a => a.UserId == userId && a.CurrencyId == currencyId)
             .Select(a => new CreditSpendable(a.Id, a.Balance, a.CurrencyId, a.ExpiresOn))
             .FirstOrDefaultAsync(cancellationToken);
+    }
 
-        return row;
+    public async Task<IReadOnlyList<CreditSpendable>> GetSpendablesForUserAsync(
+        string userId, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .AsNoTracking()
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.Balance)
+            .ThenBy(a => a.CurrencyId)
+            .Select(a => new CreditSpendable(a.Id, a.Balance, a.CurrencyId, a.ExpiresOn))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<bool> TryDebitAsync(
@@ -197,16 +216,14 @@ public class CreditAccountRepository(CleansiaDbContext context)
                     "UpdatedBy" = {actorId},
                     "UpdatedOn" = NOW()
                 WHERE "Id" = {creditAccountId} AND "Balance" >= {amount}
-                -- TenantId comes back with the row so the ledger entry belongs to the same tenant the
-                -- balance does. Writing NULL was right only for as long as single-tenant mode lasts.
-                RETURNING "Id", "TenantId"
+                RETURNING "Id"
             )
             INSERT INTO "CreditTransactions" (
                 "Id", "CreditAccountId", "Amount", "Reason", "OrderId", "DisputeId",
-                "IdempotencyKey", "Note", "IsActive", "TenantId", "CreatedBy", "CreatedOn")
+                "IdempotencyKey", "Note", "IsActive", "CreatedBy", "CreatedOn")
             SELECT
                 {NewId()}, debited."Id", {-amount}, {(int)reason}, {orderId}, NULL,
-                {idempotencyKey}, {note}, TRUE, debited."TenantId", {actorId}, NOW()
+                {idempotencyKey}, {note}, TRUE, {actorId}, NOW()
             FROM debited
             """,
             cancellationToken);

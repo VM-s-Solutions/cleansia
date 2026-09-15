@@ -19,16 +19,16 @@ namespace Cleansia.IntegrationTests.Features.Auth;
 /// The EF global tenant query filter and IgnoreQueryFilters() translate to SQL the production way here —
 /// the SQLite unit test proves the shape, this proves it on the production provider.
 ///
-/// Scenario: refresh tokens are issued on the ANONYMOUS login/refresh path (no tenant claim) so their
-/// rows are stamped TenantId == null; the revoke read runs on an AUTHENTICATED request carrying a
-/// non-null tenant_id. The repository reads must clear the filter and re-scope to the caller's own
+/// Scenario: refresh tokens are issued on the ANONYMOUS login/refresh path and stamped with the
+/// user's own operating company (ADR-0061 D4); the revoke read runs on an AUTHENTICATED request
+/// carrying a DIFFERENT tenant_id. The repository reads must clear the filter and re-scope to the caller's own
 /// UserId / token hash, so the revoke updates the row (affected-rows &gt; 0 — the token is actually dead)
 /// and never reaches another user's token.
 /// </summary>
 [Collection("PostgresCollection")]
 public class RefreshTokenTenantRevokePostgresTests : BaseIntegrationTest
 {
-    private const string TenantA = "tenant-A";
+    private const string TenantA = TestTenants.Second;
     private const string UserA = "user-A";
     private const string UserB = "user-B";
     private const string Audience = JwtAudiences.Mobile;
@@ -86,11 +86,12 @@ public class RefreshTokenTenantRevokePostgresTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private async Task SeedAsync()
     {
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(TestTenants.Default);
 
         ctx.Add(Language.Create("en", "English"));
 
@@ -108,7 +109,7 @@ public class RefreshTokenTenantRevokePostgresTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task RevokeByDeviceAsync_FromTenantContext_ActuallyRevokesNullStampedToken()
+    public async Task RevokeByDeviceAsync_FromTenantContext_ActuallyRevokesDefaultStampedToken()
     {
         await ResetAsync();
         await SeedAsync();
@@ -128,13 +129,13 @@ public class RefreshTokenTenantRevokePostgresTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task RevokeAsync_Logout_FromTenantContext_ActuallyRevokesNullStampedToken()
+    public async Task RevokeAsync_Logout_FromTenantContext_ActuallyRevokesDefaultStampedToken()
     {
         await ResetAsync();
         await SeedAsync();
 
         string rawA;
-        await using (var issueCtx = NewContext(tenantId: null))
+        await using (var issueCtx = NewContext(TestTenants.Default))
         {
             rawA = NewService(issueCtx).Issue(UserA, rememberMe: true, audience: Audience, deviceId: DeviceA).RawToken;
             await issueCtx.CommitAsync(CancellationToken.None);

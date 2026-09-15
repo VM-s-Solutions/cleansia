@@ -149,20 +149,12 @@ class OrderWireTest {
         assertEquals(4380.00, row.totalPrice, 0.0)
         assertEquals(3650.00, row.originalSubtotal, 0.0)
         assertEquals(2, row.appliedDiscountSource)
-        assertEquals(24.75, row.currency?.exchangeRate)
     }
 
     @Test
     fun aMissingListRowPriceRefusesThePageRatherThanShowingAFreeOrder() = runTest {
         LIST_ROW_REQUIRED_MONEY.forEach { field ->
             refuses(field) { listed(pageWithFirstRow { it - field }) }
-        }
-    }
-
-    @Test
-    fun aMissingExchangeRateRefusesThePageRatherThanAssumingParity() = runTest {
-        refuses("exchangeRate") {
-            listed(pageWithFirstRow { row -> row + ("currency" to (row["currency"]!!.jsonObject - "exchangeRate")) })
         }
     }
 
@@ -423,7 +415,6 @@ class OrderWireTest {
               "code": "CZK",
               "symbol": "Kč",
               "name": "Czech koruna",
-              "exchangeRate": 24.75,
               "isDefault": true
             }
         """
@@ -654,7 +645,7 @@ class OrderWireTest {
             "amountDueOnCard",
         )
 
-        val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "exchangeRate", "isDefault")
+        val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")
 
         val CANCEL_SPEC_PROPERTIES =
             setOf("orderId", "feeRate", "refundAmount", "totalPrice", "refundInitiated")

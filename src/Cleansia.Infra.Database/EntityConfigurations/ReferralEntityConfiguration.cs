@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class ReferralEntityConfiguration : AuditableEntityConfiguration<Referral, string>
+public class ReferralEntityConfiguration : TenantAuditableEntityConfiguration<Referral, string>
 {
     public override void Configure(EntityTypeBuilder<Referral> builder)
     {

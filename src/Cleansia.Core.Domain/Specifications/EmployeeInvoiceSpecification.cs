@@ -17,6 +17,7 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
     public decimal? MaxAmount { get; set; }
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
+    public string? CurrencyId { get; set; }
 
     public Expression<Func<EmployeeInvoice, bool>> SatisfiedBy()
     {
@@ -77,6 +78,11 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
             specification &= new DirectSpecification<EmployeeInvoice>(x => x.GeneratedAt >= DateFrom.Value);
         }
 
+        if (!string.IsNullOrEmpty(CurrencyId))
+        {
+            specification &= new DirectSpecification<EmployeeInvoice>(x => x.CurrencyId == CurrencyId);
+        }
+
         if (DateTo.HasValue)
         {
             // Include the entire day by going to end of day
@@ -99,7 +105,8 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
         decimal? minAmount = null,
         decimal? maxAmount = null,
         DateTime? dateFrom = null,
-        DateTime? dateTo = null) =>
+        DateTime? dateTo = null,
+        string? currencyId = null) =>
         new()
         {
             Id = id,
@@ -113,6 +120,7 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
             MinAmount = minAmount,
             MaxAmount = maxAmount,
             DateFrom = dateFrom,
-            DateTo = dateTo
+            DateTo = dateTo,
+            CurrencyId = currencyId
         };
 }

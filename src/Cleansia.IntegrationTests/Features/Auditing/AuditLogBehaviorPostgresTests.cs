@@ -1,11 +1,14 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Behaviors;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Outbox;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Auditing;
@@ -44,7 +47,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
     private CleansiaDbContext NewContext() =>
         new(new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(Fixture.GetConnectionString()).Options,
             AdminSession(),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private static IUserSessionProvider AdminSession() =>
         new TestUserSessionProvider("admin-1", "admin@cleansia.test",
@@ -60,7 +63,8 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
     {
         var session = AdminSession();
         var audit = new AuditLogBehavior<AdminRefundOrderCommand, BusinessResult>(
-            session, new AuditContext(), writer, sink, new AuditEntryFactory(session),
+            session, new HostAudienceProvider(JwtAudiences.Admin), new AuditContext(), writer, sink,
+            new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin)),
             NullLogger<AuditLogBehavior<AdminRefundOrderCommand, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<AdminRefundOrderCommand, BusinessResult>(context);
 
@@ -84,16 +88,16 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
     {
         var session = AdminSession();
         var auditContext = new AuditContext();
-        var factory = new AuditEntryFactory(session);
+        var factory = new AuditEntryFactory(session, new TestRequestMetadataProvider(), new HostAudienceProvider(JwtAudiences.Admin));
 
         var failureCapture = new AuditFailureCaptureBehavior<AdminRefundOrderCommand, BusinessResult>(
-            session, auditContext, sink, factory,
+            session, new HostAudienceProvider(JwtAudiences.Admin), auditContext, sink, factory,
             NullLogger<AuditFailureCaptureBehavior<AdminRefundOrderCommand, BusinessResult>>.Instance);
         var validation = new ValidationPipelineBehavior<AdminRefundOrderCommand, BusinessResult>(
             [validator], NullLogger<ValidationPipelineBehavior<AdminRefundOrderCommand, BusinessResult>>.Instance);
         var unitOfWork = new UnitOfWorkPipelineBehavior<AdminRefundOrderCommand, BusinessResult>(context);
         var audit = new AuditLogBehavior<AdminRefundOrderCommand, BusinessResult>(
-            session, auditContext, writer, sink, factory,
+            session, new HostAudienceProvider(JwtAudiences.Admin), auditContext, writer, sink, factory,
             NullLogger<AuditLogBehavior<AdminRefundOrderCommand, BusinessResult>>.Instance);
 
         var command = new AdminRefundOrderCommand("ORD-1");
@@ -110,8 +114,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
         {
             RuleFor(x => x.OrderId)
                 .Must(_ => false)
-                .WithErrorCode("admin.refund.rejected")
-                .WithMessage("rejected by validator");
+                .WithMessage(BusinessErrorMessage.OrderNotFound);
         }
     }
 
@@ -120,7 +123,8 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
     }
 
     private IAuditFailureSink Sink() =>
-        new OutOfBandAuditFailureSink(new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(null));
+        new OutOfBandAuditFailureSink(new SingleDbScopeFactory(Fixture.GetConnectionString()), new FixedTenantProvider(TestTenants.Default),
+            NullLogger<OutOfBandAuditFailureSink>.Instance);
 
     private static async Task<int> AuditRowCount(CleansiaDbContext ctx) =>
         await ctx.AdminActionAudits.IgnoreQueryFilters().CountAsync();
@@ -135,6 +139,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     [Fact]
@@ -144,7 +149,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
 
         await using (var ctx = NewContext())
         {
-            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(null));
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
             var result = await RunThroughPipelineAsync(ctx, writer, Sink(), ct =>
             {
                 ctx.OutboxMessages.Add(OutboxMessage.Create(QueueNames.GenerateReceipt, "receipt:ORD-1", "{}", null));
@@ -193,9 +198,9 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
 
         await using (var ctx = NewContext())
         {
-            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(null));
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
             var result = await RunThroughPipelineAsync(ctx, writer, Sink(), ct =>
-                Task.FromResult(BusinessResult.Failure(new Error("refund.too_large", "exceeds total"))));
+                Task.FromResult(BusinessResult.Failure(new Error("Amount", "refund.too_large"))));
             Assert.True(result.IsFailure);
         }
 
@@ -213,7 +218,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
 
         await using (var ctx = NewContext())
         {
-            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(null));
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 RunThroughPipelineAsync(ctx, writer, Sink(),
                     _ => Task.FromException<BusinessResult>(new InvalidOperationException("boom"))));
@@ -232,7 +237,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
 
         await using (var ctx = NewContext())
         {
-            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(null));
+            var writer = new DbContextAuditWriter(ctx, new FixedTenantProvider(TestTenants.Default));
             var result = await RunThroughFullPipelineAsync(ctx, writer, Sink(), new RejectingValidator(), ct =>
             {
                 // The handler must never run on a validation reject — proves the row came from the
@@ -247,9 +252,10 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
         var audit = Assert.Single(await verify.AdminActionAudits.IgnoreQueryFilters().ToListAsync());
         Assert.False(audit.Success);
         // ValidationPipelineBehavior collapses the rule failures into the ValidationResult sentinel
-        // (BusinessResult.Error == IValidationResult.ValidationError), so the recorded ErrorCode is the
-        // validation classification — the row marks the action a FAILURE, the trail is no longer empty.
-        Assert.Equal("ValidationError", audit.ErrorCode);
+        // (BusinessResult.Error == IValidationResult.ValidationError); the recorded ErrorCode is the
+        // FIRST rule's key, read off IValidationResult.Errors — the admin arm adopted the key on the
+        // owner's default (ADR-0062 D1).
+        Assert.Equal(BusinessErrorMessage.OrderNotFound, audit.ErrorCode);
         Assert.Equal("AdminRefundOrder", audit.Action);
         // The action transaction never committed (the handler never ran).
         Assert.Equal(0, await verify.OutboxMessages.IgnoreQueryFilters().CountAsync());
@@ -298,6 +304,8 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
                 Success = true
             });
         }
+
+        public void Add(CustomerActionAudit entry) => throw new NotSupportedException();
     }
 
     private sealed class SingleDbScopeFactory(string connectionString) : IServiceScopeFactory, IServiceProvider, IServiceScope
@@ -311,7 +319,7 @@ public class AuditLogBehaviorPostgresTests : BaseIntegrationTest
                 ? new CleansiaDbContext(
                     new DbContextOptionsBuilder<CleansiaDbContext>().UseNpgsql(connectionString).Options,
                     new TestUserSessionProvider("admin-1", "admin@cleansia.test"),
-                    new FixedTenantProvider(null))
+                    new FixedTenantProvider(TestTenants.Default))
                 : null;
     }
 

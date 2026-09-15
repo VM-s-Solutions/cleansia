@@ -50,6 +50,9 @@
       "packages": "Balíčky",
       "package_create": "Vytvořit balíček",
       "package_edit": "Upravit balíček",
+      "extras": "Doplňky",
+      "extra_create": "Vytvořit doplněk",
+      "extra_edit": "Upravit doplněk",
       "admin_users": "Administrátoři",
       "admin_user_create": "Vytvořit administrátora",
       "admin_user_edit": "Upravit administrátora",
@@ -63,11 +66,13 @@
       "currencies": "Měny",
       "currency_create": "Vytvořit měnu",
       "currency_edit": "Upravit měnu",
+      "legal_documents": "Právní dokumenty",
       "document_requirements": "Požadované dokumenty",
       "document_deletion_requests": "Žádosti o smazání dokumentu",
       "company_info": "Informace o společnosti",
       "company_info_create": "Vytvořit informace o společnosti",
       "company_info_edit": "Upravit informace o společnosti",
+      "company_settings": "Nastavení společnosti",
       "templates": "Šablony",
       "invoice_templates": "Šablony faktur",
       "invoice_template_create": "Vytvořit šablonu faktury",
@@ -93,7 +98,9 @@
       "membership_plan_edit": "Upravit plán členství",
       "data_protection": "Ochrana údajů",
       "profile": "Můj profil",
-      "customer_detail": "Zákazník"
+      "customer_detail": "Zákazník",
+      "audit_log_customers": "Akce zákazníků",
+      "audit_log_customer_entry": "Akce zákazníka"
     }
   },
   "components": {
@@ -219,15 +226,18 @@
     "reports": "Přehledy",
     "services": "Služby",
     "packages": "Balíčky",
+    "extras": "Doplňky",
     "admin_users": "Administrátoři",
     "languages": "Jazyky",
     "countries": "Země",
     "service_area": "Servisní oblast",
     "currencies": "Měny",
+    "legal_documents": "Právní dokumenty",
     "employee_documents": "Dokumenty uklízečů",
     "employee_document_requirements": "Požadavky",
     "employee_document_deletion_requests": "Žádosti o smazání",
     "company_info": "Údaje o společnosti",
+    "company_settings": "Nastavení společnosti",
     "templates": "Šablony",
     "global_rates": "Globální sazby",
     "fiscal_failures": "Fiskální selhání",
@@ -334,7 +344,6 @@
       "entity_type_natural_person": "Osoba samostatně výdělečně činná",
       "entity_type_legal_entity": "Právnická osoba",
       "registration_number": "Registrační číslo",
-      "vat_number": "DIČ",
       "legal_entity_name": "Název firmy",
       "iban": "IBAN",
       "emergency_contact": "Kontakt v nouzi",
@@ -558,7 +567,8 @@
         "date_from": "Datum od",
         "date_to": "Datum do",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "order_status": {
         "pending": "Čekající",
@@ -695,7 +705,13 @@
       },
       "access_instructions_reveal": "Zobrazit",
       "access_instructions_reveal_hint": "Zobrazení pokynů ke vstupu se zaznamenává k vašemu účtu.",
-      "access_instructions_reveal_failed": "Pokyny ke vstupu se nepodařilo zobrazit. Zkuste to prosím znovu."
+      "access_instructions_reveal_failed": "Pokyny ke vstupu se nepodařilo zobrazit. Zkuste to prosím znovu.",
+      "incident_file": {
+        "button": "Spis incidentu",
+        "success": "Spis incidentu byl stažen a zaznamenán",
+        "error": "Spis incidentu se nepodařilo sestavit",
+        "no_subject": "Na časové ose této objednávky není žádný zákazník — sestavte spis ze stránky zákazníka."
+      }
     },
     "invoice_management": {
       "title": "Správa faktur",
@@ -723,7 +739,8 @@
         "search_placeholder": "Hledat dle čísla faktury nebo zaměstnance",
         "status": "Stav faktury",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "invoice_status": {
         "pending": "Čekající",
@@ -775,7 +792,6 @@
       "history": {
         "title": "Historie zdroje",
         "description": "Vše, co se s tímto zdrojem stalo:",
-        "no_audits": "Pro tento zdroj nejsou žádné záznamy",
         "back": "Zpět na protokol akcí"
       },
       "entry": {
@@ -793,6 +809,126 @@
       },
       "drill_in": {
         "view_history": "Zobrazit historii auditu"
+      },
+      "segments": {
+        "admin": "Akce adminů",
+        "customer": "Akce zákazníků"
+      },
+      "customers": {
+        "title": "Akce zákazníků",
+        "description": "Stopa toho, co zákazníci udělali na svých účtech — objednávky, storna, reklamace, členství, souhlasy — a co k tomu platforma zaznamenala.",
+        "no_audits": "Žádné akce zákazníků nenalezeny",
+        "load_error": "Akce zákazníků se nepodařilo načíst",
+        "guest": "Host",
+        "columns": {
+          "occurred_on": "Kdy",
+          "user": "Zákazník",
+          "action": "Akce",
+          "resource": "Zdroj",
+          "audience": "Klient",
+          "outcome": "Výsledek"
+        },
+        "filters": {
+          "user": "Zákazník",
+          "user_id": "ID zákazníka",
+          "action": "Akce",
+          "audience": "Klient"
+        },
+        "entry": {
+          "title": "Akce zákazníka",
+          "description": "Co zákazník udělal, z jakého klienta a jaké důkazy si k tomu platforma uložila.",
+          "view": "Zobrazit detail",
+          "back": "Zpět",
+          "load_error": "Akci zákazníka se nepodařilo načíst",
+          "when": "Kdy",
+          "who": "Kdo",
+          "outcome": "Výsledek",
+          "audience": "Klient",
+          "audience_hint": "Zákaznický web a zákaznická aplikace sdílejí tento název; rozliší je zařízení.",
+          "ip_address": "IP adresa",
+          "device": "Zařízení",
+          "device_id": "ID zařízení",
+          "correlation_id": "Korelační ID",
+          "payload_title": "Zaznamenané důkazy",
+          "field": "Pole",
+          "value": "Hodnota",
+          "before": "Před",
+          "after": "Po",
+          "no_payload": "K této akci nebyly zaznamenány žádné důkazy",
+          "show_raw": "Zobrazit surový JSON",
+          "hide_raw": "Zobrazit jako tabulku"
+        }
+      },
+      "timeline": {
+        "load_error": "Časovou osu se nepodařilo načíst",
+        "no_entries": "Zatím nic zaznamenáno",
+        "view": "Zobrazit detail",
+        "columns": {
+          "occurred_on": "Kdy",
+          "source": "Původ",
+          "actor": "Kdo",
+          "action": "Akce",
+          "resource": "Zdroj",
+          "outcome": "Výsledek"
+        },
+        "source": {
+          "customer": "Zákazník",
+          "admin": "Admin",
+          "employee": "Uklízeč"
+        }
+      },
+      "actions": {
+        "customer": {
+          "order": {
+            "create": "Objednávka vytvořena",
+            "cancel": "Objednávka stornována",
+            "recurring": {
+              "confirm": "Opakovaný termín potvrzen"
+            }
+          },
+          "dispute": {
+            "create": "Reklamace podána"
+          },
+          "account": {
+            "register": "Účet zaregistrován",
+            "email_confirmed": "E-mailová adresa potvrzena"
+          },
+          "consent": {
+            "grant": "Souhlas udělen",
+            "withdraw": "Souhlas odvolán"
+          },
+          "membership": {
+            "subscribe": "Členství sjednáno",
+            "swap": "Plán členství změněn",
+            "cancel": "Členství zrušeno"
+          },
+          "notification_preferences": {
+            "update": "Nastavení notifikací změněno"
+          },
+          "recurring": {
+            "create": "Opakovaná objednávka vytvořena",
+            "update": "Opakovaná objednávka upravena",
+            "set_active": "Opakovaná objednávka pozastavena nebo obnovena",
+            "delete": "Opakovaná objednávka smazána"
+          },
+          "gdpr": {
+            "export": "Data exportována"
+          },
+          "session": {
+            "login": "Přihlášení",
+            "logout": "Odhlášení"
+          },
+          "password": {
+            "reset_requested": "Obnovení hesla vyžádáno",
+            "reset_completed": "Obnovení hesla dokončeno"
+          }
+        },
+        "employee": {
+          "order": {
+            "cover_requested": "Vyžádán záskok",
+            "dropped": "Zakázka odhozena"
+          }
+        }
       }
     },
     "invoice_detail": {
@@ -1020,8 +1156,11 @@
       "name": "Název",
       "description": "Popis",
       "category": "Kategorie",
-      "base_price": "Základní cena (CZK)",
-      "per_room_price": "Cena za pokoj (CZK)",
+      "base_price": "Základní cena",
+      "per_room_price": "Cena za pokoj",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
       "estimated_time": "Odhadovaný čas (minuty)",
       "messages": {
         "load_error": "Nepodařilo se načíst službu",
@@ -1079,7 +1218,11 @@
       "translations": "Překlady",
       "name": "Název",
       "description": "Popis",
-      "price": "Cena (CZK)",
+      "price": "Cena",
+      "pricing": "Ceník",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
       "included_services": "Zahrnuté služby",
       "select_services": "Vyberte služby k zahrnutí",
       "weights_title": "Relativní cenové váhy",
@@ -1094,6 +1237,60 @@
       },
       "tagline": "Krátký popisek na kartě",
       "is_popular": "Nejoblíbenější balíček"
+    },
+    "extra_management": {
+      "title": "Doplňky",
+      "description": "Doplňkové služby k rezervaci a jejich cena v jednotlivých měnách",
+      "create_extra": "Vytvořit doplněk",
+      "edit_extra": "Upravit",
+      "delete_extra": "Smazat doplněk",
+      "delete_confirm": "Smazat tento doplněk? Smazat lze pouze doplněk, který si dosud žádná objednávka nekoupila; jinak jej deaktivujte.",
+      "activate_extra": "Aktivovat doplněk",
+      "deactivate_extra": "Deaktivovat doplněk",
+      "deactivate_confirm": "Deaktivovat „{{name}}“? Doplněk se skryje z rezervačního průvodce, objednávky, které si jej koupily, zůstanou zachovány.",
+      "no_extras": "Nebyly nalezeny žádné doplňky",
+      "filters": {
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle identifikátoru, názvu nebo popisu",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše",
+        "status": "Stav",
+        "status_all": "Vše",
+        "status_active": "Aktivní",
+        "status_inactive": "Neaktivní"
+      },
+      "columns": {
+        "slug": "Identifikátor",
+        "name": "Název",
+        "price": "Cena",
+        "display_order": "Pořadí"
+      },
+      "messages": {
+        "delete_success": "Doplněk byl smazán",
+        "activate_success": "Doplněk byl aktivován",
+        "deactivate_success": "Doplněk byl deaktivován"
+      }
+    },
+    "extra_form": {
+      "create_title": "Vytvořit doplněk",
+      "edit_title": "Upravit doplněk",
+      "basic_info": "Základní informace",
+      "pricing": "Ceník",
+      "translations": "Překlady",
+      "slug": "Identifikátor (slug)",
+      "slug_hint": "Malá písmena spojená pomlčkami, např. inside-oven. Později jej nelze změnit.",
+      "name": "Název",
+      "description": "Popis",
+      "display_order": "Pořadí zobrazení",
+      "price": "Cena",
+      "price_required": "Povinné",
+      "price_optional": "Nepovinné",
+      "no_currencies": "Nejsou nastaveny žádné měny, takže zatím nelze určit cenu.",
+      "messages": {
+        "create_success": "Doplněk byl vytvořen",
+        "update_success": "Doplněk byl aktualizován"
+      }
     },
     "admin_user_management": {
       "title": "Správa administrátorů",
@@ -1192,6 +1389,41 @@
         "update_error": "Nepodařilo se aktualizovat jazyk"
       }
     },
+    "legal_documents": {
+      "title": "Právní dokumenty",
+      "description": "Každá verze každého právního textu, který platforma zobrazila, pouze ke čtení: nová verze je seed soubor s novým datem účinnosti plus nasazení.",
+      "no_versions": "Žádné právní dokumenty nenalezeny",
+      "no_texts": "Tato verze nemá žádné texty",
+      "load_error": "Právní dokumenty se nepodařilo načíst",
+      "text_load_error": "Tento text se nepodařilo načíst",
+      "retry": "Zkusit znovu",
+      "preview": "Náhled",
+      "preview_title": "Náhled",
+      "close_preview": "Zavřít náhled",
+      "show_language": "Zobrazit tento jazyk",
+      "all_markets": "Všechny trhy",
+      "audience": {
+        "customer": "Zákazník",
+        "employee": "Zaměstnanec"
+      },
+      "type": {
+        "terms_of_service": "Obchodní podmínky",
+        "privacy_policy": "Zásady ochrany osobních údajů"
+      },
+      "columns": {
+        "audience": "Publikum",
+        "type": "Typ",
+        "market": "Trh",
+        "effective_from": "Účinné od",
+        "version": "Verze",
+        "in_force": "V platnosti",
+        "languages": "Jazyky",
+        "language": "Jazyk",
+        "title": "Název",
+        "hash": "SHA-256",
+        "notes": "Poznámky"
+      }
+    },
     "country_management": {
       "title": "Správa zemí",
       "description": "Spravujte země dostupné v systému",
@@ -1199,15 +1431,20 @@
       "edit_country": "Upravit zemi",
       "delete_country": "Smazat zemi",
       "delete_confirm": "Opravdu chcete smazat tuto zemi? Toto může ovlivnit existující data.",
+      "set_default_market": "Nastavit jako výchozí trh",
+      "set_default_market_confirm": "Nastavit {{name}} jako výchozí trh? Návštěvníci jej uvidí, dokud si nevyberou zemi.",
+      "default_market": "Výchozí trh",
       "no_countries": "Žádné země nenalezeny",
       "columns": {
         "iso_code": "ISO kód",
         "name": "Název",
+        "default_market": "Výchozí trh",
         "actions": "Akce"
       },
       "messages": {
         "load_error": "Nepodařilo se načíst země",
         "delete_success": "Země byla úspěšně smazána",
+        "set_default_market_success": "Výchozí trh byl změněn",
         "delete_error": "Nepodařilo se smazat zemi"
       }
     },
@@ -1263,7 +1500,7 @@
       "edit_title": "Upravit zemi",
       "basic_info": "Základní informace",
       "iso_code": "ISO kód",
-      "iso_code_placeholder": "např. CZ, US, DE",
+      "iso_code_placeholder": "např. CZE, USA, DEU",
       "name": "Název země",
       "name_placeholder": "např. Česká republika, Spojené státy, Německo",
       "messages": {
@@ -1271,12 +1508,24 @@
         "create_success": "Země byla úspěšně vytvořena",
         "create_error": "Nepodařilo se vytvořit zemi",
         "update_success": "Země byla úspěšně aktualizována",
-        "update_error": "Nepodařilo se aktualizovat zemi"
-      }
+        "update_error": "Nepodařilo se aktualizovat zemi",
+        "market_content_success": "Obsah trhu byl úspěšně aktualizován"
+      },
+      "iso_alpha2": "Dvoupísmenný kód",
+      "iso_alpha2_placeholder": "např. CZ, US, DE",
+      "iso_alpha2_help": "ISO 3166-1 alpha-2. Zákazníci ho vidí na štítku trhu.",
+      "validation": {
+        "iso_alpha2_invalid": "Přesně dvě písmena."
+      },
+      "market": "Trh",
+      "insurance_coverage_amount": "Pojistné krytí na jednu rezervaci",
+      "insurance_coverage_amount_placeholder": "Nechte prázdné, pokud se nemá uvádět žádná částka",
+      "insurance_coverage_amount_help": "Částka ve výchozí měně země, zobrazená v textech pro zákazníky. Prázdné znamená, že text žádnou částku neuvádí.",
+      "market_content_unavailable": "Dostupné, jakmile bude mít země konfiguraci."
     },
     "currency_management": {
       "title": "Správa měn",
-      "description": "Spravujte měny a směnné kurzy",
+      "description": "Spravujte měny, ve kterých platforma působí, výchozí měnu a částku, za kterou se získá věrnostní bod",
       "create_currency": "Vytvořit měnu",
       "edit_currency": "Upravit měnu",
       "delete_currency": "Smazat měnu",
@@ -1287,44 +1536,66 @@
         "code": "Kód",
         "symbol": "Symbol",
         "name": "Název",
-        "exchange_rate": "Směnný kurz",
+        "is_active": "V provozu",
         "is_default": "Výchozí",
         "actions": "Akce"
       },
+      "operated": "Ano",
+      "not_operated": "Zatím ne",
       "messages": {
         "load_error": "Nepodařilo se načíst měny",
         "delete_success": "Měna byla úspěšně smazána",
         "delete_error": "Nepodařilo se smazat měnu",
-        "set_default_success": "Výchozí měna byla změněna"
+        "set_default_success": "Výchozí měna byla změněna",
+        "activate_success": "Měna byla zapnuta",
+        "deactivate_success": "Měna byla vypnuta"
       },
       "set_default": "Nastavit jako výchozí",
-      "set_default_confirm": "Nastavit {{code}} jako výchozí měnu?"
+      "set_default_confirm": "Nastavit {{code}} jako výchozí měnu?",
+      "activate": "Zapnout",
+      "activate_confirm": "Zapnout {{code}}? Od této chvíle musí mít každá služba a balíček cenu v této měně, aby šly uložit.",
+      "deactivate": "Vypnout",
+      "deactivate_confirm": "Vypnout {{code}}? Zákazníci v ní už nebudou moci objednávat. Stávající objednávky, výplaty a faktury zůstávají beze změny."
     },
     "currency_form": {
       "create_title": "Vytvořit měnu",
       "edit_title": "Upravit měnu",
       "basic_info": "Základní informace",
       "code": "Kód měny",
-      "code_placeholder": "např. USD, EUR, CZK",
       "symbol": "Symbol",
-      "symbol_placeholder": "např. $, €, Kč",
       "name": "Název měny",
-      "name_placeholder": "např. Americký dolar, Euro, Česká koruna",
-      "exchange_rate": "Směnný kurz",
-      "exchange_rate_placeholder": "např. 1.0, 0.92, 24.50",
+      "loyalty_points_divisor": "Částka, za kterou se získá jeden věrnostní bod",
+      "loyalty_points_divisor_placeholder": "např. 10 pro CZK — pokud pole necháte prázdné, měna žádné body nezískává",
       "messages": {
         "load_error": "Nepodařilo se načíst měnu",
         "create_success": "Měna byla úspěšně vytvořena",
         "create_error": "Nepodařilo se vytvořit měnu",
         "update_success": "Měna byla úspěšně aktualizována",
         "update_error": "Nepodařilo se aktualizovat měnu"
-      }
+      },
+      "no_show_credit": "Omluvný kredit za nedostavení se",
+      "no_show_credit_placeholder": "např. 250 pro CZK — pokud pole necháte prázdné, v této měně se žádný kredit nevyplácí"
     },
     "company_info": {
-      "title": "Údaje o společnosti",
+      "bank_account_number": "Číslo účtu",
+      "bank_name": "Název banky",
+      "city": "Město",
+      "country": "Země",
       "create_title": "Vytvořit společnost",
-      "edit_title": "Upravit společnost",
       "description": "Správa údajů o společnosti použitých na fakturách a příjemkách",
+      "edit_title": "Upravit společnost",
+      "email": "E-mail",
+      "iban": "IBAN",
+      "is_vat_payer": "Plátce DPH",
+      "legal_name": "Právní název",
+      "messages": {
+        "load_error": "Nepodařilo se načíst údaje o společnosti",
+        "save_success": "Údaje o společnosti byly úspěšně uloženy",
+        "save_error": "Nepodařilo se uložit údaje o společnosti",
+        "create_success": "Údaje o společnosti byly úspěšně vytvořeny"
+      },
+      "phone": "Telefon",
+      "registration_number": "Registrační číslo",
       "sections": {
         "legal_info": "Právní informace",
         "tax_info": "Daňové údaje",
@@ -1332,28 +1603,16 @@
         "contact": "Kontaktní údaje",
         "banking": "Bankovní údaje"
       },
-      "legal_name": "Právní název",
-      "trading_name": "Obchodní název",
-      "tagline": "Slogan",
-      "registration_number": "Registrační číslo",
-      "vat_number": "DIČ",
       "street": "Ulice",
-      "city": "Město",
-      "zip_code": "PSČ",
-      "country": "Země",
-      "phone": "Telefon",
-      "email": "E-mail",
-      "website": "Webová stránka",
-      "bank_name": "Název banky",
-      "bank_account_number": "Číslo účtu",
-      "iban": "IBAN",
       "swift": "SWIFT/BIC",
-      "messages": {
-        "load_error": "Nepodařilo se načíst údaje o společnosti",
-        "save_success": "Údaje o společnosti byly úspěšně uloženy",
-        "save_error": "Nepodařilo se uložit údaje o společnosti",
-        "create_success": "Údaje o společnosti byly úspěšně vytvořeny"
-      }
+      "tagline": "Slogan",
+      "title": "Údaje o společnosti",
+      "trading_name": "Obchodní název",
+      "vat_number": "DIČ",
+      "vat_registered_from": "Plátcem DPH od",
+      "vat_registered_from_hint": "Datum účinnosti registrace. Uchováváme jej, protože po změně statusu už jej nelze zjistit.",
+      "website": "Webová stránka",
+      "zip_code": "PSČ"
     },
     "template_management": {
       "title": "Správa šablon",
@@ -1595,6 +1854,71 @@
         "delete_error": "Nepodařilo se smazat údaje o společnosti"
       }
     },
+    "company_settings": {
+      "title": "Nastavení společnosti",
+      "description": "Každé nastavení, které může vaše provozní společnost mít, s výchozí hodnotou platformy a hodnotou, která platí. Řádek s výchozí hodnotou nic neukládá; přepsání se ukládá jen pro vaši společnost.",
+      "no_settings": "Katalog neobsahuje žádná nastavení",
+      "load_error": "Nastavení společnosti se nepodařilo načíst",
+      "retry": "Zkusit znovu",
+      "edit": "Upravit",
+      "save": "Uložit",
+      "cancel": "Zrušit",
+      "reset": "Obnovit výchozí",
+      "enabled": "Zapnuto",
+      "confirm_reset_title": "Obnovit výchozí",
+      "confirm_reset": "Odstranit uloženou hodnotu {{key}}, aby znovu platila výchozí hodnota platformy?",
+      "source": {
+        "overridden": "Přepsáno",
+        "default": "Výchozí"
+      },
+      "messages": {
+        "save_success": "Nastavení uloženo",
+        "reset_success": "Nastavení obnoveno na výchozí hodnotu"
+      },
+      "columns": {
+        "key": "Klíč",
+        "description": "Popis",
+        "category": "Kategorie",
+        "range": "Povolený rozsah",
+        "default": "Výchozí",
+        "value": "Hodnota",
+        "source": "Zdroj"
+      },
+      "categories": {
+        "retention": "Uchovávání dat"
+      },
+      "descriptions": {
+        "retention": {
+          "expired_codes": {
+            "enabled": "Zda týdenní úloha uchovávání dat maže expirované kódy pro potvrzení e-mailu a obnovu hesla"
+          },
+          "stale_devices": {
+            "days": "Počet dní nečinnosti zařízení, po kterých se smaže jeho registrace pro push notifikace"
+          },
+          "gdpr_requests": {
+            "years": "Počet let po dokončení žádosti o ochranu údajů, po kterých se z ní odstraní identita administrátora, který ji zpracoval"
+          },
+          "order_pii": {
+            "years": "Počet let po úklidu, po kterých se anonymizují zákaznické údaje dokončené objednávky"
+          },
+          "withdrawn_consents": {
+            "years": "Počet let, po které se uchovává záznam o odvolaném souhlasu"
+          },
+          "deleted_documents": {
+            "days": "Počet dní, po které se uchovává deaktivovaný dokument zaměstnance, než se soubor smaže"
+          },
+          "notifications": {
+            "days": "Počet dní, po které notifikace zůstává v přehledu v aplikaci"
+          },
+          "customer_audit": {
+            "years": "Počet let, po které se uchovává auditní záznam zákazníka"
+          },
+          "dispute_text": {
+            "years": "Počet let po výmazu účtu zákazníka, po které se uchovává volný text jeho reklamací, než se vymaže"
+          }
+        }
+      }
+    },
     "reports": {
       "title": "Přehledy",
       "description": "Prohlížejte přehledy o tržbách a mzdách, analyzujte výkon a sledujte finanční údaje",
@@ -1607,7 +1931,8 @@
         "title": "Filtry",
         "date_range": "Časové období",
         "reset": "Resetovat filtry",
-        "clear_all": "Vymazat vše"
+        "clear_all": "Vymazat vše",
+        "currency": "Měna"
       },
       "revenue_report": "Přehled tržeb",
       "payroll_report": "Přehled mezd",
@@ -1904,12 +2229,14 @@
           "cancel": "Zrušit",
           "submit": "Přidělit kredit",
           "field": {
-            "amount": "Částka ({{currency}})",
+            "currency": "Měna",
+            "amount": "Částka",
             "reason": "Důvod",
             "note": "Co se stalo",
             "note_help": "Zaznamenáno pod vaším jménem. Napište to, co byste sami chtěli číst, než tomuto zákazníkovi znovu něco přidělíte."
           },
           "validation": {
+            "currency_required": "Vyberte měnu.",
             "amount_min": "Zadejte částku větší než nula.",
             "amount_max": "To přesahuje limit pro jeden kredit. Vystavte jej po menších částkách.",
             "note_required": "Uveďte, co se stalo.",
@@ -1922,7 +2249,7 @@
           "reason": "Důvod",
           "note": "Co se stalo"
         },
-        "expire_success": "Odepsáno {{amount}}.",
+        "expire_success": "Odepsáno {{amount}} {{currency}}.",
         "expire_error": "Zůstatek se nepodařilo odepsat.",
         "expire_dialog": {
           "title": "Odepsat zůstatek kreditu",
@@ -2087,13 +2414,14 @@
         "code": "Kód",
         "name": "Název",
         "interval": "Fakturace",
-        "price": "Cena (CZK)",
-        "monthly_equivalent": "Měsíční ekvivalent (CZK)",
+        "price": "Cena",
+        "monthly_equivalent": "Měsíční ekvivalent",
         "discount": "Sleva",
         "trial_days": "Zkušební dny",
         "free_cancel_window": "Storno zdarma (h)",
         "express": "Expres",
-        "status": "Stav"
+        "status": "Stav",
+        "currency": "Měna"
       },
       "interval": {
         "Monthly": "Měsíčně",
@@ -2124,7 +2452,7 @@
           "name": "Název",
           "interval": "Fakturační období",
           "interval_immutable": "Fakturační období nelze po vytvoření změnit.",
-          "price": "Cena (CZK)",
+          "price": "Cena",
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Zkopírujte ze Stripe dashboardu (price_...). Platforma ceny ve Stripe nevytváří.",
           "discount": "Sleva (%)",
@@ -2137,17 +2465,22 @@
         "validation": {
           "code_invalid": "2–50 znaků: písmena, číslice nebo podtržítka.",
           "price_negative": "Cena musí být nula nebo vyšší.",
-          "stripe_price_id_required": "Stripe Price id je povinné.",
           "discount_range": "Sleva musí být mezi 0 a 100.",
           "trial_negative": "Počet zkušebních dnů musí být nula nebo vyšší.",
           "window_negative": "Lhůta musí být nula nebo vyšší.",
-          "express_upgrades_negative": "Počet zahrnutých expresních upgradů musí být nula nebo vyšší."
+          "express_upgrades_negative": "Počet zahrnutých expresních upgradů musí být nula nebo vyšší.",
+          "price_block_half_filled": "Zadejte cenu i Stripe Price id, nebo nechte obě pole prázdná, aby plán v této měně nebyl v prodeji."
         },
         "submit_create": "Vytvořit plán",
         "submit_update": "Uložit změny",
         "success": {
           "created": "Plán členství byl vytvořen",
           "updated": "Plán členství byl upraven"
+        },
+        "price_block": {
+          "active": "Aktivní",
+          "optional": "Nepovinné",
+          "no_currencies": "Nejsou nastaveny žádné měny, takže plán zatím nelze ocenit."
         }
       }
     },
@@ -2168,7 +2501,13 @@
           "created_on": "Vytvořeno"
         },
         "fulfil": "Vyřídit žádost o smazání",
-        "fulfil_title": "Vyřídit tuto žádost o smazání?"
+        "fulfil_title": "Vyřídit tuto žádost o smazání?",
+        "retry": "Opakovat výmaz",
+        "retry_confirm_title": "Opakovat tento výmaz?",
+        "retry_confirm_message": "Výmaz účtu uživatele {{userId}} bude spuštěn znovu. Pokud uspěje, účet bude trvale anonymizován a akci nelze vrátit.",
+        "retry_confirm_yes": "Opakovat",
+        "retry_success": "Výmaz byl zopakován. Účet je nyní vymazán.",
+        "retry_error": "Výmaz se nepodařilo zopakovat."
       },
       "request_status": {
         "Pending": "Čeká",
@@ -2233,6 +2572,22 @@
       },
       "messages": {
         "change_password_success": "Heslo bylo úspěšně změněno"
+      }
+    },
+    "customer_detail": {
+      "timeline": {
+        "title": "Časová osa",
+        "description": "Každý zaznamenaný úkon u tohoto zákazníka — jeho vlastní, adminův na jeho objednávkách, reklamacích a členství, a uklízečův na jeho zakázkách — od nejnovějšího."
+      },
+      "export_subject_data": "Exportovat data subjektu",
+      "export_success": "Export dat subjektu byl stažen a zaznamenán",
+      "export_error": "Export dat subjektu se nezdařil",
+      "incident_file": {
+        "button": "Spis incidentu (PDF)",
+        "order_scope": "ID objednávky (volitelné)",
+        "order_scope_hint": "Nechte prázdné pro celý účet, nebo zadejte ID jedné objednávky tohoto zákazníka a spis se omezí na ni.",
+        "success": "Spis incidentu byl stažen a zaznamenán",
+        "error": "Spis incidentu se nepodařilo sestavit"
       }
     }
   },
@@ -2389,7 +2744,10 @@
       "not_found": "Administrátor nenalezen"
     },
     "audit": {
-      "not_found": "Záznam auditu nebyl nalezen."
+      "not_found": "Záznam auditu nebyl nalezen.",
+      "timeline": {
+        "filter_required": "Časová osa vyžaduje právě jeden klíč: uživatele, nebo typ zdroje spolu s jeho id."
+      }
     },
     "auth": {
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
@@ -2428,7 +2786,11 @@
       "not_existing_id": "Země nenalezena",
       "not_found": "Země nenalezena",
       "not_serviced": "V této zemi nepůsobíme.",
-      "required": "Země je povinná."
+      "required": "Země je povinná.",
+      "market_not_ready": "Tuto zemi zatím nelze zapnout: potřebuje konfiguraci, jejíž výchozí měna je aktivní.",
+      "default_market_changed_concurrently": "Výchozí trh mezitím změnil někdo jiný. Obnovte stránku a zkuste to znovu",
+      "configuration_missing": "Tato země zatím nemá konfiguraci, takže obsah trhu nelze uložit.",
+      "iso_alpha2_invalid": "Dvoupísmenný kód země musí být přesně dvě velká písmena."
     },
     "credit": {
       "amount_exceeds_sanity_cap": "Tato částka přesahuje limit pro jeden kredit. Pokud je správná, vystavte ji po menších částkách.",
@@ -2437,11 +2799,14 @@
     },
     "currency": {
       "cannot_delete_default": "Výchozí měnu nelze smazat",
+      "cannot_deactivate_default": "Výchozí měnu nelze vypnout. Nejprve nastavte jako výchozí jinou měnu",
       "code_already_exists": "Měna s tímto kódem již existuje",
-      "exchange_rate_must_be_positive": "Směnný kurz musí být kladné číslo",
+      "default_changed_concurrently": "Výchozí měnu mezitím změnil někdo jiný. Obnovte stránku a zkuste to znovu",
       "in_use": "Měnu nelze smazat, protože je aktuálně používána",
       "invalid": "Neplatná měna",
-      "not_found": "Měna nenalezena"
+      "not_found": "Měna nenalezena",
+      "not_priced": "Katalog v této měně zatím nemá žádné ceny. Nejprve v ní naceňte alespoň jednu službu nebo balíček",
+      "loyalty_divisor_missing": "Tato měna zatím nemá nastavený kurz věrnostních bodů. Než trh zapnete, nastavte ve formuláři měny, kolik z ní vynese jeden bod; zapnutý trh ho musí mít stále"
     },
     "device": {
       "invalid_platform": "Platforma musí být 'android' nebo 'ios'"
@@ -2472,7 +2837,8 @@
       "not_found": "Zaměstnanec nenalezen",
       "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte.",
       "profile_incomplete": "Profil zaměstnance je nekompletní",
-      "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet"
+      "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet",
+      "work_country_operator_mismatch": "Pracovní země patří jiné provozní společnosti."
     },
     "employee_document": {
       "deletion_already_resolved": "Tato žádost o smazání již byla vyřízena.",
@@ -2500,7 +2866,9 @@
       "deletion_blocked_by_assigned_order": "Tato üklidová pracovnice je přiřazena k zakázce a zatím ji nelze smazat.",
       "deletion_blocked_by_unsettled_pay": "Této üklidové pracovnici stále dlužíme odměnu. Vyřešte to před smazáním účtu.",
       "consent_not_found": "Toto nastavení souhlasu se nepodařilo najít.",
-      "consent_already_granted": "Tento souhlas již byl udělen."
+      "consent_already_granted": "Tento souhlas již byl udělen.",
+      "request_not_found": "Tuto žádost GDPR jsme nenašli.",
+      "request_not_retryable": "Opakovat lze pouze neúspěšnou žádost o smazání."
     },
     "general": {
       "not_found": "Zdroj nenalezen"
@@ -2510,6 +2878,9 @@
       "in_use": "Jazyk nelze smazat, protože je používán jinými entitami",
       "not_found": "Jazyk nenalezen",
       "not_supported": "Jazyk není podporován"
+    },
+    "legal": {
+      "document_not_found": "Tento právní dokument zatím není k dispozici."
     },
     "loyalty": {
       "points_exceed_sanity_cap": "Tento počet bodů překračuje limit povolený pro ruční úpravu.",
@@ -2522,7 +2893,9 @@
         "action_failed": "Akce s plánem členství se nezdařila. Zkuste to znovu.",
         "code_already_exists": "Plán s tímto kódem již existuje.",
         "discount_out_of_range": "Sleva musí být mezi 0 a 100.",
-        "not_found": "Plán členství nebyl nalezen."
+        "not_found": "Plán členství nebyl nalezen.",
+        "trial_not_permitted": "Výhody Cleansia Plus vyžadují aktivní předplatné, zkušební období proto nelze nastavit. Ponechte 0 dní.",
+        "stripe_price_already_used": "Toto Stripe Price id už používá cena jiného plánu."
       }
     },
     "order": {
@@ -2564,6 +2937,12 @@
         "not_match": "Celková cena neodpovídá",
         "positive": "Celková cena musí být kladná"
       }
+    },
+    "extra": {
+      "in_use": "Doplněk nelze smazat, protože na něj odkazuje objednávka. Místo toho jej deaktivujte.",
+      "not_found": "Doplněk nenalezen",
+      "slug_already_exists": "Doplněk s tímto identifikátorem (slug) již existuje",
+      "slug_invalid": "Identifikátor (slug) musí být malá písmena spojená jednotlivými pomlčkami, např. inside-oven"
     },
     "package": {
       "in_use": "Balíček nelze smazat, protože je aktuálně používán",
@@ -2610,6 +2989,8 @@
         "invalid_status": "Neplatný stav faktury",
         "not_approved": "Fakturu je nutné nejprve schválit, teprve poté ji lze označit jako zaplacenou",
         "not_found": "Faktura nenalezena",
+        "payout_currency_mismatch": "Výplatní účet uklízeče není nastaven pro příjem měny této faktury. Požádejte ho, aby před schválením aktualizoval své výplatní údaje.",
+        "payout_details_missing": "Uklízeč nemá uložené použitelné výplatní údaje, takže platbu za tuto fakturu není kam poslat. Požádejte ho, aby před schválením doplnil své výplatní údaje.",
         "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
         "reference_already_assigned": "Tato faktura již variabilní symbol má.",
         "reference_capacity_exhausted": "Variabilní symboly pro letošní rok jsou vyčerpány. Kontaktujte podporu.",
@@ -2662,7 +3043,9 @@
       "in_use": "Službu nelze smazat, protože je aktuálně používána",
       "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk",
       "not_found": "Služba nenalezena",
-      "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky"
+      "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky",
+      "prices_required": "Cena je povinná",
+      "missing_price_for_currency": "Chybí cena pro měnu, ve které platforma prodává"
     },
     "service_area": {
       "city_not_serviced": "V tomto městě zatím nepůsobíme.",
@@ -2691,6 +3074,13 @@
         "in_use": "Šablonu účtenky nelze smazat, protože je aktuálně používána",
         "not_found": "Šablona účtenky nenalezena"
       }
+    },
+    "tenant": {
+      "not_found": "Tento trh zatím neprovozuje žádná společnost Cleansia."
+    },
+    "tenant_setting": {
+      "invalid_value": "Hodnota nemá správný typ nebo je mimo povolený rozsah tohoto nastavení.",
+      "unknown_key": "Toto nastavení není v katalogu a nelze jej nastavit."
     },
     "user": {
       "email_confirmed": "E-mail je již potvrzen",

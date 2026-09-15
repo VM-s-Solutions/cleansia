@@ -97,8 +97,11 @@ public class CalculateOrderPay
             var serviceIds = order.SelectedServices.Select(os => os.ServiceId).ToList();
             var packageIds = order.SelectedPackages.Select(os => os.PackageId).ToList();
 
+            // THE ORDER'S CURRENCY. A config denominated in anything else cannot pay this order, so
+            // counting it here would pass the guard and leave the handler to derive a zero from an
+            // empty set -- a cleaner assigned to a job that quotes nothing.
             return await _payConfigRepository.HasConfigForOrderAsync(
-                serviceIds, packageIds, command.EmployeeId, cancellationToken);
+                serviceIds, packageIds, command.EmployeeId, [order.CurrencyId], cancellationToken);
         }
     }
 
@@ -138,10 +141,13 @@ public class CalculateOrderPay
 
             var payConfigs = new List<EmployeePayConfig>();
 
+            // Scoped to the order's own currency, so SelectPreferredConfigs below is choosing between
+            // an override and a platform-wide row rather than between denominations. This is the WRITER
+            // -- the number it lands in OrderEmployeePay is what the cleaner is actually paid.
             var serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
-                serviceIds, command.EmployeeId, cancellationToken);
+                serviceIds, command.EmployeeId, [order.CurrencyId], cancellationToken);
             var packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
-                packageIds, command.EmployeeId, cancellationToken);
+                packageIds, command.EmployeeId, [order.CurrencyId], cancellationToken);
 
             payConfigs.AddRange(SelectPreferredConfigs(packageConfigs, c => c.PackageId));
             payConfigs.AddRange(SelectPreferredConfigs(serviceConfigs, c => c.ServiceId));
@@ -156,6 +162,10 @@ public class CalculateOrderPay
                 orderId: command.OrderId,
                 employeeId: command.EmployeeId,
                 payPeriodId: payPeriod!.Id,
+                // The order's currency, which is also the pay configs' -- the reads above return only
+                // rates denominated in it, so the amounts below were computed in this currency rather
+                // than merely labelled with it.
+                currencyId: order.CurrencyId,
                 basePay: basePay,
                 extrasPay: extrasPay,
                 expensesPay: expensesPay,

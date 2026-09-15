@@ -21,7 +21,13 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   and a nested `XxxFilter? Filter { get; init; }`. ✗ *Don't* use a `record Query` with inline
   `Offset`/`Limit` (found in `GetPagedPromoCodes`, `GetPagedReferrals`).
 - **A2.** Use a **`internal class Handler : IRequestHandler<Request, PagedData<TItem>>`** that returns
-  `PagedData<TItem>` **directly** (never `BusinessResult<PagedData<T>>`).
+  `PagedData<TItem>` **directly** (never `BusinessResult<PagedData<T>>`). There is no declared
+  exception any more: since T-0740 (owner ruling 2026-09-14, "option b") `ValidationPipelineBehavior`
+  runs for **every** request type — a reject on a response that cannot carry a `BusinessResult` throws
+  `RequestValidationException`, which the controller base's filter answers with the same 400
+  ProblemDetails — so a paged query gets its validator without changing shape. `GetActionTimeline`
+  (ADR-0062 D6) is canonical again and `GetAllGdprRequests.Validator` is live; the pipeline's reach is
+  pinned by `EveryValidatorIsReachedByThePipelineTests`.
 - **A3.** Filter via a **Specification**: `XxxSpecification.Create(...).SatisfiedBy()`. ✗ *Don't* call
   a bespoke `repo.GetPagedAdminAsync(...)` with inline params (`GetPagedPromoCodes`, `GetPagedReferrals`).
   Filter→spec via a `filter.MapToDomain()` extension is acceptable *only* when the spec is built from
@@ -276,6 +282,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   |---|---|---|---|
   | `CatalogRepository` (customer) | Android | **Yes** (`_services`/`_packages`/`_extras` `StateFlow`) | The **public** services/packages/extras catalog — identical for every user, anonymous-fetchable (guest booking). No account data. Re-fetched on booking entry; a stale catalog is not a cross-account leak. |
   | `CustomerServiceAreaDataSource` / `PartnerServiceAreaDataSource` | Android | No (caches in the shared `ServiceAreaProvider`) | Public serviced-countries/cities list — device-level, not per-user. |
+  | `MarketRepository` (customer) | Android | **Yes** (the market directory + the chosen market `StateFlow`) | The **public** market directory (`Market/GetOverview`, anonymous) and a **device**-level preference, like the language. No account data; a stale list is not a cross-account leak. |
   | `AppSettingsStore` / `AppSettingsRepository` | Android/iOS | **Yes** (language/theme/onboarding) | **Device**-level UI prefs (survive uninstall parity is DataStore/`UserDefaults`). Per-user onboarding is keyed **by userId** (`hasSeenOnboarding(userId:)`) so it is already user-partitioned, not a shared bucket. No account content. |
   | `OrderEventBus` / `SnackbarController` / `PushTokenSessionObserver` | Android | No (`SharedFlow(replay=0)` / delegates) | Transient event buses hold nothing after emit; the observer delegates to `PushTokenRepository` (which **is** in the set). |
 
@@ -316,7 +323,8 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
 - **B4 fetch-and-guard:** the "redundant null-check after validator" flagged by analysis is **not**
   redundant when the handler must load the entity to act on it — that's the canonical guard. We only
   forbid duplicating an existence check that the handler's own fetch already covers.
-- **Order offerability (ADR-0037, `accepted` 2026-08-03 — binding):** ten surfaces answered "which
+- **Order offerability (ADR-0037, `accepted` 2026-08-03, status term superseded by ADR-0057,
+  2026-09-08 — binding):** ten surfaces answered "which
   orders may a cleaner be offered / take" with six different status sets. We canonicalize on **none
   of them** — the majority set (`{New, Pending, Confirmed}`, held by the push and the web pane)
   contains a status with **no production writer**, and the dashboard's `{Pending, Confirmed}` reduces
@@ -326,9 +334,16 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   `Cleansia.Core.Domain.Orders.OrderAvailability`:
 
   ```
-  Offerable(o) ⟺ ( o.CurrentStatus == Confirmed ∨ (o.CurrentStatus == New ∧ o.PaymentType == Cash) )
+  Offerable(o) ⟺ ( o.CurrentStatus ∈ {New, Confirmed, OnTheWay, InProgress} )
                ∧ ( o.PaymentStatus == Paid ∨ (o.PaymentType == Cash ∧ o.RecurringTemplateId == null) )
   ```
+
+  **The status term stopped qualifying payment on 2026-09-08 (ADR-0057).** It used to read
+  `Confirmed ∨ (New ∧ Cash)`, and that `∧ Cash` existed only because a paid CARD order had already
+  been moved to `Confirmed` by the Stripe webhook. Once `Confirmed` means "a cleaner took the job" and
+  nothing else, a paid card order rests at `New` and the qualifier would take every card job off every
+  board. The first conjunct is now the plain fulfilment question — the work is not over — and the
+  second carries the whole payment qualification, which is what it always did.
 
   The second conjunct is the union of the negations of the only two scheduled retractors'
   `WHERE` clauses — **derive it from them, never paraphrase it.** Two evaluation forms (queryable +
@@ -409,13 +424,16 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   4. `PayoutReferenceCounterRepository.AllocateNextAsync` (`:18-74`, comment `:32-41`, statement
      `:69-71`; contract `IPayoutReferenceCounterRepository.cs:12-17`; call sites `GenerateInvoice.cs:88`,
      `AssignInvoiceVariableSymbol.cs:103`, `PayPeriodBackgroundService.cs:332`) — ADR-0046 §D2.1: a
-     payout invoice's *variabilní symbol* must be claimed **before** any row or document can carry it,
-     so the allocation deliberately does **not** roll back with the caller: an invoice that fails to
-     commit leaves a **gap**, which is correct for a payment reference (it is not a fiscal document
-     number, and only `FiscalCounter` owes gaplessness). Its self-commit is a **caller** property, not
-     an API one — `SqlQueryRaw` joins an ambient transaction if one is open — so the invariant travels
-     with it: **no allocator call site may sit inside a `BeginTransactionAsync` scope**, or both the gap
-     semantics and the single-counter-row lock duration break. *(The `CommitAsync` calls at
+     payout invoice's *variabilní symbol* (and, since 2026-09-15, its `INV-YYYY-NNNNNN` number — the
+     second `Scope` on the same per-company counter, keyed `(TenantId, Year, Scope)` with the tenant
+     read from the ambient provider inside the repository) must be claimed **before** any row or
+     document can carry it, so the allocation deliberately does **not** roll back with the caller: an
+     invoice that fails to commit leaves a **gap**, which is correct for a payment reference (it is not
+     a fiscal document number, and only `FiscalCounter` owes gaplessness). Its self-commit is a
+     **caller** property, not an API one — `SqlQueryRaw` joins an ambient transaction if one is open —
+     so the invariant travels with it: **no allocator call site may sit inside a
+     `BeginTransactionAsync` scope**, or both the gap semantics and the company's counter-row lock
+     duration break. *(The `CommitAsync` calls at
      `GenerateInvoice.cs:114-118` / `AssignInvoiceVariableSymbol.cs:115-119` are flushes that run
      **after** the allocation, not transactions around it — not a violation.)*
 
@@ -436,8 +454,8 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   (a2) *A change-tracked write is invisible to every **DB-read** guard over it for the rest of the unit
   of work* (AM-4/AM-5) — the mirror of seam law 3. Converting a self-committing write to a tracked one
   disarms its idempotency/uniqueness pre-reads until the commit; the duplicate then surfaces as a
-  `DbUpdateException` that rolls back the whole unit of work, or (nulls-distinct index, NULL tenant)
-  does not surface at all. Deviating form: **a repository method that stages an entity while its
+  `DbUpdateException` that rolls back the whole unit of work, or (a nulls-distinct index over a nullable
+  non-tenant term — the tenant term is NOT NULL since ADR-0061) does not surface at all. Deviating form: **a repository method that stages an entity while its
   caller's idempotency guard is a plain `DbSet` query.** Fix by making the guard `.Local`-first, or by
   *pinning* single-invocation with a test — a call-graph accident is not a safety property.
   (b) *A `catch` that logs and continues is admissible only over an operation that **normally
@@ -452,18 +470,29 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   in `roles/post-commit-effects.md`.
 
 - **Tenant-scoped unique indexes: `NULLS NOT DISTINCT` is decided by the index's JOB, not by a
-  majority (ADR-0035 AM-6, ADR-0034 D1.3, ADR-0038 §D5.2 — all `accepted`).** Single-tenant mode *is*
-  `TenantId == null` and PostgreSQL treats NULLs in a UNIQUE index as distinct, so on the platform's
-  default deployment a tenant-scoped unique index either fires or it does not, and which one is not a
-  style question:
+  majority (ADR-0035 AM-6, ADR-0034 D1.3, ADR-0038 §D5.2, ADR-0061 D9 — all `accepted`).**
+  PostgreSQL treats NULLs in a UNIQUE index as distinct, so a unique index over a nullable column either
+  fires or it does not, and which one is not a style question. **Since ADR-0061 D8 (2026-09-13) `TenantId`
+  is NOT NULL on every stamped table**, so the *tenant* term can no longer be the null that disarms an
+  index — the question now lives on the other nullable terms (`EmployeeId`, `ServiceId`, `PackageId`,
+  `IdempotencyKey`), and the option is kept on the tenant-keyed indexes anyway because the guard reads the
+  option, not the column, and a roster that lies is worse than a redundant annotation:
   - **Sole arbiter of a concurrent claim ⇒ `.AreNullsDistinct(false)` is mandatory.** No read can
     arbitrate a race, so the index is the only thing between two simultaneous claims and it has to
-    actually fire. Live instances: `FiscalCounters`, `MembershipBenefitUsages`,
-    `PromoCodeRedemptions`, `EmployeePayoutDetails`, `LiveActivityTokens`, `Users` (the account email —
-    see the arming note below, whose DDL half is still owed).
+    actually fire. Live instances in the emitted DDL (13): `FiscalCounters`, `MembershipBenefitUsages`,
+    `PromoCodeRedemptions`, `EmployeePayoutDetails`, `LiveActivityTokens`, `LoyaltyTransactions`,
+    `PromoCodes`, `ReferralCodes`, `TenantConfigurations`, `OrderReceipts` (gained its tenant term on
+    activation — the number comes from a per-tenant counter), `EmployeePayConfigs`
+    (`IX_EmployeePayConfigs_Tenant_Scope`, gained its tenant term on activation), `DisputeLines`,
+    `OrderReviewLines`.
   - **Backstop behind an authoritative app-level assert ⇒ nulls-distinct is fine.** The invariant is a
-    state you can read and assert on before writing. Live instances: `UserMemberships` (at most one
-    active row per user), `LoyaltyTransactions` (the serial-replay fast-path read).
+    state you can read and assert on before writing. Live instance: `UserMemberships` (at most one
+    active row per user) — the one `(TenantId, …)` index whose liveness activation changed, and both its
+    writers own the `23505` (ADR-0061 D9).
+  - **Not a tenant-scoped index at all, by decision: `Users (Email)`.** Global, no tenant term, no option
+    needed (`Email` is NOT NULL). One identity per email across the holding (ADR-0061 D5.1, superseding
+    ADR-0050 D1/D4), because every anonymous identity read resolves by email ignoring the tenant and a
+    per-operator scope would make login ambiguous. It left the roster with its tenant term.
 
   **Which bullet you are on is decided by one question, not by how the pre-check reads
   (ADR-0050 §D1/§CH-3):** *is there a lock, an `ON CONFLICT`, or a serializable boundary between the
@@ -479,20 +508,16 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   migration since day one, so "we don't do that here" is a false invariant, and a confidently-wrong
   comment is worse than none because it stops the next reviewer checking.
 
-  **Arming a sole arbiter is TWO artifacts, and the model is not the DDL — `Users (TenantId, Email)`
-  is the worked example.** `src/Cleansia.Infra.Database/EntityConfigurations/UserEntityConfiguration.cs:95-97`
-  states that DB-level uniqueness, *not* the app pre-check, is what closes the register/update TOCTOU
-  race, and all four `User`-creating writers (`Register`, `RegisterEmployee`, `CreateAdminUser`, social
-  provisioning) are read-then-insert with no lock — so by the test above the index is the arbiter. It
-  shipped for months as `.IsUnique()` alone, admitting unlimited duplicate `(NULL, email)` rows, which is
-  the exact "confidently-wrong comment" form named above. `:112-114` now carries
-  `.AreNullsDistinct(false)` (ADR-0050 D1), **but the emitted DDL does not yet**: the option only reaches
-  Postgres through the owner-run `Initial` regen, which is gated on a duplicate census (ADR-0050 §D3 —
-  the index cannot be created over pre-existing duplicates). **So a model assertion goes green the moment
-  the builder call lands and says nothing about the database** — do not read one as evidence of the
-  other. **ADR-0050 is `proposed`**
-  (`docs/decisions/adr-0050.md:3`).
-  **Retires when:** that status line stops reading `proposed`.
+  **Arming a sole arbiter is TWO artifacts, and the model is not the DDL — `Users` was the worked
+  example.** `UserEntityConfiguration.cs` used to state that DB-level uniqueness, *not* the app pre-check,
+  is what closes the register/update TOCTOU race, while the index it said that of was `(TenantId, Email)`
+  `.IsUnique()` alone — admitting unlimited duplicate `(NULL, email)` rows for months, the exact
+  "confidently-wrong comment" form named above. ADR-0050 D1 armed it in the *model*; the *DDL* only
+  followed with the next `Initial` regen; and ADR-0061 D5.1 then replaced the whole index with a global
+  `IX_Users_Email` (2026-09-13, accepted as amended). **The lesson outlives the instance: a model
+  assertion goes green the moment the builder call lands and says nothing about the database** — do not
+  read one as evidence of the other; `grep -n "NullsDistinct" src/Cleansia.Infra.Database/Migrations/*Initial.cs`
+  is the evidence.
 
   **Arming one also creates a new failure mode, and it ships in the same change or not at all.** The
   losing racer stops silently inserting a duplicate and starts raising `23505` at commit — a 500 where
@@ -510,16 +535,27 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   > caller was ever that shape. Do not reintroduce it — widen the flush's scope and you have a design
   > problem the name would only paper over.
 
-  **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs` (theory +
-  negative control), run by `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` —
-  **`T1-CI`** over the **five indexes on its `[InlineData]` roster** (`FiscalCounter`,
-  `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`, `User`), **baseline 0**: all
-  five green today. It asserts the **EF model only** — SQLite cannot express the option, so the DDL half
-  is the reviewer's, per the emitted-DDL rule above. The roster is **hand-maintained** and is therefore a
-  closed roster — a new sole-arbiter index is not caught until someone adds a row, and
-  `LiveActivityTokens` is named in the first bullet above without being on it. The mapping half is
-  **`T1-CI`**, **baseline 0**, over `src/Cleansia.Tests/Features/Auth/UserEmailRaceMappingTests.cs`
-  (all four writers) and `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`.
+  **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs`, run by
+  `.github/workflows/backend-ci.yml` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, in two
+  layers: a **thirteen-row `[InlineData]` roster** over the tenant-keyed sole arbiters (`FiscalCounter`,
+  `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`, `LoyaltyTransaction`,
+  `PromoCode`, `ReferralCode`, `TenantConfiguration`, `OrderReceipt`, `EmployeePayConfig`, and since
+  2026-09-15 `PayoutReferenceCounter (TenantId, Year, Scope)` and the two `EmployeeInvoice` references
+  `(TenantId, InvoiceNumber)` / `(TenantId, VariableSymbol)`) with
+  `UserMemberships` as the negative control, **and a roster-free sweep** over every unique index in
+  `ctx.Model` — one carrying a nullable column must declare the option, be filtered so the null cannot
+  appear, or be named in the test's own exception list, which may only shrink. The hand roster therefore
+  no longer fails open. It asserts the **EF model only** — SQLite cannot express the option, so the DDL
+  half is the reviewer's, per the emitted-DDL rule above. The mapping half is **`T1-CI`**, **baseline
+  0**, over `src/Cleansia.Tests/Features/Auth/UserEmailRaceMappingTests.cs` (all four writers) and
+  `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`. The tenant column itself is guarded by
+  `TenantIdRequiredModelTests` (roster-free: every `ITenantEntity` is `IsNullable == false` except the
+  two exemptions, **carries a foreign key into `Tenants` with `DeleteBehavior.Restrict`**, and no type
+  outside `ITenantEntity` has a `TenantId` property at all — a plain `Auditable` has no tenant column
+  since 2026-09-15), `InitialMigrationTenantDdlTests` (the committed migration's own operations: 48
+  `FK_<T>_Tenants_TenantId`, 2 nullable, no `IX_<tenantless>_TenantId` — counts pinned by hand, so a
+  new stamped table updates the number), `TenantIdNotNullEnforcedTests` (a real `23502`) and
+  `TenantForeignKeyEnforcedTests` (a real `23503`).
 
 - **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
   (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release

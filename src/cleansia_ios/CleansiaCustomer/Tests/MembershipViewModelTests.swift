@@ -1,4 +1,5 @@
 import CleansiaCore
+import Combine
 import XCTest
 @testable import CleansiaCustomer
 
@@ -6,9 +7,11 @@ import XCTest
 final class MembershipViewModelTests: XCTestCase {
     private func makeVM(
         client: FakeMembershipManagementClient = FakeMembershipManagementClient(),
+        market: MarketStore? = nil,
         cardAvailable: Bool = true
     ) -> (MembershipViewModel, MembershipRepository, FakeMembershipManagementClient) {
-        let repo = MembershipRepository(client: client)
+        let repo = market.map { MembershipRepository(client: client, market: $0.statePublisher) }
+            ?? MembershipRepository(client: client)
         let vm = MembershipViewModel(
             repository: repo,
             snackbar: SnackbarController(),
@@ -20,6 +23,187 @@ final class MembershipViewModelTests: XCTestCase {
     func testStartsIdle() {
         let (vm, _, _) = makeVM()
         XCTAssertEqual(vm.submitState, .idle)
+    }
+
+    // MARK: The market — plans priced for it, the subscription created in its currency
+
+    /// Every plan carries the code its price is stated in, so the label is the payload's, never the
+    /// catalogue's default and never a literal.
+    func testEachPlanIsLabelledWithItsOwnCurrency() async {
+        let client = FakeMembershipManagementClient()
+        client.plansResult = .success(MembershipFixtures.plansInEur)
+        let (vm, _, _) = makeVM(client: client)
+
+        await vm.load()
+
+        let plan = try? XCTUnwrap(vm.plans.first)
+        XCTAssertEqual(plan?.currencyCode, "EUR")
+        XCTAssertEqual(MembershipFormat.price(plan?.price ?? 0, currencyCode: plan?.currencyCode), "8 €")
+    }
+
+    func testThePlansAreRequestedForTheChosenMarket() async {
+        let market = await MarketFixtures.resolved(selected: MarketFixtures.slovakia)
+        let (vm, _, client) = makeVM(market: market)
+
+        await vm.load()
+
+        XCTAssertEqual(client.plansCountryIds, ["svk"])
+    }
+
+    func testBothSubscribePhasesCarryTheChosenMarket() async {
+        let market = await MarketFixtures.resolved(selected: MarketFixtures.slovakia)
+        let (vm, _, client) = makeVM(market: market)
+
+        _ = await vm.startSubscribe(planCode: "plus_monthly")
+        _ = await vm.confirmSubscribe(planCode: "plus_monthly")
+
+        XCTAssertEqual(client.subscribeCalls.map(\.countryId), ["svk", "svk"])
+    }
+
+    /// The no-market state: nothing is sent, and the server prices in the platform default.
+    func testWithoutAMarketThePlansAndTheSubscribeCarryNoCountry() async {
+        let market = await MarketFixtures.unavailable()
+        let (vm, _, client) = makeVM(market: market)
+
+        await vm.load()
+        _ = await vm.startSubscribe(planCode: "plus_monthly")
+
+        XCTAssertEqual(client.plansCountryIds, [nil])
+        XCTAssertEqual(client.subscribeCalls.map(\.countryId), [nil])
+    }
+
+    func testSwitchingTheMarketReReadsThePlansForItWithoutARestart() async {
+        let market = await MarketFixtures.resolved()
+        let (vm, _, client) = makeVM(market: market)
+        await vm.load()
+        XCTAssertEqual(client.plansCountryIds, ["cze"])
+
+        client.plansResult = .success(MembershipFixtures.plansInEur)
+        market.select(isoCode: "SVK")
+        await drain()
+
+        XCTAssertEqual(client.plansCountryIds, ["cze", "svk"])
+        XCTAssertEqual(vm.plans.first?.currencyCode, "EUR")
+    }
+
+    func testAMarketChangeBeforeThePlansWereEverReadDoesNotReadThem() async {
+        let market = await MarketFixtures.resolved()
+        let (_, _, client) = makeVM(market: market)
+
+        market.select(isoCode: "SVK")
+        await drain()
+
+        XCTAssertEqual(client.plansCallCount, 0)
+    }
+
+    /// Plus not on sale in the market: an empty list is a loaded state of its own — no price, no
+    /// button — never a zero and never an error.
+    func testAnEmptyPlanListIsPlusNotAvailableInThisMarket() async {
+        let client = FakeMembershipManagementClient()
+        client.plansResult = .success([])
+        let (vm, _, _) = makeVM(client: client)
+        XCTAssertTrue(vm.plansState.isLoading)
+
+        await vm.load()
+
+        guard case let .loaded(plans) = vm.plansState else { return XCTFail("expected loaded, got \(vm.plansState)") }
+        XCTAssertEqual(plans, [])
+    }
+
+    func testAFailedFirstPlanReadIsAnErrorStateAndALaterFailureKeepsThePlans() async {
+        let client = FakeMembershipManagementClient()
+        client.plansResult = .failure(ApiError(httpStatus: 500))
+        let (vm, _, _) = makeVM(client: client)
+
+        await vm.load()
+        guard case .error = vm.plansState else { return XCTFail("expected error, got \(vm.plansState)") }
+
+        client.plansResult = .success(MembershipFixtures.plans)
+        await vm.reloadPlans()
+        XCTAssertEqual(vm.plansState.loadedValue?.count, 2)
+
+        client.plansResult = .failure(ApiError(httpStatus: 500))
+        await vm.reloadPlans()
+        XCTAssertEqual(vm.plansState.loadedValue?.count, 2, "a failed re-read keeps the plans on screen")
+    }
+
+    // MARK: The membership keeps its currency
+
+    func testTheMembershipCarriesItsOwnPriceAndCurrency() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(MembershipFixtures.active)]
+        let (vm, _, _) = makeVM(client: client)
+
+        await vm.refresh()
+
+        XCTAssertEqual(vm.current?.price, 199)
+        XCTAssertEqual(vm.current?.currencyCode, "CZK")
+    }
+
+    /// A swap charges the plan's row in the subscription's currency whatever market is chosen, so the
+    /// annual switch is offered only when the listed plan is priced in that same currency.
+    func testTheAnnualSwitchIsOfferedOnlyWhenTheListedPlanIsInTheMembershipsCurrency() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(MembershipFixtures.active)]
+        let (vm, _, _) = makeVM(client: client)
+        await vm.load()
+        XCTAssertEqual(vm.annualSwitchPlan?.code, "plus_yearly")
+
+        client.plansResult = .success(MembershipFixtures.plansInEur)
+        await vm.reloadPlans()
+
+        XCTAssertNil(vm.annualSwitchPlan, "a EUR price must not be shown for a CZK swap")
+    }
+
+    func testTheAnnualSwitchIsNotOfferedWithoutAnActiveMonthlyMembership() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(MembershipFixtures.inactive)]
+        let (vm, _, _) = makeVM(client: client)
+        await vm.load()
+
+        XCTAssertNil(vm.annualSwitchPlan)
+    }
+
+    // MARK: Stripe's one currency per Customer
+
+    func testTheCurrencyLockRefusalNamesTheMembershipsCurrencyWhenKnown() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(MembershipFixtures.active)]
+        client.phase1Result = .failure(ApiError(code: MembershipViewModel.currencyLockedKey, httpStatus: 400))
+        let snackbar = SnackbarController()
+        let repo = MembershipRepository(client: client)
+        let vm = MembershipViewModel(repository: repo, snackbar: snackbar, isCardPaymentAvailable: true)
+        await vm.refresh()
+
+        let outcome = await vm.startSubscribe(planCode: "plus_monthly")
+
+        XCTAssertEqual(outcome, .failed)
+        XCTAssertEqual(snackbar.current?.text, L10n.Membership.currencyLockedIn("CZK"))
+    }
+
+    func testTheCurrencyLockRefusalWithoutAKnownCurrencyFallsToTheCatalogSentence() async {
+        let client = FakeMembershipManagementClient()
+        client.phase1Result = .failure(ApiError(code: MembershipViewModel.currencyLockedKey, httpStatus: 400))
+        let snackbar = SnackbarController()
+        let vm = MembershipViewModel(
+            repository: MembershipRepository(client: client),
+            snackbar: snackbar,
+            isCardPaymentAvailable: true
+        )
+
+        _ = await vm.startSubscribe(planCode: "plus_monthly")
+
+        XCTAssertEqual(
+            snackbar.current?.text,
+            ApiErrorLocalizer().message(for: ApiError(code: MembershipViewModel.currencyLockedKey, httpStatus: 400))
+        )
+        XCTAssertNotEqual(snackbar.current?.text, MembershipViewModel.currencyLockedKey, "the raw key must never show")
+    }
+
+    private func drain() async {
+        for _ in 0 ..< 5 {
+            await Task.yield()
+        }
     }
 
     // MARK: Phase 1 — SetupIntent

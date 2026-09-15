@@ -4,7 +4,9 @@ using Cleansia.Config.Services.DeviceRevocation;
 using Cleansia.Config.Services.UserRevocation;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
@@ -226,13 +228,15 @@ public static class ServiceExtensions
         services.AddScoped<IPayoutDetailsValidator, PayoutDetailsValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();
         services.AddScoped<ICurrencyResolutionService, CurrencyResolutionService>();
-        // ADR-0046 — claims a payout invoice's variabilní symbol from the durable per-year counter.
+        // ADR-0046 — claims a payout invoice's variabilní symbol and invoice number from the company's
+        // durable per-year counter (per company since the 2026-09-15 ruling).
         // Registered here rather than in the Functions host because both creation paths need it: the
         // admin GenerateInvoice command and the pay-period batch.
         services.AddScoped<IPayoutReferenceAllocator, PayoutReferenceAllocator>();
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
         services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<IOrderAddressResolver, OrderAddressResolver>();
+        services.AddScoped<IOperatorTenantResolver, OperatorTenantResolver>();
         services.AddScoped<IOrderPromoApplier, OrderPromoApplier>();
         services.AddScoped<IOrderLateReferralAcceptor, OrderLateReferralAcceptor>();
         services.AddScoped<IOrderPaymentDispatcher, OrderPaymentDispatcher>();
@@ -255,13 +259,20 @@ public static class ServiceExtensions
         services.AddScoped<IExpressWaiverResolver, ExpressWaiverResolver>();
         // The one place the once-per-customer trial rule is decided, for both subscribe surfaces.
         services.AddScoped<IMembershipTrialResolver, MembershipTrialResolver>();
+        // The one place a user's Stripe Customer for a currency is decided, for both subscribe surfaces.
+        services.AddScoped<IStripeCustomerResolver, StripeCustomerResolver>();
         services.AddScoped<IExpressWaiverConsumer, ExpressWaiverConsumer>();
         services.AddScoped<IOrderAccessService, OrderAccessService>();
         services.AddScoped<IAddressGeocoder, AddressGeocoder>();
         services.AddScoped<IGdprDeletionService, GdprDeletionService>();
+        // Scoped: one erasure per request, and the pipeline's failure capture reads what the service set.
+        services.AddScoped<IErasureAttempt, ErasureAttempt>();
         services.AddScoped<IGdprExportService, GdprExportService>();
+        services.AddScoped<IIncidentFileService, IncidentFileService>();
         // The one consent-write path: the GDPR consent endpoints and the partner-onboarding checkbox.
         services.AddScoped<IConsentService, ConsentService>();
+        // The legal text in force for a market, stamped on a consent and shown on the legal pages.
+        services.AddScoped<ILegalDocumentResolver, LegalDocumentResolver>();
         services.AddInfrastructureServices();
 
         return services;

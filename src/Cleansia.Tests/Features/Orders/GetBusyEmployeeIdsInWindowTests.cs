@@ -49,7 +49,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
     [Fact]
     public async Task Only_The_Busy_Candidates_Come_Back()
     {
-        await SeedAsync("busy-subset", BusyCleaner, tenantId: null);
+        await SeedAsync("busy-subset", BusyCleaner, tenantId: TestTenants.Default);
 
         var busy = await ProbeAsync([BusyCleaner, FreeCleaner]);
 
@@ -63,7 +63,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
     [Fact]
     public async Task A_Cleaner_Outside_The_Candidate_Set_Is_Never_Reported()
     {
-        await SeedAsync("busy-outside", UnknownCleaner, tenantId: null);
+        await SeedAsync("busy-outside", UnknownCleaner, tenantId: TestTenants.Default);
 
         Assert.Empty(await ProbeAsync([BusyCleaner, FreeCleaner]));
     }
@@ -71,7 +71,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
     [Fact]
     public async Task An_Empty_Candidate_Set_Answers_Empty()
     {
-        await SeedAsync("busy-empty-input", BusyCleaner, tenantId: null);
+        await SeedAsync("busy-empty-input", BusyCleaner, tenantId: TestTenants.Default);
 
         Assert.Empty(await ProbeAsync([]));
     }
@@ -81,7 +81,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
     [InlineData(OrderStatus.Cancelled)]
     public async Task A_Terminal_Order_Hands_The_Slot_Back(OrderStatus terminal)
     {
-        await SeedAsync("busy-terminal", BusyCleaner, tenantId: null, finalStatus: terminal);
+        await SeedAsync("busy-terminal", BusyCleaner, tenantId: TestTenants.Default, finalStatus: terminal);
 
         Assert.Empty(await ProbeAsync([BusyCleaner]));
     }
@@ -92,7 +92,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
         await SeedAsync(
             "busy-before",
             BusyCleaner,
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: ProbeStart.AddMinutes(-120),
             estimatedMinutes: 60);
 
@@ -105,7 +105,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
         await SeedAsync(
             "busy-floor-edge",
             BusyCleaner,
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: ProbeStart.AddHours(-Order.MaxOrderSpanHours),
             estimatedMinutes: (Order.MaxOrderSpanHours * 60) + 30);
 
@@ -135,13 +135,13 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
         await SeedAsync(
             "busy-agreement",
             BusyCleaner,
-            tenantId: null,
+            tenantId: TestTenants.Default,
             cleaningDateTime: ProbeStart.AddMinutes(startOffsetMinutes),
             estimatedMinutes: estimatedMinutes);
 
         var fromSet = await ProbeAsync([BusyCleaner]);
 
-        await using var ctx = NewContext(tenantId: null);
+        await using var ctx = NewContext(tenantId: TestTenants.Default);
         var fromBoolean = await new OrderRepository(ctx)
             .HasOverlappingOrderAsync(BusyCleaner, ProbeStart, ProbeMinutes, CancellationToken.None);
 
@@ -149,7 +149,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
         Assert.Equal(fromBoolean, fromSet.Contains(BusyCleaner));
     }
 
-    private async Task<IReadOnlySet<string>> ProbeAsync(string[] candidates, string? callerTenantId = null)
+    private async Task<IReadOnlySet<string>> ProbeAsync(string[] candidates, string? callerTenantId = TestTenants.Default)
     {
         await using var ctx = NewContext(callerTenantId);
         return await new OrderRepository(ctx).GetBusyEmployeeIdsInWindowAsync(
@@ -170,7 +170,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
         int estimatedMinutes = 120,
         OrderStatus finalStatus = OrderStatus.Confirmed)
     {
-        await using (var schema = NewContext(tenantId: null))
+        await using (var schema = NewContext(tenantId: TestTenants.Default))
         {
             await schema.Database.EnsureCreatedAsync();
         }
@@ -198,7 +198,6 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
             customerAddress: Address.Create("Busy St 4", "Praha", "14000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,

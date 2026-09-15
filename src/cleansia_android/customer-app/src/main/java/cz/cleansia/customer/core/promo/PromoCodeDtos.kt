@@ -12,11 +12,16 @@ import kotlinx.serialization.Serializable
  * caches the tier snapshot).
  */
 
-/** Mirrors backend `ValidatePromoCode.Command` — `UserId` is filled server-side from JWT. */
+/**
+ * Mirrors backend `ValidatePromoCode.Command` — `UserId` is filled server-side from JWT.
+ * [currencyId] is the quote's: a code bound to another currency previews as `CurrencyMismatch`
+ * here instead of being refused on Create. Null previews against the platform default.
+ */
 @Serializable
 data class ValidatePromoCodeRequest(
     val code: String,
     val orderSubtotal: Double,
+    val currencyId: String? = null,
 )
 
 /** Mirrors backend `ValidatePromoCode.Response`. */

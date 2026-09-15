@@ -13,8 +13,10 @@ public class PackageSort(string propertyName, bool isAscending)
     {
         if (string.Equals(propertyName, nameof(Package.Name), StringComparison.CurrentCultureIgnoreCase))
             return x => x.Name;
-        if (string.Equals(propertyName, nameof(Package.Price), StringComparison.CurrentCultureIgnoreCase))
-            return x => x.Price;
+        // NO PRICE SORT. A catalogue entry has a price PER CURRENCY, so "cheapest first" has no answer
+        // without naming one — and picking one silently is how a list quietly sorts by a market the
+        // caller is not in. A price sort belongs on a query that carries a currency; until one does,
+        // an unknown key falls through to DefaultSort exactly as every other unknown key already does.
         if (string.Equals(propertyName, "CreatedOn", StringComparison.CurrentCultureIgnoreCase))
             return x => x.CreatedOn;
         return DefaultSort;

@@ -18,11 +18,6 @@ export interface AuditLogFilterParams {
   success?: boolean;
 }
 
-interface ResourceLock {
-  resourceType: string;
-  resourceId: string;
-}
-
 @Injectable()
 export class AuditLogFacade extends UnsubscribeControlDirective {
   private readonly auditClient = inject(AdminAuditLogClient);
@@ -34,7 +29,6 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
   readonly hasError = signal<boolean>(false);
 
   private readonly currentFilter = signal<AuditLogFilterParams | null>(null);
-  private readonly resourceLock = signal<ResourceLock | null>(null);
   private readonly currentOffset = signal<number>(0);
   private readonly currentLimit = signal<number>(20);
   private readonly currentSort = signal<SortDefinition[] | undefined>(undefined);
@@ -44,15 +38,14 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
     this.hasError.set(false);
 
     const filter = this.currentFilter();
-    const lock = this.resourceLock();
 
     this.auditClient
       .getPaged(
         filter?.actorId,
         filter?.actorEmail,
         filter?.action,
-        lock?.resourceType ?? filter?.resourceType,
-        lock?.resourceId ?? filter?.resourceId,
+        filter?.resourceType,
+        filter?.resourceId,
         filter?.occurredFrom,
         filter?.occurredTo,
         filter?.success,
@@ -77,13 +70,6 @@ export class AuditLogFacade extends UnsubscribeControlDirective {
           this.initialLoading.set(false);
         }
       });
-  }
-
-  loadResourceHistory(resourceType: string, resourceId: string): void {
-    this.resourceLock.set({ resourceType, resourceId });
-    this.currentFilter.set(null);
-    this.currentOffset.set(0);
-    this.loadAudits();
   }
 
   onPageChange(offset: number, limit: number): void {

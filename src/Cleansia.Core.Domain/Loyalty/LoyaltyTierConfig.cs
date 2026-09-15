@@ -4,10 +4,12 @@ using Cleansia.Core.Domain.Common;
 namespace Cleansia.Core.Domain.Loyalty;
 
 /// <summary>
-/// Per-tenant configuration for a single <see cref="LoyaltyTier"/>. One row per
-/// tier per tenant — seeded on tenant creation, editable by admin (Phase L4).
+/// The brand's configuration for a single <see cref="LoyaltyTier"/>: one row per tier, seeded,
+/// editable by admin (Phase L4).
 /// </summary>
-public class LoyaltyTierConfig : Auditable, ITenantEntity
+// Tenantless on purpose (ADR-0061 D7): the brand's programme, sold identically by every operator —
+// the MembershipPlan sibling.
+public class LoyaltyTierConfig : Auditable
 {
     [Required]
     public LoyaltyTier Tier { get; private set; }
@@ -22,8 +24,11 @@ public class LoyaltyTierConfig : Auditable, ITenantEntity
     public decimal DiscountPercent { get; private set; }
 
     /// <summary>
-    /// Minimum order amount required for the tier discount to apply. Null
-    /// means the discount always applies (no floor).
+    /// Minimum raw subtotal for the tier discount to apply, denominated in the PLATFORM DEFAULT currency
+    /// — and enforced only on an order in that currency. On any other currency no floor applies: the
+    /// discount is the promise, the floor only keeps it off trivially small orders, and comparing this
+    /// number against a subtotal in a stronger currency withheld the promise from a whole market. Null
+    /// means no floor anywhere. → /product/business-rules#money-constants
     /// </summary>
     public decimal? MinimumOrderAmountForDiscount { get; private set; }
 

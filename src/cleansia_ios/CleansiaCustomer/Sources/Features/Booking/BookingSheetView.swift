@@ -87,9 +87,16 @@ struct BookingSheetView: View {
                 message: L10n.Booking.busyBooking
             )
         }
+        .onReceive(vm.events) { event in
+            switch event {
+            case .selectionPrunedForMarket:
+                snackbar.showInfo(L10n.Booking.marketSelectionPruned)
+            }
+        }
         .snackbarHost(snackbar, bottomInset: Self.footerSnackbarInset)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .interactiveDismissDisabled(vm.canStepBack)
     }
 
     private func submit() async {
@@ -163,7 +170,11 @@ private struct BookingSheetContent: View {
     }
 
     private var canContinue: Bool {
-        BookingStepGate.canContinue(step: step, state: viewModel.state)
+        BookingStepGate.canContinue(
+            step: step,
+            state: viewModel.state,
+            alreadyConsented: viewModel.alreadyConsented
+        )
     }
 
     private var canConfirm: Bool {
@@ -189,6 +200,7 @@ private struct BookingSheetContent: View {
             footer
         }
         .background(CleansiaColors.background.ignoresSafeArea())
+        .task { await viewModel.loadConsentStatus() }
     }
 
     private var header: some View {

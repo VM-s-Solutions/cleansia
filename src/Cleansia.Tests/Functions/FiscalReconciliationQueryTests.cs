@@ -54,7 +54,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(tenantId: null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
@@ -83,7 +83,6 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: paymentType,
             totalPrice: 1000m,
@@ -294,6 +293,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO01",
                 employeeId: employeeId,
                 payPeriodId: payPeriodId,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m);
             seed.Add(pay);
@@ -332,11 +332,12 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO02",
                 employeeId: employeeId,
                 payPeriodId: payPeriodId,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m));
 
             var invoice = EmployeeInvoice.Create(employeeId, payPeriodId, totalOrders: 1, subTotal: 500m, currencyId: "czk",
-                variableSymbol: PayrollMockFactory.TestVariableSymbol);
+                variableSymbol: PayrollMockFactory.TestVariableSymbol, invoiceNumber: PayrollMockFactory.TestInvoiceNumber);
             seed.Add(invoice);
             await seed.CommitAsync(CancellationToken.None);
         }
@@ -371,6 +372,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
                 orderId: "01HZX9N6M7Q8R9S0T1V2W3XO03",
                 employeeId: employeeId,
                 payPeriodId: payPeriodId,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m));
             await seed.CommitAsync(CancellationToken.None);

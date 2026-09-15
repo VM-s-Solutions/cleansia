@@ -64,7 +64,7 @@ public interface IOrderRepository : IRepository<Order, string>
     /// All orders within a date range. Used by the admin revenue report.
     /// </summary>
     Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
-        DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
+        DateTime startDate, DateTime endDate, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Counts the number of orders assigned to an employee in the current week (Monday to Sunday).
@@ -97,27 +97,6 @@ public interface IOrderRepository : IRepository<Order, string>
     /// </summary>
     Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
 
-    /// <summary>
-    /// ADR-0039 D3 — which of <paramref name="employeeIds"/> hold a live-commitment assignment
-    /// overlapping <c>[windowStartUtc, windowEndUtc)</c>. Same window filter as
-    /// <see cref="HasOverlappingOrderAsync"/>, in the shape a LIST of candidates needs.
-    ///
-    /// <para>Returns the BUSY subset, never the free one, so absence is the fail-OPEN default: a
-    /// cleaner missing from the answer is treated as available, which is today's behaviour.</para>
-    ///
-    /// <para>ONE query for the whole set. Calling <see cref="HasOverlappingOrderAsync"/> in a loop over
-    /// a candidate list on a request path is a hard reject — it is N unbounded scans per render, and it
-    /// is what this method exists to replace.</para>
-    ///
-    /// <para>The preferred-cleaner picker and the hold resolver both call THIS method with the SAME
-    /// window. Not the same rule — the same method: if the picker could say available and the resolver
-    /// then say busy for a reason of its own, the feature has already failed.</para>
-    ///
-    /// <para>TENANT-SCOPED, deliberately, and there is no ignoring sibling: every caller is a request
-    /// path with a claim (the recurring materializer runs under its own per-template tenant override).
-    /// A background sweep asking about ONE cleaner already has
-    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/>.</para>
-    /// </summary>
     /// <summary>
     /// The cleaners who are, RIGHT NOW, physically on a job — <c>OnTheWay</c> or <c>InProgress</c> on
     /// some assignment, with no time window at all.
@@ -156,6 +135,27 @@ public interface IOrderRepository : IRepository<Order, string>
         DateTime nowUtc,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// ADR-0039 D3 — which of <paramref name="employeeIds"/> hold a live-commitment assignment
+    /// overlapping <c>[windowStartUtc, windowEndUtc)</c>. Same window filter as
+    /// <see cref="HasOverlappingOrderAsync"/>, in the shape a LIST of candidates needs.
+    ///
+    /// <para>Returns the BUSY subset, never the free one, so absence is the fail-OPEN default: a
+    /// cleaner missing from the answer is treated as available, which is today's behaviour.</para>
+    ///
+    /// <para>ONE query for the whole set. Calling <see cref="HasOverlappingOrderAsync"/> in a loop over
+    /// a candidate list on a request path is a hard reject — it is N unbounded scans per render, and it
+    /// is what this method exists to replace.</para>
+    ///
+    /// <para>The preferred-cleaner picker and the hold resolver both call THIS method with the SAME
+    /// window. Not the same rule — the same method: if the picker could say available and the resolver
+    /// then say busy for a reason of its own, the feature has already failed.</para>
+    ///
+    /// <para>TENANT-SCOPED, deliberately, and there is no ignoring sibling: every caller is a request
+    /// path with a claim (the recurring materializer runs under its own per-template tenant override).
+    /// A background sweep asking about ONE cleaner already has
+    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/>.</para>
+    /// </summary>
     Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
         IReadOnlyCollection<string> employeeIds,
         DateTime windowStartUtc,
@@ -190,6 +190,14 @@ public interface IOrderRepository : IRepository<Order, string>
     /// with, preventing random employee-id probing.
     /// </summary>
     Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct);
+
+    /// <summary>
+    /// The order's owner and currency id, projected with no includes. For a validator term that only
+    /// has to know whether the caller's order is priced in a given currency -- a full
+    /// <c>GetByIdAsync</c> there loaded the order's whole graph a second time on the same request,
+    /// ahead of the handler's own load. Null when no such order is visible to the caller's tenant.
+    /// </summary>
+    Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
     /// The customer profile hero stats for <paramref name="userId"/> (T-0392):

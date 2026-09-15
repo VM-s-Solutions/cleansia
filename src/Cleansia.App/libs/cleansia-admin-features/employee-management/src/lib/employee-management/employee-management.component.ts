@@ -79,7 +79,7 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(EmployeeManagementFacade);
   private readonly translate = inject(TranslateService);
 
-  contractStatusTemplate = viewChild<TemplateRef<any>>(
+  contractStatusTemplate = viewChild<TemplateRef<AdminEmployeeListItem>>(
     'contractStatusTemplate'
   );
 

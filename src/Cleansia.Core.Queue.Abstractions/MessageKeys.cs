@@ -39,7 +39,7 @@ public static class MessageKeys
     public static string LiveActivity(string orderId, string eventKey, int sequence) =>
         $"liveactivity:{orderId}:{eventKey}:{sequence}";
 
-    /// <summary>generate-invoice → <c>invoice:{PayPeriodId}:{EmployeeId}</c> (one invoice per employee per period).</summary>
+    /// <summary>generate-invoice → <c>invoice:{PayPeriodId}:{EmployeeId}</c> (one generation per employee per period; it yields one invoice per currency the period holds).</summary>
     public static string Invoice(string payPeriodId, string employeeId) => $"invoice:{payPeriodId}:{employeeId}";
 
     /// <summary>

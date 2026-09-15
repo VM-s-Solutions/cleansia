@@ -57,6 +57,22 @@ public sealed class AuditLogPipelineOrderTests
     }
 
     [Fact]
+    public void ErasureFailureCaptureBehavior_Is_Registered_Outer_To_UnitOfWork_So_It_Sees_The_Erasures_Commit_Throw()
+    {
+        var behaviorTypes = RegisteredBehaviorTypes();
+
+        var erasureCapture = behaviorTypes.IndexOf(typeof(ErasureFailureCaptureBehavior<,>));
+        var unitOfWork = behaviorTypes.IndexOf(typeof(UnitOfWorkPipelineBehavior<,>));
+
+        Assert.True(erasureCapture >= 0, "ErasureFailureCaptureBehavior must be registered.");
+        Assert.True(
+            erasureCapture < unitOfWork,
+            "ErasureFailureCaptureBehavior must be OUTER to UnitOfWorkPipelineBehavior: the erasure is one " +
+            "commit and the request row it staged rolls back with a commit-throw, so only a behavior outside " +
+            "the commit can put the failed erasure on record.");
+    }
+
+    [Fact]
     public void AuditFailureCaptureBehavior_Is_Registered_Outer_To_Validation_So_It_Sees_A_Validation_Reject()
     {
         var behaviorTypes = RegisteredBehaviorTypes();

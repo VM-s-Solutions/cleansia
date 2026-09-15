@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -49,7 +50,7 @@ public class CancellationFeePreviewAgreementTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
@@ -72,7 +73,8 @@ public class CancellationFeePreviewAgreementTests
             Resolver,
             _producer.Object,
             _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            new AuditContext());
 
     private GetCancellationFeePreview.Handler CreatePreviewHandler() =>
         new(
@@ -87,7 +89,7 @@ public class CancellationFeePreviewAgreementTests
         decimal totalPrice = 1000m,
         int bookedMinutesAgo = 120)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -95,7 +97,6 @@ public class CancellationFeePreviewAgreementTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
@@ -129,14 +130,13 @@ public class CancellationFeePreviewAgreementTests
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: 10m,
             freeCancellationWindowHours: freeCancellationWindowHours,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,
             membershipPlanId: plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_1",
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
@@ -145,7 +145,7 @@ public class CancellationFeePreviewAgreementTests
             .Invoke(membership, [plan]);
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 

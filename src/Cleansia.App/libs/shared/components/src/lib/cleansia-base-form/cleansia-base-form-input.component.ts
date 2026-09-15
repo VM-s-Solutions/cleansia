@@ -30,7 +30,7 @@ import { InputSize } from './cleansia-base-form.models';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CleansiaBaseFormInputComponent
+export abstract class CleansiaBaseFormInputComponent
   implements ControlValueAccessor, OnInit, OnChanges, OnDestroy
 {
   private injector = inject(Injector);
@@ -59,7 +59,7 @@ export class CleansiaBaseFormInputComponent
     return this.required();
   });
 
-  onChange: (value: any) => void = () => {
+  onChange: (value: unknown) => void = () => {
     // Implemented by ControlValueAccessor
   };
   onTouch: () => void = () => {
@@ -119,19 +119,17 @@ export class CleansiaBaseFormInputComponent
     this.destroyed$.complete();
   }
 
-  registerOnChange(fn: any): void {
+  registerOnChange(fn: (value: unknown) => void): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: any): void {
+  registerOnTouched(fn: () => void): void {
     this.onTouch = fn;
   }
 
-  setDisabledState(isDisabled: boolean): void {
+  setDisabledState(): void {
     // Handled via signal and ngOnChanges
   }
 
-  writeValue(value: any): void {
-    // To be overridden by subclasses if needed
-  }
+  abstract writeValue(value: unknown): void;
 }

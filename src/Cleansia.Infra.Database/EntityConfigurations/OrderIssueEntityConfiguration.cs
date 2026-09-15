@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderIssueEntityConfiguration : AuditableEntityConfiguration<OrderIssue, string>
+public class OrderIssueEntityConfiguration : TenantAuditableEntityConfiguration<OrderIssue, string>
 {
     public override void Configure(EntityTypeBuilder<OrderIssue> builder)
     {

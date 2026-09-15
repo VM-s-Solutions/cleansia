@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -6,6 +7,8 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
+[AuditAction("customer.recurring.set_active", Audience = AuditAudience.Customer, ResourceType = "RecurringBookingTemplate",
+    ResourceIdProperty = nameof(SetRecurringBookingActive.Command.TemplateId))]
 public class SetRecurringBookingActive
 {
     public record Command(string TemplateId, bool IsActive) : ICommand;
@@ -42,11 +45,13 @@ public class SetRecurringBookingActive
     }
 
     public class Handler(
-        IRecurringBookingTemplateRepository templateRepository) : ICommandHandler<Command>
+        IRecurringBookingTemplateRepository templateRepository,
+        IAuditContext auditContext) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var template = (await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken))!;
+            var before = RecurringTemplateFacts.Of(template);
             if (command.IsActive)
             {
                 template.Resume();
@@ -55,6 +60,9 @@ public class SetRecurringBookingActive
             {
                 template.Pause();
             }
+
+            auditContext.RecordEvidence("RecurringBookingTemplate", template.Id,
+                new RecurringTemplateEvidence(before, RecurringTemplateFacts.Of(template)));
 
             return BusinessResult.Success();
         }

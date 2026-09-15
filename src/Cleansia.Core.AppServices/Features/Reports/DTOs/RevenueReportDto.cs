@@ -16,7 +16,13 @@ public record RevenueReportDto(
     /// Total settled from customers' credit balances across the period. Revenue the platform earned
     /// but no payment gateway ever moved, because it was money the platform already owed.
     /// </summary>
-    decimal TotalSettledFromCredit = 0m);
+    decimal TotalSettledFromCredit = 0m,
+    /// <summary>
+    /// The currency EVERY amount on this report is in. One report, one currency: the admin chose it
+    /// (or took the platform default) and the query filtered on it, so a client formats with this
+    /// and never with a hardcoded code. Nullable + defaulted so it is additive on the wire.
+    /// </summary>
+    string? CurrencyCode = null);
 
 public record DailyRevenue(
     DateOnly Date,

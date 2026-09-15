@@ -9,7 +9,7 @@ using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Infra.Common.Validations;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using MockQueryable;
 using Moq;
 
@@ -33,23 +33,34 @@ public class CancelUnfilledOrdersTests
     private const string DefaultCurrencyId = "czk";
     private const string ForeignCurrencyId = "eur";
     private const string UserId = "user-unfilled-1";
+    private const decimal CzkApology = 250m;
 
     private readonly Mock<IOrderRepository> _orders = new();
     private readonly Mock<ICreditAccountRepository> _credit = new();
-    private readonly Mock<ICurrencyRepository> _currencies = new();
     private readonly Mock<IRefundService> _refunds = new();
     private readonly Mock<INotificationProducer> _notifications = new();
     private readonly Mock<ITenantProvider> _tenants = new();
     private readonly Mock<IUnitOfWork> _uow = new();
+    private readonly List<(LogLevel Level, string Message)> _log = [];
 
-    private CreditAccount? _account;
+    /// <summary>Seeded like the DEV CZK row: an authored apology figure.</summary>
+    private readonly Currency _czk;
+
+    /// <summary>Seeded like the DEV EUR row: no apology figure authored yet.</summary>
+    private readonly Currency _eur;
+
+    private readonly Dictionary<string, CreditAccount> _accounts = [];
+
+    private CreditAccount? _account => _accounts.GetValueOrDefault(DefaultCurrencyId);
 
     public CancelUnfilledOrdersTests()
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech koruna", 1m);
-        currency.Id = DefaultCurrencyId;
-        _currencies.Setup(c => c.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
+        _czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        _czk.Id = DefaultCurrencyId;
+        _czk.SetNoShowCredit(CzkApology);
+
+        _eur = Currency.Create("EUR", "€", "Euro");
+        _eur.Id = ForeignCurrencyId;
 
         _refunds.Setup(r => r.IssueRefundAsync(
                 It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
@@ -59,7 +70,15 @@ public class CancelUnfilledOrdersTests
         _credit.Setup(c => c.EnsureForUserAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, string currencyId, CancellationToken _) =>
-                _account ??= CreditAccount.Create(userId, currencyId, "system"));
+            {
+                if (!_accounts.TryGetValue(currencyId, out var account))
+                {
+                    account = CreditAccount.Create(userId, currencyId, "system");
+                    _accounts[currencyId] = account;
+                }
+
+                return account;
+            });
     }
 
     private Order UnfilledOrder(
@@ -68,9 +87,9 @@ public class CancelUnfilledOrdersTests
         PaymentType paymentType = PaymentType.Card,
         PaymentStatus paymentStatus = PaymentStatus.Paid,
         string? userId = UserId,
-        string currencyId = DefaultCurrencyId)
+        Currency? currency = null)
     {
-        return BuildOrder(orderId, status, paymentType, paymentStatus, userId, currencyId,
+        return BuildOrder(orderId, status, paymentType, paymentStatus, userId, currency ?? _czk,
             cleaningDateTime: DateTime.UtcNow.AddHours(-2));
     }
 
@@ -84,7 +103,7 @@ public class CancelUnfilledOrdersTests
         PaymentType paymentType,
         PaymentStatus paymentStatus,
         string? userId,
-        string currencyId,
+        Currency currency,
         DateTime cleaningDateTime)
     {
         var order = Order.Create(
@@ -94,15 +113,16 @@ public class CancelUnfilledOrdersTests
             customerAddress: Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: paymentType,
             totalPrice: 1000m,
-            currencyId: currencyId,
+            currencyId: currency.Id,
             paymentStatus: paymentStatus,
             userId: userId);
 
         order.Id = orderId;
+        // The sweep reads the apology figure off the order's currency navigation (Include(o => o.Currency)).
+        order.SetCurrency(currency);
         order.SetMaxEmployees(1);
 
         // A card order is only refundable on a real Stripe surface. Without this the sweep correctly
@@ -132,9 +152,9 @@ public class CancelUnfilledOrdersTests
             .Returns(orders.AsQueryable().BuildMock());
 
     private CancelUnfilledOrders.Handler Handler() =>
-        new(_orders.Object, _credit.Object, _currencies.Object, _refunds.Object,
+        new(_orders.Object, _credit.Object, _refunds.Object,
             _notifications.Object, _tenants.Object, _uow.Object,
-            NullLogger<CancelUnfilledOrders.Handler>.Instance);
+            new CapturingLogger(_log));
 
     private Task<BusinessResult<CancelUnfilledOrders.Response>> Sweep() =>
         Handler().Handle(new CancelUnfilledOrders.Command(), default);
@@ -155,7 +175,7 @@ public class CancelUnfilledOrdersTests
         Assert.Equal(CancelledBy.System, order.CancelledBy);
         // Platform fault: the customer pays no cancellation fee.
         Assert.Equal(order.TotalPrice, order.CancellationRefundAmount);
-        Assert.Equal(BookingPolicy.NoShowCreditCzk, _account!.Balance);
+        Assert.Equal(CzkApology, _account!.Balance);
     }
 
     /// <summary>
@@ -211,7 +231,7 @@ public class CancelUnfilledOrdersTests
     {
         Arrange(BuildOrder(
             "order-ancient", OrderStatus.Confirmed, PaymentType.Card, PaymentStatus.Paid,
-            UserId, DefaultCurrencyId, cleaningDateTime: DateTime.UtcNow.AddDays(-30)));
+            UserId, _czk, cleaningDateTime: DateTime.UtcNow.AddDays(-30)));
 
         var result = await Sweep();
 
@@ -240,20 +260,45 @@ public class CancelUnfilledOrdersTests
     }
 
     /// <summary>
-    /// NoShowCreditCzk is 250 CZK and a credit account keeps whatever currency it was opened in,
-    /// converting nothing — so on a EUR order this would hand over 250 EUR, roughly twenty-five times
-    /// the intended apology. Fails closed: no credit, full refund, and a log line.
+    /// The apology figure is authored PER CURRENCY, and a credit account keeps whatever currency it
+    /// was opened in, converting nothing — so a currency with no authored figure pays none rather than
+    /// borrowing another currency's number. Fails closed: no credit, full refund, and a warning that
+    /// names the currency.
     /// </summary>
     [Fact]
-    public async Task ANonDefaultCurrencyOrderIsRefundedButNotCredited()
+    public async Task AnOrderInACurrencyWithNoAuthoredCreditIsRefundedButNotCredited()
     {
-        Arrange(UnfilledOrder(currencyId: ForeignCurrencyId));
+        Arrange(UnfilledOrder(currency: _eur));
 
         var result = await Sweep();
 
         Assert.Equal(1, result.Value.CancelledCount);
         Assert.Equal(1, result.Value.RefundedCount);
         Assert.Equal(0, result.Value.CreditedCount);
+        Assert.Empty(_accounts);
+        var warning = Assert.Single(_log, e => e.Level == LogLevel.Warning);
+        Assert.Contains("EUR", warning.Message);
+    }
+
+    /// <summary>
+    /// The day an admin authors a EUR figure, a EUR order is credited that figure into the customer's
+    /// EUR account — never the CZK number, never into the CZK account.
+    /// </summary>
+    [Fact]
+    public async Task AnOrderInACurrencyWithAnAuthoredCreditIsCreditedInThatCurrency()
+    {
+        _eur.SetNoShowCredit(10m);
+        Arrange(UnfilledOrder(currency: _eur));
+
+        var result = await Sweep();
+
+        Assert.Equal(1, result.Value.CreditedCount);
+        var account = Assert.Single(_accounts).Value;
+        Assert.Equal(ForeignCurrencyId, account.CurrencyId);
+        Assert.Equal(10m, account.Balance);
+        _credit.Verify(
+            c => c.EnsureForUserAsync(UserId, ForeignCurrencyId, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -308,22 +353,63 @@ public class CancelUnfilledOrdersTests
         _notifications.Verify(n => n.NotifyAsync(
             UserId,
             NotificationEventCatalog.OrderNoCleanerRefunded,
-            It.IsAny<Dictionary<string, string>>(),
+            It.Is<Dictionary<string, string>>(args => args["amount"] == "250 Kč" && args["orderNumber"] == order.DisplayOrderNumber),
             It.IsAny<string?>(),
             order.Id,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
+    /// Owner ruling 2026-09-13: the push carries the credit WITH its currency, formatted
+    /// from the credit's own currency row — a EUR apology says "10 €", never a CZK figure.
+    /// </summary>
+    [Fact]
+    public async Task TheAmountIsStatedInTheCreditsOwnCurrency()
+    {
+        _eur.SetNoShowCredit(10m);
+        var order = UnfilledOrder(currency: _eur);
+        Arrange(order);
+
+        await Sweep();
+
+        _notifications.Verify(n => n.NotifyAsync(
+            UserId,
+            NotificationEventCatalog.OrderNoCleanerRefunded,
+            It.Is<Dictionary<string, string>>(args => args["amount"] == "10 €"),
+            It.IsAny<string?>(),
+            order.Id,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("250", "250 Kč")]
+    [InlineData("250.00", "250 Kč")]
+    [InlineData("10", "10 Kč")]
+    [InlineData("9.5", "9.5 Kč")]
+    [InlineData("9.50", "9.5 Kč")]
+    public void TheCreditIsFormattedInvariantWithNoTrailingZerosThenTheSymbol(string amount, string expected)
+    {
+        Assert.Equal(expected, CancelUnfilledOrders.FormatCreditAmount(decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture), _czk));
+    }
+
+    [Fact]
+    public void ASymbollessCurrencyFallsBackToItsCode()
+    {
+        var bare = Currency.Create("XXX", "", "Bare");
+
+        Assert.Equal("250 XXX", CancelUnfilledOrders.FormatCreditAmount(250m, bare));
+    }
+
+    /// <summary>
     /// THE HONESTY GUARD. The announcing key promises credit, so it is sent only when credit was
-    /// actually issued. A non-default currency is refused the grant and a guest has nowhere to hold
-    /// it — both get the plain cancellation instead. Promising money nobody received would be worse
-    /// than saying less.
+    /// actually issued. A currency with no authored figure is refused the grant and a guest has
+    /// nowhere to hold it — both get the plain cancellation instead. Promising money nobody received
+    /// would be worse than saying less.
     /// </summary>
     [Fact]
     public async Task ACustomerWhoGotNoCreditIsNotPromisedAny()
     {
-        var order = UnfilledOrder(currencyId: ForeignCurrencyId);
+        var order = UnfilledOrder(currency: _eur);
         Arrange(order);
 
         await Sweep();
@@ -331,7 +417,7 @@ public class CancelUnfilledOrdersTests
         _notifications.Verify(n => n.NotifyAsync(
             UserId,
             NotificationEventCatalog.OrderCancelled,
-            It.IsAny<Dictionary<string, string>>(),
+            It.Is<Dictionary<string, string>>(args => !args.ContainsKey("amount")),
             It.IsAny<string?>(),
             order.Id,
             It.IsAny<CancellationToken>()), Times.Once);
@@ -362,5 +448,14 @@ public class CancelUnfilledOrdersTests
         _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
         _tenants.Verify(t => t.SetTenantOverride("tenant-a"), Times.Once);
         _tenants.Verify(t => t.SetTenantOverride("tenant-b"), Times.Once);
+    }
+
+    private sealed class CapturingLogger(List<(LogLevel Level, string Message)> entries)
+        : ILogger<CancelUnfilledOrders.Handler>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => entries.Add((logLevel, formatter(state, exception)));
     }
 }

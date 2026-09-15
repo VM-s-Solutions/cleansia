@@ -12,6 +12,8 @@ struct BookingQuote: Equatable {
     let extrasSubtotal: Double
     let tierDiscountAmount: Double
     let membershipDiscountAmount: Double
+    /// The tier floor the server judged the basket against; nil when no floor applies in this currency.
+    let tierDiscountMinOrderAmount: Double?
     let expressSurchargeApplied: Bool
     let expressSurchargeAmount: Double
     let expressSurchargeWaivedByMembership: Bool
@@ -26,6 +28,7 @@ struct BookingQuote: Equatable {
         extrasSubtotal: Double = 0,
         tierDiscountAmount: Double = 0,
         membershipDiscountAmount: Double = 0,
+        tierDiscountMinOrderAmount: Double? = nil,
         expressSurchargeApplied: Bool = false,
         expressSurchargeAmount: Double = 0,
         expressSurchargeWaivedByMembership: Bool = false
@@ -39,6 +42,7 @@ struct BookingQuote: Equatable {
         self.extrasSubtotal = extrasSubtotal
         self.tierDiscountAmount = tierDiscountAmount
         self.membershipDiscountAmount = membershipDiscountAmount
+        self.tierDiscountMinOrderAmount = tierDiscountMinOrderAmount
         self.expressSurchargeApplied = expressSurchargeApplied
         self.expressSurchargeAmount = expressSurchargeAmount
         self.expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership
@@ -59,6 +63,7 @@ struct BookingQuote: Equatable {
             extrasSubtotal: response.extrasSubtotal.require("extrasSubtotal"),
             tierDiscountAmount: response.tierDiscountAmount ?? 0,
             membershipDiscountAmount: response.membershipDiscountAmount ?? 0,
+            tierDiscountMinOrderAmount: response.tierDiscountMinOrderAmount,
             expressSurchargeApplied: response.expressSurchargeApplied.require("expressSurchargeApplied"),
             expressSurchargeAmount: response.expressSurchargeAmount.require("expressSurchargeAmount"),
             expressSurchargeWaivedByMembership: response.expressSurchargeWaivedByMembership

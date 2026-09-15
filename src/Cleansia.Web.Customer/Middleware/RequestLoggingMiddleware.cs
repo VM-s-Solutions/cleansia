@@ -287,6 +287,11 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                // "/api/AdminAuth/...". The admin route dumps another user's whole export, payout block
                // included, so it is the one that most needed covering.
                pathValue.Contains("gdpr/") ||
+               // A customer audit entry carries the payload, the IP address and the device label of the
+               // subject, and the timeline lists the same rows; none of those names is in a redaction
+               // list and the device label is client-controlled text no denylist reaches (ADR-0062 D6).
+               // Present on every host like the paths beside it, so a route that moves hosts keeps it.
+               pathValue.Contains("/customeraudit/") ||
                // Reading documents back: an operator's review notes and the cleaner's own description
                // ride behind the SAS, which redaction collapses. The write side (/savemydocuments) was
                // already suppressed; the read was not.

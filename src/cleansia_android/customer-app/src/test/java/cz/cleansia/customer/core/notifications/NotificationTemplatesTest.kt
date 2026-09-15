@@ -381,6 +381,108 @@ class NotificationTemplatesTest {
         )
     }
 
+    private val noCleanerKeys = listOf(
+        "notification_order_no_cleaner_refunded_title",
+        "notification_order_no_cleaner_refunded_body",
+    )
+
+    @Test
+    fun `formatBody renders the order number and the server-formatted amount into the no-cleaner body`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_order_no_cleaner_refunded_body, "A-1042", "250 Kč")
+        } returns "Nobody was able to take booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.no_cleaner_refunded",
+            R.string.notification_order_no_cleaner_refunded_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042", "amount" to "250 Kč"),
+        )
+
+        assertEquals(
+            "Nobody was able to take booking #A-1042, so we have refunded it in full and added 250 Kč credit towards your next clean. Sorry.",
+            body,
+        )
+    }
+
+    /** An older server sends no amount; the sentence must still read, never with "null" in it. */
+    @Test
+    fun `formatBody renders the no-cleaner body with an empty amount when the server sent none`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_order_no_cleaner_refunded_body, "A-1042", "")
+        } returns "Nobody was able to take booking #A-1042, so we have refunded it in full and added  credit towards your next clean. Sorry."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.no_cleaner_refunded",
+            R.string.notification_order_no_cleaner_refunded_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042"),
+        )
+
+        assertFalse("an absent amount rendered as null: \"$body\"", body.contains("null"))
+        assertTrue(body.contains("#A-1042"))
+    }
+
+    /** The amount is the no-cleaner key's alone; the plain cancellation keeps its single slot. */
+    @Test
+    fun `formatBody passes only the order number to the plain cancellation even when an amount arrives`() {
+        val context = mockk<Context>()
+        every {
+            context.getString(R.string.notification_order_cancelled_body, "A-1042")
+        } returns "Booking #A-1042 was cancelled."
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.cancelled",
+            R.string.notification_order_cancelled_body,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042", "amount" to "250 Kč"),
+        )
+
+        assertEquals("Booking #A-1042 was cancelled.", body)
+    }
+
+    /**
+     * The credit figure arrives formatted by the server in the credit's own currency, so the copy
+     * takes it as a second slot and states no number and no currency of its own.
+     */
+    @Test
+    fun `the no-cleaner body takes the order number and the amount and the title takes nothing in every locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            val body = valueOf(xml, "notification_order_no_cleaner_refunded_body")!!
+            assertEquals(
+                "$locale/strings.xml does not pass exactly the order number and the amount to the no-cleaner body",
+                listOf("%1\$s", "%2\$s"),
+                formatSlots(body),
+            )
+            assertFalse(
+                "$locale/strings.xml bakes a figure into the no-cleaner body: \"$body\"",
+                body.replace(Regex("%\\d+\\$[sd]"), "").contains(Regex("\\d")),
+            )
+            assertEquals(
+                "$locale/strings.xml puts a format slot on the argless no-cleaner title",
+                emptyList<String>(),
+                formatSlots(valueOf(xml, "notification_order_no_cleaner_refunded_title")!!),
+            )
+        }
+    }
+
+    @Test
+    fun `the four translations of the no-cleaner copy are not the English string copied over`() {
+        val english = noCleanerKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.drop(1).forEach { locale ->
+            val xml = stringsXml(locale)
+            noCleanerKeys.forEach { key ->
+                assertTrue(
+                    "$locale/strings.xml left $key in English",
+                    valueOf(xml, key) != english[key],
+                )
+            }
+        }
+    }
+
     private fun stringsXml(locale: String): String {
         val file = File(resDir, "$locale/strings.xml")
         assertTrue("missing $locale/strings.xml", file.isFile)

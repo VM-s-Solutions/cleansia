@@ -1,8 +1,10 @@
 ﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Orders;
@@ -214,6 +216,7 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
             new CreditAccountRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
+            new UserStripeCustomerRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),
@@ -227,9 +230,12 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
             new UserNotificationRepository(ctx),
             new DeadLetterRepository(ctx),
             new OutboxMessageRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
             Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
+            Mock.Of<IAppConfigurationProvider>(),
+            new ErasureAttempt(),
             NullLogger<GdprDeletionService>.Instance);
 
         var result = await service.DeleteUserAccountAsync(
@@ -276,7 +282,6 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
                 customerAddress: Address.Create("Seat St 1", "Praha", "11000", "cz"),
                 rooms: 2,
                 bathrooms: 1,
-                extras: new Dictionary<string, bool>(),
                 cleaningDateTime: DateTime.UtcNow.AddHours(6),
                 paymentType: PaymentType.Cash,
                 totalPrice: 1500m,
@@ -302,6 +307,7 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
                 orderId: "order-pay-del-1",
                 employeeId: EmployeeId,
                 payPeriodId: period.Id,
+            currencyId: "czk",
                 basePay: 500m,
                 totalPay: 500m);
             pay.Id = "order-employee-pay-del-1";
@@ -328,7 +334,7 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {

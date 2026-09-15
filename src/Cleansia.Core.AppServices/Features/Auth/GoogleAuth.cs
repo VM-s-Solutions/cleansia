@@ -1,18 +1,36 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Features.Auth.Validators;
+using Cleansia.Core.AppServices.Common.Validators.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
+/// <summary>
+/// Sign-in-or-register on a customer host; sign-in only anywhere else. The marker records the sign-in of
+/// an existing account as a session act; the provisioning branch declines the row, because a
+/// registration's proof is the two consent rows it writes and a login row would say a session was
+/// opened by an account that did not exist a moment ago. A refusal on either branch is recorded — a bad
+/// token or a sign-in with no account is exactly the login history the row exists for.
+///
+/// <para>The partner hosts route this command for their cleaners, and a host that is not a customer
+/// host provisions nothing: a cleaner's account is opened through <c>RegisterEmployee</c>, and a
+/// freshly provisioned Customer minted a partner-audience token would be an account that can sign in
+/// where it has no business. Whom such a host signs in is <see cref="PartnerLogin"/>'s rule — an
+/// Employee or an Administrator, never a Customer.</para>
+/// </summary>
+[AuditAction("customer.session.login", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class GoogleAuth
 {
     public class Validator : BaseAuthValidator<Command>
@@ -47,17 +65,26 @@ public class GoogleAuth
         string Email,
         string FirstName,
         string LastName,
-        bool TermsAccepted = false)
-        : ICommand<JwtTokenResponse>;
+        bool TermsAccepted = false,
+        // The market a first sign-in provisions into; null is the default market (ADR-0061 D3). An
+        // existing account keeps its own operator: TokenService re-scopes to it before the token is
+        // minted.
+        string? CountryId = null)
+        : ICommand<JwtTokenResponse>, IOperatorScopedRequest;
 
     public class Handler(
         IGoogleTokenVerifier googleTokenVerifier,
         ITokenService tokenService,
         ICartRepository cartRepository,
         IUserRepository userRepository,
-        IHostAudienceProvider hostAudience)
+        IHostAudienceProvider hostAudience,
+        IConsentService consentService,
+        ILegalDocumentResolver legalDocumentResolver,
+        IAuditContext auditContext)
         : ICommandHandler<Command, JwtTokenResponse>
     {
+        private bool IsCustomerHost => hostAudience.Audience == JwtAudiences.Customer;
+
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             // S1 server-truth-identity: verify the Google ID-token server-side and bind identity from the
@@ -87,6 +114,17 @@ public class GoogleAuth
 
             if (user is not null)
             {
+                // A refusal below is this account's row, not the IP's alone.
+                auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+
+                // First, ahead of the provider check: an account the host does not serve is told so, not
+                // sent to a password or Apple sign-in that this host would refuse for the same reason.
+                if (!IsCustomerHost && user.Profile is not (UserProfile.Employee or UserProfile.Administrator))
+                {
+                    return BusinessResult.Failure<JwtTokenResponse>(
+                        new Error(nameof(Command.Email), BusinessErrorMessage.InsufficientPrivileges));
+                }
+
                 // S1: the account-type guard MUST run against the account the handler
                 // actually authenticates — the VERIFIED claims.Email — not the client-supplied
                 // command.Email the validator used to check. Block a Google login from binding into an
@@ -113,7 +151,21 @@ public class GoogleAuth
                 // holds for every caller. The write rides the UnitOfWork commit; the row is tracked.
                 user.LinkGoogleId(claims.Subject);
 
-                return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
+                var session = await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken);
+
+                auditContext.RecordEvidence(
+                    "User",
+                    user.Id,
+                    new LoginEvidence(LoginEvidence.GoogleMethod, RememberMe: true, hostAudience.Audience, session.IsEmailConfirmed),
+                    actorUserId: user.Id);
+
+                return BusinessResult.Success(session);
+            }
+
+            if (!IsCustomerHost)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Email), BusinessErrorMessage.SocialAccountNotFound));
             }
 
             // Provision only when Google reports the email as verified — reject an unverifiable email
@@ -132,6 +184,8 @@ public class GoogleAuth
                     new Error(nameof(Command.TermsAccepted), BusinessErrorMessage.SocialAccountNotFound));
             }
 
+            auditContext.DeclineSuccessRow();
+
             // FirstName / LastName are kept from the command — the Google ID-token may not carry a name
             // claim, so the client-provided display name is the only available source for those two.
             var userEntity = User.CreateWithGoogle(claims.Email, command.FirstName, command.LastName, claims.Subject);
@@ -139,9 +193,16 @@ public class GoogleAuth
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
 
+            // Reached only with the tick asserted. These two rows are the registration proof (the
+            // session row is declined above), so the consent rides the same flush as the account.
+            await consentService.TryGrantAsync(userEntity.Id, ConsentType.TermsOfService,
+                await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.TermsOfService, command.CountryId, cancellationToken), cancellationToken);
+            await consentService.TryGrantAsync(userEntity.Id, ConsentType.PrivacyPolicy,
+                await legalDocumentResolver.ResolveInForceAsync(LegalDocumentType.PrivacyPolicy, command.CountryId, cancellationToken), cancellationToken);
+
             // The resolve-by-email fallback above and this insert cross a snapshot boundary with no
-            // lock, so (TenantId, Email) UNIQUE is what actually arbitrates two simultaneous
-            // provisionings of the same verified address (ADR-0050). FLUSH here and own the loser's
+            // lock, so the global Email UNIQUE index is what actually arbitrates two simultaneous
+            // provisionings of the same verified address (ADR-0050 D2). FLUSH here and own the loser's
             // 23505 — and do it BEFORE minting a JWT, so no token is issued for a row that was rejected.
             try
             {

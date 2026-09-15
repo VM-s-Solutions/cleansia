@@ -79,10 +79,6 @@ struct IdentificationSectionView: View {
                     // cost CZ and SK the term their own registries use.
                     label: vm.fieldLabels?.registrationNumberLabel ?? L10n.Profile.registrationNumber
                 )
-                CleansiaTextField(
-                    value: $vm.form.vatNumber,
-                    label: vm.fieldLabels?.vatNumberLabel ?? L10n.Profile.vatNumber
-                )
                 if vm.isLegalEntity {
                     CleansiaTextField(
                         value: $vm.form.legalEntityName,

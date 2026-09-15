@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Cleansia.Config.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
@@ -11,6 +12,7 @@ namespace Cleansia.Config.Abstractions;
 [ApiController]
 [ApiVersion("1.0")]
 [Authorize]
+[RequestValidationExceptionFilter]
 [Route("api/v{version:apiVersion}/[controller]")]
 public abstract class CleansiaApiController(IMediator mediator) : ControllerBase
 {
@@ -40,11 +42,7 @@ public abstract class CleansiaApiController(IMediator mediator) : ControllerBase
     {
         return result switch
         {
-            IValidationResult validationResult => BadRequest(CreateProblemDetails(
-                        "Validation Error",
-                        StatusCodes.Status400BadRequest,
-                        result.Error!,
-                        validationResult.Errors)),
+            IValidationResult validationResult => BadRequest(CreateValidationProblemDetails(validationResult.Errors)),
             // 401 for a failed auth command, but carry the business key in the `errors` dictionary — every
             // client (iOS firstErrorKey, Android firstErrorKey, web HttpErrorInterceptor) reads the first
             // `errors` value to localize. A bare Error{code,message} has no `errors` dict, so all three fell
@@ -87,6 +85,19 @@ public abstract class CleansiaApiController(IMediator mediator) : ControllerBase
     {
         return Redirect(CreateRedirectUrl(url, result.IsSuccess));
     }
+
+    /// <summary>
+    /// The one 400 a validation reject produces, whether it arrived as a <see cref="ValidationResult"/>
+    /// or as the <c>RequestValidationException</c> the filter catches. Both carry the
+    /// <see cref="IValidationResult.ValidationError"/> sentinel at the top and the keyed rule failures
+    /// in <c>errors</c>.
+    /// </summary>
+    internal static ProblemDetails CreateValidationProblemDetails(Error[] errors) =>
+        CreateProblemDetails(
+            "Validation Error",
+            StatusCodes.Status400BadRequest,
+            IValidationResult.ValidationError,
+            errors);
 
     private static ProblemDetails CreateProblemDetails(string title, int status, Error error, Error[]? errors = null)
     {

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -215,7 +216,6 @@ public class PreferredOfferDeferredAnnouncementTests
             customerAddress: Core.Domain.Users.Address.Create("123 Main St", "Prague", "11000", "cz"),
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: paymentType,
             totalPrice: 1000m,
@@ -247,6 +247,7 @@ public class PreferredOfferDeferredAnnouncementTests
             _pending.Object,
             _notificationProducer.Object,
             resolver,
+            new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
     }
 

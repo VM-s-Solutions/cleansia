@@ -17,6 +17,7 @@ public sealed class LoyaltyService(
     ILoyaltyAccountRepository loyaltyAccountRepository,
     ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
     ILoyaltyTransactionRepository loyaltyTransactionRepository,
+    ICurrencyRepository currencyRepository,
     INotificationProducer notificationProducer,
     ILogger<LoyaltyService> logger) : ILoyaltyService
 {
@@ -41,7 +42,7 @@ public sealed class LoyaltyService(
             return;
         }
 
-        var pointsEarned = (int)Math.Floor(order.TotalPrice / 10m);
+        var pointsEarned = await PointsForAsync(order.CurrencyId, order.TotalPrice, orderId, cancellationToken);
         if (pointsEarned <= 0)
         {
             return;
@@ -160,7 +161,7 @@ public sealed class LoyaltyService(
             return;
         }
 
-        var requested = (int)Math.Floor(refundNet / 10m);
+        var requested = await PointsForAsync(order.CurrencyId, refundNet, orderId, cancellationToken);
         if (requested <= 0)
         {
             return;
@@ -208,7 +209,7 @@ public sealed class LoyaltyService(
     }
 
     public async Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(
-        string userId, decimal orderTotal, CancellationToken cancellationToken)
+        string userId, decimal orderTotal, string currencyId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(userId))
         {
@@ -222,21 +223,40 @@ public sealed class LoyaltyService(
         }
 
         var config = await loyaltyTierConfigRepository.GetByTierAsync(account.CurrentTier, cancellationToken);
-        if (config == null || config.DiscountPercent <= 0m)
+        if (config == null)
+        {
+            return new TierDiscountResult(0m, account.CurrentTier);
+        }
+
+        // The floor is a number in the platform DEFAULT currency, and it is applied ONLY to an order in
+        // that currency. Comparing 1000 against a EUR subtotal withheld an advertised tier benefit from
+        // every real booking in that market; not applying it costs at most the tier's percentage of an
+        // order too small to have been worth a floor. The floor that was judged is returned so the
+        // quote states the same rule. → /product/business-rules#money-constants
+        decimal? floor = null;
+        if (config.MinimumOrderAmountForDiscount is { } configuredFloor)
+        {
+            var currency = await currencyRepository.GetByIdAsync(currencyId, cancellationToken);
+            if (currency?.IsDefault == true)
+            {
+                floor = configuredFloor;
+            }
+        }
+
+        if (config.DiscountPercent <= 0m)
         {
             // Snapshot the tier even when no discount applies, so we can
             // render "Bronze Cleaner" on the receipt later.
-            return new TierDiscountResult(0m, account.CurrentTier);
+            return new TierDiscountResult(0m, account.CurrentTier, floor);
         }
 
-        if (config.MinimumOrderAmountForDiscount.HasValue
-            && orderTotal < config.MinimumOrderAmountForDiscount.Value)
+        if (floor is { } appliedFloor && orderTotal < appliedFloor)
         {
-            return new TierDiscountResult(0m, account.CurrentTier);
+            return new TierDiscountResult(0m, account.CurrentTier, floor);
         }
 
         var discount = Math.Round(orderTotal * config.DiscountPercent, 2, MidpointRounding.AwayFromZero);
-        return new TierDiscountResult(discount, account.CurrentTier);
+        return new TierDiscountResult(discount, account.CurrentTier, floor);
     }
 
     public async Task GrantPointsManuallyAsync(
@@ -388,6 +408,27 @@ public sealed class LoyaltyService(
     /// <see cref="int.MaxValue"/> — unreachable, so resolution degrades to the next tier down rather than
     /// throwing (Bronze is the threshold-free floor).
     /// </summary>
+    /// <summary>
+    /// <c>floor(amount / the currency's divisor)</c>. Zero — with a log line — when the currency has no
+    /// divisor: a currency switched on before its rate was authored must not earn at another currency's
+    /// rate in either direction. ONE helper for the earn and the partial-refund clawback, so the two
+    /// cannot disagree about what a unit of money is worth. → /product/business-rules#money-constants
+    /// </summary>
+    private async Task<int> PointsForAsync(
+        string currencyId, decimal amount, string orderId, CancellationToken cancellationToken)
+    {
+        var currency = await currencyRepository.GetByIdAsync(currencyId, cancellationToken);
+        if (currency?.LoyaltyPointsDivisor is not { } divisor || divisor <= 0m)
+        {
+            logger.LogWarning(
+                "Loyalty skipped order {OrderId}: currency {CurrencyId} has no LoyaltyPointsDivisor.",
+                orderId, currencyId);
+            return 0;
+        }
+
+        return (int)Math.Floor(amount / divisor);
+    }
+
     private async Task<LoyaltyTierThresholds> ResolveThresholdsAsync(CancellationToken cancellationToken)
     {
         var configs = await loyaltyTierConfigRepository.GetAllForTenantAsync(cancellationToken);

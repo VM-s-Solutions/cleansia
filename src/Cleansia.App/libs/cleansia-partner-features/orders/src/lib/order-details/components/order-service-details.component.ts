@@ -8,7 +8,7 @@ import {
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
-  selector: 'order-service-details',
+  selector: 'cleansia-partner-order-service-details',
   standalone: true,
   imports: [
     CommonModule,

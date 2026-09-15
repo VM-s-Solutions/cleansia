@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,13 +13,19 @@ public class AdminActionAuditConfiguration : BaseEntityConfiguration<AdminAction
 
         builder.ToTable("AdminActionAudits");
 
-        // BaseEntityConfiguration maps only the key; TenantId + its filter live on
-        // AuditableEntityConfiguration, which this entity does not inherit. The global query
-        // filter is applied generically in CleansiaDbContext.ApplyTenantQueryFilters for any
-        // ITenantEntity; the property itself must still be mapped here.
+        // BaseEntityConfiguration maps only the key; the tenant column, its foreign key and its filter
+        // live on TenantAuditableEntityConfiguration, which this entity does not inherit. The global
+        // query filter is applied generically in CleansiaDbContext.ApplyTenantQueryFilters for any
+        // ITenantEntity; the column and the FK must still be mapped here, NOT NULL and Restrict like
+        // every other stamped table.
         builder.Property(e => e.TenantId)
             .HasMaxLength(26)
-            .IsRequired(false);
+            .IsRequired();
+
+        builder.HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(e => e.TenantId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(e => e.ActorId)
             .IsRequired()

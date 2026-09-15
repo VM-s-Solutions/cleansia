@@ -288,7 +288,6 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
                 "Job St 1", "Kladno", "27201", job.CountryId, null, job.Latitude, job.Longitude),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: cleaningDateTime,
             paymentType: PaymentType.Card,
             totalPrice: 1200m,
@@ -313,14 +312,14 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new NullTenantProvider());
+            new DefaultTenantProvider());
 
     private sealed record JobFixture(
         string OrderId, string CountryId, double? Latitude, double? Longitude);
 
-    private sealed class NullTenantProvider : ITenantProvider
+    private sealed class DefaultTenantProvider : ITenantProvider
     {
-        private string? _tenantId;
+        private string? _tenantId = TestTenants.Default;
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;

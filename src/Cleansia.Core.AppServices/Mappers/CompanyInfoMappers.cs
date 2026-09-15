@@ -25,7 +25,9 @@ public static class CompanyInfoMappers
             companyInfo.BankName,
             companyInfo.BankAccountNumber,
             companyInfo.Iban,
-            companyInfo.Swift);
+            companyInfo.Swift,
+            companyInfo.IsVatPayer,
+            companyInfo.VatRegisteredFrom);
 
     public static CompanyInfoListItem MapToListItem(this CompanyInfo companyInfo) =>
         new(

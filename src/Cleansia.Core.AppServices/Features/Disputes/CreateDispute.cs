@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
@@ -10,6 +11,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Disputes;
 
+// The marker names the ORDER: a refused filing has no dispute, and the order is what the refusal was
+// against. A successful filing re-labels its row to the dispute it created.
+[AuditAction("customer.dispute.create", Audience = AuditAudience.Customer, ResourceType = "Order")]
 public class CreateDispute
 {
     public class Validator : AbstractValidator<Command>
@@ -76,10 +80,27 @@ public class CreateDispute
 
     public record Response(string DisputeId);
 
+    /// <summary>
+    /// The filing as the server saw it (ADR-0062 D3): when it came relative to the clean and the
+    /// advertised window, how much was written and against how many lines. The description text stays
+    /// on the dispute row under its own erasure verdict.
+    /// </summary>
+    public record DisputeFilingEvidence(
+        string DisputeId,
+        string OrderId,
+        DisputeReason Reason,
+        decimal HoursSinceCompletion,
+        int FilingWindowHours,
+        int DescriptionLength,
+        int LineCount,
+        decimal OrderTotalPrice,
+        string? CurrencyCode) : ICustomerAuditPayload;
+
     public class Handler(
         IDisputeRepository disputeRepository,
         IOrderRepository orderRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
+        IUserSessionProvider userSessionProvider,
+        IAuditContext auditContext) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -148,6 +169,18 @@ public class CreateDispute
             }
 
             disputeRepository.Add(dispute);
+
+            var cleanEndedAt = order.CompletedAt ?? order.CleaningDateTime;
+            auditContext.RecordEvidence("Dispute", dispute.Id, new DisputeFilingEvidence(
+                DisputeId: dispute.Id,
+                OrderId: order.Id,
+                Reason: request.Reason,
+                HoursSinceCompletion: Math.Round((decimal)(DateTime.UtcNow - cleanEndedAt).TotalHours, 2),
+                FilingWindowHours: DisputeLimits.FilingWindowHours,
+                DescriptionLength: request.Description.Length,
+                LineCount: selected.Count,
+                OrderTotalPrice: order.TotalPrice,
+                CurrencyCode: order.Currency?.Code));
 
             return BusinessResult.Success(new Response(dispute.Id));
         }

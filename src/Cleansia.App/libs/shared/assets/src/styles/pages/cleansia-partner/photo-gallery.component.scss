@@ -57,14 +57,8 @@
   color: #ffc107;
 }
 
-.photo-gallery__close {
-  background: transparent;
-  border: none;
+.photo-gallery__close .p-button {
   color: white;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: background-color 0.2s;
   font-size: 1.25rem;
 
   &:hover {
@@ -85,23 +79,22 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 1rem 0.75rem;
-  border-radius: 8px;
-  transition: background-color 0.2s;
   z-index: 10;
-  font-size: 1.25rem;
 
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.2);
-  }
+  .p-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 1rem 0.75rem;
+    border-radius: 8px;
+    font-size: 1.25rem;
 
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    &:disabled {
+      opacity: 0.3;
+    }
   }
 
   &--prev {

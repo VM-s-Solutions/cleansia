@@ -34,6 +34,7 @@ public class OrderEmployeePayClampTests
             orderId: OrderId,
             employeeId: EmployeeId,
             payPeriodId: PayPeriodId,
+            currencyId: "czk",
             basePay: basePay,
             extrasPay: extrasPay,
             expensesPay: expensesPay,
@@ -140,6 +141,7 @@ public class OrderEmployeePayClampTests
         // hitting it means a data-integrity bug; the entity throws rather than pay a nonsense amount.
         var bad = OrderEmployeePay.Create(
             orderId: OrderId, employeeId: EmployeeId, payPeriodId: PayPeriodId,
+            currencyId: "czk",
             basePay: 100m, totalPay: 100m, minPay: 200m, maxPay: 150m);
 
         Assert.Throws<InvalidOperationException>(() => bad.AddBonus(10m));

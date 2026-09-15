@@ -9,10 +9,13 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TimelineComponent } from '@cleansia/admin-features/audit-log';
 import {
   AdminReferralListItem,
   CreditTransactionReason,
+  GetUserCreditCurrencyAccount,
   GetUserCreditLedgerEntry,
   GetUserLoyaltyActivityActivityItem,
   LoyaltyEarnSource,
@@ -25,6 +28,7 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
+  CleansiaTextInputComponent,
   CleansiaTitleComponent,
   PaginationState,
   TableColumn,
@@ -42,7 +46,10 @@ import {
   IssueCreditDialogComponent,
   IssueCreditDialogSubmit,
 } from '../issue-credit-dialog/issue-credit-dialog.component';
-import { ExpireCreditDialogComponent } from '../expire-credit-dialog/expire-credit-dialog.component';
+import {
+  ExpireCreditDialogComponent,
+  ExpireCreditDialogSubmit,
+} from '../expire-credit-dialog/expire-credit-dialog.component';
 import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
 
 @Component({
@@ -51,16 +58,19 @@ import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     TranslatePipe,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTableComponent,
+    CleansiaTextInputComponent,
     CleansiaTitleComponent,
     GrantPointsDialogComponent,
     IssueCreditDialogComponent,
     ExpireCreditDialogComponent,
     CleansiaPermissionDirective,
+    TimelineComponent,
   ],
   templateUrl: './user-loyalty-detail.component.html',
   providers: [UserLoyaltyDetailFacade],
@@ -76,8 +86,12 @@ export class UserLoyaltyDetailComponent
 
   private readonly destroy$ = new Subject<void>();
 
-  private userId: string | null = null;
+  readonly userId = signal<string | null>(null);
   readonly userEmail = signal<string | null>(null);
+
+  readonly incidentOrderControl = new FormControl<string>('', {
+    nonNullable: true,
+  });
 
   // One dialog reused for both grant + revoke; mode flips to drive copy/colors.
   readonly dialogVisible = signal<boolean>(false);
@@ -87,6 +101,8 @@ export class UserLoyaltyDetailComponent
   // the two forms have nothing in common beyond a free-text reason.
   readonly creditDialogVisible = signal<boolean>(false);
   readonly expireCreditDialogVisible = signal<boolean>(false);
+  /** The one account the open discharge dialog is about; null while it is closed. */
+  readonly expireCreditAccount = signal<GetUserCreditCurrencyAccount | null>(null);
 
   activityColumns!: TableColumn<GetUserLoyaltyActivityActivityItem>[];
   creditColumns!: TableColumn<GetUserCreditLedgerEntry>[];
@@ -154,7 +170,7 @@ export class UserLoyaltyDetailComponent
       this.router.navigate(['/admin-user-management']);
       return;
     }
-    this.userId = id;
+    this.userId.set(id);
     // Email is optionally passed as a query param to avoid an extra fetch.
     const emailParam = this.route.snapshot.queryParamMap.get('email');
     if (emailParam) {
@@ -165,6 +181,7 @@ export class UserLoyaltyDetailComponent
     this.facade.loadActivity(id, 0, 20);
     this.facade.loadReferrals(id);
     this.facade.loadCredit(id);
+    this.facade.loadCurrencies();
   }
 
   ngAfterViewInit(): void {
@@ -477,16 +494,20 @@ export class UserLoyaltyDetailComponent
     this.facade.issueCredit(payload, () => this.creditDialogVisible.set(false));
   }
 
-  openExpireCredit(): void {
+  openExpireCredit(account: GetUserCreditCurrencyAccount): void {
+    this.expireCreditAccount.set(account);
     this.expireCreditDialogVisible.set(true);
   }
 
   onExpireCreditDialogVisibleChange(value: boolean): void {
     this.expireCreditDialogVisible.set(value);
+    if (!value) {
+      this.expireCreditAccount.set(null);
+    }
   }
 
-  onExpireCredit(note: string): void {
-    this.facade.expireCredit(note, () => this.expireCreditDialogVisible.set(false));
+  onExpireCredit(payload: ExpireCreditDialogSubmit): void {
+    this.facade.expireCredit(payload, () => this.onExpireCreditDialogVisibleChange(false));
   }
 
   /** Signed, so the ledger reads as a statement: a spend is negative, a grant is positive. */
@@ -513,6 +534,14 @@ export class UserLoyaltyDetailComponent
       default:
         return 'pages.loyalty_user_detail.credit.reason.unknown';
     }
+  }
+
+  exportSubjectData(): void {
+    this.facade.exportSubjectData();
+  }
+
+  exportIncidentFile(): void {
+    this.facade.exportIncidentFile(this.incidentOrderControl.value);
   }
 
   onBack(): void {

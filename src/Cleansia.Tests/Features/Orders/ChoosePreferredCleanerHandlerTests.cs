@@ -41,10 +41,10 @@ public class ChoosePreferredCleanerHandlerTests
     {
         _session.Setup(s => s.GetUserId()).Returns(CustomerUserId);
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
-                CustomerUserId, "plan-plus", "sub_choose", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
+                CustomerUserId, "plan-plus", "currency-czk", "sub_choose", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1)));
         GrantOnResolve();
     }
 
@@ -296,7 +296,6 @@ public class ChoosePreferredCleanerHandlerTests
             customerAddress: Address.Create("Choose St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

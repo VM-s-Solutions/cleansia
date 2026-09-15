@@ -11,7 +11,7 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// look-alike characters. Codespace at 6 chars from a 28-char alphabet is
 /// ~481M, more than enough headroom for collision-retry generation.
 /// </summary>
-public class ReferralCode : Auditable, ITenantEntity
+public class ReferralCode : TenantAuditable
 {
     [Required]
     public string UserId { get; private set; } = default!;

@@ -8,11 +8,19 @@ namespace Cleansia.Core.Domain.Orders;
 /// this type; none re-derives it. A property of the ORDER alone: four columns in, a bool out, and it
 /// knows nothing about a cleaner.
 ///
-/// <para>Spans both axes, and a plain status list cannot express it: <c>New</c> is offerable only for
-/// cash, and <c>Confirmed</c> only once nothing scheduled can still retract the order. The two
+/// <para>Spans both axes, and a plain status list cannot express it: the fulfilment term says the work
+/// is not over, and the MONEY term carries the whole payment qualification on its own. The two
 /// evaluation forms below are deliberately NOT one shared expression — SQL and C# disagree on null
 /// semantics — and are pinned to each other by an equivalence test over real Postgres, never by
 /// review. → /domain/offerability</para>
+///
+/// <para><b>The status term no longer qualifies payment</b> (owner ruling 2026-09-08, T-0691). It used
+/// to admit <c>New</c> for <c>Cash</c> only, because a paid CARD order reached this rule by being
+/// <c>Confirmed</c> — the Stripe webhook wrote that status when money settled. Now <c>Confirmed</c>
+/// means only "a cleaner took this job", so a paid card order rests at <c>New</c> and the cash
+/// qualifier would have taken every card job off every board. Dropping it is not a widening: the money
+/// term below already refuses <c>New + Card + Pending</c> and <c>New + Card + Failed</c>, so exactly
+/// one input flips — <c>New + Card + Paid</c>, which is the state the ruling creates.</para>
 ///
 /// <para><b>The fulfilment axis says the work is not OVER — not that it has not STARTED</b> (owner
 /// ruling 2026-09-06). A crew is <c>ceil(EstimatedTime / 120)</c> and the catalogue carries single
@@ -54,7 +62,7 @@ public static class OrderAvailability
         (order.CurrentStatus == OrderStatus.Confirmed
             || order.CurrentStatus == OrderStatus.OnTheWay
             || order.CurrentStatus == OrderStatus.InProgress
-            || (order.CurrentStatus == OrderStatus.New && order.PaymentType == PaymentType.Cash))
+            || order.CurrentStatus == OrderStatus.New)
         && (order.PaymentStatus == PaymentStatus.Paid
             || (order.PaymentType == PaymentType.Cash && order.RecurringTemplateId == null));
 
@@ -70,7 +78,7 @@ public static class OrderAvailability
         (currentStatus == OrderStatus.Confirmed
             || currentStatus == OrderStatus.OnTheWay
             || currentStatus == OrderStatus.InProgress
-            || (currentStatus == OrderStatus.New && paymentType == PaymentType.Cash))
+            || currentStatus == OrderStatus.New)
         && (paymentStatus == PaymentStatus.Paid
             || (paymentType == PaymentType.Cash && recurringTemplateId is null));
 }

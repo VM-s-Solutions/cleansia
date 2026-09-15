@@ -17,6 +17,7 @@ public class TokenService(
     IRefreshTokenService refreshTokenService,
     IEmployeeRepository employeeRepository,
     IRequestMetadataProvider requestMetadata,
+    ITenantProvider tenantProvider,
     TimeProvider timeProvider)
     : ITokenService
 {
@@ -26,6 +27,28 @@ public class TokenService(
 
     public async Task<JwtTokenResponse> GenerateTokenAsync(User user, bool rememberMe, string audience, CancellationToken cancellationToken = default)
     {
+        // Each host's login refuses the profiles its audience does not serve, but that check is per
+        // command and the mint is the one seam every issuing command crosses. A Customer holding a
+        // partner-audience session is an account signed in where it has no business, so the pair is
+        // refused here as an invariant: the command is expected to have refused it with its own key first.
+        if (!Admits(audience, user.Profile))
+        {
+            throw new InvalidOperationException($"A {audience} session is never minted for a {user.Profile} account; the issuing command refuses it first.");
+        }
+
+        // Every token mint runs on an anonymous request, so the RefreshToken row added below would be
+        // stamped with no tenant. The row belongs to the user being authenticated — which is also what
+        // the JWT will say (ADR-0061 D4). This deliberately REPLACES the market operator the scope
+        // behaviour set on a social sign-in: an existing account keeps its own operator, whichever
+        // market the request named. Nothing stamped is added between the two overrides. It runs before
+        // the confirmation check because the adoption is the authentication's, not the mint's: a correct
+        // password on an unconfirmed address opens no session but still leaves a sign-in audit row, and
+        // that row is stamped from the ambient tenant at commit (ADR-0062 D7).
+        if (!string.IsNullOrEmpty(user.TenantId))
+        {
+            tenantProvider.SetTenantOverride(user.TenantId);
+        }
+
         if (!user.IsEmailConfirmed)
         {
             return new JwtTokenResponse(
@@ -54,6 +77,16 @@ public class TokenService(
             RefreshTokenExpiresAt: refresh.Record.ExpiresAt,
             Role: user.Profile.ToString());
     }
+
+    // The customer hosts serve every profile (a cleaner may book as a customer — Login has no gate);
+    // the partner hosts serve a cleaner or an administrator; the admin host an administrator only.
+    private static bool Admits(string audience, UserProfile profile) => audience switch
+    {
+        JwtAudiences.Customer => true,
+        JwtAudiences.Partner or JwtAudiences.Mobile => profile is UserProfile.Employee or UserProfile.Administrator,
+        JwtAudiences.Admin => profile == UserProfile.Administrator,
+        _ => false,
+    };
 
     private async Task<string?> ResolveEmployeeIdAsync(User user, CancellationToken cancellationToken)
     {

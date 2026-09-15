@@ -17,8 +17,8 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class Ac9CrossTenantRejectionTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = HostTestTenants.A;
+    private const string TenantB = HostTestTenants.B;
 
     [Fact]
     public async Task Cross_tenant_get_user_by_id_returns_not_found()

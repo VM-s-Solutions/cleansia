@@ -179,10 +179,20 @@ class ReferralRepositoryTest {
         val body = ValidateReferralResponse(isValid = true, referrerFirstName = "Jane")
         coEvery { api.validate(ValidateReferralRequest("ABC123")) } returns Response.success(body)
 
-        val result = newRepo().validate("abc123")
+        val result = newRepo().validate("abc123", countryId = null)
 
         assertEquals(body, result.getOrNull())
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun validate_putsTheMarketOnTheRequest() = runTest {
+        val body = ValidateReferralResponse(isValid = true, referrerFirstName = "Jane")
+        coEvery { api.validate(ValidateReferralRequest("ABC123", countryId = "svk-id")) } returns Response.success(body)
+
+        val result = newRepo().validate("abc123", countryId = "svk-id")
+
+        assertEquals(body, result.getOrNull())
     }
 
     @Test
@@ -192,7 +202,7 @@ class ReferralRepositoryTest {
         val errBody = "{}".toResponseBody("application/json".toMediaType())
         coEvery { api.validate(ValidateReferralRequest("ABC123")) } returns Response.error(400, errBody)
 
-        val result = newRepo().validate("abc123")
+        val result = newRepo().validate("abc123", countryId = null)
 
         assertTrue(result is ApiResult.Error)
         assertNull(result.getOrNull())
@@ -203,7 +213,7 @@ class ReferralRepositoryTest {
     fun validate_whenApiThrows_returnsSilentNetworkError() = runTest {
         coEvery { api.validate(ValidateReferralRequest("ABC123")) } throws java.io.IOException("boom")
 
-        val result = newRepo().validate("abc123")
+        val result = newRepo().validate("abc123", countryId = null)
 
         assertTrue((result as ApiResult.Error).error is ApiError.Network)
         assertNull(result.getOrNull())

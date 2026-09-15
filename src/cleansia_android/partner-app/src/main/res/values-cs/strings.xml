@@ -66,6 +66,7 @@
     <string name="login_subtitle">Přihlaste se pro pokračování do svého účtu</string>
     <string name="create_account">Vytvořit účet</string>
     <string name="register_subtitle">Připojte se k nám a začněte vydělávat</string>
+    <string name="register_market_label">Země, kde budete pracovat</string>
     <string name="first_name">Jméno</string>
     <string name="last_name">Příjmení</string>
     <string name="phone">Telefonní číslo</string>
@@ -430,8 +431,6 @@
     <string name="business_country">Země registrace</string>
     <string name="registration_number_label">Registrační číslo</string>
     <string name="registration_number_helper">Formát závisí na zvolené zemi.</string>
-    <string name="vat_number_label">DIČ</string>
-    <string name="vat_number_helper">Nepovinné — pouze pokud jste plátce DPH.</string>
     <string name="legal_entity_name_label">Název právnické osoby</string>
     <string name="street">Ulice</string>
     <string name="city">Město</string>
@@ -1206,7 +1205,6 @@
     <string name="error_validation_invalid_iban">Zadejte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadejte prosím platné PSČ.</string>
     <string name="error_validation_registration_number_invalid_format">Zadejte prosím platné IČO pro vybranou zemi.</string>
-    <string name="error_validation_vat_number_invalid_format">Zadejte prosím platné DIČ pro vybranou zemi.</string>
     <string name="error_validation_must_be_positive">Musí být kladné číslo.</string>
     <string name="error_validation_invalid_availability_format">Neplatný formát dostupnosti.</string>
 
@@ -1232,6 +1230,7 @@
     <string name="error_general_not_found">Nenalezeno.</string>
 
     <string name="error_country_not_serviced">V této zemi zatím nepůsobíme.</string>
+    <string name="error_tenant_not_found">Tento trh zatím neprovozuje žádná společnost Cleansia.</string>
     <string name="error_country_required">Zvolte prosím zemi.</string>
     <string name="error_city_not_serviced">V tomto městě zatím nepůsobíme.</string>
     <string name="error_language_not_supported">Tento jazyk není podporován.</string>
@@ -1312,6 +1311,7 @@
     <string name="error_company_not_found">Informace o společnosti nenalezeny</string>
     <string name="error_country_not_existing_id">Země nenalezena</string>
     <string name="error_currency_invalid">Neplatná měna</string>
+    <string name="error_currency_not_found">Měna nebyla nalezena</string>
     <string name="error_dispute_max_length_exceeded">Překročena maximální délka</string>
     <string name="error_employee_not_approved">Váš účet zatím nebyl schválen.</string>
     <string name="error_gdpr_consent_already_granted">Tento souhlas již byl udělen.</string>

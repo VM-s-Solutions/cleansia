@@ -100,6 +100,7 @@ class MembershipRepositoryTest {
         allowsExpressUpgrade = false,
         trialPeriodDays = 14,
         savingsPercentVsMonthly = 0.0,
+        currencyCode = "CZK",
     )
 
     // ── refresh ──
@@ -157,11 +158,27 @@ class MembershipRepositoryTest {
         coEvery { api.subscribe(any()) } returns Response.success(subscriptionResponse())
 
         val repo = newRepo()
-        val result = repo.subscribePhase1("plus_monthly")
+        val result = repo.subscribePhase1("plus_monthly", countryId = null)
 
         assertTrue(result is ApiResult.Success)
         assertEquals(subscriptionResponse(), (result as ApiResult.Success).data)
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    /** ADR-0059 D2: both phases carry the chosen market, so the subscription is created in its currency. */
+    @Test
+    fun bothSubscribePhases_sendTheMarketsCountry() = runTest {
+        val sent = mutableListOf<CreateMembershipSubscriptionRequest>()
+        coEvery { api.subscribe(capture(sent)) } returns Response.success(subscriptionResponse("mem-1"))
+        coEvery { api.getMine() } returns Response.success(membership())
+
+        val repo = newRepo()
+        repo.subscribePhase1("plus_monthly", countryId = "svk-id")
+        repo.subscribePhase2("plus_monthly", "tok-1", countryId = "svk-id")
+
+        assertEquals(listOf("svk-id", "svk-id"), sent.map { it.countryId })
+        assertEquals(listOf(false, true), sent.map { it.paymentMethodConfirmed })
+        assertEquals("tok-1", sent[1].idempotencyToken)
     }
 
     @Test
@@ -169,7 +186,7 @@ class MembershipRepositoryTest {
         coEvery { api.subscribe(any()) } returns Response.error(400, errorBody())
 
         val repo = newRepo()
-        val result = repo.subscribePhase1("plus_monthly")
+        val result = repo.subscribePhase1("plus_monthly", countryId = null)
 
         assertTrue("expected Error but got: $result", result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is ApiError.BadRequest)
@@ -182,7 +199,7 @@ class MembershipRepositoryTest {
         coEvery { api.subscribe(any()) } throws java.io.IOException("boom")
 
         val repo = newRepo()
-        val result = repo.subscribePhase1("plus_monthly")
+        val result = repo.subscribePhase1("plus_monthly", countryId = null)
 
         assertTrue(result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is ApiError.Network)
@@ -197,7 +214,7 @@ class MembershipRepositoryTest {
         coEvery { api.getMine() } returns Response.success(membership())
 
         val repo = newRepo()
-        val result = repo.subscribePhase2("plus_monthly", "tok-1")
+        val result = repo.subscribePhase2("plus_monthly", "tok-1", countryId = null)
 
         assertTrue(result is ApiResult.Success)
         assertEquals("mem-99", (result as ApiResult.Success).data.membershipId)
@@ -211,7 +228,7 @@ class MembershipRepositoryTest {
         coEvery { api.subscribe(any()) } returns Response.error(500, errorBody())
 
         val repo = newRepo()
-        val result = repo.subscribePhase2("plus_monthly", "tok-1")
+        val result = repo.subscribePhase2("plus_monthly", "tok-1", countryId = null)
 
         assertTrue(result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is ApiError.Server)
@@ -273,31 +290,60 @@ class MembershipRepositoryTest {
         coVerify(exactly = 0) { api.getMine() }
     }
 
-    // ── getPlans (cached catalog; Unit-of-cache semantics preserved) ──
+    // ── getPlans (cached per market) ──
 
     @Test
     fun getPlans_givenSuccess_returnsListAndCaches() = runTest {
-        coEvery { api.getPlans() } returns Response.success(listOf(plan("a"), plan("b")))
+        coEvery { api.getPlans("cze-id") } returns Response.success(listOf(plan("a"), plan("b")))
 
         val repo = newRepo()
-        val result = repo.getPlans()
+        val result = repo.getPlans("cze-id")
 
         assertTrue(result is ApiResult.Success)
         assertEquals(listOf(plan("a"), plan("b")), (result as ApiResult.Success).data)
 
-        // Second call returns the cache without a second network hit.
-        val second = repo.getPlans()
+        // second call served from cache (no second api call)
+        val second = repo.getPlans("cze-id")
         assertTrue(second is ApiResult.Success)
         assertEquals(listOf(plan("a"), plan("b")), (second as ApiResult.Success).data)
-        coVerify(exactly = 1) { api.getPlans() }
+        coVerify(exactly = 1) { api.getPlans("cze-id") }
+    }
+
+    /** The rows are priced in the market's currency, so a list answered for another market is re-read. */
+    @Test
+    fun getPlans_forAnotherMarket_reReadsRatherThanServingTheCachedList() = runTest {
+        coEvery { api.getPlans("cze-id") } returns Response.success(listOf(plan("a")))
+        coEvery { api.getPlans("svk-id") } returns Response.success(emptyList())
+
+        val repo = newRepo()
+        repo.getPlans("cze-id")
+        val svk = repo.getPlans("svk-id")
+        val svkAgain = repo.getPlans("svk-id")
+
+        assertEquals(emptyList<MembershipPlanDto>(), (svk as ApiResult.Success).data)
+        assertEquals(emptyList<MembershipPlanDto>(), (svkAgain as ApiResult.Success).data)
+        coVerify(exactly = 1) { api.getPlans("cze-id") }
+        coVerify(exactly = 1) { api.getPlans("svk-id") }
+    }
+
+    /** The server's empty answer is a fact about the market ("Plus is not on sale here"), cached like any other. */
+    @Test
+    fun getPlans_cachesAnEmptyAnswerForTheMarket() = runTest {
+        coEvery { api.getPlans("svk-id") } returns Response.success(emptyList())
+
+        val repo = newRepo()
+        repo.getPlans("svk-id")
+        repo.getPlans("svk-id")
+
+        coVerify(exactly = 1) { api.getPlans("svk-id") }
     }
 
     @Test
     fun getPlans_givenHttp500_returnsServerErrorAndEmptyCache() = runTest {
-        coEvery { api.getPlans() } returns Response.error(500, errorBody())
+        coEvery { api.getPlans(null) } returns Response.error(500, errorBody())
 
         val repo = newRepo()
-        val result = repo.getPlans()
+        val result = repo.getPlans(null)
 
         assertTrue("expected Error but got: $result", result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is ApiError.Server)

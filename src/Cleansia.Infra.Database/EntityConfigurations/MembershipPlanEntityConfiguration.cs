@@ -20,13 +20,6 @@ public class MembershipPlanEntityConfiguration : AuditableEntityConfiguration<Me
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.Property(p => p.MonthlyPriceCzk)
-            .HasPrecision(18, 2);
-
-        builder.Property(p => p.StripePriceId)
-            .IsRequired()
-            .HasMaxLength(64);
-
         builder.Property(p => p.DiscountPercentage)
             .HasPrecision(5, 2);
 
@@ -50,9 +43,6 @@ public class MembershipPlanEntityConfiguration : AuditableEntityConfiguration<Me
 
         builder.Property(p => p.IsActive)
             .IsRequired();
-
-        // Computed property — exclude from EF mapping.
-        builder.Ignore(p => p.MonthlyEquivalentPriceCzk);
 
         // Code is referenced by handler logic ("look up the PLUS_MONTHLY plan").
         // MembershipPlan is platform config (ADR-0001 Addendum A1): not

@@ -2,8 +2,6 @@
 
 public class Auditable : BaseEntity
 {
-    public string? TenantId { get; set; }
-
     public string CreatedBy { get; private set; } = default!;
 
     public DateTimeOffset CreatedOn { get; private set; } = DateTimeOffset.UtcNow;

@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { AddressDto, CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem, SignupConsentService } from '@cleansia/customer-services';
+import { CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -30,7 +30,6 @@ import {
   createAddressDto,
   filterTimeOptionsForToday,
   composeSlotMoment,
-  formatPrice,
   generateTimeOptions,
   PROMO_ERROR_FALLBACK,
   PROMO_ERROR_KEYS,
@@ -45,6 +44,7 @@ import {
   LAST_WINDOW_HOUR,
   STANDARD_LEAD_TIME_HOURS,
 } from '@cleansia/models';
+import { formatMoney, localeFor } from '@cleansia/utils';
 
 /** Midnight of a date, so two dates compare as days and not as instants. */
 function startOfDay(date: Date): Date {
@@ -92,7 +92,6 @@ export class OrderWizardComponent implements OnInit {
   protected readonly facade = inject(OrderWizardFacade);
   protected readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly signupConsent = inject(SignupConsentService);
   private readonly draft = inject(OrderDraftService);
   private readonly router = inject(Router);
   private readonly apiBaseUrl = inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? '';
@@ -471,8 +470,12 @@ export class OrderWizardComponent implements OnInit {
     }
   }
 
-  formatPrice(price: number): string {
-    return formatPrice(price);
+  /**
+   * A catalogue item is labelled with its own `currencyCode`; a figure with no payload of its own
+   * (a quote line, a plan price) with the wizard's.
+   */
+  formatPrice(price: number, currencyCode?: string | null): string {
+    return formatMoney(price, currencyCode || this.facade.currencyCode(), localeFor(this.lang()));
   }
 
   // Same icon rotation as the services-catalog page so both card sets read
@@ -596,7 +599,7 @@ export class OrderWizardComponent implements OnInit {
   private readonly visibleMonth = signal(startOfMonth(new Date()));
 
   readonly visibleMonthLabel = computed(() => {
-    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const tag = localeFor(this.lang());
     const label = new Intl.DateTimeFormat(tag, { month: 'long', year: 'numeric' })
       .format(this.visibleMonth());
     return label.charAt(0).toUpperCase() + label.slice(1);
@@ -609,7 +612,7 @@ export class OrderWizardComponent implements OnInit {
    * silently if they disagree.
    */
   readonly weekdayNames = computed(() => {
-    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const tag = localeFor(this.lang());
     const format = new Intl.DateTimeFormat(tag, { weekday: 'short' });
     // 2026-01-05 is a Monday.
     return Array.from({ length: 7 }, (_, i) => {
@@ -716,6 +719,7 @@ export class OrderWizardComponent implements OnInit {
     void data.selectedPackageIds;
     void data.rooms;
     void data.bathrooms;
+    void data.address.countryId;
     if (onPlusStep && havePlans) {
       this.refreshPlusSavings();
     }
@@ -732,6 +736,8 @@ export class OrderWizardComponent implements OnInit {
     query.rooms = data.rooms;
     query.bathrooms = data.bathrooms;
     query.planCode = plan.code;
+    // The address's country decides the currency the saving is priced in.
+    query.countryId = data.address.countryId || undefined;
     // The SLOT, not the date: midnight is a different express band.
     query.cleaningDate = composeSlotMoment(data.cleaningDate, data.cleaningTime) ?? undefined;
     this.facade.loadPlusSavings(query);
@@ -838,7 +844,7 @@ export class OrderWizardComponent implements OnInit {
 
     const when: string[] = [];
     if (data.cleaningDate) {
-      const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+      const tag = localeFor(this.lang());
       when.push(
         `${new Intl.DateTimeFormat(tag, { dateStyle: 'long' }).format(data.cleaningDate)}, ${data.cleaningTime}`
       );
@@ -932,10 +938,10 @@ export class OrderWizardComponent implements OnInit {
     () => this.facade.totalPrice() - this.facade.displayedTotalPrice() > 0.005,
   );
 
-  readonly priceBeforeDiscount = computed(() => formatPrice(this.facade.totalPrice()));
+  readonly priceBeforeDiscount = computed(() => this.formatPrice(this.facade.totalPrice()));
 
   readonly savingAmount = computed(() =>
-    formatPrice(this.facade.totalPrice() - this.facade.displayedTotalPrice()),
+    this.formatPrice(this.facade.totalPrice() - this.facade.displayedTotalPrice()),
   );
 
   /**
@@ -955,7 +961,7 @@ export class OrderWizardComponent implements OnInit {
 
   /** The money a winning code takes off, ready to print. */
   readonly promoSavings = computed(() =>
-    formatPrice(this.facade.effectivePromoDiscount()),
+    this.formatPrice(this.facade.effectivePromoDiscount()),
   );
 
   /** Drop the code and go back to whatever the order was worth without it. */
@@ -1034,7 +1040,7 @@ export class OrderWizardComponent implements OnInit {
    * A single `{{rooms}} pokoje` read "1 pokoje" for the default one-room flat.
    */
   private pluralKey(base: string, count: number): string {
-    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
+    const tag = localeFor(this.lang());
     const cat = new Intl.PluralRules(tag).select(count);
     return `pages.order.${base}_${cat}`;
   }
@@ -1128,8 +1134,7 @@ export class OrderWizardComponent implements OnInit {
     const minutes = this.facade.quote()?.estimatedDurationMinutes ?? 0;
     if (!minutes) return null;
     const hours = Math.round((minutes / 60) * 2) / 2;
-    const tag = this.lang() || this.translate.getDefaultLang() || 'cs';
-    return new Intl.NumberFormat(tag, { maximumFractionDigits: 1 }).format(hours);
+    return new Intl.NumberFormat(localeFor(this.lang()), { maximumFractionDigits: 1 }).format(hours);
   });
 
   setRooms(rooms: number): void {
@@ -1207,16 +1212,6 @@ export class OrderWizardComponent implements OnInit {
       this.triedToAdvance.set(true);
       return;
     }
-    // Parked BEFORE the submit, not after: the order can succeed and navigate
-    // away, and a consent recorded only on the way out is a consent lost to a
-    // slow network. The service delivers it at the first session that can take
-    // one, so an anonymous booking's tick is not dropped either.
-    // Only when one was actually taken. An account that already holds both was
-    // not asked, and re-recording the same grant writes a consent nobody gave
-    // on this screen.
-    if (!this.facade.alreadyConsented()) {
-      this.signupConsent.record(this.facade.formData().customerEmail);
-    }
 
     if (this.saveNewAddress() && this.isCustomAddress()) {
       const label = this.newAddressLabel().trim();
@@ -1227,9 +1222,9 @@ export class OrderWizardComponent implements OnInit {
         return;
       }
       this.labelError.set(null);
-      await this.facade.submitOrder({ label });
+      await this.facade.submitOrder({ label }, this.acceptedTerms());
       return;
     }
-    await this.facade.submitOrder(null);
+    await this.facade.submitOrder(null, this.acceptedTerms());
   }
 }

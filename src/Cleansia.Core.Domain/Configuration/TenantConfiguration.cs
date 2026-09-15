@@ -3,7 +3,7 @@ using Cleansia.Core.Domain.Common;
 
 namespace Cleansia.Core.Domain.Configuration;
 
-public class TenantConfiguration : Auditable, ITenantEntity
+public class TenantConfiguration : TenantAuditable
 {
     [Required]
     [MaxLength(100)]

@@ -1,11 +1,13 @@
 #nullable enable
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Reports.DTOs;
 using Cleansia.Core.AppServices.Features.Reports.Filters;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -16,13 +18,36 @@ public class GetPayrollReport
 {
     public record Query(ReportFilter Filter) : IQuery<PayrollReportDto>;
 
-    internal class Handler(IEmployeeInvoiceRepository employeeInvoiceRepository)
+    public class Validator : AbstractValidator<Query>
+    {
+        public Validator(ICurrencyRepository currencyRepository)
+        {
+            // Optional: null is the platform default. A NAMED currency has to exist, or a typo would
+            // answer an all-zero report that reads as "no payroll".
+            RuleFor(x => x.Filter.CurrencyId)
+                .MustAsync(async (id, ct) => await currencyRepository.ExistsAsync(id!, ct))
+                .WithMessage(BusinessErrorMessage.CurrencyNotFound)
+                .When(x => !string.IsNullOrWhiteSpace(x.Filter.CurrencyId));
+        }
+    }
+
+    internal class Handler(IEmployeeInvoiceRepository employeeInvoiceRepository, ICurrencyRepository currencyRepository)
         : IRequestHandler<Query, BusinessResult<PayrollReportDto>>
     {
         public async Task<BusinessResult<PayrollReportDto>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var invoices = await employeeInvoiceRepository
-                .GetAllByDateRangeAsync(request.Filter.StartDate, request.Filter.EndDate, cancellationToken);
+            // ONE currency per report; invoices are single-currency rows, so the filter is exact.
+            var currency = string.IsNullOrWhiteSpace(request.Filter.CurrencyId)
+                ? await currencyRepository.GetDefaultAsync(cancellationToken)
+                : await currencyRepository.GetByIdAsync(request.Filter.CurrencyId, cancellationToken);
+            if (currency is null)
+            {
+                return BusinessResult.Failure<PayrollReportDto>(new Error(
+                    nameof(request.Filter.CurrencyId), BusinessErrorMessage.CurrencyNotFound));
+            }
+
+            var invoices = await employeeInvoiceRepository.GetAllByDateRangeAsync(
+                request.Filter.StartDate, request.Filter.EndDate, currency.Id, cancellationToken);
 
             var totalPayroll = invoices.Sum(i => i.TotalAmount);
             var totalInvoices = invoices.Count;
@@ -84,7 +109,8 @@ public class GetPayrollReport
                 TotalDeductions: totalDeductions,
                 EmployeeSummaries: employeeSummaries,
                 PayrollByStatus: payrollByStatus,
-                MonthlyPayroll: monthlyPayroll);
+                MonthlyPayroll: monthlyPayroll,
+                CurrencyCode: currency.Code);
         }
 
         private static string GetEmployeeName(Core.Domain.EmployeePayroll.EmployeeInvoice invoice)

@@ -40,6 +40,40 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertFalse(rendered.body.contains("%"))
     }
 
+    func testNoCleanerRowRendersTheOrderNumberAndTheServerFormattedCredit() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.no_cleaner_refunded",
+            args: ["orderId": "ord-7", "orderNumber": "A-1042", "amount": "250 Kč"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.order.no_cleaner_refunded.title"))
+        XCTAssertEqual(
+            rendered.body,
+            String(format: L10n.localized("push.order.no_cleaner_refunded.body"), "A-1042", "250 Kč")
+        )
+        XCTAssertTrue(rendered.body.contains("#A-1042"))
+        XCTAssertTrue(rendered.body.contains("250 Kč"))
+        XCTAssertFalse(rendered.body.contains("%"))
+    }
+
+    func testNoCleanerRowWithoutAnAmountStillReadsAndNeverSaysNil() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.no_cleaner_refunded",
+            args: ["orderId": "ord-7", "orderNumber": "A-1042"]
+        ))
+        XCTAssertTrue(rendered.body.contains("#A-1042"))
+        XCTAssertFalse(rendered.body.contains("nil"))
+        XCTAssertFalse(rendered.body.contains("%"))
+    }
+
+    func testThePlainCancellationTakesOnlyTheOrderNumberEvenWhenAnAmountArrives() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.cancelled",
+            args: ["orderId": "ord-7", "orderNumber": "A-1042", "amount": "250 Kč"]
+        ))
+        XCTAssertEqual(rendered.body, String(format: L10n.localized("push.order.cancelled.body"), "A-1042"))
+        XCTAssertFalse(rendered.body.contains("250 Kč"))
+    }
+
     func testArglessEventsRenderTheTemplateVerbatim() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(eventKey: "dispute.reply", args: [:]))
         XCTAssertEqual(rendered.body, L10n.localized("push.dispute.reply.body"))

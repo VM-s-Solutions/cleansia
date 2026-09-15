@@ -18,4 +18,6 @@ public record ExtraListItem(
     string? Description,
     decimal Price,
     int DisplayOrder,
-    Dictionary<string, Translation> Translations);
+    Dictionary<string, Translation> Translations,
+    /// <summary>The currency <see cref="Price"/> is in -- see <see cref="Services.DTOs.ServiceListItem.CurrencyCode"/>.</summary>
+    string? CurrencyCode = null);

@@ -69,7 +69,7 @@ public class GenerateInvoiceHandlerTests
     private void ArrangeMediatorSuccess(string invoiceId = "INV-1") =>
         _mediator
             .Setup(m => m.Send(It.IsAny<GenerateInvoice.Command>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(BusinessResult.Success(new GenerateInvoice.Response(invoiceId)));
+            .ReturnsAsync(BusinessResult.Success(new GenerateInvoice.Response([invoiceId])));
 
     [Fact]
     public async Task Wellformed_Message_Runs_GenerateInvoice_Command_Via_Mediator()
@@ -79,7 +79,7 @@ public class GenerateInvoiceHandlerTests
         _mediator
             .Setup(m => m.Send(It.IsAny<GenerateInvoice.Command>(), It.IsAny<CancellationToken>()))
             .Callback<object, CancellationToken>((cmd, _) => captured = (GenerateInvoice.Command)cmd)
-            .ReturnsAsync(BusinessResult.Success(new GenerateInvoice.Response("INV-1")));
+            .ReturnsAsync(BusinessResult.Success(new GenerateInvoice.Response(["INV-1"])));
 
         await CreateHandler().HandleAsync(Enveloped(EmployeeId, PayPeriodId, TenantId), CancellationToken.None);
 
@@ -114,7 +114,7 @@ public class GenerateInvoiceHandlerTests
             .Setup(m => m.Send(It.IsAny<GenerateInvoice.Command>(), It.IsAny<CancellationToken>()))
             .Callback(() => Assert.True(overrideSetBeforeSend,
                 "tenant override must be set before the command runs so child writes are stamped"))
-            .ReturnsAsync(BusinessResult.Success(new GenerateInvoice.Response("INV-1")));
+            .ReturnsAsync(BusinessResult.Success(new GenerateInvoice.Response(["INV-1"])));
 
         await CreateHandler().HandleAsync(Enveloped(EmployeeId, PayPeriodId, TenantId), CancellationToken.None);
 
@@ -191,11 +191,11 @@ public class GenerateInvoiceHandlerTests
     public async Task Twice_With_Same_Message_Is_Safe_To_Run_Twice()
     {
         ArrangeTenantEmployee();
-        // First pass: invoice created. Second pass: the validator's ExistsForPayPeriodAsync guard
+        // First pass: invoice created. Second pass: the validator rejects (no unassigned pay is left, or its currency is already invoiced)
         // rejects (InvoiceAlreadyExists) — the consumer acks as a no-op. The terminal effect happens once.
         _mediator
             .SetupSequence(m => m.Send(It.IsAny<GenerateInvoice.Command>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(BusinessResult.Success(new GenerateInvoice.Response("INV-1")))
+            .ReturnsAsync(BusinessResult.Success(new GenerateInvoice.Response(["INV-1"])))
             .ReturnsAsync(BusinessResult.Failure<GenerateInvoice.Response>(
                 new Error("PayPeriodId", BusinessErrorMessage.InvoiceAlreadyExists)));
 

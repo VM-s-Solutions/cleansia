@@ -43,7 +43,7 @@ describe('credit in the booking summary', () => {
     });
 
     facade = TestBed.inject(OrderPricingFacade);
-    facade.connect({ formData, promoDiscount });
+    facade.connect({ formData, promoDiscount, marketCountryId: signal(null) });
   }
 
   /** Drives one quote through the facade the way the wizard does — the same helper the sibling spec uses. */

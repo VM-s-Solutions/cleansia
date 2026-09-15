@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class LiveActivityTokenConfiguration : AuditableEntityConfiguration<LiveActivityToken, string>
+public class LiveActivityTokenConfiguration : TenantAuditableEntityConfiguration<LiveActivityToken, string>
 {
     public override void Configure(EntityTypeBuilder<LiveActivityToken> builder)
     {

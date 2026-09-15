@@ -88,12 +88,19 @@ export class AppComponent implements OnInit {
     { label: 'sidebar.reports', icon: 'pi pi-chart-bar', route: '/reports' },
     { label: 'sidebar.services', icon: 'pi pi-wrench', route: '/service-management' },
     { label: 'sidebar.packages', icon: 'pi pi-box', route: '/package-management' },
+    { label: 'sidebar.extras', icon: 'pi pi-plus-circle', route: '/extra-management' },
     { label: 'sidebar.global_rates', icon: 'pi pi-money-bill', route: '/pay-config-management' },
     { label: 'sidebar.admin_users', icon: 'pi pi-user-plus', route: '/admin-user-management' },
     { label: 'sidebar.languages', icon: 'pi pi-globe', route: '/language-management' },
     { label: 'sidebar.countries', icon: 'pi pi-map', route: '/country-management' },
     { label: 'sidebar.service_area', icon: 'pi pi-map-marker', route: '/service-area-management' },
     { label: 'sidebar.currencies', icon: 'pi pi-dollar', route: '/currency-management' },
+    {
+      label: 'sidebar.legal_documents',
+      icon: 'pi pi-file-check',
+      route: '/legal-documents',
+      permission: Policy.CanViewCountryConfigurations,
+    },
     {
       label: 'sidebar.employee_documents',
       icon: 'pi pi-id-card',
@@ -113,6 +120,12 @@ export class AppComponent implements OnInit {
       ],
     },
     { label: 'sidebar.company_info', icon: 'pi pi-building', route: '/company-info' },
+    {
+      label: 'sidebar.company_settings',
+      icon: 'pi pi-sliders-h',
+      route: '/company-settings',
+      permission: Policy.CanViewTenantConfigurations,
+    },
     { label: 'sidebar.templates', icon: 'pi pi-file-edit', route: '/template-management' },
     { label: 'sidebar.fiscal_failures', icon: 'pi pi-exclamation-triangle', route: '/fiscal-failures' },
     {

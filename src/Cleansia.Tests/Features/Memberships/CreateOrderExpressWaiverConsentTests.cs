@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -15,6 +17,7 @@ using Cleansia.Tests.Common;
 using Cleansia.Tests.Features.Orders;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Tests.Domain.Legal;
 using Moq;
 
 namespace Cleansia.Tests.Features.Memberships;
@@ -38,7 +41,6 @@ public class CreateOrderExpressWaiverConsentTests
 
     private readonly Mock<IAddressRepository> _addressRepository = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
-    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<ICountryRepository> _countryRepository = new();
     private readonly Mock<IServiceCityRepository> _serviceCityRepository = new();
     private readonly Mock<IStripeClientFactory> _stripeClientFactory = new();
@@ -58,13 +60,6 @@ public class CreateOrderExpressWaiverConsentTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
-        _currencyRepository
-            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
-        _currencyRepository
-            .Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(currency);
         _countryRepository
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -96,7 +91,7 @@ public class CreateOrderExpressWaiverConsentTests
 
     private CreateOrder.Handler CreateHandler() =>
         new(
-            _currencyRepository.Object,
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
@@ -124,6 +119,9 @@ public class CreateOrderExpressWaiverConsentTests
             // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a
             // customer who has never been credited looks like, and what every case here assumes.
             _creditAccountRepository.Object,
+            new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object),
+            LegalDocumentFixtures.Resolver().Object,
+            new AuditContext(),
             NullLogger<CreateOrder.Handler>.Instance);
 
     /// <summary>

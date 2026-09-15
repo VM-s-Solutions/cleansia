@@ -1,6 +1,7 @@
 # GDPR, retention and audit
 
-Erasure, what survives it, and what is recorded about privileged access.
+Erasure, what survives it, what is recorded about privileged access — and what is recorded about the
+customer's own acts.
 
 ## Erasure is anonymise-in-place
 
@@ -9,20 +10,72 @@ choice explains most of what follows.
 
 ```mermaid
 flowchart LR
-  A[Erasure request] --> B{Blocking order live?}
-  B -- yes --> C[Refused — a cleaner may be en route]
+  A[Erasure request] --> B{Blocking order live, or a request not yet completed?}
+  B -- yes --> C[Refused — a cleaner may be en route, or the earlier request is still the platform's to finish]
   B -- no --> D[Anonymise user, employee, addresses]
-  D --> E[Anonymise orders, photos, disputes, pay rows]
-  E --> F[Revoke every session]
+  D --> E["Anonymise the subject's orders — the account's, and the ENDED guest bookings under its e-mail — with their photos, pay rows and guest audit rows; stamp the disputes' text window"]
+  E --> F[Stage the revoke of every session]
   F --> G[Hard-delete payout identifiers]
+  G --> H[ONE commit]
+  H -- throws --> X[Failed request row, written out of band — retried tomorrow or by an admin]
 
   classDef stop fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
-  class C stop
+  class C,X stop
 ```
 
-Nineteen repositories are walked: cart, devices, disputes, employee documents, invoices, payout
+Twenty repositories are walked: cart, devices, disputes, employee documents, invoices, payout
 details, GDPR requests, live-activity tokens, pay rows, order photos, orders, outbox, recurring
-templates, saved addresses, consents, memberships, notifications, users, dead letters.
+templates, saved addresses, consents, memberships, notifications, users, dead letters — and the
+customer audit trail, which is **pseudonymised, not deleted**: a tracked load of every row of the
+subject — and of every **guest** row on the subject's orders (no user, resource `Order`, an order in
+the set below) — `Pseudonymise()` on each (the IP address, device label and device id go; the act, its
+outcome, the evidence and the subject id stay). → [The customer trail](#customer-trail)
+
+**Whose orders.** One predicate, `SubjectOrders.Of(userId, email)`, answers it for the erasure and
+for the subject export alike (owner ruling 2026-09-15): the orders booked on the account, **or** the
+guest bookings — orders naming no account — whose contact e-mail equals the account's, case-folded.
+An order another *account* placed with the subject's address in its contact field is that account's
+and never matches. The predicate is asked with the live e-mail, before it is replaced, and **past the
+tenant filter**: a guest checkout is stamped with the *market's* operating company while the erasure
+runs under the subject's, so a guest booking placed in another market would otherwise be neither
+erased nor exported. Every order it yields goes through the same per-order path as the account's own —
+photo blob and row, the customer fields, the address, the pay rows — and keeps its operator's stamp.
+**A guest booking still live is left out of the walk, not a reason to refuse**: the blocking check
+stays the account's own live orders, because a guest booking has no cancel path (nothing anonymous
+cancels; → T-0753) and a stranger's mistyped address would otherwise dead-end the subject on an order
+the account does not list and nobody but an admin can cancel. Its contact data stays until the job
+ends and the order-PII sweep reaches it; whether it should refuse instead is an open owner question.
+
+**The whole walk is one commit.** It used to commit once in the middle — the session revoke carries
+its own commit for the logout race — which made everything above it durable while everything below
+could still roll back: a half-erased subject with no request on record. The erasure now *stages* the
+revoke into its own unit of work, and a commit that throws leaves the subject, their still-valid
+sessions and the absent request exactly as they were. A concurrency collision on a token row fails the
+erasure as a whole; the retry is the platform's (below).
+
+**What survives, by ruling (2026-09-14).** The **dispute text** — the description, the messages, the
+resolution notes — is *not* blanked at erasure any more: the erasure stamps `Dispute.TextRetainedUntil
+= now + retention.dispute_text.years` (default 3, floor > 0) and leaves it readable for defence of a
+claim; the weekly sweep's `DisputeText` task blanks it once the stamp is past and clears the stamp. The
+evidence **files** still go at erasure (they are not text) and the evidence rows are blanked. The
+cancellation reason is kept as before. The consent rows are withdrawn, and keep their IP, user agent,
+version and document id. A **guest's** booking placed with the account's e-mail is reached by that
+e-mail (above) — the one link there is, since a guest booking is never attached to an account later —
+and its guest audit rows lose their IP and device with it.
+
+**A failed erasure is on record and finished by the platform.** A throw from the walk or from its
+commit, or a refusal after the walk began, is caught outside the rolled-back transaction and written
+as a **`Failed` `GdprRequest`** with the reason (exception type and message, any e-mail-shaped token
+blanked) and who asked (`self`, the admin's e-mail, `system`); a refusal before the walk — a live
+order, a request already pending — stays a plain answer with no row. A `Failed` row, or one left
+`Processing` for more than thirty minutes by a host that died mid-walk, is **retryable**: the daily
+`RetryFailedUserDeletions` job (05:00 UTC, under the retention master switch) re-runs each once per
+row per day in its own scope with the row's tenant set, completes the row on success, appends the new
+note and logs at Error on another failure — the alarm until admin notifications exist; an admin can
+**Retry** it from the data-protection page at any time (`gdpr.user.delete.retry`, audited). Every
+request not yet `Completed` counts as pending, so the subject cannot file a second one over a failed
+first — the second used to complete on a row of its own and the sweep then re-walked the erased
+subject through the first.
 
 ## A cleaner's own deletion files a request; it does not erase
 
@@ -62,7 +115,32 @@ Referral codes are randomly generated rather than name-derived, so they leak not
 
 A background sweep prunes expired confirmation and reset codes, stale devices, completed GDPR
 requests, old orders, consents, employee documents and notifications — including a per-user
-notification cap. It runs across tenants and commits per batch.
+notification cap. **It runs once per operating company** (since 2026-09-15): it loops the company
+registry, sets the tenant override per company, reads that company's own windows from its settings
+(the platform defaults where it has set none — → [Company settings](/product/business-rules#customer-record))
+and commits per batch inside each task, so a one-year window on one company touches none of another's
+rows.
+
+**The customer audit trail is on it, per row.** One task (`CustomerActionAudits`, under the same
+`DataRetention:Enabled` master switch) deletes every row older than `retention.customer_audit.years`
+(default **3**) measured from the row's **own** act — not from the customer's last act, which would
+have kept an active customer's IP addresses for the life of the account — in batches until a batch
+comes back empty, over the `(OccurredOn)` index, under the company's override. The window cannot be
+set below one year — the floor is enforced where the value is written, on the admin page, because this
+is the one delete the append-only discipline sanctions and a cutoff of "now" would empty the evidence
+table on the next tick; a stored value the catalogue no longer accepts falls back to the default. The
+admin and cleaner audit tables have **no** window and the task never reaches them.
+→ [Business rules — retention](/product/business-rules#customer-record)
+
+**The erased customer's dispute text is on it too.** The `DisputeText` task reads only the stamp the
+erasure set (`Dispute.TextRetainedUntil`), blanks the description, the messages and the resolution
+notes of every dispute whose stamp is past, and clears the stamp so each batch shrinks the backlog —
+pure-modify, under the company's override like every task, `RetentionDefaults.BatchSize` at a time.
+The window itself (`retention.dispute_text.years`, the erasing company's own value) is read by the
+erasure when it stamps, not by the sweep.
+
+**A failed erasure is retried by its own daily job**, not by this sweep — `RetryFailedUserDeletions`
+at 05:00 UTC, under the same master switch (→ above).
 
 ## Admin action audit
 
@@ -71,16 +149,134 @@ Every privileged action writes an **append-only** record carrying the actor's se
 
 The audit is also the compensating control for the one thing stored in plaintext: revealing a cleaner's
 payout identifiers is modelled as a *command* rather than a query so it cannot happen unrecorded, and
-the entity stamps who looked and how often.
+the entity stamps who looked and how often. The same reasoning now covers the **admin subject export**:
+dumping another person's whole record is a command marked `gdpr.user.export`, so it leaves an audit row
+(subject id, scope and row counts — never the exported data) and commits the `GdprRequest` it files.
+As a query it left neither. And it covers the **incident file**: building the PDF is
+`gdpr.user.incident_file`, with the subject id, the order scope, the section counts and the SHA-256 of
+the file's data section on the row — so a printed copy can be matched to the build that produced it.
+
+**An admin's refusal on an order is traceable by the order.** `AdminCancelOrder`, `AdminReassignOrder`,
+`UpdateDisputeStatus` and `AddDisputeMessage` carry a frozen label with a resource type, so a refused
+cancel on a job in progress is an admin row with `ResourceType = Order`, the order id and
+`order.in_progress_cannot_cancel` — found by the order's history and by the audit list's resource
+filter (owner ruling 2026-09-14, Q-AUD-O2: *"the reason is worth nothing if I can't trace the failed
+order"*).
+
+## The subject export {#subject-export}
+
+The Art. 15 export is **JSON**, one document for both callers — the customer's own
+(`POST api/v1/Gdpr/export`, a `customer.gdpr.export` row with the section counts) and the admin's
+(`POST api/v1/AdminGdpr/export/{userId}`, `gdpr.user.export`) — and both commit their `GdprRequest`
+(the self-export's row names the fixed actor `self`, never the subject's e-mail, because the row
+outlives the erasure). Sections: profile, address, the employee block and payout details when the
+subject is a cleaner, **orders** (the account's and the guest bookings under its e-mail — the same set
+the erasure reaches, a live guest booking included), **disputes** (owner ruling 2026-09-15 — every
+dispute filed on the account or on one of those orders: reason and status by name, the description,
+the resolution notes, the refund with its currency code, every message as author role, time and text,
+the evidence file names; text as stored, so the three-year window's marker once the sweep has run),
+documents, invoices, consents (with IP, user agent, version and document id), the customer trail
+(`customerActions` — the account's own rows only, not the guest rows on its orders: their IP and device
+belong to whoever placed the booking, a stranger's when the address is a typo) and the metadata.
+→ [ADR-0062](/decisions/adr-0062) D5/D6 as amended 2026-09-15
+
+## The incident file {#incident-file}
+
+The document support hands over is a **PDF** (owner ruling 2026-09-14, Q-AUD-L6), built by an admin
+from `/customers/:userId` — the whole account, or one typed order id — or from an order's detail,
+scoped to that order:
+
+1. **Identity as of export** — name, e-mail, phone, account created, the **operating company and the
+   markets it serves** (`Operator: Cleansia CZ s.r.o.`, `Market: Czechia (CZ)` — resolved from the
+   market registry, never an internal id; an em-dash when no market names the company), language;
+   marked *erased* with the anonymised values after an erasure. The one document that prints it on
+   purpose.
+2. **Orders** — number, dates, address, lines, price with currency code, payment, status history,
+   refunds, assigned cleaners, cancellation.
+3. **Disputes** on those orders — reason, description, messages, evidence file names, resolution,
+   refund (whatever the three-year window still holds after an erasure).
+4. **Consents** — type, version, effective date, granted at, IP, user agent.
+5. **The trail** — the subject's customer rows, then the admin rows on the account, the orders and
+   their disputes, then the cleaner rows, newest first within each source, capped at the newest 2 000
+   per source with the cut said on the page; each payload as a two-column evidence table.
+6. **Integrity** — the SHA-256 of the data section, on the last page; the generating admin's e-mail
+   and *page x of y* in every footer. No signature.
+
+Whose orders: the ones that name the subject now **or** the ones their own *successful* acts named —
+after an erasure the trail is the only link. A stranger's order id is `order.not_found`. Scoped to an
+order, the trail is the subject's own rows and the guest rows on that order — never a bystander's
+refused probe, whose id, IP and device are not the subject's to export. **What the hash proves:** that
+this copy is the file the audit row of the *same* build describes. It does not promise a later build
+matches — an unscoped file changes with every act on the account, the previous build's own row
+included; an order-scoped file is stable until something on that order changes.
+→ [`incident-file`](/domain/roles/incident-file), [ADR-0062](/decisions/adr-0062) D6 as amended
+
+## The customer trail {#customer-trail}
+
+A **third** audit table, `CustomerActionAudits`, records what a customer did that money, an
+entitlement or the account itself turns on — twenty-five acts, opt-in by a marker on the command,
+written by the same pipeline as the admin table through the customer arm of `AuditGate`
+([ADR-0062](/decisions/adr-0062)):
+
+```mermaid
+flowchart LR
+  A[Customer command] --> G{AuditGate}
+  G -- "Administrator" --> AD[AdminActionAudits]
+  G -- "Customer, or anonymous where the marker allows — on a customer host" --> CU[CustomerActionAudits]
+  G -- "Employee / unmarked / system job / anonymous on a partner host" --> N[no row]
+  CU --> S["success: rides the action's commit, with the evidence payload"]
+  CU --> F["refusal: written out-of-band, with the error key"]
+
+  classDef key fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a
+  class CU key
+```
+
+A success row carries a typed evidence record the handler emitted — the figures and versions the
+customer was shown — and the request context (client audience, IP, device). A refusal carries the
+error key and no payload. Both carry an operating company: the request's, or — for a refusal that
+names an account the request did not sign in as — that account's. The row holds identifiers,
+money, enums and versions and never a name, a contact detail, an address line, free text or a token;
+a build-time guard walks every evidence record for a member so named.
+
+Support reads it in three places: the audit log's *Customer actions* segment (list and entry), the
+per-resource history from an order or a dispute (the customer's rows interleaved with the admin's and
+the cleaner's, newest first), and the customer's page (`/customers/:id`), which has the same timeline
+and the **Export subject data** and **Incident file (PDF)** buttons. Every route is behind
+`CanViewAuditLog`, and the admin request log suppresses their bodies wholesale. The timeline by user
+finds the subject's orders by the order's `UserId` **or** by the subject's own successful acts on it,
+so an erased subject (whose orders no longer name them) keeps the admin and cleaner rows on their
+orders.
+
+What survives what:
+
+| Event | Customer audit rows |
+|---|---|
+| Erasure of the subject | Kept; IP, device label and device id blanked — on the subject's rows and on the guest rows of the ended bookings under their e-mail. The `UserId → OrderId` link stays — after erasure it is the only link from the erased id to its orders. |
+| The subject's own data export, or an admin's | Included as `customerActions`, with the payload; IP and device null after an erasure; the account's own rows only, never the guest rows on its orders. The customer's own export is itself a `customer.gdpr.export` row. |
+| A refused sign-in, reset or confirmation on the account | A failure row **naming the account** (owner ruling 2026-09-15), under the account's operating company, with the key and the caller's IP — found by the customer's timeline. An unknown address still names nobody. → [Session rows](/flows/auth-and-identity#session-rows) |
+| Three years after the act | Deleted, per row, by the retention sweep. |
+| The order's two-year PII anonymisation | Untouched — the order loses its `UserId`; the audit row keeps its own. |
+| The incident file | Printed in the trail section, each payload flattened; the guest rows on a scoped order too, a bystander's never. |
+
+→ [What is recorded about a customer](/product/business-rules#customer-record),
+[`customer-action-audit`](/domain/roles/customer-action-audit), [`audit-gate`](/domain/roles/audit-gate)
 
 ## Edge cases
 
 | Case | What happens |
 |---|---|
 | Erasure requested with a job in progress | Refused. Erasing mid-job would anonymise a customer while a cleaner is on the way to their home. |
-| Erasure requested twice | Idempotent. |
+| Erasure requested twice | Refused as already pending while any earlier request is not yet `Completed` — a `Failed` one included, which the daily retry or an admin finishes. |
+| The erasure's commit throws | Nothing changes — the subject, their sessions, the trail; a `Failed` request row is written out of band with the reason and retried the next day at 05:00 UTC, or by an admin's **Retry**. |
+| A `Processing` request row older than thirty minutes | Cannot be a live run — the walk takes seconds — so it is treated like a failure: the daily job retries it and the admin **Retry** is offered on it. |
+| An erased customer's dispute | The description, messages and resolution notes stay readable for `retention.dispute_text.years` (3) from the erasure, then the weekly sweep blanks them; the evidence files went at erasure. |
 | A cleaner deletes their own account | A request is filed; nothing is erased. They stay signed in. An admin fulfils it after the paperwork. |
 | A cleaner is staffed on a future job, or is owed pay | Refused — for an admin as much as for the cleaner. |
 | Order photos | Anonymised individually — they carry a capturer and free text the order-level walk does not reach. |
 | An audit row for an erased admin | Survives. The audit is append-only and outlives the actor. |
+| A customer audit row for an erased customer | Survives, pseudonymised: the three request-metadata columns are blanked and nothing else changes. An erasure whose commit fails leaves the rows untouched. |
+| A guest's booking rows after the guest registers with the same email | Not inherited by the timeline — guest rows have no user and are reachable only from the order's history. The account's **erasure** reaches them all the same, by the e-mail: the ended booking is anonymised and its guest rows lose IP and device. |
+| A guest booking under the erased e-mail that is still live | Left out of the walk, not a refusal: its name, contact and address stay until the job ends and the order-PII sweep reaches it, its guest rows until the three-year sweep. A guest booking has no cancel path, so refusing would dead-end the subject on an order they cannot cancel — possibly a stranger's typo. Whether it should refuse instead is an open owner question. |
+| A guest booking placed in another market with the account's e-mail | Reached and exported all the same — the read goes past the operating-company filter, because a guest checkout is stamped with the market's company and the erasure runs under the subject's. The anonymised rows keep their own company's stamp. |
+| An anonymous refusal before the market's operator is known | No row — there is no tenant to stamp it with. The sink logs one warning instead of writing an orphan. |
 | Notification flood for one user | Capped; the overflow is pruned. |

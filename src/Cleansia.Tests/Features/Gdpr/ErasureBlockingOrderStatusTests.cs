@@ -1,9 +1,12 @@
 ﻿using System.Reflection;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -41,6 +44,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
 {
     private const string SubjectUserId = "user-erase-status-1";
     private const string SubjectEmail = "zdenka.hruskova@cleansia.test";
+    private const string OrderId = "order-erase-status-1";
 
     private readonly SqliteConnection _connection;
     private readonly Mock<IBlobContainerClientFactory> _blobClientFactory = new();
@@ -81,6 +85,50 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
         {
             Assert.Equal(BusinessErrorMessage.GdprDeletionBlockedByOrder, result.Error!.Message);
         }
+    }
+
+    /// <summary>
+    /// A guest booking placed with the subject's e-mail is the subject's order (owner ruling 2026-09-15), but
+    /// a LIVE one neither refuses the erasure nor is touched by it. A guest booking has no cancel path, so
+    /// refusing on it would dead-end the subject on "blocked by a live order" over a stranger's mistyped
+    /// address — an order that is not theirs to cancel and that their account does not list. The booking
+    /// keeps its contact data until the order-PII sweep reaches it; an ENDED one is anonymised with the
+    /// rest, matched case-insensitively as everywhere else an order is found by its contact address.
+    /// </summary>
+    [Fact]
+    public async Task A_Live_Guest_Order_Under_The_Subjects_Email_Neither_Refuses_The_Erasure_Nor_Is_Touched_By_It()
+    {
+        await SeedAsync(OrderStatus.Confirmed, userId: null, customerEmail: SubjectEmail.ToUpperInvariant());
+
+        var result = await EraseAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var order = await ReadOrderAsync();
+        Assert.Equal("Zdenka Hruskova", order.CustomerName);
+        Assert.Equal(SubjectEmail.ToUpperInvariant(), order.CustomerEmail);
+    }
+
+    [Fact]
+    public async Task An_Ended_Guest_Order_Under_The_Subjects_Email_Is_Anonymised_With_The_Erasure()
+    {
+        await SeedAsync(OrderStatus.Completed, userId: null, customerEmail: SubjectEmail.ToUpperInvariant());
+
+        var result = await EraseAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var order = await ReadOrderAsync();
+        Assert.Equal(AnonymizationMarker.Value, order.CustomerName);
+        Assert.Equal(AnonymizationMarker.Value, order.CustomerEmail);
+    }
+
+    [Fact]
+    public async Task A_Live_Guest_Order_Under_Another_Email_Does_Not_Refuse_The_Erasure()
+    {
+        await SeedAsync(OrderStatus.Confirmed, userId: null, customerEmail: "tomas.svoboda@cleansia.test");
+
+        var result = await EraseAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
     }
 
     /// <summary>
@@ -147,6 +195,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             new CreditAccountRepository(ctx),
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
+            new UserStripeCustomerRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),
@@ -160,16 +209,33 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             new UserNotificationRepository(ctx),
             new DeadLetterRepository(ctx),
             new OutboxMessageRepository(ctx),
+            new CustomerActionAuditRepository(ctx),
             Mock.Of<IRefreshTokenService>(),
             Mock.Of<IStripeClient>(),
             _blobClientFactory.Object,
+            Mock.Of<IAppConfigurationProvider>(),
+            new ErasureAttempt(),
             NullLogger<GdprDeletionService>.Instance);
 
-        return await service.DeleteUserAccountAsync(
+        var result = await service.DeleteUserAccountAsync(
             SubjectUserId, "gdpr_erasure_test", _ => ("test-actor", null), deferEmployeeErasure: false, CancellationToken.None);
+
+        // What the UnitOfWork pipeline does for a successful command, so the walk's effect can be read back.
+        if (result.IsSuccess)
+        {
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        return result;
     }
 
-    private async Task SeedAsync(OrderStatus status)
+    private async Task<Order> ReadOrderAsync()
+    {
+        await using var ctx = NewContext();
+        return await ctx.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == OrderId);
+    }
+
+    private async Task SeedAsync(OrderStatus status, string? userId = SubjectUserId, string customerEmail = SubjectEmail)
     {
         await using (var schema = NewContext())
         {
@@ -185,19 +251,18 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
 
         var order = Order.Create(
             customerName: "Zdenka Hruskova",
-            customerEmail: SubjectEmail,
+            customerEmail: customerEmail,
             customerPhone: "+420777222333",
             customerAddress: Address.Create("Erasure St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(6),
             paymentType: PaymentType.Cash,
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: SubjectUserId);
-        order.Id = "order-erase-status-1";
+            userId: userId);
+        order.Id = OrderId;
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         ctx.Add(order);
 
@@ -208,7 +273,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {

@@ -72,6 +72,10 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
   // facade's showApiError replaces the interceptor's translated snackbar —
   // without this entry the screen prints 'auth.social_account_not_found'.
   authsocialaccountnotfound: 'api.auth.social_account_not_found',
+  // A missed order lookup. The admin incident-file scope is an order id typed by
+  // hand, so 'order.not_found' is a routine refusal there, and the facade's
+  // showApiError is the snackbar the admin reads.
+  ordernotfound: 'api.order.not_found',
 };
 
 @Injectable({

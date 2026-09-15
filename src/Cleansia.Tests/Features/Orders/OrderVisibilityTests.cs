@@ -105,6 +105,57 @@ public class OrderVisibilityTests
         Assert.True(OrderVisibility.NotHeldFrom(takenByAdminAssignment, Bystander, Now));
     }
 
+    // ── The currency term (owner ruling 2026-09-12: a cleaner is paid in their work country's currency) ──
+
+    [Fact]
+    public void An_Order_Is_Payable_Only_To_A_Cleaner_Paid_In_Its_Currency()
+    {
+        var order = NewOrder(preferredEmployeeId: null, holdUntilUtc: null);
+
+        Assert.True(OrderVisibility.PayableTo(order, Bystander, Czk));
+        Assert.False(OrderVisibility.PayableTo(order, Bystander, Eur));
+    }
+
+    /// <summary>
+    /// A null currency is nobody's currency. The queryable form compares a NOT NULL column to a null
+    /// parameter and gets UNKNOWN; the in-memory form guards it so the two fail closed together.
+    /// </summary>
+    [Fact]
+    public void A_Cleaner_With_No_Resolved_Currency_Is_Paid_In_None()
+    {
+        var order = NewOrder(preferredEmployeeId: null, holdUntilUtc: null);
+
+        Assert.False(OrderVisibility.PayableTo(order, Bystander, null));
+        Assert.False(OrderVisibility.PayableTo(order, null, null));
+    }
+
+    /// <summary>
+    /// The admin override: <c>AdminReassignOrder</c> is not gated, so a cleaner can be put on an order
+    /// in a currency they are not paid in. It must stay open to THEM — and to nobody else.
+    /// </summary>
+    [Fact]
+    public void A_Cleaner_Already_On_The_Order_Keeps_It_Whatever_Its_Currency()
+    {
+        var order = NewOrder(preferredEmployeeId: null, holdUntilUtc: null, assignedEmployeeId: Bystander);
+
+        Assert.True(OrderVisibility.PayableTo(order, Bystander, Eur));
+        Assert.False(OrderVisibility.PayableTo(order, Beneficiary, Eur));
+    }
+
+    [Fact]
+    public void Open_To_Conjoins_The_Hold_And_The_Currency()
+    {
+        var held = NewOrder(Beneficiary, Now.AddHours(2));
+
+        Assert.True(OrderVisibility.OpenTo(held, Beneficiary, Czk, Now));
+        Assert.False(OrderVisibility.OpenTo(held, Beneficiary, Eur, Now));
+        Assert.False(OrderVisibility.OpenTo(held, Bystander, Czk, Now));
+        Assert.True(OrderVisibility.OpenTo(held, Bystander, Czk, Now.AddHours(3)));
+    }
+
+    private const string Czk = "czk";
+    private const string Eur = "eur";
+
     private static Order NewOrder(
         string? preferredEmployeeId,
         DateTime? holdUntilUtc,
@@ -117,7 +168,6 @@ public class OrderVisibilityTests
             customerAddress: Address.Create("Hold St 1", "Praha", "11000", "cz"),
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: Now.AddDays(1),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,

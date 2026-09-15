@@ -26,4 +26,6 @@ enum class LanguagePreference(val tag: String?) {
 data class AppSettings(
     val theme: ThemePreference = ThemePreference.System,
     val language: LanguagePreference = LanguagePreference.System,
+    /** The chosen market's `Country.IsoCode`; null = the directory's default. Compared against the list, never rendered. */
+    val market: String? = null,
 )

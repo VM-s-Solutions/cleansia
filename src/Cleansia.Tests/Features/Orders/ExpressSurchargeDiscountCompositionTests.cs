@@ -171,16 +171,20 @@ public class ExpressSurchargeDiscountCompositionTests
     {
         _loyaltyService
             .Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(tierDiscount, LoyaltyTier.GoldPolisher));
         _userMembershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(hasPlus ? ActiveMembership(PlusPercentage) : null);
 
         var factory = new OrderFactory(
             _orderRepository.Object,
             _serviceRepository.Object,
             _packageRepository.Object,
+            ExtraRepositoryDouble.Empty(),
+            CataloguePriceDoubles.NoServices(),
+            CataloguePriceDoubles.NoPackages(),
+            CataloguePriceDoubles.NoExtras(),
             PayConfigRepositoryDouble.Holding(),
             _companyInfoRepository.Object,
             _countryConfigurationRepository.Object,
@@ -199,10 +203,10 @@ public class ExpressSurchargeDiscountCompositionTests
                 Address: AddressMockFactory.Generate(),
                 Rooms: 2,
                 Bathrooms: 1,
-                Extras: new Dictionary<string, bool>(),
+                SelectedExtraSlugs: [],
                 CleaningDate: express ? Now.AddHours(3) : Now.AddDays(3),
                 PaymentType: PaymentType.Cash,
-                Currency: Currency.Create("CZK", "Kč", "Czech Koruna", 1m),
+                Currency: Currency.Create("CZK", "Kč", "Czech Koruna"),
                 SelectedServiceIds: ["service-1"],
                 SelectedPackageIds: [],
                 RawSubtotal: RawSubtotal,
@@ -231,8 +235,7 @@ public class ExpressSurchargeDiscountCompositionTests
                 PackagesSubtotal: 0m,
                 ExtrasSubtotal: 0m,
                 ExpressSurchargeApplied: express,
-                ExpressSurchargeAmount: surcharge,
-                ExchangeRate: 1m));
+                ExpressSurchargeAmount: surcharge));
 
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserId()).Returns(UserId);
@@ -240,21 +243,21 @@ public class ExpressSurchargeDiscountCompositionTests
         var loyaltyService = new Mock<ILoyaltyService>();
         loyaltyService
             .Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(tierDiscount, LoyaltyTier.GoldPolisher));
 
         var membershipRepository = new Mock<IUserMembershipRepository>();
         membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ActiveMembership(plusPercentage));
 
         var handler = new QuoteOrder.Handler(
             pricingCalculator.Object,
             session.Object,
             loyaltyService.Object,
-            new Mock<ILoyaltyTierConfigRepository>().Object,
             membershipRepository.Object,
-            new Mock<ICreditAccountRepository>().Object);
+            new Mock<ICreditAccountRepository>().Object,
+            new Mock<ICurrencyResolutionService>().Object);
 
         var result = await handler.Handle(
             new QuoteOrder.Command(
@@ -270,14 +273,13 @@ public class ExpressSurchargeDiscountCompositionTests
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
-            monthlyPriceCzk: 199m,
-            stripePriceId: "price_plus",
             discountPercentage: discountPercentage,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,
             membershipPlanId: plan.Id,
+            currencyId: "currency-czk",
             stripeSubscriptionId: "sub_1",
             currentPeriodStart: Now.AddDays(-1),
             currentPeriodEnd: Now.AddMonths(1));

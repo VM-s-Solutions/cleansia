@@ -42,6 +42,28 @@ public class EmployeeInvoiceMapperTests
     }
 
     [Fact]
+    public void MapToDto_Carries_The_Invoice_CurrencyId_Beside_Its_Code()
+    {
+        var invoice = PayrollMockFactory.Invoice();
+
+        var dto = invoice.MapToDto();
+
+        Assert.Equal(invoice.CurrencyId, dto.CurrencyId);
+        Assert.Equal(invoice.Currency?.Code ?? "", dto.CurrencyCode);
+    }
+
+    [Fact]
+    public void MapToDetailDto_Carries_The_Invoice_CurrencyId_Beside_Its_Code()
+    {
+        var invoice = PayrollMockFactory.Invoice();
+
+        var dto = invoice.MapToDetailDto();
+
+        Assert.Equal(invoice.CurrencyId, dto.CurrencyId);
+        Assert.Equal(invoice.Currency?.Code ?? "", dto.CurrencyCode);
+    }
+
+    [Fact]
     public void MapToDetailDto_Carries_PdfGenerationFailed_And_Error_When_Failed()
     {
         var invoice = PayrollMockFactory.Invoice();

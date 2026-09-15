@@ -60,7 +60,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   cleaner. ⚠️ **[ADR-0039 · panel — CH-D6] `IsActive` is NOT covered by `ContractStatus` and this is a
   live defect in ADR-0036 as it stands, not a new ADR-0039 requirement.** A departing or GDPR-erased
   cleaner is **soft-deleted**: `GdprDeletionService.cs:235-241` calls `Employee.Deactivated(...)` →
-  `Auditable.cs:35-42` sets `IsActive = false` and **leaves `ContractStatus` untouched**. So an erased
+  `Auditable.cs:33-40` sets `IsActive = false` and **leaves `ContractStatus` untouched**. So an erased
   cleaner can still be `Approved`, pass every gate, and earn a hold **plus** a targeted push — 100% of
   the first seat's fill window on a zero-probability outcome, which with
   `BookingPolicy.SpareSeatsPerOrder = 0` is now the **only** seat. `HoldDeclineReason

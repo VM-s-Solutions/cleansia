@@ -72,6 +72,7 @@ The admin app uses a sidebar layout with the following sections (all protected b
 | `/country-management`     | Countries    | Country configuration                         |
 | `/currency-management`    | Currencies   | Currency configuration                        |
 | `/company-info`           | Company Info | Company details                               |
+| `/company-settings`       | Company settings | The admin's own operating company's overrides of the catalogued platform settings (the nine retention windows today); entry gated by `CanViewTenantConfigurations` |
 | `/template-management`    | Templates    | Email/notification templates                  |
 | `/fiscal-failures`        | Fiscal Failures | Action queue for failed fiscal registrations (retry / acknowledge) |
 
@@ -97,6 +98,7 @@ The default route (`/`) redirects to `/employee-management`.
 /country-management       # Country CRUD (admin guard)
 /currency-management      # Currency CRUD (admin guard)
 /company-info             # Company info CRUD (admin guard)
+/company-settings         # Company settings — catalogued per-company overrides (admin guard)
 /template-management      # Template CRUD (admin guard)
 /fiscal-failures          # Failed fiscal registrations (admin guard)
 /unauthorized             # Unauthorized access page
@@ -121,8 +123,10 @@ The default route (`/`) redirects to `/employee-management`.
 | `country-management`    | `@cleansia/admin-features/country-management`    | Country CRUD              |
 | `currency-management`   | `@cleansia/admin-features/currency-management`   | Currency CRUD             |
 | `company-management`    | `@cleansia/admin-features/company-management`    | Company info CRUD         |
+| `company-settings`      | `@cleansia/admin-features/company-settings`      | One row per `TenantSettingCatalog` key — description, category, range, default, the value in force, override or default — edited inline with the typed input its value type calls for (number field / checkbox), reset behind a confirmation; facade in signals, `switchMap` loads; Edit/Reset gated by `CanUpdate` / `CanDeleteTenantConfiguration`; `tenant-setting-catalogue.spec.ts` ties the five locales to the backend catalogue |
 | `template-management`   | `@cleansia/admin-features/template-management`   | Template CRUD             |
 | `fiscal-failures`       | `@cleansia/admin-features/fiscal-failures`       | Fiscal failure action queue |
+| `legal-documents`       | `@cleansia/admin-features/legal-documents`       | Read-only list of every legal-text version per audience, type and market, with a per-language preview and hash (`/legal-documents`, `CanViewCountryConfigurations`; a new version is a seed file + deploy — ADR-0063) |
 
 ## Guards
 
@@ -146,6 +150,7 @@ All API calls use the `AdminClient` (NSwag-generated), which contains sub-client
 - `adminReportClient` -- Revenue and payroll reports
 - `adminPayConfigClient` -- Global rate CRUD + employee pay config summary + bulk grade apply
 - `adminPayPeriodClient` -- Pay period CRUD (create, close, mark paid)
+- `adminTenantSettingsClient` -- `getAll()`, `set(command)`, `reset(key)` against `api/AdminTenantSettings` — the company settings page
 - Various CRUD clients for services, packages, languages, countries, currencies, templates
 
 ## Configuration Management
@@ -162,8 +167,42 @@ The admin app provides CRUD interfaces for platform-wide configuration:
 | Currencies   | Supported payment currencies                            |
 | Company Info | Company legal and contact details                       |
 | Templates    | Email and notification templates                        |
+| Legal documents | Every version of the terms and the privacy policy, read-only (ADR-0063) |
 
 Per-employee pay overrides are managed on the Employee Detail page (see [User Management](./user-management)), not via Global Rates.
+
+### The market forms (ADR-0058, ADR-0059, ADR-0060)
+
+Three of those forms author what a customer's **market** shows:
+
+- **Membership plans** — the plan form renders **one price block per currency the platform knows**
+  (active currencies badged *Active*, inactive ones *Optional*), each with a price for one billing
+  period and the Stripe Price id that charges it. Every block is optional: a block is sent only when
+  both fields are filled, a half-filled block is a per-block error, and a currency the plan is not
+  priced in stays blank on populate (never `0`). The list shows the platform-default-currency price
+  with its code and prints "—" when the plan has none. Refusals rendered: `currency.not_found`,
+  `membership.plan.stripe_price_already_used`.
+- **Currencies** — `No-show apology credit` beside the loyalty divisor: the amount `CancelUnfilledOrders`
+  pays on an order in that currency; blank means none is paid.
+- **Countries** — the `Two-letter code` (required on create, pattern-checked on edit; the market chip
+  prints it) and a **Market** section with `Insurance coverage per booking`, disabled with a hint until
+  the country has a configuration row. The Market section saves through its own PUT after the country
+  update (`country.configuration_missing` if the row is missing). On the Service Area page the serviced
+  toggle snaps back off with `country.market_not_ready` when the country's configured currency is not
+  active.
+- **The default market** (owner ruling 2026-09-13) — the country a customer surface pre-selects before
+  any choice is made is the one configuration flagged `IsDefaultMarket` (CZE today; at most one, by
+  the database). The action is `PUT api/AdminCountry/{countryId}/default-market`
+  (`AdminCountryClient.defaultMarket(countryId)` on the regenerated client; permission
+  `CanUpdateCountry`): promoting another country moves the flag, promoting the current one is a no-op,
+  and a country that is not serviced or whose currency is not active is refused
+  (`country.not_serviced`, `country.market_not_ready`); a lost race answers
+  `country.default_market_changed_concurrently`. The country detail and list rows carry
+  `isDefaultMarket`. **No form control drives the action at the time of writing** — the flag rides
+  the generated client's DTOs, but the admin web country form and list neither display it nor offer
+  a button; until one lands, the client method or the API is the way to move it.
+
+→ [API — markets and memberships](/api/markets-and-memberships)
 
 ## Mobile Responsiveness
 

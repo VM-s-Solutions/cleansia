@@ -35,7 +35,7 @@ public class GetCancellationFeePreviewHandlerTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 
@@ -52,7 +52,7 @@ public class GetCancellationFeePreviewHandlerTests
         string ownerId = UserId,
         OrderStatus[]? statuses = null)
     {
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
             customerName: "Cust",
             customerEmail: "c@x.test",
@@ -60,7 +60,6 @@ public class GetCancellationFeePreviewHandlerTests
             customerAddress: null!,
             rooms: 2,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,

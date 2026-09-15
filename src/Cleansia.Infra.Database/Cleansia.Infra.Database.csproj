@@ -27,4 +27,13 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
+  <!--
+    The legal texts. The folder path is the document's identity (audience / type / market / effective
+    date / language) and the file is the text -> Seed/Legal/LegalSeedResource.cs. A new version is a
+    new dated folder; a file under a date already in force is never applied.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Seed\Legal\**\*.md" LogicalName="Seed/Legal/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

@@ -9,7 +9,7 @@ using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class User : Auditable, ITenantEntity
+public class User : TenantAuditable
 {
     public const int MaxFailedLoginAttempts = 5;
     public const int MaxCodeVerificationAttempts = 5;

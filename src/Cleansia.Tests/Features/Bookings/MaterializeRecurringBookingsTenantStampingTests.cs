@@ -1,7 +1,10 @@
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
@@ -33,9 +36,9 @@ namespace Cleansia.Tests.Features.Bookings;
 /// was the pipeline's deferred one: every order and status track in the batch was stamped with the LAST
 /// template's tenant, and tenant A's customer got an order that only tenant B can see.
 ///
-/// <para>The bug is invisible in single-tenant mode (every stamp is null and null is right), which is
-/// exactly why it shipped — so this suite seeds two templates with two DIFFERENT non-null tenants plus a
-/// legacy null-tenant one, and runs the real repositories, the real <see cref="OrderFactory"/> and a real
+/// <para>The bug is invisible while every row belongs to the same company (whatever stamp lands is the
+/// right one), which is exactly why it shipped — so this suite seeds two templates under two DIFFERENT
+/// companies and runs the real repositories, the real <see cref="OrderFactory"/> and a real
 /// <see cref="CleansiaDbContext"/> over SQLite, because the stamp lives in the context's commit and not
 /// in anything a mock can return.</para>
 /// </summary>
@@ -92,23 +95,6 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
 
         Assert.Equal(TenantA, await StatusTrackTenantOfAsync("tmpl-a"));
         Assert.Equal(TenantB, await StatusTrackTenantOfAsync("tmpl-b"));
-    }
-
-    /// <summary>
-    /// A legacy null-tenant template processed after a tenanted one must not inherit the override the
-    /// previous iteration set — the mirror of the clear-before-set half of the shape.
-    /// </summary>
-    [Fact]
-    public async Task A_Legacy_Null_Tenant_Template_Following_A_Tenanted_One_Stays_Null()
-    {
-        await SeedAsync(
-            Template("tmpl-a", "user-a", "saved-a", TenantA),
-            Template("tmpl-legacy", "user-legacy", "saved-legacy", tenantId: null));
-
-        await RunSweepAsync();
-
-        Assert.Equal(TenantA, await OrderTenantOfAsync("tmpl-a"));
-        Assert.Null(await OrderTenantOfAsync("tmpl-legacy"));
     }
 
     private async Task<string?> OrderTenantOfAsync(string templateId)
@@ -191,10 +177,19 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             sp => new AddressRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyRepository>(
             sp => new CurrencyRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<ICurrencyResolutionService>(
+            sp => new CurrencyResolutionService(
+                new EmployeeRepository(sp.GetRequiredService<CleansiaDbContext>()),
+                new CountryConfigurationRepository(sp.GetRequiredService<CleansiaDbContext>()),
+                sp.GetRequiredService<ICurrencyRepository>()));
         services.AddScoped<IOrderRepository>(
             sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());
         services.AddScoped(sp => RealOrderFactory(sp.GetRequiredService<IOrderRepository>()));
+        // The sweep requires a PAID membership (T-0690). These classes are about tenant stamping,
+        // dedupe and per-template isolation, so the owner is simply entitled — otherwise the sweep
+        // correctly generates nothing and their real subject never runs.
+        services.AddScoped(_ => EntitledMemberships());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         // Only the one command the sweep sends. Registering the real MediatR would drag the whole
@@ -226,7 +221,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
 
         var loyalty = new Mock<ILoyaltyService>();
         loyalty.Setup(s => s.ResolveTierDiscountForOrderAsync(
-                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
 
         var holdResolver = new Mock<IPreferredCleanerHoldResolver>();
@@ -239,12 +234,18 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             orderRepository,
             services.Object,
             packages.Object,
+            ExtraRepositoryDouble.Empty(),
+            CataloguePriceDoubles.NoServices(),
+            CataloguePriceDoubles.NoPackages(),
+            CataloguePriceDoubles.NoExtras(),
             PayConfigRepositoryDouble.Holding(),
             new Mock<ICompanyInfoRepository>().Object,
             new Mock<ICountryConfigurationRepository>().Object,
             new Mock<IVatCalculator>().Object,
             loyalty.Object,
-            new Mock<IUserMembershipRepository>().Object,
+            // The sweep now requires a PAID membership (T-0690). This class is not about
+            // membership, so the owner is simply entitled and the real subject runs.
+            EntitledMemberships(),
             holdResolver.Object,
             new Mock<INotificationProducer>().Object);
     }
@@ -275,10 +276,17 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
 
-        var currency = Currency.Create("CZK", "Kč", "Czech Koruna", 1m);
+        var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "currency-czk";
         currency.SetAsDefault(true);
         ctx.Set<Currency>().Add(currency);
+
+        // The service address's country must resolve to a real currency: a named country with no
+        // configuration throws rather than falling back to the default.
+        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
+        country.Id = "country-cz";
+        ctx.Set<Country>().Add(country);
+        ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create("country-cz", "CZK", "cs", 0.21m));
 
         foreach (var fixture in fixtures)
         {
@@ -324,5 +332,16 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;
+    }
+
+    private static IUserMembershipRepository EntitledMemberships()
+    {
+        var memberships = new Mock<IUserMembershipRepository>();
+        memberships
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string userId, CancellationToken _) =>
+                UserMembershipMockFactory.Paid(userId));
+        return memberships.Object;
     }
 }

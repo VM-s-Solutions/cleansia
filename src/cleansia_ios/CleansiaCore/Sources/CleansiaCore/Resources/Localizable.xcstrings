@@ -981,6 +981,41 @@
         }
       }
     },
+    "error.consent.terms_not_accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please accept the Terms of Service and Privacy Policy to continue."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы продолжить, примите Условия использования и Политику конфиденциальности."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб продовжити, прийміть Умови надання послуг та Політику конфіденційності."
+          }
+        }
+      }
+    },
     "error.country.not_existing_id": {
       "extractionState": "manual",
       "localizations": {
@@ -1117,6 +1152,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Недійсна валюта"
+          }
+        }
+      }
+    },
+    "error.currency.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Měna nebyla nalezena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currency not found"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Валюта не найдена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mena nebola nájdená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Валюту не знайдено"
           }
         }
       }
@@ -2730,6 +2800,76 @@
         }
       }
     },
+    "error.membership.plan.not_priced_in_currency": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento plán není v měně vašeho trhu dostupný."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This plan isn't available in your market's currency."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот план недоступен в валюте вашего рынка."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento plán nie je v mene vášho trhu dostupný."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей план недоступний у валюті вашого ринку."
+          }
+        }
+      }
+    },
+    "error.membership.stripe_customer_currency_locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše fakturace Plus je už nastavená v jiné měně. Pro změnu kontaktujte podporu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Plus billing is already set up in another currency. Contact support to change it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата Plus уже настроена в другой валюте. Чтобы изменить её, обратитесь в поддержку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša fakturácia Plus je už nastavená v inej mene. Pre zmenu kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата Plus уже налаштована в іншій валюті. Щоб її змінити, зверніться до підтримки."
+          }
+        }
+      }
+    },
     "error.membership.swap_same_plan": {
       "extractionState": "manual",
       "localizations": {
@@ -3390,6 +3530,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Нотатки про завершення занадто довгі."
+          }
+        }
+      }
+    },
+    "error.order.country_operator_mismatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto adresu obsluhuje jiná společnost Cleansia, z tohoto účtu ji proto nelze objednat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This address is served by a different Cleansia company, so it can't be booked from this account."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот адрес обслуживает другая компания Cleansia, поэтому из этой учётной записи его нельзя забронировать."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto adresu obsluhuje iná spoločnosť Cleansia, z tohto účtu ju preto nemožno objednať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цю адресу обслуговує інша компанія Cleansia, тому з цього облікового запису її не можна забронювати."
           }
         }
       }
@@ -4619,6 +4794,321 @@
         }
       }
     },
+    "error.promo.below_minimum_order_amount": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka nesplňuje minimální částku pro tento kód"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Order doesn't meet the minimum for this code"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ не соответствует минимальной сумме для этого кода"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka nespĺňa minimálnu sumu pre tento kód"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення не відповідає мінімальній сумі для цього коду"
+          }
+        }
+      }
+    },
+    "error.promo.currency_mismatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód neplatí pro tuto měnu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code doesn't apply to this currency"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код не действует для этой валюты"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód neplatí pre túto menu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код не діє для цієї валюти"
+          }
+        }
+      }
+    },
+    "error.promo.expired": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento kód vypršel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This code has expired"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Срок действия кода истёк"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento kód vypršal"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Термін дії коду закінчився"
+          }
+        }
+      }
+    },
+    "error.promo.global_limit_reached": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód už není dostupný"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code is no longer available"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код больше не доступен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód už nie je dostupný"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код більше не доступний"
+          }
+        }
+      }
+    },
+    "error.promo.inactive": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód už není dostupný"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code is no longer available"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код больше не доступен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód už nie je dostupný"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код більше не доступний"
+          }
+        }
+      }
+    },
+    "error.promo.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód nebyl nalezen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code not found"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код не найден"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód nebol nájdený"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код не знайдено"
+          }
+        }
+      }
+    },
+    "error.promo.not_yet_valid": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód ještě není aktivní"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code is not yet active"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код ещё не активен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód ešte nie je aktívny"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код ще не активний"
+          }
+        }
+      }
+    },
+    "error.promo.per_user_limit_reached": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento kód jste už použili"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've already used this code"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уже использовали этот код"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento kód ste už použili"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви вже використали цей код"
+          }
+        }
+      }
+    },
+    "error.promo.requires_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro použití slevového kódu se přihlaste."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to use a promo code."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Войдите в аккаунт, чтобы использовать промокод."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na použitie zľavového kódu sa prihláste."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увійдіть до облікового запису, щоб скористатися промокодом."
+          }
+        }
+      }
+    },
     "error.receipt.not_found": {
       "extractionState": "manual",
       "localizations": {
@@ -5208,6 +5698,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сервер тимчасово недоступний. Спробуйте пізніше."
+          }
+        }
+      }
+    },
+    "error.tenant.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto trhu zatím žádná společnost Cleansia nepůsobí."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This market isn't operated by any Cleansia company yet."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом рынке пока не работает ни одна компания Cleansia."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto trhu zatiaľ žiadna spoločnosť Cleansia nepôsobí."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На цьому ринку ще не працює жодна компанія Cleansia."
           }
         }
       }
@@ -6361,41 +6886,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Введіть дійсний реєстраційний номер компанії для обраної країни."
-          }
-        }
-      }
-    },
-    "error.validation.vat_number.invalid_format": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadejte prosím platné DIČ pro vybranou zemi."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Please enter a valid VAT number for the selected country."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введите действительный номер НДС для выбранной страны."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadajte prosím platné IČ DPH pre vybranú krajinu."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Введіть дійсний номер ПДВ для обраної країни."
           }
         }
       }

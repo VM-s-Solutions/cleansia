@@ -1,0 +1,76 @@
+// =============================================================================
+// The preference pill — the customer artboard's chip for a navbar preference
+// =============================================================================
+// A 44px pill with a hairline border, a glyph, the code and a chevron. PrimeNG's
+// select paints its own surface and a 6px radius, which read as a form field
+// dropped into a navigation bar rather than as the chip beside it.
+//
+// The language switcher's globe variant and the market switcher's pill are the
+// same control with a different glyph, so the rules live here once. `$glyph` is
+// the class the glyph icon carries inside each component.
+@mixin pref-pill($glyph) {
+  .p-select {
+    min-height: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: none;
+    padding: 0 6px 0 14px;
+    display: inline-flex;
+    align-items: center;
+    transition: border-color 0.16s ease, background 0.16s ease;
+
+    &:not(.p-disabled):hover {
+      border-color: #7dd3fc;
+      background: #f0f9ff;
+    }
+
+    &:not(.p-disabled).p-focus {
+      outline: 2px solid #0284c7;
+      outline-offset: 2px;
+      box-shadow: none;
+      border-color: #0284c7;
+    }
+  }
+
+  .p-select-label {
+    padding: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .p-select-dropdown {
+    width: 22px;
+    color: #64748b;
+  }
+
+  #{$glyph} {
+    color: #0369a1;
+    font-size: 16px;
+    margin-right: 8px;
+  }
+}
+
+@mixin pref-pill-dark($glyph) {
+  .p-select {
+    background: transparent;
+    border-color: rgba(148, 163, 184, 0.3);
+
+    &:not(.p-disabled):hover {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: #7dd3fc;
+    }
+  }
+
+  .p-select-label {
+    color: #cbd5e1;
+  }
+
+  #{$glyph} {
+    color: #7dd3fc;
+  }
+}

@@ -30,6 +30,7 @@ import {
 import { OrderStatus, PaymentStatus } from '@cleansia/models';
 import { OrderStatusIconPipe, OrderStatusLabelPipe } from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { GuestOrderService } from './guest-order.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
@@ -371,21 +372,10 @@ export class TrackOrderComponent implements OnInit {
     this.searched.set(true);
   }
 
-  private getLocale(): string {
-    const localeMap: Record<string, string> = {
-      cs: 'cs-CZ',
-      en: 'en-US',
-      sk: 'sk-SK',
-      uk: 'uk-UA',
-      ru: 'ru-RU',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
-  }
-
   formatDate(date: string | Date | undefined): string {
     if (!date) return '';
     const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleDateString(this.getLocale(), {
+    return d.toLocaleDateString(localeFor(this.translate.currentLang), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -399,11 +389,6 @@ export class TrackOrderComponent implements OnInit {
     price: number | undefined
   ): string {
     if (price == null) return '';
-    const code = order.currency?.code || 'CZK';
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, order.currency?.code, localeFor(this.translate.currentLang));
   }
 }

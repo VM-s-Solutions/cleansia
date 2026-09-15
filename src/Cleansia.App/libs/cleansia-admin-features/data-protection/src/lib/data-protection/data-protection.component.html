@@ -11,6 +11,17 @@
       <cleansia-section
         [title]="'pages.data_protection.requests.title' | translate"
       >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-select
+              [label]="'pages.data_protection.requests.columns.status' | translate"
+              [options]="statusOptions"
+              [showClear]="true"
+              [formControl]="statusControl"
+            />
+          </div>
+        </div>
+
         @if (facade.initialLoading()) {
           <cleansia-loader />
         } @else if (facade.hasError()) {

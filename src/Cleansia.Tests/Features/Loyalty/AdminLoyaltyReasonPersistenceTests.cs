@@ -21,6 +21,7 @@ public class AdminLoyaltyReasonPersistenceTests
     private readonly Mock<ILoyaltyTierConfigRepository> _tierConfigRepository = new();
     private readonly Mock<ILoyaltyTransactionRepository> _transactionRepository = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<ICurrencyRepository> _currencyRepository = new();
 
     private LoyaltyService CreateService() =>
         new(
@@ -28,6 +29,7 @@ public class AdminLoyaltyReasonPersistenceTests
             _accountRepository.Object,
             _tierConfigRepository.Object,
             _transactionRepository.Object,
+            _currencyRepository.Object,
             _producer.Object,
             NullLogger<LoyaltyService>.Instance);
 

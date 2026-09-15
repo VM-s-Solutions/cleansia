@@ -1,9 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  CreateMembershipCheckoutSessionCommand,
   CustomerClient,
   GetMembershipPlansResponse,
 } from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { PlusPageFacade } from './plus-page.facade';
@@ -25,6 +28,7 @@ function plan(fields: Partial<GetMembershipPlansResponse>): GetMembershipPlansRe
   response.expressUpgradesPerMonth = fields.expressUpgradesPerMonth ?? 1;
   response.trialPeriodDays = fields.trialPeriodDays ?? 14;
   response.savingsPercentVsMonthly = fields.savingsPercentVsMonthly ?? 0;
+  response.currencyCode = fields.currencyCode ?? 'CZK';
   return response;
 }
 
@@ -42,7 +46,9 @@ const SEEDED = [
 
 describe('PlusPageFacade', () => {
   let facade: PlusPageFacade;
+  let store: MockStore;
   let getPlans: jest.Mock;
+  let createCheckoutSession: jest.Mock;
 
   // Resets first: several tests re-mock `getPlans` and rebuild, and configuring
   // a TestBed that has already been instantiated throws rather than replacing
@@ -52,22 +58,122 @@ describe('PlusPageFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         PlusPageFacade,
-        { provide: CustomerClient, useValue: { membershipClient: { getPlans } } },
+        provideMockStore({
+          selectors: [{ selector: selectMarketCountryId, value: 'cze-id' }],
+        }),
+        {
+          provide: CustomerClient,
+          useValue: { membershipClient: { getPlans, createCheckoutSession } },
+        },
         // Reached only by startCheckout's failure path, which these plan-facts
         // cases never take — the facade still needs them to construct.
         { provide: SnackbarService, useValue: { showError: jest.fn() } },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
     });
+    store = TestBed.inject(MockStore);
     facade = TestBed.inject(PlusPageFacade);
   }
 
   beforeEach(() => {
     getPlans = jest.fn().mockReturnValue(of(SEEDED));
+    createCheckoutSession = jest.fn().mockReturnValue(of({ checkoutUrl: '' }));
     build();
   });
 
   afterEach(() => TestBed.resetTestingModule());
+
+  // The plans are priced per market (ADR-0059 D3): the read carries the chosen market's country
+  // and the label is the response's own code — never a platform default.
+  describe('the market a plan is priced for', () => {
+    it('asks for the plans in the chosen market when the page loads', () => {
+      facade.load();
+
+      expect(getPlans).toHaveBeenCalledWith('cze-id');
+    });
+
+    it('labels the price with the currency the response carries', () => {
+      getPlans.mockReturnValue(of([plan({ currencyCode: 'EUR' })]));
+      build();
+
+      facade.load();
+
+      expect(facade.currencyCode()).toBe('EUR');
+    });
+
+    it('re-reads the plans when the customer switches market', () => {
+      facade.load();
+      store.overrideSelector(selectMarketCountryId, 'svk-id');
+      store.refreshState();
+
+      expect(getPlans).toHaveBeenLastCalledWith('svk-id');
+      expect(getPlans).toHaveBeenCalledTimes(2);
+    });
+
+    it('sends no country when no market resolved', () => {
+      store.overrideSelector(selectMarketCountryId, null);
+      store.refreshState();
+
+      facade.load();
+
+      expect(getPlans).toHaveBeenCalledWith(undefined);
+    });
+
+    it('reports Plus unavailable when the market lists no plan', () => {
+      getPlans.mockReturnValue(of([]));
+      build();
+
+      facade.load();
+
+      expect(facade.plusUnavailable()).toBe(true);
+      expect(facade.hasPlans()).toBe(false);
+    });
+  });
+
+  describe('checkout', () => {
+    it('subscribes in the chosen market', () => {
+      facade.load();
+
+      facade.startCheckout('PLUS_MONTHLY');
+
+      const command = createCheckoutSession.mock.calls[0][0] as CreateMembershipCheckoutSessionCommand;
+      expect(command.planCode).toBe('PLUS_MONTHLY');
+      expect(command.countryId).toBe('cze-id');
+    });
+
+    it('sends no country when no market resolved', () => {
+      store.overrideSelector(selectMarketCountryId, null);
+      store.refreshState();
+
+      facade.startCheckout('PLUS_MONTHLY');
+
+      const command = createCheckoutSession.mock.calls[0][0] as CreateMembershipCheckoutSessionCommand;
+      expect(command.countryId).toBeUndefined();
+    });
+
+    // The interceptor already voices a business refusal with its own toast, and the snackbar
+    // clears its queue on every show — a second, generic toast would replace the specific one.
+    it('lets the interceptor speak for a business refusal instead of a second, generic toast', () => {
+      createCheckoutSession.mockReturnValue(
+        throwError(() => ({ errors: { PlanCode: ['membership.plan.not_priced_in_currency'] } })),
+      );
+      const snackbar = TestBed.inject(SnackbarService) as unknown as { showError: jest.Mock };
+
+      facade.startCheckout('PLUS_MONTHLY');
+
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.submitting()).toBe(false);
+    });
+
+    it('still voices a failure that carries no business key', () => {
+      createCheckoutSession.mockReturnValue(throwError(() => new Error('network')));
+      const snackbar = TestBed.inject(SnackbarService) as unknown as { showError: jest.Mock };
+
+      facade.startCheckout('PLUS_MONTHLY');
+
+      expect(snackbar.showError).toHaveBeenCalledWith('pages.plus.checkout_failed');
+    });
+  });
 
   it('splits the two plans by billing interval, not by code', () => {
     facade.load();
@@ -146,6 +252,11 @@ describe('PlusPageFacade', () => {
       expect(facade.yearlyPlan()).toBeNull();
     });
 
+    // A failed read is not "Plus is not on sale here" — that claim needs an answer.
+    it('does not claim Plus is unavailable', () => {
+      expect(facade.plusUnavailable()).toBe(false);
+    });
+
     it('stops loading, so the page is never stuck', () => {
       expect(facade.loading()).toBe(false);
     });
@@ -163,9 +274,9 @@ describe('PlusPageFacade', () => {
     });
   });
 
-  it('sends no argument — the endpoint is anonymous and takes none', () => {
+  it('reads the plans once per market, however many surfaces ask', () => {
+    facade.load();
     facade.load();
     expect(getPlans).toHaveBeenCalledTimes(1);
-    expect(getPlans).toHaveBeenCalledWith();
   });
 });

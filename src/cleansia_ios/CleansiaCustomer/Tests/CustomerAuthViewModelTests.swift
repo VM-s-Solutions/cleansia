@@ -15,12 +15,11 @@ final class CustomerAuthViewModelTests: XCTestCase {
     private var settings: FakeAppSettingsStore!
     private var snackbar: SnackbarController!
     private var referral: FakeReferralClient!
-    private var signupConsent: RecordingSignupConsent!
+    private var market: CurrentValueSubject<MarketState, Never>!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
-        signupConsent = RecordingSignupConsent()
         login = FakeLoginClient()
         registration = FakeRegistrationClient()
         confirmation = FakeEmailConfirmationClient()
@@ -31,11 +30,13 @@ final class CustomerAuthViewModelTests: XCTestCase {
         settings = FakeAppSettingsStore()
         snackbar = SnackbarController()
         referral = FakeReferralClient()
+        market = CurrentValueSubject(.unavailable)
         cancellables = []
     }
 
     override func tearDown() {
         cancellables = nil
+        market = nil
         referral = nil
         snackbar = nil
         settings = nil
@@ -59,10 +60,10 @@ final class CustomerAuthViewModelTests: XCTestCase {
             socialProvider: provider,
             settings: settings,
             snackbar: snackbar,
-            signupConsent: signupConsent,
             pendingEmail: pendingEmail,
             changePasswordClient: changePassword,
-            referralClient: referral
+            referralClient: referral,
+            market: market.eraseToAnyPublisher()
         )
     }
 
@@ -168,6 +169,18 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         XCTAssertEqual(received(), .needsEmailConfirm(email: "jana@b.cz"))
         XCTAssertEqual(registration.callCount, 1)
+    }
+
+    /// The tick rides the registration itself: the server grants Terms of Service and Privacy Policy
+    /// in the same commit that creates the account, so nothing is parked on the device any more.
+    func testSignUpSendsTheTickOnTheRegistrationItself() async {
+        registration.result = .success(true)
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.lastTermsAccepted, true)
     }
 
     func testSignUpThreadsTrimmedReferralCodeToRegister() async {
@@ -282,6 +295,99 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertEqual(registration.callCount, 1)
     }
 
+    // MARK: - The chosen market
+
+    /// The persisted market names the operating company the account is created with, so every
+    /// anonymous call that provisions or looks something up carries its country.
+    func testSignUpSendsThePersistedMarketsCountry() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.lastCountryId, "svk")
+    }
+
+    func testSignUpWithNoMarketDirectorySendsNoCountrySoTheServerPicksTheDefault() async {
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.callCount, 1)
+        XCTAssertNil(registration.lastCountryId)
+    }
+
+    func testAMarketChosenAfterTheScreenOpenedIsTheOneSent() async {
+        market.send(.resolved(selected: MarketFixtures.czechia, markets: MarketFixtures.two))
+        let vm = makeViewModel()
+        fillValidSignUp(vm)
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+
+        await vm.signUp()
+
+        XCTAssertEqual(registration.lastCountryId, "svk")
+    }
+
+    func testSignUpWithGoogleSendsThePersistedMarketsCountry() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signUpWithGoogle()
+
+        XCTAssertEqual(social.lastGoogle?.countryId, "svk")
+    }
+
+    func testSignUpWithAppleSendsThePersistedMarketsCountry() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        provider.appleResult = .apple(.init(
+            identityToken: "apple-token", rawNonce: "raw", firstName: nil, lastName: nil
+        ))
+        let vm = makeViewModel()
+        vm.onAcceptTermsChange(true)
+
+        await vm.signUpWithApple()
+
+        XCTAssertEqual(social.lastApple?.countryId, "svk")
+    }
+
+    /// A sign-in that resolves an existing account ignores the market server-side, but a first
+    /// sign-in provisions with it, and the client cannot tell the two apart before the call.
+    func testSignInWithGoogleSendsThePersistedMarketsCountryToo() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        provider.googleResult = .google(.init(
+            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
+        ))
+        let vm = makeViewModel()
+
+        await vm.signInWithGoogle()
+
+        XCTAssertEqual(social.lastGoogle?.countryId, "svk")
+    }
+
+    func testReferralValidationSendsThePersistedMarketsCountry() async {
+        market.send(.resolved(selected: MarketFixtures.slovakia, markets: MarketFixtures.two))
+        let vm = makeViewModel()
+
+        await vm.validateReferralCode("anna7")
+
+        XCTAssertEqual(referral.lastCountryId, "svk")
+    }
+
+    func testReferralValidationWithNoMarketDirectorySendsNoCountry() async {
+        let vm = makeViewModel()
+
+        await vm.validateReferralCode("anna7")
+
+        XCTAssertEqual(referral.callCount, 1)
+        XCTAssertNil(referral.lastCountryId)
+    }
+
     func testSignUpEnforcesPasswordPolicy() async {
         let vm = makeViewModel()
         fillValidSignUp(vm)
@@ -305,9 +411,8 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertEqual(registration.callCount, 0)
     }
 
-    /// The terms box is a hard blocker, not a hint. It is the reason the "unticked box parks
-    /// nothing" rule in `SignupConsentRepository` can never fire from this screen — and the
-    /// reason that rule cannot be the only thing pinning it.
+    /// The terms box is a hard blocker, not a hint: an unticked form never reaches the wire, so the
+    /// server is never asked to record a consent nobody gave.
     func testSignUpWithoutConsentSetsTermsErrorAndDoesNotSubmit() async {
         let vm = makeViewModel()
         fillValidSignUp(vm)
@@ -317,27 +422,7 @@ final class CustomerAuthViewModelTests: XCTestCase {
 
         XCTAssertNotNil(vm.signUpForm.termsError)
         XCTAssertEqual(registration.callCount, 0)
-        XCTAssertEqual(signupConsent.parked.count, 0)
-    }
-
-    func testASuccessfulSignUpParksTheTickAgainstTheSubmittedAddress() async {
-        let vm = makeViewModel()
-        fillValidSignUp(vm)
-
-        await vm.signUp()
-
-        XCTAssertEqual(signupConsent.parked.map(\.email), ["jana@b.cz"])
-        XCTAssertEqual(signupConsent.parked.map(\.accepted), [true])
-    }
-
-    func testARejectedSignUpParksNothing() async {
-        registration.result = .failure(ApiError(code: "user.existing_email", httpStatus: 400))
-        let vm = makeViewModel()
-        fillValidSignUp(vm)
-
-        await vm.signUp()
-
-        XCTAssertEqual(signupConsent.parked.count, 0)
+        XCTAssertNil(registration.lastTermsAccepted)
     }
 
     func testSignUpFormStaysInvalidUntilConsentIsAccepted() {
@@ -740,61 +825,6 @@ final class CustomerAuthViewModelTests: XCTestCase {
         XCTAssertNil(received())
     }
 
-    /// The GDPR record the tick owes, parked against the address the provider named so the spine
-    /// can deliver it from inside the very call that opens the session.
-    func testASocialSignUpParksTheTickAgainstTheProviderAddress() async {
-        provider.googleResult = .google(.init(
-            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
-        ))
-        let vm = makeViewModel()
-        vm.onAcceptTermsChange(true)
-
-        await vm.signUpWithGoogle()
-
-        XCTAssertEqual(signupConsent.parked.filter(\.accepted).map(\.email), ["a@b.cz"])
-    }
-
-    /// Apple never hands the client an address, so the identity token's claim is the only key
-    /// available before the session exists.
-    func testAnAppleSignUpParksTheTickAgainstTheIdentityTokenAddress() async {
-        provider.appleResult = .apple(.init(
-            identityToken: unsignedJwt(email: "relay@privaterelay.appleid.com"),
-            rawNonce: "raw",
-            firstName: nil,
-            lastName: nil
-        ))
-        let vm = makeViewModel()
-        vm.onAcceptTermsChange(true)
-
-        await vm.signUpWithApple()
-
-        XCTAssertEqual(
-            signupConsent.parked.filter(\.accepted).map(\.email),
-            ["relay@privaterelay.appleid.com"]
-        )
-    }
-
-    func testASocialSignInParksNoAcceptedTick() async {
-        provider.googleResult = .google(.init(
-            idToken: "g-token", googleId: "g-1", email: "a@b.cz", firstName: "A", lastName: "B"
-        ))
-        let vm = makeViewModel()
-        vm.onAcceptTermsChange(true)
-
-        await vm.signInWithGoogle()
-
-        XCTAssertEqual(signupConsent.parked.filter(\.accepted).count, 0)
-    }
-
-    private func unsignedJwt(email: String) -> String {
-        let payload = Data(#"{"email":"\#(email)"}"#.utf8)
-            .base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-        return "header.\(payload).signature"
-    }
-
     func testAppleNonceFlowRawToBackendHashedToApple() {
         let raw = Nonce.randomRaw()
         let other = Nonce.randomRaw()
@@ -843,11 +873,15 @@ private final class FakeRegistrationClient: RegistrationAuthClient {
     private(set) var callCount = 0
     private(set) var lastLanguage: String?
     private(set) var lastReferralCode: String?
+    private(set) var lastCountryId: String?
+    private(set) var lastTermsAccepted: Bool?
 
     func register(_ request: RegisterRequest) async -> ApiResult<Bool> {
         callCount += 1
         lastLanguage = request.language
         lastReferralCode = request.referralCode
+        lastCountryId = request.countryId
+        lastTermsAccepted = request.termsAccepted
         return result
     }
 }

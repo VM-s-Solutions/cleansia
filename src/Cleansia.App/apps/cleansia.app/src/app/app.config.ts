@@ -24,7 +24,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
 import { CUSTOMER_API_BASE_URL } from '@cleansia/customer-services';
-import { customerEffects, customerReducers } from '@cleansia/customer-stores';
+import { customerEffects, customerReducers, initializeMarket } from '@cleansia/customer-stores';
 import {
   APPLE_CLIENT_ID,
   AUTH_COOKIE_KEYS,
@@ -63,8 +63,14 @@ export const appConfig: ApplicationConfig = {
     // The cache was disabled on 2026-08-28 while GHSA-39pv-4j6c-2g6v and
     // GHSA-jhpw-976m-542j had no fix in any 19.x — cache-key collisions could
     // serve one user's response to another, and cookie auth meant every
-    // authenticated GET was eligible. Both are fixed in 20.3.25/20.3.27, so the
-    // cache is back on and the first-load re-fetch it cost is gone with it.
+    // authenticated GET was eligible. Both are fixed in 20.3.25/20.3.27 and the
+    // cache is on again. Angular now skips any request sent with credentials, so
+    // what is transferred is decided by CustomerAuthInterceptorFn: an anonymous
+    // GET (catalogue overviews, market, plans, property sizes, serviced
+    // countries) goes credential-less and is served from the document on
+    // bootstrap; the same GET with a session carries the cookie, is never
+    // transferred, and is re-fetched by the browser — which is the property the
+    // advisory needed.
     provideClientHydration(withEventReplay()),
     provideRouter(
       appRoutes,
@@ -91,6 +97,13 @@ export const appConfig: ApplicationConfig = {
       provide: APP_INITIALIZER,
       useFactory: initializeTranslations,
       deps: [TranslateService, PLATFORM_ID],
+      multi: true,
+    },
+    // The market is resolved before the first render on both branches, from the one cookie the
+    // server and the browser can both read, so the two issue the same catalogue URLs. -> ADR-0058
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeMarket,
       multi: true,
     },
     MessageService,

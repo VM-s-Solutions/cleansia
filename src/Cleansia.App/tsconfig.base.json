@@ -66,6 +66,9 @@
       "@cleansia/admin-features/company-management": [
         "libs/cleansia-admin-features/company-management/src/index.ts"
       ],
+      "@cleansia/admin-features/company-settings": [
+        "libs/cleansia-admin-features/company-settings/src/index.ts"
+      ],
       "@cleansia/admin-features/country-management": [
         "libs/cleansia-admin-features/country-management/src/index.ts"
       ],
@@ -81,6 +84,9 @@
       "@cleansia/admin-features/language-management": [
         "libs/cleansia-admin-features/language-management/src/index.ts"
       ],
+      "@cleansia/admin-features/legal-documents": [
+        "libs/cleansia-admin-features/legal-documents/src/index.ts"
+      ],
       "@cleansia/admin-features/disputes-management": [
         "libs/cleansia-admin-features/disputes-management/src/index.ts"
       ],
@@ -89,6 +95,9 @@
       ],
       "@cleansia/admin-features/package-management": [
         "libs/cleansia-admin-features/package-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/extra-management": [
+        "libs/cleansia-admin-features/extra-management/src/index.ts"
       ],
       "@cleansia/admin-features/reports": [
         "libs/cleansia-admin-features/reports/src/index.ts"

@@ -29,7 +29,8 @@ public class UpdateBankDetails
         public Validator(
             IEmployeeRepository employeeRepository,
             IUserSessionProvider userSessionProvider,
-            IPayoutDetailsValidator payoutDetailsValidator)
+            IPayoutDetailsValidator payoutDetailsValidator,
+            ICurrencyRepository currencyRepository)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _userSessionProvider = userSessionProvider ?? throw new ArgumentNullException(nameof(userSessionProvider));
@@ -46,6 +47,18 @@ public class UpdateBankDetails
             RuleFor(c => c.HolderName)
                 .MaximumLength(200)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+
+            // The currency the ACCOUNT holds -- a bank's country does not decide it (a Czech bank sells
+            // EUR accounts), so it is declared, never derived. Existence is the whole check: a cleaner may
+            // hold an account in a currency the platform does not operate yet, and that is a fact about
+            // their bank, not a booking (T-0708).
+            RuleFor(c => c.CurrencyId!)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.InvalidCurrency)
+                .MustAsync(currencyRepository.ExistsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidCurrency)
+                .When(c => c.CurrencyId is not null);
 
             RuleFor(c => c).CustomAsync(ValidatePayoutDetails);
         }
@@ -98,7 +111,11 @@ public class UpdateBankDetails
         string? BankCode = null,
         string? Swift = null,
         string? BankName = null,
-        string? HolderName = null) : ICommand<Response>;
+        string? HolderName = null,
+        // The currency the account holds, by the cleaner's own statement. Absent ⇒ UNCHANGED, not cleared:
+        // two shipped clients cannot send it yet, and a full-replace save from one of them must not
+        // silently revert a declaration made from another (T-0708).
+        string? CurrencyId = null) : ICommand<Response>;
 
     public record Response(string EmployeeId);
 
@@ -144,7 +161,8 @@ public class UpdateBankDetails
                     canonical.Swift,
                     canonical.BankName,
                     canonical.HolderName,
-                    confirmedAt: DateTime.UtcNow));
+                    confirmedAt: DateTime.UtcNow,
+                    currencyId: command.CurrencyId));
             }
             else
             {
@@ -159,7 +177,10 @@ public class UpdateBankDetails
                     canonical.Swift,
                     canonical.BankName,
                     canonical.HolderName,
-                    confirmedAt: DateTime.UtcNow);
+                    confirmedAt: DateTime.UtcNow,
+                    // Absent means unchanged (see Command): an old client's full-replace save must not
+                    // revert a declaration made from a newer one.
+                    currencyId: command.CurrencyId ?? existing.CurrencyId);
             }
 
             employee.MarkPayoutDetailsProvided();

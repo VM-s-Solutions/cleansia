@@ -44,6 +44,97 @@ the retry budget is spent it falls back to a **set-based revoke that verifies te
 rather than reporting a revocation that provably did not complete. A kill switch cannot be outraced
 into failing open.
 
+One caller does **not** want that commit: the GDPR erasure, which must be one transaction, revokes
+every session through a *staged* variant that rides the erasure's own single commit — a concurrency
+collision there fails the erasure as a whole, which is the correct answer, and the retry is the
+erasure's (→ [GDPR — erasure is one commit](/flows/gdpr-and-audit#erasure-is-anonymise-in-place)).
+
+## Registration requires the tick, writes the consent, and the record of it
+
+A customer sign-up **must** send `termsAccepted: true` — a missing or `false` tick is refused as
+`consent.terms_not_accepted` before any account exists (owner ruling 2026-09-14; the refusal itself
+is a row with the caller's IP). With the tick, the **server** grants `TermsOfService` and
+`PrivacyPolicy` in the same commit as the account — each `UserConsents` row stamped with the
+**document in force for the chosen market** (its version is its effective date, `2026-09-14` today,
+and its id; [ADR-0063](/decisions/adr-0063)), the IP address and the device, read server-side and never
+from the body. Nothing is parked in the browser or on the phone to be flushed later: the customer web,
+the Android and the iOS customer apps all send the tick on the registration itself. An email
+registration additionally leaves a `customer.account.register` audit row carrying the method, the
+language, whether a referral code was given, the tick and both versions — with the new user's id,
+which the session cannot supply because the user did not exist when the request began.
+
+A Google or Apple **sign-up** grants the same two consent rows and writes no registration row — the
+command is a sign-in-or-register, and its marker records the **sign-in** (below); on the provisioning
+branch the handler declines the success row, and the consent rows are the proof. A social sign-up
+without the tick is refused as `auth.social_account_not_found`: on the shared endpoint the tick is what
+tells the sign-up screen from the sign-in screen, every client refuses client-side first, and the key
+reads as "sign up first".
+
+**The partner hosts register no customers** (owner ruling 2026-09-15, *"remove it"*). `POST
+api/Auth/Register` is routed on the two customer hosts only — a cleaner's account is opened through
+`RegisterEmployee` — and a Google sign-in on a partner host **signs in an existing cleaner or
+administrator only**: a Google identity with no account is refused `auth.social_account_not_found`
+and nothing is provisioned, a Customer-profile account is refused `auth.insufficient_privileges`
+exactly as the password sign-in refuses it, and the e-mail confirmation on a partner host confirms an
+Employee or Administrator only. Behind all three, `TokenService` refuses to mint a partner or admin
+session for a profile that host does not serve — the command is expected to have refused first with
+its own key, and the mint is the one seam every issuing command crosses. Until this ruling a first-time
+Google sign-in on a partner host created a Customer and handed it a partner-audience token: an account
+that could sign in where it had no business.
+
+A customer granting a consent again later under a **different document** moves the consent row to it
+and writes a `customer.consent.grant` row; withdrawing writes `customer.consent.withdraw`. The consent
+row is the current state; those audit rows are the history. Nobody is re-prompted when a new version
+of the text takes effect. On the partner hosts the same `GrantConsent` command stamps no document, and
+a cleaner's registration (`RegisterEmployee`) sends its tick too — the partner web form does, both
+mobile partner apps still park it for the first sign-in — and grants the two employee consents
+unversioned: a cleaner accepts a different document ([ADR-0041](/decisions/adr-0041)), whose
+versioning is not built, and employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as
+amended, [What is recorded about a customer](/product/business-rules#customer-record)
+
+## Sign-in and session acts leave a row {#session-rows}
+
+Since the owner overruled the "no login history" default (2026-09-14, Q-AUD-L5), every session act
+on a **customer host** is a `CustomerActionAudits` row through the same pipeline as a booking:
+
+| Act | Row | What it carries |
+|---|---|---|
+| Password sign-in (web or mobile), Google or Apple sign-in of an existing account | `customer.session.login` | method, remember-me, the client family the token was minted for, and whether the address was confirmed — a right password on an unconfirmed address is a success that **opens no session**, and the row says so |
+| Sign-out | `customer.session.logout` | whether a token was there to revoke |
+| Password reset requested / completed | `customer.password.reset_requested` / `.reset_completed` | the subject only |
+| E-mail confirmed | `customer.account.email_confirmed` | the 6-digit code or a legacy link |
+| Refresh-token rotation | **no row** | the `RefreshToken` row is the record |
+
+A wrong password, an unknown address, a bad social token: each is a failure row with the key and the
+caller's IP, bounded by the `auth` window. **A refusal on an account that exists names the account**
+(owner ruling 2026-09-15): a wrong password, a lockout, a bad reset or confirmation code, a password
+sign-in or reset asked for a Google/Apple account, a social token refused onto an account of another
+type — the check that resolved the account names it before refusing, so the row carries the
+account's id as its subject and resource, still **no payload and never the address**, and the caller
+is told nothing they were not told before (the same key). "Fifteen wrong passwords on this account from
+three IPs last night" is now one filter on the customer's timeline. **An unknown address names
+nobody** — the row has no user, no resource and no payload, so the address the caller typed reaches no
+column. **On a partner host none of this is written**: the same commands serve cleaners there, whose
+session history belongs in no table, and the audit gate writes an anonymous act only on a customer
+host.
+
+**An administrator's session acts are admin acts** (owner ruling 2026-09-15, *"change to be as
+admin"*). The admin sign-in writes an **admin** audit row under `admin.session.login` — success and
+failure both: a refused sign-in on a known account names the account and is stamped with its
+company, an unknown address names nobody and carries no e-mail, the same rules as the customer rows —
+and the admin's sign-out lands in the admin table under `admin.session.logout`, not under the
+customer label the shared `Logout` command carries for customers. The two are the only admin session
+rows; an administrator's refresh rotations, like everyone's, write none.
+
+The row is stamped with the **account's** operating company, not the default market's — the sign-in
+adopts the user's tenant before the confirmation check, the two reset commands (which mint no token)
+adopt it themselves, and a **refusal that names an account** is re-stamped by the failure sink with
+that account's company, read past the company filter in the sink's own scope — so a second operator's
+customer never lands in the first operator's feed, refused or not. A refusal for an unknown address
+keeps the default market's stamp: there is no account to take one from
+([ADR-0061](/decisions/adr-0061) D4 as amended; [ADR-0062](/decisions/adr-0062) D3/D7 as amended
+2026-09-15).
+
 ## Immediate cutoff beyond the token TTL
 
 Mobile hosts additionally consult polled directories of revoked devices and revoked users, so a
@@ -59,4 +150,9 @@ hosts have no device id, which is why the admin TTL was shortened instead.
 | Password reset while a thief holds a session | All sessions revoked; the revoke is committed before the password change, so the failure mode is "tokens dead, retry" and never "tokens alive". |
 | Rotation racing a revoke | The revoke wins — the rotation's commit fails on the concurrency token and rolls back both the mark and the new token. |
 | Device revoked | Only tokens carrying that device id are ended. A token with no device id survives to natural expiry rather than being killed by an unrelated device. |
-| Google or Apple sign-in | Resolved by **subject**, never by email address. |
+| Google or Apple sign-in | Resolved by **subject**, never by email address. A sign-in of an existing account is a `customer.session.login` row; a first sign-in provisions the account, writes the two versioned consent rows and declines the login row. |
+| Login, logout, password reset, e-mail confirmation | A customer audit row each, on a customer host only (→ [Session rows](#session-rows)). Refresh rotations write none; the `RefreshToken` row (IP, device, audience, 90 days) stays their record. |
+| An administrator signs in or out on the admin host | An **admin** audit row each — `admin.session.login` (success or refusal, the refusal naming a known account) and `admin.session.logout`. Never a customer row. |
+| A Google sign-in or a customer registration on a partner host | No registration exists there; a Google identity with no account is refused `auth.social_account_not_found`, a Customer account `auth.insufficient_privileges`, and nothing is provisioned. |
+| Wrong password, bad code or wrong sign-in method on an account that exists | A failure row naming the account, under the account's operating company, with the key and the caller's IP — the caller learns nothing new. An unknown address: a row naming nobody. |
+| Registration or booking without the terms tick | Refused, `consent.terms_not_accepted`; the refusal is a row with the caller's IP. A signed-in customer who already holds both consents sees no box and is not asked. |

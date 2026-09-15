@@ -30,6 +30,7 @@ import {
 } from '@cleansia/customer-services';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { CleansiaCustomerRoute } from '@cleansia/services';
+import { formatMoney, localeFor } from '@cleansia/utils';
 import { TagSeverity } from '@cleansia/types';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -395,22 +396,6 @@ export class DisputesComponent implements OnInit {
   }
 
   /**
-   * All five the app ships, not three. This listed cs, en and `pl` — a locale
-   * this app does not have — so a Slovak, Russian or Ukrainian customer read
-   * their dispute dates in US format.
-   */
-  private getLocale(): string {
-    const localeMap: Record<string, string> = {
-      cs: 'cs-CZ',
-      sk: 'sk-SK',
-      en: 'en-US',
-      ru: 'ru-RU',
-      uk: 'uk-UA',
-    };
-    return localeMap[this.translate.currentLang] || 'en-US';
-  }
-
-  /**
    * How long the customer has been waiting. Recent is a COUNT — "2 days" is the
    * thing you feel — and older than a month is a date, because "47 days" stops
    * meaning anything. `Intl.RelativeTimeFormat` carries every locale's plural
@@ -420,12 +405,13 @@ export class DisputesComponent implements OnInit {
     if (!createdOn) return '';
     const days = Math.floor((Date.now() - new Date(createdOn).getTime()) / 86400000);
     if (days > 30) {
-      return new Date(createdOn).toLocaleDateString(this.getLocale(), {
+      return new Date(createdOn).toLocaleDateString(localeFor(this.translate.currentLang), {
         day: 'numeric',
         month: 'numeric',
       });
     }
-    return new Intl.RelativeTimeFormat(this.getLocale(), { numeric: 'auto' }).format(
+    const locale = localeFor(this.translate.currentLang);
+    return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
       -days,
       'day',
     );
@@ -434,7 +420,7 @@ export class DisputesComponent implements OnInit {
   /** The moment a message was written, to the minute — a thread is a sequence. */
   formatMoment(date: Date | undefined): string {
     if (!date) return '';
-    return new Date(date).toLocaleString(this.getLocale(), {
+    return new Date(date).toLocaleString(localeFor(this.translate.currentLang), {
       weekday: 'short',
       day: 'numeric',
       month: 'numeric',
@@ -445,23 +431,13 @@ export class DisputesComponent implements OnInit {
 
   formatDate(date: Date | undefined): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString(this.getLocale(), {
+    return new Date(date).toLocaleDateString(localeFor(this.translate.currentLang), {
       day: '2-digit', month: '2-digit', year: 'numeric',
     });
   }
 
-  /**
-   * An agreed refund is money off a specific order, so it is shown in THAT
-   * order's currency. The DTO carries it now — it did not, and this screen was
-   * formatting every refund as CZK, which is right while CZ is the only market
-   * and wrong on the first day it is not. The fallback remains for a dispute
-   * whose order could not be loaded.
-   */
+  /** An agreed refund is money off a specific order, so it is shown in THAT order's currency. */
   formatPrice(price: number, currency?: { code?: string }): string {
-    return new Intl.NumberFormat(this.getLocale(), {
-      style: 'currency',
-      currency: currency?.code || 'CZK',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatMoney(price, currency?.code, localeFor(this.translate.currentLang));
   }
 }

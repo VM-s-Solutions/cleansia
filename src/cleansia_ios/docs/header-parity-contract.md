@@ -119,11 +119,12 @@ belt-and-braces: either alone keeps the Bearer off the refresh call, but keep bo
 ### The allow-list — and the customer host's wider surface
 
 The allow-list is **host-specific**. Match these by path (case-insensitive), mirroring the backend's
-`[AllowAnonymous]` attributes. The partner mobile host's anonymous surface is **auth-only**; the customer
-mobile host additionally exposes the **pre-account booking flow** as anonymous (a guest can price and
-place an order before signing in), so its allow-list is larger.
+`[AllowAnonymous]` attributes. The partner mobile host's anonymous surface is **auth plus the market
+directory** (the register form picks the market the cleaner is registered with); the customer mobile
+host additionally exposes the **pre-account booking flow** as anonymous (a guest can price and place
+an order before signing in), so its allow-list is larger.
 
-**Both hosts — `/api/Auth/*` (+ password reset on `/api/User/*`):**
+**Both hosts — `/api/Auth/*` (+ password reset on `/api/User/*`) and the market directory:**
 
 | Path | Method | Notes |
 |---|---|---|
@@ -136,6 +137,7 @@ place an order before signing in), so its allow-list is larger.
 | `/api/Auth/RefreshToken` | POST | always goes via the no-auth session |
 | `/api/User/RequestPasswordChange` | PUT | password reset runs pre-session |
 | `/api/User/ChangePassword` | PUT | |
+| `/api/Market/GetOverview` | GET | the markets an operating company serves; the register forms send the chosen one as `countryId` |
 
 > `/api/Auth/Logout` is **`[Authorize]`** (NOT anonymous) on both hosts — it needs the Bearer to identify
 > the session, and it carries the refresh token in the body to revoke. Do **not** add it to the allow-list.

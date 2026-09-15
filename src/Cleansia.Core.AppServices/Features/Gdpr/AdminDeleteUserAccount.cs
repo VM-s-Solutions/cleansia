@@ -21,6 +21,8 @@ public static class AdminDeleteUserAccount
     // identity + the subject's id + the scope, not the erased PII).
     public record GdprActionSnapshot(string SubjectUserId, string Scope);
 
+    public const string DeletionScope = "Deletion";
+
     public class Validator : AbstractValidator<Command>
     {
         public Validator(
@@ -53,8 +55,6 @@ public static class AdminDeleteUserAccount
         IAuditContext auditContext)
         : ICommandHandler<Command>
     {
-        private const string DeletionScope = "Deletion";
-
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
             var adminEmail = userSessionProvider.GetUserEmail() ?? GdprAuditReasons.FallbackAdminActor;

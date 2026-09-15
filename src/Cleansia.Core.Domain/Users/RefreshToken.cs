@@ -11,7 +11,7 @@ namespace Cleansia.Core.Domain.Users;
 /// <see cref="ReplacedByTokenId"/> set. Reuse of a rotated token is treated as
 /// a theft signal and revokes the entire chain.
 /// </summary>
-public class RefreshToken : Auditable, ITenantEntity
+public class RefreshToken : TenantAuditable
 {
     public string UserId { get; private set; } = default!;
     public User? User { get; private set; }

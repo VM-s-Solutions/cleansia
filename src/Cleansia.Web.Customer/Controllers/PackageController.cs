@@ -15,8 +15,10 @@ public class PackageController(IMediator mediator) : CustomerApiController(media
     [HttpGet("GetOverview")]
     [ProducesResponseType(typeof(IEnumerable<PackageListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IEnumerable<PackageListItem>> GetOverview(CancellationToken cancellationToken)
+    public async Task<IEnumerable<PackageListItem>> GetOverview(
+        [FromQuery] string? countryId,
+        CancellationToken cancellationToken)
     {
-        return await Mediator.Send(new GetPackageOverview.Request(), cancellationToken);
+        return await Mediator.Send(new GetPackageOverview.Request(countryId), cancellationToken);
     }
 }

@@ -2,6 +2,7 @@ package cz.cleansia.core.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -18,7 +19,8 @@ import androidx.compose.ui.unit.dp
 
 /**
  * A selectable pill. The one chip the customer app draws, wherever it offers a short closed set of
- * choices — cancellation reasons, review tags.
+ * choices — cancellation reasons, review tags — and, with [role] = [Role.Button], wherever a pill
+ * opens something rather than toggling (the home market chip).
  *
  * **It takes a resolved [label], never a string resource id.** `:core` cannot reach an app's `R`, and
  * the two apps' copy is deliberately their own. Mirrors the iOS `CleansiaChip`.
@@ -35,6 +37,7 @@ fun CleansiaChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    role: Role = Role.Checkbox,
 ) {
     val border = if (isSelected) MaterialTheme.colorScheme.primary
                  else MaterialTheme.colorScheme.outlineVariant
@@ -51,15 +54,22 @@ fun CleansiaChip(
                 color = border,
                 shape = RoundedCornerShape(999.dp),
             )
-            // toggleable, NOT clickable(role = Role.Checkbox). The role alone tells a screen reader
-            // what KIND of control this is; only `value` tells it the current state. With clickable
-            // TalkBack says "checkbox" and never "checked", so a blind customer hears the same thing
-            // for a tag they picked and one they did not — which is the whole thing this needs to say.
-            .toggleable(
-                value = isSelected,
-                enabled = enabled,
-                role = Role.Checkbox,
-                onValueChange = { onClick() },
+            // A checkbox is toggleable, NOT clickable(role = Role.Checkbox). The role alone tells a
+            // screen reader what KIND of control this is; only `value` tells it the current state. With
+            // clickable TalkBack says "checkbox" and never "checked", so a blind customer hears the same
+            // thing for a tag they picked and one they did not — which is the whole thing this needs to
+            // say. Any other role is a plain control with no state to announce.
+            .then(
+                if (role == Role.Checkbox) {
+                    Modifier.toggleable(
+                        value = isSelected,
+                        enabled = enabled,
+                        role = Role.Checkbox,
+                        onValueChange = { onClick() },
+                    )
+                } else {
+                    Modifier.clickable(enabled = enabled, role = role, onClick = onClick)
+                },
             )
             .padding(horizontal = 14.dp, vertical = 8.dp),
     ) {

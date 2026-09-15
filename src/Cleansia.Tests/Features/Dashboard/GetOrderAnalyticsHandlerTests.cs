@@ -2,9 +2,13 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Moq;
 
 namespace Cleansia.Tests.Features.Dashboard;
@@ -33,6 +37,7 @@ public class GetOrderAnalyticsHandlerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _orderAccessService = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<ICurrencyResolutionService> _currencyResolution = new();
 
     private readonly DateTime _start = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private readonly DateTime _end = new(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -45,6 +50,12 @@ public class GetOrderAnalyticsHandlerTests
             .Setup(r => r.GetEmployeeOrdersByDateRangeAsync(
                 It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Order>());
+
+        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        czk.Id = "currency-czk";
+        _currencyResolution
+            .Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(czk);
     }
 
     private GetOrderAnalytics.Handler CreateHandler() =>
@@ -52,7 +63,8 @@ public class GetOrderAnalyticsHandlerTests
             typeof(GetOrderAnalytics.Handler),
             _orderRepository.Object,
             _orderAccessService.Object,
-            _session.Object)!;
+            _session.Object,
+            _currencyResolution.Object)!;
 
     private void SetCaller(UserProfile role) =>
         _session.Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
@@ -60,6 +72,55 @@ public class GetOrderAnalyticsHandlerTests
 
     private GetOrderAnalytics.Query QueryFor(string? employeeId) =>
         new() { EmployeeId = employeeId, StartDate = _start, EndDate = _end };
+
+    /// <summary>
+    /// Counts cover every order -- a count has no unit -- while the money columns cover only the
+    /// orders in the currency the dashboard labels them with. "3 orders, 2 100 Kč" is the honest
+    /// reading of two CZK jobs and one EUR job (T-0702).
+    /// </summary>
+    [Fact]
+    public async Task Service_Revenue_Counts_Every_Order_But_Sums_Only_The_Employees_Currency()
+    {
+        SetCaller(UserProfile.Employee);
+        _orderAccessService
+            .Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CallerEmployeeId);
+        var service = Service.Create("cat-1", "Deep clean", "");
+        service.Id = "svc-deep";
+        var when = new DateTime(2026, 1, 14, 10, 0, 0, DateTimeKind.Utc);
+        Order Priced(string id, string currencyId, decimal price)
+        {
+            var currency = Currency.Create(currencyId == "currency-czk" ? "CZK" : "EUR", "¤", currencyId);
+            currency.Id = currencyId;
+            // The factory stamps CurrencyId from the Currency instance (SetCurrency), not the partial.
+            var order = OrderMockFactory.Generate(
+                new OrderMockFactory.OrderPartial { Id = id, TotalPrice = price, CleaningDateTime = when },
+                currency: currency);
+            order.AddSelectedServices([OrderLineMockFactory.ServiceLine(order, service)]);
+            return order;
+        }
+        _orderRepository
+            .Setup(r => r.GetEmployeeOrdersByDateRangeAsync(
+                CallerEmployeeId, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                Priced("oa-czk-1", "currency-czk", 1000m),
+                Priced("oa-czk-2", "currency-czk", 1100m),
+                Priced("oa-eur-1", "currency-eur", 45.10m),
+            ]);
+
+        var result = await CreateHandler().Handle(QueryFor(null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(3, result.Value.TotalOrders);
+        var byService = Assert.Single(result.Value.ServiceDistribution);
+        Assert.Equal(3, byService.OrderCount);
+        Assert.Equal(2100m, byService.TotalRevenue);
+        Assert.Equal(1050m, byService.AveragePrice);
+        var week = Assert.Single(result.Value.WeeklyTrends);
+        Assert.Equal(3, week.OrderCount);
+        Assert.Equal(2100m, week.TotalRevenue);
+    }
 
     [Fact]
     public async Task NonAdmin_Supplying_Foreign_EmployeeId_Is_Scoped_To_Own_Id()

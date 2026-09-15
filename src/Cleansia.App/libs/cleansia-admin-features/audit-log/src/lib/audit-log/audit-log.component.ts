@@ -35,6 +35,7 @@ import {
 import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
+import { AuditLogSegmentComponent } from '../audit-log-segment/audit-log-segment.component';
 import { AuditLogFacade } from './audit-log.facade';
 import {
   buildOutcomeOptions,
@@ -58,6 +59,7 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    AuditLogSegmentComponent,
     FormsModule,
     ReactiveFormsModule,
   ],

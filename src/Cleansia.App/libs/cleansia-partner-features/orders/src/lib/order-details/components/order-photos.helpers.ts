@@ -73,7 +73,7 @@ export function buildGalleryPhotos(
   const uploaded =
     photosData?.photos?.map((p) => ({
       id: p.id,
-      url: p.blobUrl!,
+      url: p.blobUrl ?? '',
       fileName: p.originalFileName || p.fileName,
       capturedAt: p.capturedAt,
       capturedByEmployeeName: p.capturedByEmployeeName,

@@ -50,7 +50,7 @@ internal static class StripeWebhookTestPayloads
     }
 
     public static string SubscriptionCreatedBody(
-        string eventId, string subscriptionId, string userId, string planCode)
+        string eventId, string subscriptionId, string userId, string planCode, string currency = "czk")
     {
         var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var periodStart = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -70,6 +70,7 @@ internal static class StripeWebhookTestPayloads
               "id": "{{subscriptionId}}",
               "object": "subscription",
               "status": "active",
+              "currency": "{{currency}}",
               "metadata": {
                 "UserId": "{{userId}}",
                 "MembershipPlanCode": "{{planCode}}"

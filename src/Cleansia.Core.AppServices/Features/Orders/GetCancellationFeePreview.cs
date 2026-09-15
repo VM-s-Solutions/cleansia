@@ -101,7 +101,7 @@ public class GetCancellationFeePreview
                 FeeAmount: assessment.FeeAmount,
                 RefundAmount: assessment.RefundAmount,
                 TotalPrice: order.TotalPrice,
-                CurrencyCode: order.Currency.Code,
+                CurrencyCode: order.Currency!.Code,
                 ExpressWaiverForfeitedOnCancel: expressWaiverForfeited));
         }
     }

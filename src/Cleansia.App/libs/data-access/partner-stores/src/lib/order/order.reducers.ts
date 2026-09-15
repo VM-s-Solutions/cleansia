@@ -28,7 +28,7 @@ export const orderReducer = createReducer(
         pages: {
           ...state.pages,
           [listKey]: state.pages[listKey].updateDataAndTotalAndPageNumberAndPageSize(
-            page.data!,
+            page.data ?? [],
             page.total,
             page.pageNumber,
             page.pageSize,

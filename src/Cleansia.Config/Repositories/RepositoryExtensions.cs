@@ -2,9 +2,11 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Auditing;
+using Cleansia.Infra.Database.Gdpr;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Config.Repositories;
@@ -49,6 +51,11 @@ public static class RepositoryExtensions
         services.AddScoped<IAuditWriter, DbContextAuditWriter>();
         services.AddScoped<IAuditFailureSink, OutOfBandAuditFailureSink>();
         services.AddScoped<AuditEntryFactory>();
+
+        // The erasure's own failure record, written the same way — in a scope of its own, because the
+        // erasure's single commit is what failed (IErasureAttempt, the scoped marker it reads, is
+        // registered with the deletion service).
+        services.AddScoped<IGdprDeletionFailureSink, OutOfBandGdprDeletionFailureSink>();
 
         return services.RegisterFromAssemblies([AssemblyReference.Assembly], type => type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)));
     }

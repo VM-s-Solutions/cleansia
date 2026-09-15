@@ -51,7 +51,7 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(null));
+            new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
@@ -69,7 +69,6 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
             customerAddress: address,
             rooms: 1,
             bathrooms: 1,
-            extras: new Dictionary<string, bool>(),
             cleaningDateTime: DateTime.UtcNow.AddMinutes(30),
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
@@ -96,7 +95,7 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx)),
-            new FixedTenantProvider(null),
+            new FixedTenantProvider(TestTenants.Default),
             ctx,
             NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);
 

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -73,7 +74,7 @@ public class MobileLoginTrustedDeviceBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user, AliveTokenFor(user.Id, RawTrustedToken));
-        var validator = new MobileLogin.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new MobileLogin.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new MobileLogin.Command(user.Email, Password, true, RawTrustedToken));
@@ -86,7 +87,7 @@ public class MobileLoginTrustedDeviceBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user);
-        var validator = new MobileLogin.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new MobileLogin.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(new MobileLogin.Command(user.Email, Password, true));
 
@@ -100,7 +101,7 @@ public class MobileLoginTrustedDeviceBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user, AliveTokenFor(user.Id, RawTrustedToken));
-        var validator = new MobilePartnerLogin.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new MobilePartnerLogin.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new MobilePartnerLogin.Command(user.Email, Password, true, RawTrustedToken));
@@ -113,7 +114,7 @@ public class MobileLoginTrustedDeviceBypassTests
     {
         var user = LockedUser();
         var (users, tokens, hasher) = Repos(user, AliveTokenFor("some-other-user-id", RawTrustedToken));
-        var validator = new MobilePartnerLogin.Validator(users.Object, tokens.Object, hasher.Object);
+        var validator = new MobilePartnerLogin.Validator(users.Object, tokens.Object, hasher.Object, new AuditContext());
 
         var result = await validator.ValidateAsync(
             new MobilePartnerLogin.Command(user.Email, Password, true, RawTrustedToken));

@@ -120,6 +120,12 @@ export class AppComponent implements OnInit {
       ],
     },
     { label: 'sidebar.company_info', icon: 'pi pi-building', route: '/company-info' },
+    {
+      label: 'sidebar.company_settings',
+      icon: 'pi pi-sliders-h',
+      route: '/company-settings',
+      permission: Policy.CanViewTenantConfigurations,
+    },
     { label: 'sidebar.templates', icon: 'pi pi-file-edit', route: '/template-management' },
     { label: 'sidebar.fiscal_failures', icon: 'pi pi-exclamation-triangle', route: '/fiscal-failures' },
     {

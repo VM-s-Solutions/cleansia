@@ -153,6 +153,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'company-settings',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/company-settings').then(
+        (m) => m.companySettingsRoutes
+      ),
+  },
+  {
     path: 'pay-config-management',
     canActivate: [adminGuard],
     loadChildren: () =>

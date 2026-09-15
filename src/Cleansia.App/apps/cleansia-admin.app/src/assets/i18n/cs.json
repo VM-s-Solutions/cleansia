@@ -72,6 +72,7 @@
       "company_info": "Informace o společnosti",
       "company_info_create": "Vytvořit informace o společnosti",
       "company_info_edit": "Upravit informace o společnosti",
+      "company_settings": "Nastavení společnosti",
       "templates": "Šablony",
       "invoice_templates": "Šablony faktur",
       "invoice_template_create": "Vytvořit šablonu faktury",
@@ -236,6 +237,7 @@
     "employee_document_requirements": "Požadavky",
     "employee_document_deletion_requests": "Žádosti o smazání",
     "company_info": "Údaje o společnosti",
+    "company_settings": "Nastavení společnosti",
     "templates": "Šablony",
     "global_rates": "Globální sazby",
     "fiscal_failures": "Fiskální selhání",
@@ -1850,6 +1852,71 @@
         "load_error": "Nepodařilo se načíst údaje o společnosti",
         "delete_success": "Údaje o společnosti byly úspěšně smazány",
         "delete_error": "Nepodařilo se smazat údaje o společnosti"
+      }
+    },
+    "company_settings": {
+      "title": "Nastavení společnosti",
+      "description": "Každé nastavení, které může vaše provozní společnost mít, s výchozí hodnotou platformy a hodnotou, která platí. Řádek s výchozí hodnotou nic neukládá; přepsání se ukládá jen pro vaši společnost.",
+      "no_settings": "Katalog neobsahuje žádná nastavení",
+      "load_error": "Nastavení společnosti se nepodařilo načíst",
+      "retry": "Zkusit znovu",
+      "edit": "Upravit",
+      "save": "Uložit",
+      "cancel": "Zrušit",
+      "reset": "Obnovit výchozí",
+      "enabled": "Zapnuto",
+      "confirm_reset_title": "Obnovit výchozí",
+      "confirm_reset": "Odstranit uloženou hodnotu {{key}}, aby znovu platila výchozí hodnota platformy?",
+      "source": {
+        "overridden": "Přepsáno",
+        "default": "Výchozí"
+      },
+      "messages": {
+        "save_success": "Nastavení uloženo",
+        "reset_success": "Nastavení obnoveno na výchozí hodnotu"
+      },
+      "columns": {
+        "key": "Klíč",
+        "description": "Popis",
+        "category": "Kategorie",
+        "range": "Povolený rozsah",
+        "default": "Výchozí",
+        "value": "Hodnota",
+        "source": "Zdroj"
+      },
+      "categories": {
+        "retention": "Uchovávání dat"
+      },
+      "descriptions": {
+        "retention": {
+          "expired_codes": {
+            "enabled": "Zda noční úloha maže expirované kódy pro potvrzení e-mailu a obnovu hesla"
+          },
+          "stale_devices": {
+            "days": "Počet dní nečinnosti zařízení, po kterých se smaže jeho registrace pro push notifikace"
+          },
+          "gdpr_requests": {
+            "years": "Počet let, po které se uchovává dokončená žádost o ochranu údajů"
+          },
+          "order_pii": {
+            "years": "Počet let po úklidu, po kterých se anonymizují zákaznické údaje dokončené objednávky"
+          },
+          "withdrawn_consents": {
+            "years": "Počet let, po které se uchovává záznam o odvolaném souhlasu"
+          },
+          "deleted_documents": {
+            "days": "Počet dní, po které se uchovává deaktivovaný dokument zaměstnance, než se soubor smaže"
+          },
+          "notifications": {
+            "days": "Počet dní, po které notifikace zůstává v přehledu v aplikaci"
+          },
+          "customer_audit": {
+            "years": "Počet let, po které se uchovává auditní záznam zákazníka"
+          },
+          "dispute_text": {
+            "years": "Počet let, po které se uchovává volný text uzavřené reklamace"
+          }
+        }
       }
     },
     "reports": {

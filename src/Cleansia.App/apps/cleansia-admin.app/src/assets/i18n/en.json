@@ -72,6 +72,7 @@
       "company_info": "Company Info",
       "company_info_create": "Create Company Info",
       "company_info_edit": "Edit Company Info",
+      "company_settings": "Company settings",
       "templates": "Templates",
       "invoice_templates": "Invoice Templates",
       "invoice_template_create": "Create Invoice Template",
@@ -236,6 +237,7 @@
     "employee_document_requirements": "Requirements",
     "employee_document_deletion_requests": "Deletion requests",
     "company_info": "Company Info",
+    "company_settings": "Company settings",
     "templates": "Templates",
     "global_rates": "Global Rates",
     "fiscal_failures": "Fiscal Failures",
@@ -1740,6 +1742,71 @@
         "load_error": "Failed to load company information",
         "delete_success": "Company information deleted successfully",
         "delete_error": "Failed to delete company information"
+      }
+    },
+    "company_settings": {
+      "title": "Company settings",
+      "description": "Every setting your operating company can hold, with the platform default and the value in force. A row at its default stores nothing; an override is stored for your company alone.",
+      "no_settings": "The catalogue has no settings",
+      "load_error": "Failed to load the company settings",
+      "retry": "Try again",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "reset": "Reset to default",
+      "enabled": "Enabled",
+      "confirm_reset_title": "Reset to default",
+      "confirm_reset": "Remove the stored value of {{key}} so the platform default applies again?",
+      "source": {
+        "overridden": "Overridden",
+        "default": "Default"
+      },
+      "messages": {
+        "save_success": "Setting saved",
+        "reset_success": "Setting reset to its default"
+      },
+      "columns": {
+        "key": "Key",
+        "description": "Description",
+        "category": "Category",
+        "range": "Allowed range",
+        "default": "Default",
+        "value": "Value",
+        "source": "Source"
+      },
+      "categories": {
+        "retention": "Data retention"
+      },
+      "descriptions": {
+        "retention": {
+          "expired_codes": {
+            "enabled": "Whether the nightly job clears expired e-mail confirmation and password reset codes"
+          },
+          "stale_devices": {
+            "days": "Days a device may stay inactive before its push registration is deleted"
+          },
+          "gdpr_requests": {
+            "years": "Years a completed data-protection request is kept"
+          },
+          "order_pii": {
+            "years": "Years after the cleaning before a completed order's customer data is anonymised"
+          },
+          "withdrawn_consents": {
+            "years": "Years a withdrawn consent record is kept"
+          },
+          "deleted_documents": {
+            "days": "Days a deactivated employee document is kept before the file is deleted"
+          },
+          "notifications": {
+            "days": "Days a notification stays in the in-app feed"
+          },
+          "customer_audit": {
+            "years": "Years a customer audit row is kept"
+          },
+          "dispute_text": {
+            "years": "Years the free text of a closed dispute is kept"
+          }
+        }
       }
     },
     "reports": {

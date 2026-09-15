@@ -54,6 +54,8 @@ import {
   IAdminReportClient,
   AdminServiceClient,
   IAdminServiceClient,
+  AdminTenantSettingsClient,
+  IAdminTenantSettingsClient,
   AdminUserClient,
   IAdminUserClient,
   ApiClient,
@@ -84,6 +86,7 @@ interface IAdminClient {
   adminPayrollClient: IAdminPayrollClient;
   adminReportClient: IAdminReportClient;
   adminServiceClient: IAdminServiceClient;
+  adminTenantSettingsClient: IAdminTenantSettingsClient;
   adminUserClient: IAdminUserClient;
   emailTemplateTypesClient: ITypesClient;
   adminPayConfigClient: IAdminPayConfigClient;
@@ -174,6 +177,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminServiceClient: IAdminServiceClient = new AdminServiceClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminTenantSettingsClient: IAdminTenantSettingsClient = new AdminTenantSettingsClient(
     this.httpClient,
     this.apiBaseUrl
   );

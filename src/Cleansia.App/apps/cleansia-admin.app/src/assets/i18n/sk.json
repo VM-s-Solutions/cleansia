@@ -72,6 +72,7 @@
       "company_info": "Informácie o spoločnosti",
       "company_info_create": "Vytvoriť informácie o spoločnosti",
       "company_info_edit": "Upraviť informácie o spoločnosti",
+      "company_settings": "Nastavenia spoločnosti",
       "templates": "Šablóny",
       "invoice_templates": "Šablóny faktúr",
       "invoice_template_create": "Vytvoriť šablónu faktúry",
@@ -236,6 +237,7 @@
     "employee_document_requirements": "Požiadavky",
     "employee_document_deletion_requests": "Žiadosti o vymazanie",
     "company_info": "Informácie o spoločnosti",
+    "company_settings": "Nastavenia spoločnosti",
     "templates": "Šablóny",
     "global_rates": "Globálne sadzby",
     "fiscal_failures": "Fiškálne zlyhania",
@@ -1740,6 +1742,71 @@
         "load_error": "Nepodarilo sa načítať informácie o spoločnostiach",
         "delete_success": "Informácie o spoločnosti boli úspešne odstránené",
         "delete_error": "Nepodarilo sa odstrániť informácie o spoločnosti"
+      }
+    },
+    "company_settings": {
+      "title": "Nastavenia spoločnosti",
+      "description": "Každé nastavenie, ktoré môže mať vaša prevádzková spoločnosť, s predvolenou hodnotou platformy a hodnotou, ktorá platí. Riadok s predvolenou hodnotou nič neukladá; prepísanie sa ukladá len pre vašu spoločnosť.",
+      "no_settings": "Katalóg neobsahuje žiadne nastavenia",
+      "load_error": "Nastavenia spoločnosti sa nepodarilo načítať",
+      "retry": "Skúsiť znova",
+      "edit": "Upraviť",
+      "save": "Uložiť",
+      "cancel": "Zrušiť",
+      "reset": "Obnoviť predvolené",
+      "enabled": "Zapnuté",
+      "confirm_reset_title": "Obnoviť predvolené",
+      "confirm_reset": "Odstrániť uloženú hodnotu {{key}}, aby znova platila predvolená hodnota platformy?",
+      "source": {
+        "overridden": "Prepísané",
+        "default": "Predvolené"
+      },
+      "messages": {
+        "save_success": "Nastavenie uložené",
+        "reset_success": "Nastavenie obnovené na predvolenú hodnotu"
+      },
+      "columns": {
+        "key": "Kľúč",
+        "description": "Popis",
+        "category": "Kategória",
+        "range": "Povolený rozsah",
+        "default": "Predvolené",
+        "value": "Hodnota",
+        "source": "Zdroj"
+      },
+      "categories": {
+        "retention": "Uchovávanie údajov"
+      },
+      "descriptions": {
+        "retention": {
+          "expired_codes": {
+            "enabled": "Či nočná úloha maže expirované kódy na potvrdenie e-mailu a obnovu hesla"
+          },
+          "stale_devices": {
+            "days": "Počet dní nečinnosti zariadenia, po ktorých sa zmaže jeho registrácia pre push notifikácie"
+          },
+          "gdpr_requests": {
+            "years": "Počet rokov, počas ktorých sa uchováva dokončená žiadosť o ochranu údajov"
+          },
+          "order_pii": {
+            "years": "Počet rokov po upratovaní, po ktorých sa anonymizujú zákaznícke údaje dokončenej objednávky"
+          },
+          "withdrawn_consents": {
+            "years": "Počet rokov, počas ktorých sa uchováva záznam o odvolanom súhlase"
+          },
+          "deleted_documents": {
+            "days": "Počet dní, počas ktorých sa uchováva deaktivovaný dokument zamestnanca, kým sa súbor zmaže"
+          },
+          "notifications": {
+            "days": "Počet dní, počas ktorých notifikácia zostáva v prehľade v aplikácii"
+          },
+          "customer_audit": {
+            "years": "Počet rokov, počas ktorých sa uchováva auditný záznam zákazníka"
+          },
+          "dispute_text": {
+            "years": "Počet rokov, počas ktorých sa uchováva voľný text uzavretej reklamácie"
+          }
+        }
       }
     },
     "reports": {

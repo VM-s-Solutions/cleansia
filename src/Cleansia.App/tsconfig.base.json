@@ -66,6 +66,9 @@
       "@cleansia/admin-features/company-management": [
         "libs/cleansia-admin-features/company-management/src/index.ts"
       ],
+      "@cleansia/admin-features/company-settings": [
+        "libs/cleansia-admin-features/company-settings/src/index.ts"
+      ],
       "@cleansia/admin-features/country-management": [
         "libs/cleansia-admin-features/country-management/src/index.ts"
       ],

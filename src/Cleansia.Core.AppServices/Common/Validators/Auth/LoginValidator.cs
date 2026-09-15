@@ -170,7 +170,7 @@ public abstract class LoginValidator<TCommand> : BaseAuthValidator<TCommand>
         var user = await userRepository.GetByEmailIgnoringTenantAsync(email, cancellationToken);
         if (user is not null)
         {
-            auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
+            auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id, actorProfile: user.Profile);
         }
 
         return user;

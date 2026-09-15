@@ -82,7 +82,8 @@ public class AdminLogin
                 "User",
                 user.Id,
                 new LoginEvidence(LoginEvidence.PasswordMethod, command.RememberMe, hostAudience.Audience, tokenResponse.IsEmailConfirmed),
-                actorUserId: user.Id);
+                actorUserId: user.Id,
+                actorProfile: user.Profile);
 
             return BusinessResult.Success(tokenResponse with { HasAdminAccess = true });
         }

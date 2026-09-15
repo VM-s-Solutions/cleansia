@@ -253,6 +253,7 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
         Assert.False(row.Success);
         Assert.Equal(BusinessErrorMessage.InvalidPassword, row.ErrorCode);
         Assert.Equal(AdminId, row.ActorId);
+        Assert.Equal(UserProfile.Administrator, row.ActorProfile);
         Assert.Null(row.ActorEmail);
         Assert.Equal("User", row.ResourceType);
         Assert.Equal(AdminId, row.ResourceId);
@@ -261,9 +262,31 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
         AssertCarriesNoAddress(row);
     }
 
-    /// <summary>The handler, not the validator, refuses a non-administrator (a handler-returned auth failure is a 401); the validator had already named the account.</summary>
+    /// <summary>The success row is stamped with the administrator's own company, not the default market's: the token mint sets the override before the row is added.</summary>
     [Fact]
-    public async Task A_Customer_Refused_The_Admin_Host_Leaves_One_Admin_Failure_Row_Keyed_On_That_Account()
+    public async Task A_SignIn_Of_A_Second_Operators_Administrator_Is_Stamped_With_That_Company_Not_The_Default_Markets()
+    {
+        await SeedAdminAsync(HostTestTenants.B);
+
+        var response = await AdminClientAnonymous().PostAsJsonAsync("/api/AdminAuth/Login",
+            new { email = AdminEmail, password = Password, rememberMe = false });
+
+        HttpAssert.IsOk(response);
+        Assert.Empty(await CustomerRowsAsync());
+        var row = Assert.Single(await AdminRowsAsync());
+        Assert.Equal("admin.session.login", row.Action);
+        Assert.True(row.Success);
+        Assert.Equal(AdminId, row.ActorId);
+        Assert.Equal(HostTestTenants.B, row.TenantId);
+    }
+
+    /// <summary>
+    /// The handler, not the validator, refuses a non-administrator (a handler-returned auth failure is a
+    /// 401); the validator had already named the account, and what it is: the row a customer's incident
+    /// file collects says a Customer was refused, not that an "Administrator" failed to sign in.
+    /// </summary>
+    [Fact]
+    public async Task A_Customer_Refused_The_Admin_Host_Leaves_One_Admin_Failure_Row_Keyed_On_That_Account_Under_Its_Own_Profile()
     {
         await SeedCustomerAsync();
 
@@ -277,6 +300,7 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
         Assert.False(row.Success);
         Assert.Equal(BusinessErrorMessage.InsufficientPrivileges, row.ErrorCode);
         Assert.Equal(CustomerId, row.ActorId);
+        Assert.Equal(UserProfile.Customer, row.ActorProfile);
         Assert.Equal(CustomerId, row.ResourceId);
         Assert.Null(row.AfterJson);
         Assert.Equal(HostTestTenants.Default, row.TenantId);

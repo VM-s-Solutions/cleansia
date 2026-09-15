@@ -459,6 +459,10 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.insufficient_privileges',
   'auth.invalid_refresh_token',
   'auth.refresh_token_reused',
+  // The admin sign-in is IOperatorScopedRequest (its refusal audit row needs a tenant), so
+  // OperatorTenantScopeBehavior's refusals reach this host through AdminAuthController.Login:
+  // `country.not_serviced` is on the contract under country below, this one is only reachable here.
+  'tenant.not_found',
   // Audit log detail (admin and customer), and the three-source timeline
   'audit.not_found',
   'audit.timeline.filter_required',
@@ -696,13 +700,7 @@ const DELIBERATELY_NOT_TRANSLATED: ReadonlyArray<{
 const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   key: string;
   reason: string;
-}> = [
-  {
-    key: 'tenant.not_found',
-    reason:
-      'Emitted by OperatorTenantScopeBehavior, which only runs for an anonymous request that implements IOperatorScopedRequest. No admin controller dispatches one — every admin action is authenticated, so the claim is the tenant and the behaviour steps aside. The marker walk in deriveHostSurface asserts the roster is empty; the day an admin controller dispatches a scoped request, that walk derives this key here and the contract gains it.',
-  },
-];
+}> = [];
 
 
 // Contract keys that no BusinessErrorMessage reference anywhere in
@@ -775,11 +773,14 @@ describe('error-contract parity (admin app)', () => {
       ]);
     });
 
-    it('walks the IOperatorScopedRequest marker, and finds no scoped request behind an admin controller', () => {
+    it('walks the IOperatorScopedRequest marker to the one scoped request behind an admin controller', () => {
       expect([...operatorTenantScopeKeys()].sort()).toEqual([
         'country.not_serviced',
         'tenant.not_found',
       ]);
+      // The admin sign-in is the one anonymous act on this host: it names no market and is scoped so
+      // its refusal audit row is stamped with the default market's operator. Every other admin action
+      // is authenticated, so the claim is the tenant and the behaviour steps aside.
       const scoped = [...surface.keys.entries()]
         .flatMap(([key, provenances]) =>
           [...provenances]
@@ -787,7 +788,10 @@ describe('error-contract parity (admin app)', () => {
             .map((provenance) => `${key}: ${provenance}`)
         )
         .sort();
-      expect(scoped).toEqual([]);
+      expect(scoped).toEqual([
+        'country.not_serviced: AdminAuthController -> Auth/AdminLogin.cs -> OperatorTenantScopeBehavior',
+        'tenant.not_found: AdminAuthController -> Auth/AdminLogin.cs -> OperatorTenantScopeBehavior',
+      ]);
     });
 
     it('leaves no derived key unclassified', () => {

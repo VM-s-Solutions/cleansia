@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Auditing;
 
@@ -36,7 +37,7 @@ public sealed class AuditContext : IAuditContext
             reason);
     }
 
-    public void RecordEvidence(string resourceType, string? resourceId, object? payload, string? actorUserId = null)
+    public void RecordEvidence(string resourceType, string? resourceId, object? payload, string? actorUserId = null, UserProfile? actorProfile = null)
     {
         _snapshot = new AuditSnapshot(
             resourceType,
@@ -44,7 +45,8 @@ public sealed class AuditContext : IAuditContext
             BeforeJson: null,
             payload is null ? null : JsonSerializer.Serialize(payload, JsonOptions),
             Reason: null,
-            actorUserId);
+            actorUserId,
+            actorProfile);
     }
 
     public void DeclineSuccessRow()

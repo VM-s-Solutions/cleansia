@@ -49,6 +49,22 @@ public sealed class AdminSessionAuditLabelTests
         Assert.False(descriptor.AllowsAnonymousActor);
     }
 
+    /// <summary>
+    /// An admin-audience marker's one label is already the admin one; the descriptor copies
+    /// <c>AdminAction</c> regardless of audience, so a second label on such a marker would be written on
+    /// every row and read by nobody's contract. None may declare one.
+    /// </summary>
+    [Fact]
+    public void No_Admin_Audience_Marker_Declares_A_Second_Admin_Label()
+    {
+        var doubled = typeof(IAuditContext).Assembly
+            .GetTypes()
+            .Where(t => t.GetCustomAttribute<AuditActionAttribute>(inherit: false) is { Audience: AuditAudience.Admin, AdminAction: not null })
+            .ToList();
+
+        Assert.Empty(doubled);
+    }
+
     /// <summary>The admin sign-in is the one anonymous admin act: nothing else in the assembly may record an anonymous administrator.</summary>
     [Fact]
     public void The_Admin_SignIn_Is_The_Only_Admin_Marker_That_Allows_An_Anonymous_Actor()

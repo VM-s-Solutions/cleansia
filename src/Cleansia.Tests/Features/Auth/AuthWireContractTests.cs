@@ -28,11 +28,13 @@ public class AuthWireContractTests
     }
 
     /// <summary>
-    /// The session acts are market-scoped for the audit row's tenant (explicit interface implementation,
-    /// always the default market); the seam stays off the wire so the generated clients do not change.
+    /// The session acts — the admin sign-in among them — are market-scoped for the audit row's tenant
+    /// (explicit interface implementation, always the default market); the seam stays off the wire so
+    /// the generated clients do not change.
     /// </summary>
     [Theory]
     [InlineData(typeof(Login.Command))]
+    [InlineData(typeof(AdminLogin.Command))]
     [InlineData(typeof(MobileLogin.Command))]
     [InlineData(typeof(ConfirmUserEmail.Command))]
     [InlineData(typeof(Cleansia.Core.AppServices.Features.Users.RequestPasswordChange.Command))]

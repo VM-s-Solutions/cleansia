@@ -19,7 +19,10 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// <para>Both rows name their subject the same way: the session's user id, falling back to the
 /// snapshot's <c>ActorUserId</c> only when the session has none (S1: the session wins) — the admin
 /// sign-in runs anonymously like the customer one, and its row is keyed on the account the handler or
-/// the validator named, not on <c>System</c>. A failure row reads the subject and the resource off the
+/// the validator named, not on <c>System</c>. The admin row's profile follows the same rule: the
+/// session's role, else the profile named with the account, and <c>Administrator</c> only for the row
+/// that names nobody (System) — a customer refused the admin host is a Customer's row, since the
+/// customer's own incident file collects it. A failure row reads the subject and the resource off the
 /// snapshot too — a validator names the account it is about to refuse through the same seam — but never
 /// its payload, before/after or reason: on a refusal the only payload there could be is the request's
 /// own words.</para>
@@ -71,7 +74,7 @@ public sealed class AuditEntryFactory(
         {
             ActorId = string.IsNullOrWhiteSpace(actorId) ? SystemActor : actorId,
             ActorEmail = userSessionProvider.GetUserEmail(),
-            ActorProfile = ResolveActorProfile(),
+            ActorProfile = ResolveActorProfile(snapshot),
             Action = descriptor.AdminAction,
             ResourceType = snapshot?.ResourceType ?? descriptor.ResourceType,
             ResourceId = snapshot?.ResourceId ?? AuditResourceResolver.ResolveResourceId(request, descriptor.ResourceType),
@@ -122,12 +125,12 @@ public sealed class AuditEntryFactory(
     private static string? Clamp(string? value, int maxLength) =>
         value is { Length: var length } && length > maxLength ? value[..maxLength] : value;
 
-    private UserProfile ResolveActorProfile()
+    private UserProfile ResolveActorProfile(AuditSnapshot? snapshot)
     {
         return Enum.TryParse<UserProfile>(
             userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value, out var profile)
             ? profile
-            : UserProfile.Administrator;
+            : snapshot?.ActorProfile ?? UserProfile.Administrator;
     }
 
     private static string? ResolveCorrelationId()

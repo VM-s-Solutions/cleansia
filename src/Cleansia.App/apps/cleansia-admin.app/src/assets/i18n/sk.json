@@ -3008,6 +3008,9 @@
         "not_found": "Šablóna účtenky nebola nájdená"
       }
     },
+    "tenant": {
+      "not_found": "Tento trh zatiaľ neprevádzkuje žiadna spoločnosť Cleansia."
+    },
     "tenant_setting": {
       "invalid_value": "Hodnota nemá správny typ alebo je mimo povoleného rozsahu tohto nastavenia.",
       "unknown_key": "Toto nastavenie nie je v katalógu a nedá sa nastaviť."

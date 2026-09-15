@@ -3008,6 +3008,9 @@
         "not_found": "Receipt template not found"
       }
     },
+    "tenant": {
+      "not_found": "This market is not operated by any Cleansia company yet."
+    },
     "tenant_setting": {
       "invalid_value": "The value is not of the right type or is outside the allowed range for this setting.",
       "unknown_key": "This setting is not in the catalogue and cannot be set."

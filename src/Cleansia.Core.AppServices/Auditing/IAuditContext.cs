@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Core.AppServices.Auditing;
 
 /// <summary>
@@ -25,9 +27,12 @@ public interface IAuditContext
     /// session cannot name. A validator that resolves the account it is about to refuse names it the same
     /// way, with no payload: a refusal on a KNOWN account is that account's row, so an account-takeover
     /// trail is keyed on the victim rather than reconstructed by IP. The failure arms read the subject
-    /// and the resource off the snapshot and never its payload.
+    /// and the resource off the snapshot and never its payload. <paramref name="actorProfile"/> travels
+    /// with <paramref name="actorUserId"/> for the one arm whose row records a profile: an admin row with
+    /// no session says what the named account IS, so a customer refused the admin host is not written up
+    /// as an administrator.
     /// </summary>
-    void RecordEvidence(string resourceType, string? resourceId, object? payload, string? actorUserId = null);
+    void RecordEvidence(string resourceType, string? resourceId, object? payload, string? actorUserId = null, UserProfile? actorProfile = null);
 
     AuditSnapshot? DrainSnapshot();
 

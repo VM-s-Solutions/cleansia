@@ -14,7 +14,8 @@ public sealed class AuditActionAttribute : Attribute
     /// The label the ADMIN arm writes when an Administrator runs a customer-audience command: the same
     /// act by an administrator is an admin act and is read under an admin label (a sign-out on the admin
     /// host is <c>admin.session.logout</c>, not a customer's). Null keeps <see cref="Action"/> on both
-    /// arms. An admin-audience marker never reads it — its one label is already the admin one.
+    /// arms. An admin-audience marker declares none — its one label is already the admin one, and the
+    /// descriptor would copy a second one onto every row for nobody to read.
     /// </summary>
     public string? AdminAction { get; init; }
 

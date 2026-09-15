@@ -293,20 +293,22 @@ public sealed class AuditFailureCaptureBehaviorTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>The validator named the account AND what it is: a wrong password on a customer's address is that customer's row, not an administrator's.</summary>
     [Fact]
-    public async Task An_Anonymous_Admin_SignIn_Validation_Reject_On_The_Admin_Host_Carries_The_Subject_The_Validator_Named_And_No_Payload()
+    public async Task An_Anonymous_Admin_SignIn_Validation_Reject_On_The_Admin_Host_Carries_The_Subject_And_Profile_The_Validator_Named_And_No_Payload()
     {
         var auditContext = new AuditContext();
-        auditContext.RecordEvidence("User", "admin-9", payload: null, actorUserId: "admin-9");
+        auditContext.RecordEvidence("User", "cust-9", payload: null, actorUserId: "cust-9", actorProfile: UserProfile.Customer);
         var behavior = Behavior<AdminSignInCommand>(new TestUserSessionProvider([]), auditContext, host: JwtAudiences.Admin);
         var rejected = ValidationResult.WithErrors([new Error("Password", BusinessErrorMessage.InvalidPassword)]);
 
-        var result = await behavior.Handle(new AdminSignInCommand("admin@cleansia.test"), Returns(rejected), CancellationToken.None);
+        var result = await behavior.Handle(new AdminSignInCommand("customer@cleansia.test"), Returns(rejected), CancellationToken.None);
 
         Assert.Same(rejected, result);
         _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
             !a.Success && a.ErrorCode == BusinessErrorMessage.InvalidPassword && a.Action == "admin.session.login"
-            && a.ActorId == "admin-9" && a.ActorEmail == null && a.ResourceType == "User" && a.ResourceId == "admin-9"
+            && a.ActorId == "cust-9" && a.ActorProfile == UserProfile.Customer && a.ActorEmail == null
+            && a.ResourceType == "User" && a.ResourceId == "cust-9"
             && a.AfterJson == null && a.BeforeJson == null),
             It.IsAny<CancellationToken>()), Times.Once);
         _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);

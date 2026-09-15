@@ -402,12 +402,16 @@ public sealed class AuditLogBehaviorTests
         _writer.Verify(w => w.Add(It.IsAny<CustomerActionAudit>()), Times.Never);
     }
 
-    /// <summary>The validator resolved the account and named it before the handler refused it (an inactive or non-admin account): the row is that account's, with no payload.</summary>
+    /// <summary>
+    /// The validator resolved the account and named it before the handler refused it (an inactive or
+    /// non-admin account): the row is that account's, with no payload, and it says what the account IS —
+    /// a customer refused the admin host is a Customer's row, not an "Administrator" who failed to sign in.
+    /// </summary>
     [Fact]
-    public async Task An_Anonymous_Admin_SignIn_Refusal_On_A_Known_Account_Writes_An_Admin_Row_Keyed_On_That_Account_With_No_Payload()
+    public async Task An_Anonymous_Admin_SignIn_Refusal_On_A_Known_Account_Writes_An_Admin_Row_Keyed_On_That_Account_With_Its_Profile_And_No_Payload()
     {
         var auditContext = new AuditContext();
-        auditContext.RecordEvidence("User", "cust-9", payload: null, actorUserId: "cust-9");
+        auditContext.RecordEvidence("User", "cust-9", payload: null, actorUserId: "cust-9", actorProfile: UserProfile.Customer);
         var behavior = Behavior<AdminSignInCommand>(AnonymousSession(), JwtAudiences.Admin, auditContext);
 
         await behavior.Handle(new AdminSignInCommand("customer@cleansia.test"),
@@ -415,12 +419,13 @@ public sealed class AuditLogBehaviorTests
 
         _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
             !a.Success && a.Action == "admin.session.login" && a.ErrorCode == BusinessErrorMessage.InsufficientPrivileges
-            && a.ActorId == "cust-9" && a.ActorEmail == null && a.ResourceType == "User" && a.ResourceId == "cust-9"
+            && a.ActorId == "cust-9" && a.ActorProfile == UserProfile.Customer && a.ActorEmail == null
+            && a.ResourceType == "User" && a.ResourceId == "cust-9"
             && a.AfterJson == null && a.BeforeJson == null && a.Reason == null), It.IsAny<CancellationToken>()), Times.Once);
         _writer.Verify(w => w.Add(It.IsAny<AdminActionAudit>()), Times.Never);
     }
 
-    /// <summary>An unknown address resolves nothing: the row is the key alone, the actor is System, and nowhere on it the address the command carried.</summary>
+    /// <summary>An unknown address resolves nothing: the row is the key alone, the actor is System under the table's own profile, and nowhere on it the address the command carried.</summary>
     [Fact]
     public async Task An_Anonymous_Admin_SignIn_Refusal_With_Nothing_Named_Names_Nobody_And_Never_The_Address()
     {
@@ -431,7 +436,8 @@ public sealed class AuditLogBehaviorTests
 
         _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
             !a.Success && a.ErrorCode == BusinessErrorMessage.NotExistingUserWithEmail
-            && a.ActorId == "System" && a.ActorEmail == null && a.ResourceId == null && a.AfterJson == null),
+            && a.ActorId == "System" && a.ActorProfile == UserProfile.Administrator
+            && a.ActorEmail == null && a.ResourceId == null && a.AfterJson == null),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -453,19 +459,20 @@ public sealed class AuditLogBehaviorTests
         _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    /// <summary>S1: a signed-in administrator's row is the session's, whatever the handler named.</summary>
+    /// <summary>S1: a signed-in administrator's row is the session's — actor and profile — whatever the handler named.</summary>
     [Fact]
     public async Task A_Signed_In_Administrators_Row_Takes_The_Session_Actor_Over_The_One_The_Handler_Named()
     {
         var auditContext = new AuditContext();
-        auditContext.RecordEvidence("User", "someone-else", payload: null, actorUserId: "someone-else");
+        auditContext.RecordEvidence("User", "someone-else", payload: null, actorUserId: "someone-else", actorProfile: UserProfile.Customer);
         var behavior = Behavior<AdminRefundOrderCommand>(Session(UserProfile.Administrator), auditContext: auditContext);
 
         await behavior.Handle(new AdminRefundOrderCommand("ORD-1"),
             Returns(BusinessResult.Failure(new Error("OrderId", "refund.too_large"))), CancellationToken.None);
 
         _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
-            a.ActorId == "admin-1" && a.ResourceType == "User" && a.ResourceId == "someone-else"), It.IsAny<CancellationToken>()), Times.Once);
+            a.ActorId == "admin-1" && a.ActorProfile == UserProfile.Administrator
+            && a.ResourceType == "User" && a.ResourceId == "someone-else"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ── a declined success row ─────────────────────────────────────────────────

@@ -61,6 +61,7 @@ public class RequestLogSubjectExportPathSuppressionTests
             Employee: null,
             PayoutDetails: null,
             Orders: [],
+            Disputes: [],
             Documents: [],
             Invoices: [],
             Consents: [new GdprExportConsentDto("c-1", ConsentType.TermsOfService, true, DateTimeOffset.UtcNow, null, Ip, Device, "2026-09-14", "legal-1")],

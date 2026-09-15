@@ -95,8 +95,9 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
                 Assert.Equal(SubjectId, snapshot.GetProperty("subjectUserId").GetString());
                 Assert.Equal("Export", snapshot.GetProperty("scope").GetString());
                 Assert.Equal(0, snapshot.GetProperty("orderCount").GetInt32());
+                Assert.Equal(0, snapshot.GetProperty("disputeCount").GetInt32());
                 Assert.Equal(2, snapshot.GetProperty("customerActionCount").GetInt32());
-                Assert.Equal(4, snapshot.EnumerateObject().Count());
+                Assert.Equal(5, snapshot.EnumerateObject().Count());
                 Assert.DoesNotContain(SubjectEmail, audit.AfterJson, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain(TestConstants.TestUserSession.TestFirstName, audit.AfterJson, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain(TestConstants.TestUserSession.TestLastName, audit.AfterJson, StringComparison.OrdinalIgnoreCase);
@@ -158,7 +159,9 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
                 Assert.Equal(SubjectId, request.UserId);
                 Assert.Equal("Export", request.RequestType);
                 Assert.Equal(GdprRequestStatus.Completed, request.Status);
-                Assert.Equal(SubjectEmail, request.ProcessedBy);
+                // The request row outlives the erasure; the actor is the fixed self marker, never the address.
+                Assert.Equal(GdprAuditReasons.SelfActor, request.ProcessedBy);
+                Assert.DoesNotContain("@", request.ProcessedBy);
 
                 Assert.Equal(0, await context.AdminActionAudits.IgnoreQueryFilters().CountAsync());
 
@@ -176,9 +179,10 @@ public class SubjectExportAuditTests(PostgresContainerFixture fixture) : BaseInt
                 Assert.NotNull(audit.PayloadJson);
                 var evidence = JsonDocument.Parse(audit.PayloadJson!).RootElement;
                 Assert.Equal(0, evidence.GetProperty("orderCount").GetInt32());
+                Assert.Equal(0, evidence.GetProperty("disputeCount").GetInt32());
                 Assert.Equal(0, evidence.GetProperty("consentCount").GetInt32());
                 Assert.Equal(2, evidence.GetProperty("customerActionCount").GetInt32());
-                Assert.Equal(3, evidence.EnumerateObject().Count());
+                Assert.Equal(4, evidence.EnumerateObject().Count());
                 Assert.DoesNotContain(SubjectEmail, audit.PayloadJson, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain(TestConstants.TestUserSession.TestFirstName, audit.PayloadJson, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain("feeRate", audit.PayloadJson);

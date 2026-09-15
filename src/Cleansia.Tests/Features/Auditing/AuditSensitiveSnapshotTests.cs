@@ -332,9 +332,11 @@ public sealed class AuditSensitiveSnapshotTests
         Assert.Contains("\"subjectUserId\":\"subject-1\"", snapshot.AfterJson);
         Assert.Contains("\"scope\":\"Export\"", snapshot.AfterJson);
         Assert.Contains("\"orderCount\":1", snapshot.AfterJson);
+        Assert.Contains("\"disputeCount\":1", snapshot.AfterJson);
         Assert.Contains("\"customerActionCount\":2", snapshot.AfterJson);
         Assert.DoesNotContain("203.0.113.9", snapshot.AfterJson);
         Assert.DoesNotContain("feeRate", snapshot.AfterJson);
+        Assert.DoesNotContain("kitchen", snapshot.AfterJson, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("+420", snapshot.AfterJson);
         AssertNoSubjectPii(snapshot);
     }
@@ -347,6 +349,13 @@ public sealed class AuditSensitiveSnapshotTests
             Employee: null,
             PayoutDetails: null,
             Orders: [new GdprExportOrderDto("order-1", "CZ-1", CustomerName, CustomerEmail, OrderStatus.Completed, 1000m, DateTime.UtcNow, DateTimeOffset.UtcNow)],
+            Disputes:
+            [
+                new GdprExportDisputeDto("dispute-1", "order-1", "CZ-1", "QualityIssue", "The kitchen floor was not mopped.", "Resolved",
+                    "Partial refund issued.", 300m, "CZK", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow,
+                    [new GdprExportDisputeMessageDto("Customer", DateTimeOffset.UtcNow, "Photos attached, the tiles are still grey.")],
+                    ["kitchen-floor.jpg"]),
+            ],
             Documents: [],
             Invoices: [],
             Consents: [],

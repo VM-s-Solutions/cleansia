@@ -24,7 +24,7 @@ public static class ExportUserData
     /// Section counts only. The export holds everything the platform knows about the subject, which is
     /// exactly what the audit row must never copy.
     /// </summary>
-    public record GdprExportEvidence(int OrderCount, int ConsentCount, int CustomerActionCount) : ICustomerAuditPayload;
+    public record GdprExportEvidence(int OrderCount, int DisputeCount, int ConsentCount, int CustomerActionCount) : ICustomerAuditPayload;
 
     // Required even though the command is parameterless: the validation pipeline rejects any *Command
     // with no registered validator. The export operates on the session user, so there is no input.
@@ -51,10 +51,10 @@ public static class ExportUserData
             gdprRequestRepository.Add(auditEntry);
 
             var export = await gdprExportService.BuildAsync(user.Id, user.Email, cancellationToken);
-            auditEntry.MarkCompleted(user.Email);
+            auditEntry.MarkCompleted(GdprAuditReasons.SelfActor);
 
             auditContext.RecordEvidence("User", user.Id,
-                new GdprExportEvidence(export.Orders.Count, export.Consents.Count, export.CustomerActions.Count));
+                new GdprExportEvidence(export.Orders.Count, export.Disputes.Count, export.Consents.Count, export.CustomerActions.Count));
 
             return BusinessResult.Success(export);
         }

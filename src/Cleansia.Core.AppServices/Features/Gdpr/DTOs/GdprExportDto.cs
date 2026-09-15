@@ -8,6 +8,7 @@ public record GdprExportDto(
     GdprExportEmployeeDto? Employee,
     GdprExportPayoutDetailsDto? PayoutDetails,
     List<GdprExportOrderDto> Orders,
+    List<GdprExportDisputeDto> Disputes,
     List<GdprExportDocumentDto> Documents,
     List<GdprExportInvoiceDto> Invoices,
     List<GdprExportConsentDto> Consents,
@@ -89,6 +90,38 @@ public record GdprExportOrderDto(
     decimal TotalPrice,
     DateTime CleaningDateTime,
     DateTimeOffset CreatedOn
+);
+
+/// <summary>
+/// One row per dispute that is the subject's: filed on the account, or on an order of
+/// <c>SubjectOrders</c> — so the section follows the orders section, and an erased subject, whose
+/// orders no longer name the account, still gets the disputes the account filed. Reason and status are
+/// the enum NAMES, not the wire integers the other sections carry: this document is read by the
+/// subject, not by a client. The text is exported as stored — the description, the messages and the
+/// resolution notes until the retention window closes and the marker after the sweep, the evidence
+/// names as the marker from the erasure on. A message carries its author's role and never the staff
+/// member's id.
+/// </summary>
+public record GdprExportDisputeDto(
+    string Id,
+    string OrderId,
+    string OrderDisplayNumber,
+    string Reason,
+    string Description,
+    string Status,
+    string? ResolutionNotes,
+    decimal? RefundAmount,
+    string CurrencyCode,
+    DateTimeOffset CreatedOn,
+    DateTimeOffset? ResolvedOn,
+    List<GdprExportDisputeMessageDto> Messages,
+    List<string> EvidenceFileNames
+);
+
+public record GdprExportDisputeMessageDto(
+    string AuthorRole,
+    DateTimeOffset SentAt,
+    string Text
 );
 
 public record GdprExportDocumentDto(

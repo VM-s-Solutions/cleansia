@@ -38,7 +38,8 @@ public static class IncidentFileSections
             new("E-mail", Identity(subject.Email)),
             new("Phone", Identity(subject.PhoneNumber)),
             new("Account created", Stamp(subject.AccountCreatedOn)),
-            new("Operator", Text(subject.Operator)),
+            new("Operator", Text(subject.OperatorName)),
+            new("Market", Text(subject.Market)),
             new("Preferred language", Text(subject.PreferredLanguage)),
             new("Erased", subject.Erased ? $"yes, {Stamp(subject.ErasedOn)}" : "no"),
         };

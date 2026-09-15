@@ -25,6 +25,8 @@ public sealed class IncidentFileDocumentTests
         NullLogger<QuestPdfService>.Instance);
 
     private static readonly DateTimeOffset Booked = new(2026, 3, 1, 10, 0, 0, TimeSpan.Zero);
+    private const string OperatorName = "Cleansia CZ s.r.o.";
+    private const string Market = "Czechia (CZ)";
 
     [Fact]
     public void The_Data_Section_Carries_Every_Heading_The_Order_Number_And_The_Trail_Labels()
@@ -60,6 +62,28 @@ public sealed class IncidentFileDocumentTests
         Assert.Contains("Who: Administrator admin-1\n", text);
         Assert.Contains("Who: Employee emp-1\n", text);
         Assert.Contains("Request: 203.0.113.9 / iPhone 15\n", text);
+    }
+
+    [Fact]
+    public void The_Identity_Section_Names_The_Operating_Company_And_The_Market_Never_A_Tenant_Id()
+    {
+        var text = IncidentFileDigest.CanonicalText(IncidentFileSections.Build(Fixture()));
+
+        Assert.Contains($"Operator: {OperatorName}\n", text);
+        Assert.Contains($"Market: {Market}\n", text);
+        Assert.DoesNotContain("cleansia-cz", text);
+    }
+
+    [Fact]
+    public void A_Subject_Whose_Operator_Serves_No_Configured_Market_Prints_A_Blank_Not_A_Tenant_Id()
+    {
+        var data = Fixture() with { Subject = Fixture().Subject with { OperatorName = null, Market = null } };
+
+        var text = IncidentFileDigest.CanonicalText(IncidentFileSections.Build(data));
+
+        Assert.Contains($"Operator: {IncidentFileSections.Empty}\n", text);
+        Assert.Contains($"Market: {IncidentFileSections.Empty}\n", text);
+        Assert.DoesNotContain("cleansia-cz", text);
     }
 
     [Fact]
@@ -193,7 +217,7 @@ public sealed class IncidentFileDocumentTests
     {
         var subject = new IncidentFileSubject(
             "user-1", "Jane", "Doe", "jane.doe@example.test", "+420123456789",
-            Booked.AddMonths(-6), "cleansia-cz", "en", Erased: false, ErasedOn: null);
+            Booked.AddMonths(-6), OperatorName, Market, "en", Erased: false, ErasedOn: null);
 
         var order = new IncidentFileOrder(
             "order-1", "ORD-INC-1", Booked, Booked.AddDays(3).UtcDateTime, null, null,

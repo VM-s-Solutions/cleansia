@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -90,7 +91,8 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
 
                 Assert.False(data.Subject.Erased);
                 Assert.Equal(SubjectEmail, data.Subject.Email);
-                Assert.Equal(TestTenants.Default, data.Subject.Operator);
+                Assert.Equal("Cleansia CZ s.r.o.", data.Subject.OperatorName);
+                Assert.Equal("Czechia (CZ)", data.Subject.Market);
 
                 var orderNumber = await OrderNumberAsync(context);
                 var order = Assert.Single(data.Orders);
@@ -152,6 +154,9 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.Contains("Action: customer.order.create\n", text);
                 Assert.Contains("Action: employee.order.dropped\n", text);
                 Assert.Contains("currencyId | CZK\n", text);
+                Assert.Contains("Operator: Cleansia CZ s.r.o.\n", text);
+                Assert.Contains("Market: Czechia (CZ)\n", text);
+                Assert.DoesNotContain(TestTenants.Default, text);
 
                 var audit = Assert.Single(await context.AdminActionAudits.IgnoreQueryFilters().Where(a => a.Action == "gdpr.user.incident_file").ToListAsync());
                 Assert.True(audit.Success);
@@ -309,6 +314,7 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
         currency.IsActive = true;
         currency.SetAsDefault(true);
         context.Currencies.Add(currency);
+        context.CountryConfigurations.Add(CountryConfiguration.Create(CountryId, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default));
 
         var subject = User.CreateWithPassword(SubjectEmail, "Seed-Password-123", "Inci", "Dent");
         subject.Id = SubjectId;

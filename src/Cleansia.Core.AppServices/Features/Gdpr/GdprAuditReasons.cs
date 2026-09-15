@@ -24,8 +24,9 @@ public static class GdprAuditReasons
     public const string SystemActor = "system";
 
     /// <summary>
-    /// The actor of a customer's own deletion. Never the subject's address: the request row outlives the
-    /// erasure, and a failed attempt is put on record before the walk, while the address is still live.
+    /// The actor of a customer's own deletion or export. Never the subject's address: the request row
+    /// outlives the erasure — an export's row filed before it as much as the deletion's own — and a failed
+    /// attempt is put on record before the walk, while the address is still live.
     /// </summary>
     public const string SelfActor = "self";
 

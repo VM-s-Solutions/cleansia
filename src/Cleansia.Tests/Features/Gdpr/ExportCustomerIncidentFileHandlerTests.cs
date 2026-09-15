@@ -96,7 +96,7 @@ public sealed class ExportCustomerIncidentFileHandlerTests
 
     private static IncidentFilePdfData Data(string? orderIdFilter) =>
         new(
-            new IncidentFileSubject(SubjectId, "Jane", "Doe", "jane@example.test", "+420123456789", GeneratedAt.AddYears(-1), "cleansia-cz", "en", false, null),
+            new IncidentFileSubject(SubjectId, "Jane", "Doe", "jane@example.test", "+420123456789", GeneratedAt.AddYears(-1), "Cleansia CZ s.r.o.", "Czechia (CZ)", "en", false, null),
             orderIdFilter,
             [
                 new IncidentFileOrder("order-1", "ORD-1", GeneratedAt.AddDays(-9), GeneratedAt.AddDays(-7).UtcDateTime, null, null, "Order St 9, Brno",

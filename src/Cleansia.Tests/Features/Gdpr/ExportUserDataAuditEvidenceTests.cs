@@ -56,6 +56,13 @@ public sealed class ExportUserDataAuditEvidenceTests
                 new GdprExportOrderDto("order-1", "CZ-1", $"{FirstName} {LastName}", Email, OrderStatus.Completed, 1000m, DateTime.UtcNow, DateTimeOffset.UtcNow),
                 new GdprExportOrderDto("order-2", "CZ-2", $"{FirstName} {LastName}", Email, OrderStatus.Cancelled, 800m, DateTime.UtcNow, DateTimeOffset.UtcNow),
             ],
+            Disputes:
+            [
+                new GdprExportDisputeDto("dispute-1", "order-1", "CZ-1", "QualityIssue", "The kitchen floor was not mopped.", "Resolved",
+                    "Partial refund issued.", 300m, "CZK", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow,
+                    [new GdprExportDisputeMessageDto("Customer", DateTimeOffset.UtcNow, "Photos attached, the tiles are still grey.")],
+                    ["kitchen-floor.jpg"]),
+            ],
             Documents: [],
             Invoices: [],
             Consents:
@@ -107,9 +114,10 @@ public sealed class ExportUserDataAuditEvidenceTests
 
         var payload = JsonDocument.Parse(snapshot.AfterJson!).RootElement;
         Assert.Equal(2, payload.GetProperty("orderCount").GetInt32());
+        Assert.Equal(1, payload.GetProperty("disputeCount").GetInt32());
         Assert.Equal(3, payload.GetProperty("consentCount").GetInt32());
         Assert.Equal(1, payload.GetProperty("customerActionCount").GetInt32());
-        Assert.Equal(3, payload.EnumerateObject().Count());
+        Assert.Equal(4, payload.EnumerateObject().Count());
 
         Assert.DoesNotContain(Email, snapshot.AfterJson, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(FirstName, snapshot.AfterJson, StringComparison.OrdinalIgnoreCase);
@@ -118,12 +126,13 @@ public sealed class ExportUserDataAuditEvidenceTests
         Assert.DoesNotContain("feeRate", snapshot.AfterJson);
         Assert.DoesNotContain("2026-09-14", snapshot.AfterJson);
         Assert.DoesNotContain("legal-doc", snapshot.AfterJson);
+        Assert.DoesNotContain("kitchen", snapshot.AfterJson, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("@", snapshot.AfterJson);
         Assert.DoesNotContain("+", snapshot.AfterJson);
     }
 
     [Fact]
-    public async Task A_Successful_Export_Still_Files_A_Completed_Request_Row_For_The_Subject()
+    public async Task A_Successful_Export_Files_A_Completed_Request_Row_Processed_By_The_Fixed_Self_Actor_Never_The_Subjects_Address()
     {
         _users.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(Subject());
         _exports.Setup(s => s.BuildAsync(UserId, Email, It.IsAny<CancellationToken>())).ReturnsAsync(ExportOf(UserId));
@@ -137,7 +146,9 @@ public sealed class ExportUserDataAuditEvidenceTests
         Assert.Equal(UserId, filed!.UserId);
         Assert.Equal(GdprAuditReasons.ExportRequestType, filed.RequestType);
         Assert.Equal(GdprRequestStatus.Completed, filed.Status);
-        Assert.Equal(Email, filed.ProcessedBy);
+        // The request row outlives the erasure, so the actor must never be the address it would keep.
+        Assert.Equal(GdprAuditReasons.SelfActor, filed.ProcessedBy);
+        Assert.DoesNotContain("@", filed.ProcessedBy);
     }
 
     [Fact]

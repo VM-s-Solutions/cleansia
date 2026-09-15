@@ -282,6 +282,7 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
         var service = new GdprExportService(
             new UserRepository(ctx),
             new OrderRepository(ctx),
+            new DisputeRepository(ctx),
             Mock.Of<IEmployeeDocumentRepository>(),
             Mock.Of<IEmployeeInvoiceRepository>(),
             Mock.Of<IEmployeePayoutDetailsRepository>(),

@@ -20,6 +20,7 @@ public class IncidentFileService(
     IDisputeRepository disputeRepository,
     IUserConsentRepository userConsentRepository,
     ICurrencyRepository currencyRepository,
+    ICountryConfigurationRepository countryConfigurationRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
     IAdminActionAuditRepository adminActionAuditRepository,
     IEmployeeActionAuditRepository employeeActionAuditRepository) : IIncidentFileService
@@ -78,13 +79,14 @@ public class IncidentFileService(
             .ToListAsync(cancellationToken);
 
         var (trail, truncated) = await LoadTrailAsync(userId, orderId, orderIds, disputeIds, currencyCodes, cancellationToken);
+        var (operatorName, market) = await ResolveOperatorAsync(user.TenantId, cancellationToken);
 
         var erased = !user.IsActive && GdprAuditReasons.IsErasure(user.DeactivatedBy);
 
         return new IncidentFilePdfData(
             new IncidentFileSubject(
                 user.Id, user.FirstName, user.LastName, user.Email, user.PhoneNumber, user.CreatedOn,
-                user.TenantId, user.PreferredLanguageCode, erased, erased ? user.DeactivatedOn : null),
+                operatorName, market, user.PreferredLanguageCode, erased, erased ? user.DeactivatedOn : null),
             orderId,
             orders.Select(o => MapOrder(o, refunds.Where(r => r.OrderId == o.Id).ToList())).ToList(),
             disputes.Select(d => MapDispute(d, orderNumbers[d.OrderId])).ToList(),
@@ -117,6 +119,35 @@ public class IncidentFileService(
             .AsNoTracking()
             .OrderBy(o => o.CreatedOn)
             .ToListAsync(cancellationToken);
+    }
+
+    // The market registry is the only edge into Tenants: an operator is named by the countries it
+    // serves, so the display name and the markets come from one read of the configurations that name it.
+    private async Task<(string? OperatorName, string? Market)> ResolveOperatorAsync(string? tenantId, CancellationToken cancellationToken)
+    {
+        if (tenantId is null)
+        {
+            return (null, null);
+        }
+
+        var markets = await countryConfigurationRepository.GetQueryable()
+            .Where(c => c.OperatorTenantId == tenantId)
+            .Include(c => c.Country)
+            .Include(c => c.OperatorTenant)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        if (markets.Count == 0)
+        {
+            return (null, null);
+        }
+
+        var countries = markets
+            .Where(c => c.Country is not null)
+            .Select(c => $"{c.Country!.Name} ({c.Country.IsoAlpha2})")
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+
+        return (markets[0].OperatorTenant?.Name, countries.Count == 0 ? null : string.Join(", ", countries));
     }
 
     private Task<List<string>> ProvenOrderIdsAsync(string userId, CancellationToken cancellationToken) =>

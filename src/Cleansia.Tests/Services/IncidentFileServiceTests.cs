@@ -1,12 +1,16 @@
 using Cleansia.Core.AppServices.Features.Auditing;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Services.Pdf.IncidentFile;
+using Cleansia.TestUtilities;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using MockQueryable;
 using Moq;
@@ -17,8 +21,10 @@ namespace Cleansia.Tests.Services;
 /// What the incident file service selects and prints, over mocked repositories: scoped to an order the
 /// customer arm is the subject's own rows and the guest rows on it — never a stranger's, whose id and
 /// request context would otherwise leave the platform in a document about someone else; the proven-order
-/// cap keeps the NEWEST acts, as the timeline's cap does; and a US/CA address prints its state. The
-/// real-Postgres leg is <c>Cleansia.IntegrationTests/Features/Gdpr/IncidentFileTests</c>.
+/// cap keeps the NEWEST acts, as the timeline's cap does; a US/CA address prints its state; and the
+/// identity section names the operating company and its market, never the tenant id the row carries
+/// (S4 — an internal key is not a fact about the subject). The real-Postgres leg is
+/// <c>Cleansia.IntegrationTests/Features/Gdpr/IncidentFileTests</c>.
 /// </summary>
 public sealed class IncidentFileServiceTests
 {
@@ -37,6 +43,7 @@ public sealed class IncidentFileServiceTests
     private readonly Mock<IDisputeRepository> _disputes = new();
     private readonly Mock<IUserConsentRepository> _consents = new();
     private readonly Mock<ICurrencyRepository> _currencies = new();
+    private readonly Mock<ICountryConfigurationRepository> _countryConfigurations = new();
     private readonly Mock<ICustomerActionAuditRepository> _customer = new();
     private readonly Mock<IAdminActionAuditRepository> _admin = new();
     private readonly Mock<IEmployeeActionAuditRepository> _employee = new();
@@ -45,7 +52,9 @@ public sealed class IncidentFileServiceTests
     {
         var subject = User.CreateWithPassword("subject@cleansia.test", "Seed-Password-123", "Inci", "Dent");
         subject.Id = SubjectId;
+        subject.TenantId = TestTenants.Default;
         _users.Setup(r => r.GetQueryable()).Returns(new[] { subject }.AsQueryable().BuildMock());
+        SeedMarkets();
         _currencies.Setup(r => r.GetQueryable()).Returns(new[] { Czk }.AsQueryable().BuildMock());
         _refunds.Setup(r => r.GetQueryable()).Returns(Array.Empty<Refund>().AsQueryable().BuildMock());
         _disputes.Setup(r => r.GetQueryable()).Returns(Array.Empty<Dispute>().AsQueryable().BuildMock());
@@ -140,9 +149,54 @@ public sealed class IncidentFileServiceTests
         Assert.Equal("Testovaci 12, 11000, Praha, CZ", Assert.Single(data.Orders).Address);
     }
 
+    [Fact]
+    public async Task The_Identity_Names_The_Operating_Company_And_Every_Market_It_Serves_Never_The_Tenant_Id()
+    {
+        SeedMarkets(
+            Market(TestTenants.Default, "Cleansia CZ s.r.o.", "Czechia", "CZ"),
+            Market(TestTenants.Default, "Cleansia CZ s.r.o.", "Slovakia", "SK"),
+            Market(TestTenants.Second, "Cleansia PL sp. z o.o.", "Poland", "PL"));
+
+        var data = await Service().BuildAsync(SubjectId, null, AdminEmail, CancellationToken.None);
+
+        Assert.Equal("Cleansia CZ s.r.o.", data.Subject.OperatorName);
+        Assert.Equal("Czechia (CZ), Slovakia (SK)", data.Subject.Market);
+        var text = IncidentFileDigest.CanonicalText(IncidentFileSections.Build(data));
+        Assert.Contains("Operator: Cleansia CZ s.r.o.\n", text);
+        Assert.Contains("Market: Czechia (CZ), Slovakia (SK)\n", text);
+        Assert.DoesNotContain(TestTenants.Default, text);
+        Assert.DoesNotContain(TestTenants.Second, text);
+        Assert.DoesNotContain("Poland", text);
+    }
+
+    [Fact]
+    public async Task An_Operator_That_Serves_No_Configured_Market_Leaves_Both_Blank_And_Prints_No_Tenant_Id()
+    {
+        SeedMarkets(Market(TestTenants.Second, "Cleansia SK s.r.o.", "Slovakia", "SK"));
+
+        var data = await Service().BuildAsync(SubjectId, null, AdminEmail, CancellationToken.None);
+
+        Assert.Null(data.Subject.OperatorName);
+        Assert.Null(data.Subject.Market);
+        Assert.DoesNotContain(TestTenants.Default, IncidentFileDigest.CanonicalText(IncidentFileSections.Build(data)));
+    }
+
     private IncidentFileService Service() =>
         new(_users.Object, _orders.Object, _refunds.Object, _disputes.Object, _consents.Object, _currencies.Object,
-            _customer.Object, _admin.Object, _employee.Object);
+            _countryConfigurations.Object, _customer.Object, _admin.Object, _employee.Object);
+
+    private void SeedMarkets(params CountryConfiguration[] configurations) =>
+        _countryConfigurations.Setup(r => r.GetQueryable()).Returns(configurations.AsQueryable().BuildMock());
+
+    private static CountryConfiguration Market(string tenantId, string tenantName, string countryName, string isoAlpha2)
+    {
+        var country = Country.Create(countryName, $"{isoAlpha2}X", isoAlpha2, isServiced: true);
+        country.Id = $"country-{isoAlpha2}";
+        var configuration = CountryConfiguration.Create(country.Id, "CZK", "cs", 0.21m).AssignOperator(tenantId);
+        typeof(CountryConfiguration).GetProperty(nameof(CountryConfiguration.Country))!.SetValue(configuration, country);
+        typeof(CountryConfiguration).GetProperty(nameof(CountryConfiguration.OperatorTenant))!.SetValue(configuration, Tenant.Create(tenantId, tenantName));
+        return configuration;
+    }
 
     private void SeedOrders(params Order[] orders) =>
         _orders.Setup(r => r.GetQueryable()).Returns(orders.AsQueryable().BuildMock());

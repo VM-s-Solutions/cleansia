@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Disputes;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +11,7 @@ namespace Cleansia.Core.AppServices.Services;
 public class GdprExportService(
     IUserRepository userRepository,
     IOrderRepository orderRepository,
+    IDisputeRepository disputeRepository,
     IEmployeeDocumentRepository employeeDocumentRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
     IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
@@ -66,6 +69,20 @@ public class GdprExportService(
                 o.TotalPrice, o.CleaningDateTime, o.CreatedOn))
             .ToListAsync(cancellationToken);
 
+        // Filed on the account, or on one of the orders above: the second term keeps the section in step
+        // with the orders section, the first is what still finds the disputes after an erasure has taken
+        // the account off its orders. Past the tenant filter for the same reason the orders are.
+        var orderIds = orders.Select(o => o.Id).ToList();
+        var disputes = await disputeRepository.GetQueryableIgnoringTenant()
+            .Where(d => d.UserId == user.Id || orderIds.Contains(d.OrderId))
+            .Include(d => d.Messages)
+            .Include(d => d.Evidence)
+            .Include(d => d.Order).ThenInclude(o => o.Currency)
+            .OrderBy(d => d.CreatedOn)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+        var disputeDtos = disputes.Select(MapDispute).ToList();
+
         var documents = new List<GdprExportDocumentDto>();
         if (user.Employee is not null)
         {
@@ -102,7 +119,26 @@ public class GdprExportService(
             DateTimeOffset.UtcNow, exportedBy, "JSON");
 
         return new GdprExportDto(
-            profile, address, employee, payoutDetails, orders,
+            profile, address, employee, payoutDetails, orders, disputeDtos,
             documents, invoices, consentDtos, customerActions, metadata);
     }
+
+    private static GdprExportDisputeDto MapDispute(Dispute dispute) =>
+        new(
+            dispute.Id,
+            dispute.OrderId,
+            dispute.Order.DisplayOrderNumber,
+            dispute.Reason.ToString(),
+            dispute.Description,
+            dispute.Status.ToString(),
+            dispute.ResolutionNotes,
+            dispute.RefundAmount,
+            dispute.Order.Currency?.Code ?? dispute.Order.CurrencyId,
+            dispute.CreatedOn,
+            dispute.ResolvedOn,
+            dispute.Messages
+                .OrderBy(m => m.CreatedOn).ThenBy(m => m.Id)
+                .Select(m => new GdprExportDisputeMessageDto(m.IsStaffMessage ? "Staff" : nameof(UserProfile.Customer), m.CreatedOn, m.Message))
+                .ToList(),
+            dispute.Evidence.OrderBy(e => e.UploadedOn).ThenBy(e => e.Id).Select(e => e.FileName).ToList());
 }

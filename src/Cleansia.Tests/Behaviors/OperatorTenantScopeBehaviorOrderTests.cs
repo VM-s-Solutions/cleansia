@@ -135,10 +135,11 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
     }
 
     /// <summary>
-    /// The nine requests of ADR-0061 D3 carry the marker, plus the five session acts that name no
+    /// The nine requests of ADR-0061 D3 carry the marker, plus the six session acts that name no
     /// market and write a tenanted audit row on refusal (ADR-0062, Q-AUD-L5 overruled: the sign-ins,
-    /// the e-mail confirmation and the password reset pair — default market, the account's own company
-    /// replacing it on the token, D4). Nothing else does: a grep is the roster, and this is the grep.
+    /// the admin sign-in among them since its rows are admin ones (owner ruling 2026-09-15), the e-mail
+    /// confirmation and the password reset pair — default market, the account's own company replacing
+    /// it on the token, D4). Nothing else does: a grep is the roster, and this is the grep.
     /// </summary>
     [Fact]
     public void Exactly_The_D3_Requests_And_The_Session_Acts_Carry_The_Marker()
@@ -151,6 +152,7 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
 
         Assert.Equal(
         [
+            "Cleansia.Core.AppServices.Features.Auth.AdminLogin+Command",
             "Cleansia.Core.AppServices.Features.Auth.AppleAuth+Command",
             "Cleansia.Core.AppServices.Features.Auth.ConfirmUserEmail+Command",
             "Cleansia.Core.AppServices.Features.Auth.GoogleAuth+Command",

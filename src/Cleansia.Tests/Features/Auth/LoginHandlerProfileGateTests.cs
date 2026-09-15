@@ -25,8 +25,8 @@ public class LoginHandlerProfileGateTests
 {
     private const string Audience = JwtAudiences.Customer;
 
-    // The customer login records a session row and so takes the audit context; the partner and admin
-    // logins do not. The constructor is filled by parameter type so one helper serves all three.
+    // The customer and admin logins record a session row and so take the audit context; the partner
+    // login does not. The constructor is filled by parameter type so one helper serves all three.
     private static T Invoke<T>(Type featureType, ITokenService tokenService, IUserRepository repo, object command)
     {
         var handlerType = featureType.GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public)!;

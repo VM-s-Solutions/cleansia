@@ -19,12 +19,14 @@ namespace Cleansia.Tests.Features.Auditing;
 /// <c>Cleansia.Core.AppServices</c> reddens this, the same discipline as the erasure roster. The
 /// self-export is on it by owner ruling (Q-AUD-O3): a whole-record egress is recorded whoever asks; the
 /// session acts are on it by owner ruling too (Q-AUD-L5 overruled): a sign-in, a sign-out, a password
-/// reset and an e-mail confirmation are a login history kept beyond the refresh-token window. The two
-/// absences are asserted by name because each is a decision, not an omission.
+/// reset and an e-mail confirmation are a login history kept beyond the refresh-token window. The one
+/// admin label a customer marker carries is pinned here too (the sign-out an administrator runs is an
+/// admin act, owner ruling 2026-09-15). The absences are asserted by name because each is a decision,
+/// not an omission.
 /// </summary>
 public sealed class CustomerAuditActionRosterTests
 {
-    private sealed record Expected(string Label, string ResourceType, bool AllowsAnonymousActor = false);
+    private sealed record Expected(string Label, string ResourceType, bool AllowsAnonymousActor = false, string? AdminLabel = null);
 
     private static readonly IReadOnlyDictionary<Type, Expected> Roster = new Dictionary<Type, Expected>
     {
@@ -49,7 +51,7 @@ public sealed class CustomerAuditActionRosterTests
         [typeof(MobileLogin.Command)] = new("customer.session.login", "User", AllowsAnonymousActor: true),
         [typeof(GoogleAuth.Command)] = new("customer.session.login", "User", AllowsAnonymousActor: true),
         [typeof(AppleAuth.Command)] = new("customer.session.login", "User", AllowsAnonymousActor: true),
-        [typeof(Logout.Command)] = new("customer.session.logout", "User"),
+        [typeof(Logout.Command)] = new("customer.session.logout", "User", AdminLabel: "admin.session.logout"),
         [typeof(RequestPasswordChange.Command)] = new("customer.password.reset_requested", "User", AllowsAnonymousActor: true),
         [typeof(ChangePassword.Command)] = new("customer.password.reset_completed", "User", AllowsAnonymousActor: true),
         [typeof(ConfirmUserEmail.Command)] = new("customer.account.email_confirmed", "User", AllowsAnonymousActor: true),
@@ -71,7 +73,7 @@ public sealed class CustomerAuditActionRosterTests
 
         var actual = marked.ToDictionary(
             x => x.Command,
-            x => new Expected(x.Marker.Action!, x.Marker.ResourceType!, x.Marker.AllowsAnonymousActor));
+            x => new Expected(x.Marker.Action!, x.Marker.ResourceType!, x.Marker.AllowsAnonymousActor, x.Marker.AdminAction));
 
         var unexpected = actual.Keys.Except(Roster.Keys).Select(t => t.FullName).OrderBy(x => x).ToList();
         var missing = Roster.Keys.Except(actual.Keys).Select(t => t.FullName).OrderBy(x => x).ToList();
@@ -96,6 +98,7 @@ public sealed class CustomerAuditActionRosterTests
                 $"{feature.Name}: the UoW and the gate key on a type name ending in Command");
             var descriptor = AuditActionDescriptor.For(command);
             Assert.Equal(marker.Action, descriptor.Action);
+            Assert.Equal(marker.AdminAction ?? marker.Action, descriptor.AdminAction);
             Assert.Equal(AuditAudience.Customer, descriptor.Audience);
             Assert.True(descriptor.Audited);
             Assert.False(descriptor.Sensitive, $"{feature.Name}: a customer row has no sensitive tier");
@@ -109,6 +112,22 @@ public sealed class CustomerAuditActionRosterTests
 
         Assert.Equal(21, labels.Count);
         Assert.All(labels, l => Assert.StartsWith("customer.", l));
+    }
+
+    /// <summary>
+    /// The admin arm keeps a customer marker's label unless the marker names an admin one, and only the
+    /// sign-out does: it is the one customer-marked command the admin host dispatches, and an
+    /// administrator's sign-out is an admin act. An admin label is an admin label.
+    /// </summary>
+    [Fact]
+    public void Only_The_SignOut_Carries_An_Admin_Label_And_It_Is_An_Admin_One()
+    {
+        var withAdminLabel = MarkedInProduction().Where(x => x.Marker.AdminAction is not null).ToList();
+
+        var (feature, _, marker) = Assert.Single(withAdminLabel);
+        Assert.Equal(typeof(Logout), feature);
+        Assert.Equal("admin.session.logout", marker.AdminAction);
+        Assert.StartsWith("admin.", marker.AdminAction);
     }
 
     /// <summary>
@@ -139,13 +158,20 @@ public sealed class CustomerAuditActionRosterTests
     /// anonymous request only the scope behaviour sets — from the market the command names, or the
     /// default market when it names none (an explicit <c>CountryId => null</c>). A guest-allowed marker
     /// on a command outside that scope would drop every refusal row with one warning (ADR-0062 D1/D7).
+    /// Every marker in the assembly, whichever audience: the admin sign-in is anonymous too.
     /// </summary>
     [Fact]
     public void Every_Guest_Allowed_Marker_Sits_On_An_Operator_Scoped_Command()
     {
-        var anonymous = MarkedInProduction().Where(x => x.Marker.AllowsAnonymousActor).ToList();
+        var anonymous = typeof(IAuditContext).Assembly
+            .GetTypes()
+            .Select(t => (Feature: t, Marker: t.GetCustomAttribute<AuditActionAttribute>(inherit: false)))
+            .Where(x => x.Marker is { AllowsAnonymousActor: true })
+            .Select(x => (x.Feature, Command: x.Feature.GetNestedType("Command")!))
+            .ToList();
 
         Assert.NotEmpty(anonymous);
+        Assert.Contains(anonymous, x => x.Feature == typeof(AdminLogin));
         Assert.All(anonymous, x => Assert.True(
             typeof(IOperatorScopedRequest).IsAssignableFrom(x.Command),
             $"{x.Feature.Name}.Command allows an anonymous actor but is not IOperatorScopedRequest: its refusal rows would have no tenant"));
@@ -174,14 +200,24 @@ public sealed class CustomerAuditActionRosterTests
         Assert.Null(typeof(RefreshToken).GetCustomAttribute<AuditActionAttribute>(inherit: false));
     }
 
-    /// <summary>The employee table is not for sessions: a cleaner's or an admin's own sign-in leaves no customer row.</summary>
+    /// <summary>The employee table is not for sessions: a cleaner's own sign-in leaves no row anywhere.</summary>
     [Theory]
     [InlineData(typeof(PartnerLogin))]
     [InlineData(typeof(MobilePartnerLogin))]
-    [InlineData(typeof(AdminLogin))]
-    public void The_Partner_And_Admin_SignIns_Are_Not_Marked(Type feature)
+    public void The_Partner_SignIns_Are_Not_Marked(Type feature)
     {
         Assert.Null(feature.GetCustomAttribute<AuditActionAttribute>(inherit: false));
+    }
+
+    /// <summary>An administrator's sign-in is an admin act, not a customer one; its label is pinned in <c>AdminSessionAuditLabelTests</c>.</summary>
+    [Fact]
+    public void The_Admin_SignIn_Is_Marked_For_The_Admin_Audience_Not_The_Customer_One()
+    {
+        var marker = typeof(AdminLogin).GetCustomAttribute<AuditActionAttribute>(inherit: false);
+
+        Assert.NotNull(marker);
+        Assert.Equal(AuditAudience.Admin, marker.Audience);
+        Assert.DoesNotContain(typeof(AdminLogin.Command), MarkedInProduction().Select(x => x.Command));
     }
 
     /// <summary>

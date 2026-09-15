@@ -7,7 +7,7 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// ADR-0012 D4 — the scoped per-request buffer backing <see cref="IAuditContext"/>. A sensitive handler
 /// records one typed, pre-redacted before/after pair (or, for a customer act, one evidence record);
 /// <c>AuditLogBehavior</c> drains it when writing the success row, and both behaviors drain it on the
-/// customer failure arm (subject and resource only). Pure in-memory (no DbContext): the
+/// failure arms (subject and resource only). Pure in-memory (no DbContext): the
 /// payloads are serialized eagerly to the same camelCase JSON the jsonb columns hold, so the behavior
 /// reads back ready-to-store strings and never touches a domain type. The last record in a request wins.
 /// Enums go in by name: a row is read years later by a support agent and a lawyer's file, and a name

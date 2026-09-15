@@ -13,17 +13,22 @@ namespace Cleansia.Core.AppServices.Auditing;
 /// the resolved action descriptor, the optional drained snapshot, and the ambient correlation id. Shared
 /// by the success path (the behavior) and the failure path (the out-of-band sink) so both shapes agree
 /// on actor/action/resource/correlation. Holds no domain math — the before/after, if any, comes from the
-/// handler's pre-redacted snapshot.
+/// handler's pre-redacted snapshot. The label is the descriptor's admin one: a customer-marked command an
+/// Administrator runs is recorded as the admin act it is.
+///
+/// <para>Both rows name their subject the same way: the session's user id, falling back to the
+/// snapshot's <c>ActorUserId</c> only when the session has none (S1: the session wins) — the admin
+/// sign-in runs anonymously like the customer one, and its row is keyed on the account the handler or
+/// the validator named, not on <c>System</c>. A failure row reads the subject and the resource off the
+/// snapshot too — a validator names the account it is about to refuse through the same seam — but never
+/// its payload, before/after or reason: on a refusal the only payload there could be is the request's
+/// own words.</para>
 ///
 /// <para>The customer pair (ADR-0062 D1) builds the <c>CustomerActionAudit</c> row the same way, plus
 /// the request context: <c>ClientAudience</c> is the host that served the request (never the JWT — it is
 /// null on exactly the anonymous rows that most need it), IP and device label come from
-/// <see cref="IRequestMetadataProvider"/>, the device id is the session's signed <c>device_id</c> claim (the
-/// header only where there is no session to bind one), and the subject is the session's user id, falling
-/// back to the snapshot's <c>ActorUserId</c> only when the session has none (S1: the session wins). A
-/// failure row reads the subject and the resource off the snapshot too — a validator names the account
-/// it is about to refuse through the same seam — but never its payload: on a refusal the only payload
-/// there could be is the request's own words.</para>
+/// <see cref="IRequestMetadataProvider"/>, and the device id is the session's signed <c>device_id</c>
+/// claim (the header only where there is no session to bind one).</para>
 /// </summary>
 public sealed class AuditEntryFactory(
     IUserSessionProvider userSessionProvider,
@@ -37,9 +42,9 @@ public sealed class AuditEntryFactory(
         return Build(request, descriptor, success: true, errorCode: null, snapshot);
     }
 
-    public AdminActionAudit CreateFailure(object request, AuditActionDescriptor descriptor, string? errorCode)
+    public AdminActionAudit CreateFailure(object request, AuditActionDescriptor descriptor, string? errorCode, AuditSnapshot? snapshot = null)
     {
-        return Build(request, descriptor, success: false, errorCode, snapshot: null);
+        return Build(request, descriptor, success: false, errorCode, snapshot);
     }
 
     public CustomerActionAudit CreateCustomerSuccess(object request, AuditActionDescriptor descriptor, AuditSnapshot? snapshot)
@@ -59,22 +64,23 @@ public sealed class AuditEntryFactory(
         string? errorCode,
         AuditSnapshot? snapshot)
     {
-        var actorId = userSessionProvider.GetUserId();
+        var sessionUserId = userSessionProvider.GetUserId();
+        var actorId = string.IsNullOrWhiteSpace(sessionUserId) ? snapshot?.ActorUserId : sessionUserId;
 
         return new AdminActionAudit
         {
             ActorId = string.IsNullOrWhiteSpace(actorId) ? SystemActor : actorId,
             ActorEmail = userSessionProvider.GetUserEmail(),
             ActorProfile = ResolveActorProfile(),
-            Action = descriptor.Action,
+            Action = descriptor.AdminAction,
             ResourceType = snapshot?.ResourceType ?? descriptor.ResourceType,
             ResourceId = snapshot?.ResourceId ?? AuditResourceResolver.ResolveResourceId(request, descriptor.ResourceType),
             Success = success,
             ErrorCode = errorCode,
             OccurredOn = DateTimeOffset.UtcNow,
-            Reason = snapshot?.Reason,
-            BeforeJson = snapshot?.BeforeJson,
-            AfterJson = snapshot?.AfterJson,
+            Reason = success ? snapshot?.Reason : null,
+            BeforeJson = success ? snapshot?.BeforeJson : null,
+            AfterJson = success ? snapshot?.AfterJson : null,
             CorrelationId = ResolveCorrelationId()
         };
     }

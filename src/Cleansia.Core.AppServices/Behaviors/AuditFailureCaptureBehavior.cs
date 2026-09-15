@@ -91,16 +91,17 @@ public class AuditFailureCaptureBehavior<TRequest, TResponse>(
 
         try
         {
+            var snapshot = auditContext.DrainSnapshot();
             if (audience == AuditAudience.Admin)
             {
                 await auditFailureSink.RecordFailureAsync(
-                    auditEntryFactory.CreateFailure(request, descriptor, errorCode),
+                    auditEntryFactory.CreateFailure(request, descriptor, errorCode, snapshot),
                     cancellationToken);
             }
             else
             {
                 await auditFailureSink.RecordFailureAsync(
-                    auditEntryFactory.CreateCustomerFailure(request, descriptor, errorCode, auditContext.DrainSnapshot()),
+                    auditEntryFactory.CreateCustomerFailure(request, descriptor, errorCode, snapshot),
                     cancellationToken);
             }
         }

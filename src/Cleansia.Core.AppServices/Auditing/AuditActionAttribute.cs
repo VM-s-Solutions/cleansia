@@ -10,6 +10,14 @@ public sealed class AuditActionAttribute : Attribute
 
     public string? Action { get; }
 
+    /// <summary>
+    /// The label the ADMIN arm writes when an Administrator runs a customer-audience command: the same
+    /// act by an administrator is an admin act and is read under an admin label (a sign-out on the admin
+    /// host is <c>admin.session.logout</c>, not a customer's). Null keeps <see cref="Action"/> on both
+    /// arms. An admin-audience marker never reads it — its one label is already the admin one.
+    /// </summary>
+    public string? AdminAction { get; init; }
+
     public bool Sensitive { get; init; }
 
     public string? ResourceType { get; init; }
@@ -32,9 +40,10 @@ public sealed class AuditActionAttribute : Attribute
     public AuditAudience Audience { get; init; } = AuditAudience.Admin;
 
     /// <summary>
-    /// Only a customer-audience marker reads this: an anonymous caller is recorded as a customer act
-    /// only where the act genuinely has no session yet (registration, guest checkout, the session acts
-    /// that open or recover one) — and only on a customer host (<c>AuditGate</c>). The command must be
+    /// An anonymous caller is recorded only where the act genuinely has no session yet (registration,
+    /// guest checkout, the session acts that open or recover one) — and only on the host that serves the
+    /// marker's audience (<c>AuditGate</c>): a customer-audience marker on a customer host, an
+    /// admin-audience marker (the admin sign-in) on the admin host. The command must be
     /// <c>IOperatorScopedRequest</c>, or its refusal rows have no tenant to be stamped with.
     /// </summary>
     public bool AllowsAnonymousActor { get; init; }

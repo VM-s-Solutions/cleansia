@@ -3,9 +3,10 @@ using Cleansia.Core.AppServices.Auditing;
 namespace Cleansia.Core.AppServices.Features.Auth;
 
 /// <summary>
-/// What a <c>customer.session.login</c> row records: how the caller proved who they are, the lifetime
-/// the session was issued with, and the audience the token was minted for. Top-level because the
-/// password login on each customer host and the two social sign-ins all emit it.
+/// What a sign-in row records (<c>customer.session.login</c>, <c>admin.session.login</c>): how the
+/// caller proved who they are, the lifetime the session was issued with, and the audience the token was
+/// minted for. Top-level because the password login on each customer host, the admin host's and the two
+/// social sign-ins all emit it.
 /// <see cref="EmailConfirmed"/> is false on the one success that opens no session — the password was
 /// right but the address is unconfirmed, so the token is withheld and the client is sent to confirm.
 /// </summary>

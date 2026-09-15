@@ -39,7 +39,8 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 /// the request context filled; a rolled-back action leaves no row; a handler refusal and a validation
 /// reject each leave one out-of-band row whose <c>ErrorCode</c> is the KEY — on both of the reject's
 /// arms, returned as a result or thrown where the response cannot carry one; the latch keeps it to one; an
-/// Employee lands nowhere; an Administrator lands in the admin table; an anonymous caller lands in the
+/// Employee lands nowhere; an Administrator lands in the admin table under the marker's admin label (an
+/// administrator's act is an admin act, owner ruling 2026-09-15); an anonymous caller lands in the
 /// customer table only where the marker allows it, with <c>ClientAudience</c> filled. For an anonymous
 /// market-scoped act the tenant is the operator <c>OperatorTenantScopeBehavior</c> resolved before
 /// validation — and a refusal raised BEFORE that resolution has no tenant at all: the sink skips that
@@ -57,7 +58,7 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
     {
     }
 
-    [AuditAction("customer.test.act", Audience = AuditAudience.Customer, ResourceType = "Order")]
+    [AuditAction("customer.test.act", Audience = AuditAudience.Customer, ResourceType = "Order", AdminAction = "admin.test.act")]
     public sealed record CustomerActCommand(string OrderId) : IRequest<BusinessResult>;
 
     [AuditAction("customer.test.list", Audience = AuditAudience.Customer, ResourceType = "Order")]
@@ -436,7 +437,7 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task An_Administrator_Running_A_Customer_Marked_Command_Lands_In_The_Admin_Table_Only()
+    public async Task An_Administrator_Running_A_Customer_Marked_Command_Lands_In_The_Admin_Table_Only_Under_The_Admin_Label()
     {
         await ResetAsync();
         var run = new Run { Session = Session("admin-1", UserProfile.Administrator), Audience = JwtAudiences.Admin };
@@ -452,7 +453,7 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
         await using var verify = NewContext();
         Assert.Empty(await CustomerRows(verify));
         var admin = Assert.Single(await verify.AdminActionAudits.IgnoreQueryFilters().ToListAsync());
-        Assert.Equal("customer.test.act", admin.Action);
+        Assert.Equal("admin.test.act", admin.Action);
         Assert.Equal("admin-1", admin.ActorId);
         Assert.Equal("ORD-1", admin.ResourceId);
     }

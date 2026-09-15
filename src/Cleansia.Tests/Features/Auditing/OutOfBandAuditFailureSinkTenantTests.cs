@@ -18,9 +18,10 @@ namespace Cleansia.Tests.Features.Auditing;
 /// ADR-0062 D7 — the out-of-band failure row is stamped with the operating company of the account it
 /// names, read in the sink's own scope past the tenant filter; only a row that names nobody keeps the
 /// ambient tenant. An anonymous refusal's ambient tenant is the default market's operator, which is
-/// the right answer for an unknown address and the wrong one for a second operator's customer. A real
-/// <see cref="CleansiaDbContext"/> over SQLite in-memory, the <c>UserRepositoryTenantLoginLockoutTests</c>
-/// arrangement, so the global tenant filter actually runs.
+/// the right answer for an unknown address and the wrong one for a second operator's customer — or
+/// administrator: the admin row names its subject through <c>ActorId</c>, and a refused admin sign-in on
+/// a known account is that account's row. A real <see cref="CleansiaDbContext"/> over SQLite in-memory,
+/// the <c>UserRepositoryTenantLoginLockoutTests</c> arrangement, so the global tenant filter actually runs.
 /// </summary>
 public sealed class OutOfBandAuditFailureSinkTenantTests : IDisposable
 {
@@ -137,21 +138,61 @@ public sealed class OutOfBandAuditFailureSinkTenantTests : IDisposable
         Assert.Empty(await RowsAsync());
     }
 
-    [Fact]
-    public async Task The_Admin_Row_Keeps_The_Ambient_Tenant()
-    {
-        await SeedAsync();
-        var entry = new AdminActionAudit
+    private static AdminActionAudit AdminRefusal(string actorId, string action = "order.refund") =>
+        new()
         {
-            ActorId = "admin-1", ActorProfile = UserProfile.Administrator, Action = "order.refund",
+            ActorId = actorId, ActorProfile = UserProfile.Administrator, Action = action,
             Success = false, ErrorCode = "order.not_found", OccurredOn = DateTimeOffset.UtcNow
         };
 
-        await Sink(ambientTenant: TestTenants.Default).RecordFailureAsync(entry, CancellationToken.None);
-
+    private async Task<List<AdminActionAudit>> AdminRowsAsync()
+    {
         await using var ctx = NewContext(tenantId: null);
-        var row = Assert.Single(await ctx.AdminActionAudits.IgnoreQueryFilters().ToListAsync());
+        return await ctx.AdminActionAudits.IgnoreQueryFilters().ToListAsync();
+    }
+
+    [Fact]
+    public async Task The_Admin_Row_Whose_Actor_Holds_No_Account_Keeps_The_Ambient_Tenant()
+    {
+        await SeedAsync();
+
+        await Sink(ambientTenant: TestTenants.Default).RecordFailureAsync(AdminRefusal("admin-1"), CancellationToken.None);
+
+        var row = Assert.Single(await AdminRowsAsync());
         Assert.Equal(TestTenants.Default, row.TenantId);
+    }
+
+    [Fact]
+    public async Task The_Admin_Row_Whose_Actor_Is_System_Keeps_The_Ambient_Tenant()
+    {
+        await SeedAsync();
+
+        await Sink(ambientTenant: TestTenants.Default).RecordFailureAsync(AdminRefusal("System", "admin.session.login"), CancellationToken.None);
+
+        var row = Assert.Single(await AdminRowsAsync());
+        Assert.Equal(TestTenants.Default, row.TenantId);
+    }
+
+    [Fact]
+    public async Task The_Admin_Row_That_Names_A_Second_Operators_Account_Is_Stamped_With_That_Operator_Not_The_Ambient_Tenant()
+    {
+        await SeedAsync();
+
+        await Sink(ambientTenant: TestTenants.Default).RecordFailureAsync(AdminRefusal(SecondTenantUserId, "admin.session.login"), CancellationToken.None);
+
+        var row = Assert.Single(await AdminRowsAsync());
+        Assert.Equal(SecondTenantUserId, row.ActorId);
+        Assert.Equal(SecondTenant, row.TenantId);
+    }
+
+    [Fact]
+    public async Task The_Admin_Row_That_Names_Nobody_With_No_Ambient_Tenant_Is_Not_Written()
+    {
+        await SeedAsync();
+
+        await Sink(ambientTenant: null).RecordFailureAsync(AdminRefusal("System", "admin.session.login"), CancellationToken.None);
+
+        Assert.Empty(await AdminRowsAsync());
     }
 
     private sealed class SingleDbScopeFactory(SqliteConnection connection) : IServiceScopeFactory, IServiceProvider, IServiceScope

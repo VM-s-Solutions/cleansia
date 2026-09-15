@@ -28,6 +28,8 @@ namespace Cleansia.Tests.Features.Auditing;
 ///     a success) writes a Success=false row out-of-band, then rethrows.
 ///   • The gate is AuditGate.Resolve, shared with the inner behavior: admin Commands (opt-out) and
 ///     customer-marked Commands (opt-in); a Query, an Employee or an unmarked non-admin Command produces no row.
+///     An anonymous admin sign-in refused by its validator (the admin host only) leaves an admin row keyed on
+///     the account the validator named, or on System where the address resolved nothing — never the address.
 ///   • The shared IAuditContext latch prevents double-writing a failure the inner behavior already recorded.
 ///   • Best-effort: a sink that throws is swallowed and never changes the error returned to the admin.
 /// </summary>
@@ -47,6 +49,9 @@ public sealed class AuditFailureCaptureBehaviorTests
 
     [AuditAction("customer.session.login", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
     public sealed record CustomerSignInCommand : IRequest<BusinessResult>;
+
+    [AuditAction("admin.session.login", ResourceType = "User", AllowsAnonymousActor = true)]
+    public sealed record AdminSignInCommand(string Email) : IRequest<BusinessResult>;
 
     private readonly Mock<IAuditFailureSink> _sink = new();
 
@@ -286,6 +291,54 @@ public sealed class AuditFailureCaptureBehaviorTests
             !a.Success && a.ErrorCode == BusinessErrorMessage.NotExistingUserWithEmail
             && a.UserId == null && a.ResourceId == null && a.PayloadJson == null),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task An_Anonymous_Admin_SignIn_Validation_Reject_On_The_Admin_Host_Carries_The_Subject_The_Validator_Named_And_No_Payload()
+    {
+        var auditContext = new AuditContext();
+        auditContext.RecordEvidence("User", "admin-9", payload: null, actorUserId: "admin-9");
+        var behavior = Behavior<AdminSignInCommand>(new TestUserSessionProvider([]), auditContext, host: JwtAudiences.Admin);
+        var rejected = ValidationResult.WithErrors([new Error("Password", BusinessErrorMessage.InvalidPassword)]);
+
+        var result = await behavior.Handle(new AdminSignInCommand("admin@cleansia.test"), Returns(rejected), CancellationToken.None);
+
+        Assert.Same(rejected, result);
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
+            !a.Success && a.ErrorCode == BusinessErrorMessage.InvalidPassword && a.Action == "admin.session.login"
+            && a.ActorId == "admin-9" && a.ActorEmail == null && a.ResourceType == "User" && a.ResourceId == "admin-9"
+            && a.AfterJson == null && a.BeforeJson == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task An_Anonymous_Admin_SignIn_Validation_Reject_With_Nothing_Named_Names_Nobody()
+    {
+        var behavior = Behavior<AdminSignInCommand>(new TestUserSessionProvider([]), host: JwtAudiences.Admin);
+        var rejected = ValidationResult.WithErrors([new Error("Email", BusinessErrorMessage.NotExistingUserWithEmail)]);
+
+        await behavior.Handle(new AdminSignInCommand("nobody@cleansia.test"), Returns(rejected), CancellationToken.None);
+
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
+            !a.Success && a.ErrorCode == BusinessErrorMessage.NotExistingUserWithEmail
+            && a.ActorId == "System" && a.ActorEmail == null && a.ResourceId == null && a.AfterJson == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(JwtAudiences.Customer)]
+    [InlineData(JwtAudiences.Partner)]
+    [InlineData(JwtAudiences.Mobile)]
+    public async Task An_Anonymous_Admin_SignIn_Validation_Reject_Off_The_Admin_Host_Is_Not_Recorded(string host)
+    {
+        var behavior = Behavior<AdminSignInCommand>(new TestUserSessionProvider([]), host: host);
+        var rejected = ValidationResult.WithErrors([new Error("Email", BusinessErrorMessage.NotExistingUserWithEmail)]);
+
+        await behavior.Handle(new AdminSignInCommand("nobody@cleansia.test"), Returns(rejected), CancellationToken.None);
+
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>The partner hosts route anonymous session acts (the Google sign-in, the e-mail confirmation); a refusal there is nobody's row.</summary>

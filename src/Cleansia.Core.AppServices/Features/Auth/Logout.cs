@@ -13,7 +13,7 @@ namespace Cleansia.Core.AppServices.Features.Auth;
 /// are silently treated as success (prevents token-probing attacks and makes
 /// logout safe to retry).
 /// </summary>
-[AuditAction("customer.session.logout", Audience = AuditAudience.Customer, ResourceType = "User")]
+[AuditAction("customer.session.logout", Audience = AuditAudience.Customer, ResourceType = "User", AdminAction = "admin.session.logout")]
 public class Logout
 {
     // Validator intentionally has no rules: web clients now send an empty

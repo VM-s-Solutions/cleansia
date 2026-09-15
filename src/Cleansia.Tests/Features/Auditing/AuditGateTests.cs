@@ -11,9 +11,11 @@ namespace Cleansia.Tests.Features.Auditing;
 
 /// <summary>
 /// ADR-0062 D1 (Verification #1) — the gate has exactly two arms. The admin arm is ADR-0012 D3 verbatim
-/// (every admin Command, opt-out); the customer arm is opt-in by marker, takes the Customer role, and
-/// takes an anonymous caller only where the marker says so AND the serving host is a customer host: a
-/// cleaner's anonymous act on a partner host, and an anonymous act on the admin host, land nowhere.
+/// (every admin Command, opt-out); the customer arm is opt-in by marker and takes the Customer role. An
+/// anonymous caller is taken only where the marker says so AND the serving host is the one that serves
+/// the marker's audience: a customer marker on a customer host, an admin marker (the admin sign-in,
+/// owner ruling 2026-09-15) on the admin host. A cleaner's anonymous act on a partner host, a customer
+/// marker's anonymous act on the admin host and an admin marker's on a customer host all land nowhere.
 /// Pure logic, red-first.
 /// </summary>
 public sealed class AuditGateTests
@@ -30,6 +32,9 @@ public sealed class AuditGateTests
 
     [AuditAction("customer.something", Audience = AuditAudience.Customer, Audited = false)]
     public sealed record OptedOutCustomerCommand(string OrderId);
+
+    [AuditAction("admin.session.login", ResourceType = "User", AllowsAnonymousActor = true)]
+    public sealed record AdminGuestAllowedCommand(string Email);
 
     public sealed class Nested
     {
@@ -169,5 +174,42 @@ public sealed class AuditGateTests
     public void An_Administrator_On_The_Admin_Host_Running_A_Customer_Marked_Session_Act_Lands_In_The_Admin_Table_Only()
     {
         Assert.Equal(AuditAudience.Admin, Resolve(new Logout.Command("token"), UserProfile.Administrator, JwtAudiences.Admin));
+    }
+
+    // ── the anonymous admin arm: the admin sign-in is an admin act on the admin host only ──
+
+    [Fact]
+    public void An_Anonymous_Caller_Of_An_Admin_Marker_With_AllowsAnonymousActor_Is_The_Admin_Audience_On_The_Admin_Host()
+    {
+        Assert.Equal(AuditAudience.Admin, Resolve(new AdminGuestAllowedCommand("a@cleansia.test"), role: null, JwtAudiences.Admin));
+    }
+
+    [Theory]
+    [InlineData(JwtAudiences.Customer)]
+    [InlineData(JwtAudiences.Partner)]
+    [InlineData(JwtAudiences.Mobile)]
+    [InlineData("cleansia.functions")]
+    public void An_Anonymous_Caller_Of_An_Admin_Guest_Allowed_Marker_Lands_Nowhere_Off_The_Admin_Host(string host)
+    {
+        Assert.Null(Resolve(new AdminGuestAllowedCommand("a@cleansia.test"), role: null, host));
+    }
+
+    [Theory]
+    [InlineData(UserProfile.Customer)]
+    [InlineData(UserProfile.Employee)]
+    public void A_Signed_In_Non_Administrator_Running_An_Admin_Guest_Allowed_Marker_Lands_Nowhere(UserProfile role)
+    {
+        Assert.Null(Resolve(new AdminGuestAllowedCommand("a@cleansia.test"), role, JwtAudiences.Admin));
+    }
+
+    [Fact]
+    public void An_Anonymous_Admin_SignIn_Is_An_Admin_Act_On_The_Admin_Host_Only()
+    {
+        var login = new AdminLogin.Command("someone@cleansia.test", "Secret-123!", RememberMe: true);
+
+        Assert.Equal(AuditAudience.Admin, Resolve(login, role: null, JwtAudiences.Admin));
+        Assert.Null(Resolve(login, role: null, JwtAudiences.Customer));
+        Assert.Null(Resolve(login, role: null, JwtAudiences.Partner));
+        Assert.Null(Resolve(login, role: null, JwtAudiences.Mobile));
     }
 }

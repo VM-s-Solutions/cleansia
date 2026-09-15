@@ -16,8 +16,9 @@ namespace Cleansia.Core.AppServices.Behaviors;
 /// row; a failed audit insert rolls the action back).
 ///
 /// <para>Gate: <see cref="AuditGate"/> answers WHICH table, or none. The admin arm (D3) takes every
-/// admin Command; the customer arm (ADR-0062 D1) takes a Command whose marker opted it in, from a
-/// Customer or — where the marker allows it and the host is a customer host — an anonymous caller.
+/// admin Command — and, where an admin marker allows it and the host is the admin host, an anonymous
+/// caller (the admin sign-in); the customer arm (ADR-0062 D1) takes a Command whose marker opted it in,
+/// from a Customer or — where the marker allows it and the host is a customer host — an anonymous caller.
 /// Queries, employee mutations and unmarked customer commands produce no row. A handler that took a
 /// branch its marker does not describe declines the success row through <see cref="IAuditContext"/>;
 /// its refusals are still recorded.</para>
@@ -108,16 +109,17 @@ public class AuditLogBehavior<TRequest, TResponse>(
 
         try
         {
+            var snapshot = auditContext.DrainSnapshot();
             if (audience == AuditAudience.Admin)
             {
                 await auditFailureSink.RecordFailureAsync(
-                    auditEntryFactory.CreateFailure(request, descriptor, errorCode),
+                    auditEntryFactory.CreateFailure(request, descriptor, errorCode, snapshot),
                     cancellationToken);
             }
             else
             {
                 await auditFailureSink.RecordFailureAsync(
-                    auditEntryFactory.CreateCustomerFailure(request, descriptor, errorCode, auditContext.DrainSnapshot()),
+                    auditEntryFactory.CreateCustomerFailure(request, descriptor, errorCode, snapshot),
                     cancellationToken);
             }
         }

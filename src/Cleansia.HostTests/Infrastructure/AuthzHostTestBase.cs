@@ -115,6 +115,7 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     protected HttpClient PartnerClientAnonymous() => PartnerHost.CreateClient();
     protected HttpClient CustomerClientAnonymous() => CustomerHost.CreateClient();
     protected HttpClient MobileClientAnonymous() => MobileHost.CreateClient();
+    protected HttpClient AdminClientAnonymous() => AdminHost.CreateClient();
 
     private static HttpClient Authorized(HttpClient client, string token)
     {

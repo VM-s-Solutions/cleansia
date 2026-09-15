@@ -17,12 +17,14 @@ namespace Cleansia.Infra.Database.Auditing;
 /// <c>CommitAsync</c> would not stamp it. The behavior wraps this call and swallows: a failure here never
 /// changes the error returned to the caller (D2.2).
 ///
-/// <para>A customer row that names an account is stamped with that account's operating company (ADR-0062
-/// D7). The read runs for every subject-named customer row and is decisive only when a validator or
-/// handler named the subject on an anonymous request: there the ambient tenant is the default market's
-/// operator, the right stamp for an unknown address and the wrong one for a second operator's customer
-/// refused a sign-in, and the filter would hide that account. For a signed-in subject the read returns
-/// the operator the session claim was minted from. A row that names nobody keeps the ambient stamp.</para>
+/// <para>A row that names an account is stamped with that account's operating company (ADR-0062 D7).
+/// The read runs for every subject-named row — the customer row's <c>UserId</c>, the admin row's
+/// <c>ActorId</c> — and is decisive only when a validator or handler named the subject on an anonymous
+/// request: there the ambient tenant is the default market's operator, the right stamp for an unknown
+/// address and the wrong one for a second operator's customer or administrator refused a sign-in, and
+/// the filter would hide that account. For a signed-in subject the read returns the operator the session
+/// claim was minted from. A row that names nobody (the admin row's <c>System</c> actor resolves no
+/// account) keeps the ambient stamp.</para>
 ///
 /// <para>A row with no tenant from either source is not written. The one request shape that reaches
 /// here without one is an anonymous market-scoped act refused BEFORE <c>OperatorTenantScopeBehavior</c>
@@ -36,7 +38,7 @@ public sealed class OutOfBandAuditFailureSink(
     ILogger<OutOfBandAuditFailureSink> logger) : IAuditFailureSink
 {
     public Task RecordFailureAsync(AdminActionAudit entry, CancellationToken cancellationToken) =>
-        WriteAsync(entry, entry.Action, entry.ErrorCode, subjectUserId: null, cancellationToken);
+        WriteAsync(entry, entry.Action, entry.ErrorCode, entry.ActorId, cancellationToken);
 
     public Task RecordFailureAsync(CustomerActionAudit entry, CancellationToken cancellationToken) =>
         WriteAsync(entry, entry.Action, entry.ErrorCode, entry.UserId, cancellationToken);

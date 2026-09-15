@@ -24,10 +24,14 @@ namespace Cleansia.Tests.Features.Auditing;
 ///     NOT to the scoped writer (the UoW won't commit it). The row's ErrorCode is the refusal KEY
 ///     (Error.Message), not the field name in Error.Code — both arms, the admin one on the owner's default (ADR-0062 D1).
 ///   • The customer arm (ADR-0062 D1): a Customer running a customer-marked Command lands in the
-///     customer table; an Employee lands nowhere; an Administrator running it lands in the admin table;
-///     an anonymous caller of a guest-allowed marker lands in the customer table on a customer host and
-///     nowhere on any other; a handler that declines the success row leaves none, and its refusal is
-///     still recorded.
+///     customer table; an Employee lands nowhere; an Administrator running it lands in the admin table —
+///     under the marker's admin label where it declares one, else its own (owner ruling 2026-09-15: an
+///     administrator's sign-out is an admin act); an anonymous caller of a guest-allowed marker lands in
+///     the customer table on a customer host and nowhere on any other; a handler that declines the
+///     success row leaves none, and its refusal is still recorded.
+///   • The anonymous admin arm (the admin sign-in): an anonymous caller of a guest-allowed ADMIN marker
+///     lands in the admin table on the admin host only, keyed on the account the handler or the
+///     validator named — never on System — and a refusal there carries no payload.
 ///   • TC-AUDIT-FAILURE (exception): the failure row is written out-of-band then the exception rethrows;
 ///     a sink that throws is swallowed — the ORIGINAL error reaches the caller unchanged.
 /// </summary>
@@ -39,6 +43,12 @@ public sealed class AuditLogBehaviorTests
 
     [AuditAction("customer.order.cancel", Audience = AuditAudience.Customer, ResourceType = "Order")]
     public sealed record CustomerCancelOrderCommand(string OrderId) : IRequest<BusinessResult>;
+
+    [AuditAction("customer.session.logout", Audience = AuditAudience.Customer, ResourceType = "User", AdminAction = "admin.session.logout")]
+    public sealed record CustomerSignOutCommand : IRequest<BusinessResult>;
+
+    [AuditAction("admin.session.login", ResourceType = "User", AllowsAnonymousActor = true)]
+    public sealed record AdminSignInCommand(string Email) : IRequest<BusinessResult>;
 
     private readonly Mock<IAuditWriter> _writer = new();
     private readonly Mock<IAuditFailureSink> _sink = new();
@@ -265,6 +275,33 @@ public sealed class AuditLogBehaviorTests
     }
 
     [Fact]
+    public async Task An_Administrator_Running_A_Customer_Marked_Command_With_An_Admin_Label_Is_Recorded_Under_That_Label()
+    {
+        var behavior = Behavior<CustomerSignOutCommand>(Session(UserProfile.Administrator));
+
+        await behavior.Handle(new CustomerSignOutCommand(), Returns(BusinessResult.Success()), CancellationToken.None);
+        await behavior.Handle(new CustomerSignOutCommand(),
+            Returns(BusinessResult.Failure(new Error("Token", BusinessErrorMessage.InvalidRefreshToken))), CancellationToken.None);
+
+        _writer.Verify(w => w.Add(It.Is<AdminActionAudit>(a =>
+            a.Success && a.Action == "admin.session.logout" && a.ActorId == "admin-1")), Times.Once);
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
+            !a.Success && a.Action == "admin.session.logout" && a.ErrorCode == BusinessErrorMessage.InvalidRefreshToken), It.IsAny<CancellationToken>()), Times.Once);
+        _writer.Verify(w => w.Add(It.IsAny<CustomerActionAudit>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Customer_Running_A_Customer_Marked_Command_With_An_Admin_Label_Keeps_The_Customer_Label()
+    {
+        var behavior = Behavior<CustomerSignOutCommand>(CustomerSession(), JwtAudiences.Customer);
+
+        await behavior.Handle(new CustomerSignOutCommand(), Returns(BusinessResult.Success()), CancellationToken.None);
+
+        _writer.Verify(w => w.Add(It.Is<CustomerActionAudit>(a => a.Success && a.Action == "customer.session.logout")), Times.Once);
+        _writer.Verify(w => w.Add(It.IsAny<AdminActionAudit>()), Times.Never);
+    }
+
+    [Fact]
     public async Task A_Customer_Running_An_Unmarked_Command_Produces_No_Row()
     {
         var behavior = Behavior<AdminRefundOrderCommand>(CustomerSession(), JwtAudiences.Customer);
@@ -343,6 +380,92 @@ public sealed class AuditLogBehaviorTests
             !a.Success && a.ErrorCode == BusinessErrorMessage.InternalAuthTypeError
             && a.UserId == "user-9" && a.ResourceType == "User" && a.ResourceId == "user-9" && a.PayloadJson == null),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // ── the anonymous admin arm: the admin sign-in ─────────────────────────────
+
+    [Fact]
+    public async Task An_Anonymous_Admin_SignIn_Success_On_The_Admin_Host_Adds_An_Admin_Row_Keyed_On_The_Account_The_Handler_Named()
+    {
+        var auditContext = new AuditContext();
+        var behavior = Behavior<AdminSignInCommand>(AnonymousSession(), JwtAudiences.Admin, auditContext);
+
+        await behavior.Handle(new AdminSignInCommand("admin@cleansia.test"), _ =>
+        {
+            auditContext.RecordEvidence("User", "admin-9", new { method = "Password" }, actorUserId: "admin-9");
+            return Task.FromResult(BusinessResult.Success());
+        }, CancellationToken.None);
+
+        _writer.Verify(w => w.Add(It.Is<AdminActionAudit>(a =>
+            a.Success && a.Action == "admin.session.login" && a.ActorId == "admin-9" && a.ActorEmail == null
+            && a.ResourceType == "User" && a.ResourceId == "admin-9" && a.AfterJson != null && a.AfterJson.Contains("Password"))), Times.Once);
+        _writer.Verify(w => w.Add(It.IsAny<CustomerActionAudit>()), Times.Never);
+    }
+
+    /// <summary>The validator resolved the account and named it before the handler refused it (an inactive or non-admin account): the row is that account's, with no payload.</summary>
+    [Fact]
+    public async Task An_Anonymous_Admin_SignIn_Refusal_On_A_Known_Account_Writes_An_Admin_Row_Keyed_On_That_Account_With_No_Payload()
+    {
+        var auditContext = new AuditContext();
+        auditContext.RecordEvidence("User", "cust-9", payload: null, actorUserId: "cust-9");
+        var behavior = Behavior<AdminSignInCommand>(AnonymousSession(), JwtAudiences.Admin, auditContext);
+
+        await behavior.Handle(new AdminSignInCommand("customer@cleansia.test"),
+            Returns(BusinessResult.Failure(new Error("Email", BusinessErrorMessage.InsufficientPrivileges))), CancellationToken.None);
+
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
+            !a.Success && a.Action == "admin.session.login" && a.ErrorCode == BusinessErrorMessage.InsufficientPrivileges
+            && a.ActorId == "cust-9" && a.ActorEmail == null && a.ResourceType == "User" && a.ResourceId == "cust-9"
+            && a.AfterJson == null && a.BeforeJson == null && a.Reason == null), It.IsAny<CancellationToken>()), Times.Once);
+        _writer.Verify(w => w.Add(It.IsAny<AdminActionAudit>()), Times.Never);
+    }
+
+    /// <summary>An unknown address resolves nothing: the row is the key alone, the actor is System, and nowhere on it the address the command carried.</summary>
+    [Fact]
+    public async Task An_Anonymous_Admin_SignIn_Refusal_With_Nothing_Named_Names_Nobody_And_Never_The_Address()
+    {
+        var behavior = Behavior<AdminSignInCommand>(AnonymousSession(), JwtAudiences.Admin);
+
+        await behavior.Handle(new AdminSignInCommand("nobody@cleansia.test"),
+            Returns(BusinessResult.Failure(new Error("Email", BusinessErrorMessage.NotExistingUserWithEmail))), CancellationToken.None);
+
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
+            !a.Success && a.ErrorCode == BusinessErrorMessage.NotExistingUserWithEmail
+            && a.ActorId == "System" && a.ActorEmail == null && a.ResourceId == null && a.AfterJson == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(JwtAudiences.Customer)]
+    [InlineData(JwtAudiences.Partner)]
+    [InlineData(JwtAudiences.Mobile)]
+    public async Task An_Anonymous_Admin_SignIn_Off_The_Admin_Host_Lands_Nowhere_Whether_It_Succeeds_Or_Is_Refused(string host)
+    {
+        var behavior = Behavior<AdminSignInCommand>(AnonymousSession(), host);
+
+        await behavior.Handle(new AdminSignInCommand("admin@cleansia.test"), Returns(BusinessResult.Success()), CancellationToken.None);
+        await behavior.Handle(new AdminSignInCommand("admin@cleansia.test"),
+            Returns(BusinessResult.Failure(new Error("Email", BusinessErrorMessage.InvalidPassword))), CancellationToken.None);
+
+        _writer.Verify(w => w.Add(It.IsAny<AdminActionAudit>()), Times.Never);
+        _writer.Verify(w => w.Add(It.IsAny<CustomerActionAudit>()), Times.Never);
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<AdminActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sink.Verify(s => s.RecordFailureAsync(It.IsAny<CustomerActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>S1: a signed-in administrator's row is the session's, whatever the handler named.</summary>
+    [Fact]
+    public async Task A_Signed_In_Administrators_Row_Takes_The_Session_Actor_Over_The_One_The_Handler_Named()
+    {
+        var auditContext = new AuditContext();
+        auditContext.RecordEvidence("User", "someone-else", payload: null, actorUserId: "someone-else");
+        var behavior = Behavior<AdminRefundOrderCommand>(Session(UserProfile.Administrator), auditContext: auditContext);
+
+        await behavior.Handle(new AdminRefundOrderCommand("ORD-1"),
+            Returns(BusinessResult.Failure(new Error("OrderId", "refund.too_large"))), CancellationToken.None);
+
+        _sink.Verify(s => s.RecordFailureAsync(It.Is<AdminActionAudit>(a =>
+            a.ActorId == "admin-1" && a.ResourceType == "User" && a.ResourceId == "someone-else"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ── a declined success row ─────────────────────────────────────────────────

@@ -635,7 +635,7 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
   {
     key: 'payroll.invoice.reference_capacity_exhausted',
     reason:
-      'Sole emitter is PayoutReferenceAllocator.AllocateAsync, reached only from GenerateInvoice and AssignInvoiceVariableSymbol (both AdminPayrollController) and the PayPeriodBackgroundService timer. This host\'s invoice actions — regenerate, download, get, list — take no IPayoutReferenceAllocator.',
+      'Sole emitter is PayoutReferenceAllocator (AllocateAsync and AllocateInvoiceNumberAsync), reached only from GenerateInvoice and AssignInvoiceVariableSymbol (both AdminPayrollController) and the PayPeriodBackgroundService timer. This host\'s invoice actions — regenerate, download, get, list — take no IPayoutReferenceAllocator.',
   },
   {
     key: 'refund.failed',

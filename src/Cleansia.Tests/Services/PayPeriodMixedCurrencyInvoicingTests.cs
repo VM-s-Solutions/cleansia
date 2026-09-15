@@ -274,6 +274,34 @@ public class PayPeriodMixedCurrencyInvoicingTests
         Assert.Equal($"{written.InvoiceNumber}.pdf", sent.FileName);
     }
 
+    /// <summary>
+    /// The invoice number is the second reference a document needs, drawn from its own per-company
+    /// series; a refusal there is per document too, and the variable symbol already claimed for the
+    /// skipped document is simply a gap in that series.
+    /// </summary>
+    [Fact]
+    public async Task An_Invoice_Number_Refused_For_One_Currency_Does_Not_Cost_The_Other_Its_Invoice()
+    {
+        var calls = 0;
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => ++calls == 1
+                ? BusinessResult.Failure<string>(new Error("InvoiceNumber", "payroll.invoice.reference_capacity_exhausted"))
+                : BusinessResult.Success(PayrollMockFactory.NextTestInvoiceNumber()));
+        _unassignedPays =
+        [
+            PayrollMockFactory.OrderPay(basePay: 600m),
+            PayrollMockFactory.OrderPay(basePay: 30m, currencyId: EurId),
+        ];
+
+        await Run();
+
+        var written = Assert.Single(_addedInvoices);
+        Assert.Equal(EurId, written.CurrencyId);
+        var sent = Assert.Single(_emailsSent);
+        Assert.Equal($"{written.InvoiceNumber}.pdf", sent.FileName);
+    }
+
     // ── arrangement ──────────────────────────────────────────────────
 
     private Task Run() => new PayPeriodBackgroundService(

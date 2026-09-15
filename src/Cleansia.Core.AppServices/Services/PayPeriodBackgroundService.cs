@@ -444,8 +444,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             _logger.LogError(
                 ex,
-                "Duplicate payout reference {VariableSymbol} for employee {EmployeeId} / period {PeriodId}; skipping this employee's invoice",
+                "Duplicate payout reference (variable symbol {VariableSymbol} or invoice number {InvoiceNumber}) for employee {EmployeeId} / period {PeriodId}; skipping this employee's invoice",
                 variableSymbol.Value,
+                invoiceNumber.Value,
                 employee.Id,
                 period.Id);
             return null;
@@ -572,11 +573,15 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         byte[] pdfBytes,
         CancellationToken cancellationToken)
     {
-        var employeeName = $"{employee.User?.FirstName}_{employee.User?.LastName}";
+        // THE EMPLOYEE'S ID, NOT THEIR NAME, and the same segment the regenerate path keys on so both
+        // writers address one file. The name is mutable, and it is also the only segment that told two
+        // companies' documents apart: each company numbers its own invoices, so two first invoices of a
+        // year are both INV-YYYY-000001 under the same auto-seeded period label.
+        var employeeFolder = employee.Id;
         var payPeriodDescription = invoice.PayPeriod!.GetPeriodLabel();
         var invoiceFileName = invoice.InvoiceNumber;
 
-        var blobName = $"{payPeriodDescription}/{employeeName}/{invoiceFileName}.pdf";
+        var blobName = $"{payPeriodDescription}/{employeeFolder}/{invoiceFileName}.pdf";
         var blobClient = _blobContainerClientFactory.GetBlobContainerClient(Common.Constants.BlobContainers.GeneratedInvoices);
 
         using var pdfStream = new MemoryStream(pdfBytes);

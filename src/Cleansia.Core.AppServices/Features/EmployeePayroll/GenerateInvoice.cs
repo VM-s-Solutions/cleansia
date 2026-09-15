@@ -164,6 +164,9 @@ public class GenerateInvoice
                     invoiceRepository.Remove(invoice);
                 }
 
+                // Named after the variable symbol for either per-company reference index (symbol or
+                // invoice number): the admin's remedy is the same retry, and telling the two apart
+                // would mean parsing the constraint name out of the driver's message.
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(EmployeeInvoice.VariableSymbol),
                     BusinessErrorMessage.InvoiceReferenceUnavailable));

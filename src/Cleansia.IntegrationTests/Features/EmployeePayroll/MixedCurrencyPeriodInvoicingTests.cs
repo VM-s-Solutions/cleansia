@@ -57,7 +57,8 @@ public class MixedCurrencyPeriodInvoicingTests(PostgresContainerFixture fixture)
                 Assert.Equal(1000m, czk.TotalAmount);
                 Assert.Equal(30m, eur.TotalAmount);
 
-                // Two documents, two references -- the allocator is a global counter, so they differ.
+                // Two documents, two references -- two ordinals drawn from the same company's series, so
+                // they differ.
                 Assert.NotNull(czk.VariableSymbol);
                 Assert.NotNull(eur.VariableSymbol);
                 Assert.NotEqual(czk.VariableSymbol, eur.VariableSymbol);

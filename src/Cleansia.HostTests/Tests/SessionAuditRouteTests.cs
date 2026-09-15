@@ -13,12 +13,12 @@ namespace Cleansia.HostTests.Tests;
 /// Q-AUD-L5 overruled, end to end on the real hosts with their real <c>IHostAudienceProvider</c>: a
 /// sign-in on the Customer host leaves a <c>customer.session.login</c> row, refused or not, and a refused
 /// one for an unknown address carries the key and nowhere the address (the in-memory test server has no
-/// remote IP to record; the request context is proven on the pipeline tests); the
-/// Partner host still routes the anonymous <c>POST api/Auth/Register</c> whose command carries the
-/// customer marker, and a refusal there lands in no table — the host gate, not the marker, decides; an
-/// Administrator's sign-out on the Admin host lands in the admin table only, under the marker's frozen
-/// label — the admin arm keeps a customer marker's label, as <c>AuditLogBehaviorTests</c> pins for every
-/// customer-marked command an Administrator runs.
+/// remote IP to record; the request context is proven on the pipeline tests); neither partner host
+/// routes the anonymous <c>POST api/Auth/Register</c> any more (owner ruling 2026-09-15: a partner host
+/// provisions no customer), so the customer-marked command they used to dispatch cannot be reached
+/// there and its refusal has no table to land in; an Administrator's sign-out on the Admin host lands
+/// in the admin table only, under the marker's frozen label — the admin arm keeps a customer marker's
+/// label, as <c>AuditLogBehaviorTests</c> pins for every customer-marked command an Administrator runs.
 /// </summary>
 public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
@@ -100,16 +100,19 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
         AssertCarriesNoAddress(row, UnknownEmail);
     }
 
-    /// <summary>The known case: the customer marker on <c>Register.Command</c>, dispatched anonymously by the Partner host.</summary>
-    [Fact]
-    public async Task A_Refused_Anonymous_Registration_On_The_Partner_Host_Lands_In_No_Table()
+    [Theory]
+    [InlineData(PartnerAudience)]
+    [InlineData(MobileAudience)]
+    public async Task A_Partner_Host_No_Longer_Routes_An_Anonymous_Customer_Registration(string hostAudience)
     {
         await SeedCustomerAsync();
+        var anonymous = hostAudience == MobileAudience ? MobileClientAnonymous() : PartnerClientAnonymous();
 
-        var response = await PartnerClientAnonymous().PostAsJsonAsync("/api/Auth/Register",
-            new { email = "not-an-address", password = "short", firstName = "", lastName = "", language = "en" });
+        var response = await anonymous.PostAsJsonAsync("/api/Auth/Register",
+            new { email = "would-be-customer@hosttests.local", password = Password, firstName = "Would", lastName = "Be", language = "en", termsAccepted = true });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(0, await QueryAsync(ctx => ctx.Users.IgnoreQueryFilters().CountAsync(u => u.Email == "would-be-customer@hosttests.local")));
         Assert.Empty(await CustomerRowsAsync());
         Assert.Empty(await AdminRowsAsync());
     }

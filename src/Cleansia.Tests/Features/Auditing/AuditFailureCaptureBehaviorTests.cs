@@ -288,7 +288,7 @@ public sealed class AuditFailureCaptureBehaviorTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    /// <summary>The known case: the partner host routes the anonymous registration; a refusal there is nobody's row.</summary>
+    /// <summary>The partner hosts route anonymous session acts (the Google sign-in, the e-mail confirmation); a refusal there is nobody's row.</summary>
     [Theory]
     [InlineData(JwtAudiences.Partner)]
     [InlineData(JwtAudiences.Mobile)]

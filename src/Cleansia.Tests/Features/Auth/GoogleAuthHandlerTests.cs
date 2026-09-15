@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using Moq;
 
@@ -40,7 +41,7 @@ namespace Cleansia.Tests.Features.Auth;
 /// </summary>
 public class GoogleAuthHandlerTests
 {
-    private const string HostAudience = "customer";
+    private const string HostAudience = JwtAudiences.Customer;
 
     private readonly Mock<ITokenService> _tokenService = new();
     private readonly Mock<ICartRepository> _cartRepository = new();

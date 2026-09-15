@@ -502,10 +502,10 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Profile address / country
   'country.not_existing_id',
   'country.not_serviced',
-  // OperatorTenantScopeBehavior, before validation, on the six anonymous IOperatorScopedRequests
-  // this host dispatches (Register, RegisterEmployee, GoogleAuth, ConfirmUserEmail,
-  // RequestPasswordChange, ChangePassword): the named (or default) market has no operating company
-  // (ADR-0061 D3). Its sibling refusal is country.not_serviced above.
+  // OperatorTenantScopeBehavior, before validation, on the five anonymous IOperatorScopedRequests
+  // this host dispatches (RegisterEmployee, GoogleAuth, ConfirmUserEmail, RequestPasswordChange,
+  // ChangePassword): the named (or default) market has no operating company (ADR-0061 D3). Its
+  // sibling refusal is country.not_serviced above.
   'tenant.not_found',
   'dispute.max_length_exceeded',
   'language.not_found',
@@ -529,9 +529,6 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // GDPR consents
   'gdpr.consent_already_granted',
   'gdpr.consent_not_found',
-  // Consent — the terms gate on the anonymous POST api/Auth/Register this host still routes (it
-  // creates a Customer; RegisterEmployee is not gated).
-  'consent.terms_not_accepted',
   // Payout destination — UpdateBankDetails runs the whole PayoutDetailsValidator
   // chain, so every arm of it is reachable from the cleaner's bank-details form;
   // GetMyPayoutDetails returns payout.not_found.
@@ -732,7 +729,6 @@ describe('error-contract parity (partner app)', () => {
       const scoped = [
         'AuthController -> Auth/ConfirmUserEmail.cs -> OperatorTenantScopeBehavior',
         'AuthController -> Auth/GoogleAuth.cs -> OperatorTenantScopeBehavior',
-        'AuthController -> Auth/Register.cs -> OperatorTenantScopeBehavior',
         'AuthController -> Auth/RegisterEmployee.cs -> OperatorTenantScopeBehavior',
         'UserController -> Users/ChangePassword.cs -> OperatorTenantScopeBehavior',
         'UserController -> Users/RequestPasswordChange.cs -> OperatorTenantScopeBehavior',

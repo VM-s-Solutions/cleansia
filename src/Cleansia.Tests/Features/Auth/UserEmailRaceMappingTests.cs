@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Azure.Storage.Queues;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -65,11 +66,11 @@ public class UserEmailRaceMappingTests
 
     private GoogleAuth.Handler NewGoogleHandler(Mock<IGoogleTokenVerifier> verifier) =>
         new(verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object,
-            new HostAudienceProvider("customer"), new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext());
+            new HostAudienceProvider(JwtAudiences.Customer), new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, new AuditContext());
 
     private AppleAuth.Handler NewAppleHandler(Mock<IAppleTokenVerifier> verifier) =>
         new(verifier.Object, _tokenService.Object, _cartRepository.Object, _userRepository.Object,
-            new HostAudienceProvider("customer"), new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, NullLogger<AppleAuth.Handler>.Instance, new AuditContext());
+            new HostAudienceProvider(JwtAudiences.Customer), new Mock<IConsentService>().Object, LegalDocumentFixtures.Resolver().Object, NullLogger<AppleAuth.Handler>.Instance, new AuditContext());
 
     private void AssertNoTokenMinted() =>
         _tokenService.Verify(

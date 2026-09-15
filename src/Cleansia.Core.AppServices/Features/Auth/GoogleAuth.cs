@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,17 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Core.AppServices.Features.Auth;
 
 /// <summary>
-/// Sign-in-or-register. The marker records the sign-in of an existing account as a session act; the
-/// provisioning branch declines the row, because a registration's proof is the two consent rows it
-/// writes and a login row would say a session was opened by an account that did not exist a moment
-/// ago. A refusal on either branch is recorded — a bad token or a sign-in with no account is exactly
-/// the login history the row exists for.
+/// Sign-in-or-register on a customer host; sign-in only anywhere else. The marker records the sign-in of
+/// an existing account as a session act; the provisioning branch declines the row, because a
+/// registration's proof is the two consent rows it writes and a login row would say a session was
+/// opened by an account that did not exist a moment ago. A refusal on either branch is recorded — a bad
+/// token or a sign-in with no account is exactly the login history the row exists for.
+///
+/// <para>The partner hosts route this command for their cleaners, and a host that is not a customer
+/// host provisions nothing: a cleaner's account is opened through <c>RegisterEmployee</c>, and a
+/// freshly provisioned Customer minted a partner-audience token would be an account that can sign in
+/// where it has no business. Whom such a host signs in is <see cref="PartnerLogin"/>'s rule — an
+/// Employee or an Administrator, never a Customer.</para>
 /// </summary>
 [AuditAction("customer.session.login", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class GoogleAuth
@@ -76,6 +83,8 @@ public class GoogleAuth
         IAuditContext auditContext)
         : ICommandHandler<Command, JwtTokenResponse>
     {
+        private bool IsCustomerHost => hostAudience.Audience == JwtAudiences.Customer;
+
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             // S1 server-truth-identity: verify the Google ID-token server-side and bind identity from the
@@ -128,6 +137,12 @@ public class GoogleAuth
                         new Error(nameof(Command.Email), BusinessErrorMessage.InvalidPassword));
                 }
 
+                if (!IsCustomerHost && user.Profile is not (UserProfile.Employee or UserProfile.Administrator))
+                {
+                    return BusinessResult.Failure<JwtTokenResponse>(
+                        new Error(nameof(Command.Email), BusinessErrorMessage.InsufficientPrivileges));
+                }
+
                 // Anchor the account to the subject on the one sign-in that resolved by email. A no-op
                 // when the subject lookup is what found this row. Never overwrites a bound subject —
                 // that rule is the S1 property, enforced in LinkGoogleId itself rather than here, so it
@@ -143,6 +158,12 @@ public class GoogleAuth
                     actorUserId: user.Id);
 
                 return BusinessResult.Success(session);
+            }
+
+            if (!IsCustomerHost)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Email), BusinessErrorMessage.SocialAccountNotFound));
             }
 
             // Provision only when Google reports the email as verified — reject an unverifiable email

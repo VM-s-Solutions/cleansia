@@ -32,9 +32,9 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     {
         Db = db;
         _admin = new(() => new HostTestApplicationFactory<Cleansia.Web.Admin.Program>(db.ConnectionString));
-        _partner = new(() => new HostTestApplicationFactory<Cleansia.Web.Partner.Program>(db.ConnectionString));
+        _partner = new(() => new HostTestApplicationFactory<Cleansia.Web.Partner.Program>(db.ConnectionString, ConfigurePartnerHostServices));
         _customer = new(() => new HostTestApplicationFactory<Cleansia.Web.Customer.Program>(db.ConnectionString, ConfigureCustomerHostServices));
-        _mobile = new(() => new HostTestApplicationFactory<Cleansia.Web.Mobile.Partner.Program>(db.ConnectionString));
+        _mobile = new(() => new HostTestApplicationFactory<Cleansia.Web.Mobile.Partner.Program>(db.ConnectionString, ConfigureMobileHostServices));
     }
 
     protected HostTestApplicationFactory<Cleansia.Web.Admin.Program> AdminHost => _admin.Value;
@@ -62,10 +62,18 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     protected Task ResetDatabaseAsync() => Db.ResetAsync();
 
     /// <summary>
-    /// Override to swap a seam on the Customer host only (the harness has no Stripe stub by default:
-    /// every other class exercises paths that stop before the outbound call).
+    /// Override to swap a seam on one host (the harness has no Stripe or Google stub by default: every
+    /// other class exercises paths that stop before the outbound call).
     /// </summary>
     protected virtual void ConfigureCustomerHostServices(IServiceCollection services)
+    {
+    }
+
+    protected virtual void ConfigurePartnerHostServices(IServiceCollection services)
+    {
+    }
+
+    protected virtual void ConfigureMobileHostServices(IServiceCollection services)
     {
     }
 
@@ -106,6 +114,7 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
 
     protected HttpClient PartnerClientAnonymous() => PartnerHost.CreateClient();
     protected HttpClient CustomerClientAnonymous() => CustomerHost.CreateClient();
+    protected HttpClient MobileClientAnonymous() => MobileHost.CreateClient();
 
     private static HttpClient Authorized(HttpClient client, string token)
     {

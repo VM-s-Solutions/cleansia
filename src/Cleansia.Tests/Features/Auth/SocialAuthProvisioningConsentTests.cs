@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Tests.Domain.Legal;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -29,7 +30,7 @@ public sealed class SocialAuthProvisioningConsentTests
     private readonly Mock<ICartRepository> _cartRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IConsentService> _consentService = new();
-    private readonly IHostAudienceProvider _hostAudience = new HostAudienceProvider("customer");
+    private readonly IHostAudienceProvider _hostAudience = new HostAudienceProvider(JwtAudiences.Customer);
     private readonly LegalDocument _terms = LegalDocumentFixtures.Terms();
     private readonly LegalDocument _privacy = LegalDocumentFixtures.Privacy();
     private readonly Mock<ILegalDocumentResolver> _legalDocuments;

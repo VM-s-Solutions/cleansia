@@ -140,8 +140,11 @@ public sealed class AuditGateTests
     }
 
     /// <summary>
-    /// The known case: the partner host still routes the anonymous <c>POST api/Auth/Register</c>, whose
-    /// command carries the customer marker. A cleaner registering there is not a customer act.
+    /// The case this gate was written for: the partner hosts used to route the anonymous
+    /// <c>POST api/Auth/Register</c>, whose command carries the customer marker, and a cleaner registering
+    /// there was not a customer act. The route is gone (owner ruling 2026-09-15); the gate still reads
+    /// the host, not the marker, so a customer-marked command re-routed on a partner host would land
+    /// nowhere rather than in the customer table.
     /// </summary>
     [Fact]
     public void An_Anonymous_Registration_On_The_Partner_Host_Lands_Nowhere()

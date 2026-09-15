@@ -53,18 +53,22 @@ public sealed class GoogleAuthHostAudienceGateTests
     private static GoogleAuth.Command Command(string email) =>
         new(Token, GoogleId: "ignored", email, "First", "Last", TermsAccepted: true);
 
-    private User ExistingGoogleAccount(UserProfile profile)
+    private User ExistingGoogleAccount(UserProfile profile) => ExistingAccount(profile, AuthenticationType.Google);
+
+    private User ExistingAccount(UserProfile profile, AuthenticationType authenticationType)
     {
         var user = UserMockFactory.Generate(new UserMockFactory.UserPartial
         {
             Profile = profile,
-            AuthenticationType = AuthenticationType.Google,
-            GoogleId = Subject,
+            AuthenticationType = authenticationType,
+            GoogleId = authenticationType == AuthenticationType.Google ? Subject : null,
         });
         user.IsActive = true;
         _verifier.Setup(v => v.VerifyAsync(Token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleVerifiedClaims(Subject, user.Email, EmailVerified: true));
         _userRepository.Setup(r => r.GetByGoogleIdIgnoringTenantAsync(Subject, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user.GoogleId is null ? null : user);
+        _userRepository.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         return user;
     }
@@ -103,12 +107,16 @@ public sealed class GoogleAuthHostAudienceGateTests
         _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
     }
 
+    // The host's verdict comes before the provider's: a password-typed Customer is told the partner host
+    // is not its place, not sent to a password sign-in the same host would refuse.
     [Theory]
-    [InlineData(JwtAudiences.Partner)]
-    [InlineData(JwtAudiences.Mobile)]
-    public async Task A_Partner_Host_Refuses_A_Customer_Account_As_PartnerLogin_Does(string hostAudience)
+    [InlineData(JwtAudiences.Partner, AuthenticationType.Google)]
+    [InlineData(JwtAudiences.Mobile, AuthenticationType.Google)]
+    [InlineData(JwtAudiences.Partner, AuthenticationType.Internal)]
+    [InlineData(JwtAudiences.Mobile, AuthenticationType.Internal)]
+    public async Task A_Partner_Host_Refuses_A_Customer_Account_As_PartnerLogin_Does(string hostAudience, AuthenticationType authenticationType)
     {
-        var customer = ExistingGoogleAccount(UserProfile.Customer);
+        var customer = ExistingAccount(UserProfile.Customer, authenticationType);
 
         var result = await Handler(hostAudience).Handle(Command(customer.Email), CancellationToken.None);
 

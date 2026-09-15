@@ -147,7 +147,7 @@ public sealed class AuditGateTests
     /// nowhere rather than in the customer table.
     /// </summary>
     [Fact]
-    public void An_Anonymous_Registration_On_The_Partner_Host_Lands_Nowhere()
+    public void A_Customer_Marked_Command_Dispatched_Anonymously_On_The_Partner_Host_Lands_Nowhere()
     {
         var register = new Register.Command("cleaner@cleansia.test", "Secret-123!", "Clean", "Er", "en");
 

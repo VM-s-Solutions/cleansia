@@ -6,14 +6,22 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
+/// <summary>
+/// Proves the typed code against the named account and opens its first session. The partner hosts route
+/// it for their cleaners, and a host that is not a customer host confirms an Employee or an Administrator
+/// only — whom it signs in is <see cref="PartnerLogin"/>'s rule, and a Customer's code presented there
+/// would otherwise mint a partner-audience session for an account that has no business on that host.
+/// </summary>
 [AuditAction("customer.account.email_confirmed", Audience = AuditAudience.Customer, ResourceType = "User", AllowsAnonymousActor = true)]
 public class ConfirmUserEmail
 {
@@ -147,10 +155,21 @@ public class ConfirmUserEmail
         IHostAudienceProvider hostAudience,
         IAuditContext auditContext) : ICommandHandler<Command, JwtTokenResponse>
     {
+        private bool IsCustomerHost => hostAudience.Audience == JwtAudiences.Customer;
+
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             // Same resolution the validator proved — a diverging load here would NRE into a 500.
             var user = await Resolve(userRepository, command, cancellationToken);
+
+            // Behind the proven code on purpose, not a validator rule ahead of it: refused before the code
+            // is checked, the key would tell an anonymous caller which addresses hold a Customer account.
+            if (!IsCustomerHost && user!.Profile is not (UserProfile.Employee or UserProfile.Administrator))
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Email), BusinessErrorMessage.InsufficientPrivileges));
+            }
+
             user!.ConfirmEmail();
 
             auditContext.RecordEvidence(

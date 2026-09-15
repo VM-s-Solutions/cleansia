@@ -117,6 +117,14 @@ public class GoogleAuth
                 // A refusal below is this account's row, not the IP's alone.
                 auditContext.RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id);
 
+                // First, ahead of the provider check: an account the host does not serve is told so, not
+                // sent to a password or Apple sign-in that this host would refuse for the same reason.
+                if (!IsCustomerHost && user.Profile is not (UserProfile.Employee or UserProfile.Administrator))
+                {
+                    return BusinessResult.Failure<JwtTokenResponse>(
+                        new Error(nameof(Command.Email), BusinessErrorMessage.InsufficientPrivileges));
+                }
+
                 // S1: the account-type guard MUST run against the account the handler
                 // actually authenticates — the VERIFIED claims.Email — not the client-supplied
                 // command.Email the validator used to check. Block a Google login from binding into an
@@ -135,12 +143,6 @@ public class GoogleAuth
                 {
                     return BusinessResult.Failure<JwtTokenResponse>(
                         new Error(nameof(Command.Email), BusinessErrorMessage.InvalidPassword));
-                }
-
-                if (!IsCustomerHost && user.Profile is not (UserProfile.Employee or UserProfile.Administrator))
-                {
-                    return BusinessResult.Failure<JwtTokenResponse>(
-                        new Error(nameof(Command.Email), BusinessErrorMessage.InsufficientPrivileges));
                 }
 
                 // Anchor the account to the subject on the one sign-in that resolved by email. A no-op

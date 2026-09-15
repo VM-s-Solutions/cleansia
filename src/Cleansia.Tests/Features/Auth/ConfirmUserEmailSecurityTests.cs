@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.TestUtilities;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using Microsoft.Extensions.Logging;
@@ -33,7 +34,7 @@ namespace Cleansia.Tests.Features.Auth;
 /// </summary>
 public class ConfirmUserEmailSecurityTests
 {
-    private const string HostAudience = "customer";
+    private const string HostAudience = JwtAudiences.Customer;
 
     // Builds an UNCONFIRMED user (CreateWithPassword leaves IsEmailConfirmed=false) holding a live
     // hashed confirmation token. We don't use UserMockFactory.Generate here because it calls

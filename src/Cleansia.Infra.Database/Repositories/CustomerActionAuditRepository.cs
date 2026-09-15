@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,6 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
     : BaseRepository<CustomerActionAudit>(context), ICustomerActionAuditRepository
 {
     private const int DeleteBatchSize = 100;
-    private const string OrderResourceType = "Order";
 
     public async Task<int> PseudonymiseForSubjectAsync(string userId, CancellationToken cancellationToken)
     {
@@ -34,7 +34,7 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
         }
 
         var rows = await GetQueryableIgnoringTenant()
-            .Where(a => a.UserId == null && a.ResourceType == OrderResourceType && orderIds.Contains(a.ResourceId!))
+            .Where(a => a.UserId == null && a.ResourceType == nameof(Order) && orderIds.Contains(a.ResourceId!))
             .ToListAsync(cancellationToken);
 
         foreach (var row in rows)

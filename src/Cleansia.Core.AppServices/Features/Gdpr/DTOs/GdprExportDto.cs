@@ -74,9 +74,11 @@ public record GdprExportPayoutDetailsDto(
 
 /// <summary>
 /// One row per order that is the subject's under <c>SubjectOrders</c> — the orders booked on the account
-/// AND the guest bookings placed with the account's e-mail address (owner ruling 2026-09-15). The same
-/// rule the erasure walks, so what is erased is what is exported; a guest booking under another address
-/// is never listed, whoever asks.
+/// AND the guest bookings placed with the account's e-mail address (owner ruling 2026-09-15), in any
+/// market. The orders section and the erasure walk read the same set, so an order the erasure would
+/// anonymise is an order this lists (a guest booking still live is listed here and left for the sweep
+/// there); a guest booking under another address is never listed, whoever asks. The trail section is
+/// narrower: the account's own rows only, never the guest rows the erasure blanks on these orders.
 /// </summary>
 public record GdprExportOrderDto(
     string Id,

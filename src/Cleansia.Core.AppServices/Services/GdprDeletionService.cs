@@ -204,9 +204,11 @@ public class GdprDeletionService(
     /// It was missing from the day the set was written while the DEAD <c>Pending</c> was present.
     /// → /flows/gdpr-and-audit</para>
     ///
-    /// <para>The subject's orders are <see cref="SubjectOrders"/>'s — the account's own AND the guest
-    /// bookings under its e-mail — for the same reason: the walk below anonymises both, and a live guest
-    /// job anonymised underneath a cleaner is the outcome this set exists to prevent.</para>
+    /// <para>Only the ACCOUNT's own orders refuse. A live GUEST booking under the subject's e-mail — one of
+    /// <see cref="SubjectOrders"/>'s, which the walk below otherwise anonymises — is left out of the walk
+    /// instead: a guest booking has no cancel path, so a stranger's mistyped address would dead-end the
+    /// subject on "blocked by a live order" with no order of theirs to cancel. Its contact data stays
+    /// until the job ends and the order-PII sweep reaches it.</para>
     /// </summary>
     private static readonly OrderStatus[] ErasureBlockingStatuses =
     [
@@ -218,7 +220,7 @@ public class GdprDeletionService(
     ];
 
     private Task<bool> HasBlockingOrderAsync(Domain.Users.User user, CancellationToken cancellationToken)
-        => orderRepository.GetFiltered(SubjectOrders.Of(user.Id, user.Email))
+        => orderRepository.GetFiltered(o => o.UserId == user.Id)
             .AnyAsync(o => ErasureBlockingStatuses.Contains(o.CurrentStatus), cancellationToken);
 
     /// <summary>
@@ -334,35 +336,46 @@ public class GdprDeletionService(
 
         // The account's own orders AND the guest bookings under its e-mail (owner ruling 2026-09-15), read
         // here while the e-mail is still live: User.Anonymize() at the end of the walk replaces it.
+        //
+        // Past the tenant filter, like LookupOrder (ADR-0051's asymmetric cell): a guest booking is stamped
+        // with the MARKET's operator at checkout, while this request runs under the subject's own operator,
+        // so a booking placed in another market would otherwise be silently neither erased nor exported.
+        // The predicate is the pin — the caller's own id, or their e-mail on a row that names no account —
+        // and every read below keys on the ids it yields. Modified rows keep their stamp on commit.
+        //
+        // A guest booking still LIVE is left out rather than refusing the erasure (see
+        // ErasureBlockingStatuses); the ids below are the ended ones.
         var subjectOrders = SubjectOrders.Of(user.Id, user.Email);
-        var customerOrderIds = await orderRepository.GetFiltered(subjectOrders)
+        var customerOrderIds = await orderRepository.GetQueryableIgnoringTenant()
+            .Where(subjectOrders)
+            .Where(o => !ErasureBlockingStatuses.Contains(o.CurrentStatus))
             .Select(o => o.Id)
             .ToListAsync(ct);
 
         var photoBlobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
-        foreach (var orderId in customerOrderIds)
+        var photos = await orderPhotoRepository.GetQueryableIgnoringTenant()
+            .Where(p => customerOrderIds.Contains(p.OrderId))
+            .ToListAsync(ct);
+        foreach (var photo in photos)
         {
-            var photos = await orderPhotoRepository.GetPhotosByOrderIdAsync(orderId, ct);
-            foreach (var photo in photos)
+            try
             {
-                try
-                {
-                    var blobName = ExtractBlobNameFromUrl(photo.BlobUrl);
-                    await photoBlobClient.DeleteAsync(blobName, ct);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to delete order photo blob for order {OrderId}", orderId);
-                }
-
-                // The row survives the blob because the order does — and it carries the uploader's own file
-                // name and free-text note, which Order.AnonymizeCustomerData's review/note/issue walk never
-                // reached (photos are not a navigation on the aggregate it loads).
-                photo.Anonymize();
+                var blobName = ExtractBlobNameFromUrl(photo.BlobUrl);
+                await photoBlobClient.DeleteAsync(blobName, ct);
             }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to delete order photo blob for order {OrderId}", photo.OrderId);
+            }
+
+            // The row survives the blob because the order does — and it carries the uploader's own file
+            // name and free-text note, which Order.AnonymizeCustomerData's review/note/issue walk never
+            // reached (photos are not a navigation on the aggregate it loads).
+            photo.Anonymize();
         }
 
-        var orders = await orderRepository.GetFiltered(subjectOrders)
+        var orders = await orderRepository.GetQueryableIgnoringTenant()
+            .Where(o => customerOrderIds.Contains(o.Id))
             .Include(o => o.CustomerAddress)
             .Include(o => o.Reviews)
             .Include(o => o.OrderNotes)
@@ -454,8 +467,8 @@ public class GdprDeletionService(
 
         if (customerOrderIds.Count > 0)
         {
-            var employeePays = await orderEmployeePayRepository
-                .GetFiltered(p => customerOrderIds.Contains(p.OrderId))
+            var employeePays = await orderEmployeePayRepository.GetQueryableIgnoringTenant()
+                .Where(p => customerOrderIds.Contains(p.OrderId))
                 .ToListAsync(ct);
             foreach (var pay in employeePays)
                 pay.Anonymize();

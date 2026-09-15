@@ -133,8 +133,10 @@ public class SubjectDataErasureRosterTests
             "The service and financial record. Kept, with the customer's name, address, phone, notes and "
                 + "instructions blanked in place. The set is SubjectOrders: the account's own orders AND the "
                 + "guest bookings placed with the account's e-mail (owner ruling 2026-09-15) — a guest booking "
-                + "is never attached to an account afterwards, so the e-mail is the only link, and the export "
-                + "lists the same set. A live one refuses the erasure like a live account order does.",
+                + "is never attached to an account afterwards, so the e-mail is the only link — read past the "
+                + "tenant filter because a guest booking carries its market's operator, and the export lists "
+                + "the same set. Only a live ACCOUNT order refuses the erasure; a live guest booking is left "
+                + "for the order-PII sweep rather than dead-ending the subject on an order they cannot cancel.",
             InErasure("order.AnonymizeCustomerData()"), InErasure("SubjectOrders.Of(user.Id, user.Email)")),
 
         [typeof(Core.Domain.Orders.OrderReview)] = new(

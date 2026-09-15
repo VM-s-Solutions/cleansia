@@ -54,7 +54,11 @@ public class GdprExportService(
                     payout.ConfirmedAt, payout.LastRevealedAt, payout.RevealCount);
         }
 
-        var orders = await orderRepository.GetFiltered(SubjectOrders.Of(user.Id, user.Email))
+        // Past the tenant filter for the same reason the erasure walk reads them so: a guest booking under
+        // the subject's e-mail is stamped with the market's operator, not the subject's, and the predicate
+        // is the pin (ADR-0051).
+        var orders = await orderRepository.GetQueryableIgnoringTenant()
+            .Where(SubjectOrders.Of(user.Id, user.Email))
             .AsNoTracking()
             .Select(o => new GdprExportOrderDto(
                 o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,

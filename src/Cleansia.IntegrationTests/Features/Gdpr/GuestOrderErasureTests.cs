@@ -29,7 +29,13 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 /// export: the erasure anonymises such an order exactly as it does the account's own — name, e-mail,
 /// phone, address, the photo row's free text — and blanks IP and device on the guest audit rows that
 /// name it, while a guest booking under another address keeps every one of those; and the export lists
-/// the same orders the erasure reaches, so what is erased is what is exported.
+/// the same orders the erasure reaches.
+///
+/// <para>The guest booking is seeded under the SECOND operator — a guest checkout is stamped with its
+/// market's operator, and the erasure runs under the subject's — so a tenant-filtered read would leave
+/// it untouched and unlisted, and the row must keep that stamp afterwards. A guest booking still LIVE
+/// under the subject's e-mail neither refuses the erasure nor is touched by it: it has no cancel path,
+/// so it is left for the order-PII sweep, and the export lists it meanwhile.</para>
 ///
 /// <para>The e-mail is matched case-insensitively — the guest order here was typed in capitals — and a
 /// guest audit row that merely shares the order's identifier string under another resource type is not
@@ -48,12 +54,16 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
     private const string OwnOrderId = "order-guest-erasure-own";
     private const string GuestOrderId = "order-guest-erasure-subj";
     private const string StrangerOrderId = "order-guest-erasure-other";
+    private const string LiveGuestOrderId = "order-guest-erasure-live";
     private const string GuestIp = "203.0.113.9";
     private const string GuestDevice = "iPhone 15 / iOS 17.4";
     private const string GuestDeviceId = "device-abc-123";
     private const string StrangerIp = "198.51.100.7";
     private const string StrangerDevice = "Pixel 8";
     private const string StrangerDeviceId = "device-keep-1";
+    private const string LiveGuestIp = "203.0.113.77";
+    private const string LiveGuestDevice = "Galaxy S24";
+    private const string LiveGuestDeviceId = "device-live-9";
     private const string Payload = "{\"isGuest\": true, \"totalPrice\": 1250}";
     private const string PhotoNotes = "Left the key with the neighbour at no. 14.";
 
@@ -76,7 +86,7 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
     }
 
     [Fact]
-    public async Task A_Guest_Order_Under_The_Subjects_Email_Is_Anonymised_With_Its_Photo_Address_And_Audit_Rows_And_A_Strangers_Keeps_Everything()
+    public async Task A_Guest_Order_Under_The_Subjects_Email_In_Another_Market_Is_Anonymised_With_Its_Photo_Address_And_Audit_Rows_While_A_Strangers_And_A_Live_One_Keep_Everything()
     {
         await TestMethod(
             setup: WithoutBlobStorage,
@@ -110,6 +120,10 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
                     Assert.Null(photos[erasedId].Notes);
                 }
 
+                Assert.Equal(TestTenants.Second, orders[GuestOrderId].TenantId);
+                Assert.Equal(TestTenants.Second, orders[GuestOrderId].CustomerAddress.TenantId);
+                Assert.Equal(TestTenants.Second, photos[GuestOrderId].TenantId);
+
                 var guestBooking = Assert.Single(guestRows, r => r.ResourceId == GuestOrderId && r.ResourceType == "Order");
                 Assert.Null(guestBooking.IpAddress);
                 Assert.Null(guestBooking.DeviceLabel);
@@ -131,6 +145,19 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
                 Assert.Equal(StrangerDevice, strangersBooking.DeviceLabel);
                 Assert.Equal(StrangerDeviceId, strangersBooking.DeviceId);
 
+                var live = orders[LiveGuestOrderId];
+                Assert.Equal(OrderStatus.Confirmed, live.CurrentStatus);
+                Assert.Equal("Guest Who Is Still Coming", live.CustomerName);
+                Assert.Equal(SubjectEmail, live.CustomerEmail);
+                Assert.Equal("+420777111333", live.CustomerPhone);
+                Assert.Equal("Testovaci 12", live.CustomerAddress.Street);
+                Assert.Equal("Live_hallway.jpg", photos[LiveGuestOrderId].OriginalFileName);
+
+                var liveBooking = Assert.Single(guestRows, r => r.ResourceId == LiveGuestOrderId);
+                Assert.Equal(LiveGuestIp, liveBooking.IpAddress);
+                Assert.Equal(LiveGuestDevice, liveBooking.DeviceLabel);
+                Assert.Equal(LiveGuestDeviceId, liveBooking.DeviceId);
+
                 // Same id, different resource: the walk keys on the ORDER, and an unrelated row that merely
                 // shares the identifier string under another type is not the subject's.
                 var otherTypeSameId = Assert.Single(guestRows, r => r.ResourceId == GuestOrderId && r.ResourceType == "Dispute");
@@ -140,7 +167,7 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
     }
 
     [Fact]
-    public async Task The_Export_Lists_The_Guest_Order_Under_The_Subjects_Email_Beside_Their_Own_And_Not_A_Strangers()
+    public async Task The_Export_Lists_The_Guest_Orders_Under_The_Subjects_Email_Whatever_Their_Market_Or_Status_Beside_Their_Own_And_Not_A_Strangers()
     {
         await TestMethod(
             setup: AsTheSubject,
@@ -150,13 +177,14 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
             {
                 Assert.True(result.IsSuccess, result.Error?.Message);
 
-                Assert.Equal([OwnOrderId, GuestOrderId], result.Value.Orders.Select(o => o.Id).Order());
+                Assert.Equal([LiveGuestOrderId, OwnOrderId, GuestOrderId], result.Value.Orders.Select(o => o.Id).Order());
                 var guest = Assert.Single(result.Value.Orders, o => o.Id == GuestOrderId);
                 Assert.Equal(SubjectEmail.ToUpperInvariant(), guest.CustomerEmail);
+                Assert.Equal(OrderStatus.Confirmed, Assert.Single(result.Value.Orders, o => o.Id == LiveGuestOrderId).Status);
                 Assert.DoesNotContain(result.Value.Orders, o => o.Id == StrangerOrderId);
 
                 var audit = Assert.Single(await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync(), a => a.Action == "customer.gdpr.export");
-                Assert.Equal(2, JsonDocument.Parse(audit.PayloadJson!).RootElement.GetProperty("orderCount").GetInt32());
+                Assert.Equal(3, JsonDocument.Parse(audit.PayloadJson!).RootElement.GetProperty("orderCount").GetInt32());
             },
             transactional: false);
     }
@@ -193,27 +221,38 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
         context.Users.Add(cleanerUser);
         context.Employees.Add(cleaner);
 
+        StampUnstampedAdded(context, TestTenants.Default);
+
+        // The subject's guest booking was placed in the second operator's market, its photo with it.
+        context.Orders.Add(NewOrder(GuestOrderId, userId: null, SubjectEmail.ToUpperInvariant(), "Guest Who Is The Subject", "+420777111333", "Testovaci 12"));
+        context.Add(NewPhoto(GuestOrderId, "Guest_kitchen.jpg"));
+        StampUnstampedAdded(context, TestTenants.Second);
+
         context.Orders.AddRange(
             NewOrder(OwnOrderId, SubjectId, SubjectEmail, $"{TestConstants.TestUserSession.TestFirstName} {TestConstants.TestUserSession.TestLastName}", "+420777111333", "Testovaci 12"),
-            NewOrder(GuestOrderId, userId: null, SubjectEmail.ToUpperInvariant(), "Guest Who Is The Subject", "+420777111333", "Testovaci 12"),
-            NewOrder(StrangerOrderId, userId: null, StrangerEmail, "Tomas Svoboda", "+420777999888", "Svobodova 7"));
+            NewOrder(StrangerOrderId, userId: null, StrangerEmail, "Tomas Svoboda", "+420777999888", "Svobodova 7"),
+            NewOrder(LiveGuestOrderId, userId: null, SubjectEmail, "Guest Who Is Still Coming", "+420777111333", "Testovaci 12",
+                status: OrderStatus.Confirmed, cleaningDateTime: DateTime.UtcNow.AddDays(3)));
 
         context.AddRange(
             NewPhoto(OwnOrderId, "Subject_kitchen.jpg"),
-            NewPhoto(GuestOrderId, "Guest_kitchen.jpg"),
-            NewPhoto(StrangerOrderId, "Tomas_Svoboda_hallway.jpg"));
+            NewPhoto(StrangerOrderId, "Tomas_Svoboda_hallway.jpg"),
+            NewPhoto(LiveGuestOrderId, "Live_hallway.jpg"));
 
         StampUnstampedAdded(context, TestTenants.Default);
         await context.CommitAsync(CancellationToken.None);
 
         context.CustomerActionAudits.AddRange(
-            GuestRow("Order", GuestOrderId, GuestIp, GuestDevice, GuestDeviceId, Payload),
+            GuestRow("Order", GuestOrderId, GuestIp, GuestDevice, GuestDeviceId, Payload, TestTenants.Second),
             GuestRow("Order", StrangerOrderId, StrangerIp, StrangerDevice, StrangerDeviceId, payloadJson: null),
+            GuestRow("Order", LiveGuestOrderId, LiveGuestIp, LiveGuestDevice, LiveGuestDeviceId, payloadJson: null),
             GuestRow("Dispute", GuestOrderId, StrangerIp, StrangerDevice, StrangerDeviceId, payloadJson: null));
         await context.SaveChangesAsync();
     }
 
-    private static Order NewOrder(string id, string? userId, string customerEmail, string customerName, string customerPhone, string street)
+    private static Order NewOrder(
+        string id, string? userId, string customerEmail, string customerName, string customerPhone, string street,
+        OrderStatus status = OrderStatus.Completed, DateTime? cleaningDateTime = null)
     {
         var order = Order.Create(
             customerName: customerName,
@@ -222,14 +261,14 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
             customerAddress: Address.Create(street, "Praha", "11000", CountryId),
             rooms: 2,
             bathrooms: 1,
-            cleaningDateTime: DateTime.UtcNow.AddDays(-30),
+            cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(-30),
             paymentType: PaymentType.Card,
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
             userId: userId);
         order.Id = id;
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+        order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         return order;
     }
 
@@ -239,13 +278,14 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
             originalFileName, 1024, "image/jpeg", CleanerId, PhotoNotes);
 
     private static CustomerActionAudit GuestRow(
-        string resourceType, string resourceId, string ipAddress, string deviceLabel, string deviceId, string? payloadJson)
+        string resourceType, string resourceId, string ipAddress, string deviceLabel, string deviceId, string? payloadJson,
+        string tenantId = TestTenants.Default)
     {
         var row = CustomerActionAudit.Create(
             userId: null, clientAudience: JwtAudiences.Customer, ipAddress: ipAddress, deviceLabel: deviceLabel,
             deviceId: deviceId, action: "customer.order.create", resourceType: resourceType, resourceId: resourceId,
             success: true, errorCode: null, payloadJson: payloadJson, correlationId: null);
-        row.TenantId = TestTenants.Default;
+        row.TenantId = tenantId;
         return row;
     }
 }

@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -43,6 +44,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
 {
     private const string SubjectUserId = "user-erase-status-1";
     private const string SubjectEmail = "zdenka.hruskova@cleansia.test";
+    private const string OrderId = "order-erase-status-1";
 
     private readonly SqliteConnection _connection;
     private readonly Mock<IBlobContainerClientFactory> _blobClientFactory = new();
@@ -86,20 +88,37 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
     }
 
     /// <summary>
-    /// A guest booking placed with the subject's e-mail is the subject's order (owner ruling 2026-09-15),
-    /// so a live one refuses the erasure exactly as a live account order does — otherwise the walk would
-    /// anonymise the name, phone and address underneath a job a cleaner is about to work. The e-mail is
-    /// matched case-insensitively, as everywhere else an order is found by its contact address.
+    /// A guest booking placed with the subject's e-mail is the subject's order (owner ruling 2026-09-15), but
+    /// a LIVE one neither refuses the erasure nor is touched by it. A guest booking has no cancel path, so
+    /// refusing on it would dead-end the subject on "blocked by a live order" over a stranger's mistyped
+    /// address — an order that is not theirs to cancel and that their account does not list. The booking
+    /// keeps its contact data until the order-PII sweep reaches it; an ENDED one is anonymised with the
+    /// rest, matched case-insensitively as everywhere else an order is found by its contact address.
     /// </summary>
     [Fact]
-    public async Task An_Erasure_Is_Refused_While_A_Guest_Order_Under_The_Subjects_Email_Is_Live()
+    public async Task A_Live_Guest_Order_Under_The_Subjects_Email_Neither_Refuses_The_Erasure_Nor_Is_Touched_By_It()
     {
         await SeedAsync(OrderStatus.Confirmed, userId: null, customerEmail: SubjectEmail.ToUpperInvariant());
 
         var result = await EraseAsync();
 
-        Assert.False(result.IsSuccess);
-        Assert.Equal(BusinessErrorMessage.GdprDeletionBlockedByOrder, result.Error!.Message);
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var order = await ReadOrderAsync();
+        Assert.Equal("Zdenka Hruskova", order.CustomerName);
+        Assert.Equal(SubjectEmail.ToUpperInvariant(), order.CustomerEmail);
+    }
+
+    [Fact]
+    public async Task An_Ended_Guest_Order_Under_The_Subjects_Email_Is_Anonymised_With_The_Erasure()
+    {
+        await SeedAsync(OrderStatus.Completed, userId: null, customerEmail: SubjectEmail.ToUpperInvariant());
+
+        var result = await EraseAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var order = await ReadOrderAsync();
+        Assert.Equal(AnonymizationMarker.Value, order.CustomerName);
+        Assert.Equal(AnonymizationMarker.Value, order.CustomerEmail);
     }
 
     [Fact]
@@ -198,8 +217,22 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             new ErasureAttempt(),
             NullLogger<GdprDeletionService>.Instance);
 
-        return await service.DeleteUserAccountAsync(
+        var result = await service.DeleteUserAccountAsync(
             SubjectUserId, "gdpr_erasure_test", _ => ("test-actor", null), deferEmployeeErasure: false, CancellationToken.None);
+
+        // What the UnitOfWork pipeline does for a successful command, so the walk's effect can be read back.
+        if (result.IsSuccess)
+        {
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        return result;
+    }
+
+    private async Task<Order> ReadOrderAsync()
+    {
+        await using var ctx = NewContext();
+        return await ctx.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == OrderId);
     }
 
     private async Task SeedAsync(OrderStatus status, string? userId = SubjectUserId, string customerEmail = SubjectEmail)
@@ -229,7 +262,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
             userId: userId);
-        order.Id = "order-erase-status-1";
+        order.Id = OrderId;
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         ctx.Add(order);
 

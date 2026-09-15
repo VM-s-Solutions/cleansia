@@ -34,7 +34,8 @@ public class RefreshToken
     // the host's sign-in admits, and its own audience. They are server-authoritative: each
     // AuthController sets them from its own host identity and a client-sent value would be discarded.
     // JsonIgnore keeps them off the wire so they never appear in a generated client and can never be
-    // supplied by a caller — only Token crosses the wire.
+    // supplied by a caller — only Token crosses the wire. An empty profile set admits nobody, so a host
+    // that pins the wrong thing fails on its first refresh instead of silently dropping the pin.
     public record Command(string Token) : ICommand<JwtTokenResponse>
     {
         [JsonIgnore]
@@ -90,7 +91,7 @@ public class RefreshToken
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
             }
 
-            if (command.RequiredProfiles is { Count: > 0 } && !command.RequiredProfiles.Contains(user.Profile))
+            if (command.RequiredProfiles is not null && !command.RequiredProfiles.Contains(user.Profile))
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));

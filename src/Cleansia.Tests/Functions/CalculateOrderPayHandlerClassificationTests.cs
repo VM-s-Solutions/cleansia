@@ -15,7 +15,7 @@ namespace Cleansia.Tests.Functions;
 
 /// <summary>
 /// AC5 — the ack-on-reject vs throw-on-infra split on CalculateOrderPayHandler. The envelope suite proves
-/// the dual-read and the success path; these pin the classification: a validator failure
+/// the envelope read and the success path; these pin the classification: a validator failure
 /// (already-calculated, missing pay config) is logged and ACKED — retrying never changes the verdict and
 /// must not poison; an infra exception from EnsureOpenPeriodAsync or from mediator.Send propagates so the
 /// queue redelivers.

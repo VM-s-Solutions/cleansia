@@ -13,13 +13,15 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// ADR-0002 D2.1a envelope read on <see cref="CalculateOrderPayHandler"/>, and the tenant the envelope
-/// carries. CompleteOrder (the only producer) wraps the payload in QueueEnvelope&lt;T&gt; stamped with the
+/// The envelope read on <see cref="CalculateOrderPayHandler"/>, and the tenant the envelope carries.
+/// CompleteOrder (the only producer) wraps the payload in QueueEnvelope&lt;T&gt; stamped with the
 /// order's tenant; the consumer runs with no JWT, so that tenant is the ONLY way the filtered
 /// PayPeriods read in EnsureOpenPeriodAsync and the command's validator see the company's rows. An
-/// enveloped body must reach mediator.Send with the real ids under that tenant's override; a body
-/// carrying no tenant can never succeed (the open-period insert would fail NOT NULL and poison the
-/// queue), so it is logged and acked, never run.
+/// enveloped body must reach mediator.Send with the real ids under that tenant's override; an envelope
+/// carrying no tenant can never succeed (the open-period insert would fail NOT NULL), so it is logged
+/// and acked, never run. A body that is not an envelope with a payload is not a message this consumer
+/// recognises: it throws, so the queue's retries end in the poison consumer, which stores and alerts —
+/// a pay row that never gets created must be visible, not a warning line.
 /// </summary>
 public class CalculateOrderPayHandlerEnvelopeTests
 {
@@ -122,29 +124,37 @@ public class CalculateOrderPayHandlerEnvelopeTests
         _mediator.Verify(m => m.Send(It.IsAny<CalculateOrderPay.Command>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact]
-    public async Task Bare_Body_Carries_No_Tenant_So_It_Is_Acked_And_Never_Run()
+    [Theory]
+    [InlineData("bare")]
+    [InlineData("{}")]
+    [InlineData("null")]
+    [InlineData("not json")]
+    public async Task A_Body_That_Is_Not_An_Envelope_With_A_Payload_Throws_So_The_Queue_Dead_Letters_It(string body)
     {
         ArrangeMediatorSuccess();
+        var messageText = body == "bare" ? Bare("ORDER-2", "EMP-2") : body;
 
-        var ex = await Record.ExceptionAsync(
-            () => CreateHandler().HandleAsync(Bare("ORDER-2", "EMP-2"), CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => CreateHandler().HandleAsync(messageText, CancellationToken.None));
 
-        Assert.Null(ex);
         _tenantProvider.Verify(t => t.SetTenantOverride(It.IsAny<string>()), Times.Never);
         _payPeriod.Verify(p => p.EnsureOpenPeriodAsync(It.IsAny<CancellationToken>()), Times.Never);
         _mediator.Verify(m => m.Send(It.IsAny<CalculateOrderPay.Command>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact]
-    public async Task Missing_Ids_Are_Acked_Not_Sent()
+    [Theory]
+    [InlineData("", "EMP-1")]
+    [InlineData("ORDER-1", "")]
+    public async Task Envelope_With_Missing_Ids_Is_Acked_Not_Sent(string orderId, string employeeId)
     {
-        var handler = CreateHandler();
+        ArrangeMediatorSuccess();
 
-        // An empty-object body deserializes to empty ids — permanent, ack without invoking mediator.
-        var ex = await Record.ExceptionAsync(() => handler.HandleAsync("{}", CancellationToken.None));
+        var ex = await Record.ExceptionAsync(
+            () => CreateHandler().HandleAsync(Enveloped(orderId, employeeId, "TENANT-A"), CancellationToken.None));
 
         Assert.Null(ex);
+        _tenantProvider.Verify(t => t.SetTenantOverride(It.IsAny<string>()), Times.Never);
+        _payPeriod.Verify(p => p.EnsureOpenPeriodAsync(It.IsAny<CancellationToken>()), Times.Never);
         _mediator.Verify(m => m.Send(It.IsAny<CalculateOrderPay.Command>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

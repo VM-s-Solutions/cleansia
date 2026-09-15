@@ -99,4 +99,21 @@ public class RefreshTokenProfileGateHandlerTests
         Assert.False(string.IsNullOrEmpty(result.Value.Token));
         Assert.False(string.IsNullOrEmpty(result.Value.RefreshToken));
     }
+
+    [Fact]
+    public async Task An_Empty_Required_Set_Refuses_Every_Profile_So_A_Mis_Pinned_Host_Fails_Closed()
+    {
+        var customer = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Customer });
+        ArrangeRotation(customer);
+
+        var result = await Handle(new RefreshTokenCmd.Command("any")
+        {
+            RequiredProfiles = [],
+            RequiredAudience = CustomerAudience,
+        });
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InvalidRefreshToken, result.Error!.Message);
+        _refreshTokenService.Verify(s => s.CommitRotationAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

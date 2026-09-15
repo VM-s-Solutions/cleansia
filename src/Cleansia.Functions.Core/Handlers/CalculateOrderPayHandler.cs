@@ -16,9 +16,12 @@ namespace Cleansia.Functions.Core.Handlers;
 ///
 /// <para><b>Queue trigger — no tenant context.</b> The envelope carries the order's tenant and it is
 /// set as the override BEFORE the open-period read and the command: both go through the tenant filter,
-/// and the pay row is stamped from the ambient tenant at commit. A body with no tenant is logged and
-/// acked — every stamped table is NOT NULL, so under no tenant the open-period bootstrap would fail
-/// the insert on every redelivery and poison the queue for nothing.</para>
+/// and the pay row is stamped from the ambient tenant at commit. An envelope with no tenant is logged
+/// and acked — every stamped table is NOT NULL, so under no tenant the open-period bootstrap would fail
+/// the insert on every redelivery and poison the queue for nothing. A body that is not an envelope
+/// with a payload throws instead: CompleteOrder is the only producer and always envelopes, so there
+/// is no bare shape to fall back to, and the poison consumer's stored, alerted dead-letter is the
+/// right place for a pay row that will never be created — quieter than that is a lost row.</para>
 ///
 /// Calls <c>IPayPeriodBackgroundService.EnsureOpenPeriodAsync</c> first so
 /// pay-calc never fails with <c>NoActivePeriod</c> on fresh environments —
@@ -38,15 +41,10 @@ public class CalculateOrderPayHandler(
 {
     public async Task HandleAsync(string messageText, CancellationToken ct)
     {
-        // ADR-0002 D2.1a — DUAL-READ at the deploy boundary. CompleteOrder wraps the payload in a
-        // QueueEnvelope<T>; a bare pre-envelope body still parses so it is acked below as a message
-        // with no tenant rather than thrown as malformed. (Deserializing the bare type against an
-        // envelope yields a NON-null message with empty OrderId/EmployeeId — it passes a null check but
-        // the validator then silently rejects, so no pay row is ever created. The dual-read prevents that.)
         var (message, tenantId) = ReadPayload(messageText);
         if (message is null)
         {
-            throw new InvalidOperationException($"Failed to deserialize CalculateOrderPayMessage: {messageText}");
+            throw new InvalidOperationException($"Failed to deserialize CalculateOrderPayMessage envelope: {messageText}");
         }
 
         if (string.IsNullOrEmpty(message.OrderId) || string.IsNullOrEmpty(message.EmployeeId))
@@ -98,30 +96,12 @@ public class CalculateOrderPayHandler(
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-    /// <summary>
-    /// ADR-0002 D2.1a dual-read. Returns the <see cref="CalculateOrderPayMessage"/> payload and the
-    /// envelope's tenant from the <see cref="QueueEnvelope{T}"/> wire shape (discriminated by a non-empty
-    /// OrderId) or the bare (pre-envelope) message, which carries no tenant; a <c>null</c> message only
-    /// when neither shape is parseable.
-    /// </summary>
     private static (CalculateOrderPayMessage? Message, string? TenantId) ReadPayload(string messageText)
     {
         try
         {
             var envelope = JsonSerializer.Deserialize<QueueEnvelope<CalculateOrderPayMessage>>(messageText, JsonOptions);
-            if (envelope?.Payload is { OrderId: { Length: > 0 } } payload)
-            {
-                return (payload, envelope.TenantId);
-            }
-        }
-        catch (JsonException)
-        {
-            // Fall through to the bare-payload read below.
-        }
-
-        try
-        {
-            return (JsonSerializer.Deserialize<CalculateOrderPayMessage>(messageText, JsonOptions), null);
+            return (envelope?.Payload, envelope?.TenantId);
         }
         catch (JsonException)
         {

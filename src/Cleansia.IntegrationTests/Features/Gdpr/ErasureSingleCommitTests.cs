@@ -37,6 +37,8 @@ public class ErasureSingleCommitTests(PostgresContainerFixture fixture) : BaseIn
     private const string CountryId = "country-cz-erasure-commit";
     private const string CurrencyId = "currency-czk-erasure-1";
     private const string OrderId = "order-erasure-commit-1";
+    private const string GuestOrderId = "order-erasure-commit-guest";
+    private const string GuestIp = "203.0.113.9";
     private const string Description = "The kitchen floor was not mopped and the bins were left full.";
 
     [Fact]
@@ -95,6 +97,12 @@ public class ErasureSingleCommitTests(PostgresContainerFixture fixture) : BaseIn
                 var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == OrderId);
                 Assert.Equal(TestConstants.TestUserSession.TestUserEmail, order.CustomerEmail);
 
+                // The guest booking under the subject's e-mail rides the same commit as everything else.
+                var guestOrder = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == GuestOrderId);
+                Assert.Equal(TestConstants.TestUserSession.TestUserEmail.ToUpperInvariant(), guestOrder.CustomerEmail);
+                var guestRow = await context.CustomerActionAudits.IgnoreQueryFilters().SingleAsync(a => a.ResourceId == GuestOrderId);
+                Assert.Equal(GuestIp, guestRow.IpAddress);
+
                 var dispute = await context.Disputes.IgnoreQueryFilters().Include(d => d.Evidence).SingleAsync(d => d.OrderId == OrderId);
                 Assert.Equal(Description, dispute.Description);
                 Assert.Null(dispute.TextRetainedUntil);
@@ -135,6 +143,11 @@ public class ErasureSingleCommitTests(PostgresContainerFixture fixture) : BaseIn
 
                 var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == OrderId);
                 Assert.Equal(AnonymizationMarker.Value, order.CustomerName);
+
+                var guestOrder = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == GuestOrderId);
+                Assert.Equal(AnonymizationMarker.Value, guestOrder.CustomerEmail);
+                var guestRow = await context.CustomerActionAudits.IgnoreQueryFilters().SingleAsync(a => a.ResourceId == GuestOrderId);
+                Assert.Null(guestRow.IpAddress);
 
                 var dispute = await context.Disputes.IgnoreQueryFilters().Include(d => d.Evidence).SingleAsync(d => d.OrderId == OrderId);
                 Assert.Equal(Description, dispute.Description);
@@ -198,6 +211,28 @@ public class ErasureSingleCommitTests(PostgresContainerFixture fixture) : BaseIn
         order.Id = OrderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
         context.Orders.Add(order);
+
+        var guestOrder = Order.Create(
+            customerName: "Guest Who Is The Subject",
+            customerEmail: TestConstants.TestUserSession.TestUserEmail.ToUpperInvariant(),
+            customerPhone: "+420777111333",
+            customerAddress: Address.Create("Testovaci 12", "Praha", "11000", CountryId),
+            rooms: 1,
+            bathrooms: 1,
+            cleaningDateTime: DateTime.UtcNow.AddDays(-40),
+            paymentType: PaymentType.Cash,
+            totalPrice: 900m,
+            currencyId: CurrencyId,
+            paymentStatus: PaymentStatus.Paid);
+        guestOrder.Id = GuestOrderId;
+        guestOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, guestOrder));
+        context.Orders.Add(guestOrder);
+
+        var guestRow = CustomerActionAudit.Create(
+            userId: null, clientAudience: JwtAudiences.Customer, ipAddress: GuestIp, deviceLabel: "iPhone 15 / iOS 17.4",
+            deviceId: "device-abc-123", action: "customer.order.create", resourceType: "Order", resourceId: GuestOrderId,
+            success: true, errorCode: null, payloadJson: null, correlationId: null);
+        context.CustomerActionAudits.Add(guestRow);
 
         var dispute = new Dispute(OrderId, SubjectId, DisputeReason.QualityIssue, Description, SubjectId);
         dispute.AddMessage("Photos attached, the tiles are still grey.", SubjectId, isStaff: false);

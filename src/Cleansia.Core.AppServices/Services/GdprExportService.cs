@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,7 +54,7 @@ public class GdprExportService(
                     payout.ConfirmedAt, payout.LastRevealedAt, payout.RevealCount);
         }
 
-        var orders = await orderRepository.GetFiltered(o => o.UserId == userId)
+        var orders = await orderRepository.GetFiltered(SubjectOrders.Of(user.Id, user.Email))
             .AsNoTracking()
             .Select(o => new GdprExportOrderDto(
                 o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,

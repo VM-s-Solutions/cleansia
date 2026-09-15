@@ -86,6 +86,33 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
     }
 
     /// <summary>
+    /// A guest booking placed with the subject's e-mail is the subject's order (owner ruling 2026-09-15),
+    /// so a live one refuses the erasure exactly as a live account order does — otherwise the walk would
+    /// anonymise the name, phone and address underneath a job a cleaner is about to work. The e-mail is
+    /// matched case-insensitively, as everywhere else an order is found by its contact address.
+    /// </summary>
+    [Fact]
+    public async Task An_Erasure_Is_Refused_While_A_Guest_Order_Under_The_Subjects_Email_Is_Live()
+    {
+        await SeedAsync(OrderStatus.Confirmed, userId: null, customerEmail: SubjectEmail.ToUpperInvariant());
+
+        var result = await EraseAsync();
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.GdprDeletionBlockedByOrder, result.Error!.Message);
+    }
+
+    [Fact]
+    public async Task A_Live_Guest_Order_Under_Another_Email_Does_Not_Refuse_The_Erasure()
+    {
+        await SeedAsync(OrderStatus.Confirmed, userId: null, customerEmail: "tomas.svoboda@cleansia.test");
+
+        var result = await EraseAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+    }
+
+    /// <summary>
     /// The two sets cannot be one artifact — <c>SlotBlockingStatuses</c> is a <c>static readonly</c>
     /// array because EF inlines it into SQL, and this one runs in memory over materialized rows — so
     /// they are pinned against each other instead. ADR-0037 D5 already treats the pair as the two
@@ -175,7 +202,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             SubjectUserId, "gdpr_erasure_test", _ => ("test-actor", null), deferEmployeeErasure: false, CancellationToken.None);
     }
 
-    private async Task SeedAsync(OrderStatus status)
+    private async Task SeedAsync(OrderStatus status, string? userId = SubjectUserId, string customerEmail = SubjectEmail)
     {
         await using (var schema = NewContext())
         {
@@ -191,7 +218,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
 
         var order = Order.Create(
             customerName: "Zdenka Hruskova",
-            customerEmail: SubjectEmail,
+            customerEmail: customerEmail,
             customerPhone: "+420777222333",
             customerAddress: Address.Create("Erasure St 1", "Praha", "11000", "cz"),
             rooms: 2,
@@ -201,7 +228,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: SubjectUserId);
+            userId: userId);
         order.Id = "order-erase-status-1";
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         ctx.Add(order);

@@ -6,6 +6,7 @@ using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
@@ -139,7 +140,7 @@ public class GdprDeletionService(
 
     private async Task<BusinessResult?> FindRefusalAsync(Domain.Users.User user, CancellationToken cancellationToken)
     {
-        var blockingOrder = await HasBlockingOrderAsync(user.Id, cancellationToken);
+        var blockingOrder = await HasBlockingOrderAsync(user, cancellationToken);
         if (blockingOrder)
             return BusinessResult.Failure(new Error(
                 SubjectField, BusinessErrorMessage.GdprDeletionBlockedByOrder));
@@ -202,6 +203,10 @@ public class GdprDeletionService(
     /// to the subject's home</b>, anonymising the customer underneath a job that stays live and staffed.
     /// It was missing from the day the set was written while the DEAD <c>Pending</c> was present.
     /// → /flows/gdpr-and-audit</para>
+    ///
+    /// <para>The subject's orders are <see cref="SubjectOrders"/>'s — the account's own AND the guest
+    /// bookings under its e-mail — for the same reason: the walk below anonymises both, and a live guest
+    /// job anonymised underneath a cleaner is the outcome this set exists to prevent.</para>
     /// </summary>
     private static readonly OrderStatus[] ErasureBlockingStatuses =
     [
@@ -212,8 +217,8 @@ public class GdprDeletionService(
         OrderStatus.InProgress,
     ];
 
-    private Task<bool> HasBlockingOrderAsync(string userId, CancellationToken cancellationToken)
-        => orderRepository.GetFiltered(o => o.UserId == userId)
+    private Task<bool> HasBlockingOrderAsync(Domain.Users.User user, CancellationToken cancellationToken)
+        => orderRepository.GetFiltered(SubjectOrders.Of(user.Id, user.Email))
             .AnyAsync(o => ErasureBlockingStatuses.Contains(o.CurrentStatus), cancellationToken);
 
     /// <summary>
@@ -327,7 +332,10 @@ public class GdprDeletionService(
             await employeeDocumentRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
         }
 
-        var customerOrderIds = await orderRepository.GetFiltered(o => o.UserId == user.Id)
+        // The account's own orders AND the guest bookings under its e-mail (owner ruling 2026-09-15), read
+        // here while the e-mail is still live: User.Anonymize() at the end of the walk replaces it.
+        var subjectOrders = SubjectOrders.Of(user.Id, user.Email);
+        var customerOrderIds = await orderRepository.GetFiltered(subjectOrders)
             .Select(o => o.Id)
             .ToListAsync(ct);
 
@@ -354,7 +362,7 @@ public class GdprDeletionService(
             }
         }
 
-        var orders = await orderRepository.GetFiltered(o => o.UserId == user.Id)
+        var orders = await orderRepository.GetFiltered(subjectOrders)
             .Include(o => o.CustomerAddress)
             .Include(o => o.Reviews)
             .Include(o => o.OrderNotes)
@@ -481,8 +489,11 @@ public class GdprDeletionService(
         // pseudonymous once the User row below is anonymized — but the IP address, device label and
         // device id on each row are personal data and are blanked. A tracked walk, not a set-based
         // update, so the blanking lands in the same commit as the User row's anonymization — never a
-        // blanked trail for a customer who still exists.
+        // blanked trail for a customer who still exists. The guest rows are the same person one step
+        // removed: a booking placed with the account's e-mail carries no UserId, only the order id, and
+        // that order is one of the subject's.
         await customerActionAuditRepository.PseudonymiseForSubjectAsync(user.Id, ct);
+        await customerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync(customerOrderIds, ct);
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);

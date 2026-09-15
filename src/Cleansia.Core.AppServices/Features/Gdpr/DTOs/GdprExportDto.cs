@@ -72,6 +72,12 @@ public record GdprExportPayoutDetailsDto(
     int RevealCount
 );
 
+/// <summary>
+/// One row per order that is the subject's under <c>SubjectOrders</c> — the orders booked on the account
+/// AND the guest bookings placed with the account's e-mail address (owner ruling 2026-09-15). The same
+/// rule the erasure walks, so what is erased is what is exported; a guest booking under another address
+/// is never listed, whoever asks.
+/// </summary>
 public record GdprExportOrderDto(
     string Id,
     string DisplayOrderNumber,

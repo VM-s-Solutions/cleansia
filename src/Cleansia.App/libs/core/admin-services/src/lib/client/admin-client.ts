@@ -15368,6 +15368,253 @@ export class AdminServiceClient implements IAdminServiceClient {
     }
 }
 
+export interface IAdminTenantSettingsClient {
+    /**
+     * @return OK
+     */
+    getAll(): Observable<GetTenantSettingsResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    set(body?: SetTenantSettingCommand | undefined): Observable<SetTenantSettingResponse>;
+    /**
+     * @return OK
+     */
+    reset(key: string): Observable<ResetTenantSettingResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminTenantSettingsClient implements IAdminTenantSettingsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    getAll(): Observable<GetTenantSettingsResponse> {
+        let url = this.baseUrl + "/api/AdminTenantSettings/get-all";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetAll(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetAll(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetTenantSettingsResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetTenantSettingsResponse>;
+        }));
+    }
+
+    protected processGetAll(response: HttpResponseBase): Observable<GetTenantSettingsResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetTenantSettingsResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    set(body?: SetTenantSettingCommand | undefined): Observable<SetTenantSettingResponse> {
+        let url = this.baseUrl + "/api/AdminTenantSettings/set";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processSet(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processSet(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<SetTenantSettingResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<SetTenantSettingResponse>;
+        }));
+    }
+
+    protected processSet(response: HttpResponseBase): Observable<SetTenantSettingResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = SetTenantSettingResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    reset(key: string): Observable<ResetTenantSettingResponse> {
+        let url = this.baseUrl + "/api/AdminTenantSettings/reset/{key}";
+        if (key === undefined || key === null)
+            throw new globalThis.Error("The parameter 'key' must be defined.");
+        url = url.replace("{key}", encodeURIComponent("" + key));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReset(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processReset(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ResetTenantSettingResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ResetTenantSettingResponse>;
+        }));
+    }
+
+    protected processReset(response: HttpResponseBase): Observable<ResetTenantSettingResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ResetTenantSettingResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminUserClient {
     /**
      * @param searchTerm (optional) 
@@ -25694,6 +25941,50 @@ export interface IGetReferralsByUserResponse {
     asReferred: AdminReferralListItem[] | undefined;
 }
 
+export class GetTenantSettingsResponse implements IGetTenantSettingsResponse {
+    settings!: TenantSettingDto[] | undefined;
+
+    constructor(data?: IGetTenantSettingsResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            if (Array.isArray(Data["settings"])) {
+                this.settings = [] as any;
+                for (let item of Data["settings"])
+                    this.settings!.push(TenantSettingDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): GetTenantSettingsResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetTenantSettingsResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.settings)) {
+            data["settings"] = [];
+            for (let item of this.settings)
+                data["settings"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IGetTenantSettingsResponse {
+    settings: TenantSettingDto[] | undefined;
+}
+
 export class GetUserCreditCurrencyAccount implements IGetUserCreditCurrencyAccount {
     accountId!: string | undefined;
     balance!: number;
@@ -31189,6 +31480,46 @@ export interface IReopenPayPeriodResponse {
     payPeriodId: string | undefined;
 }
 
+export class ResetTenantSettingResponse implements IResetTenantSettingResponse {
+    key!: string | undefined;
+    value!: string | undefined;
+
+    constructor(data?: IResetTenantSettingResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.key = Data["key"];
+            this.value = Data["value"];
+        }
+    }
+
+    static fromJS(data: any): ResetTenantSettingResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResetTenantSettingResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["value"] = this.value;
+        return data;
+    }
+}
+
+export interface IResetTenantSettingResponse {
+    key: string | undefined;
+    value: string | undefined;
+}
+
 export class ResolveDisputeCommand implements IResolveDisputeCommand {
     disputeId!: string | undefined;
     refundAmount!: number | undefined;
@@ -32611,6 +32942,86 @@ export interface ISetDefaultMarketResponse {
     countryId: string | undefined;
 }
 
+export class SetTenantSettingCommand implements ISetTenantSettingCommand {
+    key!: string | undefined;
+    value!: string | undefined;
+
+    constructor(data?: ISetTenantSettingCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.key = Data["key"];
+            this.value = Data["value"];
+        }
+    }
+
+    static fromJS(data: any): SetTenantSettingCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetTenantSettingCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["value"] = this.value;
+        return data;
+    }
+}
+
+export interface ISetTenantSettingCommand {
+    key: string | undefined;
+    value: string | undefined;
+}
+
+export class SetTenantSettingResponse implements ISetTenantSettingResponse {
+    key!: string | undefined;
+    value!: string | undefined;
+
+    constructor(data?: ISetTenantSettingResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.key = Data["key"];
+            this.value = Data["value"];
+        }
+    }
+
+    static fromJS(data: any): SetTenantSettingResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetTenantSettingResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["value"] = this.value;
+        return data;
+    }
+}
+
+export interface ISetTenantSettingResponse {
+    key: string | undefined;
+    value: string | undefined;
+}
+
 export class SortDefinition implements ISortDefinition {
     field!: string | undefined;
     direction!: SortDirection;
@@ -32654,6 +33065,75 @@ export interface ISortDefinition {
 export enum SortDirection {
     Ascending = 0,
     Descending = 1,
+}
+
+export class TenantSettingDto implements ITenantSettingDto {
+    key!: string | undefined;
+    category!: string | undefined;
+    valueType!: TenantSettingValueType;
+    min!: number | undefined;
+    max!: number | undefined;
+    defaultValue!: string | undefined;
+    effectiveValue!: string | undefined;
+    isOverridden!: boolean;
+
+    constructor(data?: ITenantSettingDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.key = Data["key"];
+            this.category = Data["category"];
+            this.valueType = Data["valueType"];
+            this.min = Data["min"];
+            this.max = Data["max"];
+            this.defaultValue = Data["defaultValue"];
+            this.effectiveValue = Data["effectiveValue"];
+            this.isOverridden = Data["isOverridden"];
+        }
+    }
+
+    static fromJS(data: any): TenantSettingDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new TenantSettingDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["category"] = this.category;
+        data["valueType"] = this.valueType;
+        data["min"] = this.min;
+        data["max"] = this.max;
+        data["defaultValue"] = this.defaultValue;
+        data["effectiveValue"] = this.effectiveValue;
+        data["isOverridden"] = this.isOverridden;
+        return data;
+    }
+}
+
+export interface ITenantSettingDto {
+    key: string | undefined;
+    category: string | undefined;
+    valueType: TenantSettingValueType;
+    min: number | undefined;
+    max: number | undefined;
+    defaultValue: string | undefined;
+    effectiveValue: string | undefined;
+    isOverridden: boolean;
+}
+
+export enum TenantSettingValueType {
+    Int = 1,
+    Bool = 2,
 }
 
 export class TierConfigAdminDto implements ITierConfigAdminDto {

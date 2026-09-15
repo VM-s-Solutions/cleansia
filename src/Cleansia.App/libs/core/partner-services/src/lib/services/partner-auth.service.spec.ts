@@ -59,25 +59,6 @@ describe('PartnerAuthService command payloads', () => {
     });
   });
 
-  it('sends the profile plus the active language on register', () => {
-    service.register('a@b.cz', 'pw', 'Jan', 'Novak', 'REF10').subscribe();
-
-    expect(sentBody('register')).toEqual({
-      email: 'a@b.cz',
-      password: 'pw',
-      firstName: 'Jan',
-      lastName: 'Novak',
-      language: 'cs',
-      referralCode: 'REF10',
-    });
-  });
-
-  it('omits the referral code when none was supplied', () => {
-    service.register('a@b.cz', 'pw', 'Jan', 'Novak').subscribe();
-
-    expect(sentBody('register')['referralCode']).toBeUndefined();
-  });
-
   it('sends the profile, the active language and the ticked terms on employee register', () => {
     service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', true).subscribe();
 
@@ -132,7 +113,6 @@ describe('PartnerAuthService command payloads', () => {
   // The market is the operating company the anonymous request lands in (ADR-0061 D3);
   // a cleaner registers with the market an admin will later hold them to (D6).
   it.each<[string, string, () => Observable<unknown>]>([
-    ['register', 'register', () => service.register('a@b.cz', 'pw', 'Jan', 'Novak', undefined, 'svk-id')],
     ['employee register', 'registerEmployee', () => service.registerEmployee('a@b.cz', 'pw', 'Jan', 'Novak', true, 'svk-id')],
     ['google auth', 'googleAuth', () => service.authenticateWithGoogle('tok', 'gid', 'a@b.cz', 'Jan', 'Novak', 'svk-id')],
   ])('sends the chosen market on %s', (_, method, call) => {

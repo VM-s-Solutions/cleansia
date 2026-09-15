@@ -19,11 +19,6 @@ export interface IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    register(body?: RegisterCommand | undefined): Observable<void>;
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
     registerEmployee(body?: RegisterEmployeeCommand | undefined): Observable<void>;
     /**
      * @param body (optional) 
@@ -68,72 +63,6 @@ export class AuthClient implements IAuthClient {
     constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    register(body?: RegisterCommand | undefined): Observable<void> {
-        let url = this.baseUrl + "/api/Auth/Register";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processRegister(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processRegister(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<void>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<void>;
-        }));
-    }
-
-    protected processRegister(response: HttpResponseBase): Observable<void> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return ObservableOf(null as any);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
     }
 
     /**
@@ -13308,70 +13237,6 @@ export interface IRegisterEmployeeCommand {
     firstName: string | undefined;
     lastName: string | undefined;
     language: string | undefined;
-    countryId: string | undefined;
-    termsAccepted: boolean | undefined;
-}
-
-export class RegisterCommand implements IRegisterCommand {
-    email!: string | undefined;
-    password!: string | undefined;
-    firstName!: string | undefined;
-    lastName!: string | undefined;
-    language!: string | undefined;
-    referralCode!: string | undefined;
-    countryId!: string | undefined;
-    termsAccepted!: boolean | undefined;
-
-    constructor(data?: IRegisterCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.email = Data["email"];
-            this.password = Data["password"];
-            this.firstName = Data["firstName"];
-            this.lastName = Data["lastName"];
-            this.language = Data["language"];
-            this.referralCode = Data["referralCode"];
-            this.countryId = Data["countryId"];
-            this.termsAccepted = Data["termsAccepted"];
-        }
-    }
-
-    static fromJS(data: any): RegisterCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new RegisterCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["email"] = this.email;
-        data["password"] = this.password;
-        data["firstName"] = this.firstName;
-        data["lastName"] = this.lastName;
-        data["language"] = this.language;
-        data["referralCode"] = this.referralCode;
-        data["countryId"] = this.countryId;
-        data["termsAccepted"] = this.termsAccepted;
-        return data;
-    }
-}
-
-export interface IRegisterCommand {
-    email: string | undefined;
-    password: string | undefined;
-    firstName: string | undefined;
-    lastName: string | undefined;
-    language: string | undefined;
-    referralCode: string | undefined;
     countryId: string | undefined;
     termsAccepted: boolean | undefined;
 }

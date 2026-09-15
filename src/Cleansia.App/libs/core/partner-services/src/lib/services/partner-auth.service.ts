@@ -15,7 +15,6 @@ import {
   LogoutCommand,
   PartnerLoginCommand,
   RefreshTokenCommand,
-  RegisterCommand,
   RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
 } from '../client/partner-client';
@@ -54,33 +53,6 @@ export class PartnerAuthService {
     command.rememberMe = rememberMe;
 
     return this.partnerClient.authClient.login(command);
-  }
-
-  /**
-   * `countryId` is the market the account is opened with — the operating company an anonymous
-   * request lands in (ADR-0061 D3); null means "let the server pick its default market".
-   */
-  register(
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    referralCode?: string,
-    countryId?: string | null
-  ): Observable<boolean> {
-    const command = new RegisterCommand();
-    command.email = email;
-    command.password = password;
-    command.firstName = firstName;
-    command.lastName = lastName;
-    command.language = this.currentLanguage();
-    command.referralCode = referralCode;
-    command.countryId = countryId ?? undefined;
-
-    // The endpoint answers 200 with no body (T-0665): the bool it used to return was `true` on
-    // every success path, because failures arrive as errors. Success is therefore "it did not
-    // throw", which is what this maps. Same shape as logout() and resendConfirmationEmail() below.
-    return this.partnerClient.authClient.register(command).pipe(map(() => true));
   }
 
   /**

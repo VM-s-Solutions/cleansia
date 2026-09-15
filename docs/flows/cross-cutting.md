@@ -6,15 +6,16 @@ Things that belong to no single flow and are documented once rather than repeate
 
 A tenant is an **operating company** under the holding ([ADR-0061](/decisions/adr-0061)); each market
 is served by one (`CountryConfiguration.OperatorTenantId`), and every tenant-scoped entity carries a
-`TenantId` that is **NOT NULL** — the database refuses a business row with no owner. EF global query
-filters scope reads automatically. A row gets its tenant at commit time from whatever is ambient:
+`TenantId` that is **NOT NULL and a foreign key into `Tenants`** — the database refuses a business row
+with no owner (`23502`) or with an owner it does not know (`23503`). EF global query filters scope
+reads automatically. A row gets its tenant at commit time from whatever is ambient:
 
 | Who is writing | Where the tenant comes from |
 |---|---|
 | An authenticated request | the JWT's `tenant_id` claim, minted from the user's own row |
 | An anonymous request that writes (register, social sign-up, guest booking, promo request, referral check) | the **market** it names (`countryId`, or the default market) → that market's operator, set by `OperatorTenantScopeBehavior` before validation. A country that is not a market is `country.not_serviced`; a market nobody operates is `tenant.not_found` |
 | A request that authenticates a user (login, refresh, social sign-in, email confirm) | the user being authenticated — `TokenService` adopts it **before the confirmation check** and before the `RefreshToken` is written, replacing the market's operator on a social sign-in of an existing account; the two password-reset commands mint no token and adopt it themselves. The session acts name no market and implement `IOperatorScopedRequest` with an explicit `CountryId => null`, so their *refusal* audit row lands under the default market's operator and their *success* row under the account's ([ADR-0061](/decisions/adr-0061) D3/D4 as amended) |
-| A system job or webhook | the row it read — see below |
+| A system job or webhook | the row it read — or, when the work is *per company*, the registry — see below |
 | An audit row (admin or customer) | the same ambient tenant as the act it records, stamped by the audit writer (success) or the out-of-band failure sink — so the row and the `Order`/`User` it describes agree by construction. A customer refusal raised *before* an anonymous request's operator is resolved (`country.not_serviced`, `tenant.not_found`) has none, and the sink skips it with one warning rather than writing an orphan ([ADR-0062](/decisions/adr-0062) D7) |
 | A `Failed` GDPR request row | the erasure's own ambient tenant — written out of band by `OutOfBandGdprDeletionFailureSink` in a scope of its own, so the rolled-back walk cannot take it with it; the daily retry job sets the row's tenant per candidate scope before re-running it |
 
@@ -38,6 +39,31 @@ flowchart LR
 > A new row is stamped from the **ambient** tenant at commit time. One deferred commit at the end
 > therefore stamps every group with whichever tenant happened to be processed last. Committing inside
 > the loop is what makes the override mean anything.
+
+**The second shape: the sweeps that read per company.** Some jobs have no row to derive the tenant
+from, because their input is the list of companies and their settings — the nine retention sweeps,
+whose windows are each company's own (`TenantConfiguration`, set on the admin's *Company settings* page;
+→ [Business rules — retention](/product/business-rules#customer-record)). They loop the **registry**
+instead of grouping rows:
+
+```mermaid
+flowchart LR
+  A["ITenantRepository.GetAllIdsAsync — every company, deactivated included"] --> B[Clear override]
+  B --> C[Set override for this company]
+  C --> D["Read the company's own settings (TenantSettingCatalog — default when no row)"]
+  D --> E[Run each sweep through the filter]
+  E --> F[Commit — INSIDE each sweep]
+  F -->|next company| B
+
+  classDef key fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a
+  class D,F key
+```
+
+Every filtered read inside the loop is that company's, every setting read is that company's, and a
+company with no override rows is simply a company on the defaults — so a one-year audit window set on
+company B deletes B's two-year-old rows and leaves A's alone. `DataRetentionBackgroundService` is the
+reference; `CleanupStalePendingOrders` is the reference for the row-driven shape above. Which one a
+new job takes is decided by its input: rows, or companies.
 
 ⚠️ **A job that forgets its override does not read someone else's rows — it reads nothing, and writes
 a `23502`.** The filter's `null == null` clause matches nothing on a stamped table now that the column

@@ -82,13 +82,16 @@ dispute or an account-takeover claim can be answered from the record rather than
   user, resource `Order` and an id among the subject's orders — the guest bookings placed with the
   account's e-mail; a row sharing the id under another resource type is untouched) and
   **`DeleteExpiredAsync(cutoff)`** (the retention sweep: per row by its own `OccurredOn`, batched,
-  tenant-agnostic).
+  through the filter — the sweep runs once per company under its override since 2026-09-15, so each
+  company's cutoff reaches its own rows only).
 - **`GdprDeletionService`** — the one caller of both pseudonymise methods; roster verdict
   `AnonymizedInPlace` with the ground stated (`SubjectDataErasureRosterTests`); the order set it hands
   the guest walk is `SubjectOrders.Of(userId, email)` minus the live statuses, read past the tenant
   filter.
 - **`DataRetentionBackgroundService`** — the one caller of `DeleteExpiredAsync`; window
-  `retention.customer_audit.years`, default **3**, a value at or below zero refused with a warning.
+  `retention.customer_audit.years`, default **3**, read **per operating company** under the sweep's
+  per-company override (the catalogue's floor of one is what keeps a misconfigured setting from
+  becoming an instruction; → [`tenant-configuration`](./tenant-configuration)).
 - **`GdprExportService`** — reads every row of the subject into the export's `customerActions` section
   (both the self-export and the admin export) — the account's own rows only, never the guest rows on
   its orders: their IP and device belong to whoever placed the booking.
@@ -135,9 +138,11 @@ dispute or an account-takeover claim can be answered from the record rather than
 - **A refusal is a row.** A handler-returned failure, a validation reject, a thrown handler and a
   commit-throw each leave exactly one out-of-band row with the refusal **key** (`AuditErrorCode`), and a
   rolled-back success leaves none (`CustomerAuditPipelinePostgresTests`).
-- **An anonymous row is bounded, and lands only on a customer host.** Nine commands carry
-  `AllowsAnonymousActor` (`Register`, guest `CreateOrder`, the four sign-ins, `ConfirmUserEmail`, the
-  two password-reset commands); every customer-host action that dispatches a marked command is
+- **An anonymous row is bounded, and lands only on a customer host.** Nine customer-marked commands
+  carry `AllowsAnonymousActor` (`Register`, guest `CreateOrder`, the four sign-ins, `ConfirmUserEmail`,
+  the two password-reset commands — the tenth anonymous-capable marker in the assembly, `AdminLogin`,
+  is admin-audience and writes an *admin* row on the admin host, never a row here; and since 2026-09-15
+  `Register` is routed on the customer hosts only); every customer-host action that dispatches a marked command is
   `[EnableRateLimiting]` (`RateLimitCoverageGuardTests`, anti-vacuous by label), so an unauthenticated
   caller writes at most the `auth` window's ten rows a minute per real IP; and the gate writes an
   anonymous act only when the serving host is a customer host, so a cleaner's confirmation on a partner

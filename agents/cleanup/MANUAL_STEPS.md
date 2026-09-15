@@ -31,24 +31,6 @@ tolerates, but this is exactly the class of thing worth seeing once.
 **If one looks wrong:** the hosted templates were not deleted from the SendGrid account, so
 reverting the T-0677 commit restores the previous behaviour exactly. Nothing about this is one-way.
 
-### MS-14 — Regenerate the customer client for the property-size catalogue — **owner**
-
-`GET /api/Country/GetPropertySizes?isoCode=&languageCode=` is live and anonymous on
-`Cleansia.Web.Customer`, returning each preset with its label already resolved. CZ and SK are
-seeded. The home-page calculator still reads the hardcoded `CZ_PROPERTY_SIZE_PRESETS` list because
-the generated client has no method for the route.
-
-**Action:** `npm run generate-customer-client` from `src/Cleansia.App/`, with the customer host
-running. Then the `PROPERTY_SIZE_PRESETS` factory in
-`libs/cleansia-customer-features/home/.../quick-quote/property-size-presets.ts` swaps to the client
-call — the file says exactly what changes, and nothing else does.
-
-**Also run** `sql-scripts/seed/insert_property_size_presets.sql` against DEV (it joins on `IsoCode`,
-so it is safe to run before or after the drop in MS-2). Until it does, the endpoint answers with an
-empty list — which the calculator renders honestly as "no sizes", not as an error.
-
-This is the last acceptance criterion of T-0675 and the only thing between it and done.
-
 ### MS-15 — Regenerate the customer client for the quote's crew and duration — **owner**
 
 `QuoteOrder.Response` now carries `EstimatedDurationMinutes` and `RequiredEmployees`, computed from
@@ -86,12 +68,17 @@ stamped table, `IX_Users_Email` global, `IX_OrderReceipts_TenantId_ReceiptNumber
 log (T-0730: `CustomerActionAudits` + `UserConsents.DocumentVersion`; T-0733: the
 `IX_EmployeeActionAudits_OrderId_CreatedOn` index) to `20260913174821`, then through the 2026-09-14
 follow-up batch (T-0742: `LegalDocuments`, `LegalDocumentTexts`, `UserConsents.LegalDocumentId`;
-T-0738: `Disputes.TextRetainedUntil` + `IX_Disputes_TextRetainedUntil`) to **`20260914115922`** — 87
-tables. Each regeneration was proven against a real Postgres by the integration suite; the tenancy
-one also by `SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built
-database. **The one owed drop belongs to `20260914115922`**: a DEV database whose
-`__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
-already exist. The legal texts need no extra step — every host seeds them at start.
+T-0738: `Disputes.TextRetainedUntil` + `IX_Disputes_TextRetainedUntil`) to `20260914115922`, then
+through the 2026-09-15 tenancy batch (T-0758: `TenantId` off the 21 tenantless tables with their
+`IX_<T>_TenantId`, `FK_<T>_Tenants_TenantId` Restrict on all 48 stamped tables; T-0757:
+`PayoutReferenceCounters (TenantId, Year, Scope)`, `IX_EmployeeInvoices_TenantId_InvoiceNumber`,
+`IX_EmployeeInvoices_TenantId_VariableSymbol`) to **`20260915172310`** — 87 tables. Each regeneration
+was proven against a real Postgres by the integration suite; the tenancy ones also by
+`SeededDatabaseHasNoOrphanTenantRowsTests`, which applies the seed to the migration-built database,
+and the last one by `InitialMigrationTenantDdlTests`, which reads the migration's own operations.
+**The one owed drop belongs to `20260915172310`**: a DEV database whose `__EFMigrationsHistory`
+records any earlier id replays the whole create script against tables that already exist. The legal
+texts need no extra step — every host seeds them at start.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **This drop is the part that stayed the owner's**, and every
@@ -186,6 +173,17 @@ tracker row is now inside the archived backlog, which is why it is re-filed here
 Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
 
 ## Cleared
+
+### MS-14 — Regenerate the customer client for the property-size catalogue — **DISCHARGED 2026-09-15**
+
+Found discharged on ground truth, not by a step taken on the day: the customer client had been
+regenerated in the multicurrency programme, `libs/cleansia-customer-features/home/src/lib/home/components/quick-quote/quick-quote.facade.ts:203`
+calls `countryClient.getPropertySizes(isoCode, lang)`, and `grep -rn CZ_PROPERTY_SIZE_PRESETS src/Cleansia.App`
+returns nothing — the hardcoded list this step existed to replace is gone. The "also run
+`seed/insert_property_size_presets.sql`" half is moot as well: the presets are inserted by the root
+`sql-scripts/insert_seed_data.sql` (`PropertySizePresets — the per-country size ladder`), which every
+host auto-seeds. T-0675 closed with it (T-0756). The row sat `owner` for a fortnight after the thing it
+asked for had happened — the reason the backlog README says to grep before dispatching.
 
 ### MS-12 — Regenerate the customer web client for the promo-request endpoint — **DONE 2026-08-31**
 

@@ -240,7 +240,14 @@ init-only).
 ResourceType = "Order")]` (`AllowsAnonymousActor = true` only where a guest may act; `ResourceIdProperty`
 when the id is not `{ResourceType}Id` on the command); `AuditGate.Resolve` routes the row to
 `CustomerActionAudits` for a customer session and to the admin table for an administrator running the
-same command (under the marker's frozen label, pinned by `AuditLogBehaviorTests`). The handler emits ONE
+same command — **under the marker's `AdminAction` label where it declares one** (`Logout` declares
+`AdminAction = "admin.session.logout"`; an administrator's act is an admin act and reads as one), else
+the frozen label; `AuditEntryFactory.Build` writes `descriptor.AdminAction` on every admin row, and an
+admin-audience marker declares none (its one label is already the admin one — pinned by
+`AuditActionDescriptorTests`, `AuditLogBehaviorTests`, `SessionAuditRouteTests`). The admin sign-in is
+itself a row: `AdminLogin` carries `[AuditAction("admin.session.login", ResourceType = "User",
+AllowsAnonymousActor = true)]`, and the gate admits an anonymous act on the **admin host for an
+admin-audience marker** exactly as it does on a customer host for a customer one. The handler emits ONE
 typed evidence record, nested beside the feature and implementing `ICustomerAuditPayload`, through
 `IAuditContext.RecordEvidence(...)` — server-side figures at the moment of the act, never a
 client-asserted money figure, never a name / contact / address / free text (the PII guard walks every
@@ -251,8 +258,11 @@ session cannot (the session acts run anonymously). Failure rows carry the error 
 row there, its label in the five admin locales (`customer-audit-actions.ts`) and a rate-limit window on
 the customer-host action. Three facts about the anonymous arm (T-0744): the gate writes an anonymous
 act to the customer table **only on a customer host** (`IHostAudienceProvider.Audience ==
-JwtAudiences.Customer`) — a command routed on the partner hosts too (`Register`, `ConfirmUserEmail`,
-the password-reset pair) lands nowhere there; an anonymous marked command that names no market
+JwtAudiences.Customer`) — a command routed on the partner hosts too (`ConfirmUserEmail`, `GoogleAuth`,
+the password-reset pair; `Register` is no longer among them — the partner hosts stopped routing the
+customer registration on 2026-09-15, and `GoogleAuth` / `ConfirmUserEmail` off a customer host sign in
+an existing Employee or Administrator only, `TokenService` refusing any other audience/profile pair as
+an invariant) lands nowhere there; an anonymous marked command that names no market
 implements `IOperatorScopedRequest` with an **explicit** `CountryId => null` (off the wire, default
 market) so its out-of-band refusal row has a tenant to be stamped with (a refusal the scope behaviour
 itself raises — `country.not_serviced`, `tenant.not_found` — is still skipped with one warning, ADR-0062
@@ -1708,9 +1718,15 @@ Two isolation axes meet in this codebase, and they live in **different layers** 
   `OperatorTenantScopeBehavior` sets the market operator's override before validation; a token mint
   adopts the user's tenant (`TokenService`); a job or webhook **must** set the override from the row it
   read, per row or per tenant group, and commit inside the loop — a job that forgets reads nothing and
-  writes a `23502`. Cross-tenant *reads* are explicit: `GetQueryableIgnoringTenant()` / `IgnoreQueryFilters`
-  plus a caller-bound re-pin (S8). **This is the proven path; do not move tenancy to infra
-  (DB-per-tenant / schema-per-tenant) and do not touch the filter.**
+  writes a `23502`; one that invents a company writes a `23503` (every stamped table is FK'd to
+  `Tenants`, Restrict). **A job whose unit of work is a company rather than a row** — the retention
+  sweeps, which read each company's own `TenantSettingCatalog` windows — loops the registry instead:
+  `ITenantRepository.GetAllIdsAsync()` → `SetTenantOverride(id)` per company → the work → commit
+  inside → `ClearTenantOverride()`; `DataRetentionBackgroundService` is the reference, and the input
+  (rows or companies) is what picks the shape. Cross-tenant *reads* are explicit:
+  `GetQueryableIgnoringTenant()` / `IgnoreQueryFilters` plus a caller-bound re-pin (S8). **This is the
+  proven path; do not move tenancy to infra (DB-per-tenant / schema-per-tenant) and do not touch the
+  filter.**
 - **Region = an INFRA/config concern, and it is net-new.** Region answers *"which physical
   deployment/DB does this request hit?"* — it never answers *"whose rows is this?"* There is **no
   region concept in the domain or data model** (the only geography is `CountryConfiguration`, the

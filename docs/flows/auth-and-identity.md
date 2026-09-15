@@ -70,6 +70,18 @@ without the tick is refused as `auth.social_account_not_found`: on the shared en
 tells the sign-up screen from the sign-in screen, every client refuses client-side first, and the key
 reads as "sign up first".
 
+**The partner hosts register no customers** (owner ruling 2026-09-15, *"remove it"*). `POST
+api/Auth/Register` is routed on the two customer hosts only — a cleaner's account is opened through
+`RegisterEmployee` — and a Google sign-in on a partner host **signs in an existing cleaner or
+administrator only**: a Google identity with no account is refused `auth.social_account_not_found`
+and nothing is provisioned, a Customer-profile account is refused `auth.insufficient_privileges`
+exactly as the password sign-in refuses it, and the e-mail confirmation on a partner host confirms an
+Employee or Administrator only. Behind all three, `TokenService` refuses to mint a partner or admin
+session for a profile that host does not serve — the command is expected to have refused first with
+its own key, and the mint is the one seam every issuing command crosses. Until this ruling a first-time
+Google sign-in on a partner host created a Customer and handed it a partner-audience token: an account
+that could sign in where it had no business.
+
 A customer granting a consent again later under a **different document** moves the consent row to it
 and writes a `customer.consent.grant` row; withdrawing writes `customer.consent.withdraw`. The consent
 row is the current state; those audit rows are the history. Nobody is re-prompted when a new version
@@ -104,7 +116,15 @@ three IPs last night" is now one filter on the customer's timeline. **An unknown
 nobody** — the row has no user, no resource and no payload, so the address the caller typed reaches no
 column. **On a partner host none of this is written**: the same commands serve cleaners there, whose
 session history belongs in no table, and the audit gate writes an anonymous act only on a customer
-host. An Administrator's own sign-out on the admin host lands in the *admin* table.
+host.
+
+**An administrator's session acts are admin acts** (owner ruling 2026-09-15, *"change to be as
+admin"*). The admin sign-in writes an **admin** audit row under `admin.session.login` — success and
+failure both: a refused sign-in on a known account names the account and is stamped with its
+company, an unknown address names nobody and carries no e-mail, the same rules as the customer rows —
+and the admin's sign-out lands in the admin table under `admin.session.logout`, not under the
+customer label the shared `Logout` command carries for customers. The two are the only admin session
+rows; an administrator's refresh rotations, like everyone's, write none.
 
 The row is stamped with the **account's** operating company, not the default market's — the sign-in
 adopts the user's tenant before the confirmation check, the two reset commands (which mint no token)
@@ -132,5 +152,7 @@ hosts have no device id, which is why the admin TTL was shortened instead.
 | Device revoked | Only tokens carrying that device id are ended. A token with no device id survives to natural expiry rather than being killed by an unrelated device. |
 | Google or Apple sign-in | Resolved by **subject**, never by email address. A sign-in of an existing account is a `customer.session.login` row; a first sign-in provisions the account, writes the two versioned consent rows and declines the login row. |
 | Login, logout, password reset, e-mail confirmation | A customer audit row each, on a customer host only (→ [Session rows](#session-rows)). Refresh rotations write none; the `RefreshToken` row (IP, device, audience, 90 days) stays their record. |
+| An administrator signs in or out on the admin host | An **admin** audit row each — `admin.session.login` (success or refusal, the refusal naming a known account) and `admin.session.logout`. Never a customer row. |
+| A Google sign-in or a customer registration on a partner host | No registration exists there; a Google identity with no account is refused `auth.social_account_not_found`, a Customer account `auth.insufficient_privileges`, and nothing is provisioned. |
 | Wrong password, bad code or wrong sign-in method on an account that exists | A failure row naming the account, under the account's operating company, with the key and the caller's IP — the caller learns nothing new. An unknown address: a row naming nobody. |
 | Registration or booking without the terms tick | Refused, `consent.terms_not_accepted`; the refusal is a row with the caller's IP. A signed-in customer who already holds both consents sees no box and is not asked. |

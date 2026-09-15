@@ -81,7 +81,7 @@ a comment that only explains *why* belongs in `docs/` with a `→ /path#anchor` 
 | Order lifecycle — the two axes, and why `Pending` is dead | `/domain/order-lifecycle` |
 | Offerability, the preferred-cleaner hold, seat allocation | `/domain/offerability` |
 | Entities and their relationships | `/domain/model` |
-| Per-component contracts (27 of them) | `/domain/roles/` |
+| Per-component contracts (28 of them) | `/domain/roles/` |
 | The ten flows, end to end | `/flows/` |
 | Why a decision was made — 63 ADRs | `/decisions/` |
 | Aspire, ports, the migrator, request logging | `/architecture/local-orchestration` |
@@ -204,23 +204,29 @@ thing that proves the model and the schema agree.
 
 Four things that look like bugs, are not, and have each cost a session:
 
-- **`TenantId` is NOT NULL on every stamped table, and `NULL` is not a tenant.** A tenant is an
-  operating company under the holding (`Tenants`, one row: `cleansia-cz`); every `ITenantEntity` row
-  carries one from its first write, except `OutboxMessages` and `DeadLetters`. Two traps this closed,
-  and how: a `(TenantId, …)` unique index used to enforce nothing because Postgres treats NULLs as
-  distinct — now the tenant term can never be null, the thirteen sole-arbiter indexes are
-  `NULLS NOT DISTINCT` in the emitted DDL anyway, and a model sweep fails any new unique index over a
-  nullable column that is not; and a `NULL`-stamped row used to vanish from every tenanted reader —
-  now a writer that forgets its market fails `23502` in DEV instead of orphaning rows. The one
-  nullable `TenantId` you will still see is the **dead inherited column on tenantless `Auditable`
-  tables** (`CountryConfiguration`, `Service`, …): unfiltered, unstamped, meaning nothing. An anonymous
-  request names a **market** (`countryId`), never a tenant; the server maps market → operator.
-  → `/architecture/security-rules`, `/decisions/adr-0061`
+- **`TenantId` is NOT NULL and a real foreign key on every stamped table, and `NULL` is not a
+  tenant.** A tenant is an operating company under the holding (`Tenants`, one row: `cleansia-cz`);
+  a type that belongs to one company extends **`TenantAuditable`** (or is one of the two
+  `BaseEntity + ITenantEntity` audits) and its row carries the company from its first write —
+  48 stamped tables, NOT NULL on all but `OutboxMessages` and `DeadLetters`, each with
+  `FK_<T>_Tenants_TenantId` (Restrict, no navigation). A plain `Auditable` — the 21 catalogue and
+  per-country tables (`CountryConfiguration`, `Service`, …) — **has no `TenantId` column at all**; if
+  you see one on such a type, the type is on the wrong base. Two traps this closed, and how: a
+  `(TenantId, …)` unique index used to enforce nothing because Postgres treats NULLs as distinct —
+  now the tenant term can never be null, the thirteen sole-arbiter indexes are `NULLS NOT DISTINCT`
+  in the emitted DDL anyway, and a model sweep fails any new unique index over a nullable column that
+  is not; and a `NULL`-stamped row used to vanish from every tenanted reader — now a writer that
+  forgets its market fails `23502` in DEV instead of orphaning rows, and one that invents a company
+  fails `23503`. An anonymous request names a **market** (`countryId`), never a tenant; the server
+  maps market → operator. → `/architecture/security-rules`, `/decisions/adr-0061`
 
-- **System jobs run with no JWT context.** Query with `GetQueryableIgnoringTenant()`, then
-  `SetTenantOverride` per tenant group and commit **inside** the loop — rows are stamped from the
-  ambient tenant at commit time, so one deferred commit stamps every group with the last tenant seen.
-  `CleanupStalePendingOrders` is the reference shape. → `/flows/cross-cutting`
+- **System jobs run with no JWT context.** Two shapes, and the input decides which. Rows in: query
+  with `GetQueryableIgnoringTenant()`, then `SetTenantOverride` per tenant group and commit **inside**
+  the loop — rows are stamped from the ambient tenant at commit time, so one deferred commit stamps
+  every group with the last tenant seen; `CleanupStalePendingOrders` is the reference shape. Companies
+  in: loop `ITenantRepository.GetAllIdsAsync()`, set the override per company, do the work under it
+  (every filtered read and every `TenantSettingCatalog` read is that company's), commit inside;
+  `DataRetentionBackgroundService` is the reference shape. → `/flows/cross-cutting`
 
 - **Backend error keys land under `api.*`, never `errors.*`.** The shared `HttpErrorInterceptorFn`
   resolves `` `api.${dotValue}` ``. A key written under `errors.*` alone is read by nothing — the

@@ -289,7 +289,8 @@ missed message is theirs. A cleaner not turning up is somebody else's morning.
 | Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
 | Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
 
-The three reminders are non-mutable **on the owner's ruling**, on the same reasoning as the two above and
+The three reminders are non-mutable **on the owner's ruling** (2026-09-15, Q-PUSH-01 — the evening
+digest included; it was the one the ADR had escalated), on the same reasoning as the two above and
 recorded in ADR-0054: they are not marketing, they carry no offer, and each one is about work the cleaner
 already agreed to do.
 

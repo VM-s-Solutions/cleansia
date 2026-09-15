@@ -95,10 +95,13 @@ one operator; an operator serves one or more countries.
   indexed). CZE → `cleansia-cz`; every other configured country → nobody, and a market nobody serves
   is not listed by `Market/GetOverview`, cannot be flagged the default, and refuses anonymous writes
   (`tenant.not_found`).
-- **46 domain entity classes** implement `ITenantEntity` (`grep -rn ", ITenantEntity" src/Cleansia.Core.Domain`),
-  and the `TenantId` column is **NOT NULL** on 44 of them — only `OutboxMessage` and `DeadLetter` stay
-  nullable (an envelope may have no tenant). The CLR property stays `string?` because the value is
-  written at commit time. `LoyaltyTierConfig` left the interface on activation (the brand's programme,
+- **48 domain entity classes** implement `ITenantEntity` — 46 through `TenantAuditable`
+  (`grep -rn ": TenantAuditable" src/Cleansia.Core.Domain`) plus the two audits that name the interface
+  directly (`grep -rn ", ITenantEntity"`) — and the `TenantId` column is **NOT NULL and a `Restrict`
+  foreign key into `Tenants`** on all of them, nullable only on `OutboxMessage` and `DeadLetter` (an
+  envelope may have no tenant). A plain `Auditable` has no tenant column (since 2026-09-15). The CLR
+  property stays `string?` because the value is written at commit time. `LoyaltyTierConfig` left the
+  interface on activation (the brand's programme,
   the `MembershipPlan` sibling); `ProcessedStripeEvent : BaseEntity` deliberately never implemented it
   (the Stripe idempotency ledger is platform-global).
 - EF global query filter auto-scopes reads: `CleansiaDbContext.ApplyTenantQueryFilters`. The filter is:
@@ -137,13 +140,13 @@ classification rule, now stated in one sentence (ADR-0061 D7):
 > brand's catalogue or programme definition that every operator sells identically, or a per-country
 > fact.
 
-**The 46 entities sorted into three buckets (the classification this doctrine acts on):**
+**The 48 entities sorted into three buckets (the classification this doctrine acts on):**
 
 | Bucket | Count | Members | Verdict |
 |---|---|---|---|
-| **1 — Genuinely operator-owned** (one company's customers, cleaners, money, or its own legal/financial configuration) | 43 | Order, OrderNote, OrderIssue, OrderReview, OrderStatusTrack, OrderPhoto, OrderReceipt, OrderEmployeePay, User, Employee, EmployeeDocument, DocumentDeletionRequest, Address, SavedAddress, Cart, RefreshToken, UserConsent, GdprRequest, UserNotification, UserNotificationPreferences, Device, LiveActivityToken, Dispute, Refund, RecurringBookingTemplate, UserMembership, MembershipBenefitUsage, UserStripeCustomer, CreditAccount, LoyaltyAccount, LoyaltyTransaction, PromoCode, PromoCodeRedemption, ReferralCode, Referral, PayPeriod, EmployeePayConfig, EmployeePayoutDetails, EmployeeInvoice, FiscalCounter, CompanyInfo, AdminActionAudit, EmployeeActionAudit | **`ITenantEntity`, NOT NULL.** (`CompanyInfo` is the s.r.o. itself; the pay defaults and promo codes are the operator's money; the two audit tables are per operator by ADR-0012.) |
-| **2 — The brand's catalogue and programme, and per-country facts** | — | **Service, ServiceCategory, Package, Extra, ServiceCity, MembershipPlan, MembershipPlanPrice, LoyaltyTierConfig**, `Country*`, `Currency`, `PropertySizePreset`, `EmployeeDocumentRequirement`, `Email*Translation`, … | **Tenantless** (`Auditable` if admin-edited, `BaseEntity` if seed-only), each saying why in a one-line comment naming its sibling. `LoyaltyTierConfig` joined this bucket on activation. |
-| **3 — Infra** | 3 | **TenantConfiguration** (per-tenant key/value store — no writer, no rows, Q-TENANCY-04), **OutboxMessage**, **DeadLetter** (stamped when the envelope has a tenant; the two nullable exemptions) | **Keep `ITenantEntity`.** |
+| **1 — Genuinely operator-owned** (one company's customers, cleaners, money, or its own legal/financial configuration) | 46 | Order, OrderNote, OrderIssue, OrderReview, OrderStatusTrack, OrderPhoto, OrderReceipt, OrderEmployeePay, User, Employee, EmployeeDocument, DocumentDeletionRequest, Address, SavedAddress, Cart, RefreshToken, UserConsent, GdprRequest, UserNotification, UserNotificationPreferences, Device, LiveActivityToken, Dispute, Refund, RecurringBookingTemplate, UserMembership, MembershipBenefitUsage, UserStripeCustomer, CreditAccount, LoyaltyAccount, LoyaltyTransaction, PromoCode, PromoCodeRedemption, ReferralCode, Referral, PayPeriod, EmployeePayConfig, EmployeePayoutDetails, EmployeeInvoice, FiscalCounter, **PayoutReferenceCounter** (per company since 2026-09-15 — each company numbers its own payout invoices), CompanyInfo, **TenantConfiguration** (a company's own overrides of catalogued settings — writer, rows and catalogue since 2026-09-15), AdminActionAudit, CustomerActionAudit, EmployeeActionAudit | **`TenantAuditable` (or `BaseEntity + ITenantEntity` for the admin and customer audits), NOT NULL, FK'd to `Tenants`.** (`CompanyInfo` is the s.r.o. itself; the pay defaults and promo codes are the operator's money; the three audit tables are per operator by ADR-0012 / ADR-0062.) |
+| **2 — The brand's catalogue and programme, and per-country facts** | — | **Service, ServiceCategory, Package, Extra, ServiceCity, MembershipPlan, MembershipPlanPrice, LoyaltyTierConfig**, `Country*`, `Currency`, `PropertySizePreset`, `EmployeeDocumentRequirement`, `Email*Translation`, … | **Tenantless** (`Auditable` if admin-edited, `BaseEntity` if seed-only) — **no tenant column at all** since 2026-09-15 — each saying why in a one-line comment naming its sibling. `LoyaltyTierConfig` joined this bucket on activation. |
+| **3 — Infra** | 2 | **OutboxMessage**, **DeadLetter** (stamped when the envelope has a tenant; the two nullable exemptions — a `NULL` passes the FK) | **Keep `ITenantEntity`.** |
 
 (`ProcessedStripeEvent` is the deliberate **platform-global ledger** outside all three buckets — correctly
 `: BaseEntity`, never tenant-scoped, with `IgnoreQueryFilters()` as belt-and-braces. It is precedent, not
@@ -895,8 +898,9 @@ premise against real code. This is the single scannable sign-off.
 
 1. **Current-state map (3 axes):** done — §0 table + §1/§2/§3. **Tenancy = real mechanism,
    single-operator operation** (as rewritten 2026-09-13 for ADR-0061: a `Tenants` registry, a
-   market → operating-company map, 46 `ITenantEntity` entities with `TenantId` NOT NULL, the EF filter,
-   the JWT claim, and an anonymous write scoped by the market it names — one company today).
+   market → operating-company map, 48 `ITenantEntity` entities with `TenantId` NOT NULL and FK'd to
+   `Tenants` (2026-09-15), the EF filter, the JWT claim, and an anonymous write scoped by the market it
+   names — one company today).
    **Currency = real per-currency-price mechanism, single-currency operation**
    (platform `Currency` with `IsActive` as the market switch, prices authored per currency in sibling
    row tables, per-record `CurrencyId` on every money-carrying row; the order currency resolved from

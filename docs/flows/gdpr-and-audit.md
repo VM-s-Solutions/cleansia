@@ -115,23 +115,29 @@ Referral codes are randomly generated rather than name-derived, so they leak not
 
 A background sweep prunes expired confirmation and reset codes, stale devices, completed GDPR
 requests, old orders, consents, employee documents and notifications — including a per-user
-notification cap. It runs across tenants and commits per batch.
+notification cap. **It runs once per operating company** (since 2026-09-15): it loops the company
+registry, sets the tenant override per company, reads that company's own windows from its settings
+(the platform defaults where it has set none — → [Company settings](/product/business-rules#customer-record))
+and commits per batch inside each task, so a one-year window on one company touches none of another's
+rows.
 
 **The customer audit trail is on it, per row.** One task (`CustomerActionAudits`, under the same
 `DataRetention:Enabled` master switch) deletes every row older than `retention.customer_audit.years`
 (default **3**) measured from the row's **own** act — not from the customer's last act, which would
 have kept an active customer's IP addresses for the life of the account — in batches until a batch
-comes back empty, tenant-agnostic like the GDPR-request clean-up, over the `(OccurredOn)` index. A
-window at or below zero is treated as a misconfiguration and the default is kept with a warning: this
-is the one delete the append-only discipline sanctions, and a cutoff of "now" would empty the evidence
-table on the next tick. The admin and cleaner audit tables have **no** window and the task never
-reaches them. → [Business rules — retention](/product/business-rules#customer-record)
+comes back empty, over the `(OccurredOn)` index, under the company's override. The window cannot be
+set below one year — the floor is enforced where the value is written, on the admin page, because this
+is the one delete the append-only discipline sanctions and a cutoff of "now" would empty the evidence
+table on the next tick; a stored value the catalogue no longer accepts falls back to the default. The
+admin and cleaner audit tables have **no** window and the task never reaches them.
+→ [Business rules — retention](/product/business-rules#customer-record)
 
 **The erased customer's dispute text is on it too.** The `DisputeText` task reads only the stamp the
 erasure set (`Dispute.TextRetainedUntil`), blanks the description, the messages and the resolution
 notes of every dispute whose stamp is past, and clears the stamp so each batch shrinks the backlog —
-pure-modify, no tenant override, `RetentionDefaults.BatchSize` at a time. The window itself
-(`retention.dispute_text.years`) is read by the erasure when it stamps, not by the sweep.
+pure-modify, under the company's override like every task, `RetentionDefaults.BatchSize` at a time.
+The window itself (`retention.dispute_text.years`, the erasing company's own value) is read by the
+erasure when it stamps, not by the sweep.
 
 **A failed erasure is retried by its own daily job**, not by this sweep — `RetryFailedUserDeletions`
 at 05:00 UTC, under the same master switch (→ above).

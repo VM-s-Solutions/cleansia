@@ -341,14 +341,21 @@ a deterministic server-side fallback. Reference: `CreateMembershipSubscription.D
 
 A tenant is an **operating company** under the holding (ADR-0061): `Tenants` is the registry (one row,
 `cleansia-cz`, seed-only), `CountryConfiguration.OperatorTenantId` maps each market to the company
-that serves it, and **every stamped table's `TenantId` is NOT NULL** — the only nullable ones are the
-two infra exemptions, `OutboxMessages` and `DeadLetters`. `NULL` is not a tenant and never was one that
-production ran on. Every entity holding one operator's customers, cleaners or money implements
-`ITenantEntity`; the global EF query filter then auto-scopes reads. When adding an entity, ask "could two
-operators legitimately hold *different* rows here for the same key?" — if yes, `ITenantEntity`; if no
-(the brand's catalogue or programme, or a per-country fact), it is tenantless and says why in a one-line
-comment naming its sibling (`LoyaltyTierConfig` names `MembershipPlan`). Unique indexes on stamped tables
-are `(TenantId, X)`, not `(X)` — `Code` is unique *per operator* — with one deliberate exception:
+that serves it, and **every stamped table's `TenantId` is NOT NULL and a real foreign key into
+`Tenants`** (`FK_<T>_Tenants_TenantId`, `Restrict`, no navigation — ADR-0061 D1/D8 as amended
+2026-09-15) — the only nullable ones are the two infra exemptions, `OutboxMessages` and `DeadLetters`,
+and a `NULL` passes the FK there. `NULL` is not a tenant and never was one that production ran on.
+Every entity holding one operator's customers, cleaners or money extends **`TenantAuditable`** (the
+`Auditable` that carries `TenantId`; the two `BaseEntity + ITenantEntity` audits map the column by
+hand); the global EF query filter then auto-scopes reads. A plain `Auditable` **has no tenant column** —
+the 21 catalogue and per-country tables carry none, and a model sweep fails a non-`ITenantEntity` type
+that grows one. When adding an entity, ask "could two operators legitimately hold *different* rows here
+for the same key?" — if yes, `TenantAuditable`; if no (the brand's catalogue or programme, or a
+per-country fact), it is plain `Auditable` and says why in a one-line comment naming its sibling
+(`LoyaltyTierConfig` names `MembershipPlan`). Unique indexes on stamped tables
+are `(TenantId, X)`, not `(X)` — `Code` is unique *per operator*, and since 2026-09-15 so are a payout
+invoice's number and variable symbol (`EmployeeInvoices (TenantId, InvoiceNumber)` and
+`(TenantId, VariableSymbol)`, each company numbering its own) — with one deliberate exception:
 `Users (Email)` is **global**, because one email is one identity across the holding (ADR-0061 D5.1;
 every anonymous identity read already resolved by email ignoring the tenant, so a per-operator scope
 would make login ambiguous). The global filter applies to `Set<T>()` reads but **not** to raw SQL
@@ -359,14 +366,21 @@ carries the filter — audit those paths.
 `tenant_id` claim. An anonymous request that writes names a market (S1 above) and
 `OperatorTenantScopeBehavior` sets the market's operator as the ambient tenant before validation runs;
 a request that authenticates a user (`TokenService`, `RefreshToken`) adopts that user's tenant before it
-writes; a job or webhook derives the tenant of every row it writes from the row it read. `CommitAsync`
-stamps every `Added` `ITenantEntity` from whatever is ambient at commit time, and the database refuses a
-row with none (`23502`). The two guards that stand over all of it, both in `backend-ci.yml` with no
-`continue-on-error`: **`SeededDatabaseHasNoOrphanTenantRowsTests`** (the seed applied to the
-migration-built database leaves zero `NULL` tenants on stamped tables, every tenant in `Tenants`, and an
-operator on the default market) and **`SecondTenantIsolationHostTests`** (a second operating company
-seeded whole — customer, cleaner, order, receipt, pay default, promo code, membership — and a CZ admin
-who lists none of it and 404s on every by-id read; every JWT minted carries `tenant_id`).
+writes; a job or webhook derives the tenant of every row it writes from the row it read — or, when its
+work is *per company* rather than per row (the retention sweeps, which read each company's own
+windows), loops the registry (`ITenantRepository.GetAllIdsAsync`) and sets the override per company.
+`CommitAsync` stamps every `Added` `ITenantEntity` from whatever is ambient at commit time, and the
+database refuses a row with none (`23502`) or with a company the registry does not hold (`23503`). The
+guards that stand over all of it, all in `backend-ci.yml` with no `continue-on-error`:
+**`SeededDatabaseHasNoOrphanTenantRowsTests`** (the seed applied to the migration-built database leaves
+zero `NULL` tenants on stamped tables, every tenant in `Tenants`, and an operator on the default
+market), **`SecondTenantIsolationHostTests`** (a second operating company seeded whole — customer,
+cleaner, order, receipt, pay default, promo code, membership — and a CZ admin who lists none of it and
+404s on every by-id read; every JWT minted carries `tenant_id`), **`TenantIdRequiredModelTests`** (every
+`ITenantEntity` NOT NULL bar the two envelopes, FK'd with `Restrict`, and no other type carries a
+`TenantId`), **`InitialMigrationTenantDdlTests`** (the committed migration's own operations — 48
+`FK_<T>_Tenants_TenantId`, 2 nullable, no `IX_<tenantless>_TenantId`) and
+**`TenantForeignKeyEnforcedTests`** (a real `23503`).
 
 ### The one question that decides every bypass (ADR-0051)
 

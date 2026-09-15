@@ -287,20 +287,26 @@ Because the FKs restrict, `DeleteCurrency` asks `ICurrencyRepository.IsInUseAsyn
 ::: danger A unique index over a nullable column enforces nothing unless it says so
 Postgres treats NULLs as DISTINCT, so a unique index containing a nullable column admits unlimited
 duplicates while that column is null. `.AreNullsDistinct(false)` is what makes such an index an
-arbiter, and **13 indexes carry it in the emitted DDL** (`grep -n NullsDistinct …Initial.cs`).
+arbiter, and **17 indexes carry it in the emitted DDL** (`grep -n NullsDistinct …Initial.cs`) —
+thirteen with a tenant term, four without (`DisputeLines`, `LegalDocuments`, `LiveActivityTokens`,
+`OrderReviewLines`).
 
 **`TenantId` is no longer the nullable column that matters.** Since ADR-0061 D8 (2026-09-13) the
 column is NOT NULL on every stamped table — only `OutboxMessages` and `DeadLetters` keep it nullable —
-so the tenant term of a `(TenantId, …)` index can never be the null that disarms it. The option is
-kept on those ten indexes anyway, because the model guard reads the option, not the column, and the
-other nullable terms (`EmployeeId`, `ServiceId`, `PackageId`) still need it. Two indexes *gained* a
-tenant term on activation so that two operators can coexist — `OrderReceipts (TenantId, ReceiptNumber)`
-(the number comes from a per-operator `FiscalCounter`) and `IX_EmployeePayConfigs_Tenant_Scope` — and
-one lost it: `Users (Email)` is globally unique with no tenant term, because one email is one identity
-across the holding (ADR-0061 D5.1). `LoyaltyTierConfig` left the list with its tenant — it is
-tenantless now, unique on `Tier`.
+and since 2026-09-15 it is a foreign key into `Tenants` on every one of them and absent from every
+tenantless table (`TenantAuditable` carries it; plain `Auditable` does not), so the tenant term of a
+`(TenantId, …)` index can never be the null that disarms it. The option is kept on those thirteen
+indexes anyway, because the model guard reads the option, not the column, and the other nullable
+terms (`EmployeeId`, `ServiceId`, `PackageId`) still need it. Two indexes *gained* a tenant term on
+activation so that two operators can coexist — `OrderReceipts (TenantId, ReceiptNumber)` (the number
+comes from a per-operator `FiscalCounter`) and `IX_EmployeePayConfigs_Tenant_Scope` — and three more
+on 2026-09-15, when each operating company started numbering its own payout invoices:
+`EmployeeInvoices (TenantId, InvoiceNumber)`, `EmployeeInvoices (TenantId, VariableSymbol)` filtered,
+and `PayoutReferenceCounters (TenantId, Year, Scope)`. One lost it: `Users (Email)` is globally unique
+with no tenant term, because one email is one identity across the holding (ADR-0061 D5.1).
+`LoyaltyTierConfig` left the list with its tenant — it is tenantless now, unique on `Tier`.
 
-Six of the thirteen were added on 2026-09-05, after a guard was rewritten from a hand-listed roster
+Six of the seventeen were added on 2026-09-05, after a guard was rewritten from a hand-listed roster
 into a sweep of the whole model and found them: `EmployeePayConfig`, `LoyaltyTransaction`, `PromoCode`,
 `ReferralCode`, `TenantConfiguration` (and `LoyaltyTierConfig`, since reclassified). Each had read as
 enforcing while enforcing nothing. Another, `FeatureFlag`, was on that list until T-0689 deleted the
@@ -310,7 +316,9 @@ table outright.
 in the model, and one carrying a nullable column must either declare `NULLS NOT DISTINCT`, be filtered
 so the null cannot appear (`EmployeeInvoice`, `Order`'s recurring-template index), or be named as a
 deliberate exception (`UserMembership`, a backstop behind an authoritative read). `TenantIdRequiredModelTests`
-is its twin for the column itself: every `ITenantEntity` is required except the two named exemptions.
+is its twin for the column itself: every `ITenantEntity` is required except the two named exemptions,
+every one is a `Restrict` foreign key into `Tenants`, and no other type carries a `TenantId`;
+`InitialMigrationTenantDdlTests` pins the same three facts on the committed migration's operations.
 
 Two shapes are worth knowing. `LoyaltyTransaction` keeps **both** a tenant term and a filter: the key
 is a caller-supplied token, so a bare global index would read a cross-tenant collision as a replay,

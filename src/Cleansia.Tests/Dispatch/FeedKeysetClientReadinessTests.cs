@@ -95,10 +95,10 @@ public class FeedKeysetClientReadinessTests
     /// All three reminders are non-mutable, and nothing else pins the two that are not feed events —
     /// <see cref="NotificationFeedEventKeysTests"/> can only reach the one in the keyset.
     ///
-    /// <para>Non-mutability here is an OMISSION: <c>GetCategoryFor</c> has no arm for these keys, so
-    /// they fall through to null. That is the right default direction, but an omission is exactly what
-    /// somebody "tidies up" later by adding the arm they assume was forgotten. A cleaner must not be
-    /// able to silence a reminder about work they accepted and then not turn up.</para>
+    /// <para>Non-mutability here is the owner's ruling (2026-09-15): the digest is not silenceable.
+    /// <c>GetCategoryFor</c> has no arm for these keys, so they fall through to null — and that shape
+    /// is exactly what somebody "tidies up" later by adding the arm they assume was forgotten. A cleaner
+    /// must not be able to silence a reminder about work they accepted and then not turn up.</para>
     /// </summary>
     [Theory]
     [InlineData(NotificationEventCatalog.ReminderTomorrow)]

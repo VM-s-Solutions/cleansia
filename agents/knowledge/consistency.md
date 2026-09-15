@@ -424,13 +424,16 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   4. `PayoutReferenceCounterRepository.AllocateNextAsync` (`:18-74`, comment `:32-41`, statement
      `:69-71`; contract `IPayoutReferenceCounterRepository.cs:12-17`; call sites `GenerateInvoice.cs:88`,
      `AssignInvoiceVariableSymbol.cs:103`, `PayPeriodBackgroundService.cs:332`) — ADR-0046 §D2.1: a
-     payout invoice's *variabilní symbol* must be claimed **before** any row or document can carry it,
-     so the allocation deliberately does **not** roll back with the caller: an invoice that fails to
-     commit leaves a **gap**, which is correct for a payment reference (it is not a fiscal document
-     number, and only `FiscalCounter` owes gaplessness). Its self-commit is a **caller** property, not
-     an API one — `SqlQueryRaw` joins an ambient transaction if one is open — so the invariant travels
-     with it: **no allocator call site may sit inside a `BeginTransactionAsync` scope**, or both the gap
-     semantics and the single-counter-row lock duration break. *(The `CommitAsync` calls at
+     payout invoice's *variabilní symbol* (and, since 2026-09-15, its `INV-YYYY-NNNNNN` number — the
+     second `Scope` on the same per-company counter, keyed `(TenantId, Year, Scope)` with the tenant
+     read from the ambient provider inside the repository) must be claimed **before** any row or
+     document can carry it, so the allocation deliberately does **not** roll back with the caller: an
+     invoice that fails to commit leaves a **gap**, which is correct for a payment reference (it is not
+     a fiscal document number, and only `FiscalCounter` owes gaplessness). Its self-commit is a
+     **caller** property, not an API one — `SqlQueryRaw` joins an ambient transaction if one is open —
+     so the invariant travels with it: **no allocator call site may sit inside a
+     `BeginTransactionAsync` scope**, or both the gap semantics and the company's counter-row lock
+     duration break. *(The `CommitAsync` calls at
      `GenerateInvoice.cs:114-118` / `AssignInvoiceVariableSymbol.cs:115-119` are flushes that run
      **after** the allocation, not transactions around it — not a violation.)*
 
@@ -534,9 +537,11 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
 
   **Enforced by:** `src/Cleansia.Tests/Infrastructure/NullsNotDistinctIndexModelTests.cs`, run by
   `.github/workflows/backend-ci.yml` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, in two
-  layers: a **ten-row `[InlineData]` roster** over the tenant-keyed sole arbiters (`FiscalCounter`,
+  layers: a **thirteen-row `[InlineData]` roster** over the tenant-keyed sole arbiters (`FiscalCounter`,
   `EmployeePayoutDetails`, `PromoCodeRedemption`, `MembershipBenefitUsage`, `LoyaltyTransaction`,
-  `PromoCode`, `ReferralCode`, `TenantConfiguration`, `OrderReceipt`, `EmployeePayConfig`) with
+  `PromoCode`, `ReferralCode`, `TenantConfiguration`, `OrderReceipt`, `EmployeePayConfig`, and since
+  2026-09-15 `PayoutReferenceCounter (TenantId, Year, Scope)` and the two `EmployeeInvoice` references
+  `(TenantId, InvoiceNumber)` / `(TenantId, VariableSymbol)`) with
   `UserMemberships` as the negative control, **and a roster-free sweep** over every unique index in
   `ctx.Model` — one carrying a nullable column must declare the option, be filtered so the null cannot
   appear, or be named in the test's own exception list, which may only shrink. The hand roster therefore
@@ -544,8 +549,13 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   half is the reviewer's, per the emitted-DDL rule above. The mapping half is **`T1-CI`**, **baseline
   0**, over `src/Cleansia.Tests/Features/Auth/UserEmailRaceMappingTests.cs` (all four writers) and
   `src/Cleansia.Tests/Common/DbConstraintViolationTests.cs`. The tenant column itself is guarded by
-  `TenantIdRequiredModelTests` (roster-free, every `ITenantEntity` is `IsNullable == false` except the two
-  exemptions) and `TenantIdNotNullEnforcedTests` (a real `23502`).
+  `TenantIdRequiredModelTests` (roster-free: every `ITenantEntity` is `IsNullable == false` except the
+  two exemptions, **carries a foreign key into `Tenants` with `DeleteBehavior.Restrict`**, and no type
+  outside `ITenantEntity` has a `TenantId` property at all — a plain `Auditable` has no tenant column
+  since 2026-09-15), `InitialMigrationTenantDdlTests` (the committed migration's own operations: 48
+  `FK_<T>_Tenants_TenantId`, 2 nullable, no `IX_<tenantless>_TenantId` — counts pinned by hand, so a
+  new stamped table updates the number), `TenantIdNotNullEnforcedTests` (a real `23502`) and
+  `TenantForeignKeyEnforcedTests` (a real `23503`).
 
 - **Moving a gate onto a new denormalized column keeps the old term until a backfill retires it
   (ADR-0034 D7, `accepted`).** A flag defaulting to `false` is `false` for every existing row on release

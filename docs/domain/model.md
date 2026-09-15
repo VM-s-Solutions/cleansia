@@ -18,31 +18,40 @@ by five, which is why the check is written down rather than the number being tru
 ```mermaid
 erDiagram
   CountryConfiguration }o--o| Tenant : "OperatorTenant"
+  TenantConfiguration }o--|| Tenant : "TenantId"
+  PayoutReferenceCounter }o--|| Tenant : "TenantId"
 ```
 
 **A tenant is an operating company under the holding** — the legal entity that contracts the customer,
 employs the cleaner, issues the receipt and pays the payout ([ADR-0061](/decisions/adr-0061)). `Tenant`
 is a three-column registry (`Id varchar(26)`, assigned not generated — `cleansia-cz`; `Name`;
-`IsActive`), written only by the seed; there is no repository, no DTO and no admin surface until a
-second company exists. **A country is served by at most one operator and an operator serves one or
-more countries**: `CountryConfiguration.OperatorTenantId` (nullable, FK Restrict, indexed) is the whole
-map. Null means nobody serves that market — `Market/GetOverview` does not list it and an anonymous
-write naming it is refused `tenant.not_found`.
+`IsActive`), written only by the seed; there is no DTO and no admin surface until a second company
+exists, and one repository member — `ITenantRepository.GetAllIdsAsync`, every company, deactivated
+ones included — that the retention job loops. `IsActive` is read by nothing (the lifecycle ADR is
+Batch 2). **A country is served by at most one operator and an operator serves one or more
+countries**: `CountryConfiguration.OperatorTenantId` (nullable, FK Restrict, indexed) is the whole map.
+Null means nobody serves that market — `Market/GetOverview` does not list it and an anonymous write
+naming it is refused `tenant.not_found`.
 
-**Every stamped row carries its operator.** 47 entities implement `ITenantEntity`; the `TenantId`
-column is **NOT NULL** on 45 of them and nullable only on `OutboxMessage` and `DeadLetter` (an envelope
-may have no tenant). The value is written at commit time from the ambient tenant — the JWT claim, the
-market's operator for an anonymous write, the user's tenant on a token mint, the row's own tenant in a
-job — and the database refuses a row with none. **There is no foreign key from a stamped table to
-`Tenants`**: a tenant id enters the system at exactly two points, the operator map (which is FK'd) and
-the claim (minted from a row that was itself stamped through the map), and the closure is proven by
-`SeededDatabaseHasNoOrphanTenantRowsTests` rather than by 45 constraints. Tenantless `Auditable`
-tables (`CountryConfiguration`, `Service`, …) still carry a nullable `TenantId` column by inheritance;
-it is dead — unfiltered, unstamped, meaning nothing.
+**Every stamped row carries its operator, and the column is a foreign key.** A type that belongs to
+one company extends **`TenantAuditable : Auditable, ITenantEntity`** — 46 of them — or is one of the
+two `BaseEntity + ITenantEntity` audits (`AdminActionAudit`, `CustomerActionAudit`): **48 stamped
+tables**, each with `FK_<T>_Tenants_TenantId` (`Restrict`, no navigation — the two `TenantId` arrows
+above stand in for all 48; the area diagrams below do not repeat them). The `TenantId` column is
+**NOT NULL** on 46 of them and
+nullable only on `OutboxMessage` and `DeadLetter` (an envelope may have no tenant; a `NULL` passes the
+FK). The value is written at commit time from the ambient tenant — the JWT claim, the market's operator
+for an anonymous write, the user's tenant on a token mint, the row's own tenant or the registry's
+company in a job — and the database refuses a row with none (`23502`) or with a company it does not
+know (`23503`). A plain **`Auditable` carries no tenant column at all**: the 21 catalogue and per-country
+tables (`CountryConfiguration`, `Service`, `MembershipPlan`, …) lost the dead inherited column and its
+index on 2026-09-15 (ADR-0061 D8 as amended), and a model sweep fails a non-`ITenantEntity` type that
+grows one.
 
 | Entity | |
 |---|---|
-| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` only |
+| `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 48 stamped tables |
+| `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one catalogued setting — the nine `retention.*` windows today; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
 
 ## Identity and access
 
@@ -228,7 +237,7 @@ that money was ever recorded in cannot be deleted. → [Pay and payouts](/flows/
 | Entity | |
 |---|---|
 | `OrderEmployeePay` | references `Currency` (Restrict), `EmployeeInvoice` (nullable, SetNull), `Employee`, `Order`; unique `(OrderId, EmployeeId)` |
-| `EmployeeInvoice` | references `Country`, `Currency` (Restrict), `Employee`, `Language`; unique `(EmployeeId, PayPeriodId, CurrencyId)`, unique `InvoiceNumber`, unique filtered `VariableSymbol` |
+| `EmployeeInvoice` | references `Country`, `Currency` (Restrict), `Employee`, `Language`; unique `(EmployeeId, PayPeriodId, CurrencyId)`, unique `(TenantId, InvoiceNumber)`, unique filtered `(TenantId, VariableSymbol)` — both per company, `NULLS NOT DISTINCT`; `InvoiceNumber` is `INV-YYYY-NNNNNN` from the company's own series |
 | `PayPeriod` | — |
 | `EmployeePayConfig` | references `Currency`, `Employee`, `Package`, `Service`; unique `IX_EmployeePayConfigs_Tenant_Scope` on `(TenantId, EmployeeId, ServiceId, PackageId, CurrencyId)`, nulls not distinct — the tenant term is what lets two operators each hold a platform default (`EmployeeId` null) for the same service and currency |
 | `CreditAccount` | references `User` (Restrict); `CurrencyId` is a plain column with **no declared foreign key**; unique `(UserId, CurrencyId)` |
@@ -294,13 +303,12 @@ named on their rows: `OrderReview` and `OrderReviewLine` (declared, with delete 
 | `OrderReviewLine` | references `Review` (Cascade), `Service` and `Package` (both Restrict, no navigation); unique `(OrderReviewId, ServiceId, PackageId)` — the per-line ratings under a review |
 | `OutboxMessage` | — |
 | `ServiceCategory` | — |
-| `TenantConfiguration` | — |
 | `UserNotification` | — |
 | `UserNotificationPreferences` | references `User` |
 | `PackageService` | references `Package`, `Service` — which services a package contains |
 | `ProcessedStripeEvent` | — the replay guard; a unique index makes a redelivered webhook a no-op |
 | `ProcessedMessage` | — the same guard for queue messages |
-| `PayoutReferenceCounter` | — atomic `ON CONFLICT` numbering for payout references |
+| `PayoutReferenceCounter` | references `Tenant` — one row per `(TenantId, Year, Scope)` (unique, `NULLS NOT DISTINCT`), the atomic `ON CONFLICT` counter behind a payout invoice's two per-company series: the ten-digit variable symbol (`VariableSymbol` scope) and `INV-YYYY-NNNNNN` (`InvoiceNumber` scope); each operating company numbers its own since 2026-09-15 → [PayoutReferenceAllocator](/domain/roles/payout-reference-allocator) |
 | `CampaignProgress` | — resumable cursor for a long-running campaign sweep |
 
 ## What the diagrams do not show

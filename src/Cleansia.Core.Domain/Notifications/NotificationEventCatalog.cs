@@ -71,9 +71,9 @@ public static class NotificationEventCatalog
     /// <c>Employee.WorkCountryId</c> through <c>CountryConfiguration.TimeZoneId</c> — never from a
     /// client-supplied header, which is spoofable and banned on any path that decides anything.</para>
     ///
-    /// <para><b>Not mutable.</b> Same reasoning as <see cref="OrderAssigned"/>: a cleaner must not be
-    /// able to silence a job appearing on their own schedule and then not turn up. This one exists
-    /// because they were forgetting. → /architecture/push-notifications#event-catalogue</para>
+    /// <para><b>Not mutable — owner ruling 2026-09-15.</b> Same reasoning as <see cref="OrderAssigned"/>:
+    /// a cleaner must not be able to silence a job appearing on their own schedule and then not turn
+    /// up. This one exists because they were forgetting. → /architecture/push-notifications#event-catalogue</para>
     /// </summary>
     public const string ReminderTomorrow = "order.reminder_tomorrow";
 

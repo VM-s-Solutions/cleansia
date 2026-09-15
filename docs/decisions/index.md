@@ -36,9 +36,10 @@ flowchart LR
   A0057[ADR-0057] --> A0037[ADR-0037]
   A0061[ADR-0061] --> A0050[ADR-0050]
   A0061[ADR-0061] --> A0017[ADR-0017]
+  A0061[ADR-0061] --> A0046[ADR-0046]
   A0063[ADR-0063] --> A0062[ADR-0062]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
-  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0050,A0062 old
+  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0046,A0050,A0062 old
 ```
 
 Grey nodes are superseded in whole or in part. Not every later record replaces an earlier one:
@@ -46,7 +47,11 @@ Grey nodes are superseded in whole or in part. Not every later record replaces a
 opt-in arm for customer acts and every sentence about the admin table stays true — so there is no
 arrow between them. [ADR-0063](./adr-0063) supersedes **one paragraph** of ADR-0062 (D4's version
 constant became a stored, dated document); the rest of ADR-0062 stands and was **amended in place on
-2026-09-14** with the owner's rulings, each decision carrying a dated block.
+2026-09-14** with the owner's rulings, each decision carrying a dated block. [ADR-0061](./adr-0061)
+supersedes **one section** of [ADR-0046](./adr-0046) (§D3's global namespace — each operating company
+numbers its own payout invoices since 2026-09-15, and ADR-0046 carries the superseding note at its
+head); ADR-0061 itself was **amended in place on 2026-09-15** with the owner's rulings on its five open
+items and carries a §Rulings table.
 
 ## All records
 
@@ -97,7 +102,7 @@ constant became a stored, dated document); the rest of ADR-0062 stands and was *
 | **[ADR-0043](./adr-0043)** | User artifact metadata is scrubbed at intake by… | `accepted` |
 | **[ADR-0044](./adr-0044)** | Stored content type is byte derived on every intake | `accepted` |
 | **[ADR-0045](./adr-0045)** | Favourite cleaner is a reservation the cleaner must… ⟲ | `accepted` |
-| **[ADR-0046](./adr-0046)** | Payout invoice variable symbol is a claimed number… | `accepted` |
+| **[ADR-0046](./adr-0046)** | Payout invoice variable symbol is a claimed number… ⟲ (§D3 superseded 2026-09-15: per company) | `accepted` |
 | **[ADR-0047](./adr-0047)** | A server redacted field is rendered off its own… | `accepted` |
 | **[ADR-0048](./adr-0048)** | A generated dto is refused at the repository… | `accepted` |
 | **[ADR-0049](./adr-0049)** | A disclosure block is withheld by the server when… | `accepted` |
@@ -105,14 +110,14 @@ constant became a stored, dated document); the rest of ADR-0062 stands and was *
 | **[ADR-0051](./adr-0051)** | A reads tenancy posture is decided by the write… | `proposed` |
 | **[ADR-0052](./adr-0052)** | A cleaners own deletion files a request; only an admin… | `proposed` |
 | **[ADR-0053](./adr-0053)** | The live-commitment cap is one admins decision about one… | `accepted` |
-| **[ADR-0054](./adr-0054)** | Cleaner job reminders dedupe on a stamp per recipient… | `accepted` |
+| **[ADR-0054](./adr-0054)** | Cleaner job reminders dedupe on a stamp per recipient… (Q-PUSH-01 ruled 2026-09-15: the digest stays non-silenceable) | `accepted` |
 | **[ADR-0055](./adr-0055)** | A cleaner may set off or start only inside a 60-minute… | `accepted` |
 | **[ADR-0056](./adr-0056)** | Property size is two integers; the label is per-country… | `proposed` |
 | **[ADR-0057](./adr-0057)** | Confirmed means a cleaner took the job, and nothing else | `accepted` |
 | **[ADR-0058](./adr-0058)** | A customer's market is chosen, remembered, and overridden by the address | `accepted` |
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
 | **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
-| **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company | `accepted` |
+| **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company (amended 2026-09-14 and 2026-09-15 — the FK, `TenantAuditable`, per-company payout numbering and settings) | `accepted` |
 | **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15) | `accepted` |
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
 

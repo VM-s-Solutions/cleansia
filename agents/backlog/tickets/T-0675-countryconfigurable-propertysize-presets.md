@@ -1,11 +1,11 @@
 ---
 id: T-0675
 title: Country-configurable property-size presets
-status: blocked
+status: done
 size: L
 owner: architect
 created: 2026-08-30
-updated: 2026-08-31
+updated: 2026-09-15
 depends_on: []
 blocks: []
 stories: []
@@ -26,7 +26,7 @@ Design language and the pre-submission review: [`../../knowledge/design-language
 ## Acceptance criteria
 - [x] **AC1** - An ADR records the decision and why the domain does not change.
 - [x] **AC2** - A `PropertySizePreset` catalogue exists keyed on country, carrying `Code`, `SortOrder`, `Rooms`, `Bathrooms`, an owned per-language `Translation` dictionary and `IsActive`.
-- [ ] **AC3** - CZ and SK are seeded with their existing options; labels come from the catalogue, not a hardcoded list.
+- [x] **AC3** - CZ and SK are seeded with their existing options; labels come from the catalogue, not a hardcoded list.
 - [x] **AC4** - Orders continue to persist ints, so historic pricing stays reproducible when a preset is retired.
 - [x] **AC5** - Retiring a preset never breaks an existing order.
 
@@ -69,6 +69,13 @@ no coloured shadows. Any new shared token lands on Android and iOS in the same P
   Label resolution falls back requested language -> English -> the CODE. The code is deliberate: a
   blank chip is unpickable and tells nobody anything is wrong, while "CZ_3KK" is still choosable and
   obviously a gap. Eight tests cover it, including the empty-string-is-not-a-label case.
+- 2026-09-15 - **done**, closed by T-0756 on ground truth rather than on the row. The block MS-14
+  named had already been discharged by the customer client regen: `quick-quote.facade.ts:203` calls
+  `countryClient.getPropertySizes(isoCode, lang)` (its spec asserts the ISO code and language reach
+  the client and that a switch of market re-fetches), `grep -rn CZ_PROPERTY_SIZE_PRESETS src/Cleansia.App`
+  returns nothing, and the presets are inserted by the root `sql-scripts/insert_seed_data.sql` that
+  every host auto-seeds — so the "also run `seed/insert_property_size_presets.sql`" half of MS-14 is
+  moot too. AC3 complete.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here -->

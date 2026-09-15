@@ -193,7 +193,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
 | `RetryFailedUserDeletions` | daily 05:00 UTC | Re-runs every GDPR erasure left `Failed` (or `Processing` for over 30 min), once per row per day, in its own scope per row; logs a still-failed one at Error. Under `DataRetention__Enabled` |
 | `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
-| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders, expires customer audit rows (3 y per row) and blanks an erased customer's dispute text once its 3-year window is past (`DisputeText`) |
+| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | GDPR — deletes expired user data, anonymizes old orders, expires customer audit rows (3 y per row) and blanks an erased customer's dispute text once its 3-year window is past (`DisputeText`). Runs **once per operating company** under that company's own windows (its *Company settings*; the platform defaults where none are set) |
 
 #### Queue consumers
 

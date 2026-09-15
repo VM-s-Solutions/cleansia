@@ -101,8 +101,10 @@ set one on a single cleaner, and does not for anyone today.
 country requires, answer removal requests, manage admin users, inspect a customer's loyalty position.
 
 **Money** — pay periods (open, close, reopen, mark paid), employee invoices (one per cleaner per period
-per currency they were paid in), payout details behind an audited reveal, refunds, disputes,
-chargebacks, fiscal failures, customer credit issued in a named currency.
+per currency they were paid in, numbered `INV-YYYY-NNNNNN` from the operating company's own series
+with a ten-digit variable symbol from its own counter — each company numbers its own), payout details
+behind an audited reveal, refunds, disputes, chargebacks, fiscal failures, customer credit issued in a
+named currency.
 
 **Catalogue** — services, packages, extras, per-employee pay rates in bulk, countries, currencies,
 languages, service cities. Prices are per currency: a service, package or extra carries one price row
@@ -148,6 +150,22 @@ effective date, whether it is in force and the languages it carries, and a previ
 with its content hash. There is no authoring: a new version is a seed file plus a deploy.
 → [ADR-0063](/decisions/adr-0063)
 
+**Company settings** — a page under the configuration area where an admin sets **their own operating
+company's** values for the platform settings that may differ per company: today the nine data-retention
+windows (how long stale devices, old notifications, withdrawn consents, superseded documents, completed
+GDPR requests, order contact details, customer audit rows and an erased customer's dispute text are
+kept, and whether expired codes are cleared). One row per setting shows what it means, its allowed
+range, the platform default, the value in force and whether the company has overridden it; edit is
+inline with a number field or a checkbox, *Reset* puts a setting back on the default, and every change
+is on the admin audit trail with the before and after values. A setting outside the catalogue cannot be
+created and a value outside its range is refused, so the page can never hold a number nothing reads.
+The retention sweeps read each company's own windows. → [Business rules — retention](/product/business-rules#customer-record),
+[ADR-0061](/decisions/adr-0061) O-4 as ruled
+
+**The admin's own trail** — an administrator's sign-in and sign-out are on the audit log as admin acts
+(`admin.session.login`, `admin.session.logout`), including a refused sign-in on a known account, and a
+refused sign-in is that account's row.
+
 ## Across all of it
 
 - **Five languages** — English, Czech, Slovak, Ukrainian, Russian.
@@ -156,6 +174,8 @@ with its content hash. There is no authoring: a new version is a seed file plus 
 - **Fiscal receipts** with a reconciliation and retry path when issuance fails.
 - **One operating company per market, from the first row.** Every account, order, receipt, pay rate
   and promo code belongs to the company under the holding that serves its market — Cleansia CZ s.r.o.
-  today — and a second company is a seed row and a country assignment, not code. One email is one
-  identity across the holding. → [Business rules — the market](/product/business-rules#market),
+  today — the database holds it to a company it knows, and a second company is a seed row and a
+  country assignment, not code. Each company numbers its own payout invoices and keeps its own
+  retention windows; one email is one identity across the holding; the holding runs one Stripe account
+  for now. → [Business rules — the market](/product/business-rules#market),
   [Cross-cutting concerns](/flows/cross-cutting#tenancy)

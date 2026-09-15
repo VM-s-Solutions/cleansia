@@ -215,6 +215,17 @@ The last one is the constraint that keeps the feature from eating the marketplac
 offerable work must stay on the open board, so preferred holds cannot starve cleaners who have no
 regular customers.
 
+## What a cleaner cannot silence {#cleaner-non-mutable}
+
+A cleaner may mute notification categories; **five pushes ignore the mute**, every one about work the
+cleaner has already accepted: an admin assigning or unassigning them, the evening *"you have N jobs
+tomorrow"* digest (18:00 in the cleaner's local time), *"your job starts in about two hours"*, and
+*"your job starts soon and you have not set off"*. The digest is the one that was questioned and
+**ruled non-silenceable by the owner on 2026-09-15** (Q-PUSH-01): it is the only notice that arrives
+in time to *arrange* the day, and the two-hour notice cannot substitute for it. A cleaner not turning
+up is somebody else's morning. → [Push notifications](/architecture/push-notifications),
+[ADR-0054](/decisions/adr-0054)
+
 ## Cleaner pay
 
 One `EmployeePayConfig` is selected per selected service **and** per selected package, then summed:
@@ -261,6 +272,25 @@ it.
 The pay a cleaner earns is therefore always in the order's currency, and an invoice is one currency —
 a cleaner who worked a CZK job and a EUR job in one period receives two invoices.
 → [Pay and payouts](/flows/pay-and-payouts)
+
+### Each operating company numbers its own payout invoices {#payout-numbering}
+
+Owner ruling 2026-09-15 (*"Separate everything — one holding and child companies per country"*). A
+payout invoice carries two references and both are the **issuing company's**, not the holding's:
+
+| Reference | Shape | Series |
+|---|---|---|
+| Invoice number | `INV-YYYY-NNNNNN` — the year of issue and a six-digit ordinal from 1 | one per company per year |
+| Variable symbol (*variabilní symbol*) | `YYYYNNNNNN` — ten digits, never a leading zero, so a bank form cannot shorten it | one per company per year, independent of the number |
+
+Each ordinal is claimed atomically before the invoice exists, so two invoices can never share a
+reference within a company; a company's first invoice of the year is `INV-2026-000001` with symbol
+`2026000001` whatever another company has issued, and a year's 999 999 ordinals in one series are that
+company's alone. The year is the year the number is **claimed** — a December period closed on 2 January
+is numbered in the new year. An invoice that fails after its numbers were claimed leaves a gap; a gap
+is correct for a payment reference (only fiscal receipts must be gapless). The company printed on the
+invoice is the same company that numbered it. → [ADR-0046](/decisions/adr-0046) and its 2026-09-15
+superseding note, [ADR-0061](/decisions/adr-0061) D9 as amended
 
 ### A cleaner works in one currency {#cleaner-currency}
 
@@ -679,21 +709,32 @@ durable), payments and the Stripe webhook (Stripe is the payment record), and th
 
 **Retention — 3 years per row (owner ruling 2026-09-14, Q-AUD-L1: keep 3).** Every row is deleted
 **three years after its own act** by the weekly retention sweep (`retention.customer_audit.years`,
-default 3; a value at or below zero is refused and the default kept, because a window of "now" would
-empty the evidence table on the next tick). Per row, not three years after the customer's last act:
+default 3; the setting cannot be set below one year, because a window of "now" would empty the
+evidence table on the next tick). Per row, not three years after the customer's last act:
 the anchor form would have kept an active customer's IP addresses for the life of the account. Legal
 basis: legitimate interest, defence of claims (GDPR Art. 6(1)(f), Art. 17(3)(e)); three years is the
 Czech Civil Code's general subjective limitation period (§ 629) and covers card-scheme chargeback
 windows. The admin and cleaner audit tables have **no** window (ADR-0012 D6) and the sweep never
 touches them.
 
-| Window | Setting | Default | What it governs |
-|---|---|---|---|
-| Customer audit rows | `retention.customer_audit.years` | 3 | per row, from its own act; floor > 0 |
-| Dispute text after erasure | `retention.dispute_text.years` | 3 | the description, messages and resolution notes of an **erased** customer's disputes, from the erasure; floor > 0 |
-| GDPR requests | `retention.gdpr_requests.years` | 3 | completed request rows |
-| Order PII | `retention.order_pii.years` | 2 | the order's customer fields |
-| Withdrawn consents | `retention.withdrawn_consents.years` | 3 | consent rows after withdrawal |
+**Every retention window is per operating company** (owner ruling 2026-09-15, Q-TENANCY-04). The
+nine windows below are the platform defaults; an admin sets **their own company's** value on the admin
+app's *Company settings* page, inside the range shown, and resets it to the default. The sweep runs
+once per company under that company's values, so two companies keep different windows and neither can
+see or set the other's. A value outside the range is refused at the page, and a stored value the
+catalogue no longer accepts falls back to the default rather than to zero.
+
+| Window | Setting | Default | Range | What it governs |
+|---|---|---|---|---|
+| Expired sign-in codes | `retention.expired_codes.enabled` | on | on / off | whether expired confirmation and reset codes are cleared off the account |
+| Stale devices | `retention.stale_devices.days` | 90 | 1 – 36 500 days | a device row not seen for that long is deleted |
+| GDPR requests | `retention.gdpr_requests.years` | 3 | 1 – 100 years | who processed a completed request is blanked after it |
+| Order PII | `retention.order_pii.years` | 2 | 1 – 100 years | the order's customer fields, from the cleaning date of a completed order |
+| Withdrawn consents | `retention.withdrawn_consents.years` | 3 | 1 – 100 years | consent rows after withdrawal |
+| Superseded documents | `retention.deleted_documents.days` | 365 | 1 – 36 500 days | a cleaner's deactivated document and its file |
+| Notifications | `retention.notifications.days` | 90 | 1 – 36 500 days | in-app notification rows (plus a 500-per-user cap that is not a setting) |
+| Customer audit rows | `retention.customer_audit.years` | 3 | 1 – 100 years | per row, from its own act |
+| Dispute text after erasure | `retention.dispute_text.years` | 3 | 1 – 100 years | the description, messages and resolution notes of an **erased** customer's disputes, from the erasure |
 
 **Erasure keeps the row and blanks where it came from — and it is one commit.** Account deletion
 nulls the IP address, the device label and the device id on every row of the subject — and on the

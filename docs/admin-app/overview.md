@@ -72,6 +72,7 @@ The admin app uses a sidebar layout with the following sections (all protected b
 | `/country-management`     | Countries    | Country configuration                         |
 | `/currency-management`    | Currencies   | Currency configuration                        |
 | `/company-info`           | Company Info | Company details                               |
+| `/company-settings`       | Company settings | The admin's own operating company's overrides of the catalogued platform settings (the nine retention windows today); entry gated by `CanViewTenantConfigurations` |
 | `/template-management`    | Templates    | Email/notification templates                  |
 | `/fiscal-failures`        | Fiscal Failures | Action queue for failed fiscal registrations (retry / acknowledge) |
 
@@ -97,6 +98,7 @@ The default route (`/`) redirects to `/employee-management`.
 /country-management       # Country CRUD (admin guard)
 /currency-management      # Currency CRUD (admin guard)
 /company-info             # Company info CRUD (admin guard)
+/company-settings         # Company settings — catalogued per-company overrides (admin guard)
 /template-management      # Template CRUD (admin guard)
 /fiscal-failures          # Failed fiscal registrations (admin guard)
 /unauthorized             # Unauthorized access page
@@ -121,6 +123,7 @@ The default route (`/`) redirects to `/employee-management`.
 | `country-management`    | `@cleansia/admin-features/country-management`    | Country CRUD              |
 | `currency-management`   | `@cleansia/admin-features/currency-management`   | Currency CRUD             |
 | `company-management`    | `@cleansia/admin-features/company-management`    | Company info CRUD         |
+| `company-settings`      | `@cleansia/admin-features/company-settings`      | One row per `TenantSettingCatalog` key — description, category, range, default, the value in force, override or default — edited inline with the typed input its value type calls for (number field / checkbox), reset behind a confirmation; facade in signals, `switchMap` loads; Edit/Reset gated by `CanUpdate` / `CanDeleteTenantConfiguration`; `tenant-setting-catalogue.spec.ts` ties the five locales to the backend catalogue |
 | `template-management`   | `@cleansia/admin-features/template-management`   | Template CRUD             |
 | `fiscal-failures`       | `@cleansia/admin-features/fiscal-failures`       | Fiscal failure action queue |
 | `legal-documents`       | `@cleansia/admin-features/legal-documents`       | Read-only list of every legal-text version per audience, type and market, with a per-language preview and hash (`/legal-documents`, `CanViewCountryConfigurations`; a new version is a seed file + deploy — ADR-0063) |
@@ -147,6 +150,7 @@ All API calls use the `AdminClient` (NSwag-generated), which contains sub-client
 - `adminReportClient` -- Revenue and payroll reports
 - `adminPayConfigClient` -- Global rate CRUD + employee pay config summary + bulk grade apply
 - `adminPayPeriodClient` -- Pay period CRUD (create, close, mark paid)
+- `adminTenantSettingsClient` -- `getAll()`, `set(command)`, `reset(key)` against `api/AdminTenantSettings` — the company settings page
 - Various CRUD clients for services, packages, languages, countries, currencies, templates
 
 ## Configuration Management

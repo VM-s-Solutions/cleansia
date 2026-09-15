@@ -30,15 +30,15 @@ an app rewrite.
 
 | Fact | Evidence |
 |---|---|
-| A **tenant is an operating company** under the holding: `Tenants (Id varchar(26), Name, IsActive)`, seed-only, one row today (`cleansia-cz`, "Cleansia CZ s.r.o."). No repository, no DTO, no admin surface | `Core.Domain/Tenancy/Tenant.cs`; `sql-scripts/insert_seed_data.sql` (the first insert) |
+| A **tenant is an operating company** under the holding: `Tenants (Id varchar(26), Name, IsActive)`, seed-only, one row today (`cleansia-cz`, "Cleansia CZ s.r.o."). No DTO, no admin surface; one repository member since 2026-09-15 — `ITenantRepository.GetAllIdsAsync`, read by the retention job (deactivated companies included; `IsActive` is read by nothing) | `Core.Domain/Tenancy/Tenant.cs`; `Core.Domain/Repositories/ITenantRepository.cs`; `sql-scripts/insert_seed_data.sql` (the first insert) |
 | A **country is served by at most one operator**: `CountryConfiguration.OperatorTenantId` (nullable, FK → `Tenants`, indexed). CZE → `cleansia-cz`; every other configured country → nobody | `Core.Domain/Configuration/CountryConfiguration.cs`; the `Initial` DDL (`FK_CountryConfigurations_Tenants_OperatorTenantId`) |
-| `ITenantEntity.TenantId` is `string?` in C# and **NOT NULL in the database** on all 44 stamped tables; only `OutboxMessages` and `DeadLetters` stay nullable (`AuditableEntityConfiguration.TenantIdNullableTypes`) | `EntityConfigurations/EntityConfiguration.cs`; `grep "TenantId" …Initial.cs \| grep "nullable: true"` → the two exemptions + the tenantless `Auditable` tables |
+| `TenantId` lives on **`TenantAuditable : Auditable, ITenantEntity`** (since 2026-09-15 — a plain `Auditable` has no tenant column); `string?` in C#, **NOT NULL and `FK_<T>_Tenants_TenantId` (Restrict, no navigation) in the database** on all 48 stamped tables (46 `TenantAuditable` + the two `BaseEntity + ITenantEntity` audits); only `OutboxMessages` and `DeadLetters` stay nullable (`TenantAuditableEntityConfiguration.TenantIdNullableTypes`) | `Core.Domain/Common/TenantAuditable.cs`; `EntityConfigurations/EntityConfiguration.cs`; `grep "TenantId" …Initial.cs \| grep "nullable: true"` → the two exemptions only; `InitialMigrationTenantDdlTests` pins 48 / 2 |
 | Every `ITenantEntity` is auto-scoped by a **global query filter** (a loop over all entity types) | `CleansiaDbContext.ApplyTenantQueryFilters` — the whole method, byte-untouched by ADR-0061 |
 | Filter body: `tenantProvider==null  ‖  (currentTenantId==null && e.TenantId==null)  ‖  e.TenantId==currentTenantId`. The middle clause now **matches nothing** on a stamped table — a reader with no tenant reads nothing, which is the safe direction | same method, the `body` expression |
 | Tenant resolved from the **`tenant_id` JWT claim**, no header; the claim is minted from `User.TenantId`, which is never null | `TenantProvider.cs` (`TenantClaimType="tenant_id"`); `AuthExtensions.SetClaims` |
 | **Anonymous writers resolve their operator from the market**: an `IOperatorScopedRequest` names a `CountryId` (null = the default market), `OperatorTenantScopeBehavior` runs before validation, `OperatorTenantResolver` answers *(is it a market?, who operates it?)* and the behaviour sets the override — or refuses `country.not_serviced` / `tenant.not_found` | `Core.AppServices/Tenancy/*`; `FluentValidationExtensions.cs` (registered between `PostCommitDispatchBehavior` and `ValidationPipelineBehavior`) |
 | **A request that authenticates a user adopts the user's tenant** before it writes the `RefreshToken` | `Services/TokenService.cs:44-47`; `Features/Auth/RefreshToken.cs:102` |
-| Cross-tenant jobs/webhooks use **`SetTenantOverride`** per row or per tenant group and commit inside the loop; `CommitAsync` stamps every `Added` `ITenantEntity` from the ambient tenant | `TenantProvider.cs`; `CleansiaDbContext.CommitAsync` |
+| Cross-tenant jobs/webhooks use **`SetTenantOverride`** per row or per tenant group and commit inside the loop; a job whose unit is a *company* (the retention sweeps, each reading its company's own `TenantSettingCatalog` windows) loops `ITenantRepository.GetAllIdsAsync` and sets the override per company; `CommitAsync` stamps every `Added` `ITenantEntity` from the ambient tenant | `TenantProvider.cs`; `CleansiaDbContext.CommitAsync`; `Features/DataRetention/DataRetentionBackgroundService.cs` |
 
 **This does not change for multi-region.** Region is **not** added to the tenancy filter — a region clause in
 `ApplyTenantQueryFilters` would be a **conflation finding**. A tenant has exactly one home region, so its rows
@@ -59,8 +59,13 @@ legitimately hold *different* rows of it for the same key; otherwise it is tenan
 one-line comment naming its sibling (S8's requirement). `LoyaltyTierConfig` was the one table that
 changed class on activation (the brand's programme, the `MembershipPlan` sibling); `CompanyInfo`, the
 platform-default `EmployeePayConfigs`, the seeded `PromoCodes` and the dev admin stayed stamped and were
-re-homed to `cleansia-cz` in the seed. 46 types implement `ITenantEntity` today
-(`grep -rn ", ITenantEntity" src/Cleansia.Core.Domain` — 44 required columns plus the two exemptions).
+re-homed to `cleansia-cz` in the seed. 48 types implement `ITenantEntity` today — 46 through
+`TenantAuditable` (`grep -rn ": TenantAuditable" src/Cleansia.Core.Domain`) plus the two audits that
+name the interface directly (`grep -rn ", ITenantEntity"`) — 46 required columns plus the two
+exemptions. Two joined on 2026-09-15 by the rule above: `PayoutReferenceCounter` (each company numbers
+its own payout invoices — two companies hold different rows for the same year and scope) and, already
+stamped but now with a writer, `TenantConfiguration` (a company's own overrides of catalogued
+settings). The 21 tenantless `Auditable` tables carry no `TenantId` column at all since the same day.
 
 ## What activation changed — the two failure directions, and where each landed
 
@@ -83,14 +88,16 @@ the promo per-user index; `Users (TenantId, Email)` was the biggest instance —
 
 **What is true now:**
 
-- **`TenantId` is NOT NULL** on every stamped table (ADR-0061 D8), so the tenant term can never be null and
-  the option is vacuous *on that term*. It is kept on the ten `(TenantId, …)` sole-arbiter indexes anyway,
-  because the model guard reads the option, not the column, and the non-tenant nullable terms
-  (`EmployeeId`, `ServiceId`, `PackageId`) still need it.
-- **The emitted DDL carries `NullsDistinct=false` on 13 unique indexes** — ten with a tenant term
-  (`EmployeePayConfigs`, `EmployeePayoutDetails`, `FiscalCounters`, `LoyaltyTransactions`,
-  `MembershipBenefitUsages`, `OrderReceipts`, `PromoCodeRedemptions`, `PromoCodes`, `ReferralCodes`,
-  `TenantConfigurations`) and three without (`DisputeLines`, `LiveActivityTokens`, `OrderReviewLines`).
+- **`TenantId` is NOT NULL** on every stamped table (ADR-0061 D8) — and, since 2026-09-15, a `Restrict`
+  foreign key into `Tenants` — so the tenant term can never be null and the option is vacuous *on that
+  term*. It is kept on the thirteen `(TenantId, …)` sole-arbiter indexes anyway, because the model guard
+  reads the option, not the column, and the non-tenant nullable terms (`EmployeeId`, `ServiceId`,
+  `PackageId`) still need it.
+- **The emitted DDL carries `NullsDistinct=false` on 17 unique indexes** — thirteen with a tenant term
+  (`EmployeeInvoices` ×2, `EmployeePayConfigs`, `EmployeePayoutDetails`, `FiscalCounters`,
+  `LoyaltyTransactions`, `MembershipBenefitUsages`, `OrderReceipts`, `PayoutReferenceCounters`,
+  `PromoCodeRedemptions`, `PromoCodes`, `ReferralCodes`, `TenantConfigurations`) and four without
+  (`DisputeLines`, `LegalDocuments`, `LiveActivityTokens`, `OrderReviewLines`).
   The earlier claim in this note that *"the emitted DDL still does not"* was stale before activation and
   is false now: `grep -n "NullsDistinct" src/Cleansia.Infra.Database/Migrations/*Initial.cs` is the check.
 - **`Users` left the roster.** `IX_Users_Email` is globally unique with no tenant term (ADR-0061 D5.1,
@@ -101,13 +108,16 @@ the promo per-user index; `Users (TenantId, Email)` was the biggest instance —
   `OrderReceipts (TenantId, ReceiptNumber)` (the number comes from a per-tenant `FiscalCounter`, so two
   operators' first receipts of a year are the same string) and `IX_EmployeePayConfigs_Tenant_Scope`
   `(TenantId, EmployeeId, ServiceId, PackageId, CurrencyId)` (two operators each hold a platform default
-  for the same service and currency).
+  for the same service and currency). **Three more on 2026-09-15** (owner ruling Q-TENANCY-02, each
+  company numbers its own payout invoices — T-0757): `EmployeeInvoices (TenantId, InvoiceNumber)`,
+  `EmployeeInvoices (TenantId, VariableSymbol)` filtered, and the counter behind both,
+  `IX_PayoutReferenceCounters_Tenant_Year_Scope`. The hand roster is thirteen rows.
 - **The only index whose liveness activation changed** is the deliberate `NULLS DISTINCT` backstop
   `UserMemberships (TenantId, UserId) WHERE Status = 1`, and both of its writers already own the `23505`
   (ADR-0061 D9, the ADR-0038 §D3 question answered).
-- **The guard:** `NullsNotDistinctIndexModelTests` has a ten-row hand roster **and** a roster-free sweep
-  over every unique index in the model, so a new unique index over a nullable column cannot slip past the
-  list. It reads `ctx.Model`, not the database — the DDL is still the reviewer's to read.
+- **The guard:** `NullsNotDistinctIndexModelTests` has a thirteen-row hand roster **and** a roster-free
+  sweep over every unique index in the model, so a new unique index over a nullable column cannot slip
+  past the list. It reads `ctx.Model`, not the database — the DDL is still the reviewer's to read.
 - **How to re-derive the current list** — never copy one:
   ```
   grep -n "NullsDistinct" src/Cleansia.Infra.Database/Migrations/*Initial.cs

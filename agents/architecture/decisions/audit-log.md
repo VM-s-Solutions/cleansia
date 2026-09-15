@@ -211,6 +211,44 @@ All three answered *yes* the next day; no schema change. What changed in the sha
   re-dump. **Open:** Q-GDPR-03; T-0753 (an anonymous guest cancel keyed like the lookup); the
   account-term reading of "the subject's disputes" awaits a one-sentence ratification.
 
+## The tenancy batch (owner rulings 2026-09-15, T-0754 … T-0759)
+
+Two of the six rulings touch the shape this note tracks; the ratification question the previous
+section left is answered.
+
+- **An administrator's session acts are admin acts under admin labels (T-0755, *"change to be as
+  admin"*).** `AuditActionAttribute` gained `AdminAction` — the label the admin arm writes when an
+  Administrator runs a customer-audience command; `AuditActionDescriptor.AdminAction` is that or the
+  frozen label, and `AuditEntryFactory.Build` writes it on every admin row. `Logout` is the one
+  customer-marked command the admin host dispatches, so it is the one marker carrying it
+  (`admin.session.logout`). `AdminLogin` gained `[AuditAction("admin.session.login", ResourceType =
+  "User", AllowsAnonymousActor = true)]` — an **admin-audience** anonymous marker, which `AuditGate`
+  admits on the **admin host** (`HostServes`: customer marker ↔ customer host, admin marker ↔ admin
+  host); its refusal on a known account names the account and is stamped with the account's company
+  through the same sink path as the customer rows (T-0750), and an unknown address names nobody. The
+  admin-arm counter-rule stands: an admin-audience marker declares no `AdminAction`, because its one
+  label is already the admin one. Pinned by `AuditActionDescriptorTests`, `AuditLogBehaviorTests`,
+  `CustomerAuditPipelinePostgresTests`, `SessionAuditRouteTests` (the admin host asserts
+  `admin.session.logout`) and a HostTest for the admin sign-in row. Admin labels render raw in the
+  admin web; nothing to add.
+- **The partner hosts no longer register or provision customers (T-0754, *"remove it"*).** `POST
+  api/Auth/Register` is gone from `Web.Partner` and `Web.Mobile.Partner`; `GoogleAuth` off a customer
+  host signs in an existing Employee or Administrator only (`auth.social_account_not_found` for a new
+  identity, `auth.insufficient_privileges` for a Customer account — the `PartnerLogin` rule, decided
+  by `IHostAudienceProvider` in the handler, not by a second command); `ConfirmUserEmail` the same;
+  `TokenService.GenerateTokenAsync` throws on an audience/profile pair the host does not serve, as an
+  invariant behind the commands' own refusals. For this note: the anonymous customer arm's "a command
+  routed on the partner hosts too" list loses `Register`, and the partner parity spec's scoped list
+  loses its `Auth/Register` line.
+- **Two new audited admin acts (T-0759).** `tenant_setting.set` and `tenant_setting.reset`
+  (`SetTenantSetting` / `ResetTenantSetting`, `ResourceType = "TenantSetting"`) with a
+  `TenantSettingSnapshot(Key, Value)` before/after through `RecordChange` — a number or a switch, never
+  personal data; null = no row. → `docs/domain/roles/tenant-configuration.md`.
+- **The audit tables and the FK.** `AdminActionAudit` and `CustomerActionAudit` — the two `BaseEntity +
+  ITenantEntity` types — map `TenantId` NOT NULL and `FK_<T>_Tenants_TenantId` (Restrict) by hand in
+  their own configurations (T-0758); `EmployeeActionAudit` is `TenantAuditable` and gets both from the
+  shared mapping.
+
 ## Status
 
 ADR-0012 **accepted** (2026-06-22). **Sequenced into Wave 9 (sprint-11.md)** as 5 audit-log tickets

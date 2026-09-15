@@ -70,6 +70,22 @@ need backfilling.
 
 ### Added
 
+- **Admin — a Company settings page.** Under the configuration area, an admin now sets **their own
+  operating company's** values for the settings that may differ per company — today the nine
+  data-retention windows (stale devices, old notifications, withdrawn consents, superseded documents,
+  completed GDPR requests, order contact details, customer audit rows, an erased customer's dispute
+  text, and whether expired codes are cleared). Each row shows what the setting means, its allowed
+  range, the platform default, the value in force and whether it is an override; edit inline, reset to
+  the default, and every change lands on the admin audit trail with the before and after. The
+  retention sweeps read each company's own windows. A value outside the range is refused
+  (`tenant_setting.invalid_value`); a key the platform does not know cannot be created
+  (`tenant_setting.unknown_key`). (ADR-0061 O-4, owner ruling 2026-09-15)
+
+- **Admin — your own sign-in and sign-out are on the audit log, as admin acts.** An administrator's
+  sign-in writes `admin.session.login` — success or refusal, a refusal on a known account naming the
+  account — and the sign-out `admin.session.logout`, both in the admin log. Until now the sign-in wrote
+  nothing and the sign-out was filed under a customer label. (Owner ruling 2026-09-15)
+
 - **Customer — your data export includes your disputes.** The JSON you download from the privacy
   page now carries every dispute you filed — the reason and status in words, your description, every
   message in the thread with who wrote it (customer or staff) and when, the resolution notes, the
@@ -280,6 +296,29 @@ need backfilling.
 
 ### Changed
 
+- **Operator — each operating company numbers its own payout invoices.** A cleaner's payout invoice is
+  numbered `INV-YYYY-NNNNNN` from the issuing company's own yearly series (it used to be
+  `INV-yyyyMM-` plus five random characters), and its ten-digit variable symbol comes from that
+  company's own counter — a second company's first invoice of the year is `INV-2026-000001` with
+  symbol `2026000001` whatever Cleansia CZ has issued. Two independent series, both per company, both
+  claimed before the invoice exists; a company's exhausted year does not touch another's. The company
+  on the PDF was already the issuing company. Nothing changes for a cleaner: one invoice per period
+  per currency, as before. (ADR-0046 as superseded 2026-09-15, ADR-0061 D9; owner ruling *"separate
+  everything"*)
+
+- **Operator — every data-retention window is per operating company, on the same defaults.** The
+  weekly sweeps run once per company under that company's own windows (set on the new Company settings
+  page); a company with nothing set runs on the platform defaults exactly as before. The floor on every
+  window is now enforced where the value is written (one day / one year) rather than checked by each
+  sweep. (Owner ruling 2026-09-15)
+
+- **Operator — every company-owned row is held to a company the platform knows.** Every stamped table
+  now carries a real foreign key into the company registry, so a row written under an unknown company
+  fails at once (`23503`) instead of landing where no one can read it; the 21 catalogue and per-country
+  tables lost a dead, never-written tenant column and its index. The `Initial` migration was
+  regenerated (`20260915172310`); **the DEV drop is owed at deploy**, as before. (ADR-0061 D1/D8 as
+  amended, owner ruling 2026-09-15)
+
 - **Customer — erasing your account also erases the bookings you made as a guest with the same
   e-mail.** A guest booking is never attached to an account, so until now it stayed untouched by your
   erasure until the two-year order sweep, with the IP and device of the booking on record for three
@@ -456,6 +495,16 @@ need backfilling.
   nothing should start producing it, and no order can be moved into it. (ADR-0037)
 
 ### Removed
+
+- **Partner API — the partner hosts no longer register customers.** `POST api/Auth/Register` is gone
+  from the Partner and Partner Mobile hosts (a cleaner's account is opened through `RegisterEmployee`,
+  which is unchanged), and a Google sign-in on a partner host **signs in an existing cleaner or
+  administrator only**: a Google identity with no account is refused `auth.social_account_not_found`
+  and nothing is created, a customer account is refused `auth.insufficient_privileges` as the password
+  sign-in already refused it. Until now a first-time Google sign-in on a partner host created a
+  customer account and handed it a partner session. No shipped client called the removed route; the
+  partner web's dead `register()` went with it and the partner mobile spec no longer lists it.
+  (Owner ruling 2026-09-15, *"remove it"*)
 
 - **`MembershipPlan.MonthlyPriceCzk` / `StripePriceId` and `BookingPolicy.NoShowCreditCzk`.** A
   plan's price and Stripe Price id are `MembershipPlanPrice` rows, one per currency; the apology

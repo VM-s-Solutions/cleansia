@@ -53,6 +53,7 @@ public class FiscalCounterAllocatorTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     [Fact]

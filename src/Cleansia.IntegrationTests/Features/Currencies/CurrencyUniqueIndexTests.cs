@@ -55,6 +55,7 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private static Currency Czk(bool isDefault = false)

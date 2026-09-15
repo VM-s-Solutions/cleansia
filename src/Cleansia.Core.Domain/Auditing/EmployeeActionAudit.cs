@@ -29,7 +29,7 @@ namespace Cleansia.Core.Domain.Auditing;
 /// because nothing reads them and ADR-0045 D13 refuses collection just in case. <c>CreatedOn</c> IS
 /// the occurred-at and <c>CreatedBy</c> IS the acting principal, both stamped at commit.</para>
 /// </summary>
-public class EmployeeActionAudit : Auditable, ITenantEntity
+public class EmployeeActionAudit : TenantAuditable
 {
     /// <summary>
     /// The cleaner who acted. A bare scalar — no navigation and no FK, because the row must outlive

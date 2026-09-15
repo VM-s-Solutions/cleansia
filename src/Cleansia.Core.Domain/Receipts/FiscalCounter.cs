@@ -22,7 +22,7 @@ namespace Cleansia.Core.Domain.Receipts;
 /// such regimes key on <see cref="NoAnnualResetYear"/> so the same row keeps incrementing across
 /// years.</para>
 /// </summary>
-public class FiscalCounter : Auditable, ITenantEntity
+public class FiscalCounter : TenantAuditable
 {
     public const string DefaultIssuerScope = FiscalSequenceScope.DefaultIssuerScope;
 

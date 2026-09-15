@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class UserConsentEntityConfiguration : AuditableEntityConfiguration<UserConsent, string>
+public class UserConsentEntityConfiguration : TenantAuditableEntityConfiguration<UserConsent, string>
 {
     public override void Configure(EntityTypeBuilder<UserConsent> builder)
     {

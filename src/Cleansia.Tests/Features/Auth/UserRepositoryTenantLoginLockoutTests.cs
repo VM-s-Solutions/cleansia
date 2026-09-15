@@ -20,7 +20,7 @@ namespace Cleansia.Tests.Features.Auth;
 /// </summary>
 public sealed class UserRepositoryTenantLoginLockoutTests : IDisposable
 {
-    private const string Tenant = "tenant-1";
+    private const string Tenant = TestTenants.Second;
     private const string TenantUserId = "user-tenant";
     private const string TenantEmail = "tenant-user@cleansia.test";
     private const string DefaultTenantUserId = "user-default";
@@ -56,7 +56,7 @@ public sealed class UserRepositoryTenantLoginLockoutTests : IDisposable
     {
         await using (var ctx = NewContext(TestTenants.Default))
         {
-            await ctx.Database.EnsureCreatedAsync();
+            await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
             ctx.Add(Language.Create("en", "English"));
 
             var nullTenantUser = User.CreateWithPassword(DefaultTenantEmail, "Passw0rd!", "Null", "Tenant");

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Cleansia.Core.Domain.Orders;
 
-public class Order : Auditable, ITenantEntity
+public class Order : TenantAuditable
 {
     [MaxLength(100)]
     public string CustomerName { get; private set; }

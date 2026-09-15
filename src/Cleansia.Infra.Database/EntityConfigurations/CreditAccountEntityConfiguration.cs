@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class CreditAccountEntityConfiguration : AuditableEntityConfiguration<CreditAccount, string>
+public class CreditAccountEntityConfiguration : TenantAuditableEntityConfiguration<CreditAccount, string>
 {
     public override void Configure(EntityTypeBuilder<CreditAccount> builder)
     {

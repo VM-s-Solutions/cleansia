@@ -6,7 +6,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
 
-public class EmployeeInvoice : Auditable, ITenantEntity
+public class EmployeeInvoice : TenantAuditable
 {
     private const int PdfGenerationErrorMaxLength = 1000;
 

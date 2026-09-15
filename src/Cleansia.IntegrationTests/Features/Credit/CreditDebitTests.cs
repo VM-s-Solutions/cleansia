@@ -50,6 +50,7 @@ public class CreditDebitTests(PostgresContainerFixture fixture) : BaseIntegratio
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     /// <summary>

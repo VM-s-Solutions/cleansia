@@ -12,7 +12,7 @@ namespace Cleansia.Core.Domain.Notifications;
 /// rendered text — clients render title/body from their bundled templates in the device locale).
 /// <see cref="Auditable.CreatedOn"/> null-<see cref="ReadOn"/> = unread.
 /// </summary>
-public class UserNotification : Auditable, ITenantEntity
+public class UserNotification : TenantAuditable
 {
     public string UserId { get; private set; } = default!;
 

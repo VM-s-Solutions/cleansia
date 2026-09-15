@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class UserStripeCustomerEntityConfiguration : AuditableEntityConfiguration<UserStripeCustomer, string>
+public class UserStripeCustomerEntityConfiguration : TenantAuditableEntityConfiguration<UserStripeCustomer, string>
 {
     public override void Configure(EntityTypeBuilder<UserStripeCustomer> builder)
     {
@@ -38,8 +38,7 @@ public class UserStripeCustomerEntityConfiguration : AuditableEntityConfiguratio
             .OnDelete(DeleteBehavior.Restrict);
 
         // One Customer per user per currency. No TenantId term on purpose: a user belongs to one
-        // tenant, so the pair is already tenant-unique, and a nullable TenantId term would enforce
-        // nothing in single-tenant mode.
+        // tenant, so the pair is already tenant-unique.
         builder.HasIndex(c => new { c.UserId, c.CurrencyId })
             .IsUnique()
             .HasDatabaseName("IX_UserStripeCustomers_UserId_CurrencyId");

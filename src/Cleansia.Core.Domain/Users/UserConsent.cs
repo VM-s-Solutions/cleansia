@@ -5,7 +5,7 @@ using Cleansia.Core.Domain.Legal;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class UserConsent : Auditable, ITenantEntity
+public class UserConsent : TenantAuditable
 {
     [Required]
     public string UserId { get; private set; }

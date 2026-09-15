@@ -7,7 +7,7 @@ using Cleansia.Core.Domain.Receipts;
 
 namespace Cleansia.Core.Domain.Payments;
 
-public class Refund : Auditable, ITenantEntity
+public class Refund : TenantAuditable
 {
     [Required]
     [MaxLength(50)]

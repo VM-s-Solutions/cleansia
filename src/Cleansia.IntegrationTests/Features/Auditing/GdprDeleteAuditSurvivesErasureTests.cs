@@ -141,6 +141,7 @@ public class GdprDeleteAuditSurvivesErasureTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private sealed class SucceedingDeletionService : IGdprDeletionService

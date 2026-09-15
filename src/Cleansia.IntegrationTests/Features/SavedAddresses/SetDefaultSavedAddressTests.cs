@@ -63,6 +63,7 @@ public class SetDefaultSavedAddressTests(PostgresContainerFixture fixture) : Bas
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     /// <summary>Two saved addresses on one user; the FIRST is the default. Returns (first, second) ids.</summary>

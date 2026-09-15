@@ -59,6 +59,7 @@ public class PayConfigUniqueIndexTests(PostgresContainerFixture fixture) : BaseI
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     /// <summary>Currency and service rows the pay config's foreign keys require.</summary>

@@ -23,7 +23,7 @@ namespace Cleansia.Core.Domain.Users;
 /// <i>required</i> is decided per scheme by the payout validator, not by the column's nullability
 /// (D4/D5).</para>
 /// </summary>
-public class EmployeePayoutDetails : Auditable, ITenantEntity
+public class EmployeePayoutDetails : TenantAuditable
 {
     [Required]
     [MaxLength(26)]

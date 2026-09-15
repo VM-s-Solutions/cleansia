@@ -43,12 +43,11 @@ public class MembershipPlanPlatformConfigStructuralTests
     public void MembershipPlan_MatchesPlatformConfigPrecedent_AuditableButNotITenantEntity()
     {
         // Exact precedent parity with Currency (already platform config — Auditable, NOT ITenantEntity).
-        // Note: the TenantId property itself lives on the Auditable base and is shared by ALL entities
-        // (Currency has it too); what makes something tenant-scoped is the ITenantEntity MARKER, which is
-        // what the EF global filter (CleansiaDbContext.ApplyTenantQueryFilters) keys off. So the contract
-        // is "is Auditable, is NOT ITenantEntity" — the dormant TenantId column is the owner's migration
-        // to drop, not a C#-visible difference.
+        // The tenant column lives on TenantAuditable, so a plain Auditable type has no TenantId at all;
+        // the ITenantEntity marker is what the EF global filter (CleansiaDbContext.ApplyTenantQueryFilters)
+        // keys off.
         Assert.True(typeof(Auditable).IsAssignableFrom(typeof(MembershipPlan)));
+        Assert.False(typeof(TenantAuditable).IsAssignableFrom(typeof(MembershipPlan)));
         Assert.False(typeof(ITenantEntity).IsAssignableFrom(typeof(MembershipPlan)));
 
         // The platform-config precedent the panel cited (Currency) has exactly this shape.

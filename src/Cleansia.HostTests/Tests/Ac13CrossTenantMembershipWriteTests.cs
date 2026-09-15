@@ -42,7 +42,7 @@ public sealed class Ac13CrossTenantMembershipWriteTests(HostTestPostgresFixture 
             await DomainSeed.EnsureReferenceDataAsync(ctx);
             var owner = DomainSeed.Customer(ownerEmail, tenantId: TenantA);
             ctx.Users.Add(owner);
-            var plan = DomainSeed.MembershipPlan(tenantId: TenantA);
+            var plan = DomainSeed.MembershipPlan();
             ctx.MembershipPlans.Add(plan);
             ctx.MembershipPlanPrices.Add(DomainSeed.MembershipPlanPrice(plan.Id));
             var membership = DomainSeed.ActiveMembership(owner.Id, plan.Id, tenantId: TenantA);

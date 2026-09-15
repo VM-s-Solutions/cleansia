@@ -9,7 +9,7 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// at booking time. Tenant-scoped, code stored uppercase, lookup is
 /// case-insensitive client-side normalisation.
 /// </summary>
-public class PromoCode : Auditable, ITenantEntity
+public class PromoCode : TenantAuditable
 {
     [Required]
     [MaxLength(20)]

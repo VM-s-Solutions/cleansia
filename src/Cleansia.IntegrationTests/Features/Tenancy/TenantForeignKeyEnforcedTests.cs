@@ -9,12 +9,12 @@ using Npgsql;
 namespace Cleansia.IntegrationTests.Features.Tenancy;
 
 /// <summary>
-/// ADR-0061 D8, the pin: a stamped entity committed with no ambient tenant is refused by Postgres with
-/// a 23502, loudly, rather than landing as a row no tenanted reader can see. This is what makes the
-/// next writer that forgets its market fail on first use in DEV.
+/// The registry is a real constraint, the pin: a stamped row committed under a tenant id that is not an
+/// operating company is refused by Postgres with a 23503 naming the table's FK into <c>Tenants</c>,
+/// loudly, rather than landing as a row no company's reader can see.
 /// </summary>
 [Collection("PostgresCollection")]
-public sealed class TenantIdNotNullEnforcedTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
+public sealed class TenantForeignKeyEnforcedTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
     private readonly PostgresContainerFixture _fixture = fixture;
 
@@ -24,7 +24,7 @@ public sealed class TenantIdNotNullEnforcedTests(PostgresContainerFixture fixtur
         new FixedTenantProvider(tenantId));
 
     [Fact]
-    public async Task A_Stamped_Row_Committed_Under_No_Tenant_Raises_23502()
+    public async Task A_Stamped_Row_Committed_Under_An_Unregistered_Tenant_Raises_23503()
     {
         await using (var reset = new NpgsqlConnection(_fixture.GetConnectionString()))
         {
@@ -40,41 +40,17 @@ public sealed class TenantIdNotNullEnforcedTests(PostgresContainerFixture fixtur
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using var ctx = NewContext(tenantId: null);
-        ctx.Users.Add(User.CreateWithPassword("no-tenant@cleansia.test", "Passw0rd!", "No", "Tenant"));
+        await using var ctx = NewContext(tenantId: "not-a-company");
+        ctx.Users.Add(User.CreateWithPassword("stranger@cleansia.test", "Passw0rd!", "No", "Company"));
 
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => ctx.CommitAsync(CancellationToken.None));
 
         var postgres = Assert.IsType<PostgresException>(exception.InnerException);
-        Assert.Equal(PostgresErrorCodes.NotNullViolation, postgres.SqlState);
-        Assert.Equal("TenantId", postgres.ColumnName);
-    }
-
-    [Fact]
-    public async Task The_Same_Row_Committed_Under_A_Tenant_Lands_Stamped()
-    {
-        await using (var registry = new NpgsqlConnection(_fixture.GetConnectionString()))
-        {
-            await registry.OpenAsync();
-            await SeedTenantRegistryAsync(registry);
-        }
-
-        await using (var seed = NewContext(TestTenants.Default))
-        {
-            if (!await seed.Languages.AnyAsync(l => l.Code == "en"))
-            {
-                seed.Languages.Add(Language.Create("en", "English"));
-                await seed.CommitAsync(CancellationToken.None);
-            }
-        }
-
-        await using var ctx = NewContext(TestTenants.Second);
-        var user = User.CreateWithPassword("stamped@cleansia.test", "Passw0rd!", "Stam", "Ped");
-        ctx.Users.Add(user);
-        await ctx.CommitAsync(CancellationToken.None);
+        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, postgres.SqlState);
+        Assert.Equal("FK_Users_Tenants_TenantId", postgres.ConstraintName);
 
         await using var verify = NewContext(tenantId: null);
-        Assert.Equal(TestTenants.Second, (await verify.Users.IgnoreQueryFilters().SingleAsync(u => u.Id == user.Id)).TenantId);
+        Assert.False(await verify.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == "stranger@cleansia.test"));
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

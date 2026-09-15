@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OutboxMessageEntityConfiguration : AuditableEntityConfiguration<OutboxMessage, string>
+public class OutboxMessageEntityConfiguration : TenantAuditableEntityConfiguration<OutboxMessage, string>
 {
     public override void Configure(EntityTypeBuilder<OutboxMessage> builder)
     {

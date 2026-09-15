@@ -12,7 +12,7 @@ namespace Cleansia.Core.Domain.Users;
 /// ruling 2026-09-13). The legacy field stays: it is still the Customer one-off order
 /// payments use, and the first row for a currency it has only ever billed adopts it.
 /// </summary>
-public class UserStripeCustomer : Auditable, ITenantEntity
+public class UserStripeCustomer : TenantAuditable
 {
     [Required]
     [MaxLength(26)]

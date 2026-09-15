@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderReceiptEntityConfiguration : AuditableEntityConfiguration<OrderReceipt, string>
+public class OrderReceiptEntityConfiguration : TenantAuditableEntityConfiguration<OrderReceipt, string>
 {
     public override void Configure(EntityTypeBuilder<OrderReceipt> builder)
     {

@@ -15,8 +15,8 @@ namespace Cleansia.IntegrationTests.Features.Tenancy;
 /// stamped row without an operating company, every company a row names is in the registry, and the
 /// default market has an operator — otherwise every registration with no market fails
 /// <c>tenant.not_found</c> in DEV, which is a seed defect and must fail here instead. Redundant with the
-/// NOT NULL columns on purpose: this is the seed's contract, and it also proves the closure the registry
-/// relies on instead of forty-seven foreign keys (D1).
+/// NOT NULL columns and the foreign keys into <c>Tenants</c> on purpose: this is the seed's contract,
+/// and (a) proves the seed applied at all against the migration those constraints live in.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class SeededDatabaseHasNoOrphanTenantRowsTests : IAsyncLifetime
@@ -111,7 +111,7 @@ public sealed class SeededDatabaseHasNoOrphanTenantRowsTests : IAsyncLifetime
         foreach (var entity in ctx.Model.GetEntityTypes())
         {
             if (!typeof(ITenantEntity).IsAssignableFrom(entity.ClrType)
-                || AuditableEntityConfiguration<Auditable, string>.TenantIdNullableTypes.Contains(entity.ClrType))
+                || TenantAuditableEntityConfiguration<TenantAuditable, string>.TenantIdNullableTypes.Contains(entity.ClrType))
             {
                 continue;
             }

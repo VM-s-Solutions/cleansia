@@ -302,17 +302,13 @@ public static class DomainSeed
         return (address, saved);
     }
 
-    public static MembershipPlan MembershipPlan(string code = "HOSTTEST-MONTHLY", string? tenantId = null)
-    {
-        var plan = Cleansia.Core.Domain.Memberships.MembershipPlan.Create(
+    public static MembershipPlan MembershipPlan(string code = "HOSTTEST-MONTHLY")
+        => Cleansia.Core.Domain.Memberships.MembershipPlan.Create(
             code: code,
             name: "Host-test plan",
             discountPercentage: 10m,
             freeCancellationWindowHours: 24,
             allowsExpressUpgrade: true);
-        if (tenantId is not null) plan.TenantId = tenantId;
-        return plan;
-    }
 
     /// <summary>The plan's CZK price. The Stripe id is derived from the plan code, never a shared literal:
     /// <c>MembershipPlanPrices.StripePriceId</c> is unique, and every host-test class seeds into the one database.</summary>

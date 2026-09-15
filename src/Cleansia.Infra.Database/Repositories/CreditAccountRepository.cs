@@ -92,10 +92,6 @@ public class CreditAccountRepository(CleansiaDbContext context)
         // never commits - a tracked Issue would be thrown away along with the half-built order, and
         // flushing it explicitly would persist that order. A self-contained statement is the only
         // shape that puts the money back on a path that is about to roll back.
-        //
-        // TenantId is copied from the ACCOUNT rather than written as NULL: the ledger row belongs to
-        // whichever tenant the balance does, and hard-coding null would be right only for as long as
-        // single-tenant mode lasts.
         var rowsAffected = await context.Database.ExecuteSqlAsync(
             $"""
             WITH returned AS (
@@ -106,14 +102,14 @@ public class CreditAccountRepository(CleansiaDbContext context)
                     "UpdatedBy" = {actorId},
                     "UpdatedOn" = NOW()
                 WHERE "Id" = {account.Id}
-                RETURNING "Id", "TenantId"
+                RETURNING "Id"
             )
             INSERT INTO "CreditTransactions" (
                 "Id", "CreditAccountId", "Amount", "Reason", "OrderId", "DisputeId",
-                "IdempotencyKey", "Note", "IsActive", "TenantId", "CreatedBy", "CreatedOn")
+                "IdempotencyKey", "Note", "IsActive", "CreatedBy", "CreatedOn")
             SELECT
                 {NewId()}, returned."Id", {amount}, {(int)CreditTransactionReason.OrderPaymentReturned},
-                {orderId}, NULL, {idempotencyKey}, {note}, TRUE, returned."TenantId", {actorId}, NOW()
+                {orderId}, NULL, {idempotencyKey}, {note}, TRUE, {actorId}, NOW()
             FROM returned
             """,
             cancellationToken);
@@ -220,16 +216,14 @@ public class CreditAccountRepository(CleansiaDbContext context)
                     "UpdatedBy" = {actorId},
                     "UpdatedOn" = NOW()
                 WHERE "Id" = {creditAccountId} AND "Balance" >= {amount}
-                -- TenantId comes back with the row so the ledger entry belongs to the same tenant the
-                -- balance does. Writing NULL was right only for as long as single-tenant mode lasts.
-                RETURNING "Id", "TenantId"
+                RETURNING "Id"
             )
             INSERT INTO "CreditTransactions" (
                 "Id", "CreditAccountId", "Amount", "Reason", "OrderId", "DisputeId",
-                "IdempotencyKey", "Note", "IsActive", "TenantId", "CreatedBy", "CreatedOn")
+                "IdempotencyKey", "Note", "IsActive", "CreatedBy", "CreatedOn")
             SELECT
                 {NewId()}, debited."Id", {-amount}, {(int)reason}, {orderId}, NULL,
-                {idempotencyKey}, {note}, TRUE, debited."TenantId", {actorId}, NOW()
+                {idempotencyKey}, {note}, TRUE, {actorId}, NOW()
             FROM debited
             """,
             cancellationToken);

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, string>
+public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order, string>
 {
     public override void Configure(EntityTypeBuilder<Order> builder)
     {
@@ -178,10 +178,8 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         // handler's own question and nothing wider.
         //
         // Filtered to spawned orders because every one-off order carries RecurringTemplateId NULL and
-        // they must not collide with each other. Note what the filter buys beyond that: it keeps
-        // TenantId OUT of the key. A unique index containing nullable TenantId enforces nothing in
-        // single-tenant mode — Postgres treats NULLs as distinct — which is the landmine CLAUDE.md
-        // names, and it is why this index is on two non-null columns instead.
+        // they must not collide with each other. No tenant term: a template belongs to one company, so
+        // the pair is already tenant-unique.
         builder.HasIndex(o => new { o.RecurringTemplateId, o.CleaningDateTime })
             .IsUnique()
             .HasFilter("\"RecurringTemplateId\" IS NOT NULL")

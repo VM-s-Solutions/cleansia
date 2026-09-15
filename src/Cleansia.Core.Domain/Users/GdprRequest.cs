@@ -4,7 +4,7 @@ using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class GdprRequest : Auditable, ITenantEntity
+public class GdprRequest : TenantAuditable
 {
     public const int NotesMaxLength = 1000;
 

@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Database;
@@ -71,14 +72,20 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
     }
 
     /// <summary>
-    /// The address FK is left standing, so the country and currency an order references are real rows.
-    /// Only the Orders / OrderEmployees FKs are dropped, and only so the fixture can name a customer and
-    /// a cleaner without building two full identity graphs the sweep never reads.
+    /// The address FK is left standing, so the country and currency an order references are real rows,
+    /// and the three operators are registered so the notifications the sweep writes pass their FK into
+    /// Tenants. Only the Orders / OrderEmployees FKs are dropped, and only so the fixture can name a
+    /// customer and a cleaner without building two full identity graphs the sweep never reads.
     /// </summary>
     private async Task SeedCatalogAsync()
     {
         _tenantProvider.ClearTenantOverride();
         await using var ctx = NewContext();
+
+        ctx.Tenants.AddRange(
+            Tenant.Create(TenantA, "Operator A"),
+            Tenant.Create(TenantB, "Operator B"),
+            Tenant.Create(TenantC, "Operator C"));
 
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;

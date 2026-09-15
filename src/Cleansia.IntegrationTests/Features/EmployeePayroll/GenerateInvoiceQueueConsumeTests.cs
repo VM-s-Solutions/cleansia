@@ -8,6 +8,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Functions.Core.Handlers;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +31,7 @@ namespace Cleansia.IntegrationTests.Features.EmployeePayroll;
 [Collection("PostgresCollection")]
 public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
-    private const string TenantId = "tenant-payroll-A";
+    private const string TenantId = TestTenants.Second;
     private const string CountryId = "country-cz-payroll";
     private const string CurrencyId = "currency-czk-payroll";
 
@@ -98,13 +99,11 @@ public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) 
     {
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = CountryId;
-        country.TenantId = TenantId;
 
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.IsActive = true;
         currency.Id = CurrencyId;
         currency.SetAsDefault(true);
-        currency.TenantId = TenantId;
 
         context.Languages.Add(Language.Create("en", "English"));
         context.Countries.Add(country);

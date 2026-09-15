@@ -11,7 +11,7 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// recomputed on each grant/revoke from the append-only ledger of
 /// <see cref="LoyaltyTransaction"/> entries.
 /// </summary>
-public class LoyaltyAccount : Auditable, ITenantEntity
+public class LoyaltyAccount : TenantAuditable
 {
     [Required]
     public string UserId { get; private set; } = default!;

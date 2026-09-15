@@ -16,32 +16,6 @@ namespace Cleansia.Infra.Database.Migrations
                 .Annotation("Npgsql:PostgresExtension:pg_trgm", ",,");
 
             migrationBuilder.CreateTable(
-                name: "AdminActionAudits",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    ActorId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    ActorEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    ActorProfile = table.Column<int>(type: "integer", nullable: false),
-                    Action = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    ResourceType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    ResourceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    Success = table.Column<bool>(type: "boolean", nullable: false),
-                    ErrorCode = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    BeforeJson = table.Column<string>(type: "jsonb", nullable: true),
-                    AfterJson = table.Column<string>(type: "jsonb", nullable: true),
-                    CorrelationId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AdminActionAudits", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "CampaignProgresses",
                 columns: table => new
                 {
@@ -67,7 +41,6 @@ namespace Cleansia.Infra.Database.Migrations
                     IsServiced = table.Column<bool>(type: "boolean", nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -92,7 +65,6 @@ namespace Cleansia.Infra.Database.Migrations
                     LoyaltyPointsDivisor = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     NoShowCredit = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -106,77 +78,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CustomerActionAudits",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    ClientAudience = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
-                    DeviceLabel = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
-                    DeviceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    Action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    ResourceType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    ResourceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    Success = table.Column<bool>(type: "boolean", nullable: false),
-                    ErrorCode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    PayloadJson = table.Column<string>(type: "jsonb", nullable: true),
-                    CorrelationId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CustomerActionAudits", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "DeadLetters",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    SourceQueue = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    RawBody = table.Column<string>(type: "text", nullable: false),
-                    Error = table.Column<string>(type: "text", nullable: true),
-                    DeadLetteredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DeadLetters", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "EmployeeActionAudits",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Action = table.Column<int>(type: "integer", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EmployeeActionAudits", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Extras",
                 columns: table => new
                 {
@@ -187,7 +88,6 @@ namespace Cleansia.Infra.Database.Migrations
                     DisplayOrder = table.Column<int>(type: "integer", nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -198,28 +98,6 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Extras", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "FiscalCounters",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Year = table.Column<int>(type: "integer", nullable: false),
-                    IssuerScope = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Value = table.Column<long>(type: "bigint", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FiscalCounters", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -248,7 +126,6 @@ namespace Cleansia.Infra.Database.Migrations
                     MinimumOrderAmountForDiscount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     PerksJson = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -275,7 +152,6 @@ namespace Cleansia.Infra.Database.Migrations
                     AllowsExpressUpgrade = table.Column<bool>(type: "boolean", nullable: false),
                     ExpressUpgradesPerMonth = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -289,35 +165,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OutboxMessages",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    QueueName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    MessageKey = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
-                    Body = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false),
-                    AttemptCount = table.Column<int>(type: "integer", nullable: false),
-                    ClaimedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    ClaimedBy = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
-                    DispatchedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    NextAttemptAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    LastError = table.Column<string>(type: "text", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OutboxMessages", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Packages",
                 columns: table => new
                 {
@@ -328,7 +175,6 @@ namespace Cleansia.Infra.Database.Migrations
                     IsPopular = table.Column<bool>(type: "boolean", nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -357,32 +203,6 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PayoutReferenceCounters", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PayPeriods",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    StartDate = table.Column<DateOnly>(type: "date", nullable: false),
-                    EndDate = table.Column<DateOnly>(type: "date", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
-                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    ClosedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ClosedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PayPeriods", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -426,7 +246,6 @@ namespace Cleansia.Infra.Database.Migrations
                     DisplayOrder = table.Column<int>(type: "integer", nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -440,29 +259,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TenantConfigurations",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Value = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    Description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TenantConfigurations", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Tenants",
                 columns: table => new
                 {
@@ -473,81 +269,6 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tenants", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Addresses",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Street = table.Column<string>(type: "citext", maxLength: 255, nullable: false),
-                    City = table.Column<string>(type: "citext", maxLength: 100, nullable: false),
-                    ZipCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    State = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    Latitude = table.Column<double>(type: "double precision", precision: 9, scale: 6, nullable: true),
-                    Longitude = table.Column<double>(type: "double precision", precision: 9, scale: 6, nullable: true),
-                    CountryId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Addresses", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Addresses_Countries_CountryId",
-                        column: x => x.CountryId,
-                        principalTable: "Countries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CompanyInfo",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    LegalName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    TradingName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Tagline = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    RegistrationNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    VatNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    IsVatPayer = table.Column<bool>(type: "boolean", nullable: false),
-                    VatRegisteredFrom = table.Column<DateOnly>(type: "date", nullable: true),
-                    Street = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    City = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    ZipCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    CountryId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    Phone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    Email = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    Website = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    BankName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    BankAccountNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    Iban = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    Swift = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CompanyInfo", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_CompanyInfo_Countries_CountryId",
-                        column: x => x.CountryId,
-                        principalTable: "Countries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -588,7 +309,6 @@ namespace Cleansia.Infra.Database.Migrations
                     IsRequired = table.Column<bool>(type: "boolean", nullable: false),
                     SortOrder = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -643,7 +363,6 @@ namespace Cleansia.Infra.Database.Migrations
                     Bathrooms = table.Column<int>(type: "integer", nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -671,7 +390,6 @@ namespace Cleansia.Infra.Database.Migrations
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ZipPrefix = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -691,43 +409,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PromoCodes",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Code = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    Type = table.Column<int>(type: "integer", nullable: false),
-                    DiscountPercent = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
-                    DiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    MinimumOrderAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    MaxRedemptionsPerUser = table.Column<int>(type: "integer", nullable: false),
-                    GlobalMaxRedemptions = table.Column<int>(type: "integer", nullable: true),
-                    CurrentRedemptionsCount = table.Column<int>(type: "integer", nullable: false),
-                    ValidFrom = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    ValidUntil = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PromoCodes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PromoCodes_Currencies_CurrencyId",
-                        column: x => x.CurrencyId,
-                        principalTable: "Currencies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ExtraPrices",
                 columns: table => new
                 {
@@ -736,7 +417,6 @@ namespace Cleansia.Infra.Database.Migrations
                     CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
                     Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -771,7 +451,6 @@ namespace Cleansia.Infra.Database.Migrations
                     EmailType = table.Column<int>(type: "integer", nullable: false),
                     LanguageId = table.Column<string>(type: "character varying(26)", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -806,7 +485,6 @@ namespace Cleansia.Infra.Database.Migrations
                     EmailType = table.Column<int>(type: "integer", nullable: false),
                     LanguageId = table.Column<string>(type: "character varying(26)", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -826,54 +504,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Password = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    FirstName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
-                    LastName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
-                    Email = table.Column<string>(type: "citext", maxLength: 150, nullable: false),
-                    PhoneNumber = table.Column<string>(type: "citext", maxLength: 50, nullable: true),
-                    GoogleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
-                    AppleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
-                    ResetPasswordCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    ResetPasswordCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    BirthDate = table.Column<DateOnly>(type: "date", nullable: true),
-                    Profile = table.Column<int>(type: "integer", nullable: false),
-                    AuthenticationType = table.Column<int>(type: "integer", nullable: false),
-                    ProfilePhotoName = table.Column<string>(type: "text", nullable: true),
-                    ConfirmationCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    ConfirmationCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    IsEmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
-                    FailedLoginAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    LockoutEndsAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    ConfirmationCodeAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    ResetPasswordCodeAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
-                    LastLoginAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    PreferredLanguageCode = table.Column<string>(type: "citext", maxLength: 5, nullable: true),
-                    StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Users_Languages_PreferredLanguageCode",
-                        column: x => x.PreferredLanguageCode,
-                        principalTable: "Languages",
-                        principalColumn: "Code",
-                        onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "MembershipPlanPrices",
                 columns: table => new
                 {
@@ -883,7 +513,6 @@ namespace Cleansia.Infra.Database.Migrations
                     Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     StripePriceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -917,7 +546,6 @@ namespace Cleansia.Infra.Database.Migrations
                     CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
                     Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -953,7 +581,6 @@ namespace Cleansia.Infra.Database.Migrations
                     CategoryId = table.Column<string>(type: "character varying(26)", nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -968,6 +595,125 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Services_ServiceCategories_CategoryId",
                         column: x => x.CategoryId,
                         principalTable: "ServiceCategories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Addresses",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Street = table.Column<string>(type: "citext", maxLength: 255, nullable: false),
+                    City = table.Column<string>(type: "citext", maxLength: 100, nullable: false),
+                    ZipCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    State = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Latitude = table.Column<double>(type: "double precision", precision: 9, scale: 6, nullable: true),
+                    Longitude = table.Column<double>(type: "double precision", precision: 9, scale: 6, nullable: true),
+                    CountryId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Addresses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Addresses_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Addresses_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AdminActionAudits",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ActorId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ActorEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    ActorProfile = table.Column<int>(type: "integer", nullable: false),
+                    Action = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    ResourceType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    ResourceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    Success = table.Column<bool>(type: "boolean", nullable: false),
+                    ErrorCode = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    BeforeJson = table.Column<string>(type: "jsonb", nullable: true),
+                    AfterJson = table.Column<string>(type: "jsonb", nullable: true),
+                    CorrelationId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AdminActionAudits", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AdminActionAudits_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CompanyInfo",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    LegalName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    TradingName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Tagline = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    RegistrationNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    VatNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    IsVatPayer = table.Column<bool>(type: "boolean", nullable: false),
+                    VatRegisteredFrom = table.Column<DateOnly>(type: "date", nullable: true),
+                    Street = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    City = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ZipCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    CountryId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    Phone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Email = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Website = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    BankName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    BankAccountNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Iban = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Swift = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CompanyInfo", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CompanyInfo_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CompanyInfo_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1003,7 +749,6 @@ namespace Cleansia.Infra.Database.Migrations
                     IsDefaultMarket = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     OperatorTenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1023,6 +768,316 @@ namespace Cleansia.Infra.Database.Migrations
                     table.ForeignKey(
                         name: "FK_CountryConfigurations_Tenants_OperatorTenantId",
                         column: x => x.OperatorTenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CustomerActionAudits",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    ClientAudience = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    DeviceLabel = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
+                    DeviceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    Action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    ResourceType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    ResourceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    Success = table.Column<bool>(type: "boolean", nullable: false),
+                    ErrorCode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    PayloadJson = table.Column<string>(type: "jsonb", nullable: true),
+                    CorrelationId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomerActionAudits", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CustomerActionAudits_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DeadLetters",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    SourceQueue = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    RawBody = table.Column<string>(type: "text", nullable: false),
+                    Error = table.Column<string>(type: "text", nullable: true),
+                    DeadLetteredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DeadLetters", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DeadLetters_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EmployeeActionAudits",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Action = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeeActionAudits", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EmployeeActionAudits_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FiscalCounters",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Year = table.Column<int>(type: "integer", nullable: false),
+                    IssuerScope = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Value = table.Column<long>(type: "bigint", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FiscalCounters", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FiscalCounters_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OutboxMessages",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    QueueName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    MessageKey = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    Body = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    AttemptCount = table.Column<int>(type: "integer", nullable: false),
+                    ClaimedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ClaimedBy = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    DispatchedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    NextAttemptAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    LastError = table.Column<string>(type: "text", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OutboxMessages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OutboxMessages_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PayPeriods",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    StartDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    EndDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    ClosedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ClosedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PayPeriods", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PayPeriods_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PromoCodes",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Code = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    DiscountPercent = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
+                    DiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    MinimumOrderAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    MaxRedemptionsPerUser = table.Column<int>(type: "integer", nullable: false),
+                    GlobalMaxRedemptions = table.Column<int>(type: "integer", nullable: true),
+                    CurrentRedemptionsCount = table.Column<int>(type: "integer", nullable: false),
+                    ValidFrom = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ValidUntil = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PromoCodes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PromoCodes_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PromoCodes_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TenantConfigurations",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Value = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    Description = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TenantConfigurations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TenantConfigurations_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Password = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FirstName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
+                    LastName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
+                    Email = table.Column<string>(type: "citext", maxLength: 150, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "citext", maxLength: 50, nullable: true),
+                    GoogleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
+                    AppleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
+                    ResetPasswordCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    ResetPasswordCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    BirthDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    Profile = table.Column<int>(type: "integer", nullable: false),
+                    AuthenticationType = table.Column<int>(type: "integer", nullable: false),
+                    ProfilePhotoName = table.Column<string>(type: "text", nullable: true),
+                    ConfirmationCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    ConfirmationCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsEmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    FailedLoginAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    LockoutEndsAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ConfirmationCodeAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    ResetPasswordCodeAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    LastLoginAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    PreferredLanguageCode = table.Column<string>(type: "citext", maxLength: 5, nullable: true),
+                    StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Users_Languages_PreferredLanguageCode",
+                        column: x => x.PreferredLanguageCode,
+                        principalTable: "Languages",
+                        principalColumn: "Code",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Users_Tenants_TenantId",
+                        column: x => x.TenantId,
                         principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -1052,13 +1107,42 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Carts",
+                name: "PackageServices",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    PriceWeight = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 1m),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PackageServices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PackageServices_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PackageServices_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ServicePrices",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    UserId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    BasePrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    PerRoomPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1068,7 +1152,45 @@ namespace Cleansia.Infra.Database.Migrations
                 },
                 constraints: table =>
                 {
+                    table.PrimaryKey("PK_ServicePrices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ServicePrices_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ServicePrices_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Carts",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
                     table.PrimaryKey("PK_Carts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Carts_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Carts_Users_UserId",
                         column: x => x.UserId,
@@ -1087,17 +1209,23 @@ namespace Cleansia.Infra.Database.Migrations
                     CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     ExpiresOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CreditAccounts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CreditAccounts_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_CreditAccounts_Users_UserId",
                         column: x => x.UserId,
@@ -1118,17 +1246,23 @@ namespace Cleansia.Infra.Database.Migrations
                     LastActiveAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     NotificationsEnabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Devices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Devices_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Devices_Users_UserId",
                         column: x => x.UserId,
@@ -1170,13 +1304,13 @@ namespace Cleansia.Infra.Database.Migrations
                     PreferredCurrencyCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     Availability = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1195,6 +1329,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Employees_Countries_WorkCountryId",
                         column: x => x.WorkCountryId,
                         principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Employees_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -1217,17 +1357,23 @@ namespace Cleansia.Infra.Database.Migrations
                     CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GdprRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GdprRequests_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_GdprRequests_Users_UserId",
                         column: x => x.UserId,
@@ -1247,17 +1393,23 @@ namespace Cleansia.Infra.Database.Migrations
                     Token = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
                     LastUpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_LiveActivityTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LiveActivityTokens_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_LiveActivityTokens_Users_UserId",
                         column: x => x.UserId,
@@ -1277,17 +1429,23 @@ namespace Cleansia.Infra.Database.Migrations
                     TierAchievedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     CompletedBookingsCount = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_LoyaltyAccounts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LoyaltyAccounts_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_LoyaltyAccounts_Users_UserId",
                         column: x => x.UserId,
@@ -1358,13 +1516,13 @@ namespace Cleansia.Infra.Database.Migrations
                     PreCleaningReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CurrentStatus = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1385,6 +1543,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Orders_PromoCodes_PromoCodeId",
                         column: x => x.PromoCodeId,
                         principalTable: "PromoCodes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Orders_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -1415,17 +1579,23 @@ namespace Cleansia.Infra.Database.Migrations
                     LastMaterializedFor = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     SelectedPackageIds = table.Column<string>(type: "text", nullable: false),
                     SelectedServiceIds = table.Column<string>(type: "text", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RecurringBookingTemplates", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RecurringBookingTemplates_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_RecurringBookingTemplates_Users_UserId",
                         column: x => x.UserId,
@@ -1443,17 +1613,23 @@ namespace Cleansia.Infra.Database.Migrations
                     Code = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     TimesUsed = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ReferralCodes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ReferralCodes_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ReferralCodes_Users_UserId",
                         column: x => x.UserId,
@@ -1481,17 +1657,23 @@ namespace Cleansia.Infra.Database.Migrations
                     RememberMe = table.Column<bool>(type: "boolean", nullable: true),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RefreshTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RefreshTokens_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_RefreshTokens_Users_UserId",
                         column: x => x.UserId,
@@ -1512,13 +1694,13 @@ namespace Cleansia.Infra.Database.Migrations
                     Floor = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     Apartment = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1527,6 +1709,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_SavedAddresses_Addresses_AddressId",
                         column: x => x.AddressId,
                         principalTable: "Addresses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SavedAddresses_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -1552,13 +1740,13 @@ namespace Cleansia.Infra.Database.Migrations
                     DocumentVersion = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     LegalDocumentId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1567,6 +1755,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_UserConsents_LegalDocuments_LegalDocumentId",
                         column: x => x.LegalDocumentId,
                         principalTable: "LegalDocuments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserConsents_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -1594,13 +1788,13 @@ namespace Cleansia.Infra.Database.Migrations
                     CancellationReminderSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     TrialEndsAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1615,6 +1809,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_UserMemberships_MembershipPlans_MembershipPlanId",
                         column: x => x.MembershipPlanId,
                         principalTable: "MembershipPlans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserMemberships_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -1644,17 +1844,23 @@ namespace Cleansia.Infra.Database.Migrations
                     RecurringScheduled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     NewJobsAvailable = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserNotificationPreferences", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserNotificationPreferences_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserNotificationPreferences_Users_UserId",
                         column: x => x.UserId,
@@ -1673,17 +1879,23 @@ namespace Cleansia.Infra.Database.Migrations
                     ArgsJson = table.Column<string>(type: "jsonb", nullable: false),
                     ReadOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UserNotifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserNotifications_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_UserNotifications_Users_UserId",
                         column: x => x.UserId,
@@ -1701,13 +1913,13 @@ namespace Cleansia.Infra.Database.Migrations
                     CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1719,73 +1931,17 @@ namespace Cleansia.Infra.Database.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
+                        name: "FK_UserStripeCustomers_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_UserStripeCustomers_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PackageServices",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    PriceWeight = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 1m),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PackageServices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PackageServices_Packages_PackageId",
-                        column: x => x.PackageId,
-                        principalTable: "Packages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PackageServices_Services_ServiceId",
-                        column: x => x.ServiceId,
-                        principalTable: "Services",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ServicePrices",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    BasePrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    PerRoomPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ServicePrices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ServicePrices_Currencies_CurrencyId",
-                        column: x => x.CurrencyId,
-                        principalTable: "Currencies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ServicePrices_Services_ServiceId",
-                        column: x => x.ServiceId,
-                        principalTable: "Services",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1855,7 +2011,6 @@ namespace Cleansia.Infra.Database.Migrations
                     IdempotencyKey = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -1893,13 +2048,13 @@ namespace Cleansia.Infra.Database.Migrations
                     ReviewedByUserId = table.Column<string>(type: "text", nullable: true),
                     ReviewedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1914,6 +2069,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_EmployeeDocuments_Employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeeDocuments_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1953,13 +2114,13 @@ namespace Cleansia.Infra.Database.Migrations
                     CancelledAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     CancelledBy = table.Column<string>(type: "text", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1994,6 +2155,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "PayPeriods",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeeInvoices_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2013,13 +2180,13 @@ namespace Cleansia.Infra.Database.Migrations
                     MinimumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     MaximumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2048,6 +2215,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Services",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayConfigs_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2072,13 +2245,13 @@ namespace Cleansia.Infra.Database.Migrations
                     LastRevealedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RevealCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2101,6 +2274,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Employees",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayoutDetails_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2120,13 +2299,13 @@ namespace Cleansia.Infra.Database.Migrations
                     StripeDisputeId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     TextRetainedUntil = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2135,6 +2314,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Disputes_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Disputes_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -2159,13 +2344,13 @@ namespace Cleansia.Infra.Database.Migrations
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     OccurredOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2180,6 +2365,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_LoyaltyTransactions_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_LoyaltyTransactions_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2253,13 +2444,13 @@ namespace Cleansia.Infra.Database.Migrations
                     IsResolved = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     ResolvedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2270,6 +2461,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderIssues_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2281,13 +2478,13 @@ namespace Cleansia.Infra.Database.Migrations
                     EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Content = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2298,6 +2495,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderNotes_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2345,13 +2548,13 @@ namespace Cleansia.Infra.Database.Migrations
                     Height = table.Column<int>(type: "integer", nullable: true),
                     Notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2368,6 +2571,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderPhotos_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2396,13 +2605,13 @@ namespace Cleansia.Infra.Database.Migrations
                     FiscalAcknowledged = table.Column<bool>(type: "boolean", nullable: false),
                     FiscalAcknowledgedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2419,6 +2628,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderReceipts_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2432,13 +2647,13 @@ namespace Cleansia.Infra.Database.Migrations
                     Comment = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     Tags = table.Column<string>(type: "jsonb", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2449,6 +2664,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderReviews_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2489,13 +2710,13 @@ namespace Cleansia.Infra.Database.Migrations
                     OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
                     Sequence = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2506,6 +2727,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderStatusHistory_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2520,13 +2747,13 @@ namespace Cleansia.Infra.Database.Migrations
                     RedeemedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     SlotOrdinal = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2541,6 +2768,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_PromoCodeRedemptions_PromoCodes_PromoCodeId",
                         column: x => x.PromoCodeId,
                         principalTable: "PromoCodes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PromoCodeRedemptions_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -2567,13 +2800,13 @@ namespace Cleansia.Infra.Database.Migrations
                     PointsAwardedToReferred = table.Column<int>(type: "integer", nullable: true),
                     PointsAwardedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2588,6 +2821,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Referrals_ReferralCodes_ReferralCodeId",
                         column: x => x.ReferralCodeId,
                         principalTable: "ReferralCodes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Referrals_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -2617,13 +2856,13 @@ namespace Cleansia.Infra.Database.Migrations
                     UserMembershipId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     ReservedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2632,6 +2871,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_MembershipBenefitUsages_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MembershipBenefitUsages_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -2661,13 +2906,13 @@ namespace Cleansia.Infra.Database.Migrations
                     ReviewedByUserId = table.Column<string>(type: "text", nullable: true),
                     ReviewedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2676,6 +2921,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_DocumentDeletionRequests_EmployeeDocuments_DocumentId",
                         column: x => x.DocumentId,
                         principalTable: "EmployeeDocuments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DocumentDeletionRequests_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2704,13 +2955,13 @@ namespace Cleansia.Infra.Database.Migrations
                     ApprovedBy = table.Column<string>(type: "text", nullable: true),
                     EmployeeInvoiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2743,6 +2994,12 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_OrderEmployeePays_PayPeriods_PayPeriodId",
                         column: x => x.PayPeriodId,
                         principalTable: "PayPeriods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderEmployeePays_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -2779,7 +3036,6 @@ namespace Cleansia.Infra.Database.Migrations
                     ServiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2884,13 +3140,13 @@ namespace Cleansia.Infra.Database.Migrations
                     ConfirmedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     WindowOverrideReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -2913,6 +3169,12 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -2925,7 +3187,6 @@ namespace Cleansia.Infra.Database.Migrations
                     PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     Rating = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -3048,11 +3309,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Countries_TenantId",
-                table: "Countries",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CountryConfigurations_CountryId",
                 table: "CountryConfigurations",
                 column: "CountryId",
@@ -3069,11 +3325,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_CountryConfigurations_OperatorTenantId",
                 table: "CountryConfigurations",
                 column: "OperatorTenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CountryConfigurations_TenantId",
-                table: "CountryConfigurations",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CountryInvoiceConfigs_CountryId",
@@ -3110,11 +3361,6 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_CreditTransactions_TenantId",
-                table: "CreditTransactions",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Currencies_Code_Unique",
                 table: "Currencies",
                 column: "Code",
@@ -3126,11 +3372,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "IsDefault",
                 unique: true,
                 filter: "\"IsDefault\" = true");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Currencies_TenantId",
-                table: "Currencies",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CustomerActionAudits_OccurredOn",
@@ -3218,11 +3459,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "ServiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DisputeLines_TenantId",
-                table: "DisputeLines",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_DisputeMessages_AuthorId",
                 table: "DisputeMessages",
                 column: "AuthorId");
@@ -3293,11 +3529,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "LanguageId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmailTemplateTranslations_TenantId",
-                table: "EmailTemplateTranslations",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_EmailTemplateTranslations_Type_Language_Key",
                 table: "EmailTemplateTranslations",
                 columns: new[] { "EmailType", "LanguageId", "Key" },
@@ -3307,11 +3538,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_EmailTranslations_LanguageId",
                 table: "EmailTranslations",
                 column: "LanguageId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmailTranslations_TenantId",
-                table: "EmailTranslations",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeActionAudits_EmployeeId_CreatedOn",
@@ -3340,11 +3566,6 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "EmployeeDocumentRequirements",
                 columns: new[] { "CountryId", "DocumentType" },
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmployeeDocumentRequirements_TenantId",
-                table: "EmployeeDocumentRequirements",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeDocuments_DocumentType",
@@ -3543,20 +3764,10 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExtraPrices_TenantId",
-                table: "ExtraPrices",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Extras_Slug",
                 table: "Extras",
                 column: "Slug",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Extras_TenantId",
-                table: "Extras",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FiscalCounters_Tenant_Year_IssuerScope",
@@ -3635,11 +3846,6 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "LoyaltyAccounts",
                 column: "UserId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_LoyaltyTierConfigs_TenantId",
-                table: "LoyaltyTierConfigs",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LoyaltyTierConfigs_Tier",
@@ -3734,11 +3940,6 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_MembershipPlanPrices_TenantId",
-                table: "MembershipPlanPrices",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_MembershipPlans_Code",
                 table: "MembershipPlans",
                 column: "Code",
@@ -3748,11 +3949,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_MembershipPlans_IsActive",
                 table: "MembershipPlans",
                 column: "IsActive");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MembershipPlans_TenantId",
-                table: "MembershipPlans",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderEmployeePays_CurrencyId",
@@ -3930,11 +4126,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "ServiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderReviewLines_TenantId",
-                table: "OrderReviewLines",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_OrderReviews_OrderId",
                 table: "OrderReviews",
                 column: "OrderId");
@@ -4061,16 +4252,6 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_PackagePrices_TenantId",
-                table: "PackagePrices",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Packages_TenantId",
-                table: "Packages",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PackageServices_PackageId",
                 table: "PackageServices",
                 column: "PackageId");
@@ -4188,11 +4369,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_PropertySizePresets_CountryId_SortOrder",
                 table: "PropertySizePresets",
                 columns: new[] { "CountryId", "SortOrder" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PropertySizePresets_TenantId",
-                table: "PropertySizePresets",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RecurringBookingTemplates_IsActive_StartsOn",
@@ -4334,19 +4510,9 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ServiceCategories_TenantId",
-                table: "ServiceCategories",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ServiceCities_CountryId_Name",
                 table: "ServiceCities",
                 columns: new[] { "CountryId", "Name" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ServiceCities_TenantId",
-                table: "ServiceCities",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ServiceCities_ZipPrefix",
@@ -4365,19 +4531,9 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ServicePrices_TenantId",
-                table: "ServicePrices",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Services_CategoryId",
                 table: "Services",
                 column: "CategoryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Services_TenantId",
-                table: "Services",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TenantConfigurations_TenantId",
@@ -4741,9 +4897,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Carts");
 
             migrationBuilder.DropTable(
-                name: "Tenants");
-
-            migrationBuilder.DropTable(
                 name: "CreditAccounts");
 
             migrationBuilder.DropTable(
@@ -4817,6 +4970,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Languages");
+
+            migrationBuilder.DropTable(
+                name: "Tenants");
         }
     }
 }

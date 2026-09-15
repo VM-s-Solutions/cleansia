@@ -44,7 +44,7 @@ public sealed class CatalogInUseCartGuardTests : IDisposable
     private async Task<(string CartedServiceId, string FreeServiceId, string CartedPackageId, string FreePackageId)> SeedAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Cleansia.Core.Domain.Internationalization.Language.Create("en", "English"));
 

@@ -44,7 +44,7 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
         await using (var bootstrap = NewContext())
         {
             await bootstrap.Database.EnsureDeletedAsync();
-            await bootstrap.Database.EnsureCreatedAsync();
+            await TestTenants.EnsureCreatedWithRegistryAsync(bootstrap);
         }
 
         await using var conn = await _dataSource.OpenConnectionAsync();

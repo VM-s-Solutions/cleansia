@@ -31,9 +31,7 @@ public class PropertySizePresetEntityConfiguration
             .SetValueComparer(new JsonValueComparer<IReadOnlyDictionary<string, Translation>>());
 
         // Catalogue data, not tenant data — like Country and ServiceCity — so the
-        // natural key is (CountryId, Code) with no TenantId term. That also keeps it
-        // clear of the single-tenant NULL trap: a unique index containing a nullable
-        // TenantId enforces nothing while that column is null.
+        // natural key is (CountryId, Code); the table carries no TenantId column at all.
         // → /architecture/security-rules
         builder.HasIndex(p => new { p.CountryId, p.Code })
             .IsUnique()

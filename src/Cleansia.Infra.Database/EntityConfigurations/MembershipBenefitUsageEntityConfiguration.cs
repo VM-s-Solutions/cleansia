@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class MembershipBenefitUsageEntityConfiguration : AuditableEntityConfiguration<MembershipBenefitUsage, string>
+public class MembershipBenefitUsageEntityConfiguration : TenantAuditableEntityConfiguration<MembershipBenefitUsage, string>
 {
     public override void Configure(EntityTypeBuilder<MembershipBenefitUsage> builder)
     {
@@ -54,11 +54,10 @@ public class MembershipBenefitUsageEntityConfiguration : AuditableEntityConfigur
             .HasForeignKey(u => u.UserMembershipId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ADR-0035 D3 — the sole arbiter of the reservation race, so NULLS NOT DISTINCT is mandatory,
-        // not a style choice: single-tenant mode is TenantId = null, and a nulls-distinct index never
-        // fires ON CONFLICT there, turning quota 2 into quota 3+ under concurrency in the platform's
-        // default deployment. Filtered to live rows so a release restores capacity while the released
-        // row keeps its ordinal for the audit trail.
+        // ADR-0035 D3 — the sole arbiter of the reservation race. NULLS NOT DISTINCT is vacuous on a
+        // NOT NULL tenant term and is kept because the model guard reads the option, not the column.
+        // Filtered to live rows so a release restores capacity while the released row keeps its
+        // ordinal for the audit trail.
         builder.HasIndex(u => new { u.TenantId, u.UserId, u.BenefitKind, u.PeriodKey, u.SlotOrdinal })
             .IsUnique()
             .AreNullsDistinct(false)

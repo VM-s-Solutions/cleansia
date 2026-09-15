@@ -24,7 +24,7 @@ namespace Cleansia.Tests.Features.Auditing;
 /// </summary>
 public sealed class OutOfBandAuditFailureSinkTenantTests : IDisposable
 {
-    private const string SecondTenant = "tenant-second";
+    private const string SecondTenant = TestTenants.Second;
     private const string SecondTenantUserId = "user-second-operator";
     private const string DefaultTenantUserId = "user-default-operator";
 
@@ -48,7 +48,7 @@ public sealed class OutOfBandAuditFailureSinkTenantTests : IDisposable
     {
         await using (var ctx = NewContext(TestTenants.Default))
         {
-            await ctx.Database.EnsureCreatedAsync();
+            await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
             ctx.Add(Language.Create("en", "English"));
             var defaultUser = User.CreateWithPassword("default@cleansia.test", "Passw0rd!", "Default", "Operator");
             defaultUser.Id = DefaultTenantUserId;

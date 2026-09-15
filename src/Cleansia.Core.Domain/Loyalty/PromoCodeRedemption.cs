@@ -10,7 +10,7 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// against a specific <see cref="Order"/> by a specific <see cref="User"/>.
 /// One row per (order, code) — see <c>OrderId</c> unique index.
 /// </summary>
-public class PromoCodeRedemption : Auditable, ITenantEntity
+public class PromoCodeRedemption : TenantAuditable
 {
     [Required]
     public string PromoCodeId { get; private set; } = default!;

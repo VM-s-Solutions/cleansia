@@ -55,6 +55,7 @@ public class OutboxClaimPostgresTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private async Task SeedAsync(params OutboxMessage[] rows)

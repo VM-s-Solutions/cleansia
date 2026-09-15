@@ -57,7 +57,7 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
     private async Task SeedMembershipAsync(MembershipStatus status)
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         var plan = MembershipPlan.Create(
             code: "PLUS_MONTHLY",

@@ -135,7 +135,10 @@ public sealed class CustomerActionAuditModelMetadataTests
         Assert.NotNull(property);
         Assert.True(property!.IsNullable);
         Assert.Equal(26, property.GetMaxLength());
-        Assert.Empty(entityType.GetForeignKeys());
+        // The row must outlive everything it names, so the only foreign key is the one into the
+        // registry — a company is seed-only and never deleted.
+        var foreignKey = Assert.Single(entityType.GetForeignKeys());
+        Assert.Equal(nameof(CustomerActionAudit.TenantId), Assert.Single(foreignKey.Properties).Name);
         Assert.Empty(entityType.GetNavigations());
     }
 

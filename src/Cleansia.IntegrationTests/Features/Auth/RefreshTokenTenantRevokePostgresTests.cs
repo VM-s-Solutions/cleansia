@@ -28,7 +28,7 @@ namespace Cleansia.IntegrationTests.Features.Auth;
 [Collection("PostgresCollection")]
 public class RefreshTokenTenantRevokePostgresTests : BaseIntegrationTest
 {
-    private const string TenantA = "tenant-A";
+    private const string TenantA = TestTenants.Second;
     private const string UserA = "user-A";
     private const string UserB = "user-B";
     private const string Audience = JwtAudiences.Mobile;
@@ -86,6 +86,7 @@ public class RefreshTokenTenantRevokePostgresTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private async Task SeedAsync()

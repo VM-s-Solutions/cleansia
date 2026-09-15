@@ -232,6 +232,7 @@ public class CustomerAuditPipelinePostgresTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     // ── success rides the commit ───────────────────────────────────────────────

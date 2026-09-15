@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class DeviceConfiguration : AuditableEntityConfiguration<Device, string>
+public class DeviceConfiguration : TenantAuditableEntityConfiguration<Device, string>
 {
     public override void Configure(EntityTypeBuilder<Device> builder)
     {

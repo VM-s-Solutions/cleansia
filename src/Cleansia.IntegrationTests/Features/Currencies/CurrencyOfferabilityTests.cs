@@ -46,6 +46,7 @@ public class CurrencyOfferabilityTests(PostgresContainerFixture fixture) : BaseI
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private sealed record Seeded(string CurrencyId, string ServiceId, string PackageId, string ExtraId);

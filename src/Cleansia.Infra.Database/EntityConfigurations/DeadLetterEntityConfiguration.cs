@@ -10,7 +10,7 @@ namespace Cleansia.Infra.Database.EntityConfigurations;
 /// Id/TenantId/audit columns + the TenantId index (TenantId is nullable — a poison body may be
 /// unparseable so the tenant can be unknown).
 /// </summary>
-public class DeadLetterEntityConfiguration : AuditableEntityConfiguration<DeadLetter, string>
+public class DeadLetterEntityConfiguration : TenantAuditableEntityConfiguration<DeadLetter, string>
 {
     public override void Configure(EntityTypeBuilder<DeadLetter> builder)
     {

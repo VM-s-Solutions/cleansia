@@ -23,7 +23,7 @@ namespace Cleansia.Core.Domain.Memberships;
 /// derives the smallest free ordinal in SQL; the filtered unique index behind it is the sole arbiter of
 /// the race, which is why it is <c>NULLS NOT DISTINCT</c> (D3).</para>
 /// </summary>
-public class MembershipBenefitUsage : Auditable, ITenantEntity
+public class MembershipBenefitUsage : TenantAuditable
 {
     [Required]
     [MaxLength(26)]

@@ -73,6 +73,7 @@ public class RefreshTokenRotationRevokeRaceTests : BaseIntegrationTest
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private async Task<string> SeedActiveTokenAsync()

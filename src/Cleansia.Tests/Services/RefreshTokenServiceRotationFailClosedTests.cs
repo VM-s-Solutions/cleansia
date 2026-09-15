@@ -64,7 +64,7 @@ public sealed class RefreshTokenServiceRotationFailClosedTests : IDisposable
     private async Task<string> SeedActiveTokenAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Language.Create("en", "English"));
         var user = User.CreateWithPassword($"{UserId}@cleansia.test", "Passw0rd!", "Owner", "Rot");

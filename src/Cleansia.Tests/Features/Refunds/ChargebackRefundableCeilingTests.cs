@@ -48,7 +48,7 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
     private async Task SeedOrderWithChargebackAsync(decimal totalPrice, decimal chargebackAmount)
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = "cur-1";

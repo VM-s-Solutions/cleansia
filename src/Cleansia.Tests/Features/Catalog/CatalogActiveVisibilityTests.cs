@@ -50,7 +50,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
     private async Task<(string ActiveServiceId, string RetiredServiceId, string ActivePackageId, string RetiredPackageId)> SeedAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         var category = ServiceCategory.Create("cat-1", "Category", "seeded");
         var activeService = Service.Create(category.Id, "Active Service", "seeded");

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class CompanyInfoEntityConfiguration : AuditableEntityConfiguration<CompanyInfo, string>
+public class CompanyInfoEntityConfiguration : TenantAuditableEntityConfiguration<CompanyInfo, string>
 {
     public override void Configure(EntityTypeBuilder<CompanyInfo> builder)
     {

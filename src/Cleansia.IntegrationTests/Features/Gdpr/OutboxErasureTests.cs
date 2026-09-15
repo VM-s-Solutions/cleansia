@@ -8,6 +8,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +32,7 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 [Collection("PostgresCollection")]
 public class OutboxErasureTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
-    private const string EnqueueTenantId = "tenant-alpha";
+    private const string EnqueueTenantId = TestTenants.Second;
     private const string BystanderUserId = "x-" + TestConstants.TestUserSession.TestUserId;
     private const string BystanderEmail = "tomas.svoboda@cleansia.test";
 

@@ -5,7 +5,7 @@ using Cleansia.Core.Domain.Services;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class Cart : Auditable, ITenantEntity
+public class Cart : TenantAuditable
 {
     [Required]
     public string UserId { get; private set; }

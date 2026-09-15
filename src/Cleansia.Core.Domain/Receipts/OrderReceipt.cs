@@ -6,7 +6,7 @@ using Cleansia.Core.Fiscal.Abstractions;
 
 namespace Cleansia.Core.Domain.Receipts;
 
-public class OrderReceipt : Auditable, ITenantEntity
+public class OrderReceipt : TenantAuditable
 {
     [Required]
     [MaxLength(50)]

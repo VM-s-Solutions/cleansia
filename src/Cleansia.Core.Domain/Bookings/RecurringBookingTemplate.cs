@@ -14,7 +14,7 @@ namespace Cleansia.Core.Domain.Bookings;
 /// No UI exists today to create these; the entity is the foundation that
 /// Cleansia Plus's "recurring bookings" perk will surface when Plus launches.
 /// </summary>
-public class RecurringBookingTemplate : Auditable, ITenantEntity
+public class RecurringBookingTemplate : TenantAuditable
 {
     [Required]
     public string UserId { get; private set; } = default!;

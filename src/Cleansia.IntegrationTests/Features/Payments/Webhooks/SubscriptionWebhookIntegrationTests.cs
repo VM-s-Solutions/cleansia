@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +27,7 @@ namespace Cleansia.IntegrationTests.Features.Payments.Webhooks;
 [Collection("PostgresCollection")]
 public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
-    private const string TenantId = "tenant-sub-webhook";
+    private const string TenantId = TestTenants.Second;
     private const string PlanCode = "PLUS_MONTHLY";
     private const string CurrencyId = "currency-czk-sub-webhook";
 
@@ -276,7 +277,6 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly,
             trialPeriodDays: 0);
-        plan.TenantId = TenantId;
         context.MembershipPlans.Add(plan);
 
         await context.CommitAsync(CancellationToken.None);

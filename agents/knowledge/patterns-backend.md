@@ -29,7 +29,7 @@ parallel ones.** Authoritative architecture prose:
 | Session | `IUserSessionProvider` (`GetUserId()`, `GetTypedUserClaim(...)`) | `Cleansia.Core.Domain/Repositories/IUserSessionProvider.cs` |
 | Repo base | `BaseRepository<TEntity> : IRepository<TEntity, string>` | `Cleansia.Infra.Database/BaseRepository.cs` |
 | Unit of work | `IUnitOfWork` (`CommitAsync`) | `Cleansia.Core.Domain/SeedWork/IUnitOfWork.cs` |
-| Entity bases | `BaseEntity`, `Auditable : BaseEntity`, `IEntity`/`IEntity<T>`, `ITenantEntity` | `Cleansia.Core.Domain/Common/` |
+| Entity bases | `BaseEntity`, `Auditable : BaseEntity`, `TenantAuditable : Auditable, ITenantEntity`, `IEntity`/`IEntity<T>`, `ITenantEntity` | `Cleansia.Core.Domain/Common/` |
 | Paging in | `DataRangeRequest` (`Offset`, `Limit`, `Sort`) | `…/Shared/DTOs/RequestModels/DataRangeRequest.cs` |
 | Paging out | `PagedData<T>` (`PageNumber`, `PageSize`, `Total`, `Data`) | `…/Shared/DTOs/ResponseModels/` |
 | Sort | `SortDefinition`, `BaseSort<TEntity>`, `<Entity>Sort` | `…/Shared/DTOs/Sorting/`, `Core.Domain/Sorting/` |
@@ -269,12 +269,20 @@ arm) + `SessionAuditTests` (the second-operator stamping, on Postgres) — `T1-C
 ## Entities (from `Core.Domain/Common/`)
 
 - `IEntity` = `{ object Id; bool IsActive; }`; `IEntity<T>` narrows `Id`/`IsActive`. IDs are strings.
-- `Auditable : BaseEntity` adds `TenantId`, `CreatedBy/On`, `UpdatedBy/On`, `DeactivatedBy/On`, with
-  fluent `Created(...)`, `Updated(...)`, `Deactivated(...)` (the last sets `IsActive=false`).
+- `Auditable : BaseEntity` adds `CreatedBy/On`, `UpdatedBy/On`, `DeactivatedBy/On`, with fluent
+  `Created(...)`, `Updated(...)`, `Deactivated(...)` (the last sets `IsActive=false`). It carries **no**
+  tenant column: a catalogue or per-country type (`Currency`, `Service`, `MembershipPlan`, …) stays here.
+- `TenantAuditable : Auditable, ITenantEntity` adds `TenantId` (`string?` in C#, stamped at commit;
+  NOT NULL + `FK_<T>_Tenants_TenantId` Restrict in the database). Its mapping is
+  `TenantAuditableEntityConfiguration<T, string>`; plain `AuditableEntityConfiguration<T, string>` maps
+  no tenant. The two `BaseEntity + ITenantEntity` audits map the column and the FK by hand.
+  **Enforced by:** `TenantIdRequiredModelTests` (every `ITenantEntity` NOT NULL, FK'd, Restrict; no
+  other type carries the column) + `InitialMigrationTenantDdlTests` (the committed migration agrees) —
+  `T1-CI`, `backend-ci.yml` unit job.
 - Rich domain: private setters, factory `Create(...)`, behavior methods (`order.Cancel(...)`,
   `order.AddOrderStatus(OrderStatusTrack.Create(...))`, `order.UpdatePaymentStatus(...)`). Entity
   classes carry **no EF attributes** — mapping lives in `Infra.Database/EntityConfigurations/`
-  (DB Master's domain). Implement `ITenantEntity` for user-scoped data (S8).
+  (DB Master's domain). Derive from `TenantAuditable` for user-scoped data (S8).
 
 ## Errors & i18n binding (critical, verified)
 

@@ -13,7 +13,7 @@ namespace Cleansia.Core.Domain.LiveActivities;
 /// cleanup, APNs 410 prune, the 24h janitor, and the logout/revoke cascade) — deliberately NOT the
 /// ADR-0007 soft-delete domain surface.
 /// </summary>
-public class LiveActivityToken : Auditable, ITenantEntity
+public class LiveActivityToken : TenantAuditable
 {
     public string UserId { get; private set; } = default!;
 

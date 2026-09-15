@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class OrderPhotoEntityConfiguration : AuditableEntityConfiguration<OrderPhoto, string>
+public class OrderPhotoEntityConfiguration : TenantAuditableEntityConfiguration<OrderPhoto, string>
 {
     public override void Configure(EntityTypeBuilder<OrderPhoto> builder)
     {

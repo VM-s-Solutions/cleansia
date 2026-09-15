@@ -8,6 +8,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +29,7 @@ namespace Cleansia.IntegrationTests.Features.Gdpr;
 [Collection("PostgresCollection")]
 public class DeadLetterErasureTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
-    private const string PoisonTenantId = "tenant-alpha";
+    private const string PoisonTenantId = TestTenants.Second;
     private const string BystanderUserId = "user-keep-dl-int";
     private const string BystanderEmail = "tomas.svoboda@cleansia.test";
 

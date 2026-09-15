@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<EmployeeInvoice, string>
+public class EmployeeInvoiceEntityConfiguration : TenantAuditableEntityConfiguration<EmployeeInvoice, string>
 {
     public override void Configure(EntityTypeBuilder<EmployeeInvoice> builder)
     {

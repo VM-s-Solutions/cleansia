@@ -53,7 +53,7 @@ public class CatalogDeleteFkRestrictPostgresTests : IAsyncLifetime
         await using (var bootstrap = NewContext())
         {
             await bootstrap.Database.EnsureDeletedAsync();
-            await bootstrap.Database.EnsureCreatedAsync();
+            await TestTenants.EnsureCreatedWithRegistryAsync(bootstrap);
         }
 
         // The citext/pg_trgm extensions are created by EnsureCreated; reload so the data source's cached

@@ -215,7 +215,7 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
 
             await using (var ctx = NewContext())
             {
-                await ctx.Database.EnsureCreatedAsync();
+                await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
             }
 
             await using var conn = new NpgsqlConnection(_container.GetConnectionString());

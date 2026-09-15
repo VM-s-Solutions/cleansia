@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class UserEntityConfiguration : AuditableEntityConfiguration<User, string>
+public class UserEntityConfiguration : TenantAuditableEntityConfiguration<User, string>
 {
     public override void Configure(EntityTypeBuilder<User> builder)
     {

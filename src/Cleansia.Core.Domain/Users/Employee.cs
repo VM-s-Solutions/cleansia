@@ -8,7 +8,7 @@ using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class Employee : Auditable, ITenantEntity
+public class Employee : TenantAuditable
 {
     public EmployeeEntityType EntityType { get; private set; } = EmployeeEntityType.NaturalPerson;
 

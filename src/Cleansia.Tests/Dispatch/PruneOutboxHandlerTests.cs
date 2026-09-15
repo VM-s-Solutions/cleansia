@@ -43,7 +43,7 @@ public sealed class PruneOutboxHandlerTests : IDisposable
     private async Task EnsureSchemaAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
     }
 
     private static OutboxMessage DispatchedRow(string key, DateTimeOffset dispatchedOn)

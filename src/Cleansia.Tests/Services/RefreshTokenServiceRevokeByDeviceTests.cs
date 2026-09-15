@@ -79,7 +79,7 @@ public sealed class RefreshTokenServiceRevokeByDeviceTests : IDisposable
     private async Task SeedAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Language.Create("en", "English"));
 

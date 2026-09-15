@@ -79,7 +79,7 @@ public sealed class RefreshTokenServiceFailClosedRevokeTests : IDisposable
     private async Task SeedUserAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
         ctx.Add(Language.Create("en", "English"));
         var user = User.CreateWithPassword($"{UserId}@cleansia.test", "Passw0rd!", "Fail", "Closed");
         user.Id = UserId;

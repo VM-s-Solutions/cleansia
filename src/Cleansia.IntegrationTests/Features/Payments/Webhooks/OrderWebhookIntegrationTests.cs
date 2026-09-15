@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +45,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 {
     private const string CurrencyId = "currency-czk-order-webhook";
     private const string CountryId = "country-cz-order-webhook";
-    private const string TenantId = "tenant-order-webhook";
+    private const string TenantId = TestTenants.Second;
 
     /// <summary>
     /// The fulfilment status this fixture arranges. Pending is the DEAD status (ADR-0037 D5, no

@@ -62,7 +62,7 @@ public sealed class RefreshTokenServiceLogoutChainTests : IDisposable
     private async Task SeedUsersAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
         ctx.Add(Language.Create("en", "English"));
         foreach (var (id, first) in new[] { (UserId, "Owner"), (OtherUserId, "Other") })
         {

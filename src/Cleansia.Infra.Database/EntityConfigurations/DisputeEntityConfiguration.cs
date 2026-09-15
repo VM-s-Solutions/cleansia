@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class DisputeEntityConfiguration : AuditableEntityConfiguration<Dispute, string>
+public class DisputeEntityConfiguration : TenantAuditableEntityConfiguration<Dispute, string>
 {
     public override void Configure(EntityTypeBuilder<Dispute> builder)
     {

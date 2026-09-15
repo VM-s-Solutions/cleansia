@@ -54,6 +54,7 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private static Currency NewCurrency(string id, string code, bool isDefault, decimal? noShowCredit)

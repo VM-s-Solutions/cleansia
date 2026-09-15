@@ -7,7 +7,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
 
-public class OrderEmployeePay : Auditable, ITenantEntity
+public class OrderEmployeePay : TenantAuditable
 {
     [Required]
     public string OrderId { get; private set; } = default!;

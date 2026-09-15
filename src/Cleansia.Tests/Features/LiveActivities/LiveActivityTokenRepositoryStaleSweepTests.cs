@@ -57,7 +57,7 @@ public sealed class LiveActivityTokenRepositoryStaleSweepTests : IDisposable
     {
         await using (var ctx = NewContext())
         {
-            await ctx.Database.EnsureCreatedAsync();
+            await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
             ctx.Add(Language.Create("en", "English")); // the User's PreferredLanguageCode FK target
             var user = User.CreateWithPassword("owner@cleansia.test", "Passw0rd!", "Owner", "User");

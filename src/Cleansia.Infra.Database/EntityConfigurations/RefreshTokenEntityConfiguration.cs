@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class RefreshTokenEntityConfiguration : AuditableEntityConfiguration<RefreshToken, string>
+public class RefreshTokenEntityConfiguration : TenantAuditableEntityConfiguration<RefreshToken, string>
 {
     public override void Configure(EntityTypeBuilder<RefreshToken> builder)
     {

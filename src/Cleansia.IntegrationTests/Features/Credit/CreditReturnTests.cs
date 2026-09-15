@@ -53,6 +53,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
     }
 
     private async Task<(string UserId, string CurrencyId)> SeedCustomerAsync(decimal balance)

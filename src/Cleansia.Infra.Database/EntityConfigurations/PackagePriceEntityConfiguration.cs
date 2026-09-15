@@ -32,12 +32,9 @@ public class PackagePriceEntityConfiguration : AuditableEntityConfiguration<Pack
 
         // One price per package per currency.
         //
-        // NO TenantId TERM, deliberately, and this is the documented precedent rather than a new
-        // judgement: the catalogue is platform config, not tenant data, exactly as
-        // PropertySizePresetEntityConfiguration records for (CountryId, Code). It also keeps the index
-        // clear of the single-tenant NULL trap -- a unique index containing a nullable TenantId
-        // enforces nothing while that column is null, which is production today.
-        // -> /architecture/security-rules
+        // No tenant term: the catalogue is platform config, not tenant data, exactly as
+        // PropertySizePresetEntityConfiguration records for (CountryId, Code) — the table carries no
+        // TenantId column at all. -> /architecture/security-rules
         builder.HasIndex(p => new { p.PackageId, p.CurrencyId })
             .IsUnique()
             .HasDatabaseName("IX_PackagePrices_PackageId_CurrencyId");

@@ -46,7 +46,7 @@ public sealed class CatalogInUseTemplateGuardTests : IDisposable
     private async Task<(string TemplatedServiceId, string FreeServiceId, string TemplatedPackageId, string FreePackageId)> SeedAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Cleansia.Core.Domain.Internationalization.Language.Create("en", "English"));
 
@@ -136,7 +136,7 @@ public sealed class CatalogInUseTemplateGuardTests : IDisposable
 
         // An admin acting under a different tenant claim must still see the cross-tenant template
         // reference: the catalog row is platform config shared by every tenant.
-        await using var ctx = NewContext(tenantId: "tenant-other");
+        await using var ctx = NewContext(tenantId: TestTenants.Second);
         var inUse = await new ServiceRepository(ctx).IsInUseAsync(templatedServiceId, CancellationToken.None);
 
         Assert.True(inUse);

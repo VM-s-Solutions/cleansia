@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class EmployeePayoutDetailsEntityConfiguration : AuditableEntityConfiguration<EmployeePayoutDetails, string>
+public class EmployeePayoutDetailsEntityConfiguration : TenantAuditableEntityConfiguration<EmployeePayoutDetails, string>
 {
     public override void Configure(EntityTypeBuilder<EmployeePayoutDetails> builder)
     {
@@ -84,9 +84,8 @@ public class EmployeePayoutDetailsEntityConfiguration : AuditableEntityConfigura
             .HasForeignKey(p => p.BankCountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Cardinality one, enforced (ADR-0034 D1.3). NULLS NOT DISTINCT because single-tenant mode IS
-        // TenantId = null: a plain unique index treats each null as distinct and would let a second
-        // payout destination in for the same cleaner in the platform's default deployment. Unfiltered —
+        // Cardinality one, enforced (ADR-0034 D1.3). NULLS NOT DISTINCT is vacuous on a NOT NULL tenant
+        // term and is kept because the model guard reads the option, not the column. Unfiltered —
         // nothing deactivates this row, so there is no partial-index interaction to reason about.
         builder.HasIndex(p => new { p.TenantId, p.EmployeeId })
             .IsUnique()

@@ -353,10 +353,9 @@ VALUES
 INSERT INTO public."ServiceCities" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
-  "TenantId", "CountryId", "Name", "ZipPrefix"
+  "CountryId", "Name", "ZipPrefix"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-       NULL,
        (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
        city.name, city.zip_prefix
 FROM (VALUES
@@ -393,10 +392,9 @@ FROM (VALUES
 INSERT INTO public."ServiceCities" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
-  "TenantId", "CountryId", "Name", "ZipPrefix"
+  "CountryId", "Name", "ZipPrefix"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-       NULL,
        (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
        city.name, city.zip_prefix
 FROM (VALUES
@@ -454,7 +452,6 @@ WHERE NOT EXISTS (
   FROM public."ServiceCities" sc
   WHERE sc."CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)
     AND LOWER(sc."Name") = LOWER(city.name)
-    AND sc."TenantId" IS NULL
 );
 
 -- 4. EMAIL TRANSLATIONS
@@ -1862,34 +1859,34 @@ WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'LOYAL10' AND
 -- PLUS_MONTHLY
 INSERT INTO public."MembershipPlans" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
-    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "DeactivatedBy", "DeactivatedOn",
     "Code", "Name",
     "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
     "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
-SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     'PLUS_MONTHLY', 'Cleansia Plus (Monthly)',
     5.00, 4, true,
     1,
     1, 0
-WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY' AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY');
 
 -- PLUS_YEARLY (the annual charge is on its price row; ≈15% off vs monthly in CZK).
 INSERT INTO public."MembershipPlans" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
-    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "DeactivatedBy", "DeactivatedOn",
     "Code", "Name",
     "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
     "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
-SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     'PLUS_YEARLY', 'Cleansia Plus (Annual)',
     5.00, 4, true,
     1,
     2, 0
-WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY' AND "TenantId" IS NULL);
+WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY');
 
 -- One price per (plan, currency). CZK only: 199 Kč/month and 2030 Kč/year against the two sandbox
 -- Stripe Prices. A currency with no row here is a market where Plus is not on sale (ADR-0059 D4).
@@ -1903,7 +1900,7 @@ FROM (VALUES
   ('PLUS_MONTHLY',  199.00, 'price_1TSiJ83KjMqxM0RBVaiKAF6r'),
   ('PLUS_YEARLY',  2030.00, 'price_1TSiJ83KjMqxM0RBrfMWdjrF')
 ) AS v("Code", "Price", "StripePriceId")
-JOIN public."MembershipPlans" p ON p."Code" = v."Code" AND p."TenantId" IS NULL
+JOIN public."MembershipPlans" p ON p."Code" = v."Code"
 CROSS JOIN (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1) c
 WHERE NOT EXISTS (
   SELECT 1 FROM public."MembershipPlanPrices" mp WHERE mp."MembershipPlanId" = p."Id" AND mp."CurrencyId" = c."Id"
@@ -1922,10 +1919,9 @@ WHERE NOT EXISTS (
 INSERT INTO public."PropertySizePresets" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
-  "TenantId", "CountryId", "Code", "SortOrder", "Rooms", "Bathrooms", "Translations"
+  "CountryId", "Code", "SortOrder", "Rooms", "Bathrooms", "Translations"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-       NULL,
        (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = c.iso LIMIT 1),
        p.code, p.sort_order, p.rooms, p.bathrooms, p.translations::jsonb
 FROM (VALUES ('CZE'), ('SVK')) AS c(iso)

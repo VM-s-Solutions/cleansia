@@ -149,6 +149,7 @@ public class RequestPromoCodePersistenceTests(PostgresContainerFixture fixture) 
             SchemasToExclude = ["pg_catalog", "information_schema"]
         });
         await respawner.ResetAsync(connection);
+        await SeedTenantRegistryAsync(connection);
     }
 
     private sealed class GatedPromoCodeRepository(CleansiaDbContext context, LookupGate gate)

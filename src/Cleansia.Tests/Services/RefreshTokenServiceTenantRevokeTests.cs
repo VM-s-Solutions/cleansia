@@ -27,8 +27,7 @@ namespace Cleansia.Tests.Services;
 /// </summary>
 public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
 {
-    private const string TenantA = "tenant-A";
-    private const string TenantB = "tenant-B";
+    private const string TenantA = TestTenants.Second;
     private const string UserA = "user-A";
     private const string UserB = "user-B";
     private const string Audience = JwtAudiences.Mobile;
@@ -90,7 +89,7 @@ public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
     private async Task SeedAsync()
     {
         await using var ctx = NewContext(tenantId: TestTenants.Default);
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
 
         ctx.Add(Language.Create("en", "English"));
 
@@ -139,7 +138,7 @@ public sealed class RefreshTokenServiceTenantRevokeTests : IDisposable
         string rawA;
         await using (var issueCtx = NewContext(tenantId: TestTenants.Default))
         {
-            await issueCtx.Database.EnsureCreatedAsync();
+            await TestTenants.EnsureCreatedWithRegistryAsync(issueCtx);
             rawA = NewService(issueCtx).Issue(UserA, rememberMe: true, audience: Audience, deviceId: DeviceA).RawToken;
             await issueCtx.CommitAsync(CancellationToken.None);
         }

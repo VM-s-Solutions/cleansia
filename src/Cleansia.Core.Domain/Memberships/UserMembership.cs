@@ -20,7 +20,7 @@ namespace Cleansia.Core.Domain.Memberships;
 /// allowed — a full unique index would wrongly block that legitimate
 /// re-subscribe-after-cancel case.
 /// </summary>
-public class UserMembership : Auditable, ITenantEntity
+public class UserMembership : TenantAuditable
 {
     [Required]
     public string UserId { get; private set; } = default!;

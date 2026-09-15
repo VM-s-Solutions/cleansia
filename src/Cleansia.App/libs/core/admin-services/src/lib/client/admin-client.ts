@@ -24423,6 +24423,150 @@ export interface IGdprExportCustomerActionDto {
     deviceLabel: string | undefined;
 }
 
+export class GdprExportDisputeDto implements IGdprExportDisputeDto {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    orderDisplayNumber!: string | undefined;
+    reason!: string | undefined;
+    description!: string | undefined;
+    status!: string | undefined;
+    resolutionNotes!: string | undefined;
+    refundAmount!: number | undefined;
+    currencyCode!: string | undefined;
+    createdOn!: Date;
+    resolvedOn!: Date | undefined;
+    messages!: GdprExportDisputeMessageDto[] | undefined;
+    evidenceFileNames!: string[] | undefined;
+
+    constructor(data?: IGdprExportDisputeDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.orderDisplayNumber = Data["orderDisplayNumber"];
+            this.reason = Data["reason"];
+            this.description = Data["description"];
+            this.status = Data["status"];
+            this.resolutionNotes = Data["resolutionNotes"];
+            this.refundAmount = Data["refundAmount"];
+            this.currencyCode = Data["currencyCode"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
+            if (Array.isArray(Data["messages"])) {
+                this.messages = [] as any;
+                for (let item of Data["messages"])
+                    this.messages!.push(GdprExportDisputeMessageDto.fromJS(item));
+            }
+            if (Array.isArray(Data["evidenceFileNames"])) {
+                this.evidenceFileNames = [] as any;
+                for (let item of Data["evidenceFileNames"])
+                    this.evidenceFileNames!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): GdprExportDisputeDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportDisputeDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["orderDisplayNumber"] = this.orderDisplayNumber;
+        data["reason"] = this.reason;
+        data["description"] = this.description;
+        data["status"] = this.status;
+        data["resolutionNotes"] = this.resolutionNotes;
+        data["refundAmount"] = this.refundAmount;
+        data["currencyCode"] = this.currencyCode;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["resolvedOn"] = this.resolvedOn ? this.resolvedOn.toISOString() : undefined as any;
+        if (Array.isArray(this.messages)) {
+            data["messages"] = [];
+            for (let item of this.messages)
+                data["messages"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.evidenceFileNames)) {
+            data["evidenceFileNames"] = [];
+            for (let item of this.evidenceFileNames)
+                data["evidenceFileNames"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IGdprExportDisputeDto {
+    id: string | undefined;
+    orderId: string | undefined;
+    orderDisplayNumber: string | undefined;
+    reason: string | undefined;
+    description: string | undefined;
+    status: string | undefined;
+    resolutionNotes: string | undefined;
+    refundAmount: number | undefined;
+    currencyCode: string | undefined;
+    createdOn: Date;
+    resolvedOn: Date | undefined;
+    messages: GdprExportDisputeMessageDto[] | undefined;
+    evidenceFileNames: string[] | undefined;
+}
+
+export class GdprExportDisputeMessageDto implements IGdprExportDisputeMessageDto {
+    authorRole!: string | undefined;
+    sentAt!: Date;
+    text!: string | undefined;
+
+    constructor(data?: IGdprExportDisputeMessageDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.authorRole = Data["authorRole"];
+            this.sentAt = Data["sentAt"] ? new Date(Data["sentAt"].toString()) : undefined as any;
+            this.text = Data["text"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportDisputeMessageDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportDisputeMessageDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["authorRole"] = this.authorRole;
+        data["sentAt"] = this.sentAt ? this.sentAt.toISOString() : undefined as any;
+        data["text"] = this.text;
+        return data;
+    }
+}
+
+export interface IGdprExportDisputeMessageDto {
+    authorRole: string | undefined;
+    sentAt: Date;
+    text: string | undefined;
+}
+
 export class GdprExportDocumentDto implements IGdprExportDocumentDto {
     id!: string | undefined;
     fileName!: string | undefined;
@@ -24477,6 +24621,7 @@ export class GdprExportDto implements IGdprExportDto {
     employee!: GdprExportEmployeeDto;
     payoutDetails!: GdprExportPayoutDetailsDto;
     orders!: GdprExportOrderDto[] | undefined;
+    disputes!: GdprExportDisputeDto[] | undefined;
     documents!: GdprExportDocumentDto[] | undefined;
     invoices!: GdprExportInvoiceDto[] | undefined;
     consents!: GdprExportConsentDto[] | undefined;
@@ -24502,6 +24647,11 @@ export class GdprExportDto implements IGdprExportDto {
                 this.orders = [] as any;
                 for (let item of Data["orders"])
                     this.orders!.push(GdprExportOrderDto.fromJS(item));
+            }
+            if (Array.isArray(Data["disputes"])) {
+                this.disputes = [] as any;
+                for (let item of Data["disputes"])
+                    this.disputes!.push(GdprExportDisputeDto.fromJS(item));
             }
             if (Array.isArray(Data["documents"])) {
                 this.documents = [] as any;
@@ -24545,6 +24695,11 @@ export class GdprExportDto implements IGdprExportDto {
             for (let item of this.orders)
                 data["orders"].push(item ? item.toJSON() : undefined as any);
         }
+        if (Array.isArray(this.disputes)) {
+            data["disputes"] = [];
+            for (let item of this.disputes)
+                data["disputes"].push(item ? item.toJSON() : undefined as any);
+        }
         if (Array.isArray(this.documents)) {
             data["documents"] = [];
             for (let item of this.documents)
@@ -24576,6 +24731,7 @@ export interface IGdprExportDto {
     employee: GdprExportEmployeeDto;
     payoutDetails: GdprExportPayoutDetailsDto;
     orders: GdprExportOrderDto[] | undefined;
+    disputes: GdprExportDisputeDto[] | undefined;
     documents: GdprExportDocumentDto[] | undefined;
     invoices: GdprExportInvoiceDto[] | undefined;
     consents: GdprExportConsentDto[] | undefined;

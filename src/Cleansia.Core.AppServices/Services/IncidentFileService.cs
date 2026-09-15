@@ -164,9 +164,9 @@ public class IncidentFileService(
     {
         // Scoped to an order, the customer arm is the subject's rows that name the order or its disputes
         // plus the guest rows on it. The orders this file walks are the account's and the proven ones —
-        // NOT the e-mail-matched guest bookings the erasure and the export reach through SubjectOrders,
-        // so a guest booking placed before the account existed is in this file only when an admin names
-        // it by id. A stranger's refused probe at the order is left out: its user id and request context
+        // NOT the e-mail-matched guest bookings the erasure and the export reach through SubjectOrders:
+        // a guest booking placed before the account existed is outside this file, and naming it by id
+        // is refused as not the subject's. A stranger's refused probe at the order is left out: its user id and request context
         // are theirs, not the subject's, and this document leaves the platform. Unscoped, it is the
         // subject's own rows, like the export.
         var customer = orderId is null

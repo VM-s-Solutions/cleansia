@@ -8299,6 +8299,90 @@
         },
         "additionalProperties": false
       },
+      "GdprExportDisputeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderDisplayNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolutionNotes": {
+            "type": "string",
+            "nullable": true
+          },
+          "refundAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedOn": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportDisputeMessageDto"
+            },
+            "nullable": true
+          },
+          "evidenceFileNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GdprExportDisputeMessageDto": {
+        "type": "object",
+        "properties": {
+          "authorRole": {
+            "type": "string",
+            "nullable": true
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "text": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "GdprExportDocumentDto": {
         "type": "object",
         "properties": {
@@ -8340,6 +8424,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GdprExportOrderDto"
+            },
+            "nullable": true
+          },
+          "disputes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportDisputeDto"
             },
             "nullable": true
           },

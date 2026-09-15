@@ -53,7 +53,7 @@ public class RefreshTokenDoesNotRecordLoginTests
 
         var result = await Handle(new RefreshTokenCmd.Command("any")
         {
-            RequiredProfile = UserProfile.Customer,
+            RequiredProfiles = [UserProfile.Customer],
             RequiredAudience = CustomerAudience,
         });
 

@@ -105,7 +105,7 @@ public class AuthController(
         var enriched = command with
         {
             Token = RefreshTokenFromCookieOrBody(command.Token),
-            RequiredProfile = UserProfile.Customer,
+            RequiredProfiles = [UserProfile.Customer],
             RequiredAudience = JwtAudiences.Customer,
         };
         var result = await Mediator.Send(enriched, cancellationToken);

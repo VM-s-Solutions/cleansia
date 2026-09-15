@@ -68,14 +68,14 @@ public class RefreshTokenProfileGateHandlerTests
     }
 
     [Fact]
-    public async Task RequiredProfile_Mismatch_Rejects_With_InvalidRefreshToken()
+    public async Task Profile_Outside_The_Required_Set_Rejects_With_InvalidRefreshToken()
     {
         var demoted = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Employee });
         ArrangeRotation(demoted);
 
         var result = await Handle(new RefreshTokenCmd.Command("any")
         {
-            RequiredProfile = UserProfile.Customer,
+            RequiredProfiles = [UserProfile.Customer],
             RequiredAudience = CustomerAudience,
         });
 
@@ -84,14 +84,14 @@ public class RefreshTokenProfileGateHandlerTests
     }
 
     [Fact]
-    public async Task RequiredProfile_Match_Succeeds_With_New_Token()
+    public async Task Profile_In_The_Required_Set_Succeeds_With_New_Token()
     {
         var customer = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Customer });
         ArrangeRotation(customer);
 
         var result = await Handle(new RefreshTokenCmd.Command("any")
         {
-            RequiredProfile = UserProfile.Customer,
+            RequiredProfiles = [UserProfile.Customer],
             RequiredAudience = CustomerAudience,
         });
 

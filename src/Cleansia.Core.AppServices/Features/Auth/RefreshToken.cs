@@ -30,14 +30,15 @@ public class RefreshToken
         }
     }
 
-    // RequiredProfile/RequiredAudience are the host's per-host refresh pin (ADR-0001). They are
-    // server-authoritative: each AuthController sets them from its own host identity and a
-    // client-sent value would be discarded. JsonIgnore keeps them off the wire so they never appear
-    // in a generated client and can never be supplied by a caller — only Token crosses the wire.
+    // RequiredProfiles/RequiredAudience are the host's per-host refresh pin (ADR-0001): the profiles
+    // the host's sign-in admits, and its own audience. They are server-authoritative: each
+    // AuthController sets them from its own host identity and a client-sent value would be discarded.
+    // JsonIgnore keeps them off the wire so they never appear in a generated client and can never be
+    // supplied by a caller — only Token crosses the wire.
     public record Command(string Token) : ICommand<JwtTokenResponse>
     {
         [JsonIgnore]
-        public UserProfile? RequiredProfile { get; init; }
+        public IReadOnlyCollection<UserProfile>? RequiredProfiles { get; init; }
 
         [JsonIgnore]
         public string? RequiredAudience { get; init; }
@@ -89,7 +90,7 @@ public class RefreshToken
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
             }
 
-            if (command.RequiredProfile.HasValue && user.Profile != command.RequiredProfile.Value)
+            if (command.RequiredProfiles is { Count: > 0 } && !command.RequiredProfiles.Contains(user.Profile))
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));

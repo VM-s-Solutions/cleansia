@@ -92,7 +92,11 @@ public class AuthController(IMediator mediator) : MobileApiController(mediator)
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshToken.Command command, CancellationToken cancellationToken)
     {
-        var enriched = command with { RequiredProfile = UserProfile.Employee, RequiredAudience = JwtAudiences.Mobile };
+        var enriched = command with
+        {
+            RequiredProfiles = [UserProfile.Employee, UserProfile.Administrator],
+            RequiredAudience = JwtAudiences.Mobile,
+        };
         var result = await Mediator.Send(enriched, cancellationToken);
         return HandleResult<JwtTokenResponse>(result);
     }

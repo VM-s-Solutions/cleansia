@@ -11,7 +11,7 @@ namespace Cleansia.Tests.Features.Auth;
 /// is the same System.Text.Json the API model-binds with and Swashbuckle builds its schema from, so a
 /// field absent from this round-trip is absent from the generated TS/Kotlin client too.
 ///   - Web Login/PartnerLogin/AdminLogin: trustedDeviceToken is server-set (cookie) → off the wire.
-///   - RefreshToken: requiredProfile/requiredAudience are the host's pin → off the wire.
+///   - RefreshToken: requiredProfiles/requiredAudience are the host's pin → off the wire.
 ///   - Mobile Login/PartnerLogin: trustedDeviceToken is client-supplied → on the wire.
 /// </summary>
 public class AuthWireContractTests
@@ -74,12 +74,12 @@ public class AuthWireContractTests
     }
 
     [Fact]
-    public void RefreshToken_RequiredProfile_And_RequiredAudience_Are_Not_On_The_Wire()
+    public void RefreshToken_RequiredProfiles_And_RequiredAudience_Are_Not_On_The_Wire()
     {
         var json = JsonSerializer.Serialize(
             new RefreshToken.Command("raw")
             {
-                RequiredProfile = UserProfile.Customer,
+                RequiredProfiles = [UserProfile.Customer],
                 RequiredAudience = JwtAudiences.Customer,
             },
             Options);
@@ -90,13 +90,13 @@ public class AuthWireContractTests
     }
 
     [Fact]
-    public void RefreshToken_RequiredProfile_And_RequiredAudience_Cannot_Be_Set_From_The_Body()
+    public void RefreshToken_RequiredProfiles_And_RequiredAudience_Cannot_Be_Set_From_The_Body()
     {
-        const string body = """{"token":"raw","requiredProfile":0,"requiredAudience":"cleansia.admin"}""";
+        const string body = """{"token":"raw","requiredProfiles":[0],"requiredAudience":"cleansia.admin"}""";
 
         var command = JsonSerializer.Deserialize<RefreshToken.Command>(body, Options)!;
 
-        Assert.Null(command.RequiredProfile);
+        Assert.Null(command.RequiredProfiles);
         Assert.Null(command.RequiredAudience);
         Assert.Equal("raw", command.Token);
     }

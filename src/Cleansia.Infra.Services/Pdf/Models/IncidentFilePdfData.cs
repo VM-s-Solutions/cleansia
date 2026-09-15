@@ -21,7 +21,7 @@ public sealed record IncidentFilePdfData(
 /// <paramref name="OperatorName"/> is the operating company's display name and <paramref name="Market"/>
 /// the countries it serves, both resolved from the market registry — never the tenant id the user row
 /// carries, which is an internal key and not a fact about the subject (S4). Null when the registry names
-/// no market for the operator; the page prints a blank, not the key.
+/// no market for the operator; the page prints the empty marker (—), not the key.
 /// </summary>
 public sealed record IncidentFileSubject(
     string UserId,

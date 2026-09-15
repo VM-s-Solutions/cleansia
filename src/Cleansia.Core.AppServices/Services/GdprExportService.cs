@@ -71,7 +71,11 @@ public class GdprExportService(
 
         // Filed on the account, or on one of the orders above: the second term keeps the section in step
         // with the orders section, the first is what still finds the disputes after an erasure has taken
-        // the account off its orders. Past the tenant filter for the same reason the orders are.
+        // the account off its orders. The bypass is for the order term alone: a dispute the account filed
+        // is stamped with the subject's own operator (a chargeback re-pins to the order's, which an
+        // account order shares), so the residual it guards is a dispute on a guest booking stamped with
+        // another market's operator — none is written today. The pin is the caller's own id and the ids
+        // the orders read yielded (ADR-0051).
         var orderIds = orders.Select(o => o.Id).ToList();
         var disputes = await disputeRepository.GetQueryableIgnoringTenant()
             .Where(d => d.UserId == user.Id || orderIds.Contains(d.OrderId))

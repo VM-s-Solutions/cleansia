@@ -100,7 +100,11 @@ public record GdprExportOrderDto(
 /// subject, not by a client. The text is exported as stored — the description, the messages and the
 /// resolution notes until the retention window closes and the marker after the sweep, the evidence
 /// names as the marker from the erasure on. A message carries its author's role and never the staff
-/// member's id.
+/// member's id. The order term only ever matches a dispute the account itself filed today:
+/// <c>CreateDispute</c> refuses an order the account does not own, and a chargeback on a guest
+/// booking fails the dispute's account key. The day that path opens, such a dispute is a stranger's
+/// card chargeback on a booking placed under the subject's e-mail, and this predicate must be
+/// re-examined before it is.
 /// </summary>
 public record GdprExportDisputeDto(
     string Id,

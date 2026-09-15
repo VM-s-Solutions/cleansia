@@ -62,3 +62,6 @@ report names the migration id.
   and the immutability walk's second sanctioned caller went with it; the dispute repository's erasure
   read now says what the caller does). **A7 residual stands** — the only lever is matching guest
   orders by e-mail, filed as Q-GDPR-01. Recorded in ADR-0062 D5 as amended.
+- 2026-09-15 — Q-GDPR-01 ruled *yes* and shipped as **T-0751** (`6ab64fff` + `ca6dc84e`): the e-mail
+  lever, `SubjectOrders`; `PseudonymiseGuestRowsForOrdersAsync` is back as the second sanctioned
+  caller, keyed on the e-mail-matched orders this time.

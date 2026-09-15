@@ -44,3 +44,5 @@ No PDF (T-0746). No change to the admin export.
   and document id **survive** on the withdrawn row; the erased-subject export test now asserts it).
   Reported, not built: the JSON export carries no dispute section (Q-GDPR-02). Recorded in ADR-0062
   D3/D5 as amended.
+- 2026-09-15 — Q-GDPR-02 ruled *yes* and shipped as **T-0752** (`9c0b9801`): the export carries the
+  disputes; `GdprExportEvidence` gained `DisputeCount`.

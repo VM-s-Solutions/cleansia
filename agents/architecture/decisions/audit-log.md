@@ -170,6 +170,47 @@ What changed in the shape this note tracks:
   Administrator) filed open. The label an Administrator's own sign-out carries in the admin table
   (`customer.session.logout`, the marker's frozen label) is a ratification question.
 
+## The three open questions, ruled (owner 2026-09-15, T-0750 … T-0752)
+
+All three answered *yes* the next day; no schema change. What changed in the shape this note tracks:
+
+- **A failure row may name a subject the caller did not prove they own (T-0750).** The validator
+  that resolves an account names it before refusing — `IAuditContext.RecordEvidence("User", user.Id,
+  payload: null, actorUserId: user.Id)` from `LoginValidator`'s one `ResolveAsync`, `ChangePassword`,
+  `ConfirmUserEmail`, `RequestPasswordChange`'s account-loading predicate, and the `GoogleAuth`/`AppleAuth`
+  handlers on the account-type and deactivated refusals. **Both failure arms now drain the snapshot**
+  (subject and resource only) and `AuditEntryFactory.CreateCustomerFailure` takes them; `PayloadJson`
+  stays null on every failure row; the session wins over a named subject. **The sink re-stamps:**
+  `OutOfBandAuditFailureSink` reads the named subject's `TenantId` past the tenant filter in its own
+  scope and stamps the row with it, falling back to the ambient tenant for a nameless row — so a
+  refusal on a second operator's account lands in that operator's feed. The five session commands'
+  `CountryId => null` still decides the stamp of an unknown-address refusal. Tenancy stays out of the
+  validators (ADR-0061 D3).
+- **`SubjectOrders.Of(userId, email)` in `Core.Domain/Orders` (T-0751)** is the one definition of a
+  data subject's orders — the account's, or `UserId == null && CustomerEmail.ToLower() == email.ToLower()`
+  — asked by the erasure walk and the subject export, both **past the tenant filter** (a guest checkout
+  is stamped with the market's operator; ADR-0051's bypass-and-re-pin cell, pinned by `SubjectOrders`
+  then by the ids it yielded; `CommitAsync` re-stamps Added rows only). The erasure's blocking check
+  stays `o.UserId == user.Id`; the walk reads `SubjectOrders` minus `ErasureBlockingStatuses` (a live
+  guest booking is left out, not a refusal — a guest booking has no cancel path; Q-GDPR-03 asks
+  whether it should refuse; T-0753 gives it a cancel path). **The immutability walk now expects two
+  repository writes**: `PseudonymiseForSubjectAsync` and `PseudonymiseGuestRowsForOrdersAsync(orderIds)`
+  (`UserId` null, `ResourceType == nameof(Order)`, id in the set; tracked, on the single commit). The
+  export's trail stays the account's own rows (the guest rows' IP/device may be a stranger's).
+- **The JSON export carries `Disputes` (T-0752)** — `GdprExportDisputeDto` with enum **names** (the
+  wire converter writes the other sections' enums as integers), the thread as (author role, time,
+  text), notes, refund + currency code, evidence names; filed on the account or on a `SubjectOrders`
+  order (the order term is tenant-bypassed for the guest case only and today matches nothing the
+  account term does not). `GdprExportEvidence` and `GdprExportSnapshot` carry `DisputeCount`.
+  `ExportUserData` stamps `GdprAuditReasons.SelfActor` into `GdprRequest.ProcessedBy` (was the live
+  e-mail). `IncidentFileSubject.Operator` → `OperatorName` + `Market`, resolved from
+  `CountryConfiguration` rows whose `OperatorTenantId` is the user's (the one edge into `Tenants`);
+  the tenant id is absent from the hashed section model.
+- **Owed after the phase:** NSwag regen of the customer, admin and partner clients (`GdprExportDto.disputes`
+  — the generated `toJSON()` drops the section from the web download until then) and the mobile spec
+  re-dump. **Open:** Q-GDPR-03; T-0753 (an anonymous guest cancel keyed like the lookup); the
+  account-term reading of "the subject's disputes" awaits a one-sentence ratification.
+
 ## Status
 
 ADR-0012 **accepted** (2026-06-22). **Sequenced into Wave 9 (sprint-11.md)** as 5 audit-log tickets

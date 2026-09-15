@@ -94,18 +94,26 @@ on a **customer host** is a `CustomerActionAudits` row through the same pipeline
 | Refresh-token rotation | **no row** | the `RefreshToken` row is the record |
 
 A wrong password, an unknown address, a bad social token: each is a failure row with the key and the
-caller's IP, bounded by the `auth` window. **An unknown address names nobody** — the row has no user,
-no resource and no payload, so the address the caller typed reaches no column. A refused sign-in on
-an account that exists is `UserId = null` as well (the refusal is a validation reject, which never
-reaches the handler that names the subject) — attributable by IP only until the owner rules on naming
-the account. **On a partner host none of this is written**: the same commands serve cleaners there,
-whose session history belongs in no table, and the audit gate writes an anonymous act only on a
-customer host. An Administrator's own sign-out on the admin host lands in the *admin* table.
+caller's IP, bounded by the `auth` window. **A refusal on an account that exists names the account**
+(owner ruling 2026-09-15): a wrong password, a lockout, a bad reset or confirmation code, a password
+sign-in or reset asked for a Google/Apple account, a social token refused onto an account of another
+type — the check that resolved the account names it before refusing, so the row carries the
+account's id as its subject and resource, still **no payload and never the address**, and the caller
+is told nothing they were not told before (the same key). "Fifteen wrong passwords on this account from
+three IPs last night" is now one filter on the customer's timeline. **An unknown address names
+nobody** — the row has no user, no resource and no payload, so the address the caller typed reaches no
+column. **On a partner host none of this is written**: the same commands serve cleaners there, whose
+session history belongs in no table, and the audit gate writes an anonymous act only on a customer
+host. An Administrator's own sign-out on the admin host lands in the *admin* table.
 
 The row is stamped with the **account's** operating company, not the default market's — the sign-in
-adopts the user's tenant before the confirmation check, and the two reset commands (which mint no
-token) adopt it themselves — so a second operator's customer never lands in the first operator's feed
-([ADR-0061](/decisions/adr-0061) D4 as amended).
+adopts the user's tenant before the confirmation check, the two reset commands (which mint no token)
+adopt it themselves, and a **refusal that names an account** is re-stamped by the failure sink with
+that account's company, read past the company filter in the sink's own scope — so a second operator's
+customer never lands in the first operator's feed, refused or not. A refusal for an unknown address
+keeps the default market's stamp: there is no account to take one from
+([ADR-0061](/decisions/adr-0061) D4 as amended; [ADR-0062](/decisions/adr-0062) D3/D7 as amended
+2026-09-15).
 
 ## Immediate cutoff beyond the token TTL
 
@@ -124,4 +132,5 @@ hosts have no device id, which is why the admin TTL was shortened instead.
 | Device revoked | Only tokens carrying that device id are ended. A token with no device id survives to natural expiry rather than being killed by an unrelated device. |
 | Google or Apple sign-in | Resolved by **subject**, never by email address. A sign-in of an existing account is a `customer.session.login` row; a first sign-in provisions the account, writes the two versioned consent rows and declines the login row. |
 | Login, logout, password reset, e-mail confirmation | A customer audit row each, on a customer host only (→ [Session rows](#session-rows)). Refresh rotations write none; the `RefreshToken` row (IP, device, audience, 90 days) stays their record. |
+| Wrong password, bad code or wrong sign-in method on an account that exists | A failure row naming the account, under the account's operating company, with the key and the caller's IP — the caller learns nothing new. An unknown address: a row naming nobody. |
 | Registration or booking without the terms tick | Refused, `consent.terms_not_accepted`; the refusal is a row with the caller's IP. A signed-in customer who already holds both consents sees no box and is not asked. |

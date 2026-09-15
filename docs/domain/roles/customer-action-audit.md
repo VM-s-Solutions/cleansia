@@ -38,6 +38,16 @@ dispute or an account-takeover claim can be answered from the record rather than
   does not describe declines the success row: the social sign-ins on their **provisioning** branch (a
   registration's proof is the consent rows it writes, not a `customer.session.login`). The failure arms
   do not read it — a refusal on either branch is still recorded.
+- **The validators and handlers that resolve an account before refusing** (owner ruling 2026-09-15) —
+  `LoginValidator` (one `ResolveAsync` every rule reads through: `Login`, `MobileLogin` and the
+  unmarked partner/admin sign-ins), `ChangePassword`, `ConfirmUserEmail`, the one predicate of
+  `RequestPasswordChange` that loads the account, and the `GoogleAuth`/`AppleAuth` handlers on their
+  account-type and deactivated refusals — name the account through the same seam,
+  `RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id)`, so the **failure row carries
+  the refused account as subject and resource**. Both failure arms drain the snapshot and the factory
+  reads the subject and the resource off it and never its payload; the session still wins over a named
+  subject (S1); an unknown address resolves nothing and names nobody; nothing of the naming reaches the
+  caller.
 - **`IRequestMetadataProvider`** (through the factory) — the IP address and device label. The device
   id comes from the **session's signed `device_id` claim** on a signed-in row and from the `X-Device-Id`
   header only on an anonymous one (the header is the client's word alone; the claim is the device the
@@ -60,18 +70,28 @@ dispute or an account-takeover claim can be answered from the record rather than
   `OperatorTenantScopeBehavior` set for an anonymous act (the session acts name no market and carry an
   explicit `CountryId => null`, so their refusal row lands under the default market's operator), or
   the **account's own** operator that `TokenService` / the reset handlers adopt before a session act's
-  success row is stamped (ADR-0061 D4 as amended). A refusal raised before any operator exists cannot
-  be stamped and is skipped with one warning.
+  success row is stamped (ADR-0061 D4 as amended). **A failure row that names a subject is stamped by
+  `OutOfBandAuditFailureSink` with that subject's `TenantId`**, read in the sink's own scope past the
+  tenant filter — decisive when a validator named a known account on an anonymous request, a no-op for
+  a signed-in subject whose claim is that operator already; a row naming nobody keeps the ambient stamp.
+  A refusal raised before any operator exists cannot be stamped and is skipped with one warning.
 - **`ICustomerActionAuditRepository`** — `Add`, reads, **`PseudonymiseForSubjectAsync`** (the erasure:
   a tracked, tenant-ignoring load and `Pseudonymise()` on each row, riding the erasure's single commit —
-  never `ExecuteUpdateAsync`, which would commit outside it) and **`DeleteExpiredAsync(cutoff)`** (the
-  retention sweep: per row by its own `OccurredOn`, batched, tenant-agnostic).
-- **`GdprDeletionService`** — the one caller of `PseudonymiseForSubjectAsync`; roster verdict
-  `AnonymizedInPlace` with the ground stated (`SubjectDataErasureRosterTests`).
+  never `ExecuteUpdateAsync`, which would commit outside it), **`PseudonymiseGuestRowsForOrdersAsync(orderIds)`**
+  (the erasure's second sanctioned `Pseudonymise` caller, owner ruling 2026-09-15: the rows with no
+  user, resource `Order` and an id among the subject's orders — the guest bookings placed with the
+  account's e-mail; a row sharing the id under another resource type is untouched) and
+  **`DeleteExpiredAsync(cutoff)`** (the retention sweep: per row by its own `OccurredOn`, batched,
+  tenant-agnostic).
+- **`GdprDeletionService`** — the one caller of both pseudonymise methods; roster verdict
+  `AnonymizedInPlace` with the ground stated (`SubjectDataErasureRosterTests`); the order set it hands
+  the guest walk is `SubjectOrders.Of(userId, email)` minus the live statuses, read past the tenant
+  filter.
 - **`DataRetentionBackgroundService`** — the one caller of `DeleteExpiredAsync`; window
   `retention.customer_audit.years`, default **3**, a value at or below zero refused with a warning.
 - **`GdprExportService`** — reads every row of the subject into the export's `customerActions` section
-  (both the self-export and the admin export).
+  (both the self-export and the admin export) — the account's own rows only, never the guest rows on
+  its orders: their IP and device belong to whoever placed the booking.
 - **`IncidentFileService`** ([`incident-file`](./incident-file)) — prints the subject's rows (and, scoped
   to an order, the guest rows on it) in the PDF's trail section, each payload flattened to a two-column
   table.
@@ -123,14 +143,19 @@ dispute or an account-takeover claim can be answered from the record rather than
   anonymous act only when the serving host is a customer host, so a cleaner's confirmation on a partner
   host lands nowhere (`AuditGateTests`, host tests on the customer, partner and admin hosts).
 - **A refusal for an unknown address names nobody and carries no address.** `UserId`, `ResourceId`
-  and `PayloadJson` are all null on it (`SessionAuditTests`). A refused sign-in on a *known* account is
-  `UserId = null` too — attributable by IP only, pending an owner/architect ruling.
+  and `PayloadJson` are all null on it (`SessionAuditTests`). **A refused sign-in, reset or
+  confirmation on a *known* account names it**: `UserId` = the account, resource `User`/the account,
+  `PayloadJson` still null, `TenantId` the account's operator — on a second operator's account the row
+  is found by the timeline and the paged list under that operator and by neither under the default
+  (`SessionAuditTests` on Postgres, `OutOfBandAuditFailureSinkTenantTests`).
 - **The payload holds ids, money, enums and versions only** — the PII guard is the standing proof the
   erasure verdict relies on; a new member named `*Email`, `*Phone`, `*Name`, `*Reason`,
   `*Description`, `ConfirmationCode` or an unbounded `string` fails the build naming the record.
 - **Erasure survives its own failure.** After `DeleteUserAccount` the rows exist with the three
-  request-metadata columns null and `PayloadJson`/`UserId` unchanged; an erasure whose commit throws
-  leaves them un-pseudonymised (`CustomerActionAuditErasureTests`).
+  request-metadata columns null and `PayloadJson`/`UserId` unchanged — the subject's rows and the
+  guest rows on the ended bookings under their e-mail alike, while a stranger's guest row and a
+  `Dispute`-typed row sharing an id keep everything; an erasure whose commit throws leaves them all
+  un-pseudonymised (`CustomerActionAuditErasureTests`, `GuestOrderErasureTests`, `ErasureSingleCommitTests`).
 - **Retention is per row and touches nothing else.** A row at cutoff − 1 day goes and a row at
   cutoff + 1 day stays for the same user; guest rows the same; the admin and employee tables' counts
   are unchanged (`CustomerActionAuditRetentionTests`, SQLite and Postgres).

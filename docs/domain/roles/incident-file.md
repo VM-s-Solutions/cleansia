@@ -25,9 +25,12 @@ the audited act that produced it — and refuse to print anyone else's data whil
   subject now **or** the ones the subject's own *successful* customer acts named, grouped by order,
   newest act first, capped after the ordering. After an erasure `Order.UserId` is blanked, so the trail
   is the only link; a refused act proves nothing and names no order.
-- **The nine repositories** it reads — user, order (address, lines, status history, assigned
+- **The ten repositories** it reads — user, order (address, lines, status history, assigned
   cleaners), refund, dispute (messages, evidence), consent (with the `LegalDocument` for the effective
-  date), currency (ids → codes), and the three audit tables. Every read is `AsNoTracking`; the trail is
+  date), currency (ids → codes), the three audit tables, and the **market registry**
+  (`CountryConfiguration` with its `Country` and `OperatorTenant`) — the one edge into `Tenants`: the
+  rows whose `OperatorTenantId` is the subject's give the operating company's display name and the
+  markets it serves as *"Name (ISO2)"*, ordered and joined. Every read is `AsNoTracking`; the trail is
   loaded through the tenant filter of the admin's session.
 - **`IncidentFileEvidenceFields`** — flattens each audit row's `PayloadJson` into a two-column
   evidence table in declaration order, currency ids read as codes and enums as the names the pipeline
@@ -62,8 +65,11 @@ the audited act that produced it — and refuse to print anyone else's data whil
   with the victim's order id, ADR-0062 D3) carries *their* user id, IP and device label, and a
   document built to leave the platform must not carry it (S6) — it is left out; widening that again is
   the owner's security call.
-- **The subject's market.** The user row carries none; the *operator* printed in the identity section
-  is the server-side image of the market the account was opened under.
+- **A tenant id.** The user row carries the operator's id and the file never prints it (S4 — an
+  internal identifier on a document built to leave the platform): the identity section prints
+  `Operator: Cleansia CZ s.r.o.` and `Market: Czechia (CZ)`, the company's display name and the
+  markets it serves, resolved from the market registry — the em-dash marker for both when no market
+  names the company. The id is absent from the section model, so absent from the hash.
 - **Free text it did not store.** After an erasure the identity fields print the anonymised values
   (`[DELETED]`, `deleted_{id}@anonymized.local`) and the file is marked *erased*; the dispute text
   prints whatever the three-year window still holds; evidence file names print `[DELETED]` where the
@@ -89,5 +95,12 @@ the audited act that produced it — and refuse to print anyone else's data whil
   differently (the Integrity block) (`IncidentFileDocumentTests`).
 - **After an erasure the file still builds**: identity marked erased, trail present with its request
   context blanked, the order reached through the subject's booking row (`IncidentFileTests`).
+- **The operating company is printed by name and the tenant id is nowhere in the canonical text**
+  (`IncidentFileTests` seeds a `CountryConfiguration` for the operator; `IncidentFileServiceTests`
+  pins the marker when none names it).
+- **Its orders are not the erasure's set.** The file walks the orders that name the subject and the
+  proven ones (above) — **not** the e-mail-matched guest bookings the erasure and the JSON export reach
+  through `SubjectOrders`. The divergence is stated on the service beside the trail read; widening the
+  file to the e-mail set is a separate call, not a drift.
 - **The route is suppressed from every host's request log** by the `gdpr/` rule (the path-suppression
   test names it), and the render logs the subject id only.

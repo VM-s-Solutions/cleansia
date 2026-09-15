@@ -13,7 +13,7 @@ flowchart LR
   A[Erasure request] --> B{Blocking order live, or a request not yet completed?}
   B -- yes --> C[Refused — a cleaner may be en route, or the earlier request is still the platform's to finish]
   B -- no --> D[Anonymise user, employee, addresses]
-  D --> E[Anonymise orders, photos, pay rows; stamp the disputes' text window]
+  D --> E["Anonymise the subject's orders — the account's, and the ENDED guest bookings under its e-mail — with their photos, pay rows and guest audit rows; stamp the disputes' text window"]
   E --> F[Stage the revoke of every session]
   F --> G[Hard-delete payout identifiers]
   G --> H[ONE commit]
@@ -27,8 +27,24 @@ Twenty repositories are walked: cart, devices, disputes, employee documents, inv
 details, GDPR requests, live-activity tokens, pay rows, order photos, orders, outbox, recurring
 templates, saved addresses, consents, memberships, notifications, users, dead letters — and the
 customer audit trail, which is **pseudonymised, not deleted**: a tracked load of every row of the
-subject, `Pseudonymise()` on each (the IP address, device label and device id go; the act, its
+subject — and of every **guest** row on the subject's orders (no user, resource `Order`, an order in
+the set below) — `Pseudonymise()` on each (the IP address, device label and device id go; the act, its
 outcome, the evidence and the subject id stay). → [The customer trail](#customer-trail)
+
+**Whose orders.** One predicate, `SubjectOrders.Of(userId, email)`, answers it for the erasure and
+for the subject export alike (owner ruling 2026-09-15): the orders booked on the account, **or** the
+guest bookings — orders naming no account — whose contact e-mail equals the account's, case-folded.
+An order another *account* placed with the subject's address in its contact field is that account's
+and never matches. The predicate is asked with the live e-mail, before it is replaced, and **past the
+tenant filter**: a guest checkout is stamped with the *market's* operating company while the erasure
+runs under the subject's, so a guest booking placed in another market would otherwise be neither
+erased nor exported. Every order it yields goes through the same per-order path as the account's own —
+photo blob and row, the customer fields, the address, the pay rows — and keeps its operator's stamp.
+**A guest booking still live is left out of the walk, not a reason to refuse**: the blocking check
+stays the account's own live orders, because a guest booking has no cancel path (nothing anonymous
+cancels; → T-0753) and a stranger's mistyped address would otherwise dead-end the subject on an order
+the account does not list and nobody but an admin can cancel. Its contact data stays until the job
+ends and the order-PII sweep reaches it; whether it should refuse instead is an open owner question.
 
 **The whole walk is one commit.** It used to commit once in the middle — the session revoke carries
 its own commit for the logout race — which made everything above it durable while everything below
@@ -43,9 +59,9 @@ resolution notes — is *not* blanked at erasure any more: the erasure stamps `D
 claim; the weekly sweep's `DisputeText` task blanks it once the stamp is past and clears the stamp. The
 evidence **files** still go at erasure (they are not text) and the evidence rows are blanked. The
 cancellation reason is kept as before. The consent rows are withdrawn, and keep their IP, user agent,
-version and document id. A **guest's** booking rows are not reached: a guest booking is never attached
-to an account later, so no row with no user belongs to the subject — reaching them would mean matching
-guest orders by e-mail, which is an open owner question.
+version and document id. A **guest's** booking placed with the account's e-mail is reached by that
+e-mail (above) — the one link there is, since a guest booking is never attached to an account later —
+and its guest audit rows lose their IP and device with it.
 
 **A failed erasure is on record and finished by the platform.** A throw from the walk or from its
 commit, or a refusal after the walk began, is caught outside the rolled-back transaction and written
@@ -141,14 +157,34 @@ cancel on a job in progress is an admin row with `ResourceType = Order`, the ord
 filter (owner ruling 2026-09-14, Q-AUD-O2: *"the reason is worth nothing if I can't trace the failed
 order"*).
 
+## The subject export {#subject-export}
+
+The Art. 15 export is **JSON**, one document for both callers — the customer's own
+(`POST api/v1/Gdpr/export`, a `customer.gdpr.export` row with the section counts) and the admin's
+(`POST api/v1/AdminGdpr/export/{userId}`, `gdpr.user.export`) — and both commit their `GdprRequest`
+(the self-export's row names the fixed actor `self`, never the subject's e-mail, because the row
+outlives the erasure). Sections: profile, address, the employee block and payout details when the
+subject is a cleaner, **orders** (the account's and the guest bookings under its e-mail — the same set
+the erasure reaches, a live guest booking included), **disputes** (owner ruling 2026-09-15 — every
+dispute filed on the account or on one of those orders: reason and status by name, the description,
+the resolution notes, the refund with its currency code, every message as author role, time and text,
+the evidence file names; text as stored, so the three-year window's marker once the sweep has run),
+documents, invoices, consents (with IP, user agent, version and document id), the customer trail
+(`customerActions` — the account's own rows only, not the guest rows on its orders: their IP and device
+belong to whoever placed the booking, a stranger's when the address is a typo) and the metadata.
+→ [ADR-0062](/decisions/adr-0062) D5/D6 as amended 2026-09-15
+
 ## The incident file {#incident-file}
 
 The document support hands over is a **PDF** (owner ruling 2026-09-14, Q-AUD-L6), built by an admin
 from `/customers/:userId` — the whole account, or one typed order id — or from an order's detail,
 scoped to that order:
 
-1. **Identity as of export** — name, e-mail, phone, account created, operator, language; marked
-   *erased* with the anonymised values after an erasure. The one document that prints it on purpose.
+1. **Identity as of export** — name, e-mail, phone, account created, the **operating company and the
+   markets it serves** (`Operator: Cleansia CZ s.r.o.`, `Market: Czechia (CZ)` — resolved from the
+   market registry, never an internal id; an em-dash when no market names the company), language;
+   marked *erased* with the anonymised values after an erasure. The one document that prints it on
+   purpose.
 2. **Orders** — number, dates, address, lines, price with currency code, payment, status history,
    refunds, assigned cleaners, cancellation.
 3. **Disputes** on those orders — reason, description, messages, evidence file names, resolution,
@@ -191,7 +227,8 @@ flowchart LR
 
 A success row carries a typed evidence record the handler emitted — the figures and versions the
 customer was shown — and the request context (client audience, IP, device). A refusal carries the
-error key and no payload. Both carry the operating company of the request. The row holds identifiers,
+error key and no payload. Both carry an operating company: the request's, or — for a refusal that
+names an account the request did not sign in as — that account's. The row holds identifiers,
 money, enums and versions and never a name, a contact detail, an address line, free text or a token;
 a build-time guard walks every evidence record for a member so named.
 
@@ -208,8 +245,9 @@ What survives what:
 
 | Event | Customer audit rows |
 |---|---|
-| Erasure of the subject | Kept; IP, device label and device id blanked. The `UserId → OrderId` link stays — after erasure it is the only link from the erased id to its orders. |
-| The subject's own data export, or an admin's | Included as `customerActions`, with the payload; IP and device null after an erasure. The customer's own export is itself a `customer.gdpr.export` row. |
+| Erasure of the subject | Kept; IP, device label and device id blanked — on the subject's rows and on the guest rows of the ended bookings under their e-mail. The `UserId → OrderId` link stays — after erasure it is the only link from the erased id to its orders. |
+| The subject's own data export, or an admin's | Included as `customerActions`, with the payload; IP and device null after an erasure; the account's own rows only, never the guest rows on its orders. The customer's own export is itself a `customer.gdpr.export` row. |
+| A refused sign-in, reset or confirmation on the account | A failure row **naming the account** (owner ruling 2026-09-15), under the account's operating company, with the key and the caller's IP — found by the customer's timeline. An unknown address still names nobody. → [Session rows](/flows/auth-and-identity#session-rows) |
 | Three years after the act | Deleted, per row, by the retention sweep. |
 | The order's two-year PII anonymisation | Untouched — the order loses its `UserId`; the audit row keeps its own. |
 | The incident file | Printed in the trail section, each payload flattened; the guest rows on a scoped order too, a bystander's never. |
@@ -231,6 +269,8 @@ What survives what:
 | Order photos | Anonymised individually — they carry a capturer and free text the order-level walk does not reach. |
 | An audit row for an erased admin | Survives. The audit is append-only and outlives the actor. |
 | A customer audit row for an erased customer | Survives, pseudonymised: the three request-metadata columns are blanked and nothing else changes. An erasure whose commit fails leaves the rows untouched. |
-| A guest's booking rows after the guest registers with the same email | Not inherited. Guest rows have no user and are reachable only from the order's history. |
+| A guest's booking rows after the guest registers with the same email | Not inherited by the timeline — guest rows have no user and are reachable only from the order's history. The account's **erasure** reaches them all the same, by the e-mail: the ended booking is anonymised and its guest rows lose IP and device. |
+| A guest booking under the erased e-mail that is still live | Left out of the walk, not a refusal: its name, contact and address stay until the job ends and the order-PII sweep reaches it, its guest rows until the three-year sweep. A guest booking has no cancel path, so refusing would dead-end the subject on an order they cannot cancel — possibly a stranger's typo. Whether it should refuse instead is an open owner question. |
+| A guest booking placed in another market with the account's e-mail | Reached and exported all the same — the read goes past the operating-company filter, because a guest checkout is stamped with the market's company and the erasure runs under the subject's. The anonymised rows keep their own company's stamp. |
 | An anonymous refusal before the market's operator is known | No row — there is no tenant to stamp it with. The sink logs one warning instead of writing an orphan. |
 | Notification flood for one user | Capped; the overflow is pruned. |

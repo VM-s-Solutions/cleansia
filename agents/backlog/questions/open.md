@@ -9,8 +9,11 @@ names the `Q-` id.** A question with no blocked row behind it is a question nobo
 
 > **Q-AUD-L1 … L6 and Q-AUD-O1 … O3 were answered by the owner on 2026-09-14** and are deleted from
 > here per the rule above. The record is `docs/decisions/adr-0062.md` §Rulings (one table, the default
-> filed beside the ruling and where it landed); the work is T-0738 … T-0748. Three questions the batch
-> raised and could not answer are below.
+> filed beside the ruling and where it landed); the work is T-0738 … T-0748. **The three that batch
+> raised — Q-GDPR-01 (erasure by e-mail), Q-GDPR-02 (disputes in the export), Q-AUD-O4 (name the
+> refused account) — were answered on 2026-09-15**, all *yes*, and are deleted too; the record is
+> ADR-0062's second §Rulings table and the work is T-0750 … T-0752. One question they raised is
+> below (Q-GDPR-03).
 
 ## Q-PUSH-01 — May a cleaner silence the evening "jobs tomorrow" digest?
 
@@ -84,58 +87,27 @@ market is refused; the choice is reversible by dropping one index if you ever wa
 **Answer needed:** only if a person must be able to hold two separate accounts with two companies.
 **Blocks:** nothing today. If the answer is ever "yes", it must land before the second company opens.
 
-## Q-GDPR-01 — Should an erasure reach a guest's booking rows by e-mail?
+## Q-GDPR-03 — Should a LIVE guest booking under the erased e-mail block the erasure?
 
-**Raised by:** your ruling A7 ("extend" the erasure to guest rows) on 2026-09-14, attempted in T-0738
-and found impossible by order (ADR-0062 D5 as amended).
-**Who answers:** the owner (with the lawyer if the answer is yes).
-**Why it needs you:** the ruling asked the erasure to blank the IP and device on the customer audit
-rows of guest bookings that "later became this account's". No such row can exist: an order's
-`UserId` is written once at creation from the same session the audit row takes its `UserId` from and
-is only ever nulled afterwards — a guest booking is never attached to an account later. So a person
-who booked as a guest and *then* registered has guest rows the platform cannot tie to the account by
-any id. **The only lever is matching guest orders by the booking e-mail**, which is the e-mail the
-erasure is about to blank — and matching by e-mail is exactly what ADR-0062 D6 declines for the
-*timeline* ("a guest who later registers with the same email does not inherit them"). **Default
-applied: the residual stands** — a guest's rows are pseudonymous by construction (no user id), keep
-their IP and device label for the three-year window, and are reachable only by the order's history.
-**Answer needed:** should a customer's erasure also pseudonymise the audit rows of guest orders that
-carry the same e-mail? If yes: a tenant-ignoring read of orders by `CustomerEmail` before the address
-is blanked, one more `Pseudonymise` site (the immutability walk allows exactly one delete site and one
-mutator today — it would gain a second sanctioned caller), and a statement in the privacy text.
-**Blocks:** nothing.
-
-## Q-GDPR-02 — Should the Art. 15 JSON export carry a dispute section?
-
-**Raised by:** T-0743 (the export's consent section), 2026-09-14 — pre-existing, noticed while the
-consent fields were added.
+**Raised by:** the review of T-0751 (erasure by e-mail — your ruling on Q-GDPR-01, 2026-09-15).
 **Who answers:** the owner.
-**Why it needs you:** `GdprExportService` builds profile, addresses, orders, invoices, consents (now
-with IP, user agent, version and document id), the payout block and the customer trail — and **no
-dispute section**: a customer who exports their data does not get the disputes they filed, their
-messages or the resolutions, although all of it is their personal data and the PDF incident file an
-admin builds prints it. **Default applied: unchanged** — not built, because a section's shape (do the
-admin's messages and the cleaner's belong in the subject's export? the resolution notes?) is a
-disclosure decision, not a mapping.
-**Answer needed:** whether the customer's export includes their disputes, and if so which parts — their
-own description and messages only, or the whole thread and the resolution.
-**Blocks:** nothing.
-
-## Q-AUD-O4 — Should a refused sign-in on a KNOWN account name that account on its row?
-
-**Raised by:** T-0744 (session acts recorded), 2026-09-14.
-**Who answers:** the owner and the architect together.
-**Why it needs you:** a wrong password on an existing account is a validation reject, and a
-validation reject never reaches the handler that names the subject through `RecordEvidence(…,
-actorUserId)` — so the `customer.session.login` failure row has `UserId = null`, the key
-(`auth.invalid_credentials`, `auth.too_many_attempts`, …), the IP and the device label. It is
-attributable by IP only. An account-takeover trail keyed on the *victim* ("fifteen wrong passwords on
-this account from three IPs last night") is what the L5 ruling was for, and today it has to be
-reconstructed by IP. The fix is not free: the validator would have to resolve the account by the
-typed address and hand its id to the row, which names an account the caller has *not* proven they
-own — S1 territory (the row would carry an id the caller could probe for), and an unknown address must
-still name nobody. **Default applied: `UserId = null`**, stated in ADR-0062 D3 as amended, S2 and the
-audit-gate card.
-**Answer needed:** whether the failure row may name the account the typed address resolves to (a
-row-level fact, never returned to the caller), or stays IP-only.
-**Blocks:** nothing.
+**Why it needs you:** your ruling made the erasure reach the guest bookings placed with the erased
+account's e-mail. The first cut widened the *blocking* check to that set too, so a `New`/`Confirmed`
+guest booking under the subject's e-mail refused the erasure with `gdpr.deletion_blocked_by_order` —
+exactly as the account's own live orders do. The review reverted that, for this reason (the fix
+commit's words): *"a guest booking has no cancel path (`CancelOrder` refuses `order.UserId != userId`;
+nothing anonymous cancels), so the subject, and `AdminDeleteUserAccount` through the same
+`FindRefusalAsync`, were dead-ended on an order the account does not list until the job completed or
+an admin cancelled it, over what may be a stranger's typo. The blocking rule was never part of the
+2026-09-15 ruling (T-0738 NOT: no change to the blocking rules), so it is back to the account's own
+orders, and the walk leaves a live guest booking out instead … with the bounded residual stated on
+`ErasureBlockingStatuses`: its contact data stays until the job ends and the order-PII sweep reaches
+it (the guest audit rows go with the three-year sweep). Whether a live guest booking SHOULD refuse
+stays an owner question; this is the default that needs no ruling."* **Default applied: left out, not
+refused.** The two honest options: (a) keep it — the subject's erasure completes; the live guest
+booking's name, phone and address stay on the order (a cleaner is about to work it) until it ends and
+the two-year sweep reaches it; or (b) refuse, like the account's own live orders — consistent, but
+only defensible once a guest can cancel their own booking (**T-0753**, filed on your word), otherwise
+a stranger's mistyped address locks the subject out of their erasure until an admin cancels.
+**Answer needed:** (a) or (b) — and if (b), whether it waits for T-0753.
+**Blocks:** nothing. T-0753 is filed either way.

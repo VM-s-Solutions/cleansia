@@ -63,3 +63,5 @@ No refresh-token rows; no employee session rows; no change to the auth flows the
   Administrator's sign-out on the admin host lands in the admin table under the frozen
   `customer.session.logout` label (a ratification question). Recorded in ADR-0062 D3/D6/D7 and
   ADR-0061 D3/D4 as amended.
+- 2026-09-15 — Q-AUD-O4 ruled *name it* and shipped as **T-0750** (`e53346cf`): a refused sign-in,
+  reset or confirmation on a known account names the account and is stamped with its operator.

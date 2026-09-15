@@ -113,7 +113,7 @@ constant became a stored, dated document); the rest of ADR-0062 stands and was *
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
 | **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
 | **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company | `accepted` |
-| **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14) | `accepted` |
+| **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15) | `accepted` |
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.

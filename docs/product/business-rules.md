@@ -603,7 +603,7 @@ just in case (ADR-0045 D13). The acts, and the evidence each success row carries
 | Sign out | `customer.session.logout` | whether a token was there to revoke |
 | Ask for a password reset / complete one | `customer.password.reset_requested` / `.reset_completed` | who — and nothing else. A request for an address that matches no account is a row with **no user and no address**: the address the caller typed reaches no column |
 | Confirm the e-mail | `customer.account.email_confirmed` | which shape confirmed it — the 6-digit code or a legacy link |
-| Export their own data | `customer.gdpr.export` | how many orders, consents and trail rows the export held — never the export |
+| Export their own data | `customer.gdpr.export` | how many orders, disputes, consents and trail rows the export held — never the export |
 | Grant / withdraw a consent | `customer.consent.grant` / `.withdraw` | the consent type and the document version — this **is** the consent history, because the `UserConsents` row is overwritten in place |
 | Subscribe to Plus (either surface) | `customer.membership.subscribe` | the plan, currency, price, monthly equivalent, country, trial days (none today), the channel, and whether the row is an idempotent replay of an earlier confirm (`reconciled`) |
 | Swap / cancel Plus | `customer.membership.swap` / `.cancel` | plan and price before and after; or the plan and when the current period ends |
@@ -619,8 +619,12 @@ a row with no user and the caller's IP, bounded by the `auth` rate-limit window 
 minute per real client IP) — except one refused before its market's operating company is known
 (`country.not_serviced`, `tenant.not_found`), which has no company to belong to and is logged, not
 written. An anonymous act is recorded **only on a customer host**: a cleaner signing in or resetting
-a password on a partner host leaves no row anywhere. A refused sign-in on an account that *exists* is
-recorded with no user too — attributable by IP only — until the owner rules on naming the account.
+a password on a partner host leaves no row anywhere. **A refused sign-in, reset or confirmation on an
+account that *exists* names the account** (owner ruling 2026-09-15): a wrong password, a lockout, a
+bad reset or confirmation code, a password sign-in or reset asked for a Google/Apple account, a social
+token refused onto an account of another type — the row carries the account's id as its subject, is
+filed under the account's operating company, and still holds no payload and never the address; the
+caller is answered exactly as before. A request for an address that matches no account names nobody.
 
 **An admin's refusal is traceable by the order.** An admin act refused on an order or a dispute
 (`AdminCancelOrder` → `order.cancel`, `AdminReassignOrder` → `order.reassign`, `UpdateDisputeStatus`,
@@ -692,7 +696,8 @@ touches them.
 | Withdrawn consents | `retention.withdrawn_consents.years` | 3 | consent rows after withdrawal |
 
 **Erasure keeps the row and blanks where it came from — and it is one commit.** Account deletion
-nulls the IP address, the device label and the device id on every row of the subject and nothing
+nulls the IP address, the device label and the device id on every row of the subject — and on the
+guest rows of the ended bookings placed with the subject's e-mail (below) — and nothing
 else; the act, its outcome, the evidence and the `UserId → OrderId` link stay — after erasure the
 trail is the only link from the erased id to its orders, which is the point of it, and the only route
 from that id back to a person is outside the platform, through Stripe (Q-AUD-L1: the link is kept).
@@ -701,10 +706,21 @@ fails leaves the subject, their sessions and everything else exactly as they wer
 **The dispute text survives erasure for three years** (owner ruling 2026-09-14, Q-AUD-L3: *"keep it
 for 3 years then delete — cleaner and better for defence"*): the description, the messages and the
 resolution notes stay readable under a stamp the erasure sets, and the weekly sweep blanks them once
-it is past; the evidence files still go at erasure; the cancellation reason is kept as before. A
-guest's booking rows are **not** reached by a later erasure — a guest booking is never attached to an
-account, so no row with no user belongs to the subject; whether erasure should match guest bookings
-by e-mail is an open owner question.
+it is past; the evidence files still go at erasure; the cancellation reason is kept as before.
+
+**Erasure reaches the guest bookings placed with the account's e-mail (owner ruling 2026-09-15).** A
+guest booking is never attached to an account, so the e-mail is the only link — and the erasure uses
+it: the subject's orders are the account's own **plus** every booking that names no account and
+carries the account's e-mail (matched case-insensitively; a booking another account placed with that
+address in its contact field is that account's and never matches), in any market. An **ended** guest
+booking is anonymised like the account's own — name, contact, address, photos, pay rows — and the
+guest rows on it in the trail lose their IP and device. A guest booking **still live** (booked, taken
+or under way) is **left out, not a reason to refuse**: only the account's own live orders block an
+erasure, because a guest booking cannot be cancelled by anyone but an admin (→ T-0753) and a stranger's
+mistyped address would otherwise lock the subject out of their own erasure; its contact data stays
+until the job ends and the two-year order sweep reaches it. Whether a live guest booking should block
+instead is an open owner question. The subject's data export lists the same set of orders, the live
+guest booking included.
 
 **A failed erasure is on record and finished by the platform.** If the walk throws or is refused
 after it began, a `Failed` GDPR request row is written outside the rolled-back transaction with the
@@ -718,10 +734,15 @@ the data-protection page at any time.
 **Support reads it; nobody else does.** The three admin reads and the per-customer timeline are behind
 `CanViewAuditLog` — no separate support role yet (owner, Q-AUD-O1: *"a few more roles like Support /
 Accountant / Manager … a bit later"* — T-0748) — and the two whole-subject exports behind
-`CanAdminExportUserData`: the **JSON export** (Art. 15 — profile, orders, consents with IP, device
-and version, the trail; no dispute section, an open owner call) and the **incident file, a PDF**
+`CanAdminExportUserData`: the **JSON export** (Art. 15 — profile, the orders above, **the disputes**
+on the account or on those orders with the whole thread — reason, description, messages by author
+role, resolution notes, refund, evidence names, text as the three-year window still holds it (owner
+ruling 2026-09-15) — consents with IP, device and version, and the account's own trail; the same
+document the customer downloads for themselves, whose request row names `self` and never their
+e-mail) and the **incident file, a PDF**
 (owner ruling 2026-09-14, Q-AUD-L6: *"PDF would be a cleaner approach"*) — the customer's identity as
-of the build, their orders (or one order), the disputes on them, the consents and the whole trail of
+of the build with the **operating company and its markets** spelled out (never an internal id), their
+orders (or one order), the disputes on them, the consents and the whole trail of
 customer, admin and cleaner acts on those orders, with a SHA-256 of the data section printed on the
 last page and carried on the audit row of the build, so a printed copy can be matched to the act that
 produced it. Not a signature: the hash matches the copy to *its own* build, and an unscoped file's

@@ -70,6 +70,21 @@ need backfilling.
 
 ### Added
 
+- **Customer — your data export includes your disputes.** The JSON you download from the privacy
+  page now carries every dispute you filed — the reason and status in words, your description, every
+  message in the thread with who wrote it (customer or staff) and when, the resolution notes, the
+  refund with its currency, and the names of the evidence files. After an erasure the text is there
+  for the three years it is kept, then the marker that replaced it. The admin's export of your record
+  carries the same section. (ADR-0062, owner ruling 2026-09-15)
+
+- **Admin — a refused sign-in on an existing account is on that account's record.** A wrong
+  password, a lockout, a bad reset or confirmation code, a password sign-in or reset for a Google or
+  Apple account, and a social token refused onto an account of another type now show on the
+  customer's timeline under the customer, not only under the caller's IP — so "fifteen wrong passwords
+  on this account from three addresses last night" is one filter. The address the caller typed still
+  reaches no column, an unknown address names nobody, and the caller is answered exactly as before.
+  (ADR-0062, owner ruling 2026-09-15)
+
 - **Customer — the terms and the privacy policy are dated documents, and the version you accept is
   the date it took effect.** The `/terms` and `/privacy` pages show the text in force for your market
   in your language, with *Effective from* and *Version* (`2026-09-14` today); a market with its own
@@ -265,6 +280,22 @@ need backfilling.
 
 ### Changed
 
+- **Customer — erasing your account also erases the bookings you made as a guest with the same
+  e-mail.** A guest booking is never attached to an account, so until now it stayed untouched by your
+  erasure until the two-year order sweep, with the IP and device of the booking on record for three
+  years. Now every finished guest booking placed with your e-mail address — in any market — is
+  anonymised with your account, and its trail rows lose their IP and device. A guest booking that is
+  still live (booked, taken or under way) is left alone rather than blocking the erasure — only your
+  account's own live orders do that, because a guest booking cannot be cancelled by you — and its
+  details go when the job ends and the sweep reaches it. Your data export lists the same set of
+  orders. (ADR-0062, owner ruling 2026-09-15)
+
+- **API consumer — the subject export carries a `disputes` array.** `POST api/v1/Gdpr/export` and
+  `POST api/v1/AdminGdpr/export/{userId}` answer with a `disputes` section (reason and status as
+  names, not integers); the `orders` section now includes guest bookings matched by e-mail. The web
+  apps' downloaded file carries the section once their generated clients are regenerated — until then
+  the generated `toJSON()` drops it from the saved file, though the API response has it.
+
 - **Customer — you cannot register or book without accepting the terms.** A sign-up by e-mail and a
   booking now require the terms tick; the refusal is `consent.terms_not_accepted`. A signed-in
   customer whose account already holds both consents sees no box and is not asked; a guest always is;
@@ -369,6 +400,15 @@ need backfilling.
   never run before** — expect a burst of previously-undelivered notifications on that deploy.
 
 ### Fixed
+
+- **Admin — the incident file names the operating company and its markets instead of an internal
+  id.** The identity section printed the company's database identifier under *Operator*; it now
+  prints the company by name and the markets it serves (*Cleansia CZ s.r.o.*, *Czechia (CZ)*), or a
+  dash when no market names it.
+
+- **Customer — a refused sign-in on an account held by a second operating company is filed under that
+  company.** It used to land under the default market's, because the refusal named nobody. Invisible
+  with one company today; the rule for the day there are two.
 
 - **Operator — an API host closes its database connections when it stops.** The connection pool was
   registered as a pre-built instance the container never disposed, so every host that shut down —
@@ -521,6 +561,10 @@ need backfilling.
   offers a retry.
 
 ### Security
+
+- **Customer — your own data export no longer writes your e-mail onto the request record.** The
+  GDPR request row a self-export files outlives your erasure; it used to carry your live address as
+  the requester and now carries the fixed marker `self`, as the self-service deletion already did.
 
 - **The favourite-cleaner feed is no longer a way to read cleaners' schedules or their personal data.**
   Four changes to one endpoint: it is rate-limited against the account's shared budget, so sweeping it

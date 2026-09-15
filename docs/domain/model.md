@@ -113,7 +113,7 @@ that any order was ever priced in cannot be deleted. → [Business rules](/produ
 
 | Entity | |
 |---|---|
-| `Order` | references `Currency` (Restrict), `PromoCode` (nullable, Restrict — the code that was actually honoured; a losing promo leaves it null), `Receipt` |
+| `Order` | references `Currency` (Restrict), `PromoCode` (nullable, Restrict — the code that was actually honoured; a losing promo leaves it null), `Receipt`. `UserId` is null on a guest booking and is never attached afterwards, so **`SubjectOrders.Of(userId, email)`** (`Core.Domain/Orders`) is the one definition of a data subject's orders for the erasure and the subject export: the account's orders **or** the rows with no `UserId` whose `CustomerEmail` matches case-folded (owner ruling 2026-09-15) — asked past the tenant filter, because a guest checkout is stamped with the market's operator → [ADR-0062](/decisions/adr-0062) D5 as amended 2026-09-15 |
 | `OrderEmployee` | — |
 | `OrderExtra` | references `Order` (Cascade), `Extra` (Restrict — a catalogue extra referenced by any order line cannot be deleted, only deactivated); unique `(OrderId, ExtraId)` |
 | `OrderPackageService` | references `OrderPackage` (Cascade), `Service` (Restrict); unique `(OrderPackageId, ServiceId)` |
@@ -234,7 +234,7 @@ that money was ever recorded in cannot be deleted. → [Pay and payouts](/flows/
 | `CreditAccount` | references `User` (Restrict); `CurrencyId` is a plain column with **no declared foreign key**; unique `(UserId, CurrencyId)` |
 | `CreditTransaction` | references `Account` (Cascade); unique `IdempotencyKey` — unfiltered and with no tenant term, because this is money and the backstop has to fire |
 | `Refund` | references `Dispute`, `Order`, `Receipt` |
-| `Dispute` | references `Order`, `User`; `TextRetainedUntil` (nullable, indexed) is the stamp an erasure sets to `now + retention.dispute_text.years` — the description, messages and resolution notes stay readable for defence of claims until the weekly `DisputeText` sweep finds the stamp past, blanks them and clears it (owner ruling 2026-09-14, Q-AUD-L3; the evidence blobs still go at erasure) → [ADR-0062](/decisions/adr-0062) D5 as amended |
+| `Dispute` | references `Order`, `User`; `TextRetainedUntil` (nullable, indexed) is the stamp an erasure sets to `now + retention.dispute_text.years` — the description, messages and resolution notes stay readable for defence of claims until the weekly `DisputeText` sweep finds the stamp past, blanks them and clears it (owner ruling 2026-09-14, Q-AUD-L3; the evidence blobs still go at erasure). Exported whole — thread, notes, refund, evidence names, text as stored — in the subject's Art. 15 JSON export when filed on the account or on a `SubjectOrders` order (owner ruling 2026-09-15) → [ADR-0062](/decisions/adr-0062) D5/D6 as amended |
 | `DisputeLine` | references `Dispute` (Cascade), `Service` and `Package` (both Restrict, no navigation); unique `(DisputeId, ServiceId, PackageId)` — the order lines a dispute is about |
 | `DisputeEvidence` | references `Dispute` |
 | `DisputeMessage` | references `Author`, `Dispute` |
@@ -288,7 +288,7 @@ named on their rows: `OrderReview` and `OrderReviewLine` (declared, with delete 
 | `DeadLetter` | — |
 | `EmailTemplateTranslation` | references `Language` |
 | `EmailTranslation` | — |
-| `GdprRequest` | references `User`; `Status` gained a live `Failed` writer — an erasure that throws or is refused after its walk began leaves a `Failed` row written out of band (`ProcessedBy` the actor — `"self"`, the admin's e-mail or `"system"` — and `Notes` the exception type and message with any e-mail-shaped token blanked, **appended** per attempt within the 1 000-char bound, oldest text dropped first); a `Failed` row, or a `Processing` row older than 30 minutes, is what the daily retry sweep and the admin **Retry** re-run, and every row not yet `Completed` counts as *pending* for a second filing → [ADR-0062](/decisions/adr-0062) D5 as amended |
+| `GdprRequest` | references `User`; `Status` gained a live `Failed` writer — an erasure that throws or is refused after its walk began leaves a `Failed` row written out of band (`ProcessedBy` the actor — `"self"` for the subject's own deletion *and* export (never their e-mail: the row outlives the erasure), the admin's e-mail or `"system"` — and `Notes` the exception type and message with any e-mail-shaped token blanked, **appended** per attempt within the 1 000-char bound, oldest text dropped first); a `Failed` row, or a `Processing` row older than 30 minutes, is what the daily retry sweep and the admin **Retry** re-run, and every row not yet `Completed` counts as *pending* for a second filing → [ADR-0062](/decisions/adr-0062) D5 as amended |
 | `LiveActivityToken` | — |
 | `OrderReview` | references `Order` |
 | `OrderReviewLine` | references `Review` (Cascade), `Service` and `Package` (both Restrict, no navigation); unique `(OrderReviewId, ServiceId, PackageId)` — the per-line ratings under a review |

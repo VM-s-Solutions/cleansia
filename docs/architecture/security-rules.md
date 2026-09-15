@@ -102,9 +102,14 @@ command is `[EnableRateLimiting]`, pinned by `RateLimitCoverageGuardTests`); a r
 the market's operator is resolved has no tenant to be stamped with and is skipped with one warning,
 never written with none. **A refusal for an unknown e-mail address is a row with no user, no
 resource and no payload** — the address the caller typed reaches no column (the PII guard refuses
-`Email`-named members; `PayloadJson` is null on every failure row). **A refused sign-in on a known
-account is also `UserId = null`** (a wrong password is a validation reject and never reaches the
-handler that would name the subject) — attributable by IP only, an open owner/architect question.
+`Email`-named members; `PayloadJson` is null on every failure row). **A refused sign-in, reset or
+confirmation on a known account names the account** (owner ruling 2026-09-15): the validator that
+resolved it names it through `RecordEvidence("User", user.Id, payload: null, actorUserId: user.Id)`
+before refusing, so the failure row carries the account's id as subject and resource — an id the
+caller has *not* proven they own, which is why the row stays `PayloadJson` null, the session still
+wins over the named subject (S1), the response is the same key as before, and the id is read by the
+admin surfaces alone. The out-of-band sink stamps such a row with the **named account's** operator,
+read past the tenant filter in its own scope; a row naming nobody keeps the ambient stamp.
 **Append-only, with one sanctioned mutator:** `Pseudonymise()` blanks the three request-metadata
 columns on erasure and nothing else — no code path calls `Remove`, `Deactivate` or touches `IsActive`
 on the type (`CustomerActionAuditImmutabilityTests`); each row is deleted by the retention sweep three
@@ -115,7 +120,11 @@ is marked `gdpr.user.incident_file` (Sensitive) with a snapshot of ids, section 
 SHA-256 of the data section; both leave an `AdminActionAudit` row, never the content, and the export
 commits its `GdprRequest`. The incident file scoped to an order prints the subject's own rows and the
 guest rows on that order, **never a bystander's refused probe** (their id, IP and device label are not
-the subject's to export — S6). The customer's own export is a `customer.gdpr.export` row with counts.
+the subject's to export — S6). The customer's own export is a `customer.gdpr.export` row with counts,
+and its `GdprRequest` row names the fixed actor `self`, never the subject's e-mail (the row outlives
+the erasure). The incident file prints the operating company's name and markets, **never the tenant
+id** (S4). The JSON export's trail is the account's own rows — not the guest rows on the bookings the
+erasure reaches by e-mail, whose IP and device may be a stranger's.
 → [ADR-0062](/decisions/adr-0062), [`customer-action-audit`](/domain/roles/customer-action-audit),
 [`audit-gate`](/domain/roles/audit-gate), [`incident-file`](/domain/roles/incident-file)
 
@@ -162,7 +171,9 @@ data unless gated by a different shared secret (e.g. a confirmation code in the 
 the entity gains a sensitive field tomorrow. Audit every Response/DTO for fields that must not
 reach the client:
 - `UserId` (the client knows their own id); other users' ids
-- `TenantId` (never expose)
+- `TenantId` (never expose — and never *print*: the incident file resolves the operator to its display
+  name and markets from the market registry rather than emitting the id, and the id is absent from
+  the hashed section model — `IncidentFileTests`)
 - email / phone / full name of non-self users (exception: cleaner first-name on an assigned order
   is documented intent)
 - Stripe customer/subscription ids, token hashes, password hashes

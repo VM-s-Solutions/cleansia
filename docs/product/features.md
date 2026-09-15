@@ -52,8 +52,10 @@ from the market, not from the translation; a market with no figure gets the sent
 **Account and privacy** — saved addresses, notification preferences, five languages, data export and
 account erasure. The export carries the customer's own conduct record — every booking, cancellation,
 dispute filing, membership change, sign-in and consent, with the figures the platform showed them at
-the time — and each consent with the IP, the device and the **version of the terms** it was given
-under; pulling the export is itself on the record. The terms and the privacy policy are **dated
+the time — each consent with the IP, the device and the **version of the terms** it was given under,
+and **every dispute** with its thread, resolution and refund; pulling the export is itself on the
+record. An erasure reaches the **guest bookings placed with the account's e-mail** as well as the
+account's own (a live one is left to finish first). The terms and the privacy policy are **dated
 documents**: the `/terms` and `/privacy` pages show the version in force for the customer's market
 with its effective date, a sign-up or a booking without the terms tick is **refused**, and the
 consent written at sign-up points at exactly the text that was shown. An erasure request that could

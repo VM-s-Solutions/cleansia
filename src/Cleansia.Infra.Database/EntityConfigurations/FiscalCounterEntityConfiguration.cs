@@ -20,8 +20,8 @@ public class FiscalCounterEntityConfiguration : TenantAuditableEntityConfigurati
 
         builder.Property(c => c.Value).IsRequired();
 
-        // The allocator's atomic UPSERT keys on this index. NULLS NOT DISTINCT is vacuous on a NOT NULL
-        // tenant term and is kept because the model guard reads the option, not the column.
+        // The allocator's atomic UPSERT keys on this index. NULLS NOT DISTINCT kept on a NOT NULL tenant
+        // term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
         builder.HasIndex(c => new { c.TenantId, c.Year, c.IssuerScope })
             .IsUnique()
             .AreNullsDistinct(false)

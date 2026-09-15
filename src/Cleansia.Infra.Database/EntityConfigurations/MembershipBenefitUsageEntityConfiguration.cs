@@ -54,10 +54,9 @@ public class MembershipBenefitUsageEntityConfiguration : TenantAuditableEntityCo
             .HasForeignKey(u => u.UserMembershipId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ADR-0035 D3 — the sole arbiter of the reservation race. NULLS NOT DISTINCT is vacuous on a
-        // NOT NULL tenant term and is kept because the model guard reads the option, not the column.
-        // Filtered to live rows so a release restores capacity while the released row keeps its
-        // ordinal for the audit trail.
+        // ADR-0035 D3 — the sole arbiter of the reservation race. Filtered to live rows so a release
+        // restores capacity while the released row keeps its ordinal for the audit trail. NULLS NOT
+        // DISTINCT kept on a NOT NULL tenant term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
         builder.HasIndex(u => new { u.TenantId, u.UserId, u.BenefitKind, u.PeriodKey, u.SlotOrdinal })
             .IsUnique()
             .AreNullsDistinct(false)

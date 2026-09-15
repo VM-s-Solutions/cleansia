@@ -79,13 +79,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
     public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
     {
-        // Cross-tenant scan: pay-calc on a tenant-scoped order should bootstrap
-        // a tenant-scoped PayPeriod for that same tenant. Today the system is
-        // single-tenant in practice (TenantId null), so the simple "any open
-        // period for the active tenant context" check is sufficient. The
-        // multi-tenant flow already loops per tenant in
-        // CloseExpiredPeriodsAndOpenNewAsync; bootstrap inherits the active
-        // tenant override from the caller (queue consumer sets none → null).
+        // Per-company bootstrap: the open-period read goes through the tenant
+        // filter and the new row is stamped from the ambient tenant at commit,
+        // so this answers for whatever tenant the caller has adopted. The
+        // scheduled rollover loops per tenant in CloseExpiredPeriodsAndOpenNewAsync.
         var hasOpen = await _payPeriodRepository
             .GetQueryable()
             .AnyAsync(p => p.Status == PayPeriodStatus.Open, cancellationToken);
@@ -139,9 +136,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             foreach (var tenantGroup in expiredPeriods.GroupBy(p => p.TenantId ?? string.Empty))
             {
-                // Reset before each iteration so a non-empty override from the
-                // previous group doesn't leak into a single-tenant (empty key)
-                // group that follows it.
+                // Reset before each iteration so the previous group's override
+                // never outlives its group: what the next commit stamps is
+                // decided here, not by whatever ran last.
                 _tenantProvider.ClearTenantOverride();
                 if (!string.IsNullOrEmpty(tenantGroup.Key))
                 {

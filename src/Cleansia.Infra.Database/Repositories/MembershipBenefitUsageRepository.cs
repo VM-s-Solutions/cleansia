@@ -96,8 +96,8 @@ public class MembershipBenefitUsageRepository(
             // gives it no type — PostgreSQL resolves the SELECT's own output types before coercing to
             // the target columns) AND in `IS NOT DISTINCT FROM u."TenantId"` (text). Untyped with a
             // NULL value, PostgreSQL deduces two different types for the same parameter and refuses the
-            // whole statement with 42P08 — in SINGLE-TENANT mode only, which is why the promo path shipped
-            // this bug past a tenanted test run.
+            // whole statement with 42P08 — only when the value is null, which is how the promo path
+            // shipped this bug past a tenanted test run while the tenant term was still nullable.
             new NpgsqlParameter("tenantId", NpgsqlDbType.Text) { Value = (object?)tenantId ?? DBNull.Value },
             new NpgsqlParameter("createdBy", createdBy),
         };

@@ -40,7 +40,7 @@ public class ExpireStaleCreditHandlerTests
         Assert.Equal(20m, result.Value.TotalExpiredByCurrencyId["currency-eur"]);
         Assert.Equal(0m, czk.Balance);
         Assert.Equal(0m, eur.Balance);
-        // One tenant group (both single-tenant), one commit.
+        // One tenant group (both accounts are unstamped in-memory rows, so one empty key), one commit.
         _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -19,8 +19,9 @@ namespace Cleansia.IntegrationTests.Features.Memberships;
 /// the promo archetype, not copied: <c>generate_series</c>, <c>IS NOT DISTINCT FROM</c>,
 /// <c>ON CONFLICT DO NOTHING</c> over a filtered <c>NULLS NOT DISTINCT</c> partial index and an
 /// explicitly-typed nullable text parameter are all PostgreSQL behaviours. The last one is why the
-/// promo path shipped a <c>42P08</c> that only fired in single-tenant mode and survived a tenanted
-/// test run — so every case here runs with a NULL tenant, which is the platform's default deployment.</para>
+/// promo path once shipped a <c>42P08</c> that fired only on a null parameter and survived a tenanted
+/// test run. Every case here runs under the fixture's own company, the way every request does now
+/// that the tenant term is NOT NULL.</para>
 ///
 /// <para>Non-transactional on purpose: the reservation auto-commits outside the caller's unit of work,
 /// which is the whole point of Mode A, and folding it into an ambient test scope would test something
@@ -143,12 +144,11 @@ public class MembershipBenefitReservationTests(PostgresContainerFixture fixture)
 
     /// <summary>
     /// <c>TC-BENEFIT-RACE-0</c> — two concurrent claims with ONE slot left yield exactly one non-null
-    /// result and exactly one live row, <b>with a NULL tenant</b>.
+    /// result and exactly one live row.
     ///
-    /// <para>Run only in a tenanted fixture this would pass against a nulls-DISTINCT index that does not
-    /// work — i.e. it would prove the opposite of what it claims. Single-tenant mode <i>is</i>
-    /// <c>TenantId == null</c>, and PostgreSQL treats NULLs as distinct in a unique index by default, so
-    /// without <c>NULLS NOT DISTINCT</c> both rows land and quota 2 becomes quota 3.</para>
+    /// <para>The filtered unique index is the sole arbiter: two independent connections both pass the
+    /// in-statement free-slot read, and only the index decides which insert lands. Without it both
+    /// rows land and quota 2 becomes quota 3.</para>
     /// </summary>
     [Fact]
     public async Task TwoConcurrentClaimsForTheLastSlotYieldExactlyOneRow()

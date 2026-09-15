@@ -36,9 +36,9 @@ namespace Cleansia.Tests.Features.Bookings;
 /// was the pipeline's deferred one: every order and status track in the batch was stamped with the LAST
 /// template's tenant, and tenant A's customer got an order that only tenant B can see.
 ///
-/// <para>The bug is invisible in single-tenant mode (every stamp is null and null is right), which is
-/// exactly why it shipped — so this suite seeds two templates with two DIFFERENT non-null tenants plus a
-/// legacy null-tenant one, and runs the real repositories, the real <see cref="OrderFactory"/> and a real
+/// <para>The bug is invisible while every row belongs to the same company (whatever stamp lands is the
+/// right one), which is exactly why it shipped — so this suite seeds two templates under two DIFFERENT
+/// companies and runs the real repositories, the real <see cref="OrderFactory"/> and a real
 /// <see cref="CleansiaDbContext"/> over SQLite, because the stamp lives in the context's commit and not
 /// in anything a mock can return.</para>
 /// </summary>

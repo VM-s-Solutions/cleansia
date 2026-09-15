@@ -37,9 +37,8 @@ public class OrderExtraEntityConfiguration : IEntityTypeConfiguration<OrderExtra
         // One row per extra per order, enforced by the schema rather than by the caller's habit of
         // passing a distinct slug list.
         //
-        // NO TenantId term, deliberately. OrderExtra derives BaseEntity, not Auditable, so it has no
-        // TenantId to include — which is also why no global query filter attaches. Including a nullable
-        // TenantId would make the index enforce nothing while that column is null.
+        // NO TenantId term, deliberately. OrderExtra derives BaseEntity, which carries no tenant column,
+        // so there is nothing to include — which is also why no global query filter attaches.
         builder.HasIndex(oe => new { oe.OrderId, oe.ExtraId })
             .IsUnique()
             .HasDatabaseName("IX_OrderExtras_OrderId_ExtraId");

@@ -33,10 +33,9 @@ public class CreditAccountEntityConfiguration : TenantAuditableEntityConfigurati
             .HasFilter("\"ExpiresOn\" IS NOT NULL");
 
         // ONE ACCOUNT PER CUSTOMER PER CURRENCY. Unique on (UserId, CurrencyId), and deliberately not
-        // (TenantId, UserId, CurrencyId): TenantId is nullable and Postgres treats NULLs as distinct,
-        // so a composite index containing it admits unlimited duplicates while it is null, which is
-        // production today. Both columns here are NOT NULL, so this is a real constraint with nothing
-        // to fold — no .AreNullsDistinct(false) needed. User is already tenant-scoped.
+        // (TenantId, UserId, CurrencyId): a user belongs to one company, so the pair is already
+        // tenant-unique and a tenant term would narrow nothing. Both columns here are NOT NULL, so this
+        // is a real constraint with nothing to fold — no .AreNullsDistinct(false) needed.
         //
         // UserId leads so the same index also serves the currency-BLIND reads: "every account this
         // customer holds", which is what the GDPR erasure gate and the admin discharge must ask.

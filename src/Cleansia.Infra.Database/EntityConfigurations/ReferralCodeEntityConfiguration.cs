@@ -35,8 +35,8 @@ public class ReferralCodeEntityConfiguration : TenantAuditableEntityConfiguratio
 
         // Lookup is GetByCodeAsync(code) — codes are tenant-scoped (the
         // global EF filter still applies at query time).
-        // NULLS NOT DISTINCT is vacuous on a NOT NULL tenant term and is kept because the model guard
-        // reads the option, not the column. The odds are long — a
+        // NULLS NOT DISTINCT kept on a NOT NULL tenant term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
+        // The odds are long — a
         // generated code collides about once in 481 million attempts — but EnsureCodeForUserAsync's
         // retry-on-collision loop can only see COMMITTED rows, so without this two users can end up
         // holding one code and ProcessOrderCompletedAsync then pays the referral points to whichever

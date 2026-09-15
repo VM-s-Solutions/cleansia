@@ -9,8 +9,10 @@ namespace Cleansia.Core.Queue.Abstractions;
 /// <c>Guid</c> per send) — see <see cref="MessageKeys"/> for the frozen formulas.</para>
 ///
 /// <para><see cref="TenantId"/> is carried explicitly because the queue consumer has no JWT — it sets
-/// the tenant override before reading tenant-scoped rows. Nullable: <c>null</c> in single-tenant mode.
-/// Redundant-but-harmless for <c>notifications-dispatch</c> (the push payload already carries it).</para>
+/// the tenant override before reading tenant-scoped rows. Nullable: a producer with no ambient tenant
+/// (an anonymous request, a job that has not chosen a group) sends none, which is why the outbox row
+/// it lands in is one of the two nullable envelopes. Redundant-but-harmless for
+/// <c>notifications-dispatch</c> (the push payload already carries it).</para>
 /// </summary>
 public sealed record QueueEnvelope<T>(
     string MessageKey,

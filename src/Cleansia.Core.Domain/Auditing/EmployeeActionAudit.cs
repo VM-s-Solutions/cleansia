@@ -57,7 +57,7 @@ public class EmployeeActionAudit : TenantAuditable
     /// <summary>
     /// The only way to make one. <c>CreatedBy</c>, <c>CreatedOn</c> and <c>TenantId</c> are NOT set
     /// here — <c>CleansiaDbContext.CommitAsync</c> stamps all three, which is the whole reason this is
-    /// <see cref="Auditable"/> rather than <c>BaseEntity</c> like its admin-side sibling.
+    /// <see cref="TenantAuditable"/> rather than <c>BaseEntity</c> like its admin-side sibling.
     /// </summary>
     public static EmployeeActionAudit Create(
         string employeeId, string orderId, EmployeeAuditAction action) =>

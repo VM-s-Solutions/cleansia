@@ -14,9 +14,9 @@ namespace Cleansia.HostTests.Tests;
 /// pinned across the tenant boundary. AC9 covers user-by-id, dispute-create, invoice-by-id and an order
 /// WRITE; nothing covered these two, so their tenancy was held by the EF global query filter alone.
 ///
-/// <para>The filter's middle disjunct (<c>currentTenantId == null &amp;&amp; e.TenantId == null</c>) matches
-/// everything in single-tenant mode, which is production today — so a test seeding null-tenant rows
-/// proves nothing here. Every row below carries a real, explicit tenant.</para>
+/// <para>The filter's middle disjunct (<c>currentTenantId == null &amp;&amp; e.TenantId == null</c>) can
+/// match only the two nullable envelopes now that every stamped table is NOT NULL, so the boundary
+/// under test is the claimed-tenant branch. Every row below carries a real, explicit tenant.</para>
 ///
 /// <para>Each attacker is handed everything except the tenant: an approved, complete-profile cleaner
 /// whose remaining gate would pass if the row were visible (a free seat and no preferred hold for the

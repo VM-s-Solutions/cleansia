@@ -32,9 +32,9 @@ public class EmployeeActionAuditConfiguration : TenantAuditableEntityConfigurati
         // timeline, which reads the table by OrderId — one order by resource, the user's recent orders
         // by user. None on (CreatedOn) alone: no caller, and a speculative index is paid on every insert.
         //
-        // The inherited TenantId index comes from AuditableEntityConfiguration and is accepted as-is;
-        // 61 configurations carry it. It is NOT a uniqueness arbiter here — nothing on this table is
-        // unique, which is what append-only means.
+        // The inherited TenantId index comes from TenantAuditableEntityConfiguration and is accepted
+        // as-is; the 45 stamped configurations carry it. It is NOT a uniqueness arbiter here — nothing
+        // on this table is unique, which is what append-only means.
         builder.HasIndex(e => new { e.EmployeeId, e.CreatedOn })
             .IsDescending(false, true)
             .HasDatabaseName("IX_EmployeeActionAudits_EmployeeId_CreatedOn");

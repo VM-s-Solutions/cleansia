@@ -7,8 +7,8 @@ namespace Cleansia.Infra.Database.EntityConfigurations;
 /// <summary>
 /// EF config for the payout-reference counter (ADR-0046). Deliberately a plain
 /// <see cref="IEntityTypeConfiguration{TEntity}"/> rather than
-/// <see cref="AuditableEntityConfiguration{T,TKey}"/>: the entity is tenant-global by design, so there
-/// is no <c>TenantId</c> column and the S8 tenant grep should treat this as a reasoned exception —
+/// <see cref="TenantAuditableEntityConfiguration{T,TKey}"/>: the entity is tenant-global by design, so
+/// there is no <c>TenantId</c> column and the S8 tenant grep should treat this as a reasoned exception —
 /// the same lane <see cref="ProcessedMessageEntityConfiguration"/> takes.
 /// </summary>
 public class PayoutReferenceCounterEntityConfiguration : IEntityTypeConfiguration<PayoutReferenceCounter>

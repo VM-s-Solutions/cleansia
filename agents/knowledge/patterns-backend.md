@@ -282,7 +282,8 @@ arm) + `SessionAuditTests` (the second-operator stamping, on Postgres) — `T1-C
 - Rich domain: private setters, factory `Create(...)`, behavior methods (`order.Cancel(...)`,
   `order.AddOrderStatus(OrderStatusTrack.Create(...))`, `order.UpdatePaymentStatus(...)`). Entity
   classes carry **no EF attributes** — mapping lives in `Infra.Database/EntityConfigurations/`
-  (DB Master's domain). Derive from `TenantAuditable` for user-scoped data (S8).
+  (DB Master's domain). User-scoped data implements `ITenantEntity` (S8): the 45 stamped types via
+  `TenantAuditable`, the two audits by hand.
 
 ## Errors & i18n binding (critical, verified)
 
@@ -1035,7 +1036,7 @@ is the name of the rule but not the best shape for it:
 A cap on how many times **one user** may receive **one benefit** in **one period** is a row, never a
 counter and never a derived count.
 
-- **Shape:** an `Auditable` + `ITenantEntity` ledger row carrying `UserId`, a **`Kind` discriminator**
+- **Shape:** a `TenantAuditable` ledger row carrying `UserId`, a **`Kind` discriminator**
   (int-stored, never reordered), a **stored `PeriodKey`** string, and a 0-based `SlotOrdinal`.
 - **Concurrency — three layers, all three named:** a non-authoritative app-level read (the resolver's
   count — it decides the *quoted* price, never the claim), **one atomic claim statement**, and a

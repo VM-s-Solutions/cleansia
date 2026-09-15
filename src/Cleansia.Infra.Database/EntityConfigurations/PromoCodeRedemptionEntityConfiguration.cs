@@ -63,8 +63,8 @@ public class PromoCodeRedemptionEntityConfiguration : TenantAuditableEntityConfi
         // lookup as a left-prefix.
         //
         // NULLS NOT DISTINCT (ADR-0038 D5.2) because this index is the SOLE ARBITER of a concurrent
-        // claim, not a backstop behind an authoritative read. Vacuous on a NOT NULL tenant term, kept
-        // because the model guard reads the option, not the column.
+        // claim, not a backstop behind an authoritative read. Kept on a NOT NULL tenant term
+        // -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
         builder.HasIndex(r => new { r.TenantId, r.PromoCodeId, r.UserId, r.SlotOrdinal })
             .IsUnique()
             .AreNullsDistinct(false);

@@ -21,7 +21,7 @@ namespace Cleansia.Tests.Services;
 /// enqueued, so the watermark never moved and the same cleaner was re-notified about the same jobs on
 /// every sweep, forever (T-0529). These run the real service against a real <see cref="CleansiaDbContext"/>
 /// over SQLite with a real <see cref="EmployeeRepository"/> and a real unit of work, so the watermark is
-/// asserted where it matters — persisted — for a tenanted cleaner AND a single-tenant one.
+/// asserted where it matters — persisted — for a cleaner of the default company AND one of another.
 /// </summary>
 public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
 {

@@ -17,8 +17,7 @@ namespace Cleansia.IntegrationTests.Features.Credit;
 /// <para>Issuing is the safe direction — two concurrent grants both increase the balance and both are
 /// correct — so it goes through the tracked graph rather than a conditional UPDATE. What it still
 /// needs the database for is the retry: <c>CreditTransactions.IdempotencyKey</c> carries a PLAIN
-/// unique index, and the whole point of that shape is that it enforces something in single-tenant
-/// mode, where <c>TenantId</c> is null and a <c>(TenantId, …)</c> index enforces nothing at all.
+/// unique index on a table with no tenant column, and only Postgres can prove that the index fires.
 /// SQLite cannot make that claim on our behalf.</para>
 /// </summary>
 [Collection("PostgresCollection")]
@@ -121,9 +120,10 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
     /// granted the money ONCE. The unique index on IdempotencyKey is the arbiter — the read-then-write
     /// above it cannot be, because both attempts read the same balance.
     ///
-    /// <para>It carries no <c>TenantId</c> term and no filter, deliberately. LoyaltyTransactions took
-    /// the (TenantId, IdempotencyKey) shape, and with TenantId null in production Postgres treats
-    /// every row's key as distinct — the backstop its own comment names enforces nothing.</para>
+    /// <para>It carries no <c>TenantId</c> term and no filter, deliberately: the key is minted per
+    /// grant and unique on its own, and the table carries no tenant column. The shape LoyaltyTransactions
+    /// once took — (TenantId, IdempotencyKey) over a nullable tenant term, nulls distinct — enforced
+    /// nothing while the term was null, which is what this test rules out for money.</para>
     /// </summary>
     [Fact]
     public async Task AReplayedGrantIsRefusedAndTheMoneyIsGrantedOnce()

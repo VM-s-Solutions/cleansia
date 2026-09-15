@@ -73,7 +73,7 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
         Assert.False(
             index.GetAreNullsDistinct(),
             $"{entityClrType.Name} ({string.Join(", ", columns)}) is the sole arbiter of a concurrent "
-            + "claim, so it must be declared .AreNullsDistinct(false) or it never fires when TenantId is null.");
+            + "claim, so it must be declared .AreNullsDistinct(false) or a null term in the key stops it firing.");
     }
 
     /// <summary>
@@ -144,9 +144,9 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     /// Unique indexes knowingly left unenforced.
     ///
     /// <para><b>Empty, and that is the point.</b> It held seven — every unique index carrying an
-    /// unfiltered nullable column, which in single-tenant mode (TenantId null, i.e. production)
-    /// enforced nothing at all. All seven now declare NULLS NOT DISTINCT, so the set emptied rather
-    /// than being maintained.</para>
+    /// unfiltered nullable column, which enforced nothing at all while that column (then a nullable
+    /// TenantId) was null. All seven now declare NULLS NOT DISTINCT, so the set emptied rather than
+    /// being maintained.</para>
     /// </summary>
     private static readonly HashSet<string> KnownUnenforced = new(StringComparer.Ordinal)
     {

@@ -84,9 +84,9 @@ public class EmployeePayoutDetailsEntityConfiguration : TenantAuditableEntityCon
             .HasForeignKey(p => p.BankCountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Cardinality one, enforced (ADR-0034 D1.3). NULLS NOT DISTINCT is vacuous on a NOT NULL tenant
-        // term and is kept because the model guard reads the option, not the column. Unfiltered —
-        // nothing deactivates this row, so there is no partial-index interaction to reason about.
+        // Cardinality one, enforced (ADR-0034 D1.3). Unfiltered — nothing deactivates this row, so there
+        // is no partial-index interaction to reason about. NULLS NOT DISTINCT kept on a NOT NULL tenant
+        // term -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
         builder.HasIndex(p => new { p.TenantId, p.EmployeeId })
             .IsUnique()
             .AreNullsDistinct(false)

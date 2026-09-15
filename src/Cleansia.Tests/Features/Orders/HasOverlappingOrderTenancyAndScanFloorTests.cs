@@ -18,8 +18,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// resolved <c>TenantId == null</c> against non-null rows, so every branch was false, the query returned
 /// nothing, and every cleaner reported FREE — the digest would advertise clashing jobs and, because the
 /// same method is the booking write gate, a genuine double-booking would be permitted (S8's third form,
-/// ADR-0039 §D6). Invisible in single-tenant mode, so every tenancy case here seeds a NON-NULL
-/// <c>TenantId</c>.
+/// ADR-0039 §D6). Invisible while a null ambient tenant could still match null rows, so every tenancy
+/// case here seeds an explicit <c>TenantId</c> and probes under that claim, another company's, and none.
 ///
 /// The second half pins the scan floor: the overlap predicate's only sargable term is the UPPER bound
 /// (<c>CleaningDateTime &lt; windowEnd</c>) — the lower side is a per-row interval computation — so

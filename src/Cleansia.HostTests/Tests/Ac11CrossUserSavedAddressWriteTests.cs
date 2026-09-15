@@ -20,8 +20,8 @@ namespace Cleansia.HostTests.Tests;
 ///   <item>the legitimate owner → 200 and the row IS updated (proving the rejection is the boundary,
 ///   not a broken endpoint).</item>
 /// </list>
-/// Both tenants carry NON-NULL distinct tenant_id claims so the multi-tenant filter branch is the one
-/// under test, not the single-tenant null/null escape.
+/// Both callers carry distinct tenant_id claims so the claimed-tenant filter branch is the one under
+/// test, not the no-claim branch.
 /// </summary>
 public sealed class Ac11CrossUserSavedAddressWriteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {

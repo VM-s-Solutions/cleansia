@@ -91,8 +91,8 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     protected async Task<T> QueryAsync<T>(Func<CleansiaDbContext, Task<T>> query)
     {
         using var scope = PartnerHost.Services.CreateScope();
-        // Override to a sentinel tenant the test data never uses so the default null/null single-tenant
-        // match doesn't accidentally satisfy the filter; assertions use IgnoreQueryFilters anyway.
+        // Override to a sentinel tenant the test data never uses so no ambient tenant can accidentally
+        // satisfy the filter; assertions use IgnoreQueryFilters anyway.
         var tenant = scope.ServiceProvider.GetRequiredService<ITenantProvider>();
         tenant.SetTenantOverride("__hosttests_query_scope__");
         var ctx = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();

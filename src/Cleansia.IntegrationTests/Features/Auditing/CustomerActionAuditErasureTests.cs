@@ -27,7 +27,7 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 /// every row exactly as it was: the trail is never blanked for a customer who still exists.</para>
 ///
 /// <para>Also covers the retention delete the repository exposes for the retention task: per row, by its own age,
-/// across tenants, and never the admin or employee tables.</para>
+/// for the ambient company alone, and never the admin or employee tables.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -134,8 +134,13 @@ public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) :
             transactional: false);
     }
 
+    /// <summary>
+    /// The delete is the ambient company's alone: the retention job calls it once per company under that
+    /// company's override, because each company keeps its own window. The second company's expired row
+    /// survives a delete run under the first.
+    /// </summary>
     [Fact]
-    public async Task The_Retention_Delete_Removes_Rows_By_Their_Own_Age_Across_Tenants_And_Nothing_Else()
+    public async Task The_Retention_Delete_Removes_The_Ambient_Companys_Rows_By_Their_Own_Age_And_Nothing_Else()
     {
         var cutoff = DateTimeOffset.UtcNow.AddYears(-3);
 
@@ -161,11 +166,12 @@ public class CustomerActionAuditErasureTests(PostgresContainerFixture fixture) :
             },
             assert: async (CleansiaDbContext context, int deleted) =>
             {
-                Assert.Equal(3, deleted);
+                Assert.Equal(2, deleted);
 
-                var remaining = await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync();
-                var survivor = Assert.Single(remaining);
-                Assert.Equal("ORD-YOUNG", survivor.ResourceId);
+                var remaining = await context.CustomerActionAudits.IgnoreQueryFilters()
+                    .Select(a => a.ResourceId)
+                    .ToListAsync();
+                Assert.Equal(["ORD-SK", "ORD-YOUNG"], remaining.OrderBy(r => r, StringComparer.Ordinal));
 
                 Assert.Equal(1, await context.AdminActionAudits.IgnoreQueryFilters().CountAsync());
             });

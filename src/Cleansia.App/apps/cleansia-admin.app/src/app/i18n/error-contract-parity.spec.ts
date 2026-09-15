@@ -636,6 +636,10 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'template.email.invalid_type',
   'template.email.key_exists',
   'template.email.not_found',
+  // Company settings — AdminTenantSettingsController.Set / Reset: only a catalogued key, only a value
+  // of its type inside its range (SetTenantSetting / ResetTenantSetting validators).
+  'tenant_setting.invalid_value',
+  'tenant_setting.unknown_key',
   // The failed-deletion retry (AdminGdprController.RetryUserDeletion): only a Failed row, or one left
   // Processing past the stale window, can be retried — AdminRetryUserDeletion.Validator.
   'gdpr.request_not_retryable',

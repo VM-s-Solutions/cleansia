@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Database;
@@ -19,7 +20,8 @@ namespace Cleansia.IntegrationTests.Features.DataRetention;
 /// that row's own <c>OccurredOn</c> across both operating companies. A backlog wider than one batch is
 /// drained in the one run, which on Postgres exercises the id-list delete the batching is built on.
 /// Rows the sweep must never reach — a younger row of the same user, the admin table, the employee
-/// table — are counted after it.
+/// table — are counted after it. The second case is the per-company read: a window one company set
+/// shortens that company alone.
 /// </summary>
 [Collection("PostgresCollection")]
 public class CustomerActionAuditRetentionTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -73,6 +75,55 @@ public class CustomerActionAuditRetentionTests(PostgresContainerFixture fixture)
 
                 Assert.Equal(1, await context.AdminActionAudits.IgnoreQueryFilters().CountAsync());
                 Assert.Equal(1, await context.EmployeeActionAudits.IgnoreQueryFilters().CountAsync());
+            });
+    }
+
+    /// <summary>
+    /// Each operating company keeps its own window. A row under <c>retention.customer_audit.years</c>
+    /// for the second company alone shortens ITS window to a year: its two-year-old rows go, the first
+    /// company's two-year-old rows stay under the three-year default, and the setting row itself — a
+    /// stamped row of the second company — is untouched by the sweep.
+    /// </summary>
+    [Fact]
+    public async Task A_Companys_Own_Window_Is_Read_Per_Company_So_Its_Rows_Go_And_The_Other_Companys_Stay()
+    {
+        var twoYearsAgo = DateTimeOffset.UtcNow.AddYears(-2);
+
+        await TestMethod(
+            setup: services =>
+            {
+                services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+                services.Replace(ServiceDescriptor.Singleton(_ => new Mock<IBlobContainerClientFactory>().Object));
+                return Task.CompletedTask;
+            },
+            arrange: async context =>
+            {
+                var window = TenantConfiguration.Create(RetentionDefaults.CustomerAuditRetentionYearsKey, "1");
+                window.TenantId = TestTenants.Second;
+                window.Created("admin-sk", DateTimeOffset.UtcNow);
+                context.TenantConfigurations.Add(window);
+
+                context.CustomerActionAudits.AddRange(
+                    Row(twoYearsAgo, "cust-cz", "ORD-CZ-TWO-YEARS", TestTenants.Default),
+                    Row(twoYearsAgo, "cust-sk", "ORD-SK-TWO-YEARS", TestTenants.Second),
+                    Row(DateTimeOffset.UtcNow.AddMonths(-6), "cust-sk", "ORD-SK-SIX-MONTHS", TestTenants.Second));
+                await Task.CompletedTask;
+            },
+            act: async provider =>
+            {
+                await provider.GetRequiredService<IDataRetentionBackgroundService>().RunAllRetentionTasksAsync(CancellationToken.None);
+                return true;
+            },
+            assert: async (CleansiaDbContext context, bool _) =>
+            {
+                var remaining = await context.CustomerActionAudits.IgnoreQueryFilters()
+                    .Select(a => a.ResourceId)
+                    .ToListAsync();
+                Assert.Equal(["ORD-CZ-TWO-YEARS", "ORD-SK-SIX-MONTHS"], remaining.OrderBy(r => r, StringComparer.Ordinal));
+
+                var setting = Assert.Single(await context.TenantConfigurations.IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(TestTenants.Second, setting.TenantId);
+                Assert.Equal("1", setting.Value);
             });
     }
 

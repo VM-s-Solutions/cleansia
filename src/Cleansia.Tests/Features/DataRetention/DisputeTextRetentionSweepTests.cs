@@ -151,16 +151,16 @@ public sealed class DisputeTextRetentionSweepTests : IDisposable
             .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
             .Build();
 
-    private CleansiaDbContext NewContext() =>
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(TestTenants.Default));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
     }
 
     private async Task SeedAsync(params Dispute[] disputes)
@@ -170,10 +170,15 @@ public sealed class DisputeTextRetentionSweepTests : IDisposable
         await seed.CommitAsync(CancellationToken.None);
     }
 
+    /// <summary>
+    /// The sweep and its context share one tenant provider, the way one DI scope does on the host: the
+    /// per-company override the sweep sets is what the filter and the commit read.
+    /// </summary>
     private async Task RunSweepAsync(IConfiguration configuration)
     {
-        await using var ctx = NewContext();
-        await NewSweep(ctx, configuration).RunAllRetentionTasksAsync(CancellationToken.None);
+        var tenantProvider = new FixedTenantProvider(null);
+        await using var ctx = NewContext(tenantProvider);
+        await NewSweep(ctx, tenantProvider, configuration).RunAllRetentionTasksAsync(CancellationToken.None);
     }
 
     private static Dispute Stamped(string id, DateTimeOffset retainedUntil)
@@ -193,7 +198,7 @@ public sealed class DisputeTextRetentionSweepTests : IDisposable
         return dispute;
     }
 
-    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, IConfiguration configuration)
+    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, ITenantProvider tenantProvider, IConfiguration configuration)
     {
         var session = new TestUserSessionProvider("system", "system@cleansia.test");
         return new DataRetentionBackgroundService(
@@ -206,6 +211,8 @@ public sealed class DisputeTextRetentionSweepTests : IDisposable
             new UserNotificationRepository(ctx),
             new CustomerActionAuditRepository(ctx),
             new DisputeRepository(ctx),
+            new TenantRepository(ctx),
+            tenantProvider,
             _configProvider.Object,
             new DataRetentionConfig(configuration),
             _blobClientFactory.Object,

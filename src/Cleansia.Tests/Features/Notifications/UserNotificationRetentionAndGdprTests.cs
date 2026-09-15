@@ -56,16 +56,23 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
 
     public void Dispose() => _connection.Dispose();
 
-    private CleansiaDbContext NewContext() =>
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(TestTenants.Default));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
 
     private async Task EnsureSchemaAsync()
     {
         await using var ctx = NewContext();
-        await ctx.Database.EnsureCreatedAsync();
+        await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
+    }
+
+    private async Task RunRetentionAsync()
+    {
+        var tenantProvider = new FixedTenantProvider(null);
+        await using var ctx = NewContext(tenantProvider);
+        await NewRetentionService(ctx, tenantProvider).RunAllRetentionTasksAsync(CancellationToken.None);
     }
 
     private static UserNotification Row(string userId, DateTimeOffset createdOn)
@@ -75,7 +82,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
         return row;
     }
 
-    private DataRetentionBackgroundService NewRetentionService(CleansiaDbContext ctx)
+    private DataRetentionBackgroundService NewRetentionService(CleansiaDbContext ctx, ITenantProvider tenantProvider)
     {
         var session = new TestUserSessionProvider("system", "system@cleansia.test");
         return new DataRetentionBackgroundService(
@@ -88,6 +95,8 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             new UserNotificationRepository(ctx),
             new CustomerActionAuditRepository(ctx),
             new DisputeRepository(ctx),
+            new TenantRepository(ctx),
+            tenantProvider,
             _configProvider.Object,
             new DataRetentionConfig(new ConfigurationBuilder().Build()),
             _blobClientFactory.Object,
@@ -116,10 +125,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using (var ctx = NewContext())
-        {
-            await NewRetentionService(ctx).RunAllRetentionTasksAsync(CancellationToken.None);
-        }
+        await RunRetentionAsync();
 
         var remaining = await ReadRowsAsync();
         Assert.Equal(2, remaining.Count);
@@ -144,10 +150,7 @@ public sealed class UserNotificationRetentionAndGdprTests : IDisposable
             await seed.CommitAsync(CancellationToken.None);
         }
 
-        await using (var ctx = NewContext())
-        {
-            await NewRetentionService(ctx).RunAllRetentionTasksAsync(CancellationToken.None);
-        }
+        await RunRetentionAsync();
 
         var remaining = await ReadRowsAsync();
         Assert.Equal(RetentionDefaults.MaxNotificationsPerUser, remaining.Count(r => r.UserId == UserId));

@@ -51,7 +51,7 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
 
         while (true)
         {
-            var batch = await GetQueryableIgnoringTenant()
+            var batch = await GetQueryable()
                 .Where(a => a.OccurredOn < cutoff)
                 .OrderBy(a => a.OccurredOn)
                 .Select(a => a.Id)
@@ -63,7 +63,7 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
                 break;
             }
 
-            total += await GetQueryableIgnoringTenant()
+            total += await GetQueryable()
                 .Where(a => batch.Contains(a.Id))
                 .ExecuteDeleteAsync(cancellationToken);
         }

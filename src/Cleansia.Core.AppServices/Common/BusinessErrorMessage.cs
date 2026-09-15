@@ -507,6 +507,10 @@ public static class BusinessErrorMessage
     // Tenant Configuration
     public const string TenantConfigNotFound = "tenant_config.not_found";
     public const string TenantConfigKeyAlreadyExists = "tenant_config.key_already_exists";
+    /// <summary>Only a key in <c>TenantSettingCatalog</c> may be set or reset for an operating company.</summary>
+    public const string TenantSettingUnknownKey = "tenant_setting.unknown_key";
+    /// <summary>The value is not of the key's type or is outside its range (a retention window is 1 to its ceiling).</summary>
+    public const string TenantSettingInvalidValue = "tenant_setting.invalid_value";
 
     // Country Configuration
     public const string CountryConfigNotFound = "country_config.not_found";

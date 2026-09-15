@@ -25,8 +25,10 @@ public interface ICustomerActionAuditRepository : IRepository<CustomerActionAudi
     Task<int> PseudonymiseGuestRowsForOrdersAsync(IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Deletes every row whose own <see cref="CustomerActionAudit.OccurredOn"/> is before the cutoff,
-    /// across tenants, in batches. Returns the number of rows deleted.
+    /// Deletes every row of the AMBIENT operating company whose own
+    /// <see cref="CustomerActionAudit.OccurredOn"/> is before the cutoff, in batches. Each company keeps
+    /// its own window, so the retention job calls this once per company under that company's override.
+    /// Returns the number of rows deleted.
     /// </summary>
     Task<int> DeleteExpiredAsync(DateTimeOffset cutoff, CancellationToken cancellationToken);
 }

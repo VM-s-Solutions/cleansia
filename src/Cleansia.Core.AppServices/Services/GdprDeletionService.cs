@@ -1,6 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -432,7 +432,8 @@ public class GdprDeletionService(
 
         var disputes = await disputeRepository.GetDisputesByUserIdAsync(user.Id, ct);
         var evidenceBlobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
-        var disputeTextRetainedUntil = DateTimeOffset.UtcNow.AddYears(await ResolveDisputeTextRetentionYearsAsync(ct));
+        var disputeTextRetainedUntil = DateTimeOffset.UtcNow.AddYears(
+            await configProvider.GetAsync(TenantSettingCatalog.DisputeTextRetentionYears, ct));
         foreach (var dispute in disputes)
         {
             // These two steps are ordered, not adjacent by accident. AnonymizeEvidence() overwrites
@@ -510,24 +511,6 @@ public class GdprDeletionService(
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);
-    }
-
-    private async Task<int> ResolveDisputeTextRetentionYearsAsync(CancellationToken ct)
-    {
-        var setting = await configProvider.GetTenantSettingAsync(RetentionDefaults.DisputeTextRetentionYearsKey, ct);
-        var years = int.TryParse(setting, out var parsed) ? parsed : RetentionDefaults.DefaultDisputeTextRetentionYears;
-
-        // A window at or below zero would have the next sweep blank the text the ruling says to keep;
-        // a setting below the floor is a misconfiguration, not an instruction.
-        if (years <= 0)
-        {
-            logger.LogWarning(
-                "{Key} = {Years} is below the floor; the dispute text window uses the default {Default} years",
-                RetentionDefaults.DisputeTextRetentionYearsKey, years, RetentionDefaults.DefaultDisputeTextRetentionYears);
-            years = RetentionDefaults.DefaultDisputeTextRetentionYears;
-        }
-
-        return years;
     }
 
     private static string ExtractBlobNameFromUrl(string blobUrl)

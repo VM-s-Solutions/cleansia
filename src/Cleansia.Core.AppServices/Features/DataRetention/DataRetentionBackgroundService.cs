@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Configuration;
@@ -20,6 +21,8 @@ public class DataRetentionBackgroundService(
     IUserNotificationRepository userNotificationRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
     IDisputeRepository disputeRepository,
+    ITenantRepository tenantRepository,
+    ITenantProvider tenantProvider,
     IAppConfigurationProvider configProvider,
     IDataRetentionConfig retentionConfig,
     IBlobContainerClientFactory blobClientFactory,
@@ -40,37 +43,50 @@ public class DataRetentionBackgroundService(
             return;
         }
 
-        await RunSafeAsync("ExpiredUserCodes", CleanExpiredUserCodesAsync, cancellationToken);
-        await RunSafeAsync("StaleDevices", CleanStaleDevicesAsync, cancellationToken);
-        await RunSafeAsync("OldGdprRequests", CleanOldGdprRequestsAsync, cancellationToken);
-        await RunSafeAsync("OrderCustomerPii", CleanOrderCustomerPiiAsync, cancellationToken);
-        await RunSafeAsync("WithdrawnConsents", CleanWithdrawnConsentsAsync, cancellationToken);
-        await RunSafeAsync("SupersededDocuments", CleanSupersededDocumentsAsync, cancellationToken);
-        await RunSafeAsync("UserNotifications", CleanUserNotificationsAsync, cancellationToken);
-        await RunSafeAsync("CustomerActionAudits", CleanCustomerActionAuditsAsync, cancellationToken);
-        await RunSafeAsync("DisputeText", CleanExpiredDisputeTextAsync, cancellationToken);
+        // Each operating company keeps its own windows (TenantSettingCatalog), so the job runs the tasks
+        // once per company under its override: every read below is filtered to that company, its
+        // settings are its own, and the commits inside each task stamp nothing else. No JWT on a job —
+        // without the override a filtered read returns nothing at all.
+        var tenantIds = await tenantRepository.GetAllIdsAsync(cancellationToken);
 
-        logger.LogInformation("Data retention job completed");
+        foreach (var tenantId in tenantIds)
+        {
+            tenantProvider.ClearTenantOverride();
+            tenantProvider.SetTenantOverride(tenantId);
+
+            await RunSafeAsync("ExpiredUserCodes", tenantId, CleanExpiredUserCodesAsync, cancellationToken);
+            await RunSafeAsync("StaleDevices", tenantId, CleanStaleDevicesAsync, cancellationToken);
+            await RunSafeAsync("OldGdprRequests", tenantId, CleanOldGdprRequestsAsync, cancellationToken);
+            await RunSafeAsync("OrderCustomerPii", tenantId, CleanOrderCustomerPiiAsync, cancellationToken);
+            await RunSafeAsync("WithdrawnConsents", tenantId, CleanWithdrawnConsentsAsync, cancellationToken);
+            await RunSafeAsync("SupersededDocuments", tenantId, CleanSupersededDocumentsAsync, cancellationToken);
+            await RunSafeAsync("UserNotifications", tenantId, CleanUserNotificationsAsync, cancellationToken);
+            await RunSafeAsync("CustomerActionAudits", tenantId, CleanCustomerActionAuditsAsync, cancellationToken);
+            await RunSafeAsync("DisputeText", tenantId, CleanExpiredDisputeTextAsync, cancellationToken);
+        }
+
+        tenantProvider.ClearTenantOverride();
+
+        logger.LogInformation("Data retention job completed for {TenantCount} operating companies", tenantIds.Count);
     }
 
-    private async Task RunSafeAsync(string taskName, Func<CancellationToken, Task> task, CancellationToken ct)
+    private async Task RunSafeAsync(string taskName, string tenantId, Func<CancellationToken, Task> task, CancellationToken ct)
     {
         try
         {
-            logger.LogInformation("Starting retention task: {Task}", taskName);
+            logger.LogInformation("Starting retention task: {Task} for {TenantId}", taskName, tenantId);
             await task(ct);
-            logger.LogInformation("Completed retention task: {Task}", taskName);
+            logger.LogInformation("Completed retention task: {Task} for {TenantId}", taskName, tenantId);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Retention task '{Task}' failed", taskName);
+            logger.LogError(ex, "Retention task '{Task}' failed for {TenantId}", taskName, tenantId);
         }
     }
 
     private async Task CleanExpiredUserCodesAsync(CancellationToken ct)
     {
-        var setting = await configProvider.GetTenantSettingAsync(RetentionDefaults.ExpiredCodesEnabledKey, ct);
-        if (setting?.Equals("false", StringComparison.OrdinalIgnoreCase) == true)
+        if (!await configProvider.GetAsync(TenantSettingCatalog.ExpiredCodesEnabled, ct))
         {
             logger.LogInformation("ExpiredUserCodes task disabled by config");
             return;
@@ -78,16 +94,13 @@ public class DataRetentionBackgroundService(
 
         var now = DateTimeOffset.UtcNow;
 
-        // System job — no JWT context. Use IgnoreQueryFilters so the sweep
-        // sees rows across all tenants. Pure-modify (ExecuteUpdate) — no new
-        // rows created, so no tenant override needed.
-        var confirmationCount = await userRepository.GetQueryableIgnoringTenant()
+        var confirmationCount = await userRepository.GetQueryable()
             .Where(u => u.ConfirmationCode != null && u.ConfirmationCodeExpiresAt < now)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(u => u.ConfirmationCode, (string?)null)
                 .SetProperty(u => u.ConfirmationCodeExpiresAt, (DateTimeOffset?)null), ct);
 
-        var resetCount = await userRepository.GetQueryableIgnoringTenant()
+        var resetCount = await userRepository.GetQueryable()
             .Where(u => u.ResetPasswordCode != null && u.ResetPasswordCodeExpiresAt < now)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(u => u.ResetPasswordCode, (string?)null)
@@ -99,15 +112,14 @@ public class DataRetentionBackgroundService(
 
     private async Task CleanStaleDevicesAsync(CancellationToken ct)
     {
-        var daysStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.StaleDevicesDaysKey, ct);
-        var days = int.TryParse(daysStr, out var d) ? d : RetentionDefaults.DefaultStaleDevicesDays;
+        var days = await configProvider.GetAsync(TenantSettingCatalog.StaleDevicesDays, ct);
         var cutoff = DateTimeOffset.UtcNow.AddDays(-days);
 
         var totalDeleted = 0;
 
         while (true)
         {
-            var batch = await deviceRepository.GetQueryableIgnoringTenant()
+            var batch = await deviceRepository.GetQueryable()
                 .Where(device => device.IsActive && device.LastActiveAt < cutoff)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
@@ -125,11 +137,10 @@ public class DataRetentionBackgroundService(
 
     private async Task CleanOldGdprRequestsAsync(CancellationToken ct)
     {
-        var yearsStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.GdprRequestsYearsKey, ct);
-        var years = int.TryParse(yearsStr, out var y) ? y : RetentionDefaults.DefaultGdprRequestsYears;
+        var years = await configProvider.GetAsync(TenantSettingCatalog.GdprRequestsYears, ct);
         var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
 
-        var affected = await gdprRequestRepository.GetQueryableIgnoringTenant()
+        var affected = await gdprRequestRepository.GetQueryable()
             .Where(r => r.Status == GdprRequestStatus.Completed
                      && r.CompletedAt < cutoff
                      && r.ProcessedBy != null)
@@ -142,15 +153,14 @@ public class DataRetentionBackgroundService(
 
     private async Task CleanOrderCustomerPiiAsync(CancellationToken ct)
     {
-        var yearsStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.OrderPiiYearsKey, ct);
-        var years = int.TryParse(yearsStr, out var y) ? y : RetentionDefaults.DefaultOrderPiiYears;
+        var years = await configProvider.GetAsync(TenantSettingCatalog.OrderPiiYears, ct);
         var cutoff = DateTime.UtcNow.AddYears(-years);
 
         var totalProcessed = 0;
 
         while (true)
         {
-            var batch = await orderRepository.GetQueryableIgnoringTenant()
+            var batch = await orderRepository.GetQueryable()
                 .Where(o => o.CleaningDateTime < cutoff
                          && o.CustomerName != AnonymizationMarker.Value
                          && o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed))
@@ -179,15 +189,14 @@ public class DataRetentionBackgroundService(
 
     private async Task CleanWithdrawnConsentsAsync(CancellationToken ct)
     {
-        var yearsStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.WithdrawnConsentsYearsKey, ct);
-        var years = int.TryParse(yearsStr, out var y) ? y : RetentionDefaults.DefaultWithdrawnConsentsYears;
+        var years = await configProvider.GetAsync(TenantSettingCatalog.WithdrawnConsentsYears, ct);
         var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
 
         var totalDeleted = 0;
 
         while (true)
         {
-            var batch = await userConsentRepository.GetQueryableIgnoringTenant()
+            var batch = await userConsentRepository.GetQueryable()
                 .Where(c => !c.IsGranted && c.WithdrawnAt != null && c.WithdrawnAt < cutoff)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
@@ -206,8 +215,7 @@ public class DataRetentionBackgroundService(
 
     private async Task CleanSupersededDocumentsAsync(CancellationToken ct)
     {
-        var daysStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.DeletedDocumentsDaysKey, ct);
-        var days = int.TryParse(daysStr, out var d) ? d : RetentionDefaults.DefaultDeletedDocumentsDays;
+        var days = await configProvider.GetAsync(TenantSettingCatalog.DeletedDocumentsDays, ct);
         var cutoff = DateTimeOffset.UtcNow.AddDays(-days);
 
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.EmployeeDocuments);
@@ -215,7 +223,7 @@ public class DataRetentionBackgroundService(
 
         while (true)
         {
-            var batch = await employeeDocumentRepository.GetQueryableIgnoringTenant()
+            var batch = await employeeDocumentRepository.GetQueryable()
                 .Where(doc => !doc.IsActive && doc.DeactivatedOn < cutoff)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
@@ -248,15 +256,14 @@ public class DataRetentionBackgroundService(
 
     private async Task CleanUserNotificationsAsync(CancellationToken ct)
     {
-        var daysStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.NotificationsDaysKey, ct);
-        var days = int.TryParse(daysStr, out var d) ? d : RetentionDefaults.DefaultNotificationsDays;
+        var days = await configProvider.GetAsync(TenantSettingCatalog.NotificationsDays, ct);
         var cutoff = DateTimeOffset.UtcNow.AddDays(-days);
 
         var totalDeleted = 0;
 
         while (true)
         {
-            var batch = await userNotificationRepository.GetQueryableIgnoringTenant()
+            var batch = await userNotificationRepository.GetQueryable()
                 .Where(n => n.CreatedOn < cutoff)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
@@ -271,7 +278,7 @@ public class DataRetentionBackgroundService(
 
         // Runaway cap: for any user beyond the newest MaxNotificationsPerUser rows, hard-delete
         // the overflow regardless of age (abuse guard, not a UX cap).
-        var overCapUsers = await userNotificationRepository.GetQueryableIgnoringTenant()
+        var overCapUsers = await userNotificationRepository.GetQueryable()
             .GroupBy(n => n.UserId)
             .Where(g => g.Count() > RetentionDefaults.MaxNotificationsPerUser)
             .Select(g => g.Key)
@@ -279,7 +286,7 @@ public class DataRetentionBackgroundService(
 
         foreach (var userId in overCapUsers)
         {
-            var overflow = await userNotificationRepository.GetQueryableIgnoringTenant()
+            var overflow = await userNotificationRepository.GetQueryable()
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.CreatedOn)
                 .Skip(RetentionDefaults.MaxNotificationsPerUser)
@@ -298,20 +305,10 @@ public class DataRetentionBackgroundService(
 
     private async Task CleanCustomerActionAuditsAsync(CancellationToken ct)
     {
-        var yearsStr = await configProvider.GetTenantSettingAsync(RetentionDefaults.CustomerAuditRetentionYearsKey, ct);
-        var years = int.TryParse(yearsStr, out var y) ? y : RetentionDefaults.DefaultCustomerAuditRetentionYears;
-
         // This is the one delete the append-only discipline sanctions, so a window of zero (cutoff =
-        // now) or less (cutoff in the future) would empty the evidence table on the next tick. A
-        // setting below the floor is a misconfiguration, not an instruction.
-        if (years <= 0)
-        {
-            logger.LogWarning(
-                "{Key} = {Years} is below the floor; the customer audit sweep uses the default {Default} years",
-                RetentionDefaults.CustomerAuditRetentionYearsKey, years, RetentionDefaults.DefaultCustomerAuditRetentionYears);
-            years = RetentionDefaults.DefaultCustomerAuditRetentionYears;
-        }
-
+        // now) or less (cutoff in the future) would empty the evidence table on the next tick; the
+        // catalogue's floor of one is what keeps a misconfigured setting from becoming an instruction.
+        var years = await configProvider.GetAsync(TenantSettingCatalog.CustomerAuditRetentionYears, ct);
         var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
 
         // Per row by its own age, never anchored on the customer's last act: the anchor form kept an
@@ -330,10 +327,10 @@ public class DataRetentionBackgroundService(
 
         // The erasure stamped the window (GdprDeletionService reads the retention.dispute_text.years
         // setting); this task reads only the stamp. Anonymize() clears it, which is what makes each batch
-        // shrink the backlog rather than re-read the same rows. Pure-modify, so no tenant override.
+        // shrink the backlog rather than re-read the same rows.
         while (true)
         {
-            var batch = await disputeRepository.GetQueryableIgnoringTenant()
+            var batch = await disputeRepository.GetQueryable()
                 .Where(d => d.TextRetainedUntil != null && d.TextRetainedUntil < now)
                 .Include(d => d.Messages)
                 .Include(d => d.Evidence)

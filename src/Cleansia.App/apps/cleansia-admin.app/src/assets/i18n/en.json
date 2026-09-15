@@ -3008,6 +3008,10 @@
         "not_found": "Receipt template not found"
       }
     },
+    "tenant_setting": {
+      "invalid_value": "The value is not of the right type or is outside the allowed range for this setting.",
+      "unknown_key": "This setting is not in the catalogue and cannot be set."
+    },
     "user": {
       "email_confirmed": "Email is already confirmed",
       "existing_email": "Email already exists",

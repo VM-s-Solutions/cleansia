@@ -3008,6 +3008,10 @@
         "not_found": "Šablona účtenky nenalezena"
       }
     },
+    "tenant_setting": {
+      "invalid_value": "Hodnota nemá správný typ nebo je mimo povolený rozsah tohoto nastavení.",
+      "unknown_key": "Toto nastavení není v katalogu a nelze jej nastavit."
+    },
     "user": {
       "email_confirmed": "E-mail je již potvrzen",
       "existing_email": "E-mail již existuje",

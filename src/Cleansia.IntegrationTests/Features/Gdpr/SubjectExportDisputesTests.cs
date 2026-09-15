@@ -226,6 +226,11 @@ public class SubjectExportDisputesTests(PostgresContainerFixture fixture) : Base
         own.Id = OwnDisputeId;
         own.AddMessage(CustomerMessage, SubjectId, isStaff: false);
         own.AddMessage(StaffMessage, AdminId, isStaff: true);
+        // Two messages added in the same instant tie on CreatedOn, and the export then orders them by
+        // a random id — a minute apart is the conversation the assertion reads back.
+        var messages = own.Messages.ToList();
+        context.Entry(messages[0]).Property(nameof(DisputeMessage.CreatedOn)).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-2);
+        context.Entry(messages[1]).Property(nameof(DisputeMessage.CreatedOn)).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-1);
         own.AddEvidence(EvidenceFileName, $"{OwnOrderId}/2f9c1a4b7d6e4f0b9c3a5e8d1f2b4c60.jpg", SubjectId);
         own.Resolve(AdminId, 300m, ResolutionNotes);
 

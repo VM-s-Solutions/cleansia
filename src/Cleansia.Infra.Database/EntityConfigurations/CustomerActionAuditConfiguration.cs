@@ -79,8 +79,11 @@ public class CustomerActionAuditConfiguration : BaseEntityConfiguration<Customer
         builder.HasIndex(e => new { e.ResourceType, e.ResourceId })
             .HasDatabaseName("IX_CustomerActionAudits_ResourceType_ResourceId");
 
-        // The retention sweep deletes by row age across tenants (ADR-0062 D5); no (Action, ...) index —
-        // the action filter runs inside the tenant-scoped list.
+        // The retention sweep deletes by row age (ADR-0062 D5), one operating company at a time under its
+        // own window: TenantId = ambient AND OccurredOn < cutoff, oldest first. The (TenantId, OccurredOn)
+        // composite above serves that predicate — equality, then the range, scanned backwards for the
+        // ascending order — which leaves this single-column index with no reader of its own. No
+        // (Action, ...) index — the action filter runs inside the tenant-scoped list.
         builder.HasIndex(e => e.OccurredOn)
             .HasDatabaseName("IX_CustomerActionAudits_OccurredOn");
     }

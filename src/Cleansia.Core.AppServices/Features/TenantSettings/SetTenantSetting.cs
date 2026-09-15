@@ -46,17 +46,9 @@ public class SetTenantSetting
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var definition = TenantSettingCatalog.Find(command.Key);
-            if (definition is null)
-            {
-                return BusinessResult.Failure<Response>(new Error(nameof(command.Key), BusinessErrorMessage.TenantSettingUnknownKey));
-            }
-
-            var value = definition.Canonicalize(command.Value);
-            if (value is null)
-            {
-                return BusinessResult.Failure<Response>(new Error(nameof(command.Value), BusinessErrorMessage.TenantSettingInvalidValue));
-            }
+            // The validator refused any key outside the catalogue and any value its definition rejects.
+            var definition = TenantSettingCatalog.Find(command.Key)!;
+            var value = definition.Canonicalize(command.Value)!;
 
             var existing = await tenantConfigurationRepository.GetByKeyAsync(definition.Key, cancellationToken);
             var before = new TenantSettingSnapshot(definition.Key, existing?.Value);

@@ -156,7 +156,8 @@ public sealed class DataRetentionEnablementTests : IDisposable
     /// The sweep over the REAL <see cref="AppConfigurationProvider"/> against this database — no mock stands
     /// between the test and the condition a deployed host is in. That matters: a stubbed provider is what let
     /// the old tests pass while production did nothing. The per-task tuning keys it serves resolve to absent
-    /// here, exactly as they do in production, so every task falls through to its RetentionDefaults window.
+    /// here, as they do for a company that has set nothing, so every task falls through to its
+    /// RetentionDefaults window.
     /// </summary>
     private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, ITenantProvider tenantProvider, IConfiguration configuration)
     {

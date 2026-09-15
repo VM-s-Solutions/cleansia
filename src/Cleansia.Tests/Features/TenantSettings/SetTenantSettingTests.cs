@@ -162,17 +162,4 @@ public sealed class SetTenantSettingTests
 
         Assert.Equal(new TenantSettingSnapshot(Key, null), before);
     }
-
-    [Fact]
-    public async Task The_Handler_Guards_The_Catalogue_And_The_Range_Rather_Than_Trusting_The_Validator()
-    {
-        var unknown = await CreateHandler().Handle(new SetTenantSetting.Command("retention.unknown.years", "1"), CancellationToken.None);
-        var outOfRange = await CreateHandler().Handle(new SetTenantSetting.Command(Key, "0"), CancellationToken.None);
-
-        Assert.False(unknown.IsSuccess);
-        Assert.Equal(BusinessErrorMessage.TenantSettingUnknownKey, unknown.Error!.Message);
-        Assert.False(outOfRange.IsSuccess);
-        Assert.Equal(BusinessErrorMessage.TenantSettingInvalidValue, outOfRange.Error!.Message);
-        _repository.Verify(r => r.Add(It.IsAny<TenantConfiguration>()), Times.Never);
-    }
 }

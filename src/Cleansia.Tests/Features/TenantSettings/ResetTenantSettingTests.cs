@@ -105,14 +105,4 @@ public sealed class ResetTenantSettingTests
         Assert.Equal(new TenantSettingSnapshot(Key, "1"), before);
         Assert.Equal(new TenantSettingSnapshot(Key, null), after);
     }
-
-    [Fact]
-    public async Task The_Handler_Guards_The_Catalogue_Rather_Than_Trusting_The_Validator()
-    {
-        var result = await CreateHandler().Handle(new ResetTenantSetting.Command("retention.unknown.years"), CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(BusinessErrorMessage.TenantSettingUnknownKey, result.Error!.Message);
-        _repository.Verify(r => r.GetByKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
 }

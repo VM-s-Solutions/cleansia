@@ -37,9 +37,11 @@ public class DeviceConfiguration : TenantAuditableEntityConfiguration<Device, st
         builder.HasIndex(d => d.UserId);
         builder.HasIndex(d => new { d.UserId, d.DeviceId }).IsUnique();
 
-        // The stale-device retention sweep (DataRetentionBackgroundService.CleanStaleDevicesAsync)
-        // filters IsActive AND LastActiveAt < cutoff over every tenant. This (IsActive, LastActiveAt)
-        // composite serves that equality + range so the sweep is index-backed, not a full scan.
+        // The stale-device retention sweep (DataRetentionBackgroundService.CleanStaleDevicesAsync) runs
+        // once per operating company on the filtered set: TenantId = ambient AND IsActive AND
+        // LastActiveAt < cutoff. This (IsActive, LastActiveAt) composite still backs the selective part
+        // (the equality + range) so the sweep is index-backed, not a full scan; the tenant term is
+        // applied to the rows it yields, which costs nothing while one company holds a database's rows.
         builder.HasIndex(d => new { d.IsActive, d.LastActiveAt });
 
         builder.HasOne(d => d.User)

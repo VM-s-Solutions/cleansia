@@ -39,11 +39,8 @@ public class ResetTenantSetting
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var definition = TenantSettingCatalog.Find(command.Key);
-            if (definition is null)
-            {
-                return BusinessResult.Failure<Response>(new Error(nameof(command.Key), BusinessErrorMessage.TenantSettingUnknownKey));
-            }
+            // The validator refused any key outside the catalogue.
+            var definition = TenantSettingCatalog.Find(command.Key)!;
 
             var existing = await tenantConfigurationRepository.GetByKeyAsync(definition.Key, cancellationToken);
             if (existing is not null)

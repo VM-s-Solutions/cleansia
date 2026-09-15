@@ -60,13 +60,13 @@ public sealed class TenantSettingsRouteTests(HostTestPostgresFixture db) : Authz
     }
 
     [Fact]
-    public async Task Anonymous_caller_is_rejected_on_every_route()
+    public async Task Anonymous_caller_is_401d_on_every_route()
     {
         var client = AdminHost.CreateClient();
 
-        Assert.NotEqual(System.Net.HttpStatusCode.OK, (await client.GetAsync(GetAllRoute)).StatusCode);
-        Assert.NotEqual(System.Net.HttpStatusCode.OK, (await client.PutAsJsonAsync(SetRoute, new { key = Key, value = "1" })).StatusCode);
-        Assert.NotEqual(System.Net.HttpStatusCode.OK, (await client.DeleteAsync(ResetRoute(Key))).StatusCode);
+        HttpAssert.IsUnauthorized(await client.GetAsync(GetAllRoute));
+        HttpAssert.IsUnauthorized(await client.PutAsJsonAsync(SetRoute, new { key = Key, value = "1" }));
+        HttpAssert.IsUnauthorized(await client.DeleteAsync(ResetRoute(Key)));
     }
 
     [Fact]

@@ -107,7 +107,6 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
     this.readIncidentSubject(orderId, 0)
       .pipe(
-        takeUntil(this.destroyed$),
         switchMap((userId) => {
           if (!userId) {
             this.snackbarService.showErrorTranslated(
@@ -119,6 +118,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
             .incidentFile(userId, orderId)
             .pipe(map((file: FileResponse) => ({ userId, file })));
         }),
+        takeUntil(this.destroyed$),
         catchError((error: unknown) => {
           this.snackbarService.showApiError(
             error,

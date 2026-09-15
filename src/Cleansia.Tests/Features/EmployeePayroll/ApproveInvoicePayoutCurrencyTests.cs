@@ -182,7 +182,8 @@ public class ApproveInvoicePayoutCurrencyTests
             totalOrders: 2,
             subTotal: 900m,
             currencyId: currencyId,
-            variableSymbol: PayrollMockFactory.TestVariableSymbol);
+            variableSymbol: PayrollMockFactory.TestVariableSymbol,
+            invoiceNumber: PayrollMockFactory.TestInvoiceNumber);
         invoice.Id = InvoiceId;
         if (status == EmployeeInvoiceStatus.Approved)
         {

@@ -64,6 +64,9 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     [InlineData(typeof(TenantConfiguration), new[] { "TenantId", "Key" })]
     [InlineData(typeof(OrderReceipt), new[] { "TenantId", "ReceiptNumber" })]
     [InlineData(typeof(EmployeePayConfig), new[] { "TenantId", "EmployeeId", "ServiceId", "PackageId", "CurrencyId" })]
+    [InlineData(typeof(PayoutReferenceCounter), new[] { "TenantId", "Year", "Scope" })]
+    [InlineData(typeof(EmployeeInvoice), new[] { "TenantId", "InvoiceNumber" })]
+    [InlineData(typeof(EmployeeInvoice), new[] { "TenantId", "VariableSymbol" })]
     public void A_Sole_Arbiter_Unique_Index_Is_Declared_Nulls_Not_Distinct(Type entityClrType, string[] columns)
     {
         using var ctx = NewContext();
@@ -109,6 +112,20 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     }
 
     /// <summary>
+    /// An invoice that has not yet been given a reference (ADR-0046 D4) holds NULL, and the filter is
+    /// what keeps those rows out of the per-company uniqueness — without it NULLS NOT DISTINCT would
+    /// let one company hold exactly one reference-less invoice.
+    /// </summary>
+    [Fact]
+    public void The_Payout_Reference_Index_Is_Filtered_To_Referenced_Rows()
+    {
+        using var ctx = NewContext();
+        var index = FindIndex(ctx, typeof(EmployeeInvoice), ["TenantId", "VariableSymbol"]);
+
+        Assert.Equal("\"VariableSymbol\" IS NOT NULL", index.GetFilter());
+    }
+
+    /// <summary>
     /// The five-column pay-config key is the one whose EF default name overruns Postgres's 63-character
     /// identifier limit. A 23505 names the index that fired, and a truncated <c>..._PackageId_~</c> is
     /// not a name anyone can read off the log line or grep for.
@@ -132,8 +149,6 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     /// </summary>
     private static readonly HashSet<string> NullsDistinctIsFine = new(StringComparer.Ordinal)
     {
-        // Filtered "VariableSymbol" IS NOT NULL, so no indexed row can hold a null in it.
-        "EmployeeInvoice (VariableSymbol)",
         // Filtered "RecurringTemplateId" IS NOT NULL — the nullable column cannot be null in an indexed row.
         "Order (RecurringTemplateId, CleaningDateTime)",
         // The documented backstop behind GetActiveForUserAsync, deliberately left nulls-distinct.

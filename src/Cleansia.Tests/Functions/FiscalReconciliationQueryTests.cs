@@ -337,7 +337,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
                 totalPay: 500m));
 
             var invoice = EmployeeInvoice.Create(employeeId, payPeriodId, totalOrders: 1, subTotal: 500m, currencyId: "czk",
-                variableSymbol: PayrollMockFactory.TestVariableSymbol);
+                variableSymbol: PayrollMockFactory.TestVariableSymbol, invoiceNumber: PayrollMockFactory.TestInvoiceNumber);
             seed.Add(invoice);
             await seed.CommitAsync(CancellationToken.None);
         }

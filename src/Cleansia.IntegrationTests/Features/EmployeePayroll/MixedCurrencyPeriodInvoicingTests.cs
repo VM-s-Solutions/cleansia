@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -147,7 +148,8 @@ public class MixedCurrencyPeriodInvoicingTests(PostgresContainerFixture fixture)
                 var czkPays = await context.Set<OrderEmployeePay>()
                     .Where(p => p.EmployeeId == _employeeId && p.PayPeriodId == _payPeriodId && p.CurrencyId == Czk)
                     .ToListAsync();
-                var czkInvoice = EmployeeInvoice.CreateFromOrderPays(_employeeId, _payPeriodId, czkPays, "2600000001");
+                var czkInvoice = EmployeeInvoice.CreateFromOrderPays(
+                    _employeeId, _payPeriodId, czkPays, "2600000001", PayrollMockFactory.NextTestInvoiceNumber());
                 context.Add(czkInvoice);
                 foreach (var pay in czkPays)
                 {

@@ -15,6 +15,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
+using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -202,7 +203,8 @@ public class InvoiceListCurrencyScopeTests(PostgresContainerFixture fixture) : B
     private static void AddInvoice(
         CleansiaDbContext context, string employeeId, string payPeriodId, OrderEmployeePay[] pays, string variableSymbol)
     {
-        var invoice = EmployeeInvoice.CreateFromOrderPays(employeeId, payPeriodId, pays, variableSymbol);
+        var invoice = EmployeeInvoice.CreateFromOrderPays(
+            employeeId, payPeriodId, pays, variableSymbol, PayrollMockFactory.NextTestInvoiceNumber());
         context.Add(invoice);
         foreach (var pay in pays)
         {

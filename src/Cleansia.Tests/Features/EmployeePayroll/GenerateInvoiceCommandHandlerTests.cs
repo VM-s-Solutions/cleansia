@@ -28,6 +28,9 @@ public class GenerateInvoiceCommandHandlerTests
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestInvoiceNumber));
     }
 
     private GenerateInvoice.Handler CreateHandler() => new(

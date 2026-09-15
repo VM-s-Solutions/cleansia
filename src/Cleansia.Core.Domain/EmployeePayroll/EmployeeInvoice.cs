@@ -94,10 +94,10 @@ public class EmployeeInvoice : TenantAuditable
     private ICollection<OrderEmployeePay> _orderPays = [];
     public IReadOnlyCollection<OrderEmployeePay> OrderPays => _orderPays.ToList().AsReadOnly();
 
-    // variableSymbol is REQUIRED and deliberately not defaulted: it is claimed from the durable
-    // per-year counter before the invoice exists, and a defaulted parameter would let a future third
-    // creation path compile while silently issuing a payout invoice that carries no payment
-    // reference — which is exactly the state ADR-0046 closes.
+    // variableSymbol and invoiceNumber are REQUIRED and deliberately not defaulted: both are claimed
+    // from the company's durable per-year counter before the invoice exists, and a defaulted parameter
+    // would let a future third creation path compile while silently issuing a payout invoice that
+    // carries no payment reference — which is exactly the state ADR-0046 closes.
     public static EmployeeInvoice Create(
         string employeeId,
         string payPeriodId,
@@ -105,6 +105,7 @@ public class EmployeeInvoice : TenantAuditable
         decimal subTotal,
         string currencyId,
         string variableSymbol,
+        string invoiceNumber,
         decimal bonusAmount = 0,
         decimal deductionAmount = 0)
     {
@@ -114,8 +115,6 @@ public class EmployeeInvoice : TenantAuditable
         {
             totalAmount = 0;
         }
-
-        var invoiceNumber = $"INV-{DateTime.UtcNow:yyyyMM}-{Guid.NewGuid().ToString("N")[..5].ToUpper()}";
 
         return new EmployeeInvoice
         {
@@ -154,7 +153,8 @@ public class EmployeeInvoice : TenantAuditable
         string employeeId,
         string payPeriodId,
         IReadOnlyCollection<OrderEmployeePay> orderPays,
-        string variableSymbol)
+        string variableSymbol,
+        string invoiceNumber)
     {
         var currencyId = SingleCurrencyOf(orderPays);
         var (subTotal, bonusAmount, deductionAmount) = SumPayAmounts(orderPays);
@@ -166,6 +166,7 @@ public class EmployeeInvoice : TenantAuditable
             subTotal,
             currencyId,
             variableSymbol,
+            invoiceNumber,
             bonusAmount,
             deductionAmount);
     }
@@ -392,13 +393,6 @@ public class EmployeeInvoice : TenantAuditable
         ArgumentOutOfRangeException.ThrowIfNegative(paymentTermsDays);
 
         return GeneratedAt.Date.AddDays(paymentTermsDays);
-    }
-
-    public string GenerateInvoiceNumber(string prefix = "EMP")
-    {
-        var employeeShort = EmployeeId.Substring(0, Math.Min(6, EmployeeId.Length)).ToUpper();
-        var periodShort = PayPeriodId.Substring(0, Math.Min(6, PayPeriodId.Length)).ToUpper();
-        return $"{prefix}-{periodShort}-{employeeShort}";
     }
 
     public decimal CalculateAveragePay()

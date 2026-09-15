@@ -175,8 +175,10 @@ public class AdminReportCurrencyScopeTests(PostgresContainerFixture fixture) : B
         await context.CommitAsync(CancellationToken.None);
 
         context.AddRange(
-            EmployeeInvoice.Create(employee.Id, period.Id, 1, 500m, Czk, PayrollMockFactory.NextTestVariableSymbol()),
-            EmployeeInvoice.Create(employee.Id, period.Id, 1, 20m, Eur, PayrollMockFactory.NextTestVariableSymbol()));
+            EmployeeInvoice.Create(employee.Id, period.Id, 1, 500m, Czk,
+                PayrollMockFactory.NextTestVariableSymbol(), PayrollMockFactory.NextTestInvoiceNumber()),
+            EmployeeInvoice.Create(employee.Id, period.Id, 1, 20m, Eur,
+                PayrollMockFactory.NextTestVariableSymbol(), PayrollMockFactory.NextTestInvoiceNumber()));
         await context.CommitAsync(CancellationToken.None);
     }
 

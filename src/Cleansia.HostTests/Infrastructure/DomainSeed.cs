@@ -185,7 +185,8 @@ public static class DomainSeed
             totalOrders: 1,
             subTotal: 1000m,
             currencyId: CurrencyId,
-            variableSymbol: PayrollMockFactory.NextTestVariableSymbol());
+            variableSymbol: PayrollMockFactory.NextTestVariableSymbol(),
+            invoiceNumber: PayrollMockFactory.NextTestInvoiceNumber());
         if (tenantId is not null) invoice.TenantId = tenantId;
         return invoice;
     }

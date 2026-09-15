@@ -106,7 +106,7 @@ public class GenerateInvoice
 
             // Every payout reference is claimed BEFORE any invoice is staged, so a refused allocation
             // leaves nothing half-written.
-            var symbols = new List<string>(groups.Count);
+            var references = new List<(string VariableSymbol, string InvoiceNumber)>(groups.Count);
             foreach (var _ in groups)
             {
                 var variableSymbol = await payoutReferenceAllocator.AllocateAsync(cancellationToken);
@@ -114,7 +114,14 @@ public class GenerateInvoice
                 {
                     return BusinessResult.Failure<Response>(variableSymbol.Error!);
                 }
-                symbols.Add(variableSymbol.Value!);
+
+                var invoiceNumber = await payoutReferenceAllocator.AllocateInvoiceNumberAsync(cancellationToken);
+                if (invoiceNumber.IsFailure)
+                {
+                    return BusinessResult.Failure<Response>(invoiceNumber.Error!);
+                }
+
+                references.Add((variableSymbol.Value!, invoiceNumber.Value!));
             }
 
             var invoices = new List<EmployeeInvoice>(groups.Count);
@@ -125,7 +132,8 @@ public class GenerateInvoice
                     command.EmployeeId,
                     command.PayPeriodId,
                     rows,
-                    symbols[i]);
+                    references[i].VariableSymbol,
+                    references[i].InvoiceNumber);
 
                 invoiceRepository.Add(invoice);
                 foreach (var orderPay in rows)
@@ -136,12 +144,12 @@ public class GenerateInvoice
             }
 
             // This handler does NOT own its own commit — UnitOfWorkPipelineBehavior commits after it
-            // returns, so a duplicate variable symbol would reach the unique index there and surface as
-            // an unhandled DbUpdateException (a 500 on the admin path, a poisoned message on the queue
-            // one). FLUSH here and own the failure: the allocator makes a duplicate impossible by
-            // construction, so this is the backstop for a hand-written INSERT or a restored counter row,
-            // and it must be a refusal the admin can act on rather than a stack trace. One flush for
-            // every currency's invoice, so a period is invoiced whole or not at all.
+            // returns, so a duplicate reference would reach its per-company unique index there and
+            // surface as an unhandled DbUpdateException (a 500 on the admin path, a poisoned message on
+            // the queue one). FLUSH here and own the failure: the allocator makes a duplicate impossible
+            // by construction, so this is the backstop for a hand-written INSERT or a restored counter
+            // row, and it must be a refusal the admin can act on rather than a stack trace. One flush
+            // for every currency's invoice, so a period is invoiced whole or not at all.
             try
             {
                 await invoiceRepository.CommitAsync(cancellationToken);

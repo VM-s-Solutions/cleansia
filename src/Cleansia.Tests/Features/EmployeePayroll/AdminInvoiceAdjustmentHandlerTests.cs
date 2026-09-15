@@ -29,7 +29,8 @@ public class AdminInvoiceAdjustmentHandlerTests
             totalOrders: 2,
             subTotal: 200m,
             currencyId: "currency-1",
-            variableSymbol: PayrollMockFactory.TestVariableSymbol);
+            variableSymbol: PayrollMockFactory.TestVariableSymbol,
+            invoiceNumber: PayrollMockFactory.TestInvoiceNumber);
         invoice.Id = InvoiceId;
         return invoice;
     }

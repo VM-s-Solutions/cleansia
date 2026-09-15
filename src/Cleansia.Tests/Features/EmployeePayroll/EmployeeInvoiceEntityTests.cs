@@ -5,9 +5,9 @@ using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
-/// Pure-entity nets for <see cref="EmployeeInvoice"/>: clamp-to-zero, invoice numbering and
-/// payment-reference shape, the stamped-at-construction variable symbol and its one-time
-/// assignment, and the status-transition guards that protect the money path (a paid invoice is
+/// Pure-entity nets for <see cref="EmployeeInvoice"/>: clamp-to-zero, the two references stamped at
+/// construction (the invoice number mirrored as the payment reference, the variable symbol and its
+/// one-time assignment), and the status-transition guards that protect the money path (a paid invoice is
 /// terminal).
 /// </summary>
 public class EmployeeInvoiceEntityTests
@@ -24,6 +24,7 @@ public class EmployeeInvoiceEntityTests
             subTotal: 100m,
             currencyId: "currency-1",
             variableSymbol: PayrollMockFactory.TestVariableSymbol,
+            invoiceNumber: PayrollMockFactory.TestInvoiceNumber,
             bonusAmount: 0m,
             deductionAmount: 500m);
 
@@ -40,6 +41,7 @@ public class EmployeeInvoiceEntityTests
             subTotal: 199.99m,
             currencyId: "currency-1",
             variableSymbol: PayrollMockFactory.TestVariableSymbol,
+            invoiceNumber: PayrollMockFactory.TestInvoiceNumber,
             bonusAmount: 10.01m,
             deductionAmount: 5.50m);
 
@@ -58,7 +60,8 @@ public class EmployeeInvoiceEntityTests
         // the bonus/deduction lines AND still total 115, not add them again on top.
         var pays = new[] { PayrollMockFactory.OrderPay(basePay: 100m, bonusPay: 20m, deductionPay: 5m) };
 
-        var invoice = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol);
+        var invoice = EmployeeInvoice.CreateFromOrderPays(
+            "emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol, PayrollMockFactory.TestInvoiceNumber);
 
         Assert.Equal(100m, invoice.SubTotal);
         Assert.Equal(20m, invoice.BonusAmount);
@@ -76,7 +79,8 @@ public class EmployeeInvoiceEntityTests
             PayrollMockFactory.OrderPay(basePay: 250m, expensesPay: 12.50m)
         };
 
-        var created = EmployeeInvoice.CreateFromOrderPays("emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol);
+        var created = EmployeeInvoice.CreateFromOrderPays(
+            "emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol, PayrollMockFactory.TestInvoiceNumber);
         var added = PayrollMockFactory.Invoice(totalOrders: 0, subTotal: 0m).AddOrderPays(pays);
 
         Assert.Equal(created.SubTotal, added.SubTotal);
@@ -85,31 +89,35 @@ public class EmployeeInvoiceEntityTests
         Assert.Equal(created.TotalAmount, added.TotalAmount);
     }
 
-    // ── AC9: invoice number shape, payment reference, uniqueness ─────
+    // ── invoice number: stamped from the company's series, mirrored as the payment reference ──
 
     [Fact]
-    public void Create_Sets_InvoiceNumber_To_Inv_YearMonth_Suffix_Shape()
+    public void Create_Stamps_The_InvoiceNumber_It_Was_Given()
     {
-        var invoice = PayrollMockFactory.Invoice();
+        var invoice = PayrollMockFactory.Invoice(invoiceNumber: "INV-2026-000042");
 
-        Assert.Matches(@"^INV-\d{6}-[0-9A-F]{5}$", invoice.InvoiceNumber);
+        Assert.Equal("INV-2026-000042", invoice.InvoiceNumber);
     }
 
     [Fact]
     public void Create_Sets_PaymentReference_Equal_To_InvoiceNumber()
     {
-        var invoice = PayrollMockFactory.Invoice();
+        var invoice = PayrollMockFactory.Invoice(invoiceNumber: "INV-2026-000042");
 
-        Assert.Equal(invoice.InvoiceNumber, invoice.PaymentReference);
+        Assert.Equal("INV-2026-000042", invoice.PaymentReference);
     }
 
     [Fact]
-    public void Two_Invoices_Created_In_Same_Call_Get_Distinct_InvoiceNumbers()
+    public void CreateFromOrderPays_Stamps_Both_References()
     {
-        var first = PayrollMockFactory.Invoice();
-        var second = PayrollMockFactory.Invoice();
+        var pays = new[] { PayrollMockFactory.OrderPay(basePay: 100m) };
 
-        Assert.NotEqual(first.InvoiceNumber, second.InvoiceNumber);
+        var invoice = EmployeeInvoice.CreateFromOrderPays(
+            "emp-1", "period-1", pays, PayrollMockFactory.TestVariableSymbol, PayrollMockFactory.TestInvoiceNumber);
+
+        Assert.Equal(PayrollMockFactory.TestVariableSymbol, invoice.VariableSymbol);
+        Assert.Equal(PayrollMockFactory.TestInvoiceNumber, invoice.InvoiceNumber);
+        Assert.Equal(PayrollMockFactory.TestInvoiceNumber, invoice.PaymentReference);
     }
 
     [Fact]

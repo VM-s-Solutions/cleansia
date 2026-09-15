@@ -109,6 +109,9 @@ public class PayPeriodInvoicePdfFailureRecordingTests
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestVariableSymbol));
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(PayrollMockFactory.TestInvoiceNumber));
 
         _languageRepository
             .Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

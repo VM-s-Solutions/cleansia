@@ -111,6 +111,9 @@ public class PayPeriodMixedCurrencyInvoicingTests
         _payoutReferenceAllocator
             .Setup(a => a.AllocateAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => BusinessResult.Success(PayrollMockFactory.NextTestVariableSymbol()));
+        _payoutReferenceAllocator
+            .Setup(a => a.AllocateInvoiceNumberAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => BusinessResult.Success(PayrollMockFactory.NextTestInvoiceNumber()));
 
         _languageRepository
             .Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

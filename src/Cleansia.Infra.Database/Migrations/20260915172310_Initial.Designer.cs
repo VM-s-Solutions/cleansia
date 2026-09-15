@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260915143954_Initial")]
+    [Migration("20260915172310_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1816,9 +1816,6 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.HasIndex("InvoiceNumber")
-                        .IsUnique();
-
                     b.HasIndex("LanguageId");
 
                     b.HasIndex("PayPeriodId");
@@ -1827,11 +1824,18 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.HasIndex("VariableSymbol")
+                    b.HasIndex("Status", "GeneratedAt");
+
+                    b.HasIndex("TenantId", "InvoiceNumber")
+                        .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "InvoiceNumber"), false);
+
+                    b.HasIndex("TenantId", "VariableSymbol")
                         .IsUnique()
                         .HasFilter("\"VariableSymbol\" IS NOT NULL");
 
-                    b.HasIndex("Status", "GeneratedAt");
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "VariableSymbol"), false);
 
                     b.HasIndex("EmployeeId", "PayPeriodId", "CurrencyId")
                         .IsUnique();
@@ -2188,8 +2192,25 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset>("CreatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
@@ -2206,8 +2227,13 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Year")
-                        .IsUnique();
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "Year", "Scope")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PayoutReferenceCounters_Tenant_Year_Scope");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Year", "Scope"), false);
 
                     b.ToTable("PayoutReferenceCounters", (string)null);
                 });
@@ -6916,6 +6942,15 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.PayPeriod", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Tenancy.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.PayoutReferenceCounter", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Tenancy.Tenant", null)
                         .WithMany()

@@ -188,24 +188,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PayoutReferenceCounters",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Year = table.Column<int>(type: "integer", nullable: false),
-                    Value = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PayoutReferenceCounters", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ProcessedMessages",
                 columns: table => new
                 {
@@ -919,6 +901,34 @@ namespace Cleansia.Infra.Database.Migrations
                     table.PrimaryKey("PK_OutboxMessages", x => x.Id);
                     table.ForeignKey(
                         name: "FK_OutboxMessages_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PayoutReferenceCounters",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Year = table.Column<int>(type: "integer", nullable: false),
+                    Scope = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Value = table.Column<long>(type: "bigint", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PayoutReferenceCounters", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PayoutReferenceCounters_Tenants_TenantId",
                         column: x => x.TenantId,
                         principalTable: "Tenants",
                         principalColumn: "Id",
@@ -3619,12 +3629,6 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmployeeInvoices_InvoiceNumber",
-                table: "EmployeeInvoices",
-                column: "InvoiceNumber",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_EmployeeInvoices_LanguageId",
                 table: "EmployeeInvoices",
                 column: "LanguageId");
@@ -3650,11 +3654,19 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmployeeInvoices_VariableSymbol",
+                name: "IX_EmployeeInvoices_TenantId_InvoiceNumber",
                 table: "EmployeeInvoices",
-                column: "VariableSymbol",
+                columns: new[] { "TenantId", "InvoiceNumber" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_TenantId_VariableSymbol",
+                table: "EmployeeInvoices",
+                columns: new[] { "TenantId", "VariableSymbol" },
                 unique: true,
-                filter: "\"VariableSymbol\" IS NOT NULL");
+                filter: "\"VariableSymbol\" IS NOT NULL")
+                .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeePayConfigs_CurrencyId",
@@ -4262,10 +4274,16 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "ServiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PayoutReferenceCounters_Year",
+                name: "IX_PayoutReferenceCounters_Tenant_Year_Scope",
                 table: "PayoutReferenceCounters",
-                column: "Year",
-                unique: true);
+                columns: new[] { "TenantId", "Year", "Scope" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayoutReferenceCounters_TenantId",
+                table: "PayoutReferenceCounters",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PayPeriods_EndDate",

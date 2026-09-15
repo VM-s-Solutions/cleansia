@@ -110,11 +110,19 @@ public class EmployeeInvoiceEntityConfiguration : TenantAuditableEntityConfigura
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
-        builder.HasIndex(e => e.InvoiceNumber)
-            .IsUnique();
-
-        builder.HasIndex(e => e.VariableSymbol)
+        // Each operating company numbers its own payout invoices, so both references are unique PER
+        // COMPANY: two companies' first invoices of a year carry the same strings by construction. Sole
+        // arbiters between allocate and insert, so NULLS NOT DISTINCT stays on even though TenantId is
+        // NOT NULL -> /decisions/adr-0061#d9-nulls-not-distinct-on-every-sole-arbiter-tenant-index-and-the-two-indexes-that-gain-a-tenant-term
+        builder.HasIndex(e => new { e.TenantId, e.InvoiceNumber })
             .IsUnique()
+            .AreNullsDistinct(false);
+
+        // Filtered, because an invoice that has not yet been given a reference (ADR-0046 D4) holds NULL
+        // and NULLS NOT DISTINCT would otherwise let a company hold exactly one of those.
+        builder.HasIndex(e => new { e.TenantId, e.VariableSymbol })
+            .IsUnique()
+            .AreNullsDistinct(false)
             .HasFilter("\"VariableSymbol\" IS NOT NULL");
 
         builder.HasIndex(e => e.EmployeeId);

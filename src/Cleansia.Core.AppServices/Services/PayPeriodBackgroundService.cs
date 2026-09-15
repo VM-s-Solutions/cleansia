@@ -400,11 +400,23 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             return null;
         }
 
+        var invoiceNumber = await _payoutReferenceAllocator.AllocateInvoiceNumberAsync(cancellationToken);
+        if (invoiceNumber.IsFailure)
+        {
+            _logger.LogError(
+                "Could not allocate an invoice number for employee {EmployeeId} / period {PeriodId} ({Error}); skipping this employee's invoice",
+                employee.Id,
+                period.Id,
+                invoiceNumber.Error?.Message);
+            return null;
+        }
+
         var invoice = EmployeeInvoice.CreateFromOrderPays(
             employee.Id,
             period.Id,
             orderPays,
-            variableSymbol.Value!);
+            variableSymbol.Value!,
+            invoiceNumber.Value!);
 
         _employeeInvoiceRepository.Add(invoice);
 

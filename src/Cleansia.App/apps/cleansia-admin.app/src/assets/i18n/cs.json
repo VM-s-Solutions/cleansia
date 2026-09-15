@@ -1890,13 +1890,13 @@
       "descriptions": {
         "retention": {
           "expired_codes": {
-            "enabled": "Zda noční úloha maže expirované kódy pro potvrzení e-mailu a obnovu hesla"
+            "enabled": "Zda týdenní úloha uchovávání dat maže expirované kódy pro potvrzení e-mailu a obnovu hesla"
           },
           "stale_devices": {
             "days": "Počet dní nečinnosti zařízení, po kterých se smaže jeho registrace pro push notifikace"
           },
           "gdpr_requests": {
-            "years": "Počet let, po které se uchovává dokončená žádost o ochranu údajů"
+            "years": "Počet let po dokončení žádosti o ochranu údajů, po kterých se z ní odstraní identita administrátora, který ji zpracoval"
           },
           "order_pii": {
             "years": "Počet let po úklidu, po kterých se anonymizují zákaznické údaje dokončené objednávky"
@@ -1914,7 +1914,7 @@
             "years": "Počet let, po které se uchovává auditní záznam zákazníka"
           },
           "dispute_text": {
-            "years": "Počet let, po které se uchovává volný text uzavřené reklamace"
+            "years": "Počet let po výmazu účtu zákazníka, po které se uchovává volný text jeho reklamací, než se vymaže"
           }
         }
       }

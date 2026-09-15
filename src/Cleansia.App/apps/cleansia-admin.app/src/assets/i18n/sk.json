@@ -1780,13 +1780,13 @@
       "descriptions": {
         "retention": {
           "expired_codes": {
-            "enabled": "Či nočná úloha maže expirované kódy na potvrdenie e-mailu a obnovu hesla"
+            "enabled": "Či týždenná úloha uchovávania údajov maže expirované kódy na potvrdenie e-mailu a obnovu hesla"
           },
           "stale_devices": {
             "days": "Počet dní nečinnosti zariadenia, po ktorých sa zmaže jeho registrácia pre push notifikácie"
           },
           "gdpr_requests": {
-            "years": "Počet rokov, počas ktorých sa uchováva dokončená žiadosť o ochranu údajov"
+            "years": "Počet rokov po dokončení žiadosti o ochranu údajov, po ktorých sa z nej odstráni identita administrátora, ktorý ju spracoval"
           },
           "order_pii": {
             "years": "Počet rokov po upratovaní, po ktorých sa anonymizujú zákaznícke údaje dokončenej objednávky"
@@ -1804,7 +1804,7 @@
             "years": "Počet rokov, počas ktorých sa uchováva auditný záznam zákazníka"
           },
           "dispute_text": {
-            "years": "Počet rokov, počas ktorých sa uchováva voľný text uzavretej reklamácie"
+            "years": "Počet rokov po vymazaní účtu zákazníka, počas ktorých sa uchováva voľný text jeho reklamácií, kým sa vymaže"
           }
         }
       }

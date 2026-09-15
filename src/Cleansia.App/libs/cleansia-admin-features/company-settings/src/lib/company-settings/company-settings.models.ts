@@ -72,7 +72,7 @@ export function getCompanySettingsTableDefinition(
       },
       {
         id: 'description',
-        field: 'key',
+        field: 'description',
         header: translate.instant('pages.company_settings.columns.description'),
         getValue: (row: TenantSettingDto) => translate.instant(getSettingDescriptionKey(row.key)),
         width: '28%',

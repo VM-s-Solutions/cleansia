@@ -1780,13 +1780,13 @@
       "descriptions": {
         "retention": {
           "expired_codes": {
-            "enabled": "Whether the nightly job clears expired e-mail confirmation and password reset codes"
+            "enabled": "Whether the weekly retention job clears expired e-mail confirmation and password reset codes"
           },
           "stale_devices": {
             "days": "Days a device may stay inactive before its push registration is deleted"
           },
           "gdpr_requests": {
-            "years": "Years a completed data-protection request is kept"
+            "years": "Years after a data-protection request is completed before the processing administrator's identity is cleared from it"
           },
           "order_pii": {
             "years": "Years after the cleaning before a completed order's customer data is anonymised"
@@ -1804,7 +1804,7 @@
             "years": "Years a customer audit row is kept"
           },
           "dispute_text": {
-            "years": "Years the free text of a closed dispute is kept"
+            "years": "Years after a customer's account erasure that the free text of their disputes is kept before it is blanked"
           }
         }
       }

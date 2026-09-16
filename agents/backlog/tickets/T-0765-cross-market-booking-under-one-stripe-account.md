@@ -194,11 +194,14 @@ preserving normal SSR and browser loading. Its 57-test store suite and lint pass
 production build passed with application API connections blocked and zero such attempts recorded
 (only the Google Fonts build asset host was allowed).
 
-**Still open:** iOS order market labels are not implemented. The handover’s requirement to use only
-members already present in a committed Swift client conflicts with the repository’s generated Swift
-clients being gitignored and created from committed OpenAPI specifications in CI. The requested
-owner clarification is pending; the Mac regeneration/Xcode session remains parked. T-0765 stays
-`in_progress` until the remaining client work and verification are complete.
+**iOS order market labels — shipped 2026-09-16 in `b1fe50eb`** (the customer order list and detail label
+each booking with its market: `order_market_label` = country · currency from the row's `countryId` /
+`currencyId` over the market directory; five locales in `Localizable.xcstrings`). The premise that had
+parked it — "use only members of a committed Swift client" — was wrong: the Swift clients are generated
+from the committed OpenAPI specs by iOS CI and never committed, so the row's existing members were
+enough. `ace84b54` adds the format-only key to the string-catalog guard's allow-list after iOS CI
+refused it for reading the same in every locale (two specifiers and a middle dot). No Mac session
+needed; iOS CI builds and runs the XCTest targets.
 
 The documentation now records the implemented split between account and operator ownership in
 ADR-0058, ADR-0061, ADR-0062, business rules, booking flow and customer web overview. The ADR-0061

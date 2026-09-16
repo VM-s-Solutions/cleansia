@@ -214,7 +214,7 @@ public class GdprDeletionService(
     ///
     /// <para>Only the ACCOUNT's own orders refuse. A live GUEST booking under the subject's e-mail — one of
     /// <see cref="SubjectOrders"/>'s, which the walk below otherwise anonymises — is left out of the walk
-    /// instead: a guest booking has no cancel path, so a stranger's mistyped address would dead-end the
+    /// instead: a guest can cancel only with the booking's own credentials, so a stranger's mistyped address would dead-end the
     /// subject on "blocked by a live order" with no order of theirs to cancel. Its contact data stays
     /// until the job ends and the order-PII sweep reaches it.</para>
     /// </summary>

@@ -181,7 +181,7 @@ Some things about how I work that are not obvious:
 - Anything you find outside the agreed scope goes on a list and is reported at
   the end. Do not fix it while you are in there.
 - Do not commit or push until I ask.
-- Do not credit Claude anywhere: no commit trailer, no PR line, no comment.
+- Do not credit any AI tool anywhere: no commit trailer, no PR line, no comment.
 
 Pick the item above, investigate it, and come back to me with what you found
 and the scope you propose. Do not start changing files yet.

@@ -2,7 +2,7 @@
 
 > **Read this first when you move iOS development to the Mac.** It orients you: where the project
 > stands, what's done vs. what's next, the exact first-session sequence, and how to keep working with
-> Claude on the Mac. The step-by-step *commands* live in [`MANUAL_STEPS.md`](MANUAL_STEPS.md) and
+> the agent on the Mac. The step-by-step *commands* live in [`MANUAL_STEPS.md`](MANUAL_STEPS.md) and
 > [`README.md`](README.md) — this doc is the map, not the manual.
 >
 > **Branch:** `master`. **iOS lives at** `src/cleansia_ios/`. Last iOS commit at handover: `c1009c63`.
@@ -117,19 +117,19 @@ cited Android Compose screen, ADR-0018).
 
 ---
 
-## 6. Keeping Claude in the loop on the Mac
+## 6. Keeping the agent in the loop on the Mac
 
-You have two ways to work with Claude from here:
+You have two ways to work with the agent from here:
 
 - **Best: run Claude Code ON the Mac.** Then Claude has the full toolchain — it can `swift build`, run
   tests, generate the client, and drive Phase 1 **compile-verified** (the same way it became reliable on
   the Bicep once it had the bicep CLI). This is the recommended setup for iOS. Point it at this doc + the
   ADRs and it can pick up cold.
-- **Alternative: keep Claude on Windows** authoring Phase 1 screens against the Android reference, with
+- **Alternative: keep the agent on Windows** authoring Phase 1 screens against the Android reference, with
   **you** compiling/running on the Mac and feeding back errors. Workable, but slower and re-introduces
   the "can't verify it builds" gap that produced stubs earlier. Prefer the first option.
 
-**To resume cold (either way), point Claude at:** this doc →
+**To resume cold (either way), point the agent at:** this doc →
 `sprint-12.md` → the ADRs (0013/0014/0016/0018) → skim the Android reference for the screen you're
 porting (`src/cleansia_android/{partner,customer}-app/.../features/<screen>`).
 

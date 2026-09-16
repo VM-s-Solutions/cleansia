@@ -14,7 +14,7 @@ micromanage. This document is how that team works.
 ## 1. The one-screen picture
 
 ```
-  YOU ──"natural language request"──►  ORCHESTRATOR (the main Claude session)
+  YOU ──"natural language request"──►  ORCHESTRATOR (the main agent session)
                                             │ hands the request to the PM
                                             ▼
                                           ┌────┐

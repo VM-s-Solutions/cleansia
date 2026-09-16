@@ -123,3 +123,22 @@ only defensible once a guest can cancel their own booking (**T-0753**, filed on 
 a stranger's mistyped address locks the subject out of their erasure until an admin cancels.
 **Answer needed:** (a) or (b) — and if (b), whether it waits for T-0753.
 **Blocks:** nothing. T-0753 is filed either way.
+
+## Q-VS-01 — Does the accountant accept the ten-digit variable symbol, now numbered per company?
+
+**Raised by:** ADR-0046 §D1 (2026-08-31), cited as filed; lost in the backlog reset and re-filed on
+2026-09-16 by the full-branch sweep. **Who answers:** the owner, with the účetní.
+**Why it needs you:** every payout invoice carries a *variabilní symbol* of `YYYY` + a six-digit
+ordinal (`PayoutReferenceAllocator`), since T-0757 allocated per operating company (`(TenantId, Year,
+Scope)` counter). Czech banks accept up to ten digits; whether the accountant wants a company digit
+inside it, or a different series per company, is an accounting fact about the s.r.o.s. **Default
+applied: ten digits, per-company sequence, no company digit** (the column is `varchar(10)` and the
+digits are spent). Blocks nothing until the first real payout.
+
+## Q-ART-01(b) — Should the dispute-evidence upload accept fewer file types?
+
+**Raised by:** ADR-0043 (dispute evidence) and `docs/architecture/security-rules.md` cite it as an
+owner question; lost in the backlog reset and re-filed on 2026-09-16. **Who answers:** the owner.
+**Why it needs you:** uploads are sniffed against `SniffedContentType.Signatures` (images, PDF, …) and
+size-capped; narrowing to images only is a product decision (fewer attack surfaces, but a customer
+cannot attach an invoice PDF as evidence). **Default applied: the accept set unchanged.** Blocks nothing.

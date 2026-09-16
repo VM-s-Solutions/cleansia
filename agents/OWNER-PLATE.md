@@ -1,0 +1,36 @@
+# Owner plate — what only Mike can decide or do (written 2026-09-16 from a full-branch sweep)
+
+Everything an agent could build without a ruling is either shipped or filed as a `todo` row in
+`agents/backlog/INDEX.md`. This file holds the rest: decisions with their default in force, and
+actions outside the repository. Strike a line when it is done; move a decision to
+`agents/backlog/questions/open.md`'s answered convention when it is ruled.
+
+## Decisions (default in force until ruled)
+
+| # | Decision | Context | Default in force |
+|---|---|---|---|
+| D1 | **Q-GDPR-03** — a live guest booking under an erased e-mail: block the erasure, or leave the booking out? | The question's premise moved: it said blocking is defensible only once a guest can cancel — T-0753 shipped that on web, Android and iOS (`e5d28767`, `0f4d301a`, `28ccf8b1`). | Left out; the booking's contact data goes when the job ends and the order-PII sweep reaches it (`GdprDeletionService.cs` `ErasureBlockingStatuses` on the account's own orders only). |
+| D2 | **T-0693** — when the last cleaner drops a job, does the order return to `New`? | Today it stays `Confirmed` with zero assignees (`DropOrder.cs`, `RequestCover.cs`); six sweeps compensate with an assignee check. Option 1: walk back (new transition, admin-override guard, ~8 fixtures). Option 2: keep, write the reason into ADR-0057 §Consequences, close. | Stays `Confirmed`. |
+| D3 | **Revenue report semantics** (T-0702 AC3 unmet though the row reads done) | `GetRevenueReport.cs` sums `TotalPrice` of every order incl. cancelled ones and subtracts no refunds. One sentence — e.g. "paid and completed orders, minus refunds, per currency" — makes it a small backend ticket. | Wrong figures. |
+| D4 | **Which statuses may a customer cancel?** | Guest cancel offers it through *OnTheWay* (web/Android/iOS); signed-in stops at *Confirmed*; the server allows both (`CancellationAssessor.cs`). Pick one set. Two siblings are pure fixes on your word: the signed-in mobile sheets accept a 2 000-char reason the server caps at 500; signed-in mobile shows the policy refund figure, not `actualRefundAmount`. | Inconsistent. |
+| D5 | **Admin notifications** — channel + events | Nothing exists; the failed-erasure retry logs at Error for want of it (`RetryFailedUserDeletions`). Needs: e-mail / in-app / both; the events (new order, dispute filed, failed erasure, payment failure, …); the recipients. | Nothing. |
+| D6 | **T-0767 responsiveness picks** | `agents/analysts/web-responsiveness-2026-09-16.md`: seven layout groups and two runtime groups across the three web apps. Pick which become tickets. | Nothing changed. |
+| D7 | **Company lifecycle defaults** (ADR-0064) | Q-LC-01 administrators of a deactivated company stay admitted (waits on D8); Q-LC-02 the archive bundle holds the books only, not users/consents/customer audit rows; Q-LC-03 `UserId` stays on `credit-accounts.jsonl` / `promo-code-redemptions.jsonl` (architect may rule); O-6 no immutability lock on `company-archives`; O-2 every Plus is cancelled at wind-down — its rationale ("the customer can book nowhere else") weakened now that cross-market booking exists (T-0765). | As stated. |
+| D8 | **T-0748 roles** — Support / Accountant / Manager | Your "later". Q-LC-01 and the holding view hang off it; first deliverable is the `Policy.* → role` matrix in the ticket. | Every admin policy is `AdminOnly`. |
+| D9 | **Q-VS-01** — does the accountant accept the ten-digit variable symbol (`YYYY` + 6-digit ordinal, now per company)? | ADR-0046 cites it as filed; it was lost in the backlog reset and is re-filed in `questions/open.md` on 2026-09-16. | Ten digits. |
+| D10 | **Q-ART-01(b)** — narrow the dispute-evidence file types? | ADR-0043 / security-rules cite it as filed; re-filed on 2026-09-16. | Accept set unchanged (`SniffedContentType.Signatures`). |
+| D11 | Smaller defaults, fine unless you object | "The subject's disputes" in the export reads both the account and the order term; the incident file stays narrow (no bystander rows; the file's own act stays in the trail); a withdrawn consent keeps IP/UA/version after erasure; `CreateOrder` records the tick but grants no consent rows (A6); one legal entity vs one per country stays undecided (nothing blocks). | As stated in ADR-0062/0063. |
+
+## Actions (outside the repo)
+
+| # | Action | Detail |
+|---|---|---|
+| A1 | **Merge PR #255, then the DEV deploy-day runbook** | Merging does not deploy (`deploy-dev.yml` is manual). Order: (1) `Execute SQL Script → DEV → reset-database.sql` — the DEV database holds master's migration `20260908075819`; the tree's is `20260916120038` and the migrator fails on a mismatch; (2) `Deploy to DEV → mode=deploy` — Bicep provisions itself (the `company-archives` container, the `company-wind-down` and `company-archive` queues with poison twins); (3) `Execute SQL Script → DEV → insert_seed_data.sql` **after** the deploy (deployed hosts run as Production and never auto-seed); (4) verify `__EFMigrationsHistory` = `20260916120038_Initial`, `Tenants` has `cleansia-cz`, CZE `OperatorTenantId` set, two `LegalDocuments` seeded. Local Aspire Postgres needs the same reset. `agents/cleanup/MANUAL_STEPS.md` MS-2. |
+| A2 | **Legal texts** (lawyer) | DEV customers consent to the seeded **draft** (banner in five locales, `src/Cleansia.Infra.Database/Seed/Legal/customer/*/any/2026-09-14/`). The final wording is a new dated folder + deploy; the seeder refuses to alter an in-force version. Plus the lawyer's confirmations of L1 (three-year retention, Art. 6(1)(f) / 17(3)(e)), L3 (dispute text three years after erasure), L6 (the PDF incident file). |
+| A3 | **Seed placeholders** | `CompanyInfo` IČO / DIČ / bank details read `REPLACE WITH ACTUAL` (`sql-scripts/insert_seed_data.sql`) and print on every receipt, payout invoice and the wind-down e-mails; `Tenant.Name` "Cleansia CZ s.r.o." ≠ `CompanyInfo.LegalName` "Cleansia s.r.o.". Replace before DEV is shown to anyone. |
+| A4 | **Market figures at activation** (admin forms) | EUR/PLN/GBP/USD no-show credits are DEV placeholders; EUR's loyalty divisor is null and `ActivateCurrency` refuses until it is set; SK's insurance figure is null; Plus prices exist for CZK only; SVK VAT is seeded 20 % twice and POL's payout scheme is NULL (both out of scope until those markets open). |
+| A5 | **MS-13** — send one of each e-mail from DEV and eyeball it | Nine templates now (the two wind-down notices are new). Related: the order-status e-mail (type 6) has no seeded translations — cs/sk/uk/ru customers get hard-coded English for take/start/complete unless a seed script is added (say the word). |
+| A6 | **MS-3** — rotate the exposed Mapbox token | Mapbox dashboard + Key Vault `Mapbox--GeocodingAccessToken`; two comments in the partner env files reference the old one. |
+| A7 | **Mac session (optional)** | iOS CI builds and runs XCTest for all three targets (721 + 860 + 1 223 green on `82cfb546`); a Mac is needed only to run the apps and to eyeball T-0766 (status bar) on a device. |
+| A8 | **Accountant** | The multicurrency plan names the účetní review as the one overdue external item; nothing blocks code until ~1 M Kč YTD bookings. |
+| A9 | **MS-9 at the first PRO deploy** | Invite yourself to the prod admin console (DEV verified 2026-09-11). PRO stays untouched by agents. |

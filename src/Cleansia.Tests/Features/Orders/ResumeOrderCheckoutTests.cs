@@ -72,7 +72,7 @@ public class ResumeOrderCheckoutTests
     private ResumeOrderCheckout.Validator CreateValidator(Order? order)
     {
         _orders
-            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForOwnerAsync(OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         return new ResumeOrderCheckout.Validator(_orders.Object, _session.Object);
     }
@@ -87,11 +87,12 @@ public class ResumeOrderCheckoutTests
     {
         var order = BuildOrder();
         _orders
-            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForOwnerAsync(OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
 
         var handler = new ResumeOrderCheckout.Handler(
             _orders.Object,
+            _session.Object,
             _stripeFactory.Object,
             new StripeConfig(new ConfigurationBuilder()
                 .AddInMemoryCollection([new KeyValuePair<string, string?>("Stripe:Enabled", "false")])
@@ -109,10 +110,10 @@ public class ResumeOrderCheckoutTests
     private ResumeOrderCheckout.Handler CreateHandler(Order order)
     {
         _orders
-            .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForOwnerAsync(OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         return new ResumeOrderCheckout.Handler(
-            _orders.Object, _stripeFactory.Object, new StripeConfig(new ConfigurationBuilder().Build()),
+            _orders.Object, _session.Object, _stripeFactory.Object, new StripeConfig(new ConfigurationBuilder().Build()),
             NullLogger<ResumeOrderCheckout.Handler>.Instance);
     }
 

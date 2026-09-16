@@ -25,8 +25,8 @@ namespace Cleansia.IntegrationTests.Features.Auditing;
 /// booking of one order, a consent grant), one admin refund on that order and one cleaner drop of it. By
 /// user the timeline returns the four rows <c>OccurredOn DESC</c> with the source of each; by resource it
 /// returns the three that name the order and, unlike the user key, reaches a guest act; paging walks
-/// the same order without a gap or a duplicate; a row stamped for another operator never appears
-/// (the global tenant filter); and once the user is erased — the order no longer names them — the
+/// the same order without a gap or a duplicate; by-user history unions operators while resource
+/// history stays tenant-filtered; and once the user is erased — the order no longer names them — the
 /// admin and cleaner rows on it are still on their timeline, reached through their own booking row.
 /// </summary>
 [Collection("PostgresCollection")]
@@ -121,7 +121,7 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
     }
 
     [Fact]
-    public async Task Another_Operators_Rows_Never_Appear()
+    public async Task Account_Timeline_Unions_Operator_Acts_While_Resource_Timeline_Stays_Filtered()
     {
         await TestMethod(
             setup: AdminSession,
@@ -137,9 +137,10 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
                 ByOrder: await Send(provider, new GetActionTimeline.Request { ResourceType = "Order", ResourceId = OrderId })),
             assert: (CleansiaDbContext _, (PagedData<TimelineEntryDto> ByUser, PagedData<TimelineEntryDto> ByOrder) r) =>
             {
-                Assert.Equal(4, r.ByUser.Total);
+                Assert.Equal(7, r.ByUser.Total);
                 Assert.Equal(3, r.ByOrder.Total);
-                Assert.DoesNotContain(r.ByUser.Data.Concat(r.ByOrder.Data), e => e.Id.EndsWith("other-tenant"));
+                Assert.Equal(3, r.ByUser.Data.Count(e => e.Id.EndsWith("other-tenant")));
+                Assert.DoesNotContain(r.ByOrder.Data, e => e.Id.EndsWith("other-tenant"));
                 return Task.CompletedTask;
             });
     }

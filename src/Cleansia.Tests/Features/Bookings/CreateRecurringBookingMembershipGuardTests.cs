@@ -44,6 +44,7 @@ public class CreateRecurringBookingMembershipGuardTests
             _savedAddressRepository.Object,
             _membershipRepository.Object,
             _session.Object,
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
             new AuditContext());
 
     private static SavedAddress ArrangeSavedAddress()

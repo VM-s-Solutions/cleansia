@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Users;
 
@@ -19,20 +20,19 @@ public class GetUser
             RuleFor(user => user.UserId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(userRepository.ExistsAsync)
-                .WithErrorCode(nameof(Query.UserId))
-                .WithMessage(BusinessErrorMessage.NotExistingUserWithId);
+                .WithMessage(BusinessErrorMessage.Required);
         }
     }
 
     public record Query(
-        string UserId)
+        string UserId, string? OrderId = null)
         : IQuery<UserItem>;
 
     public class Handler(
         IUserRepository userRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        IOrderRepository orderRepository,
+        ITenantRepository tenantRepository)
         : IQueryHandler<Query, UserItem>
     {
         public async Task<BusinessResult<UserItem>> Handle(Query query, CancellationToken cancellationToken)
@@ -52,6 +52,28 @@ public class GetUser
             var user = await userRepository.GetByIdNoTrackingAsync(query.UserId, cancellationToken);
             if (user is null)
             {
+                if (role == UserProfile.Administrator.ToString() && !string.IsNullOrEmpty(query.OrderId))
+                {
+                    // The admin's filtered order proves access before the customer crosses the tenant filter.
+                    var order = await orderRepository.GetQueryable().AsNoTracking()
+                        .FirstOrDefaultAsync(o => o.Id == query.OrderId && o.UserId == query.UserId, cancellationToken);
+                    if (order is not null)
+                    {
+                        var customer = await userRepository.GetByIdIgnoringTenantAsync(order.UserId!, cancellationToken);
+                        if (customer is not null && customer.Profile == UserProfile.Customer && customer.TenantId is not null)
+                        {
+                            var company = await tenantRepository.GetByIdAsync(customer.TenantId, cancellationToken);
+                            var email = customer.Email;
+                            var at = email.IndexOf('@');
+                            var maskedEmail = at > 0 ? $"{email[0]}***{email[at..]}" : "***";
+                            var panel = new CustomerOfAnotherCompanyDto(customer.Id, customer.FirstName, maskedEmail, company?.Name ?? string.Empty);
+                            return BusinessResult.Success(new UserItem(
+                                string.Empty, customer.FirstName, string.Empty, null,
+                                UserProfile.Customer.MapToCode(), default(Core.Domain.Enums.AuthenticationType).MapToCode(),
+                                false, null, null, null, null, customer.Id, true, panel));
+                        }
+                    }
+                }
                 return BusinessResult.Failure<UserItem>(new Error(
                     nameof(Query.UserId), BusinessErrorMessage.NotExistingUserWithId));
             }

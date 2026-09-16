@@ -29,7 +29,7 @@ public class SetRecurringBookingActive
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(_templateRepository.ExistsAsync)
+                .MustAsync(BeOwnedByCallerAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotFound)
                 .MustAsync(BeOwnedByCallerAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
@@ -39,18 +39,19 @@ public class SetRecurringBookingActive
         {
             var userId = _userSessionProvider.GetUserId();
             if (string.IsNullOrEmpty(userId)) return false;
-            var template = await _templateRepository.GetByIdAsync(id, cancellationToken);
+            var template = await _templateRepository.GetByIdForOwnerAsync(id, _userSessionProvider.GetUserId() ?? string.Empty, cancellationToken);
             return template != null && template.UserId == userId;
         }
     }
 
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
+        IUserSessionProvider userSessionProvider,
         IAuditContext auditContext) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
-            var template = (await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken))!;
+            var template = (await templateRepository.GetByIdForOwnerAsync(command.TemplateId, userSessionProvider.GetUserId()!, cancellationToken))!;
             var before = RecurringTemplateFacts.Of(template);
             if (command.IsActive)
             {

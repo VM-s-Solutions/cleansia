@@ -168,5 +168,8 @@ public record OrderItem(
     /// <para>Nullable + defaulted so it is additive on the wire: a client built before this field
     /// omits it and behaves exactly as before.</para>
     /// </summary>
-    string? SystemCancellationReason = null
+    string? SystemCancellationReason = null,
+
+    /// <summary>Customer company name for an admin viewing another company's customer; null otherwise.</summary>
+    string? CustomerCompany = null
 );

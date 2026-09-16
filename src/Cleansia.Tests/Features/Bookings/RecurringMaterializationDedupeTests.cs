@@ -1,4 +1,4 @@
-﻿using Cleansia.TestUtilities.MockDataFactories.Memberships;
+using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
@@ -258,6 +258,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         var services = new ServiceCollection();
 
         services.AddLogging();
+        services.AddSingleton(Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy(TestTenants.Default));
         services.AddScoped<ITenantProvider>(_ => new MutableTenantProvider());
         services.AddScoped(sp => new CleansiaDbContext(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,

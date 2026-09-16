@@ -120,7 +120,7 @@ public sealed class LoyaltyService(
             return;
         }
 
-        var account = await loyaltyAccountRepository.GetByUserIdAsync(order.UserId, cancellationToken);
+        var account = await loyaltyAccountRepository.GetByUserIdIgnoringTenantAsync(order.UserId, cancellationToken);
         if (account == null)
         {
             return;
@@ -192,7 +192,7 @@ public sealed class LoyaltyService(
             return;
         }
 
-        var account = await loyaltyAccountRepository.GetByUserIdAsync(order.UserId, cancellationToken);
+        var account = await loyaltyAccountRepository.GetByUserIdIgnoringTenantAsync(order.UserId, cancellationToken);
         if (account == null)
         {
             return;

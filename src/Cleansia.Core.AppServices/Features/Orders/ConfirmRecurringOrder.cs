@@ -68,10 +68,11 @@ public class ConfirmRecurringOrder
     }
 
     public class Handler(
-        IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
         ICreditAccountRepository creditAccountRepository,
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
         IPendingDispatch pending,
@@ -89,7 +90,7 @@ public class ConfirmRecurringOrder
                     nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            var order = await orderRepository.GetByIdAsync(command.OrderId, cancellationToken);
+            var order = await orderAccessService.LoadOrderForCallerAsync(command.OrderId, cancellationToken);
             if (order == null
                 || order.UserId != sessionUserId
                 || string.IsNullOrEmpty(order.RecurringTemplateId))
@@ -116,6 +117,12 @@ public class ConfirmRecurringOrder
 
             if (result.IsSuccess)
             {
+                // Card confirmation reads the account first; its success audit follows the order.
+                if (!string.IsNullOrEmpty(order.TenantId))
+                {
+                    tenantProvider.SetTenantOverride(order.TenantId);
+                }
+
                 var nowUtc = DateTime.UtcNow;
                 auditContext.RecordEvidence("Order", order.Id, new RecurringOccurrenceConfirmationEvidence(
                     OrderId: order.Id,
@@ -133,6 +140,8 @@ public class ConfirmRecurringOrder
         private async Task<BusinessResult<Response>> HandleCashAsync(
             Order order, CancellationToken cancellationToken)
         {
+            if (order.TenantId is not null) tenantProvider.SetTenantOverride(order.TenantId);
+
             // Cash means the customer pays the cleaner on-site — no gateway step. The MONEY axis moves
             // and the fulfilment axis does not: the customer confirming their own occurrence is not a
             // cleaner taking it, and owner ruling 2026-09-08 (T-0691) is that Confirmed means only the

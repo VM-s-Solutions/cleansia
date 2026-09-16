@@ -1,5 +1,6 @@
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Database.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.Repositories;
@@ -30,7 +31,15 @@ public class CreditAccountRepository(CleansiaDbContext context)
         // BOTH COLUMNS. Matching on UserId alone returned an account in whatever currency the
         // customer's first credit happened to open, and every caller then added its own currency's
         // number to that balance -- a CZK refund landing on a EUR account, with no error and no clue.
-        var existing = await GetDbSet()
+        //
+        // Past the tenant filter, and a new row stamped with the USER's company rather than the ambient
+        // one: credit follows the account, but the callers that put money on it act as the ORDER's
+        // operator (a refund an admin issues, the no-cleaner sweep, a cancellation), and for a booking
+        // made across the border that is another company. Filtered, the read found nothing and the
+        // insert collided on IX_CreditAccounts_UserId_CurrencyId, which has no tenant term on purpose.
+        // Every caller reaches here with a user id read off an order or a customer it has already
+        // loaded and access-checked (S8).
+        var existing = await GetQueryableIgnoringTenant()
             .FirstOrDefaultAsync(
                 a => a.UserId == userId && a.CurrencyId == currencyId, cancellationToken);
 
@@ -40,6 +49,7 @@ public class CreditAccountRepository(CleansiaDbContext context)
         }
 
         var account = CreditAccount.Create(userId, currencyId, userId);
+        account.TenantId = await context.UserTenantIdAsync(userId, cancellationToken);
         Add(account);
         return account;
     }
@@ -148,7 +158,8 @@ public class CreditAccountRepository(CleansiaDbContext context)
     public Task<CreditSpendable?> GetSpendableAsync(
         string userId, string currencyId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        // The user id comes from the caller's account or an authorized order.
+        return GetQueryableIgnoringTenant()
             .AsNoTracking()
             .Where(a => a.UserId == userId && a.CurrencyId == currencyId)
             .Select(a => new CreditSpendable(a.Id, a.Balance, a.CurrencyId, a.ExpiresOn))

@@ -99,8 +99,9 @@ public class CancellationAcceptanceSignalTests
 
     private CancelOrder.Handler CreateCancelHandler() =>
         new(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
+            Mock.Of<ITenantProvider>(),
             _refundService.Object,
             _creditAccountRepository.Object,
             _loyaltyService.Object,
@@ -126,10 +127,11 @@ public class CancellationAcceptanceSignalTests
 
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>
         new(
-            _orderRepository.Object,
+            Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
             _creditAccountRepository.Object,
             _userRepository.Object,
             _session.Object,
+            _tenantProvider.Object,
             _stripeClient.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,

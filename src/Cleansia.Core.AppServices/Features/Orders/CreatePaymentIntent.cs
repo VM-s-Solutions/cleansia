@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
@@ -50,22 +51,30 @@ public class CreatePaymentIntent
 
         private async Task<bool> BeOwnedByCallerAsync(string orderId, CancellationToken cancellationToken)
         {
-            var userId = _userSessionProvider.GetUserId();
-            if (string.IsNullOrEmpty(userId)) return false;
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
-            return order != null && order.UserId == userId;
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
+            return order != null && order.UserId == _userSessionProvider.GetUserId();
         }
 
         private async Task<bool> BeCardPaymentAsync(string orderId, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
             return order != null && order.PaymentType == PaymentType.Card;
         }
 
         private async Task<bool> NotAlreadyPaidAsync(string orderId, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
             return order != null && order.PaymentStatus != PaymentStatus.Paid;
+        }
+
+        // The caller's own order in whichever operating company the market put it (S8: pinned by the
+        // caller's own id); null for anyone else's, so a stranger's order and a missing one read alike.
+        private Task<Order?> LoadOwnOrderAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return string.IsNullOrEmpty(userId)
+                ? Task.FromResult<Order?>(null)
+                : _orderRepository.GetByIdForOwnerAsync(orderId, userId, cancellationToken);
         }
     }
 
@@ -80,7 +89,8 @@ public class CreatePaymentIntent
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             // Ownership + payment-type + not-paid enforced by Validator.
-            var order = (await orderRepository.GetByIdAsync(command.OrderId, cancellationToken))!;
+            var order = (await orderRepository.GetByIdForOwnerAsync(
+                command.OrderId, userSessionProvider.GetUserId()!, cancellationToken))!;
 
             // The mobile charge surface. Gated with the other two, and BEFORE CreateCustomerAsync so a
             // refused payment leaves no Stripe customer behind. -> IStripeConfig

@@ -244,5 +244,6 @@ public class OrderFactoryPreferredHoldTests
             RawSubtotal: 1500m,
             NowUtc: Now,
             ReservedExpressWaiver: null,
+            OperatorTenantId: null,
             PreferredEmployeeId: PreferredEmployeeId);
 }

@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Authentication;
 
@@ -11,16 +12,19 @@ public class OrderAccessService : IOrderAccessService
 {
     private readonly IUserSessionProvider _userSessionProvider;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IOrderRepository _orderRepository;
     private readonly ICurrencyResolutionService _currencyResolutionService;
     private readonly Lazy<Task<string?>> _callerEmployeeId;
 
     public OrderAccessService(
         IUserSessionProvider userSessionProvider,
         IEmployeeRepository employeeRepository,
+        IOrderRepository orderRepository,
         ICurrencyResolutionService currencyResolutionService)
     {
         _userSessionProvider = userSessionProvider;
         _employeeRepository = employeeRepository;
+        _orderRepository = orderRepository;
         _currencyResolutionService = currencyResolutionService;
         _callerEmployeeId = new Lazy<Task<string?>>(ResolveCallerEmployeeIdAsync);
     }
@@ -29,6 +33,27 @@ public class OrderAccessService : IOrderAccessService
     {
         var role = _userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
         return role == UserProfile.Customer.ToString();
+    }
+
+    public IQueryable<Order> OrdersForCaller()
+    {
+        var userId = _userSessionProvider.GetUserId();
+        return IsCustomerCaller() && !string.IsNullOrEmpty(userId)
+            ? _orderRepository.GetQueryableForOwner(userId)
+            : _orderRepository.GetQueryable();
+    }
+
+    public Task<Order?> LoadOrderForCallerAsync(string orderId, CancellationToken cancellationToken)
+    {
+        var userId = _userSessionProvider.GetUserId();
+        return IsCustomerCaller() && !string.IsNullOrEmpty(userId)
+            ? _orderRepository.GetByIdForOwnerAsync(orderId, userId, cancellationToken)
+            : _orderRepository.GetByIdAsync(orderId, cancellationToken);
+    }
+
+    public Task<bool> OrderExistsForCallerAsync(string orderId, CancellationToken cancellationToken)
+    {
+        return OrdersForCaller().AnyAsync(o => o.Id == orderId, cancellationToken);
     }
 
     public Task<string?> GetCallerEmployeeIdAsync(CancellationToken cancellationToken)

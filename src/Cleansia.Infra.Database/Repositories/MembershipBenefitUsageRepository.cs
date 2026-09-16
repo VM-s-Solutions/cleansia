@@ -76,7 +76,10 @@ public class MembershipBenefitUsageRepository(
             return null;
         }
 
-        var tenantId = tenantProvider?.GetCurrentTenantId();
+        // The membership and owner pin the account's company independently of the order operator.
+        var tenantId = await Context.UserMemberships.IgnoreQueryFilters()
+            .Where(m => m.Id == userMembershipId && m.UserId == userId)
+            .Select(m => m.TenantId).SingleAsync(cancellationToken);
         var actorId = userSessionProvider?.GetUserId();
         var createdBy = string.IsNullOrWhiteSpace(actorId) ? SystemActor : actorId!;
         var id = Ulid.NewUlid().ToString();
@@ -124,7 +127,7 @@ public class MembershipBenefitUsageRepository(
         string periodKey,
         CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        return GetQueryableIgnoringTenant()
             .CountAsync(
                 u => u.UserId == userId
                     && u.BenefitKind == benefitKind
@@ -138,7 +141,10 @@ public class MembershipBenefitUsageRepository(
         MembershipBenefitKind benefitKind,
         CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        // Past the tenant filter: the slot was reserved under the customer's own company at booking,
+        // while a cancellation of a booking made across the border runs as the order's operator. The
+        // pin is the order id the caller has already loaded and access-checked (S8).
+        return GetQueryableIgnoringTenant()
             .FirstOrDefaultAsync(
                 u => u.OrderId == orderId && u.BenefitKind == benefitKind && u.IsActive,
                 cancellationToken);
@@ -146,7 +152,8 @@ public class MembershipBenefitUsageRepository(
 
     public Task<MembershipBenefitUsage?> GetTrackedByIdAsync(string id, CancellationToken cancellationToken)
     {
-        return GetDbSet().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        // The id was returned by this repository's reservation, never accepted from the wire.
+        return GetQueryableIgnoringTenant().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
     public Task<int> ReleaseOrphanedReservationsAsync(DateTime cutoffUtc, CancellationToken cancellationToken)

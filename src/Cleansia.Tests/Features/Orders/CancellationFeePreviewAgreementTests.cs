@@ -65,8 +65,9 @@ public class CancellationFeePreviewAgreementTests
 
     private CancelOrder.Handler CreateCancelHandler() =>
         new(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
+            Mock.Of<ITenantProvider>(),
             _refundService.Object,
             _creditAccountRepository.Object,
             _loyaltyService.Object,
@@ -78,7 +79,7 @@ public class CancellationFeePreviewAgreementTests
 
     private GetCancellationFeePreview.Handler CreatePreviewHandler() =>
         new(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
             Resolver,
             _expressWaiverConsumer.Object);

@@ -200,8 +200,8 @@ public class QuoteOrderSpanCapTests
             CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
             CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
             Mock.Of<IPromoCodeService>(),
-            Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>(),
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 

@@ -54,8 +54,9 @@ public sealed class CancelOrderAuditEvidenceTests
 
     private CancelOrder.Handler CreateHandler() =>
         new(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
+            Mock.Of<ITenantProvider>(),
             _refundService.Object,
             _creditAccountRepository.Object,
             _loyaltyService.Object,

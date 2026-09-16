@@ -16,13 +16,13 @@ public class CreateDisputeValidatorTests
 {
     private const string ExistingOrderId = "order-1";
 
-    private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<Cleansia.Core.AppServices.Authentication.IOrderAccessService> _orderRepository = new();
     private readonly CreateDispute.Validator _validator;
 
     public CreateDisputeValidatorTests()
     {
         _orderRepository
-            .Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.OrderExistsForCallerAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _validator = new CreateDispute.Validator(_orderRepository.Object);
     }

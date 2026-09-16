@@ -16,6 +16,7 @@ using Cleansia.TestUtilities.MockDataFactories.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Bookings;
 
@@ -168,7 +169,7 @@ public class RecurringPreferredCleanerCarryThroughTests
             .Callback((RecurringBookingTemplate t) => created = t);
 
         var result = await new CreateRecurringBooking.Handler(
-                templates.Object, savedAddresses.Object, memberships.Object, session.Object, new AuditContext())
+                templates.Object, savedAddresses.Object, memberships.Object, session.Object, OrderMarketDoubles.OperatedBy("cleansia-cz"), new AuditContext())
             .Handle(
                 new CreateRecurringBooking.Command(
                     Frequency: (int)RecurrenceFrequency.Weekly,
@@ -247,6 +248,7 @@ public class RecurringPreferredCleanerCarryThroughTests
             _pricingCalculator.Object,
             _orderFactory.Object,
             _memberships.Object,
+            OrderMarketDoubles.OperatedBy("cleansia-cz"),
             _tenantProvider.Object,
             _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);

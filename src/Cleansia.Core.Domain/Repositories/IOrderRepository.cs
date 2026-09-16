@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.Domain.Orders;
+﻿using System.Linq.Expressions;
+using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Sorting.Common;
 
 namespace Cleansia.Core.Domain.Repositories;
 
@@ -198,6 +200,7 @@ public interface IOrderRepository : IRepository<Order, string>
     /// ahead of the handler's own load. Null when no such order is visible to the caller's tenant.
     /// </summary>
     Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, CancellationToken cancellationToken);
+    Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// The customer profile hero stats for <paramref name="userId"/> (T-0392):
@@ -205,9 +208,29 @@ public interface IOrderRepository : IRepository<Order, string>
     /// discounts summed over the user's non-cancelled orders), and the currency
     /// code of the user's most recent order. Returns
     /// <see cref="CustomerProfileStats.Empty"/> semantics for a user with no
-    /// orders (zeros, null currency).
+    /// orders (zeros, null currency). Counts the user's orders in every operating company
+    /// (<see cref="GetQueryableForOwner"/>); <paramref name="userId"/> is the caller's own.
     /// </summary>
     Task<CustomerProfileStats> GetCustomerProfileStatsAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Orders across operators pinned by the session user, or by a user from an authorized order.
+    /// Staff listings remain tenant-filtered.
+    /// </summary>
+    IQueryable<Order> GetQueryableForOwner(string userId);
+
+    /// <summary>
+    /// <see cref="IRepository{Order,String}.GetByIdAsync"/>'s graph over <see cref="GetQueryableForOwner"/>.
+    /// Null when no order of that id belongs to <paramref name="userId"/>, so a missing order and
+    /// somebody else's read the same.
+    /// </summary>
+    Task<Order?> GetByIdForOwnerAsync(string id, string userId, CancellationToken cancellationToken);
+
+    Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken);
+
+    IQueryable<Order> GetPagedSortForOwner<TSort>(
+        string userId, int offset, int limit, Expression<Func<Order, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Order>;
 
     /// <summary>
     /// Cross-tenant lookup by order id. ONLY for use by Stripe webhook handlers

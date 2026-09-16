@@ -61,7 +61,7 @@ public class GetMyServingCleaners
             // while the historical Completed order survives, and there is no global IsActive filter
             // (S10). Both flags are checked: Deactivated() on the Employee leaves the User alone and
             // vice versa, so either one alone misses half the departures.
-            var rows = await orderRepository.GetQueryable()
+            var rows = await orderRepository.GetQueryableForOwner(userId)
                 .AsNoTracking()
                 .Where(o => o.UserId == userId && o.CurrentStatus == OrderStatus.Completed)
                 .SelectMany(

@@ -72,6 +72,10 @@ public class LoyaltyAccount : TenantAuditable
         }
 
         var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Earn, points, source, orderId, description: description, idempotencyKey: idempotencyKey);
+        // The ledger row belongs to the account's company, not to whichever company's order or admin
+        // moved the points: a cross-market completion grants under the market operator's ambient tenant,
+        // and a row stamped there would vanish from the customer's own activity feed.
+        tx.TenantId = TenantId;
         _transactions.Add(tx);
 
         LifetimePoints += points;
@@ -104,6 +108,7 @@ public class LoyaltyAccount : TenantAuditable
         }
 
         var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Revoke, -points, source, orderId, description: description, idempotencyKey: idempotencyKey);
+        tx.TenantId = TenantId;
         _transactions.Add(tx);
 
         LifetimePoints = Math.Max(0, LifetimePoints - points);

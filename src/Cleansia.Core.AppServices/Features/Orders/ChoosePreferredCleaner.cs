@@ -93,15 +93,15 @@ public class ChoosePreferredCleaner
         private async Task<bool> PreferredEmployeeIsPaidInTheOrdersCurrencyAsync(
             Command command, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetOwnerAndCurrencyAsync(command.OrderId, cancellationToken);
+            var order = await _orderRepository.GetOwnerAndCurrencyAsync(command.OrderId, _userSessionProvider.GetUserId()!, cancellationToken);
             if (order is null || order.UserId != _userSessionProvider.GetUserId())
             {
                 return true;
             }
 
-            var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(
-                command.EmployeeId, cancellationToken);
-            return cleanerCurrency.Id == order.CurrencyId;
+            var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForServingEmployeeAsync(
+                _userSessionProvider.GetUserId()!, command.EmployeeId, cancellationToken);
+            return cleanerCurrency?.Id == order.CurrencyId;
         }
     }
 
@@ -110,7 +110,8 @@ public class ChoosePreferredCleaner
         IUserSessionProvider userSessionProvider,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
         INotificationProducer notificationProducer,
-        IUserMembershipRepository userMembershipRepository) : ICommandHandler<Command, Response>
+        IUserMembershipRepository userMembershipRepository,
+        ITenantProvider tenantProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -118,7 +119,7 @@ public class ChoosePreferredCleaner
             var userId = userSessionProvider.GetUserId();
 
             var order = await orderRepository
-                .GetQueryable()
+                .GetQueryableForOwner(userId ?? string.Empty)
                 .Include(o => o.AssignedEmployees)
                 .Include(o => o.CustomerAddress)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
@@ -143,6 +144,7 @@ public class ChoosePreferredCleaner
                     new Error(nameof(command.EmployeeId), BusinessErrorMessage.PreferredOfferClosed));
             }
 
+            if (order.TenantId is not null) tenantProvider.SetTenantOverride(order.TenantId);
             var resolved = await preferredCleanerHoldResolver.ResolveAsync(
                 userId,
                 command.EmployeeId,

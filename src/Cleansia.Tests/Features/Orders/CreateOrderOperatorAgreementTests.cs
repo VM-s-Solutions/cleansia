@@ -12,19 +12,13 @@ using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
 
-/// <summary>
-/// ADR-0061 D6 — tenant and currency are two reads of one country. The order's currency is the
-/// service address's country's; its tenant is the ambient one (the claim, or for a guest the operator
-/// the scope behaviour resolved). This rule refuses the booking when the address's country is
-/// operated by another company than the ambient tenant, for guests and customers alike (D6), and it
-/// keys on the OPERATOR, not the country: one company serving two countries books either.
-/// </summary>
 public sealed class CreateOrderOperatorAgreementTests
 {
     private const string Czechia = "cz";
     private const string Slovakia = "sk";
 
     private readonly Mock<IOperatorTenantResolver> _operators = new();
+    private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ITenantProvider> _tenant = new();
     private readonly Mock<IOrderAddressResolver> _addresses = new();
 
@@ -72,7 +66,7 @@ public sealed class CreateOrderOperatorAgreementTests
             calculator.Object,
             Mock.Of<IOrderRepository>(),
             Mock.Of<IUserMembershipRepository>(),
-            Mock.Of<IUserSessionProvider>(),
+            _session.Object,
             PayConfigRepositoryDouble.Holding(),
             currencies.Object,
             _addresses.Object,
@@ -90,15 +84,15 @@ public sealed class CreateOrderOperatorAgreementTests
         CreateOrderTestData.ValidCommand(customerAddress: CreateOrderTestData.InlineAddress(countryId));
 
     [Fact]
-    public async Task A_Customer_Of_One_Operator_Booking_A_Country_Another_Operates_Is_Refused_On_The_Address()
+    public async Task A_Customer_Of_One_Operator_Can_Book_Another_Operators_Market()
     {
+        _session.Setup(s => s.GetUserId()).Returns("customer-cz");
         AmbientTenant("cleansia-cz");
         OperatedBy(Slovakia, "cleansia-sk");
 
         var result = await Validator().ValidateAsync(AddressIn(Slovakia));
 
-        var failure = Assert.Single(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderCountryOperatorMismatch);
-        Assert.Equal(nameof(CreateOrder.Command.CustomerAddress), failure.ErrorCode);
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
     [Fact]
@@ -113,7 +107,7 @@ public sealed class CreateOrderOperatorAgreementTests
     }
 
     [Fact]
-    public async Task A_Guest_Is_Held_To_The_Same_Rule_As_A_Customer()
+    public async Task A_Guest_Still_Requires_The_Resolved_Operator_To_Match()
     {
         // The scope behaviour set the default operator from a request that named no market, while the
         // address resolves to a country another company operates.
@@ -157,4 +151,14 @@ public sealed class CreateOrderOperatorAgreementTests
             Times.Once);
         _operators.Verify(r => r.ResolveAsync(Czechia, It.IsAny<CancellationToken>()), Times.Once);
     }
+    [Fact]
+    public async Task A_Signed_In_Customer_Cannot_Book_An_Unserviced_Market()
+    {
+        _session.Setup(s => s.GetUserId()).Returns("customer-cz");
+        AmbientTenant("cleansia-cz");
+        OperatedBy(Slovakia, null);
+        var result = await Validator().ValidateAsync(AddressIn(Slovakia));
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CountryNotServiced);
+    }
+
 }

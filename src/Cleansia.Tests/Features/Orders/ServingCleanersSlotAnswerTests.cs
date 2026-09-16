@@ -198,7 +198,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
         HandleAsync(GetMyServingCleaners.Query query)
     {
         await using var ctx = NewContext();
-        _orderRepository.Setup(r => r.GetQueryable()).Returns(new OrderRepository(ctx).GetQueryable());
+        _orderRepository.Setup(r => r.GetQueryableForOwner(It.IsAny<string>())).Returns(new OrderRepository(ctx).GetQueryable());
 
         var result = await new GetMyServingCleaners.Handler(
             _orderRepository.Object,

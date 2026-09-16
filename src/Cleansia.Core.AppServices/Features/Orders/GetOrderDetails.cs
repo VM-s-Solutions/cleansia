@@ -19,13 +19,13 @@ public class GetOrderDetails
 {
     public class Validator : AbstractValidator<Query>
     {
-        public Validator(IOrderRepository orderRepository)
+        public Validator(IOrderAccessService orderAccessService)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderRepository.ExistsAsync)
+                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
         }
     }
@@ -33,19 +33,20 @@ public class GetOrderDetails
     public record Query(string OrderId) : IQuery<OrderItem>;
 
     public class Handler(
-        IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider,
         IEmployeePayConfigRepository payConfigRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         IOrderPhotoRepository orderPhotoRepository,
         IEmployeeRepository employeeRepository,
+        IUserRepository userRepository,
+        ITenantRepository tenantRepository,
         IExpressWaiverConsumer expressWaiverConsumer,
         IUserMembershipRepository userMembershipRepository) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var order = await orderRepository.GetByIdAsync(query.OrderId, cancellationToken);
+            var order = await orderAccessService.LoadOrderForCallerAsync(query.OrderId, cancellationToken);
             if (order == null || !await orderAccessService.CanBrowseOrderAsync(order, cancellationToken))
             {
                 return BusinessResult.Failure<OrderItem>(new Error(
@@ -60,8 +61,9 @@ public class GetOrderDetails
             // Photos count is cheap to look up and lets the partner
             // mobile gate the Complete slide client-side. Same query
             // CompleteOrder.Validator uses, so the two stay in sync.
-            var afterPhotoCount = await orderPhotoRepository
-                .GetPhotoCountByOrderIdAndTypeAsync(order.Id, PhotoType.After, cancellationToken);
+            var afterPhotoCount = orderAccessService.IsCustomerCaller()
+                ? await orderPhotoRepository.GetPhotoCountForOwnerAsync(order.Id, order.UserId!, PhotoType.After, cancellationToken)
+                : await orderPhotoRepository.GetPhotoCountByOrderIdAndTypeAsync(order.Id, PhotoType.After, cancellationToken);
             var hasAfterPhotos = afterPhotoCount > 0;
 
             // Resolve caller-context fields: only employee callers get a
@@ -124,6 +126,8 @@ public class GetOrderDetails
                     order.Id, order.AssignedEmployees.Count > 0, cancellationToken)
                 : null;
 
+            var isAdminCaller = role == UserProfile.Administrator.ToString();
+
             var detail = order.MapToDetail(
                 estimatedCleanerPay,
                 isAssignedToCurrentUser,
@@ -132,6 +136,9 @@ public class GetOrderDetails
                 expressWaiverForfeitedOnCancel,
                 isCustomerCaller
                     ? await ResolvePreferredOfferAsync(order, DateTime.UtcNow, cancellationToken)
+                    : null,
+                isAdminCaller
+                    ? await ResolveCustomerCompanyAsync(order, cancellationToken)
                     : null);
 
             if (!isEntitledToCustomerData)
@@ -142,11 +149,27 @@ public class GetOrderDetails
             // The customer wrote these instructions and the assigned cleaner is standing at the door;
             // an admin is neither. They get the reveal route, which is audited — see
             // OrderPiiRedaction.WithholdAccessInstructions.
-            var isAdminCaller = role == UserProfile.Administrator.ToString();
-
             return BusinessResult.Success(isAdminCaller
                 ? detail.WithholdAccessInstructions()
                 : detail);
+        }
+
+        // The authorized order pins this cross-company lookup; only the company name is returned.
+        private async Task<string?> ResolveCustomerCompanyAsync(Order order, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(order.UserId))
+            {
+                return null;
+            }
+
+            var customer = await userRepository.GetByIdIgnoringTenantAsync(order.UserId, cancellationToken);
+            if (customer is null || string.IsNullOrEmpty(customer.TenantId) || customer.TenantId == order.TenantId)
+            {
+                return null;
+            }
+
+            var company = await tenantRepository.GetByIdAsync(customer.TenantId, cancellationToken);
+            return company?.Name;
         }
 
         /// <summary>

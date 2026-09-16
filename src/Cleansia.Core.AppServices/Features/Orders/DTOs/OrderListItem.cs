@@ -71,4 +71,6 @@ public record OrderListItem(
     /// decide whether to raise the completion rating prompt from the WARM list cache, and the detail
     /// payload is the only other place a review appears. One bool removes an N+1 before it exists.
     /// </summary>
-    bool HasReview);
+    bool HasReview,
+    /// <summary>Service-address country for the market label, paired with this order's currency.</summary>
+    string? CountryId = null);

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -138,9 +139,9 @@ public class CreateRecurringBooking
 
             var orderCurrency = await _currencyResolutionService.ResolveCurrencyForCountryAsync(
                 address.CountryId, cancellationToken);
-            var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(
-                employeeId, cancellationToken);
-            return cleanerCurrency.Id == orderCurrency.Id;
+            var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForServingEmployeeAsync(
+                userId, employeeId, cancellationToken);
+            return cleanerCurrency?.Id == orderCurrency.Id;
         }
 
         /// <summary>
@@ -173,6 +174,7 @@ public class CreateRecurringBooking
         ISavedAddressRepository savedAddressRepository,
         IUserMembershipRepository userMembershipRepository,
         IUserSessionProvider userSessionProvider,
+        IOperatorTenantResolver operatorTenantResolver,
         IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
@@ -215,6 +217,7 @@ public class CreateRecurringBooking
                 endsOn: command.EndsOn,
                 preferredEmployeeId: command.PreferredEmployeeId);
 
+            template.TenantId = (await operatorTenantResolver.ResolveAsync(address.Address.CountryId, cancellationToken)).OperatorTenantId;
             templateRepository.Add(template);
 
             auditContext.RecordEvidence("RecurringBookingTemplate", template.Id,

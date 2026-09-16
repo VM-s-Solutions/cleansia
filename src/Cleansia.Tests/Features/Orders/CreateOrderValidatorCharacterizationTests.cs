@@ -97,8 +97,8 @@ public class CreateOrderValidatorCharacterizationTests
             servicePrices ?? PricedServices(Czk, Eur),
             packagePrices ?? PricedPackages(Czk, Eur),
             _promoCodeService.Object,
-            Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>(),
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 

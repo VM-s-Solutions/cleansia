@@ -14,6 +14,7 @@ using Cleansia.TestUtilities.MockDataFactories.Users;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
+using Cleansia.TestUtilities;
 
 namespace Cleansia.Tests.Features.Bookings;
 
@@ -128,6 +129,7 @@ public class RecurringMaterializationCurrencyTests
             _pricingCalculator.Object,
             _orderFactory.Object,
             _memberships.Object,
+            OrderMarketDoubles.OperatedBy("cleansia-cz"),
             _tenantProvider.Object,
             _unitOfWork.Object,
             NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);

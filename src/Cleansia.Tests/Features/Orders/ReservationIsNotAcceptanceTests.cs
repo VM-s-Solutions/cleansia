@@ -111,7 +111,7 @@ public class ReservationIsNotAcceptanceTests
 
     private GetCancellationFeePreview.Handler CreateHandler() =>
         new(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
             _expressWaiverConsumer.Object);

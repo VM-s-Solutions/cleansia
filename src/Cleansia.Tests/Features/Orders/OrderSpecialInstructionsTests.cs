@@ -79,6 +79,7 @@ public class OrderSpecialInstructionsTests
             RawSubtotal: 1500m,
             NowUtc: DateTime.UtcNow,
             ReservedExpressWaiver: null,
+            OperatorTenantId: null,
             SpecialInstructions: specialInstructions);
 
     [Fact]
@@ -139,7 +140,7 @@ public class OrderSpecialInstructionsTests
             SelectedPackageIds: [],
             RawSubtotal: 1500m,
             NowUtc: DateTime.UtcNow,
-            ReservedExpressWaiver: null);
+            ReservedExpressWaiver: null, OperatorTenantId: "cleansia-cz");
 
         var order = await CreateFactory().CreateAsync(input, CancellationToken.None);
 

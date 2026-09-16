@@ -111,6 +111,7 @@ public class OrderPayCoverageGateTests
                 RawSubtotal: 1000m,
                 NowUtc: DateTime.UtcNow,
                 ReservedExpressWaiver: null,
+                OperatorTenantId: null,
                 PromoDiscountAmount: 0m),
             CancellationToken.None);
 
@@ -243,8 +244,8 @@ public class CreateOrderPayCoverageValidatorTests
         CataloguePriceDoubles.Packages(
             CreateOrderTestData.DefaultCurrency(), (CreateOrderTestData.PackageId, 1000m)),
         Mock.Of<IPromoCodeService>(),
-        Mock.Of<IOperatorTenantResolver>(),
-        Mock.Of<ITenantProvider>(),
+        Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+        Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
         Mock.Of<IUserConsentRepository>(),
         CreateOrderTestData.Speaking(Constants.Language.English));
 

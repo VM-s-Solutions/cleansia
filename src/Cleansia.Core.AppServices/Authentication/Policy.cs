@@ -2,6 +2,7 @@
 
 public class Policy
 {
+    public const string CanViewOrderCustomer = nameof(CanViewOrderCustomer);
     // Code
     public const string CanViewCodeOverview = nameof(CanViewCodeOverview); // Anonymous
 

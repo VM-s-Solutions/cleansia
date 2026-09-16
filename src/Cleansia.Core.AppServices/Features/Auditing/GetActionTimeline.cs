@@ -43,8 +43,11 @@ public class GetActionTimeline
 
     public class Validator : AbstractValidator<Request>
     {
-        public Validator()
+        public Validator(IUserRepository userRepository)
         {
+            When(r => !string.IsNullOrWhiteSpace(r.UserId), () =>
+                RuleFor(r => r.UserId!).MustAsync(userRepository.ExistsAsync)
+                    .WithMessage(BusinessErrorMessage.NotExistingUserWithId));
             RuleFor(x => x)
                 .Must(KeyedByExactlyOneOfUserOrResource)
                 .WithMessage(BusinessErrorMessage.TimelineFilterRequired)
@@ -128,19 +131,19 @@ public class GetActionTimeline
             return (customer, admin, employee);
         }
 
+        // Validation proves the admin's account scope; resource ids are derived from that user.
         private async Task<(IQueryable<CustomerActionAudit>, IQueryable<AdminActionAudit>, IQueryable<EmployeeActionAudit>)> ByUserAsync(
             string userId, CancellationToken cancellationToken)
         {
-            var provenOrderIds = await ProvenOrderIds(customerActionAuditRepository.GetQueryable(), userId)
+            var provenOrderIds = await ProvenOrderIds(customerActionAuditRepository.GetQueryableForUser(userId), userId)
                 .ToListAsync(cancellationToken);
-            var orderIds = await orderRepository.GetQueryable()
+            var orderIds = await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => o.UserId == userId || provenOrderIds.Contains(o.Id))
                 .OrderByDescending(o => o.CreatedOn)
                 .Take(RecentResourceCap)
                 .Select(o => o.Id)
                 .ToListAsync(cancellationToken);
-            var disputeIds = await disputeRepository.GetQueryable()
-                .Where(d => d.UserId == userId)
+            var disputeIds = await disputeRepository.GetQueryableForOwner(userId)
                 .OrderByDescending(d => d.CreatedOn)
                 .Take(RecentResourceCap)
                 .Select(d => d.Id)
@@ -152,15 +155,14 @@ public class GetActionTimeline
                 .Select(m => m.Id)
                 .ToListAsync(cancellationToken);
 
-            var customer = customerActionAuditRepository.GetQueryable()
-                .Where(a => a.UserId == userId);
-            var admin = adminActionAuditRepository.GetQueryable()
+            var customer = customerActionAuditRepository.GetQueryableForUser(userId);
+            var admin = adminActionAuditRepository.GetQueryableIgnoringTenant()
                 .Where(a => a.ResourceId != null && (
                     (a.ResourceType == nameof(User) && a.ResourceId == userId)
                     || (a.ResourceType == nameof(Order) && orderIds.Contains(a.ResourceId))
                     || (a.ResourceType == nameof(Dispute) && disputeIds.Contains(a.ResourceId))
                     || (a.ResourceType == nameof(UserMembership) && membershipIds.Contains(a.ResourceId))));
-            var employee = employeeActionAuditRepository.GetQueryable()
+            var employee = employeeActionAuditRepository.GetQueryableIgnoringTenant()
                 .Where(a => orderIds.Contains(a.OrderId));
 
             return (customer, admin, employee);

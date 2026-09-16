@@ -39,7 +39,7 @@ public sealed class CreateDisputeAuditEvidenceTests
     }
 
     private CreateDispute.Handler CreateHandler() =>
-        new(_disputeRepository.Object, _orderRepository.Object, _session.Object, _auditContext);
+        new(_disputeRepository.Object, Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session), _session.Object, Mock.Of<ITenantProvider>(), _auditContext);
 
     private Order ArrangeOrder(string? ownerUserId = CallerUserId, DateTime? cleaningDateTime = null, DateTime? completedAt = null)
     {

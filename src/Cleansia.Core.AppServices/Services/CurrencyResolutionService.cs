@@ -9,6 +9,14 @@ public sealed class CurrencyResolutionService(
     ICountryConfigurationRepository countryConfigurationRepository,
     ICurrencyRepository currencyRepository) : ICurrencyResolutionService
 {
+    public async Task<Currency?> ResolveCurrencyForServingEmployeeAsync(string userId, string employeeId, CancellationToken cancellationToken)
+    {
+        var employee = await employeeRepository.GetServingCustomerAsync(employeeId, userId, cancellationToken);
+        return string.IsNullOrEmpty(employee?.WorkCountryId)
+            ? null
+            : await ResolveCurrencyForCountryAsync(employee.WorkCountryId, cancellationToken);
+    }
+
     public async Task<Currency> ResolveCurrencyForEmployeeAsync(
         string employeeId,
         CancellationToken cancellationToken)

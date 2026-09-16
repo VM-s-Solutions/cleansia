@@ -122,11 +122,20 @@ public sealed class OrderFactory(
         string? appliedMembershipPlanId = applied.MembershipAmount > 0m ? membershipPlanId : null;
         LoyaltyTier? appliedTierAtPurchase = applied.TierAmount > 0m ? tierAtPurchase : null;
 
+        // Saved addresses remain on the account; the operator needs its own visible address snapshot.
+        var address = input.Address;
+        if (address.TenantId is not null && input.OperatorTenantId is not null && address.TenantId != input.OperatorTenantId)
+        {
+            address = Core.Domain.Users.Address.Create(address.Street, address.City, address.ZipCode,
+                address.CountryId, address.State, address.Latitude, address.Longitude);
+            address.TenantId = input.OperatorTenantId;
+        }
+
         var order = Order.Create(
             input.CustomerName,
             input.CustomerEmail,
             input.CustomerPhone,
-            input.Address,
+            address,
             input.Rooms,
             input.Bathrooms,
             input.CleaningDate,
@@ -150,6 +159,7 @@ public sealed class OrderFactory(
             accessMode: input.AccessMode);
 
         order.SetCurrency(input.Currency);
+        order.TenantId = input.OperatorTenantId;
 
         // EVERY LINE SNAPSHOTS ITS OWN PRICE HERE, and this is the only place that happens. Before
         // these columns existed the lines were pure join rows, so the refund allocator, the receipt PDF
@@ -275,9 +285,11 @@ public sealed class OrderFactory(
 
         // VAT breakdown — gracefully degrade when there's no company info
         // configured for the country (sets net = total, vat = 0).
+        // The issuer is pinned to the address-market operator.
         var countryId = input.Address.CountryId;
-        var companyInfo = await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
-                          ?? await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+        var companyInfo = (input.OperatorTenantId is { } operatorTenantId
+                              ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, countryId, cancellationToken)
+                              : await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken));
         if (companyInfo != null)
         {
             var countryConfig = await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);

@@ -114,7 +114,7 @@ public sealed class CustomerActionAuditImmutabilityTests
     }
 
     [Fact]
-    public void The_Repository_Interface_Adds_Only_The_Two_Erasure_Writes_And_The_Retention_Delete()
+    public void The_Repository_Interface_Adds_Only_The_Two_Erasure_Writes_The_Retention_Delete_And_The_By_User_Reads()
     {
         var declared = typeof(ICustomerActionAuditRepository)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
@@ -125,6 +125,9 @@ public sealed class CustomerActionAuditImmutabilityTests
         Assert.Equal(
             [
                 nameof(ICustomerActionAuditRepository.DeleteExpiredAsync),
+                nameof(ICustomerActionAuditRepository.GetCountForUserAsync),
+                nameof(ICustomerActionAuditRepository.GetPagedSortForUser),
+                nameof(ICustomerActionAuditRepository.GetQueryableForUser),
                 nameof(ICustomerActionAuditRepository.PseudonymiseForSubjectAsync),
                 nameof(ICustomerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync)
             ],

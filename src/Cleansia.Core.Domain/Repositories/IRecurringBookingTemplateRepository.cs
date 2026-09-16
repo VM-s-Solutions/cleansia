@@ -9,6 +9,7 @@ namespace Cleansia.Core.Domain.Repositories;
 /// </summary>
 public interface IRecurringBookingTemplateRepository : IRepository<RecurringBookingTemplate, string>
 {
+    Task<RecurringBookingTemplate?> GetByIdForOwnerAsync(string id, string userId, CancellationToken cancellationToken);
     /// <summary>
     /// All templates owned by a user, both active and paused, ordered with
     /// active first then by creation date. Used by the customer Plus UI to

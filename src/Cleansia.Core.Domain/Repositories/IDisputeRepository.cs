@@ -1,4 +1,6 @@
+using System.Linq.Expressions;
 using Cleansia.Core.Domain.Disputes;
+using Cleansia.Core.Domain.Sorting.Common;
 
 namespace Cleansia.Core.Domain.Repositories;
 
@@ -48,4 +50,21 @@ public interface IDisputeRepository : IRepository<Dispute, string>
     /// mutation so the commit lands under the dispute's tenant.
     /// </summary>
     Task<Dispute?> GetByStripeDisputeIdIgnoringTenantAsync(string stripeDisputeId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The caller's own disputes across every operating company — a dispute is stamped with its
+    /// ORDER's operator, and a customer who booked across the border filed it under a company that is
+    /// not their own. Past the tenant filter, re-pinned by <paramref name="userId"/>, which MUST be the
+    /// caller's own id from their JWT (S8; the same shape as <c>IOrderRepository.GetQueryableForOwner</c>).
+    /// Staff read their own company's disputes through the filter, never through this.
+    /// </summary>
+    IQueryable<Dispute> GetQueryableForOwner(string userId);
+
+    Task<Dispute?> GetDisputeWithDetailsForOwnerAsync(string disputeId, string userId, CancellationToken cancellationToken);
+
+    Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Dispute, bool>>? filter, CancellationToken cancellationToken);
+
+    IQueryable<Dispute> GetPagedSortForOwner<TSort>(
+        string userId, int offset, int limit, Expression<Func<Dispute, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Dispute>;
 }

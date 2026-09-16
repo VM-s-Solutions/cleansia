@@ -32,6 +32,29 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 public class CreateOrderHandlerCharacterizationTests
 {
+    [Fact]
+    public async Task The_Market_Operator_Is_Active_Before_The_Factory_Adds_The_Order()
+    {
+        var ambient = "account-company";
+        _tenantProvider.Setup(t => t.GetCurrentTenantId()).Returns(() => ambient);
+        _tenantProvider.Setup(t => t.SetTenantOverride(It.IsAny<string>())).Callback<string>(id => ambient = id);
+        _orderFactory.Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback<CreateOrderInput, CancellationToken>((input, _) =>
+            {
+                Assert.Equal("tenant-1", ambient);
+                Assert.Equal("tenant-1", input.OperatorTenantId);
+            })
+            .ReturnsAsync((CreateOrderInput input, CancellationToken _) =>
+                OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+                {
+                    Id = CreatedOrderId, UserId = input.UserId, TenantId = input.OperatorTenantId,
+                    CustomerAddress = input.Address, PaymentType = PaymentType.Cash, TotalPrice = input.RawSubtotal
+                }));
+        var result = await CreateHandler().Handle(CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash), CancellationToken.None);
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal("tenant-1", ambient);
+    }
+
     private const string UserId = "user-1";
     private const string CreatedOrderId = "order-created-1";
     private const string ConfirmationCode = "ABC123";
@@ -52,6 +75,7 @@ public class CreateOrderHandlerCharacterizationTests
     private readonly Mock<IOrderPricingCalculator> _pricingCalculator = new();
     private readonly Mock<IOrderFactory> _orderFactory = new();
     private readonly Mock<IAddressGeocoder> _addressGeocoder = new();
+    private readonly Mock<ITenantProvider> _tenantProvider = new();
 
     public CreateOrderHandlerCharacterizationTests()
     {
@@ -147,6 +171,8 @@ public class CreateOrderHandlerCharacterizationTests
             _creditAccountRepository.Object,
             new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object),
             LegalDocumentFixtures.Resolver().Object,
+            OrderMarketDoubles.OperatedBy("tenant-1"),
+            _tenantProvider.Object,
             new AuditContext(),
             NullLogger<CreateOrder.Handler>.Instance);
 

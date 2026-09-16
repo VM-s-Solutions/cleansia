@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
@@ -77,6 +78,7 @@ public class MaterializeRecurringBookingTemplate
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
         IUserMembershipRepository userMembershipRepository,
+        IOperatorTenantResolver operatorTenantResolver,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
@@ -103,13 +105,11 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
-            // Scoped ITenantProvider, so this override is confined to this template's scope and cannot
-            // leak into the next one even if this handler throws. The clear is belt-and-braces for hosts
-            // that hand out a longer-lived provider.
+            // Membership and saved-address reads belong to the template owner's account.
             tenantProvider.ClearTenantOverride();
-            if (!string.IsNullOrEmpty(template.TenantId))
+            if (!string.IsNullOrEmpty(template.User.TenantId))
             {
-                tenantProvider.SetTenantOverride(template.TenantId);
+                tenantProvider.SetTenantOverride(template.User.TenantId);
             }
 
             // A recurring schedule is a Cleansia Plus benefit, and owner ruling 2026-09-08 (T-0690) is
@@ -227,6 +227,17 @@ public class MaterializeRecurringBookingTemplate
             var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
                 address.CountryId, cancellationToken);
 
+            // Re-resolve the address market on each tick; a closed market creates no occurrences.
+            var operatorResolution = await operatorTenantResolver.ResolveAsync(address.CountryId, cancellationToken);
+            if (!operatorResolution.IsMarket || operatorResolution.OperatorTenantId is null)
+            {
+                logger.LogWarning(
+                    "Template {TemplateId} skipped: country {CountryId} of its address is not a serviced market with an "
+                    + "operating company. The schedule is preserved and resumes if the market reopens",
+                    template.Id, address.CountryId);
+                return BusinessResult.Success(new Response(0));
+            }
+
             // Recurring orders are scheduled days/weeks in advance,
             // so the express surcharge never applies — pass null
             // CleaningDate to skip the surcharge check. Extras aren't
@@ -252,6 +263,8 @@ public class MaterializeRecurringBookingTemplate
                 new[] { template.User.FirstName, template.User.LastName }
                     .Where(s => !string.IsNullOrWhiteSpace(s)));
 
+            tenantProvider.SetTenantOverride(operatorResolution.OperatorTenantId);
+
             var ordersCreated = 0;
             foreach (var occurrence in pending)
             {
@@ -274,6 +287,7 @@ public class MaterializeRecurringBookingTemplate
                     // Explicitly null, not omitted: a recurring occurrence never draws an express
                     // waiver as a RULE, not as an accident of the template shape carrying no time.
                     ReservedExpressWaiver: null,
+                    OperatorTenantId: operatorResolution.OperatorTenantId,
                     PromoDiscountAmount: 0m,
                     PromoCodeId: null,
                     // Unfiltered on purpose: this sweep has no user session, and the factory's
@@ -293,7 +307,10 @@ public class MaterializeRecurringBookingTemplate
             // the per-scope split: CleansiaDbContext stamps TenantId on every Added ITenantEntity from the
             // tenant that is ambient AT COMMIT TIME, and the tests drive this handler directly, without a
             // pipeline to commit for them. The occurrences and the LastMaterializedFor marker land in this
-            // one transaction — that is the atom.
+            // one transaction — that is the atom. The ambient tenant is switched to the market's operator
+            // first, so the occurrences' children (their status rows) land beside the occurrences; the
+            // template's marker keeps the template's company.
+            tenantProvider.SetTenantOverride(operatorResolution.OperatorTenantId);
             await unitOfWork.CommitAsync(cancellationToken);
 
             return BusinessResult.Success(new Response(ordersCreated));

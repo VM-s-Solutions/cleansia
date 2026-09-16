@@ -21,4 +21,16 @@ public interface IOrderAccessService
     bool IsCustomerCaller();
 
     Task<string?> GetCallerEmployeeIdAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Owner-pinned across companies for a customer; tenant-filtered for staff.
+    /// Handlers must still apply the access or browse gate to the returned order.
+    /// </summary>
+    IQueryable<Order> OrdersForCaller();
+
+    /// <summary>The detail graph of one order out of <see cref="OrdersForCaller"/>, or null.</summary>
+    Task<Order?> LoadOrderForCallerAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>The validators' existence check over <see cref="OrdersForCaller"/>.</summary>
+    Task<bool> OrderExistsForCallerAsync(string orderId, CancellationToken cancellationToken);
 }

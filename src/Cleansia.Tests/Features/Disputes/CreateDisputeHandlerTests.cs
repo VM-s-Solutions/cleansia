@@ -51,8 +51,8 @@ public class CreateDisputeHandlerTests
         (CreateDispute.Handler)Activator.CreateInstance(
             typeof(CreateDispute.Handler),
             _disputeRepository.Object,
-            _orderRepository.Object,
-            _session.Object,
+            Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
+            _session.Object, Mock.Of<ITenantProvider>(),
             new AuditContext())!;
 
     /// <summary>

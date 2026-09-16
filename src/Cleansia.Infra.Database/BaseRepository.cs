@@ -72,8 +72,20 @@ public abstract class BaseRepository<TEntity>(CleansiaDbContext context) : IRepo
 
     public virtual IQueryable<TEntity> GetPagedSort<TSort>(int offset, int limit, Expression<Func<TEntity, bool>>? filter, IEnumerable<SortDefinition> sortDefinitions)
         where TSort : BaseSort<TEntity>
+        => PagedSort<TSort>(GetQueryable(), offset, limit, filter, sortDefinitions);
+
+    protected static IQueryable<TEntity> PagedSort<TSort>(
+        IQueryable<TEntity> query,
+        int offset,
+        int limit,
+        Expression<Func<TEntity, bool>>? filter,
+        IEnumerable<SortDefinition> sortDefinitions)
+        where TSort : BaseSort<TEntity>
     {
-        var query = FilterData(filter);
+        if (filter is not null)
+        {
+            query = query.Where(filter);
+        }
 
         foreach (var (sort, index) in sortDefinitions.Select((value, i) => (value, i)))
         {

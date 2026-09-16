@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
@@ -71,13 +72,13 @@ public class CancelOrder
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderRepository orderRepository)
+        public Validator(IOrderAccessService orderAccessService)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderRepository.ExistsAsync)
+                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
 
             RuleFor(x => x.Reason)
@@ -87,8 +88,9 @@ public class CancelOrder
     }
 
     public class Handler(
-        IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider,
         IRefundService refundService,
         ICreditAccountRepository creditAccountRepository,
         ILoyaltyService loyaltyService,
@@ -102,8 +104,8 @@ public class CancelOrder
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var order = await orderRepository
-                .GetQueryable()
+            var order = await orderAccessService
+                .OrdersForCaller()
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
                     .ThenInclude(ae => ae.Employee)
@@ -137,6 +139,16 @@ public class CancelOrder
             var feeRate = assessment.FeeRate;
             var refundAmount = assessment.RefundAmount;
             var paymentStatusAtCancel = order.PaymentStatus;
+
+            // From here the request acts as the ORDER's operator, which for a booking made across the
+            // border is not the customer's own company: the status row, the refund (which commits
+            // mid-flight, on its own), and this act's audit row all belong in the market's books. The
+            // policy above was read first because it is the customer's own membership. Loyalty and credit
+            // below follow the account and read past the filter by the customer's id.
+            if (!string.IsNullOrEmpty(order.TenantId))
+            {
+                tenantProvider.SetTenantOverride(order.TenantId);
+            }
 
             order.Cancel(
                 cancelledAtUtc: now,

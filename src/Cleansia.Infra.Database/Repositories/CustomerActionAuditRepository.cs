@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.Repositories;
@@ -9,6 +11,22 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
     : BaseRepository<CustomerActionAudit>(context), ICustomerActionAuditRepository
 {
     private const int DeleteBatchSize = 100;
+
+    public IQueryable<CustomerActionAudit> GetQueryableForUser(string userId)
+    {
+        return GetQueryableIgnoringTenant().Where(a => a.UserId == userId);
+    }
+
+    public Task<int> GetCountForUserAsync(string userId, Expression<Func<CustomerActionAudit, bool>>? filter, CancellationToken cancellationToken)
+    {
+        var query = GetQueryableForUser(userId);
+        return (filter is null ? query : query.Where(filter)).CountAsync(cancellationToken);
+    }
+
+    public IQueryable<CustomerActionAudit> GetPagedSortForUser<TSort>(
+        string userId, int offset, int limit, Expression<Func<CustomerActionAudit, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<CustomerActionAudit>
+        => PagedSort<TSort>(GetQueryableForUser(userId), offset, limit, filter, sort);
 
     public async Task<int> PseudonymiseForSubjectAsync(string userId, CancellationToken cancellationToken)
     {

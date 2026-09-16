@@ -192,6 +192,7 @@ public class CreateRecurringBookingPreferredCleanerTests
             _savedAddressRepository.Object,
             _membershipRepository.Object,
             _session.Object,
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
             new AuditContext());
 
     private static CreateRecurringBooking.Command CommandWith(string? preferredEmployeeId) =>

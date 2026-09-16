@@ -17,6 +17,7 @@ using Moq;
 using Stripe;
 using Constants = Cleansia.Core.AppServices.Common.Constants;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
+using Cleansia.Tests.Common;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -97,10 +98,11 @@ public class OrderConfirmedHonestProducerTests
         session.Setup(s => s.GetUserId()).Returns(CustomerUserId);
 
         var result = await new ConfirmRecurringOrder.Handler(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, session),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
+            Mock.Of<ITenantProvider>(),
             new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>().Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,

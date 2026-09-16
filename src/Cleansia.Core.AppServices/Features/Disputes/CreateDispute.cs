@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
@@ -18,13 +19,13 @@ public class CreateDispute
 {
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderRepository orderRepository)
+        public Validator(IOrderAccessService orderAccessService)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(orderRepository.ExistsAsync)
+                .MustAsync(orderAccessService.OrderExistsForCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
 
             RuleFor(x => x.Reason)
@@ -98,8 +99,9 @@ public class CreateDispute
 
     public class Handler(
         IDisputeRepository disputeRepository,
-        IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider,
+        ITenantProvider tenantProvider,
         IAuditContext auditContext) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
@@ -109,15 +111,23 @@ public class CreateDispute
             // Inner ownership gate (ADR-0001 §D2 [OWN-DATA], S3): the
             // CanCreateDispute → CustomerOnly policy is the coarse outer gate; this
             // handler check decides *which* customer's order may be disputed and holds
-            // on any invocation path. Loaded via the tenant-filtered GetByIdAsync (S8 —
-            // never IgnoreQueryFilters). A non-owner gets the not-found business error
+            // on any invocation path. The load is the caller's own orders in every operating
+            // company, pinned by their id (S8). A non-owner gets the not-found business error
             // (NotFound, not Forbidden) so a missing order and someone else's order are
             // indistinguishable.
-            var order = await orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+            var order = await orderAccessService.LoadOrderForCallerAsync(request.OrderId, cancellationToken);
 
             if (order is null || order.UserId != userId)
             {
                 return BusinessResult.Failure<Response>(new Error(nameof(request.OrderId), BusinessErrorMessage.OrderNotFound));
+            }
+
+            // The dispute is a claim against the ORDER's operator and lives in that company's books,
+            // like the chargeback path's rows do: the open-dispute read below, the row added and this
+            // act's audit row all take the order's tenant, not the customer's.
+            if (!string.IsNullOrEmpty(order.TenantId))
+            {
+                tenantProvider.SetTenantOverride(order.TenantId);
             }
 
             // You cannot report a clean that has not happened yet. Nothing stopped it before: the

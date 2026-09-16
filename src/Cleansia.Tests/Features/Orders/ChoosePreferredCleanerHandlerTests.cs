@@ -270,7 +270,8 @@ public class ChoosePreferredCleanerHandlerTests
             _session.Object,
             _resolver.Object,
             _notificationProducer.Object,
-            _userMembershipRepository.Object);
+            _userMembershipRepository.Object,
+            Mock.Of<ITenantProvider>());
 
     private void GrantOnResolve()
     {
@@ -315,7 +316,7 @@ public class ChoosePreferredCleanerHandlerTests
         order.GrantPreferredHold(
             FirstChoiceId, lapsesAt, lapsesAt.AddHours(-2), BookingPolicy.MaxPreferredOfferRounds);
 
-        _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository.Setup(r => r.GetQueryableForOwner(It.IsAny<string>())).Returns(new[] { order }.AsQueryable().BuildMock());
         return order;
     }
 

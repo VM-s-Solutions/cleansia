@@ -68,6 +68,8 @@ public record CreateOrderInput(
     /// template shape.
     /// </summary>
     MembershipBenefitUsage? ReservedExpressWaiver,
+    /// <summary>Address-market operator resolved by the caller, used for order and issuer ownership.</summary>
+    string? OperatorTenantId,
     /// <summary>
     /// Optional promo discount + code id from <c>PromoCodeService.Preview</c>.
     /// Caller computes; factory only feeds these into best-of-three.

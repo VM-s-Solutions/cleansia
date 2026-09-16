@@ -37,7 +37,7 @@ public class DeleteRecurringBooking
 
         private async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken)
         {
-            return await _templateRepository.GetByIdAsync(id, cancellationToken) != null;
+            return await _templateRepository.GetByIdForOwnerAsync(id, _userSessionProvider.GetUserId() ?? string.Empty, cancellationToken) != null;
         }
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
@@ -48,18 +48,19 @@ public class DeleteRecurringBooking
                 return false;
             }
 
-            var template = await _templateRepository.GetByIdAsync(id, cancellationToken);
+            var template = await _templateRepository.GetByIdForOwnerAsync(id, _userSessionProvider.GetUserId() ?? string.Empty, cancellationToken);
             return template != null && template.UserId == userId;
         }
     }
 
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
+        IUserSessionProvider userSessionProvider,
         IAuditContext auditContext) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
-            var template = (await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken))!;
+            var template = (await templateRepository.GetByIdForOwnerAsync(command.TemplateId, userSessionProvider.GetUserId()!, cancellationToken))!;
             templateRepository.Remove(template);
             auditContext.RecordEvidence("RecurringBookingTemplate", template.Id,
                 new RecurringTemplateEvidence(Before: RecurringTemplateFacts.Of(template), After: null));

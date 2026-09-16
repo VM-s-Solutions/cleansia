@@ -58,6 +58,11 @@ public class GetPagedCustomerActionAuditsHandlerTests
             .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<CustomerActionAudit, bool>>>(), It.IsAny<CancellationToken>()))
             .Callback<Expression<Func<CustomerActionAudit, bool>>?, CancellationToken>((f, _) => captureFilter?.Invoke(f))
             .ReturnsAsync(total);
+        _repository.Setup(r => r.GetCountForUserAsync(It.IsAny<string>(), It.IsAny<Expression<Func<CustomerActionAudit, bool>>>(), It.IsAny<CancellationToken>()))
+            .Callback<string, Expression<Func<CustomerActionAudit, bool>>?, CancellationToken>((_, f, _) => captureFilter?.Invoke(f))
+            .ReturnsAsync(total);
+        _repository.Setup(r => r.GetPagedSortForUser<CustomerActionAuditSort>(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Expression<Func<CustomerActionAudit, bool>>>(), It.IsAny<IEnumerable<SortDefinition>>()))
+            .Returns(rows.AsQueryable().BuildMock());
         _repository
             .Setup(r => r.GetPagedSort<CustomerActionAuditSort>(
                 It.IsAny<int>(), It.IsAny<int>(),

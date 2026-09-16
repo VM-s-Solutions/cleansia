@@ -50,7 +50,8 @@ public sealed record OrderListAddressRow(
     string City,
     string ZipCode,
     double? Latitude,
-    double? Longitude);
+    double? Longitude,
+    string? CountryId = null);
 
 public sealed record OrderListCurrencyRow(
     string Id,

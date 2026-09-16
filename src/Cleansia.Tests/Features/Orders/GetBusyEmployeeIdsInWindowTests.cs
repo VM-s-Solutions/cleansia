@@ -113,11 +113,12 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
     }
 
     [Fact]
-    public async Task Another_Tenants_Commitment_Is_Invisible()
+    public async Task A_Proven_Cleaner_Is_Busy_Across_Operators_And_Unrelated_Cleaners_Stay_Excluded()
     {
         await SeedAsync("busy-foreign-tenant", BusyCleaner, SeedTenantId);
 
-        Assert.Empty(await ProbeAsync([BusyCleaner], callerTenantId: OtherTenantId));
+        Assert.Equal([BusyCleaner], await ProbeAsync([BusyCleaner], callerTenantId: OtherTenantId));
+        Assert.Empty(await ProbeAsync(["unrelated-cleaner"], callerTenantId: OtherTenantId));
         Assert.Equal([BusyCleaner], await ProbeAsync([BusyCleaner], callerTenantId: SeedTenantId));
     }
 

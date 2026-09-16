@@ -38,7 +38,8 @@ public static class OrderMappers
                     o.CustomerAddress.City,
                     o.CustomerAddress.ZipCode,
                     o.CustomerAddress.Latitude,
-                    o.CustomerAddress.Longitude),
+                    o.CustomerAddress.Longitude,
+                    o.CustomerAddress.CountryId),
             o.DisplayOrderNumber,
             o.Rooms,
             o.Bathrooms,
@@ -170,7 +171,8 @@ public static class OrderMappers
             EstimatedCleanerPay: null,
             CustomerAddressLatitude: row.Address?.Latitude,
             CustomerAddressLongitude: row.Address?.Longitude,
-            HasReview: row.HasReview);
+            HasReview: row.HasReview,
+            CountryId: row.Address?.CountryId);
     }
 
     public static OrderListItem MapToDto(this Order order)
@@ -217,7 +219,8 @@ public static class OrderMappers
             EstimatedCleanerPay: null,
             CustomerAddressLatitude: order.CustomerAddress?.Latitude,
             CustomerAddressLongitude: order.CustomerAddress?.Longitude,
-            HasReview: order.Reviews.Count > 0
+            HasReview: order.Reviews.Count > 0,
+            CountryId: order.CustomerAddress?.CountryId
         );
     }
 
@@ -237,7 +240,8 @@ public static class OrderMappers
         bool hasAfterPhotos = false,
         bool isCustomerCaller = false,
         bool? expressWaiverForfeitedOnCancel = null,
-        PreferredOfferDetails? preferredOffer = null)
+        PreferredOfferDetails? preferredOffer = null,
+        string? customerCompany = null)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -303,7 +307,8 @@ public static class OrderMappers
             IsAssignedToCurrentUser: isAssignedToCurrentUser,
             HasAfterPhotos: hasAfterPhotos,
             ExpressWaiverForfeitedOnCancel: expressWaiverForfeitedOnCancel,
-            PreferredOffer: preferredOffer
+            PreferredOffer: preferredOffer,
+            CustomerCompany: customerCompany
         );
     }
 

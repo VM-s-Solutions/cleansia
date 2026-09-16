@@ -52,7 +52,7 @@ public class PartialRefundLoyaltyClawbackTests
         account.Id = "acct-1";
         account.GrantPoints(originalEarn, LoyaltyEarnSource.OrderCompleted, OrderId, ActorId, DefaultThresholds());
         _accountRepository
-            .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUserIdIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
         return account;
     }
@@ -300,7 +300,7 @@ public class PartialRefundLoyaltyClawbackTests
 
         await CreateService().RevokeForPartialRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
 
-        _accountRepository.Verify(r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _accountRepository.Verify(r => r.GetByUserIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 

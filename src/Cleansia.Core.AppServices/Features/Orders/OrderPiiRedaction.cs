@@ -64,6 +64,7 @@ public static class OrderPiiRedaction
             Review = null,
             ExpressWaiverForfeitedOnCancel = null,
             PreferredOffer = null,
+            CustomerCompany = null,
         };
 
     /// <summary>

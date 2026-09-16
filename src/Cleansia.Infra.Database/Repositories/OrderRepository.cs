@@ -1,7 +1,9 @@
-﻿using Cleansia.Core.Domain.Enums;
+﻿using System.Linq.Expressions;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.Repositories;
@@ -83,13 +85,36 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .CountAsync(cancellationToken);
     }
 
+    public IQueryable<Order> GetQueryableForOwner(string userId)
+    {
+        // The caller supplies the session user or a user from an already-authorized order.
+        return GetQueryableIgnoringTenant().Where(o => o.UserId == userId);
+    }
+
+    public Task<Order?> GetByIdForOwnerAsync(string id, string userId, CancellationToken cancellationToken)
+    {
+        return WithDetailGraph(GetQueryableForOwner(userId))
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public Task<int> GetCountForOwnerAsync(string userId, Expression<Func<Order, bool>>? filter, CancellationToken cancellationToken)
+    {
+        var query = GetQueryableForOwner(userId);
+        return (filter is null ? query : query.Where(filter)).CountAsync(cancellationToken);
+    }
+
+    public IQueryable<Order> GetPagedSortForOwner<TSort>(
+        string userId, int offset, int limit, Expression<Func<Order, bool>>? filter, IEnumerable<SortDefinition> sort)
+        where TSort : BaseSort<Order>
+        => PagedSort<TSort>(GetQueryableForOwner(userId), offset, limit, filter, sort);
+
     public async Task<CustomerProfileStats> GetCustomerProfileStatsAsync(string userId, CancellationToken cancellationToken)
     {
         // One repository call for the profile hero card: bookings placed, money
-        // saved, and the currency to render it in. GetDbSet() carries the tenant
-        // filter; UserId scopes to the caller. No Includes — aggregates and a
-        // projection only.
-        var userOrders = GetDbSet().Where(o => o.UserId == userId);
+        // saved, and the currency to render it in. UserId scopes to the caller,
+        // across every company their bookings landed in. No Includes — aggregates
+        // and a projection only.
+        var userOrders = GetQueryableForOwner(userId);
 
         // Bookings = every order the user placed, any status.
         var totalBookings = await userOrders.CountAsync(cancellationToken);
@@ -105,8 +130,8 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // Discount amounts are denominated in each order's OWN currency, so we
         // report a single figure in ONE currency — the user's most recent
         // realized order — and sum only the orders in that currency. Summing
-        // across currencies would add unlike units (CZK + EUR); for this
-        // single-country-per-user product that currency is stable, and this
+        // across currencies would add unlike units (CZK + EUR) — and a customer
+        // who books across markets holds orders in more than one — so this
         // keeps the hero stat a correct, correctly-labelled scalar.
         var savingsCurrencyCode = await realizedOrders
             .OrderByDescending(o => o.CreatedOn)
@@ -177,7 +202,13 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
 
     public override Task<Order?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        return WithDetailGraph(GetDbSet())
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    private static IQueryable<Order> WithDetailGraph(IQueryable<Order> orders)
+    {
+        return orders
             .Include(o => o.OrderStatusHistory)
             .Include(o => o.Currency)
             .Include(o => o.SelectedServices)
@@ -195,8 +226,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Include(o => o.OrderNotes)
             .Include(o => o.OrderIssues)
             .Include(o => o.Reviews)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            .AsSplitQuery();
     }
 
     public Task<Order?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken)
@@ -341,7 +371,8 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // date band) then sit together on IX_Orders_CurrentStatus_CleaningDateTime and the semi-join
         // runs on IX_OrderEmployees_OrderId. Driving from the employee index would prune the date band
         // only AFTER the join, walking each candidate's whole assignment history.
-        var busy = await LiveCommitmentsInWindow(GetDbSet(), windowStartUtc, windowEndUtc)
+        // Employee ids come from the caller's completed orders or an authorized preferred offer.
+        var busy = await LiveCommitmentsInWindow(GetQueryableIgnoringTenant(), windowStartUtc, windowEndUtc)
             .SelectMany(o => o.AssignedEmployees)
             .Where(ae => employeeIds.Contains(ae.EmployeeId))
             .Select(ae => ae.EmployeeId)
@@ -392,7 +423,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // actually finished. Past Completed orders qualify; in-flight
         // ones don't (you can't request "the cleaner I'm currently with" as a
         // preference for a future booking — they need to have finished one).
-        return await GetDbSet()
+        return await GetQueryableForOwner(userId)
             .Where(o => o.UserId == userId
                 && o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
                 && o.CurrentStatus == OrderStatus.Completed)
@@ -406,6 +437,10 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Select(o => new OrderOwnerAndCurrency(o.UserId, o.CurrencyId))
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public Task<OrderOwnerAndCurrency?> GetOwnerAndCurrencyAsync(string orderId, string userId, CancellationToken cancellationToken)
+        => GetQueryableForOwner(userId).Where(o => o.Id == orderId)
+            .Select(o => new OrderOwnerAndCurrency(o.UserId, o.CurrencyId)).FirstOrDefaultAsync(cancellationToken);
 
     public async Task<(double? Average, int Count)> GetAverageRatingForEmployeeAsync(
         string employeeId, CancellationToken cancellationToken)

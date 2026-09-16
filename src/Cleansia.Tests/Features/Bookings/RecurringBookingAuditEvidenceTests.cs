@@ -68,7 +68,7 @@ public sealed class RecurringBookingAuditEvidenceTests
             endsOn: null,
             preferredEmployeeId: "emp-favourite");
         template.Id = TemplateId;
-        _templateRepository.Setup(r => r.GetByIdAsync(TemplateId, It.IsAny<CancellationToken>())).ReturnsAsync(template);
+        _templateRepository.Setup(r => r.GetByIdForOwnerAsync(TemplateId, It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(template);
         return template;
     }
 
@@ -117,7 +117,7 @@ public sealed class RecurringBookingAuditEvidenceTests
         _templateRepository.Setup(r => r.Add(It.IsAny<RecurringBookingTemplate>())).Callback<RecurringBookingTemplate>(t => added = t);
 
         var result = await new CreateRecurringBooking.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _membershipRepository.Object, _session.Object, _auditContext)
+                _templateRepository.Object, _savedAddressRepository.Object, _membershipRepository.Object, _session.Object, Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"), _auditContext)
             .Handle(new CreateRecurringBooking.Command(
                 Frequency: (int)RecurrenceFrequency.Weekly, DayOfWeek: (int)System.DayOfWeek.Tuesday, TimeOfDay: "09:00",
                 Rooms: 2, Bathrooms: 1, SavedAddressId: SavedAddressId, SelectedServiceIds: ["service-1"], SelectedPackageIds: [],
@@ -141,7 +141,7 @@ public sealed class RecurringBookingAuditEvidenceTests
         ArrangeExistingTemplate();
 
         var result = await new UpdateRecurringBooking.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, _auditContext)
+                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"), _auditContext)
             .Handle(new UpdateRecurringBooking.Command(
                 TemplateId, Frequency: (int)RecurrenceFrequency.Biweekly, DayOfWeek: (int)System.DayOfWeek.Friday, TimeOfDay: "14:30",
                 Rooms: 3, Bathrooms: 2, SavedAddressId: SavedAddressId, SelectedServiceIds: ["service-1", "service-2"],
@@ -166,7 +166,7 @@ public sealed class RecurringBookingAuditEvidenceTests
     {
         ArrangeExistingTemplate();
 
-        var result = await new SetRecurringBookingActive.Handler(_templateRepository.Object, _auditContext)
+        var result = await new SetRecurringBookingActive.Handler(_templateRepository.Object, _session.Object, _auditContext)
             .Handle(new SetRecurringBookingActive.Command(TemplateId, IsActive: false), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -180,7 +180,7 @@ public sealed class RecurringBookingAuditEvidenceTests
     {
         ArrangeExistingTemplate();
 
-        var result = await new DeleteRecurringBooking.Handler(_templateRepository.Object, _auditContext)
+        var result = await new DeleteRecurringBooking.Handler(_templateRepository.Object, _session.Object, _auditContext)
             .Handle(new DeleteRecurringBooking.Command(TemplateId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -200,7 +200,7 @@ public sealed class RecurringBookingAuditEvidenceTests
             .ReturnsAsync((UserMembership?)null);
 
         var result = await new CreateRecurringBooking.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _membershipRepository.Object, _session.Object, _auditContext)
+                _templateRepository.Object, _savedAddressRepository.Object, _membershipRepository.Object, _session.Object, Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"), _auditContext)
             .Handle(new CreateRecurringBooking.Command(
                 Frequency: (int)RecurrenceFrequency.Weekly, DayOfWeek: (int)System.DayOfWeek.Tuesday, TimeOfDay: "09:00",
                 Rooms: 2, Bathrooms: 1, SavedAddressId: SavedAddressId, SelectedServiceIds: ["service-1"], SelectedPackageIds: [],

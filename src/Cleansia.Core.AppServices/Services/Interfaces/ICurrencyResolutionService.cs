@@ -29,6 +29,9 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 /// </summary>
 public interface ICurrencyResolutionService
 {
+    /// <summary>Customer perk lookup pinned to their completed-order relationship with the cleaner.</summary>
+    Task<Currency?> ResolveCurrencyForServingEmployeeAsync(string userId, string employeeId, CancellationToken cancellationToken);
+
     Task<Currency> ResolveCurrencyForEmployeeAsync(
         string employeeId,
         CancellationToken cancellationToken);

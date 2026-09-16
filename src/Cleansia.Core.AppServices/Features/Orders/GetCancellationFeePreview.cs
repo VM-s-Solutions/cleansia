@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
@@ -57,7 +58,7 @@ public class GetCancellationFeePreview
     }
 
     public class Handler(
-        IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider,
         ICancellationPolicyResolver cancellationPolicyResolver,
         IExpressWaiverConsumer expressWaiverConsumer) : IQueryHandler<Query, Response>
@@ -67,8 +68,8 @@ public class GetCancellationFeePreview
             var userId = userSessionProvider.GetUserId()!;
             // AssignedEmployees without the Employee graph: the fee needs the row's existence, and the
             // customer is owed the price, not the roster.
-            var order = await orderRepository
-                .GetQueryable()
+            var order = await orderAccessService
+                .OrdersForCaller()
                 .Include(o => o.AssignedEmployees)
                 .Include(o => o.Currency)
                 .AsNoTracking()

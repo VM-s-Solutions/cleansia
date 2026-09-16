@@ -18,6 +18,14 @@ public class CompanyInfoRepository(CleansiaDbContext context) : BaseRepository<C
             .FirstOrDefaultAsync(c => c.CountryId == countryId && c.IsActive, cancellationToken);
     }
 
+    public async Task<CompanyInfo?> GetActiveForOperatorAsync(string operatorTenantId, string countryId, CancellationToken cancellationToken)
+    {
+        return await GetQueryableIgnoringTenant()
+            .Include(c => c.Country)
+            .FirstOrDefaultAsync(
+                c => c.TenantId == operatorTenantId && c.CountryId == countryId && c.IsActive, cancellationToken);
+    }
+
     public async Task<bool> ExistsActiveForCountryAsync(string countryId, CancellationToken cancellationToken)
     {
         return await GetDbSet().AnyAsync(c => c.CountryId == countryId && c.IsActive, cancellationToken);

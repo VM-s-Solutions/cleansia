@@ -121,6 +121,8 @@ public class CreateOrderExpressWaiverConsentTests
             _creditAccountRepository.Object,
             new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object),
             LegalDocumentFixtures.Resolver().Object,
+            OrderMarketDoubles.OperatedBy("tenant-1"),
+            Mock.Of<ITenantProvider>(),
             new AuditContext(),
             NullLogger<CreateOrder.Handler>.Instance);
 

@@ -11,6 +11,9 @@ public interface IReferralRepository : IRepository<Referral, string>
     /// </summary>
     Task<Referral?> GetByReferredUserIdAsync(string userId, CancellationToken cancellationToken);
 
+    /// <summary>Account referral and code, pinned to the owner of an already-authorized order.</summary>
+    Task<Referral?> GetForOrderOwnerAsync(string orderId, string userId, CancellationToken cancellationToken);
+
     /// <summary>
     /// Per-status counts of referrals where the given user is the referrer, computed with a single
     /// grouped query over the indexed ReferrerUserId — replaces materialising every row (with the

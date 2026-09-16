@@ -13,6 +13,7 @@ using Cleansia.Infra.Common.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Tests.Common;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -39,10 +40,11 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
 
     private ConfirmRecurringOrder.Handler CreateHandler() =>
         new(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, _session),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             _session.Object,
+            Mock.Of<ITenantProvider>(),
             new Mock<IStripeClient>().Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             new Mock<IPendingDispatch>().Object,

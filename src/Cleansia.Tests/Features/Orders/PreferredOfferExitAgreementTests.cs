@@ -191,13 +191,14 @@ public class PreferredOfferExitAgreementTests
 
     private GetOrderDetails.Handler CreateDetailHandler() =>
         new(
-            _orderRepository.Object,
             _orderAccessService.Object,
             _session.Object,
             _payConfigRepository.Object,
             _orderEmployeePayRepository.Object,
             _orderPhotoRepository.Object,
             _employeeRepository.Object,
+            Mock.Of<IUserRepository>(),
+            Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             _userMembershipRepository.Object);
 
@@ -207,7 +208,8 @@ public class PreferredOfferExitAgreementTests
             _session.Object,
             _resolver.Object,
             Mock.Of<INotificationProducer>(),
-            _userMembershipRepository.Object);
+            _userMembershipRepository.Object,
+            Mock.Of<ITenantProvider>());
 
     private void GiveTheCallerPlus() =>
         _userMembershipRepository
@@ -289,9 +291,12 @@ public class PreferredOfferExitAgreementTests
             order.AddAssignedEmployee(OrderEmployee.Create(order, NewCleaner(RivalId)));
         }
 
-        _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository.Setup(r => r.GetQueryableForOwner(It.IsAny<string>())).Returns(new[] { order }.AsQueryable().BuildMock());
         _orderRepository
             .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        _orderAccessService
+            .Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
     }
 

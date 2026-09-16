@@ -298,8 +298,8 @@ public class OrderSpanCapTests
             CataloguePriceDoubles.Services(Czk, (CreateOrderTestData.ServiceId, 500m, 100m)),
             CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)),
             Mock.Of<IPromoCodeService>(),
-            Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>(),
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 
@@ -321,5 +321,6 @@ public class OrderSpanCapTests
             SelectedPackageIds: [PackageId],
             RawSubtotal: 1500m,
             NowUtc: DateTime.UtcNow,
-            ReservedExpressWaiver: null);
+            ReservedExpressWaiver: null,
+            OperatorTenantId: null);
 }

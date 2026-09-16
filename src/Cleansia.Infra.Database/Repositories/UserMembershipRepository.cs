@@ -34,6 +34,8 @@ public class UserMembershipRepository(CleansiaDbContext context)
     {
         var now = DateTime.UtcNow;
         return ActiveForUserQuery(userId)
+            // Benefits follow the account even while an authorized order is operated elsewhere.
+            .IgnoreQueryFilters()
             .Where(m => m.TrialEndsAtUtc == null || m.TrialEndsAtUtc <= now);
     }
 

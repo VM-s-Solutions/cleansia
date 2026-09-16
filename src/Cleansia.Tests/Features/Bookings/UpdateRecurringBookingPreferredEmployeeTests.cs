@@ -43,7 +43,7 @@ public class UpdateRecurringBookingPreferredEmployeeTests
             .Setup(r => r.ExistsAsync(TemplateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _templateRepository
-            .Setup(r => r.GetByIdAsync(TemplateId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForOwnerAsync(TemplateId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BuildTemplate());
         _membershipRepository
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
@@ -88,7 +88,7 @@ public class UpdateRecurringBookingPreferredEmployeeTests
     private UpdateRecurringBooking.Validator CreateValidator() =>
         new(_templateRepository.Object, _membershipRepository.Object, _session.Object,
             _orderRepository.Object, _savedAddressRepository.Object,
-            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()));
+            OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"));
 
     private static UpdateRecurringBooking.Command CommandWith(string? preferredEmployeeId) =>
         new(

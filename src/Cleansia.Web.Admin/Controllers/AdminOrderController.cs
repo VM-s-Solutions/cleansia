@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.AppServices.Features.Users.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
@@ -38,6 +39,15 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<OrderItem>(result);
     }
+
+    [HttpGet("{orderId}/customer")]
+    [Permission(Policy.CanViewOrderCustomer)]
+    [ProducesResponseType(typeof(UserItem), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetOrderCustomer(string orderId, CancellationToken cancellationToken)
+        => HandleResult<UserItem>(await Mediator.Send(new GetOrderCustomer.Query(orderId), cancellationToken));
 
     // A Command, not a GET, and that is the point: AuditGate writes an audit row only for a
     // request type whose name ends in "Command". Entry instructions are a physical key to somebody's

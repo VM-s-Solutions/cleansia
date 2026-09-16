@@ -47,6 +47,8 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
 {
     private const string TenantA = "tenant-a";
     private const string TenantB = "tenant-b";
+    private const string CzechiaId = "country-cz";
+    private const string SlovakiaId = "country-sk";
 
     private readonly SqliteConnection _connection;
     private readonly MutableTenantProvider _tenantProvider = new();
@@ -75,8 +77,8 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
     public async Task Each_Templates_Orders_Are_Stamped_With_Their_Own_Tenant()
     {
         await SeedAsync(
-            Template("tmpl-a", "user-a", "saved-a", TenantA),
-            Template("tmpl-b", "user-b", "saved-b", TenantB));
+            Template("tmpl-a", "user-a", "saved-a", TenantA, CzechiaId),
+            Template("tmpl-b", "user-b", "saved-b", TenantB, SlovakiaId));
 
         var response = await RunSweepAsync();
 
@@ -93,8 +95,8 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
     public async Task A_Deactivated_Companys_Templates_Are_Skipped_And_The_Other_Companys_Materialise()
     {
         await SeedAsync(
-            Template("tmpl-a", "user-a", "saved-a", TenantA),
-            Template("tmpl-b", "user-b", "saved-b", TenantB));
+            Template("tmpl-a", "user-a", "saved-a", TenantA, CzechiaId),
+            Template("tmpl-b", "user-b", "saved-b", TenantB, SlovakiaId));
         await RegisterCompaniesAsync(deactivated: TenantB);
 
         var response = await RunSweepAsync();
@@ -128,8 +130,8 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
     public async Task Each_Templates_Status_Tracks_Are_Stamped_With_Their_Own_Tenant()
     {
         await SeedAsync(
-            Template("tmpl-a", "user-a", "saved-a", TenantA),
-            Template("tmpl-b", "user-b", "saved-b", TenantB));
+            Template("tmpl-a", "user-a", "saved-a", TenantA, CzechiaId),
+            Template("tmpl-b", "user-b", "saved-b", TenantB, SlovakiaId));
 
         await RunSweepAsync();
 
@@ -233,6 +235,9 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         // dedupe and per-template isolation, so the owner is simply entitled — otherwise the sweep
         // correctly generates nothing and their real subject never runs.
         services.AddScoped(_ => EntitledMemberships());
+        // Each occurrence lands in the books of the company that serves its address's market: the
+        // Czech address is company A's market, the Slovak one company B's.
+        services.AddScoped(_ => OrderMarketDoubles.Operators((CzechiaId, TenantA), (SlovakiaId, TenantB)));
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         // Only the one command the sweep sends. Registering the real MediatR would drag the whole
@@ -305,10 +310,10 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         return calculator.Object;
     }
 
-    private static TemplateFixture Template(string templateId, string userId, string savedAddressId, string? tenantId)
-        => new(templateId, userId, savedAddressId, tenantId);
+    private static TemplateFixture Template(string templateId, string userId, string savedAddressId, string? tenantId, string countryId)
+        => new(templateId, userId, savedAddressId, tenantId, countryId);
 
-    private sealed record TemplateFixture(string TemplateId, string UserId, string SavedAddressId, string? TenantId);
+    private sealed record TemplateFixture(string TemplateId, string UserId, string SavedAddressId, string? TenantId, string CountryId);
 
     private async Task SeedAsync(params TemplateFixture[] fixtures)
     {
@@ -323,13 +328,22 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         currency.Id = "currency-czk";
         currency.SetAsDefault(true);
         ctx.Set<Currency>().Add(currency);
+        var euro = Currency.Create("EUR", "€", "Euro");
+        euro.Id = "currency-eur";
+        euro.IsActive = true;
+        ctx.Set<Currency>().Add(euro);
 
         // The service address's country must resolve to a real currency: a named country with no
-        // configuration throws rather than falling back to the default.
-        var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
-        country.Id = "country-cz";
-        ctx.Set<Country>().Add(country);
-        ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create("country-cz", "CZK", "cs", 0.21m));
+        // configuration throws rather than falling back to the default. Two markets, one per company,
+        // because an occurrence is stamped with its address market's operator, not its template's tenant.
+        var czechia = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
+        czechia.Id = CzechiaId;
+        ctx.Set<Country>().Add(czechia);
+        ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create(CzechiaId, "CZK", "cs", 0.21m).AssignOperator(TenantA));
+        var slovakia = Country.Create("Slovakia", "SK", "SK", isServiced: true);
+        slovakia.Id = SlovakiaId;
+        ctx.Set<Country>().Add(slovakia);
+        ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create(SlovakiaId, "EUR", "sk", 0.20m).AssignOperator(TenantB));
 
         foreach (var fixture in fixtures)
         {
@@ -339,7 +353,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             user.TenantId = fixture.TenantId;
             ctx.Set<User>().Add(user);
 
-            var address = Address.Create("123 Main St", "Prague", "11000", "country-cz");
+            var address = Address.Create("123 Main St", "Prague", "11000", fixture.CountryId);
             address.Id = $"address-{fixture.TemplateId}";
             address.TenantId = fixture.TenantId;
             ctx.Set<Address>().Add(address);

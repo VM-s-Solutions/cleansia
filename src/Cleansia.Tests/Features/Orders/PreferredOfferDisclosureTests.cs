@@ -389,17 +389,21 @@ public class PreferredOfferDisclosureTests
         _orderRepository
             .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
+        _orderAccessService
+            .Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
     }
 
     private GetOrderDetails.Handler CreateDetailHandler() =>
         new(
-            _orderRepository.Object,
             _orderAccessService.Object,
             _session.Object,
             _payConfigRepository.Object,
             _orderEmployeePayRepository.Object,
             _orderPhotoRepository.Object,
             _employeeRepository.Object,
+            Mock.Of<IUserRepository>(),
+            Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             _userMembershipRepository.Object);
 

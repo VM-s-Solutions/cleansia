@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Moq;
@@ -15,6 +16,12 @@ namespace Cleansia.Tests.Features.Orders;
 /// </summary>
 internal static class OrderMarketDoubles
 {
+    public static ITenantProvider TenantAt(string tenantId)
+    {
+        var mock = new Mock<ITenantProvider>();
+        mock.Setup(t => t.GetCurrentTenantId()).Returns(tenantId);
+        return mock.Object;
+    }
     /// <summary>
     /// A single-market platform: every country, and no country, resolves to <paramref name="currency"/>,
     /// and every cleaner is paid in it.
@@ -25,6 +32,8 @@ internal static class OrderMarketDoubles
         mock.Setup(s => s.ResolveCurrencyForCountryAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
         mock.Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(currency);
+        mock.Setup(s => s.ResolveCurrencyForServingEmployeeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
         return mock.Object;
     }
@@ -60,6 +69,9 @@ internal static class OrderMarketDoubles
         mock.Setup(s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string employeeId, CancellationToken _) =>
                 cleaners.FirstOrDefault(c => c.EmployeeId == employeeId).Currency ?? platformDefault);
+        mock.Setup(s => s.ResolveCurrencyForServingEmployeeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, string employeeId, CancellationToken _) =>
+                cleaners.FirstOrDefault(c => c.EmployeeId == employeeId).Currency ?? platformDefault);
         return mock.Object;
     }
 
@@ -81,6 +93,30 @@ internal static class OrderMarketDoubles
                 It.IsAny<CreateOrder.Command>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((CreateOrder.Command command, string? _, CancellationToken _) =>
                 command.CustomerAddress?.CountryId);
+        return mock.Object;
+    }
+
+    /// <summary>One operating company serving every country: the single-market platform's operator map.</summary>
+    public static IOperatorTenantResolver OperatedBy(string tenantId)
+    {
+        var mock = new Mock<IOperatorTenantResolver>();
+        mock.Setup(r => r.ResolveAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new OperatorResolution(true, tenantId));
+        return mock.Object;
+    }
+
+    /// <summary>
+    /// The named countries are markets served by the named companies; any other country is not a market
+    /// — the shape of a holding with one company per country.
+    /// </summary>
+    public static IOperatorTenantResolver Operators(params (string CountryId, string TenantId)[] operators)
+    {
+        var mock = new Mock<IOperatorTenantResolver>();
+        mock.Setup(r => r.ResolveAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string? countryId, CancellationToken _) =>
+                operators.FirstOrDefault(o => o.CountryId == countryId) is { TenantId: { } tenantId }
+                    ? new OperatorResolution(true, tenantId)
+                    : OperatorResolution.NotAMarket);
         return mock.Object;
     }
 

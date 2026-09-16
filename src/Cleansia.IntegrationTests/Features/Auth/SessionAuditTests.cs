@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auditing;
 using Cleansia.Core.AppServices.Features.Auditing.DTOs;
@@ -218,13 +219,13 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
         BusinessResult<JwtTokenResponse> Refusal,
         PagedData<TimelineEntryDto> TimelineByUserAsSecondOperator,
         PagedData<CustomerActionAuditDto> ListByUserAsSecondOperator,
-        PagedData<TimelineEntryDto> TimelineByUserAsDefaultOperator);
+        RequestValidationException ForeignAccountRefusal);
 
     /// <summary>
     /// The row is the second operator's: the sink read the account it names past the tenant filter and
     /// stamped the row with the account's operator, not the default market's that the scope behaviour set
     /// for the anonymous request. The reads are what an admin of each operator sees through the global
-    /// filter: the victim's own operator finds the row by user on both reads; the default market's does not.
+    /// account gate: the subject's operator finds both reads; another company is refused.
     /// </summary>
     [Fact]
     public async Task A_Wrong_Password_On_A_Second_Operators_Account_Is_Stamped_With_That_Operator_And_Found_By_Both_Admin_Reads_By_User()
@@ -244,7 +245,8 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
                     {
                         Filter = new CustomerActionAuditFilter(CustomerId, null, null, null, null, null, null, null)
                     })),
-                    await ReadAsOperator(provider, TestTenants.Default, m => m.Send(new GetActionTimeline.Request { UserId = CustomerId })));
+                    await Assert.ThrowsAsync<RequestValidationException>(() =>
+                        ReadAsOperator(provider, TestTenants.Default, m => m.Send(new GetActionTimeline.Request { UserId = CustomerId }))));
             },
             assert: async (CleansiaDbContext context, RefusalObserved observed) =>
             {
@@ -270,7 +272,7 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.Equal(row.Id, listed.Id);
                 Assert.Equal(CustomerId, listed.UserId);
 
-                Assert.Empty(observed.TimelineByUserAsDefaultOperator.Data);
+                Assert.Contains(observed.ForeignAccountRefusal.Errors, error => error.Message == BusinessErrorMessage.NotExistingUserWithId);
             },
             transactional: false);
     }

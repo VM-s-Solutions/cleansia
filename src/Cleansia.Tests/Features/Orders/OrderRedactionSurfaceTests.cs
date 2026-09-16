@@ -58,6 +58,7 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.Review),
         nameof(OrderItem.ExpressWaiverForfeitedOnCancel),
         nameof(OrderItem.PreferredOffer),
+        nameof(OrderItem.CustomerCompany),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -130,6 +131,7 @@ public class OrderRedactionSurfaceTests
 
     private static readonly string[] ListKept =
     [
+        nameof(OrderListItem.CountryId),
         nameof(OrderListItem.Id),
         nameof(OrderListItem.CustomerAddressApproximate),
         nameof(OrderListItem.DisplayOrderNumber),
@@ -378,7 +380,8 @@ public class OrderRedactionSurfaceTests
             HasAfterPhotos: true,
             ExpressWaiverForfeitedOnCancel: true,
             PreferredOffer: new PreferredOfferDetails(
-                PreferredOfferState.AwaitingConfirmation, "Petra", DateTime.UtcNow.AddHours(2), true));
+                PreferredOfferState.AwaitingConfirmation, "Petra", DateTime.UtcNow.AddHours(2), true),
+            CustomerCompany: "Account company");
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(

@@ -16,6 +16,7 @@ using Moq;
 using Stripe;
 using Constants = Cleansia.Core.AppServices.Common.Constants;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
+using Cleansia.Tests.Common;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -238,10 +239,11 @@ public class PreferredOfferDeferredAnnouncementTests
         var stripeClient = new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>();
 
         return new ConfirmRecurringOrder.Handler(
-            _orderRepository.Object,
+            OrderAccessDoubles.Over(_orderRepository, session),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
+            Mock.Of<ITenantProvider>(),
             stripeClient.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
             _pending.Object,

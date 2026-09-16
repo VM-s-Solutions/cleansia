@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -172,17 +172,22 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.OrderAddressExactlyOneRequired)
                 .WithName(nameof(Command.CustomerAddress));
 
-            // TENANT AND CURRENCY ARE TWO READS OF ONE COUNTRY (ADR-0061 D6): the order's currency is
-            // the service address's country's, and its tenant is the ambient one — the claim, or for a
-            // guest the operator the scope behaviour resolved from the request's market. The two can
-            // disagree (a customer of one operator booking an address another operates; a guest whose
-            // request named no country while the address resolves to another market), and an order
-            // stamped with a tenant its own account cannot list is the outcome this refuses.
-            // UNCONDITIONAL — guest and authenticated alike (ADR-0061 D6).
+            // Guests must match their request's operator; customers may book any serviced market.
             RuleFor(x => x)
                 .MustAsync(AddressCountryIsOperatedByAmbientTenantAsync)
                 .WithMessage(BusinessErrorMessage.OrderCountryOperatorMismatch)
-                .WithErrorCode(nameof(Command.CustomerAddress));
+                .WithErrorCode(nameof(Command.CustomerAddress))
+                .When(_ => IsGuest());
+
+            RuleFor(x => x)
+                .Cascade(CascadeMode.Stop)
+                .MustAsync(AddressCountryIsAMarketAsync)
+                .WithMessage(BusinessErrorMessage.CountryNotServiced)
+                .WithErrorCode(nameof(Command.CustomerAddress))
+                .MustAsync(AddressCountryHasAnOperatorAsync)
+                .WithMessage(BusinessErrorMessage.TenantNotFound)
+                .WithErrorCode(nameof(Command.CustomerAddress))
+                .When(_ => !IsGuest());
 
             // The pay-coverage and price terms mirror OrderFactory's backstops so the customer gets a
             // 400 instead of a 500. They reuse the existing selection codes deliberately: the booking
@@ -361,31 +366,38 @@ public class CreateOrder
             CancellationToken cancellationToken)
             => await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
                    _userSessionProvider.GetUserId()!, command.PreferredEmployeeId!, cancellationToken)
-               && (await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(
-                   command.PreferredEmployeeId!, cancellationToken)).Id
+               && (await _currencyResolutionService.ResolveCurrencyForServingEmployeeAsync(
+                   _userSessionProvider.GetUserId()!, command.PreferredEmployeeId!, cancellationToken))?.Id
                   == await ResolveOrderCurrencyIdAsync(command, context, cancellationToken);
 
-        private async Task<bool> HavePayCoverageAsync(
-            Command command,
-            IEnumerable<string> serviceIds,
-            ValidationContext<Command> context,
-            CancellationToken cancellationToken) =>
-            await NamedCurrencyIsAnotherMarketsAsync(command, context, cancellationToken)
-            || (await PayCoverageLookup.FindSelectionGapsAsync(
-                _serviceRepository, _packageRepository, _payConfigRepository,
-                serviceIds, [], await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
-                cancellationToken)).Count == 0;
+        private Task<bool> HavePayCoverageAsync(
+            Command command, IEnumerable<string> serviceIds, ValidationContext<Command> context, CancellationToken cancellationToken)
+            => HaveOperatorPayCoverageAsync(command, serviceIds, [], context, cancellationToken);
 
-        private async Task<bool> HavePackagePayCoverageAsync(
-            Command command,
-            IEnumerable<string> packageIds,
-            ValidationContext<Command> context,
-            CancellationToken cancellationToken) =>
-            await NamedCurrencyIsAnotherMarketsAsync(command, context, cancellationToken)
-            || (await PayCoverageLookup.FindSelectionGapsAsync(
-                _serviceRepository, _packageRepository, _payConfigRepository,
-                [], packageIds, await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
-                cancellationToken)).Count == 0;
+        private Task<bool> HavePackagePayCoverageAsync(
+            Command command, IEnumerable<string> packageIds, ValidationContext<Command> context, CancellationToken cancellationToken)
+            => HaveOperatorPayCoverageAsync(command, [], packageIds, context, cancellationToken);
+
+        private async Task<bool> HaveOperatorPayCoverageAsync(
+            Command command, IEnumerable<string> serviceIds, IEnumerable<string> packageIds,
+            ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            if (await NamedCurrencyIsAnotherMarketsAsync(command, context, cancellationToken)) return true;
+            var resolution = await ResolveOperatorAsync(command, context, cancellationToken);
+            var originalTenant = _tenantProvider.GetCurrentTenantId();
+            try
+            {
+                if (resolution?.OperatorTenantId is { } operatorId) _tenantProvider.SetTenantOverride(operatorId);
+                return (await PayCoverageLookup.FindSelectionGapsAsync(
+                    _serviceRepository, _packageRepository, _payConfigRepository, serviceIds, packageIds,
+                    await ResolveOrderCurrencyIdAsync(command, context, cancellationToken), cancellationToken)).Count == 0;
+            }
+            finally
+            {
+                _tenantProvider.ClearTenantOverride();
+                if (originalTenant is not null) _tenantProvider.SetTenantOverride(originalTenant);
+            }
+        }
 
         private async Task<bool> ArePricedInOrderCurrencyAsync(
             Command command,
@@ -429,6 +441,9 @@ public class CreateOrder
 
         private const string OrderCurrencyIdKey = "createOrder.orderCurrencyId";
         private const string OrderCountryIdKey = "createOrder.orderCountryId";
+        private const string OperatorResolutionKey = "createOrder.operatorResolution";
+
+        private bool IsGuest() => string.IsNullOrEmpty(_userSessionProvider.GetUserId());
 
         /// <summary>
         /// A country the command does not determine is refused by the handler's address resolver with
@@ -441,14 +456,48 @@ public class CreateOrder
             ValidationContext<Command> context,
             CancellationToken cancellationToken)
         {
-            var countryId = await ResolveOrderCountryIdAsync(command, context, cancellationToken);
-            if (countryId is null)
+            var resolution = await ResolveOperatorAsync(command, context, cancellationToken);
+            return resolution is null || resolution.Value.OperatorTenantId == _tenantProvider.GetCurrentTenantId();
+        }
+
+        private async Task<bool> AddressCountryIsAMarketAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var resolution = await ResolveOperatorAsync(command, context, cancellationToken);
+            return resolution is null || resolution.Value.IsMarket;
+        }
+
+        private async Task<bool> AddressCountryHasAnOperatorAsync(
+            Command command,
+            Command _,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+        {
+            var resolution = await ResolveOperatorAsync(command, context, cancellationToken);
+            return resolution is null || resolution.Value.OperatorTenantId is not null;
+        }
+
+        /// <summary>
+        /// The operator of the address's country, resolved once per validation beside the country and
+        /// the currency; null when the command does not determine a country.
+        /// </summary>
+        private async Task<OperatorResolution?> ResolveOperatorAsync(
+            Command command, ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            if (context.RootContextData.TryGetValue(OperatorResolutionKey, out var cached))
             {
-                return true;
+                return cached as OperatorResolution?;
             }
 
-            var resolution = await _operatorTenantResolver.ResolveAsync(countryId, cancellationToken);
-            return resolution.OperatorTenantId == _tenantProvider.GetCurrentTenantId();
+            var countryId = await ResolveOrderCountryIdAsync(command, context, cancellationToken);
+            OperatorResolution? resolution = countryId is null
+                ? null
+                : await _operatorTenantResolver.ResolveAsync(countryId, cancellationToken);
+            context.RootContextData[OperatorResolutionKey] = resolution!;
+            return resolution;
         }
 
         /// <summary>
@@ -849,6 +898,8 @@ public class CreateOrder
         ICreditAccountRepository creditAccountRepository,
         ICancellationPolicyResolver cancellationPolicyResolver,
         ILegalDocumentResolver legalDocumentResolver,
+        IOperatorTenantResolver operatorTenantResolver,
+        ITenantProvider tenantProvider,
         IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
@@ -878,6 +929,10 @@ public class CreateOrder
             // The quote resolved the same way from the same country, so the two agree by construction.
             var currency = await currencyResolutionService.ResolveCurrencyForCountryAsync(
                 address.CountryId, cancellationToken);
+
+            // The address selects the operator; the customer's account remains in its own company.
+            var operatorTenantId = (await operatorTenantResolver.ResolveAsync(address.CountryId, cancellationToken))
+                .OperatorTenantId;
 
             // The calculator now surfaces the broken-out (raw + extras +
             // surcharge) shape, so OrderFactory can take a raw-pre-surcharge
@@ -935,6 +990,9 @@ public class CreateOrder
             var promo = await orderPromoApplier.PreviewAsync(
                 command, userId, rawSubtotal, currency.Id, cancellationToken);
 
+            var accountTenantId = tenantProvider.GetCurrentTenantId();
+            if (operatorTenantId is not null) tenantProvider.SetTenantOverride(operatorTenantId);
+
             var order = await orderFactory.CreateAsync(new CreateOrderInput(
                 UserId: userId,
                 CustomerName: command.CustomerName,
@@ -954,6 +1012,7 @@ public class CreateOrder
                 ReservedExpressWaiver: reservation,
                 PromoDiscountAmount: promo.DiscountAmount,
                 PromoCodeId: promo.PromoCodeId,
+                OperatorTenantId: operatorTenantId,
                 PreferredEmployeeId: command.PreferredEmployeeId,
                 RecurringTemplateId: null,
                 SpecialInstructions: command.SpecialInstructions,
@@ -1006,8 +1065,11 @@ public class CreateOrder
             // Promo persistence runs after the order is in the repo so the
             // promo row gets the order id. Failure logs but doesn't roll back —
             // the customer already paid and the promo just doesn't get tracked.
+            // Promo codes stay in the account's company; the booking and its audit use the operator.
+            if (accountTenantId is not null) tenantProvider.SetTenantOverride(accountTenantId);
             await orderPromoApplier.ApplyAsync(
                 command, userId, order, rawSubtotal, currency.Id, cancellationToken);
+            if (operatorTenantId is not null) tenantProvider.SetTenantOverride(operatorTenantId);
 
             var cancellationPolicy = await cancellationPolicyResolver.ResolveForUserAsync(
                 order.UserId, cancellationToken);

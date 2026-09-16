@@ -212,6 +212,7 @@ public class ExpressSurchargeDiscountCompositionTests
                 RawSubtotal: RawSubtotal,
                 NowUtc: Now,
                 ReservedExpressWaiver: null,
+                OperatorTenantId: null,
                 PromoDiscountAmount: promoDiscount),
             CancellationToken.None);
     }

@@ -37,11 +37,22 @@ public class GetActionTimelineTests
     private readonly Mock<IDisputeRepository> _disputes = new();
     private readonly Mock<IUserMembershipRepository> _memberships = new();
 
+    private static IUserRepository VisibleUsers()
+    {
+        var users = new Mock<IUserRepository>();
+        users.Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        return users.Object;
+    }
+
     public GetActionTimelineTests()
     {
         Seed(Array.Empty<CustomerActionAudit>(), Array.Empty<AdminActionAudit>(), Array.Empty<EmployeeActionAudit>());
+        _orders.Setup(r => r.GetQueryableIgnoringTenant()).Returns(Array.Empty<Order>().AsQueryable().BuildMock());
         _orders.Setup(r => r.GetQueryable()).Returns(Array.Empty<Order>().AsQueryable().BuildMock());
+        _disputes.Setup(r => r.GetQueryableIgnoringTenant()).Returns(Array.Empty<Dispute>().AsQueryable().BuildMock());
         _disputes.Setup(r => r.GetQueryable()).Returns(Array.Empty<Dispute>().AsQueryable().BuildMock());
+        _disputes.Setup(r => r.GetQueryableForOwner(It.IsAny<string>())).Returns(Array.Empty<Dispute>().AsQueryable().BuildMock());
+        _memberships.Setup(r => r.GetQueryableIgnoringTenant()).Returns(Array.Empty<UserMembership>().AsQueryable().BuildMock());
         _memberships.Setup(r => r.GetQueryable()).Returns(Array.Empty<UserMembership>().AsQueryable().BuildMock());
     }
 
@@ -55,7 +66,7 @@ public class GetActionTimelineTests
     [InlineData(null, null, "order-1")]
     public async Task Validator_Refuses_Anything_But_Exactly_One_Key(string? userId, string? type, string? id)
     {
-        var result = await new GetActionTimeline.Validator()
+        var result = await new GetActionTimeline.Validator(VisibleUsers())
             .ValidateAsync(new GetActionTimeline.Request { UserId = userId, ResourceType = type, ResourceId = id });
 
         Assert.False(result.IsValid);
@@ -67,7 +78,7 @@ public class GetActionTimelineTests
     [InlineData(null, "Order", "order-1")]
     public async Task Validator_Accepts_A_User_Or_A_Resource_Pair(string? userId, string? type, string? id)
     {
-        var result = await new GetActionTimeline.Validator()
+        var result = await new GetActionTimeline.Validator(VisibleUsers())
             .ValidateAsync(new GetActionTimeline.Request { UserId = userId, ResourceType = type, ResourceId = id });
 
         Assert.True(result.IsValid);
@@ -76,7 +87,7 @@ public class GetActionTimelineTests
     [Fact]
     public async Task Validator_Refuses_A_Page_Larger_Than_MaxLimit_As_Page_Size_Exceeded()
     {
-        var result = await new GetActionTimeline.Validator()
+        var result = await new GetActionTimeline.Validator(VisibleUsers())
             .ValidateAsync(new GetActionTimeline.Request { UserId = UserId, Limit = GetActionTimeline.MaxLimit + 1 });
 
         Assert.False(result.IsValid);
@@ -86,7 +97,7 @@ public class GetActionTimelineTests
     [Fact]
     public async Task Validator_Accepts_A_Page_Of_Exactly_MaxLimit()
     {
-        var result = await new GetActionTimeline.Validator()
+        var result = await new GetActionTimeline.Validator(VisibleUsers())
             .ValidateAsync(new GetActionTimeline.Request { UserId = UserId, Limit = GetActionTimeline.MaxLimit });
 
         Assert.True(result.IsValid);
@@ -202,6 +213,7 @@ public class GetActionTimelineTests
         const string probedOrderId = "order-probed";
         var erased = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = OrderId, UserId = UserId }).AnonymizeCustomerData();
         var probed = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = probedOrderId, UserId = UserId }).AnonymizeCustomerData();
+        _orders.Setup(r => r.GetQueryableIgnoringTenant()).Returns(new[] { erased, probed }.AsQueryable().BuildMock());
         _orders.Setup(r => r.GetQueryable()).Returns(new[] { erased, probed }.AsQueryable().BuildMock());
         Seed(
             [CustomerRow("c-booking", UserId, OrderId, T0), CustomerRow("c-refused", UserId, probedOrderId, T0.AddMinutes(1), success: false)],
@@ -269,7 +281,10 @@ public class GetActionTimelineTests
     private void Seed(CustomerActionAudit[] customer, AdminActionAudit[] admin, EmployeeActionAudit[] employee)
     {
         _customer.Setup(r => r.GetQueryable()).Returns(customer.AsQueryable().BuildMock());
+        _customer.Setup(r => r.GetQueryableForUser(It.IsAny<string>())).Returns((string userId) => customer.Where(c => c.UserId == userId).AsQueryable().BuildMock());
+        _admin.Setup(r => r.GetQueryableIgnoringTenant()).Returns(admin.AsQueryable().BuildMock());
         _admin.Setup(r => r.GetQueryable()).Returns(admin.AsQueryable().BuildMock());
+        _employee.Setup(r => r.GetQueryableIgnoringTenant()).Returns(employee.AsQueryable().BuildMock());
         _employee.Setup(r => r.GetQueryable()).Returns(employee.AsQueryable().BuildMock());
     }
 
@@ -280,6 +295,7 @@ public class GetActionTimelineTests
             var order = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { Id = id, UserId = UserId });
             return order;
         }).ToArray();
+        _orders.Setup(r => r.GetQueryableIgnoringTenant()).Returns(orders.AsQueryable().BuildMock());
         _orders.Setup(r => r.GetQueryable()).Returns(orders.AsQueryable().BuildMock());
 
         var disputes = (disputeIds ?? []).Select(id =>
@@ -288,7 +304,9 @@ public class GetActionTimelineTests
             dispute.Id = id;
             return dispute;
         }).ToArray();
+        _disputes.Setup(r => r.GetQueryableIgnoringTenant()).Returns(disputes.AsQueryable().BuildMock());
         _disputes.Setup(r => r.GetQueryable()).Returns(disputes.AsQueryable().BuildMock());
+        _disputes.Setup(r => r.GetQueryableForOwner(It.IsAny<string>())).Returns((string userId) => disputes.Where(d => d.UserId == userId).AsQueryable().BuildMock());
 
         var memberships = (membershipIds ?? []).Select(id =>
         {
@@ -296,6 +314,7 @@ public class GetActionTimelineTests
             membership.Id = id;
             return membership;
         }).ToArray();
+        _memberships.Setup(r => r.GetQueryableIgnoringTenant()).Returns(memberships.AsQueryable().BuildMock());
         _memberships.Setup(r => r.GetQueryable()).Returns(memberships.AsQueryable().BuildMock());
     }
 

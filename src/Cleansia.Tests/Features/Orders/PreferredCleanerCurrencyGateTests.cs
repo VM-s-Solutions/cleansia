@@ -68,7 +68,7 @@ public class PreferredCleanerCurrencyGateTests
             .Setup(r => r.UserHasCompletedOrderWithEmployeeAsync(UserId, StrangerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _orderRepository
-            .Setup(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OrderOwnerAndCurrency(UserId, Czk.Id));
         _savedAddressRepository
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
@@ -77,7 +77,7 @@ public class PreferredCleanerCurrencyGateTests
             .Setup(r => r.ExistsAsync(TemplateId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _templateRepository
-            .Setup(r => r.GetByIdAsync(TemplateId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdForOwnerAsync(TemplateId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Template());
 
         _serviceRepository
@@ -166,7 +166,7 @@ public class PreferredCleanerCurrencyGateTests
     public async Task ChoosePreferredCleaner_Does_Not_Judge_The_Currency_Of_Another_Customers_Order()
     {
         _orderRepository
-            .Setup(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new OrderOwnerAndCurrency("user-someone-else", Czk.Id));
 
         var result = await ChooseValidator().ValidateAsync(new ChoosePreferredCleaner.Command(OrderId, EurCleanerId));
@@ -183,7 +183,7 @@ public class PreferredCleanerCurrencyGateTests
     {
         await ChooseValidator().ValidateAsync(new ChoosePreferredCleaner.Command(OrderId, EurCleanerId));
 
-        _orderRepository.Verify(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
+        _orderRepository.Verify(r => r.GetOwnerAndCurrencyAsync(OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         _orderRepository.Verify(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _orderRepository.Verify(r => r.GetQueryable(), Times.Never);
     }
@@ -254,7 +254,7 @@ public class PreferredCleanerCurrencyGateTests
 
     private void VerifyNoCleanerCurrencyResolved() =>
         Mock.Get(_markets).Verify(
-            s => s.ResolveCurrencyForEmployeeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            s => s.ResolveCurrencyForServingEmployeeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
     private CreateOrder.Validator CreateOrderValidator() =>
@@ -272,8 +272,8 @@ public class PreferredCleanerCurrencyGateTests
             CataloguePriceDoubles.Services(Czk, (CreateOrderTestData.ServiceId, 500m, 100m)),
             CataloguePriceDoubles.Packages(Czk, (CreateOrderTestData.PackageId, 1000m)),
             new Mock<IPromoCodeService>().Object,
-            Mock.Of<IOperatorTenantResolver>(),
-            Mock.Of<ITenantProvider>(),
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+            Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English));
 
@@ -290,7 +290,7 @@ public class PreferredCleanerCurrencyGateTests
             _session.Object,
             _orderRepository.Object,
             _savedAddressRepository.Object,
-            _markets);
+            _markets, OrderMarketDoubles.Servicing(Czechia));
 
     private static CreateRecurringBooking.Command CreateRecurringCommand(string preferredEmployeeId) =>
         new(

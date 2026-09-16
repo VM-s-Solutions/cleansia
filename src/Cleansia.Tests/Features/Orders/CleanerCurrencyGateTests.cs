@@ -133,7 +133,7 @@ public class CleanerCurrencyGateTests
             .Returns(new Claim(ClaimTypes.Role, UserProfile.Employee.ToString()));
 
         return new OrderAccessService(
-            session.Object, new Mock<IEmployeeRepository>().Object, ValidatorTestHelpers.CurrencyResolver(paidIn));
+            session.Object, new Mock<IEmployeeRepository>().Object, Mock.Of<IOrderRepository>(), ValidatorTestHelpers.CurrencyResolver(paidIn));
     }
 
     private static Task<Infra.Common.Validations.BusinessResult<IReadOnlyList<Core.AppServices.Features.Orders.DTOs.PendingOfferItem>>>

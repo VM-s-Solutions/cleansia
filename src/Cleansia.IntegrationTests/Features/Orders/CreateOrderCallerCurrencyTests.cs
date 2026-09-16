@@ -42,7 +42,7 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// the gate refuses what the writer could not pay — the agreement the gate exists for.</para>
 /// </summary>
 [Collection("PostgresCollection")]
-public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
+public partial class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
     : BaseIntegrationTest(fixture)
 {
     private const string Czk = "currency-czk-caller";
@@ -250,14 +250,8 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
             transactional: false);
     }
 
-    /// <summary>
-    /// TC-TEN-MISMATCH-1 (ADR-0061 D6). Slovakia handed to a second operating company: the CZ customer's
-    /// booking at the Slovak address is refused on the address with the operator key and nothing is
-    /// written. The Slovak booking above, under one company serving both countries, is the negative
-    /// case — the rule keys on the operator, not the country.
-    /// </summary>
     [Fact]
-    public async Task A_Customer_Booking_A_Country_Another_Company_Operates_Is_Refused_And_Writes_Nothing()
+    public async Task A_Customer_Booking_Another_Companys_Market_Lands_In_That_Operator()
     {
         await TestMethod(
             setup: ConfigureCustomerSession,
@@ -266,11 +260,11 @@ public class CreateOrderCallerCurrencyTests(PostgresContainerFixture fixture)
                 .Send(BuildCommand(Slovakia, currencyId: null, EurServicePrice + EurPackagePrice)),
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
-                Assert.False(result.IsSuccess);
-                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
-                var failure = Assert.Single(validation.Errors, e => e.Message == BusinessErrorMessage.OrderCountryOperatorMismatch);
-                Assert.Equal(nameof(CreateOrder.Command.CustomerAddress), failure.Code);
-                Assert.Empty(await context.Orders.IgnoreQueryFilters().ToListAsync());
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == result.Value.Id);
+                Assert.Equal(TestTenants.Second, order.TenantId);
+                Assert.Equal(CustomerUserId, order.UserId);
+                Assert.Equal(Eur, order.CurrencyId);
             },
             transactional: false);
     }

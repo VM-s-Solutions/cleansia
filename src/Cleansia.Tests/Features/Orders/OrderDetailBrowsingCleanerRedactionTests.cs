@@ -351,13 +351,14 @@ public class OrderDetailBrowsingCleanerRedactionTests
 
     private GetOrderDetails.Handler CreateHandler() =>
         new(
-            _orderRepository.Object,
             _orderAccessService.Object,
             _userSessionProvider.Object,
             _payConfigRepository.Object,
             _orderEmployeePayRepository.Object,
             _orderPhotoRepository.Object,
             _employeeRepository.Object,
+            Mock.Of<IUserRepository>(),
+            Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             Mock.Of<IUserMembershipRepository>());
 
@@ -365,6 +366,9 @@ public class OrderDetailBrowsingCleanerRedactionTests
     {
         _orderRepository
             .Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        _orderAccessService
+            .Setup(a => a.LoadOrderForCallerAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         _orderPhotoRepository
             .Setup(r => r.GetPhotoCountByOrderIdAndTypeAsync(OrderId, PhotoType.After, It.IsAny<CancellationToken>()))

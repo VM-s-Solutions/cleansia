@@ -17,14 +17,11 @@ namespace Cleansia.Infra.Database.Auditing;
 /// <c>CommitAsync</c> would not stamp it. The behavior wraps this call and swallows: a failure here never
 /// changes the error returned to the caller (D2.2).
 ///
-/// <para>A row that names an account is stamped with that account's operating company (ADR-0062 D7).
-/// The read runs for every subject-named row — the customer row's <c>UserId</c>, the admin row's
-/// <c>ActorId</c> — and is decisive only when a validator or handler named the subject on an anonymous
-/// request: there the ambient tenant is the default market's operator, the right stamp for an unknown
-/// address and the wrong one for a second operator's customer or administrator refused a sign-in, and
-/// the filter would hide that account. For a signed-in subject the read returns the operator the session
-/// claim was minted from. A row that names nobody (the admin row's <c>System</c> actor resolves no
-/// account) keeps the ambient stamp.</para>
+/// <para>A customer order or dispute failure uses the resource's operator only after proving that
+/// the resource belongs to the named customer. Other failures use the subject account's company
+/// (ADR-0062 D7), then the ambient tenant when no account resolves. Anonymous account refusals can
+/// therefore resolve the subject past the tenant filter without attributing foreign-resource probes
+/// to the probed operator.</para>
 ///
 /// <para>A row with no tenant from either source is not written. The one request shape that reaches
 /// here without one is an anonymous market-scoped act refused BEFORE <c>OperatorTenantScopeBehavior</c>
@@ -54,6 +51,9 @@ public sealed class OutOfBandAuditFailureSink(
         await using var scope = serviceScopeFactory.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
 
+        entry.TenantId ??= entry is CustomerActionAudit customer
+            ? await OrderOperatorAsync(context, customer, cancellationToken)
+            : null;
         entry.TenantId ??= await SubjectTenantAsync(context, subjectUserId, cancellationToken) ?? tenantProvider.GetCurrentTenantId();
         if (entry.TenantId is null)
         {
@@ -66,6 +66,25 @@ public sealed class OutOfBandAuditFailureSink(
 
         context.Set<TEntry>().Add(entry);
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task<string?> OrderOperatorAsync(CleansiaDbContext context, CustomerActionAudit entry, CancellationToken cancellationToken)
+    {
+        if (entry.UserId is null || entry.ResourceId is null
+            || !(entry.Action.StartsWith("customer.order.", StringComparison.Ordinal)
+                 || entry.Action.StartsWith("customer.dispute.", StringComparison.Ordinal))) return null;
+
+        // A refused probe proves no ownership. Only the subject's own resource can select an operator.
+        return entry.ResourceType switch
+        {
+            "Order" => await context.Orders.IgnoreQueryFilters()
+                .Where(o => o.Id == entry.ResourceId && o.UserId == entry.UserId)
+                .Select(o => o.TenantId).FirstOrDefaultAsync(cancellationToken),
+            "Dispute" => await context.Disputes.IgnoreQueryFilters()
+                .Where(d => d.Id == entry.ResourceId && d.UserId == entry.UserId)
+                .Select(d => d.TenantId).FirstOrDefaultAsync(cancellationToken),
+            _ => null
+        };
     }
 
     private static async Task<string?> SubjectTenantAsync(CleansiaDbContext context, string? subjectUserId, CancellationToken cancellationToken) =>

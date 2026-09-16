@@ -18,6 +18,11 @@ public class ReferralRepository(CleansiaDbContext context)
             .FirstOrDefaultAsync(r => r.ReferredUserId == userId, cancellationToken);
     }
 
+    public Task<Referral?> GetForOrderOwnerAsync(string orderId, string userId, CancellationToken cancellationToken)
+        => GetDbSet().IgnoreQueryFilters().Include(r => r.ReferralCode)
+            .FirstOrDefaultAsync(r => r.ReferredUserId == userId
+                && context.Orders.IgnoreQueryFilters().Any(o => o.Id == orderId && o.UserId == userId), cancellationToken);
+
     public async Task<IReadOnlyDictionary<ReferralStatus, int>> GetStatusCountsByReferrerAsync(
         string userId, CancellationToken cancellationToken)
     {

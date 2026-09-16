@@ -115,6 +115,8 @@ public sealed class CreateOrderAuditEvidenceTests
             _creditAccountRepository.Object,
             new CancellationPolicyResolver(_membershipRepository.Object),
             _legalDocuments.Object,
+            OrderMarketDoubles.OperatedBy("tenant-1"),
+            Mock.Of<ITenantProvider>(),
             _auditContext,
             NullLogger<CreateOrder.Handler>.Instance);
 

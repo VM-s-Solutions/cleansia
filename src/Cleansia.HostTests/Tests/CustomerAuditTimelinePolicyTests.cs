@@ -83,14 +83,17 @@ public sealed class CustomerAuditTimelinePolicyTests(HostTestPostgresFixture db)
     }
 
     [Fact]
-    public async Task Admin_clears_the_gate_by_user_and_by_resource_and_sees_only_their_own_tenants_rows()
+    public async Task Account_admin_sees_user_history_across_operators_but_resource_history_stays_filtered()
     {
-        await SeedAsync(ctx =>
+        await SeedAsync(async ctx =>
         {
+            await DomainSeed.EnsureReferenceDataAsync(ctx);
+            var customer = DomainSeed.Customer("cust-a@hosttests.local", HostTestTenants.A);
+            customer.Id = "cust-a";
+            ctx.Users.Add(customer);
             ctx.CustomerActionAudits.AddRange(
                 DomainSeed.CustomerAudit("caud-a1", "cust-a", HostTestTenants.A),
                 DomainSeed.CustomerAudit("caud-b1", "cust-a", HostTestTenants.B));
-            return Task.CompletedTask;
         });
 
         var token = TestJwtFactory.Mint(AdminAudience, "admin-a", "admin-a@hosttests.local",
@@ -99,14 +102,27 @@ public sealed class CustomerAuditTimelinePolicyTests(HostTestPostgresFixture db)
         var byUser = await AdminClient(token).GetAsync(ByUser);
         HttpAssert.IsOk(byUser);
         var userPage = await byUser.Content.ReadFromJsonAsync<PageResponse>();
-        Assert.Equal(1, userPage!.Total);
-        Assert.Equal("caud-a1", Assert.Single(userPage.Data).Id);
+        Assert.Equal(2, userPage!.Total);
+        Assert.Equal(new[] { "caud-a1", "caud-b1" }, userPage.Data.Select(e => e.Id).OrderBy(id => id));
 
         var byOrder = await AdminClient(token).GetAsync(ByOrder);
         HttpAssert.IsOk(byOrder);
         var orderPage = await byOrder.Content.ReadFromJsonAsync<PageResponse>();
         Assert.Equal(1, orderPage!.Total);
         Assert.Equal("caud-a1", Assert.Single(orderPage.Data).Id);
+
+        var paged = await AdminClient(token).GetAsync("/api/CustomerAudit/get-paged?filter.userId=cust-a");
+        HttpAssert.IsOk(paged);
+        var auditPage = await paged.Content.ReadFromJsonAsync<PageResponse>();
+        Assert.Equal(2, auditPage!.Total);
+        Assert.Equal(new[] { "caud-a1", "caud-b1" }, auditPage.Data.Select(e => e.Id).OrderBy(id => id));
+
+        var otherAdmin = TestJwtFactory.Mint(AdminAudience, "admin-b", "admin-b@hosttests.local",
+            UserProfile.Administrator, tenantId: HostTestTenants.B);
+        var foreignUser = await AdminClient(otherAdmin).GetAsync(ByUser);
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, foreignUser.StatusCode);
+        var foreignPaged = await AdminClient(otherAdmin).GetAsync("/api/CustomerAudit/get-paged?filter.userId=cust-a");
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, foreignPaged.StatusCode);
     }
 
     private sealed record PageResponse(int Total, List<EntryResponse> Data);

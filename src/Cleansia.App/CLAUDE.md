@@ -3,7 +3,7 @@
 This is the Angular 19 / Nx monorepo for the 3 web apps (customer SSR, partner SPA, admin SPA).
 
 **The canonical project guide is the root [`../../CLAUDE.md`](../../CLAUDE.md)** — read it for the
-full architecture, conventions, the agent operating system, and the i18n/NSwag/owner-only rules.
+full architecture, conventions, the agent operating system, and the i18n/client-generation rules.
 
 ## Frontend specifics
 
@@ -13,8 +13,10 @@ full architecture, conventions, the agent operating system, and the i18n/NSwag/o
 
 Key rules (full list in the catalog): OnPush + signals, logic in facades not components,
 `<cleansia-*>`/PrimeNG (never raw form controls), `TranslatePipe` on every string with keys in all 5
-locales, no `any`, three explicit data states. Never run `npm run generate-*-client` or hand-edit the
-NSwag-generated clients — that's owner-only; flag `manual_step: nswag-regen`.
+locales, no `any`, three explicit data states. Run `npm run generate-*-client` when a backend DTO or
+endpoint changes, before implementing dependent consumers. Regeneration is ordinary implementation
+work: commit the generated client in the same change as the DTO or endpoint and report each command
+run. Never hand-edit generated clients. The root prohibition on all production operations still applies.
 
 ## Local dev & the same-origin /api proxy
 

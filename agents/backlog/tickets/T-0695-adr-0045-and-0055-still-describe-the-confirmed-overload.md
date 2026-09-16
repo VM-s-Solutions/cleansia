@@ -1,11 +1,11 @@
 ---
 id: T-0695
 title: ADR-0045 and ADR-0055 still describe the Confirmed overload that ADR-0057 removed
-status: todo
+status: done
 size: S
 owner: —
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-16
 depends_on: [T-0691]
 blocks: []
 stories: []
@@ -36,11 +36,11 @@ and is a candidate for the same banner rather than an inline edit.
 
 ## Acceptance criteria
 
-- [ ] **AC1** — ADR-0045 and ADR-0055 each carry a dated banner naming ADR-0057 and stating which of
+- [x] **AC1** — ADR-0045 and ADR-0055 each carry a dated banner naming ADR-0057 and stating which of
       their claims it supersedes. No original phrase is rewritten.
-- [ ] **AC2** — The banner distinguishes the two kinds of staleness: the *status meaning* (superseded by
+- [x] **AC2** — The banner distinguishes the two kinds of staleness: the *status meaning* (superseded by
       ADR-0057) and the *D5-should-be-D1 citation* (a factual repair).
-- [ ] **AC3** — `node agents/tools/check-catalog-claims.mjs` stays green.
+- [x] **AC3** — `node agents/tools/check-catalog-claims.mjs` stays green.
 
 ## Out of scope
 
@@ -54,5 +54,12 @@ partial supersede; ADR-0057 already follows it.
 
 ## Status log
 
+- 2026-09-16 — Done: independent source review approved with no blockers or majors. Catalog checker
+  reports zero claim violations, docs references zero unresolved, backlog consistency zero
+  violations, and the documentation production build passes. No user-visible behavior changed, so
+  no changelog entry is required for this documentation correction.
+- 2026-09-16 — Added dated correction banners to both ADRs, preserving their historical bodies.
+  The banners separate ADR-0057's status change from the D5/D1 factual repair, identify D3's
+  single-source rule, and preserve ADR-0055's clock gate. Checks and review are recorded above.
 - 2026-09-08 — filed from the T-0691 out-of-scope list; all four line references re-verified against the
   tree the same day.

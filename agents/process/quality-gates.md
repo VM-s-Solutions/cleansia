@@ -173,10 +173,11 @@ sibling on a *fix* is **Gate 0.5 leg 1** — not "would the suite survive a stub
 red before this change".
 
 ### Gate 7 — Contract & docs parity (when the surface changed)
-- If a backend DTO/endpoint changed, the ticket carries a `MANUAL_STEP: nswag-regen` flag for the
-  owner. The agents do **not** regenerate clients.
-- If a schema changed, the ticket carries a `MANUAL_STEP: ef-migration` flag. The agents do **not**
-  run migrations.
+- If a backend DTO/endpoint changed, regenerate the clients before implementing dependent consumers,
+  commit them in the same change, and verify all three web app builds.
+- If a schema changed, regenerate the single `Initial` in the same change and run the full
+  integration suite. Record the migration id in `agents/cleanup/MANUAL_STEPS.md` MS-2; the resulting
+  DEV drop happens with deployment, never during branch work.
 - If shipped behavior changed, the Docs agent updates the relevant `docs/**` page and the changelog —
   [`CHANGELOG.md`](../../CHANGELOG.md) at the **repository root** — in the same ticket (or a linked
   docs ticket).
@@ -299,36 +300,33 @@ Mechanics and scope:
 
 ---
 
-## Owner-only steps (the agents never do these)
+## Generated artifacts are implementation work
 
-Per `CLAUDE.md`, **one** step is owner-only. Agents detect the need, flag it as a `manual_steps` entry
-on the ticket, and **block the dependent work** until the owner confirms it's done:
+Per `CLAUDE.md`, run required regeneration without an owner handoff:
 
-- **NSwag client regeneration** — `npm run generate-*-client`. Agents flag it; the owner regenerates
-  the TypeScript clients before dependent frontend/mobile work begins.
+- **NSwag client regeneration** — `npm run generate-*-client`. Regenerate before dependent
+  frontend/mobile work and commit the generated client in the same change as its DTO or endpoint.
+- **EF Core migrations** — regenerate the single `Initial` and prove it with the full integration
+  suite. Commit it with the schema change and update the migration id in
+  `agents/cleanup/MANUAL_STEPS.md` MS-2.
+- **DEV database drop** — perform it with the next deployment, never during branch work. Keep it
+  tracked until deployment; its scheduling does not block completion of verified branch work.
 
-**EF Core migrations are no longer owner-only** (owner ruling, 2026-08-15). Pre-prod, an agent
-regenerates `Initial` itself and proves it with the integration suite — see `CLAUDE.md` § *Manual
-steps*. The **DEV database drop** that a changed migration id forces is still the owner's, and is
-still a `manual_steps` entry.
+Name every regeneration, verification and DEV step actually run in the ticket's status log and the
+report. Unperformed regeneration or failed verification blocks `done`; routine work is not an
+approval request. **All production operations remain prohibited**, including read-only access.
 
-A ticket that needs either and hasn't had it confirmed cannot reach `done`.
+### Sequence regeneration before dependent work
 
-### Batch the owner-only handoffs (don't interleave them mid-wave)
-The owner-only rule is sound, but interleaving each `dotnet ef` / regen mid-wave is lossy: it leaves
-the tree half-broken (a missing migration trips EF `PendingModelChangesWarning` on **every**
-integration test; a stale client breaks the build) and forces a slow per-step round-trip. Instead, a
-batch should produce **one MANUAL_STEPS bundle at the end** — "run these N migrations + these M
-regens, then tell me" — so there is a single fat handoff, not many thin ones. The PM collects the
-bundle from the batch's tickets; the orchestrator re-verifies once after the owner confirms the whole
-bundle.
+Keep the model, migration and generated clients consistent at each implementation checkpoint. A
+missing migration fails integration startup, and a stale client breaks its consumers. Complete each
+required regeneration before verifying the dependent layer, then report the completed batch together.
 
 ### After an NSwag regen, build **all three** apps before pushing
 Regenerating one client (e.g. an added required DTO field) commonly breaks an **untouched** consumer
 in another app. This drift surfaced repeatedly and was always the same shape (a stale `new
-LoginCommand({...})` missing a now-required field). The owner-only regen guardrail stays, but the
-follow-through is: **after any regen, run all three production builds** (`build:cleansia-{customer,
-partner,admin}`) and fix the consumers before pushing. The blocking frontend prod-build CI catches
+LoginCommand({...})` missing a now-required field). **After any regen, run all three production
+builds** (`build:cleansia-{customer,partner,admin}`) and fix the consumers before pushing. The blocking frontend prod-build CI catches
 this too, but catching it locally avoids a red PR. (No dedicated client-drift CI job: the build gate
 already fails on the drift symptom.)
 

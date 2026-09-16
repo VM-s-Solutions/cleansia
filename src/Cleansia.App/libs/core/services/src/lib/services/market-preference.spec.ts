@@ -1,4 +1,5 @@
 import {
+  marketCountryOptions,
   PREFERRED_MARKET_KEY,
   persistPreferredMarket,
   readPreferredMarket,
@@ -74,5 +75,36 @@ describe('persistPreferredMarket', () => {
 
     expect(document.cookie).toContain('preferred_market=SVK');
     expect(localStorage.length).toBe(0);
+  });
+});
+
+describe('marketCountryOptions', () => {
+  const markets = [
+    { countryId: 'cze-id', isoCode: 'CZE', name: 'Czechia', translations: { cs: { name: 'Česko' } } },
+    { countryId: 'svk-id', isoCode: 'SVK', name: 'Slovakia', translations: { cs: { name: 'Slovensko' } } },
+  ];
+
+  it('offers one option per market, valued by the country id and labelled in the language', () => {
+    expect(marketCountryOptions(markets, 'cs')).toEqual([
+      { label: 'Česko', value: 'cze-id' },
+      { label: 'Slovensko', value: 'svk-id' },
+    ]);
+  });
+
+  it('falls back from a missing translation to the name, and from a missing name to the code', () => {
+    expect(marketCountryOptions(markets, 'uk')).toEqual([
+      { label: 'Czechia', value: 'cze-id' },
+      { label: 'Slovakia', value: 'svk-id' },
+    ]);
+    expect(
+      marketCountryOptions([{ countryId: 'deu-id', isoCode: 'DEU', name: undefined, translations: undefined }], 'en'),
+    ).toEqual([{ label: 'DEU', value: 'deu-id' }]);
+  });
+
+  // A market with no country id cannot be sent as an address country, so it is not offered.
+  it('drops a market that names no country', () => {
+    expect(
+      marketCountryOptions([{ countryId: undefined, isoCode: 'POL', name: 'Poland', translations: undefined }], 'en'),
+    ).toEqual([]);
   });
 });

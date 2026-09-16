@@ -1,5 +1,5 @@
-import { inject, Injectable, signal } from '@angular/core';
-import { ICleansiaSelectOption } from '@cleansia/components';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
@@ -13,10 +13,15 @@ import {
   UpdateCurrentUserPhotoCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
-import { SavedAddressStore } from '@cleansia/customer-stores';
-import { SnackbarService } from '@cleansia/services';
+import {
+  SavedAddressStore,
+  selectMarketCountryId,
+  selectMarkets,
+} from '@cleansia/customer-stores';
+import { marketCountryOptions, SnackbarService } from '@cleansia/services';
+import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, map, of, takeUntil } from 'rxjs';
 import {
   AvatarIntent,
   ProfileDetails,
@@ -32,6 +37,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
   private readonly savedAddressStore = inject(SavedAddressStore);
+  private readonly store = inject(Store);
 
   user = signal<MyProfileDto | null>(null);
   loading = signal(true);
@@ -66,7 +72,19 @@ export class ProfileFacade extends UnsubscribeControlDirective {
 
   readonly addresses = this.savedAddressStore.addresses;
   readonly addressesLoading = this.savedAddressStore.loading;
-  countryOptions = signal<ICleansiaSelectOption[]>([]);
+
+  private readonly markets = toSignal(this.store.select(selectMarkets), { initialValue: [] });
+  private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
+    initialValue: null,
+  });
+  private readonly language = toSignal(
+    this.translate.onLangChange.pipe(map(({ lang }) => lang)),
+    { initialValue: this.translate.currentLang || this.translate.getDefaultLang() },
+  );
+  /** The saved-address country picker lists the market directory (ADR-0058 D1). */
+  readonly countryOptions = computed(() => marketCountryOptions(this.markets(), this.language()));
+  /** A new address starts on the chosen market; '' when none resolved, so the picker sits empty. */
+  readonly defaultCountryId = computed(() => this.marketCountryId() ?? '');
 
   loadProfile(
     onSuccess?: (user: MyProfileDto) => void,
@@ -280,30 +298,6 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           this.snackbar.showError(
             this.translate.instant('pages.profile.save_error'),
           );
-        },
-      });
-  }
-
-  loadCountries(): void {
-    // Customer profile only ever uses this to render the address country
-    // picker, so use the serviced list — same reasoning as the order
-    // wizard. See planning/active/service-areas.md.
-    this.customerClient.countryClient
-      .getServiced()
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe({
-        next: (countries) => {
-          const currentLang = this.translate.currentLang;
-          const options: ICleansiaSelectOption[] = (countries ?? []).map((country) => {
-            const translation = country.translations?.[currentLang]?.name;
-            const name = translation ?? country.name ?? '';
-            const iso = country.isoCode ?? '';
-            return {
-              label: iso ? `${name} (${iso})` : name,
-              value: country.id,
-            };
-          });
-          this.countryOptions.set(options);
         },
       });
   }

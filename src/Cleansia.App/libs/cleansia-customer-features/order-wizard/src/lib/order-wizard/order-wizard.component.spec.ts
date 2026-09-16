@@ -2,7 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { computed, signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { CleansiaSelectComponent } from '@cleansia/components';
 import { SnackbarService } from '@cleansia/services';
 import {
   GetMembershipPlansResponse,
@@ -66,6 +68,8 @@ class FakeOrderWizardFacade {
   isAuthenticated = signal(false);
   savedAddresses = signal<SavedAddressDto[]>([]);
   selectedSavedAddressId = signal<string | null>(null);
+  countryOptions = signal<{ label: string; value: string }[]>([]);
+  addressCountryId = signal<string | null>(null);
 
   cityServiced = signal<'idle' | 'pending' | 'ok' | 'rejected' | 'error'>('idle');
   extras = signal<unknown[]>([]);
@@ -338,6 +342,42 @@ describe('OrderWizardComponent (a11y)', () => {
 
       const input = el.querySelector('#wizard-first-name') as HTMLElement;
       expect(input.getAttribute('aria-invalid')).not.toBe('true');
+    });
+  });
+
+  describe('the address country picker', () => {
+    it('offers the market directory and shows the country the booking is priced for', async () => {
+      await setup();
+      facade.activeStep.set(1);
+      facade.countryOptions.set([
+        { label: 'Czechia', value: 'cze-id' },
+        { label: 'Slovakia', value: 'svk-id' },
+      ]);
+      facade.addressCountryId.set('cze-id');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const select = fixture.debugElement
+        .queryAll(By.directive(CleansiaSelectComponent))
+        .map((debugElement) => debugElement.componentInstance as CleansiaSelectComponent)
+        .find((instance) => instance.id() === 'wizard-country');
+      expect(select).toBeTruthy();
+      expect(select?.label()).toBe('pages.order.country');
+      expect(select?.options()).toEqual([
+        { label: 'Czechia', value: 'cze-id' },
+        { label: 'Slovakia', value: 'svk-id' },
+      ]);
+      expect(select?.innerValue).toBe('cze-id');
+    });
+
+    it('writes a pick onto the address country', async () => {
+      await setup();
+      facade.activeStep.set(1);
+      fixture.detectChanges();
+
+      fixture.componentInstance.updateAddressField('countryId', 'svk-id');
+
+      expect(facade.formData().address.countryId).toBe('svk-id');
     });
   });
 

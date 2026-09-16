@@ -37,3 +37,32 @@ export function resolveMarket<T extends MarketCandidate>(
 export function persistPreferredMarket(isoCode: string): void {
   document.cookie = `${PREFERRED_MARKET_KEY}=${isoCode}; path=/; max-age=31536000; SameSite=Lax`;
 }
+
+/** What one market has to carry to be offered as an address country; `MarketListItem` satisfies it. */
+export interface MarketCountry {
+  readonly countryId: string | undefined;
+  readonly isoCode: string | undefined;
+  readonly name: string | undefined;
+  readonly translations?: { [language: string]: { name?: string | undefined } } | undefined;
+}
+
+export interface MarketCountryOption {
+  readonly label: string;
+  readonly value: string;
+}
+
+/**
+ * The address country picker's options: the market directory, one per market's country
+ * (ADR-0058 D1 — a market is a serviced country, so the directory is the served list).
+ */
+export function marketCountryOptions(
+  markets: readonly MarketCountry[],
+  language: string,
+): MarketCountryOption[] {
+  return markets
+    .filter((market): market is MarketCountry & { countryId: string } => !!market.countryId)
+    .map((market) => ({
+      label: market.translations?.[language]?.name || market.name || market.isoCode || market.countryId,
+      value: market.countryId,
+    }));
+}

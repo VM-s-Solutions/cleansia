@@ -211,6 +211,22 @@
         @if (!facade.isAuthenticated() || isCustomAddress() || facade.savedAddresses().length === 0) {
         <div class="cl-wiz__addr">
           <div class="cl-wiz__addr-main">
+            <!--
+              The market directory, showing the chosen market until a country
+              is picked here. What it shows is what the booking is priced in.
+            -->
+            <div class="cl-wiz__field">
+              <cleansia-select
+                [floatVariant]="null"
+                id="wizard-country"
+                [label]="'pages.order.country' | translate"
+                [options]="facade.countryOptions()"
+                [ngModel]="facade.addressCountryId()"
+                (ngModelChange)="updateAddressField('countryId', $event)"
+                [showClear]="false"
+                inputSize="full-width"
+              />
+            </div>
             <div class="cl-wiz__field">
               <span class="cl-lbl">{{ 'pages.order.address_field_label' | translate }}</span>
               <cleansia-address-autocomplete

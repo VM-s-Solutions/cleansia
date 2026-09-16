@@ -534,6 +534,14 @@
         [required]="true"
         inputSize="full-width"
       />
+      <cleansia-select
+        [floatVariant]="null"
+        formControlName="country"
+        [label]="'pages.profile.address_country' | translate"
+        [options]="countryOptions()"
+        [showClear]="false"
+        inputSize="full-width"
+      />
       <cleansia-address-autocomplete
         [initialQuery]="addressForm.controls.street.value"
         (picked)="onAddressPicked($event)"

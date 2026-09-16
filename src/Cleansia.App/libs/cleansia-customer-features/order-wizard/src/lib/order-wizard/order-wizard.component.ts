@@ -5,7 +5,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
-import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
+import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaSelectComponent, CleansiaTelephoneComponent } from '@cleansia/components';
 import { CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
@@ -72,6 +72,7 @@ function startOfMonth(date: Date): Date {
     CleansiaAddressAutocompleteComponent,
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
+    CleansiaSelectComponent,
     CleansiaTelephoneComponent,
     WizardPreferredCleanerComponent,
     RouterModule,
@@ -383,7 +384,7 @@ export class OrderWizardComponent implements OnInit {
   }
 
   /** Patch one field of the address without disturbing the others. */
-  updateAddressField(field: 'street' | 'city' | 'zipCode', value: string): void {
+  updateAddressField(field: 'street' | 'city' | 'zipCode' | 'countryId', value: string): void {
     const current = this.facade.formData().address;
     this.facade.updateFormData({
       address: createAddressDto({

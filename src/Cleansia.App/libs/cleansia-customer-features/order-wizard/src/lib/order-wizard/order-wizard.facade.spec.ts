@@ -19,12 +19,13 @@ import {
   selectCustomerServices,
   selectCustomerServicesCatalogue,
   selectMarketCountryId,
+  selectMarkets,
 } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -46,7 +47,6 @@ describe('OrderWizardFacade', () => {
   let orderClient: { quote: jest.Mock; createOrder: jest.Mock };
   let paymentClient: { createOrder: jest.Mock };
   let promoCodeClient: { validate: jest.Mock };
-  let countryClient: { getServiced: jest.Mock };
   let gdprClient: { consentsGet: jest.Mock };
   let extraClient: { getOverview: jest.Mock };
   let userClient: { getCurrent: jest.Mock };
@@ -56,6 +56,7 @@ describe('OrderWizardFacade', () => {
   let snackbar: { showError: jest.Mock; showInfoTranslated: jest.Mock };
   let router: { navigate: jest.Mock };
   let guestOrderService: { save: jest.Mock };
+  let langChange: Subject<{ lang: string }>;
   let savedAddressStore: {
     addresses: ReturnType<typeof signal>;
     loaded: ReturnType<typeof signal>;
@@ -88,7 +89,6 @@ describe('OrderWizardFacade', () => {
     promoCodeClient = {
       validate: jest.fn().mockReturnValue(of({ isValid: true, discountAmount: 100 })),
     };
-    countryClient = { getServiced: jest.fn().mockReturnValue(of([])) };
     gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
     extraClient = { getOverview: jest.fn().mockReturnValue(of([])) };
     userClient = { getCurrent: jest.fn().mockReturnValue(of({})) };
@@ -101,6 +101,7 @@ describe('OrderWizardFacade', () => {
     snackbar = { showError: jest.fn(), showInfoTranslated: jest.fn() };
     router = { navigate: jest.fn() };
     guestOrderService = { save: jest.fn() };
+    langChange = new Subject<{ lang: string }>();
     savedAddressStore = {
       addresses: signal([]),
       loaded: signal(true),
@@ -126,7 +127,6 @@ describe('OrderWizardFacade', () => {
             orderClient,
             paymentClient,
             promoCodeClient,
-            countryClient,
             gdprClient,
             extraClient,
             userClient,
@@ -148,6 +148,7 @@ describe('OrderWizardFacade', () => {
             instant: (k: string) => k,
             currentLang: 'en',
             getDefaultLang: () => 'en',
+            onLangChange: langChange,
           },
         },
       ],
@@ -160,6 +161,7 @@ describe('OrderWizardFacade', () => {
     store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
     store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
     store.overrideSelector(selectMarketCountryId, null);
+    store.overrideSelector(selectMarkets, []);
     facade = TestBed.inject(OrderWizardFacade);
   }
 
@@ -1143,26 +1145,84 @@ describe('OrderWizardFacade', () => {
     });
   });
 
-  describe('initialize', () => {
-    it('loads served countries and extras and reads auth state', () => {
-      facade.initialize();
+  // The address country picker lists the market directory (ADR-0058 D1) and shows the chosen
+  // market until the address names a country (D4). What it shows is what the booking is priced
+  // for, so an inline address that never named one is sent with that country rather than none —
+  // the server resolves a blank only while exactly one country is served.
+  describe('the address country picker', () => {
+    const markets = [
+      { countryId: 'cze-id', isoCode: 'CZE', name: 'Czechia', translations: { cs: { name: 'Česko' } } },
+      { countryId: 'svk-id', isoCode: 'SVK', name: 'Slovakia', translations: { cs: { name: 'Slovensko' } } },
+    ];
 
-      expect(countryClient.getServiced).toHaveBeenCalledTimes(1);
-      expect(extraClient.getOverview).toHaveBeenCalledTimes(1);
-      expect(facade.isAuthenticated()).toBe(false);
+    beforeEach(() => {
+      store.overrideSelector(selectMarkets, markets as never);
+      store.overrideSelector(selectMarketCountryId, 'cze-id');
+      store.refreshState();
     });
 
-    // The generated clients emit NULL from an array-returning method for a 200 whose body is not
-    // a JSON array, and for a 204. The declared type says otherwise, so nothing — not
-    // `catchError`, not the compiler — stands between that null and these signals. Seeding the
-    // mocks with a plausible array is exactly how that stayed invisible.
-    it('holds an empty country list when the served-countries read emits null', () => {
-      countryClient.getServiced.mockReturnValue(of(null));
+    it('offers every market as a country, labelled in the current language', () => {
+      expect(facade.countryOptions()).toEqual([
+        { label: 'Czechia', value: 'cze-id' },
+        { label: 'Slovakia', value: 'svk-id' },
+      ]);
 
+      langChange.next({ lang: 'cs' });
+
+      expect(facade.countryOptions().map((option) => option.label)).toEqual(['Česko', 'Slovensko']);
+    });
+
+    it('shows the chosen market until the address names a country, then the address', () => {
+      expect(facade.addressCountryId()).toBe('cze-id');
+
+      facade.updateFormData({ address: createAddressDto({ countryId: 'svk-id' }) });
+      expect(facade.addressCountryId()).toBe('svk-id');
+
+      store.overrideSelector(selectMarketCountryId, 'deu-id');
+      store.refreshState();
+      expect(facade.addressCountryId()).toBe('svk-id');
+    });
+
+    const completeInlineOrder = (countryId: string) =>
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        cleaningDate: new Date('2026-07-01T00:00:00Z'),
+        cleaningTime: '10:00',
+        address: createAddressDto({ street: 'Hlavna 2', city: 'Bratislava', zipCode: '81101', countryId }),
+        addressLatitude: 48.14,
+        addressLongitude: 17.1,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
+        customerEmail: 'a@b.com',
+        customerPhone: '+421123456789',
+        paymentType: PaymentType.Cash,
+      });
+
+    it('sends the country the picker showed when the inline address never named one', async () => {
+      completeInlineOrder('');
+
+      await facade.submitOrder();
+
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.customerAddress.countryId).toBe('cze-id');
+    });
+
+    it('sends the picked country over the chosen market', async () => {
+      completeInlineOrder('svk-id');
+
+      await facade.submitOrder();
+
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.customerAddress.countryId).toBe('svk-id');
+    });
+  });
+
+  describe('initialize', () => {
+    it('loads extras and reads auth state', () => {
       facade.initialize();
 
-      expect(facade.countries()).toEqual([]);
-      expect(facade.formData().address.countryId).toBe('');
+      expect(extraClient.getOverview).toHaveBeenCalledTimes(1);
+      expect(facade.isAuthenticated()).toBe(false);
     });
 
     // `[...null]` throws "not iterable" — but it throws INSIDE a subscribe next handler, which

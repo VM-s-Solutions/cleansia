@@ -5,7 +5,6 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddressDto,
   CategoryDto,
-  CountryListItem,
   CreateOrderCommand,
   CustomerAddress,
   CustomerAuthService,
@@ -30,13 +29,19 @@ import {
   selectCustomerServices,
   selectCustomerServicesCatalogue,
   selectMarketCountryId,
+  selectMarkets,
 } from '@cleansia/customer-stores';
-import { CleansiaCustomerRoute, extractApiErrorCode, SnackbarService } from '@cleansia/services';
+import {
+  CleansiaCustomerRoute,
+  extractApiErrorCode,
+  marketCountryOptions,
+  SnackbarService,
+} from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, map, of, takeUntil } from 'rxjs';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -102,7 +107,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     this.store.select(selectCustomerDefaultCurrencyCode),
     { initialValue: null },
   );
-  countries = signal<CountryListItem[]>([]);
   // Anonymous catalog of bookable extras, read with the rest of the catalogue for the address's
   // country. Best-effort: if the call fails the wizard still works, the extras section just
   // stays empty (same approach the mobile app uses).
@@ -192,12 +196,20 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly marketCountryId = toSignal(this.store.select(selectMarketCountryId), {
     initialValue: null,
   });
+  private readonly markets = toSignal(this.store.select(selectMarkets), { initialValue: [] });
+  private readonly language = toSignal(
+    this.translate.onLangChange.pipe(map(({ lang }) => lang)),
+    { initialValue: this.translate.currentLang || this.translate.getDefaultLang() },
+  );
+  /** The address country picker lists the market directory (ADR-0058 D1). */
+  readonly countryOptions = computed(() => marketCountryOptions(this.markets(), this.language()));
   /**
-   * The country the catalogue and the quote are priced for: the service address's, which decides
-   * the currency the booking is charged in, and until an address names one the chosen market's
-   * (ADR-0058 D4). A market chosen after the address is entered does not touch the booking.
+   * The country the address is in, which decides the currency the booking is charged in and what
+   * the catalogue and the quote are priced for: the address's own once it names one, and the
+   * chosen market's until then (ADR-0058 D4). The picker shows this value, and a market chosen
+   * after the address named a country does not touch the booking.
    */
-  private readonly catalogueCountry = computed<string | null>(
+  readonly addressCountryId = computed<string | null>(
     () => this.formData().address.countryId || this.marketCountryId(),
   );
   /** The country the catalogue was last read for, so a same-country address edit re-reads nothing. */
@@ -351,34 +363,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   initialize(): void {
     this.followAddressCountry();
     this.store.dispatch(loadCustomerCurrencies());
-    // `getServiced` returns only countries the company operates in. The old
-    // `getOverview` call alphabetically returned the full catalog, so the
-    // auto-select-first-country fallback silently picked Argentina for
-    // every CZ booking — the address persisted with CountryId=Argentina and
-    // the backend now (rightly) rejects that. Service-area work in
-    // planning/active/service-areas.md.
-    this.customerClient.countryClient.getServiced().pipe(takeUntil(this.destroyed$)).subscribe({
-      next: (countries) => {
-        // `?? []` because the generated client answers a 200 whose body is not a JSON array — an
-        // empty body, a `{}`, a `null` — and a 204 with NULL, while its declared type promises an
-        // array (see `processGetServiced` in customer-client.ts, which falls to
-        // `result200 = null as any`). Nothing above catches it: null is not an error, so a
-        // `catchError` would not fire even if this read had one, and TypeScript never complains
-        // because the declared type is non-nullable. Coalesced ONCE into a local because the
-        // auto-select below measures and indexes the same list the signal holds.
-        const served = countries ?? [];
-        this.countries.set(served);
-        // Auto-select country ONLY when there's exactly one served — otherwise
-        // require the user to pick. With multiple served countries we'd hit
-        // the same silent-default bug if we auto-picked here, just with a
-        // different country.
-        if (served.length === 1 && !this.formData().address.countryId) {
-          const address = new AddressDto(this.formData().address);
-          address.countryId = served[0].id ?? '';
-          this.updateFormData({ address });
-        }
-      },
-    });
     const loggedIn = this.authService.isLoggedIn();
     this.isAuthenticated.set(loggedIn);
     this.membership.load(loggedIn);
@@ -427,12 +411,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * once that list has landed.
    */
   private followAddressCountry(): void {
-    toObservable(this.catalogueCountry, { injector: this.injector })
+    toObservable(this.addressCountryId, { injector: this.injector })
       .pipe(takeUntil(this.destroyed$))
       .subscribe((countryId) => {
         if (countryId !== this.catalogueCountryId) this.loadCatalogue(countryId);
       });
-    this.loadCatalogue(this.catalogueCountry());
+    this.loadCatalogue(this.addressCountryId());
 
     this.store
       .select(selectCustomerServicesCatalogue)
@@ -478,7 +462,13 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   /** A list priced for the platform default never trims: nothing was ever picked outside it. */
   private pricedForAddress(countryId: string | null): boolean {
-    return countryId !== null && countryId === this.catalogueCountry();
+    return countryId !== null && countryId === this.addressCountryId();
+  }
+
+  private inlineCustomerAddress(address: AddressDto): CustomerAddress {
+    const customerAddress = new CustomerAddress(address);
+    customerAddress.countryId = this.addressCountryId() ?? '';
+    return customerAddress;
   }
 
   private keepSelectedServices(offered: (id: string) => boolean): void {
@@ -885,10 +875,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       `${data.customerFirstName} ${data.customerLastName}`.trim();
     command.customerEmail = data.customerEmail;
     command.customerPhone = data.customerPhone;
-    // Backend validator is XOR: send savedAddressId OR customerAddress, never both.
-    command.customerAddress = savedId
-      ? undefined
-      : new CustomerAddress(data.address);
+    // Backend validator is XOR: send savedAddressId OR customerAddress, never both. The inline
+    // address carries the country the picker showed and the quote was priced for.
+    command.customerAddress = savedId ? undefined : this.inlineCustomerAddress(data.address);
     command.savedAddressId = savedId ?? undefined;
     command.selectedServiceIds = data.selectedServiceIds;
     command.selectedPackageIds = data.selectedPackageIds;

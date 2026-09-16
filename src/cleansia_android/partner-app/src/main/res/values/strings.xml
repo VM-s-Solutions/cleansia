@@ -1265,8 +1265,8 @@
     <string name="notification_channel_dispute_reply_name">Support replies</string>
     <string name="notification_channel_dispute_reply_desc">Notifies you when support responds to your dispute.</string>
 
-    <string name="notification_order_confirmed_title">Job confirmed</string>
-    <string name="notification_order_confirmed_body">Job #%1$s is confirmed. Tap to see the details.</string>
+    <string name="notification_order_payment_confirmed_title">Job confirmed</string>
+    <string name="notification_order_payment_confirmed_body">Job #%1$s is confirmed. Tap to see the details.</string>
     <string name="notification_order_in_progress_title">Job in progress</string>
     <string name="notification_order_in_progress_body">Job #%1$s is underway. Tap to follow along.</string>
     <string name="notification_order_completed_title">Job completed</string>
@@ -1436,4 +1436,6 @@
     <string name="open_settings">Open Settings</string>
     <string name="photo_source_title">Add photo</string>
     <string name="camera_unavailable">This device has no camera.</string>
+    <string name="notification_recurring_paused_title">Recurring schedule paused</string>
+    <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
 </resources>

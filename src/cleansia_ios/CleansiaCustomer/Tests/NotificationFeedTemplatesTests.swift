@@ -6,6 +6,45 @@ final class NotificationFeedTemplatesTests: XCTestCase {
     private let appBundle = Bundle(identifier: "cz.cleansia.customer") ?? .main
     private let languages = ["en", "cs", "sk", "uk", "ru"]
 
+    func testRecurringPauseRowRendersWithoutArgsAndSurvivesTheCustomerFeedFilter() throws {
+        XCTAssertTrue(CustomerFeedEventKeys.contains("recurring.paused"))
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(eventKey: "recurring.paused", args: [:]))
+        let withUnrelatedArgs = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "recurring.paused",
+            args: ["orderId": "unrelated-order", "orderNumber": "MUST-NOT-APPEAR", "count": "3"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.recurring.paused.title"))
+        XCTAssertEqual(rendered.body, L10n.localized("push.recurring.paused.body"))
+        XCTAssertEqual(withUnrelatedArgs.body, rendered.body)
+        XCTAssertFalse(rendered.body.hasPrefix("push."))
+        XCTAssertFalse(rendered.body.contains("%"))
+        let rows = NotificationFeedTemplates.rows(from: [
+            NotificationFixtures.item(id: "paused", eventKey: "recurring.paused"),
+            NotificationFixtures.item(id: "unknown", eventKey: "unknown.event")
+        ])
+        XCTAssertEqual(rows.map(\.id), ["paused"])
+    }
+
+    func testCurrentAndPersistedLegacyPaymentRowsRenderTheSameBooking() throws {
+        let current = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.payment_confirmed",
+            args: ["orderNumber": "A-1042"]
+        ))
+        let legacy = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "order.confirmed",
+            args: ["orderNumber": "A-1042"]
+        ))
+        XCTAssertEqual(current.title, legacy.title)
+        XCTAssertEqual(current.body, legacy.body)
+        XCTAssertTrue(current.body.contains("A-1042"))
+        XCTAssertFalse(current.body.contains("%"))
+        let rows = NotificationFeedTemplates.rows(from: [
+            NotificationFixtures.item(id: "current", eventKey: "order.payment_confirmed"),
+            NotificationFixtures.item(id: "saved", eventKey: "order.confirmed")
+        ])
+        XCTAssertEqual(rows.map(\.id), ["current", "saved"])
+    }
+
     func testOrderRowRendersTheApnsTemplateWithTheOrderNumber() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
             eventKey: "order.completed",

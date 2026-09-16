@@ -1,11 +1,11 @@
 ---
 id: T-0694
 title: The order.confirmed push key has a fulfilment name and a money meaning
-status: todo
+status: in_progress
 size: M
 owner: —
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-16
 depends_on: [T-0691]
 blocks: []
 stories: []
@@ -51,4 +51,10 @@ Check whether anything persists the key (a notification feed row) before assumin
 
 ## Status log
 
+- 2026-09-16 — Client implementation started with regression tests. The new key is
+  `order.payment_confirmed`: the existing recurring-cash producer also confirms an occurrence
+  before onsite collection, so `payment_received` would overstate that trigger. Copy and triggers
+  remain unchanged. Preserve `order.confirmed` for historical feed rows, queued envelopes and
+  notifications already held by devices. Updated mobile clients must ship before new backend
+  emission; old binaries cannot resolve a new key. Backend changes follow the guest-cancel lane.
 - 2026-09-08 — filed from the T-0691 out-of-scope list.

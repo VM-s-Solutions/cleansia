@@ -5,6 +5,7 @@ import Foundation
 /// from feed v1 (Q-FEED-01) and partner keys never reach this host.
 enum CustomerFeedEventKeys {
     static let all: Set<String> = [
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
@@ -15,6 +16,7 @@ enum CustomerFeedEventKeys {
         "order.no_cleaner_refunded",
         "dispute.reply",
         "recurring.scheduled",
+        "recurring.paused",
         "membership.expiring_soon",
         "membership.cancellation_effective",
         "loyalty.tier_upgrade"
@@ -71,6 +73,7 @@ enum NotificationFeedTemplates {
     }
 
     private static let orderNumberEvents: Set<String> = [
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",

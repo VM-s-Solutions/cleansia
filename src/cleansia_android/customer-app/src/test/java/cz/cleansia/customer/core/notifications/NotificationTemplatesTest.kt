@@ -15,10 +15,119 @@ import org.junit.Test
 
 /**
  * `order.cleaner_assigned` is the only event that may claim a cleaner is on the job:
- * `order.confirmed` is produced by the Stripe webhook and by the customer confirming a
+ * `order.payment_confirmed` is produced by the Stripe webhook and by the customer confirming a
  * recurring occurrence, on neither of which has a cleaner seen the order.
  */
 class NotificationTemplatesTest {
+    @Test
+    fun recurringPauseUsesTheExistingRecurringPreferenceAndEntersTheCustomerFeed() {
+        val template = NotificationTemplates.templateFor("recurring.paused")
+        assertNotNull(template)
+        assertEquals(R.string.notification_recurring_paused_title, template?.titleRes)
+        assertEquals(R.string.notification_recurring_paused_body, template?.bodyRes)
+        assertEquals(NotificationCategoryDto.RecurringScheduled, template?.category)
+        assertTrue(CustomerFeedEventKeys.contains("recurring.paused"))
+    }
+
+    @Test
+    fun recurringPauseFormatsBodyWithoutArguments() {
+        val context = mockk<Context>()
+        val bodyRes = R.string.notification_recurring_paused_body
+        every { context.getString(bodyRes) } returns "Schedule paused; renew Plus."
+        for (args in listOf(emptyMap(), mapOf("orderNumber" to "MUST-NOT-APPEAR", "count" to "3"))) {
+            assertEquals(
+                "Schedule paused; renew Plus.",
+                NotificationTemplates.formatBody(context, "recurring.paused", bodyRes, args),
+            )
+        }
+    }
+
+    @Test
+    fun recurringPauseCopyExplainsInactivePlusAndRenewalInEveryLocale() {
+        val requiredWords = mapOf(
+            "values" to listOf("paused", "not active", "renew", "resume"),
+            "values-cs" to listOf("pozastaven", "není aktivní", "obnovte", "pokračovat"),
+            "values-sk" to listOf("pozastaven", "nie je aktívne", "obnovte", "pokračovať"),
+            "values-uk" to listOf("призупинено", "неактивний", "поновіть", "відновити"),
+            "values-ru" to listOf("приостановлено", "неактивен", "продлите", "возобновить"),
+        )
+        val cancellationWords = listOf("cancel", "zruš", "скасов", "скасован", "отмен")
+        val english = stringsXml("values")
+        for (locale in locales) {
+            val xml = stringsXml(locale)
+            val title = valueOf(xml, "notification_recurring_paused_title")
+            val body = valueOf(xml, "notification_recurring_paused_body")
+            assertNotNull("$locale pause title", title)
+            assertNotNull("$locale pause body", body)
+            assertTrue(title!!.isNotBlank())
+            assertTrue(body!!.isNotBlank())
+            assertEquals(emptyList<String>(), formatSlots(title))
+            assertEquals(emptyList<String>(), formatSlots(body))
+            assertTrue("$locale must name Plus", body.contains("Plus"))
+            for (word in requiredWords.getValue(locale)) {
+                assertTrue("$locale must explain $word", body.contains(word, ignoreCase = true))
+            }
+            for (word in cancellationWords) {
+                assertFalse("$locale must not say visits were cancelled", "$title $body".contains(word, ignoreCase = true))
+            }
+            if (locale != "values") {
+                assertFalse("$locale title left in English", title == valueOf(english, "notification_recurring_paused_title"))
+                assertFalse("$locale body left in English", body == valueOf(english, "notification_recurring_paused_body"))
+            }
+        }
+    }
+
+
+    @Test
+    fun `payment confirmation and saved legacy notifications share a template`() {
+        val current = NotificationTemplates.templateFor("order.payment_confirmed")
+        assertNotNull(current)
+        assertEquals(NotificationTemplates.templateFor("order.confirmed"), current)
+        assertEquals(NotificationCategoryDto.OrderUpdates, current?.category)
+    }
+
+    @Test
+    fun `payment confirmation formats the order number for both wire keys`() {
+        val context = mockk<Context>()
+        val bodyRes = R.string.notification_order_payment_confirmed_body
+        every { context.getString(bodyRes, "A-1042") } returns "Booking A-1042"
+        listOf("order.payment_confirmed", "order.confirmed").forEach { key ->
+            assertEquals(
+                "Booking A-1042",
+                NotificationTemplates.formatBody(context, key, bodyRes, mapOf("orderNumber" to "A-1042")),
+            )
+        }
+    }
+
+    @Test
+    fun `payment confirmation and saved legacy taps require and open the booking`() {
+        listOf("order.payment_confirmed", "order.confirmed").forEach { key ->
+            assertEquals(Routes.OrderDetail("ord-7"), NotificationDeepLink.resolve(key, mapOf("orderId" to "ord-7")))
+            assertNull(NotificationDeepLink.resolve(key, emptyMap()))
+        }
+    }
+
+    @Test
+    fun `payment confirmation copy exists with the same one argument in every locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            val title = valueOf(xml, "notification_order_payment_confirmed_title")
+            val body = valueOf(xml, "notification_order_payment_confirmed_body")
+            assertNotNull("$locale payment confirmation title", title)
+            assertNotNull("$locale payment confirmation body", body)
+            assertTrue(title!!.isNotBlank())
+            assertTrue(body!!.isNotBlank())
+            assertEquals(emptyList<String>(), formatSlots(title))
+            assertEquals(listOf("%1${'$'}s"), formatSlots(body))
+        }
+    }
+
+    @Test
+    fun `current and persisted legacy payment notifications both remain in the customer feed`() {
+        assertTrue(CustomerFeedEventKeys.contains("order.payment_confirmed"))
+        assertTrue(CustomerFeedEventKeys.contains("order.confirmed"))
+    }
+
 
     private val locales = listOf("values", "values-cs", "values-sk", "values-uk", "values-ru")
 
@@ -339,7 +448,7 @@ class NotificationTemplatesTest {
     fun `no confirmation string claims a cleaner in any locale`() {
         locales.forEach { locale ->
             val xml = stringsXml(locale)
-            listOf("notification_order_confirmed_title", "notification_order_confirmed_body").forEach { key ->
+            listOf("notification_order_payment_confirmed_title", "notification_order_payment_confirmed_body").forEach { key ->
                 val value = valueOf(xml, key)!!
                 assertFalse(
                     "$locale/strings.xml still claims a cleaner in $key: \"$value\"",

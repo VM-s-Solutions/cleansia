@@ -56,6 +56,7 @@ object NotificationDeepLink {
         // Order-scoped events land on the order detail so the cleaner sees the
         // job that changed. dispute.reply also carries the disputed order's id
         // (see CleansiaFirebaseMessagingService).
+        "order.payment_confirmed",
         "order.confirmed",
         "order.in_progress",
         "order.completed",

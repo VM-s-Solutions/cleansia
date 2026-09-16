@@ -1235,8 +1235,8 @@
     <string name="notification_channel_dispute_reply_name">Відповіді підтримки</string>
     <string name="notification_channel_dispute_reply_desc">Сповіщає, коли підтримка відповідає на вашу скаргу.</string>
 
-    <string name="notification_order_confirmed_title">Замовлення підтверджено</string>
-    <string name="notification_order_confirmed_body">Замовлення №%1$s підтверджено. Торкніться, щоб переглянути деталі.</string>
+    <string name="notification_order_payment_confirmed_title">Замовлення підтверджено</string>
+    <string name="notification_order_payment_confirmed_body">Замовлення №%1$s підтверджено. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_order_in_progress_title">Замовлення виконується</string>
     <string name="notification_order_in_progress_body">Замовлення №%1$s виконується. Торкніться, щоб стежити за ним.</string>
     <string name="notification_order_completed_title">Замовлення завершено</string>
@@ -1406,4 +1406,6 @@
     <string name="open_settings">Відкрити налаштування</string>
     <string name="photo_source_title">Додати фото</string>
     <string name="camera_unavailable">На цьому пристрої немає камери.</string>
+    <string name="notification_recurring_paused_title">Розклад регулярних прибирань призупинено</string>
+    <string name="notification_recurring_paused_body">Ваш розклад регулярних прибирань призупинено, оскільки Plus неактивний. Поновіть Plus, щоб відновити планування прибирань.</string>
 </resources>

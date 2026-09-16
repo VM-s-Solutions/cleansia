@@ -7,6 +7,12 @@ namespace Cleansia.Infra.Database.Repositories;
 public class UserMembershipRepository(CleansiaDbContext context)
     : BaseRepository<UserMembership>(context), IUserMembershipRepository
 {
+    public Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken) =>
+        GetDbSet().Where(m => m.UserId == userId && m.PaidPeriodConfirmedAt != null)
+            .OrderByDescending(m => m.PaidPeriodConfirmedAt)
+            .ThenByDescending(m => m.CreatedOn).ThenByDescending(m => m.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public Task<UserMembership?> GetActiveForUserAsync(string userId, CancellationToken cancellationToken)
     {
         return ActiveForUserQuery(userId).FirstOrDefaultAsync(cancellationToken);

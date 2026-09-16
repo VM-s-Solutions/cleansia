@@ -82,7 +82,12 @@ database, and the last two by `InitialMigrationTenantDdlTests`, which reads the 
 operations. Guest cancellation then regenerated `Initial` as **`20260916102615`** on 2026-09-16:
 `Order.CurrentStatus` becomes an EF concurrency token to reject stale status writes. There is no new
 SQL column and the create operations remain unchanged; all 501 PostgreSQL integration tests passed
-with this metadata change. **The one owed drop belongs to `20260916102615`**: a DEV database whose
+with this metadata change. Recurring pause notification state regenerated Initial again as
+**`20260916120038`**: `UserMemberships` gains `PaidPeriodConfirmedAt`,
+`RecurringPauseStateObservedAt`, `RecurringPauseNotificationSentAt` and
+`RecurringPauseNotificationSequence`, with PostgreSQL `xmin` concurrency metadata. The table count
+remains 87; full integration verification of this regeneration is in progress.
+**The one owed drop belongs to `20260916120038`**: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start.
 

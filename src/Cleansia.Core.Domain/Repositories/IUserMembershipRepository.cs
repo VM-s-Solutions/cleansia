@@ -11,6 +11,9 @@ namespace Cleansia.Core.Domain.Repositories;
 /// </summary>
 public interface IUserMembershipRepository : IRepository<UserMembership, string>
 {
+    /// <summary>Latest authoritatively paid enrolment for a proven account owner, tracked for its lapse latch.</summary>
+    Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken);
+
     /// <summary>
     /// Resolve the user's currently-providing-benefits membership, with
     /// <see cref="UserMembership.MembershipPlan"/> eagerly loaded so the

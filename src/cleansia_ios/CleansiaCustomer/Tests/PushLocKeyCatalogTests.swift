@@ -19,6 +19,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     private let appBundle = Bundle(identifier: "cz.cleansia.customer") ?? .main
     private let languages = ["en", "cs", "sk", "uk", "ru"]
     private let events = [
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
@@ -30,6 +31,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.starting_soon",
         "dispute.reply",
         "recurring.scheduled",
+        "recurring.paused",
         "loyalty.tier_upgrade",
         "membership.expiring_soon",
         "membership.cancellation_effective",
@@ -51,6 +53,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
     /// APNs loc-args are always strings, so every slot is `%1$@` whatever the
     /// backend put in it.
     private let orderNumberArgEvents: Set<String> = [
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.on_the_way",
@@ -154,14 +157,17 @@ final class PushLocKeyCatalogTests: XCTestCase {
     }
 
     /// `order.cleaner_assigned` is the only event that may claim a cleaner is on the
-    /// job. `order.confirmed` is also produced by the Stripe webhook and by the
+    /// job. `order.payment_confirmed` is produced by the Stripe webhook and by the
     /// customer confirming a recurring occurrence, on neither of which has a cleaner
     /// seen the order.
     func testNoConfirmationCopyClaimsACleaner() throws {
         for language in languages {
             let table = try localizableTable(for: language)
             let word = try XCTUnwrap(cleanerWord[language])
-            for key in ["push.order.confirmed.title", "push.order.confirmed.body"] {
+            for key in [
+                "push.order.payment_confirmed.title", "push.order.payment_confirmed.body",
+                "push.order.confirmed.title", "push.order.confirmed.body"
+            ] {
                 let value = try XCTUnwrap(table[key], "\(key) in \(language)")
                 XCTAssertNil(
                     value.range(of: word, options: .caseInsensitive),
@@ -252,6 +258,44 @@ final class PushLocKeyCatalogTests: XCTestCase {
                         "\(key) says \(word) in \(language): \(value)"
                     )
                 }
+            }
+        }
+    }
+
+    func testPaymentConfirmationRetainsTheLegacyCopyInEveryLanguage() throws {
+        for language in languages {
+            let table = try localizableTable(for: language)
+            for suffix in ["title", "body"] {
+                let current = try XCTUnwrap(table["push.order.payment_confirmed.\(suffix)"], language)
+                let legacy = try XCTUnwrap(table["push.order.confirmed.\(suffix)"], language)
+                XCTAssertEqual(current, legacy, language)
+            }
+        }
+    }
+
+    func testRecurringPauseExplainsInactivePlusAndRenewalWithoutCancellingVisits() throws {
+        let requiredWords = [
+            "en": ["paused", "not active", "renew", "resume"],
+            "cs": ["pozastaven", "není aktivní", "obnovte", "pokračovat"],
+            "sk": ["pozastaven", "nie je aktívne", "obnovte", "pokračovať"],
+            "uk": ["призупинено", "неактивний", "поновіть", "відновити"],
+            "ru": ["приостановлено", "неактивен", "продлите", "возобновить"]
+        ]
+        let cancellationWords = ["cancel", "zruš", "скасов", "скасован", "отмен"]
+        for language in languages {
+            let table = try localizableTable(for: language)
+            let title = try XCTUnwrap(table["push.recurring.paused.title"], language)
+            let body = try XCTUnwrap(table["push.recurring.paused.body"], language)
+            XCTAssertFalse(title.isEmpty, language)
+            XCTAssertFalse(body.isEmpty, language)
+            XCTAssertFalse(title.contains("%"), language)
+            XCTAssertFalse(body.contains("%"), language)
+            XCTAssertTrue(body.contains("Plus"), language)
+            for word in try XCTUnwrap(requiredWords[language]) {
+                XCTAssertNotNil(body.range(of: word, options: .caseInsensitive), "\(language): \(word)")
+            }
+            for word in cancellationWords {
+                XCTAssertNil("\(title) \(body)".range(of: word, options: .caseInsensitive), "\(language): \(word)")
             }
         }
     }

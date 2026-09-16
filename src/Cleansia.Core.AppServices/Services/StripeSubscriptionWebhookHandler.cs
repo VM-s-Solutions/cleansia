@@ -61,6 +61,8 @@ public class StripeSubscriptionWebhookHandler(
         var endToWrite = periodEnd == default ? membership.CurrentPeriodEnd : periodEnd;
 
         membership.UpdateFromStripeWebhook(stripeStatus, startToWrite, endToWrite, trialEnd);
+        if (membership.StripeSubscriptionId == subscriptionId)
+            membership.RecordRecurringPauseState(stripeStatus, stripeEvent.Created, DateTime.UtcNow);
 
         logger.LogInformation(
             "Synced membership {MembershipId} (sub {SubscriptionId}) from {EventType}: status now {Status}",
@@ -194,6 +196,7 @@ public class StripeSubscriptionWebhookHandler(
             currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
             trialEndsAtUtc: trialEnd);
+        membership.RecordRecurringPauseState(stripeSub?.Status, stripeEvent.Created, DateTime.UtcNow);
         userMembershipRepository.Add(membership);
 
         // The read above is a fast path, not the guarantee: two webhooks can both pass it before either

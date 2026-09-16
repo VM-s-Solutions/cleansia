@@ -27,6 +27,8 @@ public class FcmMessageFactoryTests
     public static TheoryData<string, Dictionary<string, string>, string[]> DisplayableEvents => new()
     {
         { "order.confirmed", OrderArgs(), ["A-1042"] },
+        { "order.payment_confirmed", OrderArgs(), ["A-1042"] },
+        { "recurring.paused", new Dictionary<string, string>(), [] },
         { "order.on_the_way", OrderArgs(), ["A-1042"] },
         { "order.in_progress", OrderArgs(), ["A-1042"] },
         { "order.completed", OrderArgs(), ["A-1042"] },
@@ -344,6 +346,7 @@ public class FcmMessageFactoryTests
             "order.new_available",
             "order.no_cleaner_refunded",
             "order.on_the_way",
+            "order.payment_confirmed",
             "order.preferred_offer",
             "order.preferred_offer_closed",
             "order.refunded",
@@ -353,6 +356,7 @@ public class FcmMessageFactoryTests
             "order.seat_open",
             "order.starting_soon",
             "payroll.invoice_paid",
+            "recurring.paused",
             "recurring.scheduled",
         ];
 

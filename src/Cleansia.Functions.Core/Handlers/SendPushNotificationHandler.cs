@@ -243,6 +243,12 @@ public class SendPushNotificationHandler(
     private static string SubjectFrom(SendPushNotificationMessage message)
     {
         if (message.Args is null) return string.Empty;
+        if (message.EventKey == NotificationEventCatalog.RecurringPaused
+            && message.Args.TryGetValue("membershipId", out var membershipId)
+            && message.Args.TryGetValue("pauseSequence", out var sequence))
+        {
+            return MessageKeys.RecurringPauseSubject(membershipId, sequence);
+        }
         foreach (var argKey in new[] { "orderId", "disputeId", "membershipId" })
         {
             if (message.Args.TryGetValue(argKey, out var value) && !string.IsNullOrEmpty(value))

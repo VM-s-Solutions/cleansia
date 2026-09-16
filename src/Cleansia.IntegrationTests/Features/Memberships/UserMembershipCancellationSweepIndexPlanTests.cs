@@ -334,10 +334,10 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
             "INSERT INTO \"UserMemberships\" " +
             "(\"Id\",\"UserId\",\"MembershipPlanId\",\"CurrencyId\",\"StripeSubscriptionId\",\"Status\"," +
             "\"CurrentPeriodStart\",\"CurrentPeriodEnd\",\"CancelledAt\",\"RenewalReminderSentAt\"," +
-            "\"CancellationReminderSentAt\",\"IsActive\",\"CreatedBy\",\"CreatedOn\",\"TenantId\") SELECT " +
+            "\"CancellationReminderSentAt\",\"RecurringPauseNotificationSequence\",\"IsActive\",\"CreatedBy\",\"CreatedOn\",\"TenantId\") SELECT " +
             $"'{prefix}-' || g, 'u-{prefix}-' || g, 'plan-1', 'currency-czk', 'sub-{prefix}-' || g, 1, " +
             $"'{Iso(Now.AddDays(-25))}', {periodEnd}, {cancelledAt}, {renewalSent}, " +
-            $"{cancellationSent}, true, 'seed', '{Iso(Now)}', '{TestTenants.Default}' " +
+            $"{cancellationSent}, 0, true, 'seed', '{Iso(Now)}', '{TestTenants.Default}' " +
             $"FROM generate_series(1, {count}) AS g;";
 
         private static async Task Execute(NpgsqlConnection conn, string sql)

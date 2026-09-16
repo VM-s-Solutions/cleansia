@@ -2,6 +2,29 @@ import XCTest
 @testable import CleansiaCustomer
 
 final class CustomerNotificationDeepLinkTests: XCTestCase {
+    func testRecurringPauseTapOpensMembershipManagementWithoutAnOrderId() throws {
+        let destination = try XCTUnwrap(CustomerNotificationDeepLink.resolve(
+            eventKey: "recurring.paused", orderId: nil, disputeId: nil
+        ))
+        XCTAssertEqual(destination, .membershipManagement)
+        let plan = CustomerPushTapRouting.plan(for: destination)
+        XCTAssertEqual(plan.tab, .profile)
+        XCTAssertEqual(plan.routes, [])
+        XCTAssertEqual(
+            CustomerNotificationDeepLink.resolve(
+                eventKey: "recurring.paused",
+                orderId: "unrelated-order",
+                disputeId: nil
+            ),
+            .membershipManagement
+        )
+    }
+
+    func testArglessRecurringPauseAlertUsesTheSameMembershipTap() {
+        let userInfo = alertCarryingUserInfo(eventKey: "recurring.paused", locArgs: [], extra: [:])
+        XCTAssertEqual(CustomerNotificationDeepLink.resolve(userInfo), .membershipManagement)
+    }
+
     func testOrderEventWithIdResolvesToOrderDestination() {
         let destination = CustomerNotificationDeepLink.resolve(
             eventKey: "order.confirmed",
@@ -13,6 +36,7 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
 
     func testAllOrderScopedEventsResolveToOrder() {
         let keys = [
+            "order.payment_confirmed",
             "order.confirmed",
             "order.cleaner_assigned",
             "order.on_the_way",
@@ -35,6 +59,11 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
     }
 
     func testOrderEventWithoutIdResolvesToNil() {
+        XCTAssertNil(CustomerNotificationDeepLink.resolve(
+            eventKey: "order.payment_confirmed",
+            orderId: nil,
+            disputeId: nil
+        ))
         XCTAssertNil(CustomerNotificationDeepLink.resolve(
             eventKey: "order.confirmed",
             orderId: nil,

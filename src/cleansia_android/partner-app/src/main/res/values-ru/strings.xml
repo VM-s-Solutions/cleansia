@@ -1235,8 +1235,8 @@
     <string name="notification_channel_dispute_reply_name">Ответы поддержки</string>
     <string name="notification_channel_dispute_reply_desc">Уведомляет, когда поддержка отвечает на вашу жалобу.</string>
 
-    <string name="notification_order_confirmed_title">Заказ подтверждён</string>
-    <string name="notification_order_confirmed_body">Заказ №%1$s подтверждён. Нажмите, чтобы посмотреть детали.</string>
+    <string name="notification_order_payment_confirmed_title">Заказ подтверждён</string>
+    <string name="notification_order_payment_confirmed_body">Заказ №%1$s подтверждён. Нажмите, чтобы посмотреть детали.</string>
     <string name="notification_order_in_progress_title">Заказ выполняется</string>
     <string name="notification_order_in_progress_body">Заказ №%1$s выполняется. Нажмите, чтобы следить за ним.</string>
     <string name="notification_order_completed_title">Заказ завершён</string>
@@ -1406,4 +1406,6 @@
     <string name="open_settings">Открыть настройки</string>
     <string name="photo_source_title">Добавить фото</string>
     <string name="camera_unavailable">На этом устройстве нет камеры.</string>
+    <string name="notification_recurring_paused_title">Расписание регулярных уборок приостановлено</string>
+    <string name="notification_recurring_paused_body">Ваше расписание регулярных уборок приостановлено, поскольку Plus неактивен. Продлите Plus, чтобы возобновить планирование уборок.</string>
 </resources>

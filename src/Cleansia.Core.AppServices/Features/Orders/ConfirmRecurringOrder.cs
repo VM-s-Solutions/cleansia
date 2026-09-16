@@ -168,7 +168,7 @@ public class ConfirmRecurringOrder
             {
                 await notificationProducer.NotifyAsync(
                     order.UserId,
-                    NotificationEventCatalog.OrderConfirmed,
+                    NotificationEventCatalog.OrderPaymentConfirmed,
                     new Dictionary<string, string>
                     {
                         ["orderId"] = order.Id,

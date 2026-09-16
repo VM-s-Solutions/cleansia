@@ -251,7 +251,8 @@ public class RecurringPreferredCleanerCarryThroughTests
             OrderMarketDoubles.OperatedBy("cleansia-cz"),
             _tenantProvider.Object,
             _unitOfWork.Object,
-            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);
+            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
+            Mock.Of<INotificationProducer>());
     }
 
     private static MaterializeRecurringBookingTemplate.Command SweepCommand() =>

@@ -23,6 +23,21 @@ import org.junit.Test
 class NotificationDeepLinkTest {
 
     @Test
+    fun recurringPauseOpensMembershipManagementWithoutAnOrderId() {
+        for (args in listOf(emptyMap(), mapOf("orderId" to "unrelated-order"))) {
+            assertEquals(
+                Routes.Home(tab = MainTab.Profile.name),
+                NotificationDeepLink.resolve("recurring.paused", args),
+            )
+        }
+        assertEquals(
+            Routes.OrderDetail("existing-visit"),
+            NotificationDeepLink.resolve("recurring.scheduled", mapOf("orderId" to "existing-visit")),
+        )
+    }
+
+
+    @Test
     fun `membership events land on the profile tab, not the sales page`() {
         for (key in listOf("membership.expiring_soon", "membership.cancellation_effective")) {
             assertEquals(

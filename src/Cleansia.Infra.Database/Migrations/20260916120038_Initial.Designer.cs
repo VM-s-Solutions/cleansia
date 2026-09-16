@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260916102615_Initial")]
+    [Migration("20260916120038_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -3416,6 +3416,18 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<DateTime?>("PaidPeriodConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RecurringPauseNotificationSentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("RecurringPauseNotificationSequence")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("RecurringPauseStateObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("RenewalReminderSentAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -3446,6 +3458,12 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 

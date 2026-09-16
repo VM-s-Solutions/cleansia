@@ -41,6 +41,10 @@ public class UserMembershipEntityConfiguration : TenantAuditableEntityConfigurat
 
         builder.Property(m => m.RenewalReminderSentAt);
         builder.Property(m => m.CancellationReminderSentAt);
+        builder.Property(m => m.PaidPeriodConfirmedAt);
+        builder.Property(m => m.RecurringPauseStateObservedAt);
+        builder.Property(m => m.RecurringPauseNotificationSentAt);
+        builder.Property(m => m.RecurringPauseNotificationSequence).IsRequired();
 
         // No index: read only alongside a row already loaded by the active-membership query, never a
         // predicate on its own.

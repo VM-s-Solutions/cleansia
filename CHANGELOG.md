@@ -70,6 +70,12 @@ need backfilling.
 
 ### Added
 
+- **Plus — a recurring schedule pause is now explained.** After a confirmed paid membership
+  lapses, the customer receives one notice explaining that scheduling is paused and renewing Plus
+  resumes it. Existing booked visits remain intact; muting push still leaves the feed item. Android
+  and iOS carry all five locales. Previously unmarked membership histories start receiving these
+  notices after a new authoritative paid observation. (T-0692.)
+
 - **Guest cancellation on customer web and Android:** guests can preview the standard cancellation fee and cancel using
   their booking number, email and confirmation code. Confirmation email reports any refund actually
   issued. The iOS screen remains pending. Guest lookup also accepts
@@ -352,6 +358,11 @@ need backfilling.
   client sends the slot yet, so nothing displays this today. (ADR-0039)
 
 ### Changed
+
+- **Operator — release updated mobile clients before the notification backend.** New payment-side
+  confirmations use `order.payment_confirmed`; both mobile platforms retain `order.confirmed` for
+  old feed rows, queued messages and notifications held by devices. Copy and triggers stay the same.
+  Older app binaries cannot resolve the new key. (T-0694.)
 
 - **Operator — "serviced" now means "served by an operating company that is not deactivated".** The
   one read every market check goes through (`Country/GetServiced`, `Market/GetOverview`, the quotes,

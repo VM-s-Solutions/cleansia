@@ -93,6 +93,17 @@ public class UserMembership : TenantAuditable
     /// </summary>
     public DateTime? CancellationReminderSentAt { get; private set; }
 
+    /// <summary>Latest authoritative paid observation; webhook observations use the Stripe event time.</summary>
+    public DateTime? PaidPeriodConfirmedAt { get; private set; }
+
+    /// <summary>Latest provider state time used by pause notifications, independent of delivery time.</summary>
+    public DateTime? RecurringPauseStateObservedAt { get; private set; }
+
+    /// <summary>Durable once-per-lapse latch; paid recovery clears the timestamp, never the sequence.</summary>
+    public DateTime? RecurringPauseNotificationSentAt { get; private set; }
+
+    public long RecurringPauseNotificationSequence { get; private set; }
+
     /// <summary>
     /// End of the Stripe free trial, mirrored from the subscription's <c>trial_end</c>.
     /// NULL = this enrolment is not, and never was, in a trial.
@@ -204,6 +215,42 @@ public class UserMembership : TenantAuditable
         // only one that stays null here.
         TrialEndsAtUtc = trialEndsAtUtc ?? TrialEndsAtUtc;
         return this;
+    }
+
+    public bool TryMarkRecurringPauseNotificationSent(DateTime nowUtc)
+    {
+        if (PaidPeriodConfirmedAt is null
+            || RecurringPauseNotificationSentAt is not null
+            || (Status == MembershipStatus.Active && nowUtc < CurrentPeriodEnd)
+            || IsInTrialAt(nowUtc))
+        {
+            return false;
+        }
+
+        RecurringPauseNotificationSequence = checked(RecurringPauseNotificationSequence + 1);
+        RecurringPauseNotificationSentAt = nowUtc;
+        return true;
+    }
+
+    public void RecordRecurringPauseState(
+        string? stripeStatus, DateTime observedAtUtc, DateTime nowUtc, DateTime? trialEndsAtUtc = null)
+    {
+        if (string.IsNullOrEmpty(stripeStatus) || observedAtUtc == default
+            || observedAtUtc <= RecurringPauseStateObservedAt)
+        {
+            return;
+        }
+
+        RecurringPauseStateObservedAt = observedAtUtc;
+        if (stripeStatus != "active" || nowUtc >= CurrentPeriodEnd || IsInTrialAt(nowUtc)
+            || trialEndsAtUtc > nowUtc || observedAtUtc <= PaidPeriodConfirmedAt)
+        {
+            return;
+        }
+
+        PaidPeriodConfirmedAt = observedAtUtc;
+        // Provider chronology determines recovery even when its webhook arrives after the pause notice.
+        RecurringPauseNotificationSentAt = null;
     }
 
     /// <summary>

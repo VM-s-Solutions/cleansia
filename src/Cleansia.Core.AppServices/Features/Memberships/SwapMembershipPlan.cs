@@ -121,6 +121,8 @@ public class SwapMembershipPlan
                 newMembershipPlanId: newPlan.Id,
                 currentPeriodStart: swapped.CurrentPeriodStart,
                 currentPeriodEnd: swapped.CurrentPeriodEnd);
+            var paidObservation = DateTime.UtcNow;
+            membership.RecordRecurringPauseState(swapped.Status, paidObservation, paidObservation, swapped.TrialEnd);
 
             logger.LogInformation(
                 "Swapped membership {MembershipId} (sub {SubscriptionId}) to plan {NewPlanCode}, new period end {PeriodEnd}",

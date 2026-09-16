@@ -224,6 +224,42 @@ public class SendPushNotificationIdempotencyTests
         _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Theory]
+    [InlineData("order.confirmed")]
+    [InlineData("order.payment_confirmed")]
+    public async Task Payment_keys_keep_their_own_bare_and_envelope_replay_identity(string eventKey)
+    {
+        SetupOneEligibleDevice("USER-1");
+        var handler = CreateHandler();
+        var message = new SendPushNotificationMessage("USER-1", eventKey,
+            new Dictionary<string, string> { ["orderId"] = "ORDER-1" }, "TENANT-A");
+        var key = MessageKeys.Push("USER-1", eventKey, "ORDER-1");
+        await handler.HandleAsync(JsonSerializer.Serialize(message, JsonOptions), CancellationToken.None);
+        await handler.HandleAsync(SerializeEnvelope(message, key, "TENANT-A"), CancellationToken.None);
+        Assert.Equal(key, Assert.Single(_guard.ClaimedKeys));
+        _pushDispatcher.Verify(x => x.SendAsync(It.IsAny<IReadOnlyList<string>>(), eventKey,
+            It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Distinct_pause_sequences_send_once_each_with_matching_bare_and_envelope_identity()
+    {
+        SetupOneEligibleDevice("USER-1");
+        var handler = CreateHandler();
+        foreach (var sequence in new[] { "1", "2" })
+        {
+            var message = new SendPushNotificationMessage("USER-1", "recurring.paused",
+                new Dictionary<string, string> { ["membershipId"] = "MEMBER-1", ["pauseSequence"] = sequence }, "TENANT-A");
+            var key = MessageKeys.Push("USER-1", "recurring.paused", MessageKeys.RecurringPauseSubject("MEMBER-1", sequence));
+            await handler.HandleAsync(JsonSerializer.Serialize(message, JsonOptions), CancellationToken.None);
+            await handler.HandleAsync(SerializeEnvelope(message, key, "TENANT-A"), CancellationToken.None);
+            Assert.Contains(key, _guard.ClaimedKeys);
+        }
+        Assert.Equal(2, _guard.ClaimedKeys.Count);
+        _pushDispatcher.Verify(x => x.SendAsync(It.IsAny<IReadOnlyList<string>>(), "recurring.paused",
+            It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
     // Test double for IIdempotencyGuard: a claim survives across the two invocations in this test
     // class (mirrors the singleton in-memory backing) so a redelivery short-circuits.
     private sealed class FakeIdempotencyGuard : IIdempotencyGuard

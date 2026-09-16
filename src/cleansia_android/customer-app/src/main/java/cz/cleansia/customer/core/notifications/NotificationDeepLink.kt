@@ -49,6 +49,7 @@ object NotificationDeepLink {
      * right screen; feed callers just mark the row read in that case.
      */
     fun resolve(eventKey: String, args: Map<String, String>): Any? = when (eventKey) {
+        "order.payment_confirmed",
         "order.confirmed",
         "order.cleaner_assigned",
         "order.starting_soon",
@@ -72,6 +73,7 @@ object NotificationDeepLink {
         // someone who ALREADY has a subscription — it is expiring, or a cancellation has taken effect —
         // so landing them on "buy Cleansia Plus" answered a question they had not asked and hid the one
         // they had. MembershipManagementCard lives on the Profile tab and renders both states.
+        "recurring.paused",
         "membership.expiring_soon",
         "membership.cancellation_effective" -> Routes.Home(tab = MainTab.Profile.name)
         "loyalty.tier_upgrade" -> Routes.RewardsActivity

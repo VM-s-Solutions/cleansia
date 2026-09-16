@@ -31,7 +31,8 @@ enum CustomerNotificationDeepLink {
         disputeId: String?
     ) -> CustomerNotificationDestination? {
         switch eventKey {
-        case "order.confirmed",
+        case "order.payment_confirmed",
+             "order.confirmed",
              "order.cleaner_assigned",
              "order.on_the_way",
              "order.in_progress",
@@ -47,7 +48,8 @@ enum CustomerNotificationDeepLink {
         case "dispute.reply":
             guard let disputeId else { return nil }
             return .dispute(disputeId: disputeId)
-        case "membership.expiring_soon",
+        case "recurring.paused",
+             "membership.expiring_soon",
              "membership.cancellation_effective":
             return .membershipManagement
         case "loyalty.tier_upgrade":

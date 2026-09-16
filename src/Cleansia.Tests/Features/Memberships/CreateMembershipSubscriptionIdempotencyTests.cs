@@ -116,6 +116,27 @@ public class CreateMembershipSubscriptionIdempotencyTests
     private static CreateMembershipSubscription.Command ConfirmedCommand(string? token) =>
         new(PlanCode, PaymentMethodConfirmed: true) { IdempotencyToken = token };
 
+    [Theory]
+    [InlineData("active", true)]
+    [InlineData("trialing", false)]
+    [InlineData("incomplete", false)]
+    [InlineData("incomplete_expired", false)]
+    public async Task Confirmed_request_records_paid_proof_only_from_the_returned_Stripe_status(string status, bool paid)
+    {
+        var created = new List<UserMembership>();
+        _membershipRepository.Setup(r => r.Add(It.IsAny<UserMembership>())).Callback<UserMembership>(created.Add);
+        _stripe.Setup(c => c.CreateSubscriptionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SubscriptionResult("sub-payment-proof", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1), Status: status));
+
+        var result = await CreateHandler().Handle(ConfirmedCommand(ClientToken), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var membership = Assert.Single(created);
+        Assert.Equal(paid, membership.PaidPeriodConfirmedAt is not null);
+        Assert.Equal(MembershipStatus.Active, membership.Status);
+    }
+
     // ── the Stripe idempotency key is DERIVED from the client token, not Guid.NewGuid() ──
 
     [Fact]

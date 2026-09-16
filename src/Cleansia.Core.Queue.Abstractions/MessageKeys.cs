@@ -14,6 +14,9 @@ namespace Cleansia.Core.Queue.Abstractions;
 /// </summary>
 public static class MessageKeys
 {
+    /// <summary>One recurring-pause dispatch per membership lapse, including repeated lapses in one period.</summary>
+    public static string RecurringPauseSubject(string membershipId, string sequence) => $"{membershipId}:{sequence}";
+
     /// <summary>One guest cancellation email per order.</summary>
     public static string GuestOrderCancelledEmail(string orderId) => $"email:guest-order-cancelled:{orderId}";
 

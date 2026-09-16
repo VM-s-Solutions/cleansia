@@ -86,7 +86,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_first"));
                 Assert.Equal(1, await ReceiptOutboxCountAsync(context));
-                Assert.Equal(1, await OrderConfirmedPushOutboxCountAsync(context));
+                Assert.Equal(1, await OrderPaymentConfirmedPushOutboxCountAsync(context));
             });
     }
 
@@ -123,7 +123,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_tenant_scoped"));
                 Assert.Equal(1, await ReceiptOutboxCountAsync(context));
-                Assert.Equal(1, await OrderConfirmedPushOutboxCountAsync(context));
+                Assert.Equal(1, await OrderPaymentConfirmedPushOutboxCountAsync(context));
 
                 // AC3: the write re-scoped to the order's own tenant, so the persisted effect rows carry
                 // that tenant — not null and not the (absent) request tenant.
@@ -164,7 +164,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
                 // The ProcessedStripeEvent stamp + each outbox effect survive both deliveries exactly once.
                 Assert.Equal(1, await ProcessedEventCountAsync(context, "evt_order_redeliver"));
                 Assert.Equal(1, await ReceiptOutboxCountAsync(context));
-                Assert.Equal(1, await OrderConfirmedPushOutboxCountAsync(context));
+                Assert.Equal(1, await OrderPaymentConfirmedPushOutboxCountAsync(context));
             });
     }
 
@@ -271,7 +271,7 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
 
         Assert.Equal(0, await ProcessedEventCountAsync(context, eventId));
         Assert.Equal(0, await ReceiptOutboxCountAsync(context));
-        Assert.Equal(0, await OrderConfirmedPushOutboxCountAsync(context));
+        Assert.Equal(0, await OrderPaymentConfirmedPushOutboxCountAsync(context));
     }
 
     private static Task<Order> LoadOrderAsync(CleansiaDbContext context) =>
@@ -300,9 +300,9 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             .FirstAsync(m => m.QueueName == QueueNames.GenerateReceipt
                           && m.MessageKey == MessageKeys.Receipt(_orderId));
 
-    private static async Task<int> OrderConfirmedPushOutboxCountAsync(CleansiaDbContext context)
+    private static async Task<int> OrderPaymentConfirmedPushOutboxCountAsync(CleansiaDbContext context)
     {
-        var pushKey = MessageKeys.Push(_userId, NotificationEventCatalog.OrderConfirmed, _orderId);
+        var pushKey = MessageKeys.Push(_userId, NotificationEventCatalog.OrderPaymentConfirmed, _orderId);
         return await context.OutboxMessages
             .IgnoreQueryFilters()
             .CountAsync(m => m.QueueName == QueueNames.NotificationsDispatch && m.MessageKey == pushKey);

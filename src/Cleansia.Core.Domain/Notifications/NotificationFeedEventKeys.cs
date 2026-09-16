@@ -26,6 +26,7 @@ public static class NotificationFeedEventKeys
 {
     public static readonly IReadOnlyList<string> Customer =
     [
+        NotificationEventCatalog.OrderPaymentConfirmed,
         NotificationEventCatalog.OrderConfirmed,
         NotificationEventCatalog.OrderCleanerAssigned,
         NotificationEventCatalog.OrderOnTheWay,
@@ -36,6 +37,7 @@ public static class NotificationFeedEventKeys
         NotificationEventCatalog.OrderNoCleanerRefunded,
         NotificationEventCatalog.DisputeReply,
         NotificationEventCatalog.RecurringScheduled,
+        NotificationEventCatalog.RecurringPaused,
         NotificationEventCatalog.MembershipExpiringSoon,
         NotificationEventCatalog.MembershipCancellationEffective,
         NotificationEventCatalog.LoyaltyTierUpgrade,

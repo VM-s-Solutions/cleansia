@@ -1183,8 +1183,8 @@
     <string name="notification_channel_dispute_reply_name">Ответы поддержки</string>
     <string name="notification_channel_dispute_reply_desc">Сообщим, когда поддержка ответит на вашу жалобу.</string>
 
-    <string name="notification_order_confirmed_title">Заказ подтверждён ✅</string>
-    <string name="notification_order_confirmed_body">Заказ #%1$s подтверждён. Нажмите, чтобы посмотреть подробности.</string>
+    <string name="notification_order_payment_confirmed_title">Заказ подтверждён ✅</string>
+    <string name="notification_order_payment_confirmed_body">Заказ #%1$s подтверждён. Нажмите, чтобы посмотреть подробности.</string>
     <string name="notification_cleaner_assigned_title">Клинер найден! 🎉</string>
     <string name="notification_cleaner_assigned_body">К вашему заказу #%1$s назначен клинер. Нажмите, чтобы посмотреть подробности.</string>
     <string name="notification_order_starting_soon_title">Уборка скоро начнётся</string>
@@ -1372,6 +1372,8 @@
     <string name="error_dispute_line_not_on_order">Одной из выбранных услуг нет в этом заказе. Откройте форму снова и попробуйте ещё раз.</string>
     <string name="order_market_unknown">Рынок недоступен</string>
     <string name="order_market_label">%1$s · %2$s</string>
+    <string name="notification_recurring_paused_title">Расписание регулярных уборок приостановлено</string>
+    <string name="notification_recurring_paused_body">Ваше расписание регулярных уборок приостановлено, поскольку Plus неактивен. Продлите Plus, чтобы возобновить планирование уборок.</string>
     <string name="guest_order_entry">Найти бронирование без учётной записи</string>
     <string name="guest_order_title">Бронирование без учётной записи</string>
     <string name="guest_order_intro">Введите номер бронирования, электронную почту и код подтверждения из письма о бронировании.</string>

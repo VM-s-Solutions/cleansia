@@ -249,14 +249,46 @@ Several keys exist as separate keys for reasons that are easy to undo by "simpli
 
 ### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
 
-`OrderConfirmed` is a **money** event with a fulfilment-sounding name. Both of its producers — the
-Stripe webhook and the recurring cash confirmation — settle payment and have no cleaner at all; since
-[ADR-0057](/decisions/adr-0057) neither writes a fulfilment status either. The key keeps its name
-because renaming it costs ten locale files across two mobile platforms and the customer still needs
-telling their payment landed. → [the order lifecycle](/domain/order-lifecycle)
+`order.payment_confirmed` records the payment-side confirmation. The Stripe webhook settles a card
+payment; recurring cash confirmation accepts the occurrence before onsite collection. Neither means
+a cleaner accepted the job, and since [ADR-0057](/decisions/adr-0057) neither writes a fulfilment status.
+The key therefore says “confirmed”, rather than claiming cash has already been received.
+→ [the order lifecycle](/domain/order-lifecycle)
+
+The previous `order.confirmed` key remains a compatibility entry for persisted feed rows, pending
+queue envelopes and notifications already held by devices. Both keys retain identical copy,
+arguments, preference category and booking tap destination. New events use the new key; existing
+rows and idempotency keys are not rewritten or re-enqueued.
+
+Ship mobile clients carrying both keys before enabling new backend emission. An older binary cannot
+resolve the new Android template or APNs localization key; server-side compatibility entries do not
+update a device's bundled strings. This follows [ADR-0025's version-skew constraint](/decisions/adr-0025).
 
 Widening that key to carry "a cleaner is committed to your booking" would repeat the overloading one
 layer up, in the thing that writes to a customer's lock screen.
+
+### A recurring schedule pauses once per paid lapse {#recurring-paused}
+
+When materialization skips a recurring template because paid Plus is inactive, `recurring.paused`
+tells the account owner to renew. The template stays saved and existing occurrences stay booked.
+The notification belongs to the account's operator, even when a template serves another market.
+It uses the existing recurring-notification preference; a muted push still leaves the feed item.
+
+The membership stores the notice timestamp and a permanent sequence. The sequence participates in
+the dispatch identity, so feed retention and a later recovery cannot make an earlier delivery eligible
+again. The notice, outbox intent and membership latch commit together; PostgreSQL concurrency checking
+allows only one competing template or sweep to acquire that latch.
+
+An authoritative Stripe `active` observation for a live, non-trial period establishes paid-period
+proof. The account's latest proven-paid membership owns its lapse; an unsuccessful new subscription
+cannot replace it with a fresh latch. Paid and unpaid observations retain their provider chronology,
+so a delayed genuine recovery can rearm the next lapse while an older replay cannot. Equal or missing
+event chronology does not rearm. Existing entitlement reconciliation is unchanged.
+
+No payment history is inferred for an unmarked membership: it continues to follow existing scheduling
+rules but receives this notice only after an authoritative paid observation establishes proof. There
+is no historical-data backfill. Both mobile apps carry the five-locale display copy; the customer's
+feed and tap route lead to membership renewal.
 
 ### Why the preferred-offer-closed message is one sentence {#one-sentence}
 

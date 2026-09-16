@@ -3,7 +3,10 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
+using System.Globalization;
 using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Validations;
@@ -81,7 +84,8 @@ public class MaterializeRecurringBookingTemplate
         IOperatorTenantResolver operatorTenantResolver,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
-        ILogger<Handler> logger) : ICommandHandler<Command, Response>
+        ILogger<Handler> logger,
+        INotificationProducer notificationProducer) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -112,30 +116,25 @@ public class MaterializeRecurringBookingTemplate
                 tenantProvider.SetTenantOverride(template.User.TenantId);
             }
 
-            // A recurring schedule is a Cleansia Plus benefit, and owner ruling 2026-09-08 (T-0690) is
-            // that no Plus benefit is granted without a paid subscription. This reverses the earlier
-            // position, documented below at the pricing call, that "a lapsed membership must not stop a
-            // schedule" — a lapsed member used to keep receiving orders, priced as a guest.
-            //
-            // Read AFTER the tenant override above, not before: UserMembership is an ITenantEntity, so
-            // the entitlement query is filtered, and without the override a tenanted member would read
-            // as unentitled and have their schedule stopped.
-            //
-            // Three things this deliberately does NOT do:
-            //   * It does not deactivate the template. The schedule stays exactly as authored, so
-            //     resubscribing resumes it on the next tick with no action from the customer. A lapse
-            //     is a pause, not a deletion.
-            //   * It does not touch occurrences already materialized inside the horizon. Those are real
-            //     orders, possibly already authorized on a card; retracting them is a refund path that
-            //     does not exist. They run, and the schedule stops after them.
-            //   * It does not notify. MembershipExpiringSoon already warns the customer before the
-            //     lapse (SendMembershipLifecycleNotifications), so the stop is not the first they hear
-            //     of it. A dedicated "your schedule has stopped" event is worth its own ticket.
+            // Entitlement and the durable lapse notice belong to the account. Existing occurrences
+            // and the authored schedule remain intact while the membership is unpaid.
             var entitled = await userMembershipRepository
                 .GetEntitledForUserNoTrackingAsync(template.UserId, cancellationToken);
 
             if (entitled == null)
             {
+                var membership = await userMembershipRepository.GetLatestPaidForUserAsync(template.UserId, cancellationToken);
+                if (template.IsActive && membership?.TryMarkRecurringPauseNotificationSent(now) == true)
+                {
+                    var sequence = membership.RecurringPauseNotificationSequence.ToString(CultureInfo.InvariantCulture);
+                    await notificationProducer.NotifyAsync(template.UserId, NotificationEventCatalog.RecurringPaused,
+                        new Dictionary<string, string>
+                        {
+                            ["membershipId"] = membership.Id,
+                            ["pauseSequence"] = sequence,
+                        }, membership.TenantId, MessageKeys.RecurringPauseSubject(membership.Id, sequence), cancellationToken);
+                    await unitOfWork.CommitAsync(cancellationToken);
+                }
                 logger.LogInformation(
                     "Template {TemplateId} skipped: owner {UserId} has no paid Cleansia Plus membership. "
                     + "The schedule is preserved and resumes if they resubscribe",

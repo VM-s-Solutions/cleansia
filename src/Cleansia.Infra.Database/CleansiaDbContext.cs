@@ -171,6 +171,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         ApplySqliteDateTimeOffsetCompatibility(modelBuilder);
 
         ApplyRefreshTokenConcurrencyToken(modelBuilder);
+        ApplyMembershipConcurrencyToken(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -197,6 +198,18 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         // column by NpgsqlPostgresModelFinalizingConvention (no real column, no DDL, no migration).
         // Declared as a shadow property so the domain RefreshToken entity carries no EF concern.
         modelBuilder.Entity<RefreshToken>()
+            .Property<uint>("xmin")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+    }
+
+    private void ApplyMembershipConcurrencyToken(ModelBuilder modelBuilder)
+    {
+        if (Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL") return;
+
+        // The losing sweep rolls back its latch, feed row and outbox together; webhook recovery also
+        // conflicts with a stale lapse notification instead of silently overwriting it.
+        modelBuilder.Entity<UserMembership>()
             .Property<uint>("xmin")
             .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();

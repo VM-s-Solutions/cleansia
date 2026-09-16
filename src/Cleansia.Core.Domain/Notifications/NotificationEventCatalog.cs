@@ -7,6 +7,8 @@
 /// </summary>
 public static class NotificationEventCatalog
 {
+    public const string OrderPaymentConfirmed = "order.payment_confirmed";
+    // Kept for persisted feed rows, queued messages and device-held notifications.
     public const string OrderConfirmed = "order.confirmed";
     public const string OrderOnTheWay = "order.on_the_way";
     public const string OrderInProgress = "order.in_progress";
@@ -19,6 +21,7 @@ public static class NotificationEventCatalog
     public const string PromoNewSitewide = "promo.new_sitewide";
     public const string DisputeReply = "dispute.reply";
     public const string RecurringScheduled = "recurring.scheduled";
+    public const string RecurringPaused = "recurring.paused";
 
     /// <summary>
     /// Customer-targeted: a cleaner is now committed to this order. Produced wherever an assignment
@@ -26,8 +29,8 @@ public static class NotificationEventCatalog
     /// link) + <c>orderNumber</c> (loc); no cleaner name, which belongs on the order detail the deep
     /// link opens rather than on a lock screen.
     ///
-    /// <para><b>Distinct from <see cref="OrderConfirmed"/> on purpose</b> — that key is overloaded and two
-    /// of its producers have no cleaner at all.
+    /// <para><b>Distinct from <see cref="OrderPaymentConfirmed"/> on purpose</b> — payment confirmation
+    /// does not establish that a cleaner took the job.
     /// → /architecture/push-notifications#assigned-vs-confirmed</para>
     /// </summary>
     public const string OrderCleanerAssigned = "order.cleaner_assigned";
@@ -224,7 +227,7 @@ public static class NotificationEventCatalog
 
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
-        OrderConfirmed => NotificationCategory.OrderUpdates,
+        OrderPaymentConfirmed or OrderConfirmed => NotificationCategory.OrderUpdates,
         OrderOnTheWay => NotificationCategory.CleanerOnTheWay,
         OrderInProgress => NotificationCategory.OrderUpdates,
         OrderCompleted => NotificationCategory.OrderCompleted,
@@ -239,7 +242,7 @@ public static class NotificationEventCatalog
         LoyaltyTierUpgrade => NotificationCategory.TierUpgrade,
         PromoNewSitewide => NotificationCategory.Promo,
         DisputeReply => NotificationCategory.DisputeReply,
-        RecurringScheduled => NotificationCategory.RecurringScheduled,
+        RecurringScheduled or RecurringPaused => NotificationCategory.RecurringScheduled,
         OrderCleanerAssigned => NotificationCategory.OrderUpdates,
         OrderStartingSoon => NotificationCategory.OrderUpdates,
         PreferredOfferClosed => NotificationCategory.OrderUpdates,

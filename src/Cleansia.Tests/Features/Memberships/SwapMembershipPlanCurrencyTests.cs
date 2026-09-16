@@ -64,6 +64,33 @@ public class SwapMembershipPlanCurrencyTests
             new AuditContext(),
             NullLogger<SwapMembershipPlan.Handler>.Instance);
 
+    [Theory]
+    [InlineData("active", false, true)]
+    [InlineData("active", true, false)]
+    [InlineData("trialing", true, false)]
+    [InlineData("past_due", false, false)]
+    [InlineData("incomplete", false, false)]
+    public async Task Only_a_paid_swap_response_rearms_the_lapse(string status, bool trial, bool paid)
+    {
+        var now = DateTime.UtcNow;
+        var membership = UserMembership.Create(UserId, "plan-monthly", MembershipPricingMockFactory.CzkCurrencyId,
+            SubscriptionId, now.AddMonths(-1), now.AddHours(-1));
+        membership.RecordRecurringPauseState("active", now.AddMonths(-1), now.AddMonths(-1));
+        Assert.True(membership.TryMarkRecurringPauseNotificationSent(now.AddMinutes(-1)));
+        _membershipRepository.Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _priceRepository.PriceIn(_yearly.Id, MembershipPricingMockFactory.CzkCurrencyId, "price_yearly_czk", 2030m);
+        _stripe.Setup(c => c.SwapSubscriptionPriceAsync(SubscriptionId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SubscriptionResult(SubscriptionId, now, now.AddYears(1), trial ? now.AddDays(7) : null, status));
+
+        var result = await Handler().Handle(new SwapMembershipPlan.Command("PLUS_YEARLY"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(paid, membership.RecurringPauseNotificationSentAt is null);
+        Assert.Equal(paid, membership.PaidPeriodConfirmedAt > now.AddMinutes(-1));
+        Assert.Equal(1, membership.RecurringPauseNotificationSequence);
+        Assert.Equal(MembershipStatus.Active, membership.Status);
+    }
+
     [Fact]
     public async Task TheTargetPlansRow_InTheMembershipsCurrency_IsHandedToStripe()
     {

@@ -1250,8 +1250,8 @@
     <string name="notification_channel_dispute_reply_name">Odpovědi podpory</string>
     <string name="notification_channel_dispute_reply_desc">Upozorní vás, když podpora odpoví na vaši stížnost.</string>
 
-    <string name="notification_order_confirmed_title">Zakázka potvrzena</string>
-    <string name="notification_order_confirmed_body">Zakázka č. %1$s je potvrzena. Klepnutím zobrazíte podrobnosti.</string>
+    <string name="notification_order_payment_confirmed_title">Zakázka potvrzena</string>
+    <string name="notification_order_payment_confirmed_body">Zakázka č. %1$s je potvrzena. Klepnutím zobrazíte podrobnosti.</string>
     <string name="notification_order_in_progress_title">Zakázka probíhá</string>
     <string name="notification_order_in_progress_body">Zakázka č. %1$s právě probíhá. Klepnutím ji můžete sledovat.</string>
     <string name="notification_order_completed_title">Zakázka dokončena</string>
@@ -1421,4 +1421,6 @@
     <string name="open_settings">Otevřít nastavení</string>
     <string name="photo_source_title">Přidat foto</string>
     <string name="camera_unavailable">Toto zařízení nemá fotoaparát.</string>
+    <string name="notification_recurring_paused_title">Plán opakovaných úklidů pozastaven</string>
+    <string name="notification_recurring_paused_body">Váš plán opakovaných úklidů je pozastaven, protože Plus není aktivní. Obnovte Plus a plánování úklidů bude pokračovat.</string>
 </resources>

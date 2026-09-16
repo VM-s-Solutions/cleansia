@@ -132,7 +132,8 @@ public class RecurringMaterializationCurrencyTests
             OrderMarketDoubles.OperatedBy("cleansia-cz"),
             _tenantProvider.Object,
             _unitOfWork.Object,
-            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);
+            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
+            Mock.Of<INotificationProducer>());
 
     private static MaterializeRecurringBookingTemplate.Command SweepCommand() =>
         new(TemplateId, DateTime.UtcNow, HorizonDays: 7);

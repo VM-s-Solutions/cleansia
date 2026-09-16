@@ -287,6 +287,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         // dedupe and per-template isolation, so the owner is simply entitled — otherwise the sweep
         // correctly generates nothing and their real subject never runs.
         services.AddScoped(_ => EntitledMemberships());
+        services.AddScoped<INotificationProducer>(_ => Mock.Of<INotificationProducer>());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         return services.BuildServiceProvider();

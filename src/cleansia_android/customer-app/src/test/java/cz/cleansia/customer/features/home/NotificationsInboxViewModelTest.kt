@@ -9,6 +9,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.notifications.PagedNotificationsDto
 import cz.cleansia.customer.core.notifications.UserNotificationDto
+import cz.cleansia.customer.features.main.MainTab
 import cz.cleansia.customer.navigation.Routes
 import cz.cleansia.customer.testing.MainDispatcherRule
 import io.mockk.coEvery
@@ -79,6 +80,30 @@ class NotificationsInboxViewModelTest {
         coEvery { repository.markRead(any()) } returns ApiResult.Success(Unit)
         coEvery { repository.markAllRead(any()) } returns ApiResult.Success(Unit)
         coEvery { repository.refreshUnreadCount() } returns ApiResult.Success(0)
+    }
+
+    @Test
+    fun recurringPauseRowRendersWithoutArgsAndTapOpensMembershipManagement() = runTest {
+        val row = completedRow.copy(id = "n-paused", eventKey = "recurring.paused", args = emptyMap())
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(row))
+        every { appContext.getString(R.string.notification_recurring_paused_title) } returns "Recurring schedule paused"
+        every { appContext.getString(R.string.notification_recurring_paused_body) } returns "Renew Plus to resume scheduling."
+
+        val vm = viewModel()
+        vm.open()
+        advanceUntilIdle()
+        val item = (vm.state.value as NotificationsInboxUiState.Loaded).items.single()
+        assertEquals("n-paused", item.id)
+        assertEquals("Recurring schedule paused", item.title)
+        assertEquals("Renew Plus to resume scheduling.", item.body)
+
+        vm.openRoute.test {
+            vm.onRowClick(item)
+            assertEquals(Routes.Home(tab = MainTab.Profile.name), awaitItem())
+        }
+        advanceUntilIdle()
+        coVerify(exactly = 1) { repository.markRead("n-paused") }
+        verify(exactly = 1) { repository.decrementUnread() }
     }
 
     private fun viewModel() = NotificationsInboxViewModel(repository, snackbar, appContext)

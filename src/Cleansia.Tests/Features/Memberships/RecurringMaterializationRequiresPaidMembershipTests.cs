@@ -133,7 +133,8 @@ public class RecurringMaterializationRequiresPaidMembershipTests
             OrderMarketDoubles.OperatedBy("cleansia-cz"),
             _tenantProvider.Object,
             _unitOfWork.Object,
-            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance);
+            NullLogger<MaterializeRecurringBookingTemplate.Handler>.Instance,
+            Mock.Of<INotificationProducer>());
     }
 
     /// <summary>Arrange the owner as a paid member, which is what the entitlement read answers.</summary>

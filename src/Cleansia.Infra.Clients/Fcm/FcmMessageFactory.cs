@@ -32,6 +32,7 @@ public static class FcmMessageFactory
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> ApnsDisplayMap { get; } =
         new Dictionary<string, IReadOnlyList<string>>
         {
+            [NotificationEventCatalog.OrderPaymentConfirmed] = OrderNumberArg,
             [NotificationEventCatalog.OrderConfirmed] = OrderNumberArg,
             [NotificationEventCatalog.OrderCleanerAssigned] = OrderNumberArg,
             [NotificationEventCatalog.OrderStartingSoon] = OrderNumberArg,
@@ -44,6 +45,7 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.OrderRefunded] = OrderNumberArg,
             [NotificationEventCatalog.OrderNoCleanerRefunded] = OrderNumberAndAmountArgs,
             [NotificationEventCatalog.RecurringScheduled] = OrderNumberArg,
+            [NotificationEventCatalog.RecurringPaused] = NoArgs,
             [NotificationEventCatalog.NewJobsAvailable] = CountArg,
             [NotificationEventCatalog.OrderSeatOpen] = OrderNumberArg,
             [NotificationEventCatalog.ReminderTomorrow] = CountArg,

@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.Clients.Abstractions;
+using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -346,7 +346,8 @@ public class StripeClient : IStripeClient
             SubscriptionId: subscription.Id,
             CurrentPeriodStart: periodStart,
             CurrentPeriodEnd: periodEnd,
-            TrialEnd: subscription.TrialEnd);
+            TrialEnd: subscription.TrialEnd,
+            Status: subscription.Status);
     }
 
     public async Task<SubscriptionResult> SwapSubscriptionPriceAsync(
@@ -389,7 +390,8 @@ public class StripeClient : IStripeClient
             SubscriptionId: swapped.Id,
             CurrentPeriodStart: periodStart,
             CurrentPeriodEnd: periodEnd,
-            TrialEnd: swapped.TrialEnd);
+            TrialEnd: swapped.TrialEnd,
+            Status: swapped.Status);
     }
 
     public async Task CancelSubscriptionAtPeriodEndAsync(

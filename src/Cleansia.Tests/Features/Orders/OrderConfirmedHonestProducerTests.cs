@@ -22,22 +22,8 @@ using Cleansia.Tests.Common;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// <c>order.confirmed</c>'s two producers — the Stripe webhook and the customer confirming their own
-/// recurring occurrence — establish that the booking is PAID and nothing more: on both, the order only
-/// becomes offerable at that moment, so no cleaner has yet seen it. Neither may claim one, and neither
-/// may borrow the assignment key.
-///
-/// <para><b>Neither writes a fulfilment status any more</b> (T-0691, owner ruling 2026-09-08).
-/// <c>OrderStatus.Confirmed</c> now means only "a cleaner took this job", so both producers move the
-/// MONEY axis and leave the order at <c>New</c>. This class is the reason that change is safe to make
-/// in one commit: it already separated "the booking is confirmed" from "a cleaner has it", and asserted
-/// the push key never claims a cleaner. Only the status assertions moved.</para>
-///
-/// <para>The push key keeps its name. <c>order.confirmed</c> now describes a money event with a
-/// fulfilment-sounding name, which is untidy — but renaming it costs ten locale files across two mobile
-/// platforms plus the feed catalogue, and the customer still needs telling that their payment landed.
-/// The copy guards that forbid it claiming a cleaner (<c>PushLocKeyCatalogTests</c>,
-/// <c>NotificationTemplatesTest</c>) are unaffected and still true.</para>
+/// Payment settlement and recurring cash confirmation emit the money-axis notification without
+/// claiming a cleaner or changing fulfilment status. Their existing payment guards prevent replay.
 /// </summary>
 public class OrderConfirmedHonestProducerTests
 {
@@ -78,12 +64,14 @@ public class OrderConfirmedHonestProducerTests
             SettlementCommand("evt_confirmed_1"), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
+        var replay = await CreateWebhookHandler().Handle(SettlementCommand("evt_confirmed_replay"), CancellationToken.None);
+        Assert.True(replay.IsSuccess);
         // The money axis moved and the fulfilment axis did NOT. This assertion used to read
         // Confirmed; that it now reads New is the whole of T-0691 at its writer.
         Assert.Equal(OrderStatus.New, order.CurrentStatus);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         Assert.Empty(order.AssignedEmployees);
-        Assert.Equal([NotificationEventCatalog.OrderConfirmed], _sentEventKeys);
+        Assert.Equal([NotificationEventCatalog.OrderPaymentConfirmed], _sentEventKeys);
     }
 
     [Fact]
@@ -97,7 +85,7 @@ public class OrderConfirmedHonestProducerTests
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserId()).Returns(CustomerUserId);
 
-        var result = await new ConfirmRecurringOrder.Handler(
+        var handler = new ConfirmRecurringOrder.Handler(
             OrderAccessDoubles.Over(_orderRepository, session),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
@@ -109,10 +97,11 @@ public class OrderConfirmedHonestProducerTests
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
             new AuditContext(),
-            NullLogger<ConfirmRecurringOrder.Handler>.Instance)
-            .Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
-
+            NullLogger<ConfirmRecurringOrder.Handler>.Instance);
+        var result = await handler.Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
         Assert.True(result.IsSuccess);
+        var replay = await handler.Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
+        Assert.True(replay.IsFailure);
         // Same as the webhook above: money moves, fulfilment does not. The occurrence stays offerable
         // because OrderAvailability admits New with a satisfied money term — before T-0691 the
         // Confirmed append was load-bearing here, since a recurring CASH order at New is refused by
@@ -120,7 +109,7 @@ public class OrderConfirmedHonestProducerTests
         Assert.Equal(OrderStatus.New, order.CurrentStatus);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         Assert.Empty(order.AssignedEmployees);
-        Assert.Equal([NotificationEventCatalog.OrderConfirmed], _sentEventKeys);
+        Assert.Equal([NotificationEventCatalog.OrderPaymentConfirmed], _sentEventKeys);
     }
 
     /// <summary>

@@ -212,6 +212,8 @@ public class CreateMembershipSubscription
                     currentPeriodStart: subscription.CurrentPeriodStart,
                     currentPeriodEnd: subscription.CurrentPeriodEnd,
                     trialEndsAtUtc: subscription.TrialEnd);
+                var paidObservation = DateTime.UtcNow;
+                membership.RecordRecurringPauseState(subscription.Status, paidObservation, paidObservation);
                 userMembershipRepository.Add(membership);
 
                 // The re-check above still leaves a window where the loser sees null because the winner

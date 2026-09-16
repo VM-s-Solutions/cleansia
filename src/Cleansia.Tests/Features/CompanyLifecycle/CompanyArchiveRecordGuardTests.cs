@@ -79,20 +79,19 @@ public sealed class CompanyArchiveRecordGuardTests
     }
 
     /// <summary>
-    /// A forbidden part matches on PascalCase word boundaries, not on raw substrings: <c>Ip</c> is the
-    /// word in <c>ClientIp</c> and <c>IpAddress</c>, not the letters inside <c>ReceiptNumber</c> or
-    /// <c>ZipCode</c> — the ADR's own layout carries a receipt number on every order row.
+    /// A forbidden part matches anywhere in the name, so a plural or a suffix (<c>Emails</c>,
+    /// <c>Messages</c>, <c>Tokens</c>) is caught as the ADR rule says. <c>Ip</c> alone matches as a
+    /// PascalCase word: it is a syllable of the books' own vocabulary — Rece<b>ip</b>t, Z<b>ip</b>,
+    /// Str<b>ip</b>e, Membersh<b>ip</b> — while every IP-address member in the domain is the word
+    /// (<c>IpAddress</c>, <c>ClientIp</c>).
     /// </summary>
-    private static bool IsForbidden(string memberName)
-    {
-        var words = Words(memberName);
-        return ForbiddenNameParts.Select(Words).Any(part =>
-            Enumerable.Range(0, Math.Max(0, words.Count - part.Count + 1))
-                .Any(start => part.Select((word, i) => string.Equals(words[start + i], word, StringComparison.OrdinalIgnoreCase)).All(x => x)));
-    }
+    private static bool IsForbidden(string memberName) =>
+        ForbiddenNameParts.Any(part => part == "Ip"
+            ? Words(memberName).Any(word => string.Equals(word, part, StringComparison.OrdinalIgnoreCase))
+            : memberName.Contains(part, StringComparison.OrdinalIgnoreCase));
 
-    private static List<string> Words(string name) =>
-        Regex.Split(name, "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])").Where(w => w.Length > 0).ToList();
+    private static IEnumerable<string> Words(string name) =>
+        Regex.Split(name, "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])").Where(w => w.Length > 0);
 
     private static IReadOnlyList<string> Offenders(IEnumerable<Type> roots) =>
         MembersOf(roots)
@@ -142,11 +141,33 @@ public sealed class CompanyArchiveRecordGuardTests
         }
     }
 
+    /// <summary>
+    /// Only the ledger names the person, as its counterparty, and the ADR is silent on it; every
+    /// other row cross-references by order, receipt, invoice, dispute or employee id. The order row
+    /// is what the two-year sweep leaves, and the dispute row must not restore the link the sweep
+    /// broke on the order it belongs to.
+    /// </summary>
+    [Fact]
+    public void Only_The_Ledger_Rows_Name_The_Person_By_Id()
+    {
+        var rowsNamingTheUser = MembersOf(ShippedRecords())
+            .Where(m => m.Member.Name == "UserId")
+            .Select(m => m.Owner.Name)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(["CreditAccount", "PromoCodeRedemption"], rowsNamingTheUser);
+    }
+
     [Theory]
     [InlineData(typeof(WithEmail), "WithEmail.CustomerEmail")]
+    [InlineData(typeof(WithEmails), "WithEmails.Emails")]
+    [InlineData(typeof(WithPhones), "WithPhones.Phones")]
+    [InlineData(typeof(WithMessages), "WithMessages.Messages")]
     [InlineData(typeof(WithIban), "WithIban.Iban")]
     [InlineData(typeof(WithUpperCaseIban), "WithUpperCaseIban.IBAN")]
     [InlineData(typeof(WithClientIp), "WithClientIp.ClientIp")]
+    [InlineData(typeof(WithIpAddress), "WithIpAddress.IpAddress")]
     [InlineData(typeof(WithNestedStreet), "StreetLine.Street")]
     public void The_Guard_Refuses_A_Row_Carrying_The_Shapes_It_Exists_For(Type offender, string expected)
     {
@@ -156,12 +177,20 @@ public sealed class CompanyArchiveRecordGuardTests
     }
 
     [Fact]
-    public void The_Guard_Passes_A_Row_Of_Ids_Money_Enums_And_A_Receipt_Number()
+    public void The_Guard_Passes_A_Row_Of_Ids_Money_Enums_And_The_Books_Own_Vocabulary()
     {
         Assert.Empty(Offenders([typeof(Clean)]));
     }
 
     private sealed record WithEmail(string Id, string CustomerEmail);
+
+    private sealed record WithEmails(string Id, string Emails);
+
+    private sealed record WithPhones(string Id, string Phones);
+
+    private sealed record WithMessages(string Id, string Messages);
+
+    private sealed record WithIpAddress(string Id, string IpAddress);
 
     private sealed record WithIban(string Id, string Iban);
 
@@ -173,5 +202,15 @@ public sealed class CompanyArchiveRecordGuardTests
 
     private sealed record WithNestedStreet(string Id, IReadOnlyList<StreetLine> Lines);
 
-    private sealed record Clean(string Id, string OrderId, string ReceiptNumber, string ZipCode, decimal Amount, Cleansia.Core.Domain.Enums.RefundReason Reason, DateTimeOffset CreatedOn);
+    private sealed record Clean(
+        string Id,
+        string OrderId,
+        string ReceiptId,
+        string ReceiptNumber,
+        string ZipCode,
+        string StripePaymentIntentId,
+        decimal MembershipDiscountAmount,
+        decimal Amount,
+        Cleansia.Core.Domain.Enums.RefundReason Reason,
+        DateTimeOffset CreatedOn);
 }

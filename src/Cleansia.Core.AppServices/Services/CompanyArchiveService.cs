@@ -168,13 +168,7 @@ public sealed class CompanyArchiveService(
             builtOn,
             companies.Select(ToRow).ToList(),
             files);
-        var manifestBytes = JsonSerializer.SerializeToUtf8Bytes(manifest, ManifestJsonOptions);
-        using (var manifestStream = new MemoryStream(manifestBytes))
-        {
-            await archives.UploadAsync($"{folder}/{ManifestFileName}", manifestStream, cancellationToken: cancellationToken);
-        }
-
-        var manifestSha256 = Hex(SHA256.HashData(manifestBytes));
+        var manifestSha256 = await SealAsync(archives, $"{folder}/{ManifestFileName}", JsonSerializer.SerializeToUtf8Bytes(manifest, ManifestJsonOptions), cancellationToken);
         tenant.MarkArchived(manifestSha256, builtOn);
         await unitOfWork.CommitAsync(cancellationToken);
 
@@ -288,6 +282,29 @@ public sealed class CompanyArchiveService(
         }
     }
 
+    /// <summary>
+    /// Two builds of one frozen company can overlap — a redelivery beside a "build again" — and while
+    /// the files they write are the same bytes, their manifests differ by the build instant. The first
+    /// manifest to land is the seal: a build that finds one already there stamps the row with that
+    /// one's hash, never its own, so the row and the blob cannot disagree.
+    /// </summary>
+    private static async Task<string> SealAsync(IBlobContainerClient archives, string manifestPath, byte[] manifestBytes, CancellationToken cancellationToken)
+    {
+        using (var manifestStream = new MemoryStream(manifestBytes))
+        {
+            if (await archives.UploadIfAbsentAsync(manifestPath, manifestStream, cancellationToken))
+            {
+                return Hex(SHA256.HashData(manifestBytes));
+            }
+        }
+
+        var landed = await archives.DownloadAsync(manifestPath, cancellationToken);
+        await using (landed.Content)
+        {
+            return Hex(await SHA256.HashDataAsync(landed.Content, cancellationToken));
+        }
+    }
+
     private static string Hex(byte[] hash) => Convert.ToHexString(hash).ToLowerInvariant();
 
     private static CompanyArchiveRecords.Order ToRow(Domain.Orders.Order o) => new(
@@ -346,7 +363,7 @@ public sealed class CompanyArchiveService(
         r.Source, r.Status, r.ConfirmedOn, r.CreatedOn);
 
     private static CompanyArchiveRecords.Dispute ToRow(Domain.Disputes.Dispute d) => new(
-        d.Id, d.OrderId, d.UserId, d.Reason, d.Status, d.RefundAmount, d.ResolvedBy, d.ResolvedOn, d.StripeDisputeId, d.TextRetainedUntil,
+        d.Id, d.OrderId, d.Reason, d.Status, d.RefundAmount, d.ResolvedBy, d.ResolvedOn, d.StripeDisputeId, d.TextRetainedUntil,
         d.Lines.Select(l => new CompanyArchiveRecords.DisputeLine(l.Id, l.ServiceId, l.PackageId)).ToList(),
         d.CreatedOn);
 

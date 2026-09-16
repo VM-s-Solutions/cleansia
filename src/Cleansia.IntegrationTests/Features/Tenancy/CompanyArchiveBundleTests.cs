@@ -32,7 +32,8 @@ namespace Cleansia.IntegrationTests.Features.Tenancy;
 /// receipt and invoice PDFs copied byte for byte with the source blobs left in place, no file of the
 /// person's estate, the manifest written last with every file's row count and hash — and then stamps
 /// the row with the manifest's hash. A second delivery writes nothing. A build that dies after the
-/// first file is rebuilt from scratch on redelivery into the same folder, hash for hash.
+/// first file is rebuilt from scratch on redelivery into the same folder, hash for hash. Two builds
+/// that overlap seal with one manifest, and the row carries that one's hash.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -76,6 +77,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
     ];
 
     private readonly InMemoryBlobStorage _blobs = new();
+    private readonly ManualClock _clock = new(FrozenOn.AddHours(1));
 
     private sealed record Seeded(string CustomerBId, string EmployeeBId, string ReceiptedOrderId, string AnonymisedOrderId, string DisputeId);
 
@@ -85,7 +87,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         services.Replace(ServiceDescriptor.Singleton<IBlobContainerClientFactory>(_blobs));
         // One clock for every build, so two builds of the same frozen input are comparable byte for
         // byte: the manifest records the build instant.
-        services.Replace(ServiceDescriptor.Singleton<TimeProvider>(new FixedClock(FrozenOn.AddHours(1))));
+        services.Replace(ServiceDescriptor.Singleton<TimeProvider>(_clock));
         return Task.CompletedTask;
     }
 
@@ -161,7 +163,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.Equal(seeded.DisputeId, dispute.GetProperty("id").GetString());
                 Assert.Equal("Resolved", dispute.GetProperty("status").GetString());
                 Assert.Single(dispute.GetProperty("lines").EnumerateArray());
-                foreach (var forbidden in new[] { "description", "resolutionNotes", "messages", "evidence" })
+                foreach (var forbidden in new[] { "description", "resolutionNotes", "messages", "evidence", "userId" })
                 {
                     Assert.False(dispute.TryGetProperty(forbidden, out _), $"disputes.jsonl carries {forbidden}");
                 }
@@ -286,6 +288,51 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.Equal(run.Clean.ManifestSha256, run.Rebuilt.ManifestSha256);
                 Assert.Equal(run.CleanSnapshot, run.RebuiltSnapshot);
                 return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// A redelivery beside a "build again" can run two builds of one frozen company at once. The
+    /// interleaving that would leave the blob and the row disagreeing: the earlier build lands its
+    /// manifest and, before it stamps, a later build runs through — writing its own manifest on top
+    /// and stamping — after which the earlier stamps its own hash. The first manifest to land is the
+    /// seal; whichever build finds it there stamps that hash, never its own.
+    /// </summary>
+    [Fact]
+    public async Task Two_Overlapping_Builds_Seal_With_The_First_Manifest_To_Land_And_The_Row_Carries_Its_Hash()
+    {
+        await TestMethod(
+            setup: SetupAsync,
+            arrange: async ctx =>
+            {
+                await SeedAsync(ctx);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                CompanyArchiveRunSummary later = default!;
+                // The moment the earlier build's manifest lands, a later build (a minute on, so its own
+                // manifest differs) runs through to its stamp; only then does the earlier build stamp.
+                _blobs.AfterNextWriteOf($"{Folder}/manifest.json", async () =>
+                {
+                    _clock.Advance(TimeSpan.FromMinutes(1));
+                    later = await RunAsync(provider, B, FrozenOn);
+                });
+                var earlier = await RunAsync(provider, B, FrozenOn);
+                return (Earlier: earlier, Later: later);
+            },
+            assert: async (ctx, runs) =>
+            {
+                Assert.True(runs.Earlier.Ran);
+                Assert.True(runs.Later.Ran);
+
+                var manifestBytes = _blobs.Container(AppConstants.BlobContainers.CompanyArchives).Bytes($"{Folder}/manifest.json");
+                var tenant = await ctx.Tenants.AsNoTracking().SingleAsync(t => t.Id == B);
+                Assert.Equal(Sha256(manifestBytes), tenant.ArchiveManifestSha256);
+                Assert.Equal(runs.Earlier.ManifestSha256, tenant.ArchiveManifestSha256);
+                Assert.Equal(runs.Later.ManifestSha256, tenant.ArchiveManifestSha256);
+                Assert.Equal(FrozenOn.AddHours(1), JsonDocument.Parse(manifestBytes).RootElement.GetProperty("builtOn").GetDateTimeOffset());
             },
             transactional: false);
     }
@@ -475,21 +522,24 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         return order;
     }
 
-    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    private sealed class ManualClock(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
+
+        public void Advance(TimeSpan by) => now += by;
     }
 
     /// <summary>
     /// A blob account in memory: one container per name, copies by URI across containers, a
-    /// streaming writer that lands on dispose, a per-write fault to inject, and a snapshot to
-    /// compare two builds.
+    /// streaming writer that lands on dispose, a one-shot fault or hook on a named write, and a
+    /// snapshot to compare two builds.
     /// </summary>
     private sealed class InMemoryBlobStorage : IBlobContainerClientFactory
     {
         private const string Host = "https://blobs.test";
         private readonly Dictionary<string, InMemoryContainer> _containers = new(StringComparer.Ordinal);
         private string? _failNextWriteOf;
+        private (string Blob, Func<Task> Action)? _afterNextWriteOf;
         private int _writes;
 
         public IBlobContainerClient GetBlobContainerClient(string containerName) => Container(containerName);
@@ -506,6 +556,9 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         }
 
         public void FailNextWriteOf(string blobName) => _failNextWriteOf = blobName;
+
+        /// <summary>Runs once, after the named blob's next upload has landed and before the uploader continues.</summary>
+        public void AfterNextWriteOf(string blobName, Func<Task> action) => _afterNextWriteOf = (blobName, action);
 
         public void ResetContainer(string name) => _containers.Remove(name);
 
@@ -526,6 +579,15 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
             {
                 _failNextWriteOf = null;
                 throw new IOException($"injected fault writing {blobName}");
+            }
+        }
+
+        internal async Task AfterWriteAsync(string blobName)
+        {
+            if (_afterNextWriteOf is { } hook && hook.Blob == blobName)
+            {
+                _afterNextWriteOf = null;
+                await hook.Action();
             }
         }
 
@@ -561,6 +623,18 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 using var buffer = new MemoryStream();
                 await stream.CopyToAsync(buffer, cancellationToken);
                 Put(blobName, buffer.ToArray());
+                await storage.AfterWriteAsync(blobName);
+            }
+
+            public async Task<bool> UploadIfAbsentAsync(string blobName, Stream stream, CancellationToken cancellationToken)
+            {
+                if (Entries.ContainsKey(blobName))
+                {
+                    return false;
+                }
+
+                await UploadAsync(blobName, stream, cancellationToken: cancellationToken);
+                return true;
             }
 
             public Task DeleteAsync(string blobName, CancellationToken cancellationToken)

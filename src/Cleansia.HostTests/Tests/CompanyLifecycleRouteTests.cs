@@ -21,6 +21,7 @@ using Cleansia.HostTests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using RefreshTokenEntity = Cleansia.Core.Domain.Users.RefreshToken;
 
 namespace Cleansia.HostTests.Tests;
@@ -78,11 +79,13 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
     });
 
     private readonly RecordingStripeClient _stripe = new();
+    private readonly RecordingLoggerProvider _customerHostLog = new();
 
     protected override void ConfigureCustomerHostServices(IServiceCollection services)
     {
         services.RemoveAll<IStripeClient>();
         services.AddSingleton<IStripeClient>(_stripe);
+        services.AddSingleton<ILoggerProvider>(_customerHostLog);
     }
 
     protected override void ConfigurePartnerHostServices(IServiceCollection services) => UseStubVerifier(services);
@@ -803,8 +806,8 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
     /// TC-LC-ARCH-3 on the routes: a frozen company's customer is answered 409 <c>tenant.archived</c>
     /// on a review and on a dispute — the dispute's failure audit row carries the key and no books row
     /// lands — while a signed Stripe chargeback for the company's order is answered 200 and leaves a
-    /// dead-letter row under the company, so Stripe never retries against an endpoint every company
-    /// shares.
+    /// dead-letter row under the company and one Error log line naming the company and the source, so
+    /// Stripe never retries against an endpoint every company shares and an operator still sees it.
     /// </summary>
     [Fact]
     public async Task A_frozen_companys_books_answer_409_on_the_request_path_and_200_plus_a_dead_letter_on_the_Stripe_webhook()
@@ -866,6 +869,11 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         Assert.Equal(payload, deadLetter.RawBody);
         Assert.Contains(BusinessErrorMessage.TenantArchived, deadLetter.Error, StringComparison.Ordinal);
         Assert.Contains(HostTestTenants.B, deadLetter.Error, StringComparison.Ordinal);
+
+        var refused = Assert.Single(_customerHostLog.Entries, e => e.Level == LogLevel.Error && e.Exception is CompanyArchivedException);
+        Assert.Contains(HostTestTenants.B, refused.Message, StringComparison.Ordinal);
+        Assert.Contains("stripe-webhook", refused.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(payload, refused.Message, StringComparison.Ordinal);
     }
 
     /// <summary>A B customer's card booking at the Bratislava address, unpaid: it owes no receipt and no chargeback horizon.</summary>

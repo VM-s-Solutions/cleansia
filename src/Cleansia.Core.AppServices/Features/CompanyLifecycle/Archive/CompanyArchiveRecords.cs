@@ -117,7 +117,6 @@ public static class CompanyArchiveRecords
     public sealed record Dispute(
         string Id,
         string OrderId,
-        string UserId,
         DisputeReason Reason,
         DisputeStatus Status,
         decimal? RefundAmount,
